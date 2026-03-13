@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  PrivacyInfo.xcprivacy — Apple Privacy Manifest
+  Required for App Store submission for any app using Firebase (since May 2024).
+  Declares which privacy-sensitive APIs are accessed and why.
+  Ref: https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
+-->
+<plist version="1.0">
+<dict>
+	<!-- We do not track users across apps or websites owned by other companies. -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+
+	<!-- We do not use any tracking domains. -->
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<!-- Required reason APIs accessed by Firebase and our app. -->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<!-- File timestamp API — used by Firebase SDK for local cache management. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>DDA9.1</string>
+			</array>
+		</dict>
+		<!-- UserDefaults — used to persist scenario bundle versions and game save metadata. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+		<!-- System boot time — used by Firebase for SDK diagnostics. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>35F9.1</string>
+			</array>
+		</dict>
+		<!-- Disk space — used by Firebase and our bundle cache to manage local storage. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>E174.1</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- Data collected and linked to user identity.
+	     We use Firebase Anonymous Authentication only — no PII is collected.
+	     The Firebase UID is an anonymous, randomly generated identifier. -->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<!-- Used solely to persist anonymous game state across sessions. -->
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

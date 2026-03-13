@@ -1,0 +1,28 @@
+// Storage rules for The Administration
+// scenario-bundles/: aggregated bundle JSON files — authenticated read, server-write only.
+// scenarios/{year}/{month}/: individual JSON backups written by Cloud Functions — not client-facing.
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Aggregated bundle files downloaded by the iOS app.
+    // Auth required so anonymous sign-in gates access; no unauthenticated reads.
+    match /scenario-bundles/{file} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Per-scenario JSON backups written by Cloud Functions via Admin SDK.
+    // Not surfaced to clients directly.
+    match /scenarios/{allPaths=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // Default deny-all
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

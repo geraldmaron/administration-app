@@ -1,0 +1,15 @@
+# Firebase config — download from Firebase console, add to Xcode manually.
+# See GoogleService-Info.plist.template for setup instructions.
+TheAdministration/GoogleService-Info.plist
+
+# Xcode build artifacts
+DerivedData/
+*.xcuserstate
+*.xcuserdatad
+xcuserdata/
+
+# Swift Package Manager resolved versions (committed in teams, ignored here for flexibility)
+# TheAdministration.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+# OS artifacts
+.DS_Store

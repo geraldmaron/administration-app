@@ -1,0 +1,70 @@
+name: TheAdministration
+options:
+  bundleIdPrefix: com.administration
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: en
+  xcodeVersion: "15.0"
+
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    majorVersion: "11.0.0"
+
+targets:
+  TheAdministration:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: TheAdministration
+    dependencies:
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseStorage
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.administration.theadministration
+        PRODUCT_NAME: TheAdministration
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2" # iPhone and iPad
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: "YES"
+        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+    info:
+      path: TheAdministration/Info.plist
+      properties:
+        CFBundleDisplayName: TheAdministration
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        LSRequiresIPhoneOS: true
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+
+  TheAdministrationTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: TheAdministrationTests
+    dependencies:
+      - target: TheAdministration
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.administration.theadministration.tests
+        SWIFT_VERSION: "5.9"
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+        GENERATE_INFOPLIST_FILE: "YES"
+

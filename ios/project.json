@@ -1,0 +1,11 @@
+{
+  "name": "TheAdministration",
+  "displayName": "TheAdministration",
+  "organizationIdentifier": "com.administration",
+  "bundleIdentifier": "com.administration.theadministration",
+  "deploymentTarget": "17.0",
+  "platforms": ["ios"],
+  "developmentTeam": "",
+  "codeSigningIdentity": "Apple Development",
+  "description": "The Administration - Political Simulation Game"
+}

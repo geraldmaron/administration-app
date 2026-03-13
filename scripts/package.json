@@ -1,0 +1,20 @@
+{
+    "name": "the-administration-scripts",
+    "description": "Admin and maintenance scripts for The Administration Firebase backend",
+    "scripts": {
+        "generate": "ts-node generate-scenarios.ts",
+        "pre-flight": "ts-node pre-flight.ts",
+        "audit": "ts-node audit-existing-scenarios.ts",
+        "token-audit": "ts-node token-usage-audit.ts",
+        "check-gen": "ts-node check-generation-job.ts"
+    },
+    "engines": {
+        "node": "22"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "ts-node": "^10.9.0",
+        "typescript": "^5.0.0"
+    },
+    "private": true
+}

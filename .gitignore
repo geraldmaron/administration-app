@@ -1,0 +1,103 @@
+# Large model files
+ios/models/*.gguf
+
+# iOS build artifacts
+ios/.build/
+ios/.swiftpm/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcworkspace/xcuserdata/
+ios/DerivedData/
+ios/*.xcworkspace/xcshareddata/
+*.xcuserstate
+*.xcuserdatad
+
+# Swift Package Manager
+.swiftpm/
+.build/
+*.xcodeproj/project.xcworkspace/xcshareddata/
+
+# Node modules (web)
+web/node_modules/
+web/functions/node_modules/
+web/.next/
+web/.pnpm-store/
+web/out/
+web/build/
+web/dist/
+
+# Logs
+*.log
+web/dev.log
+web/.next/**/*.log
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Service account keys
+**/serviceAccountKey*.json
+
+# iOS Firebase config (use template, don't commit real file)
+**/GoogleService-Info.plist
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+web/test-results/
+web/screenshots/
+playwright-report/
+
+# Package manager locks (optional - uncomment if you want to ignore)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.tmp/
+web/.audit-cache/
+.agent/
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

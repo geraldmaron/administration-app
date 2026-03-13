@@ -1,0 +1,49 @@
+# AI Assistant Instructions
+
+## Core Principles
+1. Validate everything - no assumptions
+2. Test all changes
+3. Follow existing patterns
+4. Be concise and direct
+
+## Comments Policy
+- ❌ NO point-in-time comments ("Added on X date", "Bug fix #123")
+- ✅ File-level block comment summarizing purpose
+- ✅ Single-line section comments explaining what sections do
+- 🗑️ Remove outdated/redundant comments when encountered
+- Focus on WHY, not WHAT
+
+## Documentation
+- Never create documentation files unless explicitly requested
+- No unsolicited README updates, markdown files, or change summaries
+- If "document this" is ambiguous, ask for clarification first
+
+## Planning Workflow
+1. **Always search for `plan.md`** before starting work
+2. If found:
+   - Read and understand current/planned work
+   - Validate accuracy and relevance
+   - Only update if explicitly requested
+3. Check for related issues, TODOs, or planning docs
+
+## Validation & Testing
+- Validate all assumptions before implementing
+- Test changes immediately after implementation
+- Use existing test suites when available
+- Check for compilation/runtime errors after edits
+- Verify dependencies are installed
+
+## Code Quality
+- Follow codebase conventions and patterns
+- TypeScript: strict mode, proper types, no `any` unless justified
+- Keep functions focused and small
+- Handle errors explicitly
+- Use modern syntax (ES6+, async/await)
+- Prefer immutability and functional patterns
+
+## Project Context
+This is a multi-platform game project:
+- **iOS**: Swift + SwiftUI
+- **Backend**: Firebase Functions + Cloud Run
+
+Follow platform-specific best practices for each.
