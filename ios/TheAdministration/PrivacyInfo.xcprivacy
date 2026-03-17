@@ -8,18 +8,14 @@
 -->
 <plist version="1.0">
 <dict>
-	<!-- We do not track users across apps or websites owned by other companies. -->
 	<key>NSPrivacyTracking</key>
 	<false/>
 
-	<!-- We do not use any tracking domains. -->
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
 
-	<!-- Required reason APIs accessed by Firebase and our app. -->
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
-		<!-- File timestamp API — used by Firebase SDK for local cache management. -->
 		<dict>
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
@@ -28,7 +24,6 @@
 				<string>DDA9.1</string>
 			</array>
 		</dict>
-		<!-- UserDefaults — used to persist scenario bundle versions and game save metadata. -->
 		<dict>
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
@@ -37,7 +32,6 @@
 				<string>CA92.1</string>
 			</array>
 		</dict>
-		<!-- System boot time — used by Firebase for SDK diagnostics. -->
 		<dict>
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
@@ -46,7 +40,6 @@
 				<string>35F9.1</string>
 			</array>
 		</dict>
-		<!-- Disk space — used by Firebase and our bundle cache to manage local storage. -->
 		<dict>
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
@@ -57,9 +50,6 @@
 		</dict>
 	</array>
 
-	<!-- Data collected and linked to user identity.
-	     We use Firebase Anonymous Authentication only — no PII is collected.
-	     The Firebase UID is an anonymous, randomly generated identifier. -->
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array>
 		<dict>
@@ -71,7 +61,6 @@
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
-				<!-- Used solely to persist anonymous game state across sessions. -->
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>

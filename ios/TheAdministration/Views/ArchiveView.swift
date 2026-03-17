@@ -40,7 +40,7 @@ struct ArchiveView: View {
     private var header: some View {
         ScreenHeader(
             protocolLabel: "DECISION_ARCHIVE_LINK_V8",
-            title: "ARCHIVE",
+            title: "Archive",
             subtitle: "\(gameStore.state.archive.count) recorded decision\(gameStore.state.archive.count == 1 ? "" : "s")"
         )
         .padding(.horizontal, 16)
@@ -54,13 +54,15 @@ struct ArchiveView: View {
                 .foregroundColor(AppColors.foregroundSubtle)
                 .font(.system(size: 14))
             TextField("Search decisions…", text: $searchText)
-                .font(.system(size: 13, design: .monospaced))
+                .font(AppTypography.body)
                 .foregroundColor(AppColors.foreground)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(AppColors.backgroundElevated)
-        .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .accessibilityLabel("Search decisions")
@@ -72,7 +74,6 @@ struct ArchiveView: View {
             LazyVStack(spacing: 0) {
                 ForEach(Array(records.reversed().enumerated()), id: \.element.id) { index, turn in
                     ArchiveCard(turn: turn, action: { selectedTurn = turn })
-                        .staggerEntrance(index: index, offset: 10)
                 }
             }
             .padding(.horizontal, 16)
@@ -211,30 +212,31 @@ struct TurnDetailSheet: View {
                         Group {
                             HStack {
                                 Text("Turn \(turn.turn)")
-                                    .font(.system(size: 12, weight: .black, design: .monospaced))
+                                    .font(AppTypography.micro)
                                     .foregroundColor(AppColors.foregroundSubtle)
+                                    .monospacedDigit()
                                 Spacer()
                                 if let ts = turn.timestamp {
                                     Text(ts)
-                                        .font(.system(size: 10))
+                                        .font(AppTypography.micro)
                                         .foregroundColor(AppColors.foregroundSubtle)
                                 }
                             }
                             Text(turn.scenarioTitle)
-                                .font(.system(size: 22, weight: .black))
+                                .font(.system(size: 22, weight: .semibold))
                                 .foregroundColor(AppColors.foreground)
                             Text("Decision: \(turn.decisionLabel)")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(AppColors.foregroundMuted)
                         }
                         Divider().background(AppColors.border)
 
                         if !turn.metricDeltas.isEmpty {
                             VStack(alignment: .leading, spacing: 10) {
-                                Text("METRIC CHANGES")
-                                    .font(.system(size: 10, weight: .black))
+                                Text("Metric Changes")
+                                    .font(AppTypography.caption)
+                                    .fontWeight(.semibold)
                                     .foregroundColor(AppColors.foregroundSubtle)
-                                    .tracking(2)
                                 ForEach(turn.metricDeltas) { delta in
                                     HStack {
                                         Text(delta.name)
@@ -242,7 +244,7 @@ struct TurnDetailSheet: View {
                                             .foregroundColor(AppColors.foreground)
                                         Spacer()
                                         Text("\(delta.delta > 0 ? "+" : "")\(Int(delta.delta))")
-                                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
                                             .foregroundColor(delta.delta > 0 ? AppColors.success : (delta.delta < 0 ? AppColors.error : AppColors.foregroundSubtle))
                                     }
                                 }
@@ -252,10 +254,10 @@ struct TurnDetailSheet: View {
 
                         if !turn.cabinetFeedback.isEmpty {
                             VStack(alignment: .leading, spacing: 10) {
-                                Text("CABINET RESPONSE")
-                                    .font(.system(size: 10, weight: .black))
+                                Text("Cabinet Response")
+                                    .font(AppTypography.caption)
+                                    .fontWeight(.semibold)
                                     .foregroundColor(AppColors.foregroundSubtle)
-                                    .tracking(2)
                                 ForEach(turn.cabinetFeedback, id: \.memberName) { fb in
                                     HStack(alignment: .top, spacing: 8) {
                                         Circle()

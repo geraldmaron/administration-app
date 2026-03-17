@@ -299,7 +299,7 @@ private struct MetricDeltaRow: View {
                     ZStack(alignment: .leading) {
                         Rectangle().fill(AppColors.border)
                         Rectangle()
-                            .fill(deltaColor)
+                            .fill(AppColors.accentPrimary.opacity(0.8))
                             .frame(width: geo.size.width * CGFloat(min(1.0, abs(Double(metric.netChange)) / 20.0)))
                     }
                 }

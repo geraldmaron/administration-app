@@ -38,7 +38,7 @@ class PersistenceService {
     static let shared = PersistenceService()
     private init() {}
 
-    static let totalSlots = 3
+    static let totalSlots = 10
     private static let activeSlotKey = "active_save_slot"
 
     // MARK: - Active slot
@@ -102,6 +102,58 @@ class PersistenceService {
         try? FileManager.default.removeItem(at: fileURL(for: slot))
         UserDefaults.standard.removeObject(forKey: metaKey(for: slot))
         if activeSlot == slot { activeSlot = 1 }
+    }
+
+    // MARK: - Auto-save
+
+    private var autoSaveFileURL: URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return docs.appendingPathComponent("saved_game_autosave.json")
+    }
+
+    private static let autoSaveMetaKey = "save_autosave_meta"
+
+    func autoSave(state: GameState) {
+        guard let data = try? JSONEncoder().encode(state) else { return }
+        do {
+            try data.write(to: autoSaveFileURL)
+        } catch {
+            print("⚠️  Failed to auto-save game: \(error)")
+        }
+        let meta = SaveSlotMetadata(
+            id: 0,
+            countryId: state.countryId,
+            countryName: nil,
+            turn: state.turn,
+            dateSaved: Date(),
+            playerName: state.player?.name,
+            customName: "Auto-Save"
+        )
+        if let metaData = try? JSONEncoder().encode(meta) {
+            UserDefaults.standard.set(metaData, forKey: Self.autoSaveMetaKey)
+        }
+    }
+
+    func loadAutoSave() -> GameState? {
+        guard let data = try? Data(contentsOf: autoSaveFileURL) else { return nil }
+        return try? JSONDecoder().decode(GameState.self, from: data)
+    }
+
+    var hasAutoSave: Bool {
+        FileManager.default.fileExists(atPath: autoSaveFileURL.path)
+    }
+
+    var autoSaveMeta: SaveSlotMetadata? {
+        guard let data = UserDefaults.standard.data(forKey: Self.autoSaveMetaKey),
+              let meta = try? JSONDecoder().decode(SaveSlotMetadata.self, from: data) else {
+            return nil
+        }
+        return meta
+    }
+
+    func deleteAutoSave() {
+        try? FileManager.default.removeItem(at: autoSaveFileURL)
+        UserDefaults.standard.removeObject(forKey: Self.autoSaveMetaKey)
     }
 
     // MARK: - Exists

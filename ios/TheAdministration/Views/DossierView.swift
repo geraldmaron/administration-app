@@ -155,12 +155,12 @@ struct PersonDossierView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("STRENGTHS")
                         .font(.system(size: 10, weight: .black, design: .monospaced))
-                        .foregroundColor(AppColors.success)
+                        .foregroundColor(AppColors.accentSecondary)
                         .tracking(3)
                     ForEach(strengths, id: \.self) { item in
                         HStack(alignment: .top, spacing: 6) {
                             Circle()
-                                .fill(AppColors.success)
+                                .fill(AppColors.accentSecondary)
                                 .frame(width: 4, height: 4)
                                 .padding(.top, 5)
                             Text(item)
@@ -176,12 +176,12 @@ struct PersonDossierView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("WEAKNESSES")
                         .font(.system(size: 10, weight: .black, design: .monospaced))
-                        .foregroundColor(AppColors.error)
+                        .foregroundColor(AppColors.accentTertiary)
                         .tracking(3)
                     ForEach(weaknesses, id: \.self) { item in
                         HStack(alignment: .top, spacing: 6) {
                             Circle()
-                                .fill(AppColors.error)
+                                .fill(AppColors.accentTertiary)
                                 .frame(width: 4, height: 4)
                                 .padding(.top, 5)
                             Text(item)

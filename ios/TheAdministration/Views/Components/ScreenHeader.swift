@@ -1,7 +1,6 @@
 /// ScreenHeader
 /// Unified header component used across all main screens.
-/// Renders a protocol status label, screen title, optional subtitle,
-/// and optional trailing action content.
+/// Clean left-aligned title with optional subtitle and trailing action content.
 import SwiftUI
 
 struct ScreenHeader<TrailingContent: View>: View {
@@ -25,28 +24,22 @@ struct ScreenHeader<TrailingContent: View>: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(AppColors.success)
-                        .frame(width: 6, height: 6)
-                        .accentGlow(color: AppColors.success, radius: 4)
-
+                if !protocolLabel.isEmpty {
                     Text(protocolLabel)
-                        .font(AppTypography.micro)
-                        .foregroundColor(AppColors.success.opacity(0.85))
-                        .tracking(3)
+                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        .tracking(1.5)
+                        .foregroundColor(AppColors.foregroundSubtle.opacity(0.5))
                 }
 
-                Text(title)
-                    .font(AppTypography.title)
+                Text(title.uppercased())
+                    .font(.system(size: 22, weight: .heavy))
                     .foregroundColor(AppColors.foreground)
-                    .tracking(-1)
+                    .tracking(1.5)
 
                 if let subtitle = subtitle {
                     Text(subtitle)
-                        .font(AppTypography.label)
+                        .font(AppTypography.body)
                         .foregroundColor(AppColors.foregroundMuted)
-                        .tracking(1)
                 }
             }
 

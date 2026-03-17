@@ -14,20 +14,26 @@ The player is always **you** — never "the government", "the president", or "th
 
 **VOICE BY FIELD:**
 - `description`, `options[].text`, `advisorFeedback[].feedback` → second person ("You face...", "Your administration...", "You direct...")
-- `outcomeHeadline`, `outcomeSummary`, `outcomeContext` → **third-person journalistic** — these are displayed as newspaper articles. Write as a wire-service reporter covering the decision, not as a briefing to the player. Never use "you" or "your" in these fields.
+- `outcomeHeadline`, `outcomeSummary`, `outcomeContext` → **third-person journalistic** — these are displayed as newspaper articles. Use `{leader_title}` (or `{the_leader_title}` at a sentence start) when referring to the head of government. Do not use generic phrases such as "The administration" or "the government". Write as a wire-service reporter covering the decision, not as a briefing to the player. Never use "you" or "your" in these fields.
 
 ---
 
-## Token System
+## HARD REQUIREMENTS (will cause rejection if violated)
 
-All country-specific content must use `{token}` placeholders:
+- **Outcome fields must be third-person.** Never use "you" or "your" in `outcomeHeadline`, `outcomeSummary`, or `outcomeContext`. Second-person language is required for `description`, `options[].text`, and `advisorFeedback[].feedback`.
+- **Minimum length requirements:**
+  - `description` must be **45+ words**.
+  - `options[].text` must be **35+ words**.
+  - `outcomeSummary` must be **200+ characters AND at least 2 sentences**. A single sentence of 210 characters passes the character check but fails sentence validation. Write at minimum: one lede sentence stating the action and its immediate consequence, then a second sentence expanding the impact or naming a secondary effect.
+  - `outcomeContext` must be **300+ characters AND at least 3 sentences (50–80 words)**. The "MAX 100 words" cap in the structural section is an upper bound — not permission to write briefly. 282 characters is a direct scoring penalty. Aim for 4 sentences: name an institution, describe the mechanism, include a reaction (opposition, market, or public), and close with a broader implication.
+- **Prohibited phrasing in second-person fields** (`description`, `options[].text`, `advisorFeedback[].feedback`): never use the phrases **"the government"** or **"the administration"** (including with any capitalization).
+- **Token usage:** never use **"the {token}"**; prefer the `{the_token}` form where appropriate (e.g., `{the_leader_title}`, `{the_finance_role}`, `{the_player_country}`).
+- **Token-followed word capitalization (outcome fields only):** In `outcomeSummary` and `outcomeContext`, avoid opening the field with a `{token}` placeholder — restructure so the first word is a capitalized narrative word (e.g., `"Emergency measures were ordered..."`, `"A new trade framework took effect..."`). If a token must appear first, the word immediately after the closing `}` **must be capitalized**: `{the_player_country} Has signed the accord.` ✅  NOT  `{the_player_country} has signed the accord.` ❌. Grammar validation checks that no sentence-start token is followed by a lowercase word.
+- Any violation of these requirements will cause the scenario to be rejected/failed audit.
 
-- `{the_player_country}` — the player's country name (with article — always use this form, never `{player_country}`)
-- `{leader_title}` — the player's title (President, Prime Minister, etc.)
-- `{finance_role}` — Finance Minister / Secretary of the Treasury / etc.
-- `{the_finance_role}` — article form for sentence-initial use
-- `{currency}` — the country's currency name
-- `{gdp_description}` — a description of GDP scale (NOT a specific number to steal or misappropriate)
+---
+
+{{TOKEN_SYSTEM}}
 
 Use `the_*` forms for all country relationship tokens in narrative text. For role/title tokens, use the `the_*` form when the token opens a sentence. Never hard-code country names, currencies, or political party names.
 
@@ -64,6 +70,11 @@ Use `the_*` forms for all country relationship tokens in narrative text. For rol
 - `{president}`, `{prime_minister}` — use `{leader_title}` instead.
 - `{country}`, `{country_name}` — use `{the_player_country}` instead.
 - `{border_ival}` — typo. Use `{border_rival}`.
+- `{culture_role}`, `{media_role}`, `{communications_role}` — NOT valid tokens. Culture/media policy falls under `{interior_role}`.
+- `{technology_role}`, `{innovation_role}`, `{science_role}`, `{research_role}` — NOT valid tokens. Use `{commerce_role}`.
+- `{infrastructure_role}` — NOT valid. Use `{transport_role}`.
+- `{military_role}` — NOT valid. Use `{defense_role}`.
+- `{housing_role}`, `{welfare_role}`, `{social_role}` — NOT valid. Use `{labor_role}`.
 - Any token not in the approved list fails validation. When in doubt, use approved tokens only.
 
 **HARDCODED GOVERNMENT STRUCTURE TERMS — ALWAYS BANNED:**
@@ -75,6 +86,28 @@ These terms assume a specific government system and will read as wrong for presi
 - `"parliamentary minority"` → use `"{legislature} minority"`
 - `"parliamentary support"` → use `"{legislature} support"`
 - `"parliament"` (as a standalone institution noun) → use `{legislature}`
+
+**HARDCODED MINISTRY AND INSTITUTION NAMES — ALWAYS BANNED:**
+These are country-specific names that will display incorrectly for most countries. Always use the role token.
+
+- `"Justice Ministry"` / `"Ministry of Justice"` / `"Department of Justice"` / `"Justice Department"` → use `{justice_role}` / `{the_justice_role}`
+- `"Finance Ministry"` / `"Ministry of Finance"` / `"Treasury Department"` / `"Department of the Treasury"` → use `{finance_role}` / `{the_finance_role}`
+- `"Defense Ministry"` / `"Defence Ministry"` / `"Ministry of Defense"` / `"Department of Defense"` → use `{defense_role}` / `{the_defense_role}`
+- `"Interior Ministry"` / `"Ministry of Interior"` / `"Home Office"` / `"Department of Homeland Security"` → use `{interior_role}` / `{the_interior_role}`
+- `"Foreign Ministry"` / `"Ministry of Foreign Affairs"` / `"State Department"` / `"Department of State"` / `"Foreign Office"` → use `{foreign_affairs_role}` / `{the_foreign_affairs_role}`
+- `"Health Ministry"` / `"Ministry of Health"` / `"Department of Health"` → use `{health_role}` / `{the_health_role}`
+- `"Education Ministry"` / `"Ministry of Education"` / `"Department of Education"` → use `{education_role}` / `{the_education_role}`
+- `"Commerce Ministry"` / `"Ministry of Commerce"` / `"Department of Commerce"` → use `{commerce_role}` / `{the_commerce_role}`
+- `"Labour Ministry"` / `"Labor Ministry"` / `"Ministry of Labour"` / `"Department of Labor"` → use `{labor_role}` / `{the_labor_role}`
+- `"Energy Ministry"` / `"Ministry of Energy"` / `"Department of Energy"` → use `{energy_role}` / `{the_energy_role}`
+- `"Environment Ministry"` / `"Ministry of Environment"` / `"Environmental Protection Agency"` → use `{environment_role}` / `{the_environment_role}`
+- `"Transport Ministry"` / `"Ministry of Transport"` / `"Department of Transportation"` → use `{transport_role}` / `{the_transport_role}`
+- `"Agriculture Ministry"` / `"Ministry of Agriculture"` / `"Department of Agriculture"` → use `{agriculture_role}` / `{the_agriculture_role}`
+
+✅ CORRECT: `"You direct {the_justice_role} to launch a formal inquiry into the contracting scandal."`
+❌ WRONG: `"You direct the Justice Ministry to launch a formal inquiry."` (breaks for US, France, India, etc.)
+✅ CORRECT: `"{the_finance_role} warned the cabinet that the proposed subsidy exceeds available reserves."`
+❌ WRONG: `"The Treasury Department warned the cabinet..."` (US-only phrasing)
 
 ✅ CORRECT: `"Your {ruling_party} warns that the reform threatens their influence in {legislature}."`
 ❌ WRONG: `"Your ruling coalition warns that the reform could collapse your parliamentary majority."`
@@ -96,8 +129,26 @@ Usage examples:
 
 Apply the same `{the_*}` rules for these tokens as for relationship tokens: use the `the_*` form in subject/object positions; use the bare form only in possessives (`{opposition_party}'s demands`).
 
-**CANONICAL ADVISOR ROLES** (only these are valid for `advisorFeedback.roleId`):
-`role_executive`, `role_economy`, `role_labor`, `role_justice`, `role_diplomacy`, `role_interior`, `role_health`, `role_commerce`, `role_defense`, `role_environment`, `role_military`
+**CANONICAL ADVISOR ROLES** (only these 13 are valid for `advisorFeedback.roleId`):
+`role_executive`, `role_diplomacy`, `role_defense`, `role_economy`, `role_justice`, `role_health`, `role_commerce`, `role_labor`, `role_interior`, `role_energy`, `role_environment`, `role_transport`, `role_education`
+
+Role definitions:
+- `role_executive` — Chief of Staff / Executive Office (overall strategy and cabinet coordination)
+- `role_diplomacy` — Foreign Affairs Minister (international relations, treaties, diplomatic posture)
+- `role_defense` — Defense Minister (military operations, security doctrine, national defense)
+- `role_economy` — Finance Minister / Treasury Secretary (fiscal policy, macroeconomic stability)
+- `role_justice` — Attorney General / Justice Minister (rule of law, legal process, civil liberties)
+- `role_health` — Health Minister (public health, medical systems, pandemic response)
+- `role_commerce` — Commerce / Trade Minister (business regulation, domestic trade, industry)
+- `role_labor` — Labor Minister (workers, wages, employment policy, unions)
+- `role_interior` — Interior / Home Affairs Minister (domestic security, public order, border enforcement)
+- `role_energy` — Energy Minister (power grid, energy supply, resource extraction)
+- `role_environment` — Environment Minister (climate, natural resources, environmental regulation)
+- `role_transport` — Transport Minister (infrastructure, logistics, transit networks)
+- `role_education` — Education Minister (curriculum reform, literacy programs, university funding)
+
+Invalid role redirects (never use these):
+- `role_military` does NOT exist — use `role_defense`
 - `role_innovation` does NOT exist — use `role_commerce`
 - `role_finance` does NOT exist — use `role_economy`
 - `role_foreign_affairs` does NOT exist — use `role_diplomacy`
@@ -107,7 +158,6 @@ Apply the same `{the_*}` rules for these tokens as for relationship tokens: use 
 - `role_approval` does NOT exist — it is a METRIC, not a role; use `role_executive`
 - `role_equality` does NOT exist — it is a METRIC, not a role; use `role_labor` or `role_health`
 - `role_sovereignty` does NOT exist — it is a METRIC, not a role; use `role_defense` or `role_diplomacy`
-- `role_education` does NOT exist — use `role_commerce` (education policy) or `role_labor`
 - **NEVER use a metric ID as a roleId** — metrics (`metric_approval`, `metric_public_order`, etc.) are different from roles (`role_interior`, `role_diplomacy`, etc.)
 
 ---
@@ -121,9 +171,10 @@ Apply the same `{the_*}` rules for these tokens as for relationship tokens: use 
   - The third sentence is encouraged whenever it adds specificity about the conflict, affected institution, or decision window.
 
 ### Options (exactly 3)
-- `text`: **2–3 sentences, 35–90 words** — what the player decides, the specific mechanism used, the trade-off accepted, and who is most affected. The third sentence is encouraged when it names the constituency bearing the cost or a concrete downstream consequence.
-  - **Minimum 35 words is a hard floor.** A line like “You provide financial relief. This stabilizes discontent.” fails — it is too thin. Name the institution deploying the policy, the mechanism (subsidy, embargo, injunction, taskforce), and the group that benefits versus bears the cost.  - ❌ Too short (10 words): "You impose export controls on grain shipments. Prices stabilize."
-  - ✅ Sufficient (40 words): "You direct the Commerce Ministry to impose emergency export controls on staple grain shipments, capping volumes at 60% of last year's quota. Domestic farmers absorb short-term revenue losses while urban consumers see immediate price relief at state-subsidized markets."- `label`: 1–5 words, plain text (e.g., "Impose Tariffs", "Negotiate directly")
+- `text`: **2–3 sentences, 35–60 words** — renders on a mobile iOS card. Write what the player decides, the specific mechanism used, the trade-off accepted, and who is most affected. The third sentence is encouraged when it names the constituency bearing the cost or a concrete downstream consequence.
+  - ❌ Too short (10 words): “You impose export controls on grain shipments. Prices stabilize.”
+  - ✅ Target (32 words): “You direct the Commerce Ministry to impose emergency export controls on staple grain shipments, capping volumes at 60% of last year’s quota. Domestic farmers absorb short-term losses while urban consumers see immediate relief.”
+- `label`: **MAX 3 words, prefer 1–2 words**, plain text (e.g., “Negotiate”, “Impose Tariffs”). **No `{token}` placeholders allowed in labels.** Renders as a small badge on iOS — keep it tight.
 - `effects`: **exactly 3 effects per option** (minimum 2, hard maximum 4 — prefer 3). probability = 1.0, duration 1–20 turns, values typically ±1.2 to ±4.0. Scenarios with more than 4 effects per option are IMMEDIATELY REJECTED.
   - **DOMAIN REQUIREMENT**: at least one effect per option MUST target a metric in the scenario's bundle domain. For example:
     - `politics` bundle → at least one of: `metric_approval`, `metric_public_order`, `metric_corruption`, `metric_bureaucracy`, `metric_democracy`, `metric_liberty`
@@ -135,14 +186,29 @@ Apply the same `{the_*}` rules for these tokens as for relationship tokens: use 
     - `environment` bundle → at least one of: `metric_environment`, `metric_health`, `metric_energy`
     - `social` bundle → at least one of: `metric_equality`, `metric_education`, `metric_health`, `metric_housing`, `metric_immigration`, `metric_crime`
     - `dick_mode` bundle → at least one of: `metric_liberty`, `metric_democracy`, `metric_public_order`, `metric_corruption`, `metric_sovereignty`, `metric_foreign_relations`
-- `outcomeHeadline`: 3–8 words — **newspaper headline style**, no "you"/"your"
-- `outcomeSummary`: 2–3 sentences, min 200 characters — **news article lede**: third person, past tense, journalistic. Lead with the concrete action taken and its immediate consequence. ❌ "You've imposed emergency fuel controls..." → ✅ "The administration imposed emergency fuel controls, raising import costs for domestic suppliers."
-- `outcomeContext`: 1 solid paragraph, 4–6 sentences, min 300 characters — **news article body**: third person, journalistic. Name the specific institution, group, or market segment affected, describe the downstream mechanism, include at least one reaction (opposition, ally, public, market), and close with a broader implication. No "you" or "your".
+- `outcomeHeadline`: 3–15 words, **MAX 15 words** — **newspaper headline style**, no "you"/"your". Renders as a prominent headline on iOS.
+- `outcomeSummary`: **2–3 sentences, 40–80 words** — **news article lede**: third person, past tense, journalistic. Lead with the concrete action taken and its immediate consequence. The first sentence must be **≤25 words**. ❌ "You've imposed emergency fuel controls..." → ✅ "{leader_title} ordered emergency fuel controls, raising import costs for domestic suppliers."
+- `outcomeContext`: **50–100 words (minimum 300 characters)**, 3–5 sentences — **news article body**: third person, journalistic. The ≤100-word cap is a ceiling, not permission to write briefly. Name at least one specific institution, party, ministry, or market segment (e.g., `{the_legislature}`, `{the_opposition_party}`, `{the_finance_role}`, bond markets). Describe the downstream mechanism, include at least one reaction (opposition, ally, public, market), and close with a broader implication. No "you" or "your".
+
+**FORBIDDEN PATTERNS — outcome fields (fail the quality audit):**
+- "stakeholders" → use a named group (opposition legislators, export sector, public health advocates, smallholder farmers)
+- "mixed reactions" → state one concrete reaction explicitly
+- "cautious optimism" → cliché; describe what is making them cautiously hopeful
+- "continue to assess" → deflects; say what actually happened or what is being assessed now
+- "cascading effects on" → vague; name the mechanism (supply chains, budget deficit, voter sentiment)
+- "institutional stability" → vague; name the institution and what precisely changed
+- "public confidence" (standalone) → name the confidence source (bond markets, polling lead, retail spending)
+- "will be critical in determining" → deflects; state the direction plainly
+- "broader implications" → show the implication, don't label it
+- "diplomatic initiative has received" → don't lede on reception; lede on the action and its consequence
+- "potential for sustainable growth" / "potential for [X]" → state the outcome or don't predict
+- Any sentence that starts with "This [noun phrase] has received" → passive reception framing; restructure to state consequence
+- "analysts say" / "analysts note" → attribute to a named institution or official
 
 ### Advisor Feedback (required for every option)
-Every option needs `advisorFeedback[]` covering `role_executive` plus **every** role whose metrics appear in `effects`.
+Every option MUST contain `advisorFeedback[]` entries for **ALL 13 canonical roles** — no partial subsets. Every minister must weigh in on every decision. An option with fewer than 13 `advisorFeedback` entries is automatically rejected.
 
-Format: `{ "roleId": "role_xxx", "stance": "support"|"oppose"|"neutral"|"concerned", "feedback": "1–2 substantive sentences specific to this role's domain and THIS scenario's context" }`
+Format: `{ "roleId": "role_xxx", "stance": "support"|"oppose"|"neutral"|"concerned", "feedback": "1–2 substantive sentences, target 30–50 words, MAX ~60 words, specific to this role's domain and THIS scenario's context" }`
 
 Feedback must reference the **concrete policy action, affected institution, and the advisor's professional stake** in this specific scenario. Name the mechanism, the population affected, and the causal chain.
 
@@ -216,7 +282,9 @@ Feedback must reference the **concrete policy action, affected institution, and 
 ### Pre-Output Hard-Fail Check (run before returning JSON)
 - Confirm every `{token}` in output appears in the approved token list/context.
 - Confirm `description` is **45–110 words** — count words; under 45 is a hard rejection.
-- Confirm each `options[].text` is **35–90 words** — count words; under 35 is a hard rejection.
-- Confirm each `outcomeSummary` is **≥200 characters** and each `outcomeContext` is **≥300 characters**.
+- Confirm each `options[].text` is **35–60 words** — under 35 is too thin; over 60, consolidate sentences.
+- Confirm each `outcomeSummary` is **40–80 words, 200+ characters, and contains at least 2 sentences** — a single sentence passes the character check but fails sentence validation.
+- Confirm each `outcomeContext` is **50–100 words and 300+ characters** — the ≤100-word cap is a ceiling, not a license to write 50 words. Fewer than 300 characters is a direct scoring penalty.
+- Confirm each option's `advisorFeedback` array contains exactly **13 entries** covering all canonical roles.
 - Confirm no banned phrases or boilerplate substrings remain.
 - Confirm each option includes concrete trade-offs and scenario-specific causal logic.

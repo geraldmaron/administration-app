@@ -149,7 +149,8 @@ Evaluate and return scores + specific issues found. If no issues exist for a dim
 // ---------------------------------------------------------------------------
 
 export async function evaluateContentQuality(
-    scenario: BundleScenario
+    scenario: BundleScenario,
+    modelOverride?: string
 ): Promise<ContentQualityResult> {
     const prompt = buildQualityPrompt(scenario);
 
@@ -157,7 +158,7 @@ export async function evaluateContentQuality(
         { maxTokens: 2048, temperature: 0.2 },
         prompt,
         QUALITY_SCHEMA,
-        'gpt-4o-mini'
+        modelOverride || 'gpt-4o-mini'
     );
 
     if (!result.data) {

@@ -223,3 +223,181 @@ final class ScenarioScoringTests: XCTestCase {
     }
 }
 
+final class TemplateEngineTests: XCTestCase {
+
+    private func makeCountry(
+        id: String,
+        name: String,
+        definiteArticle: String? = nil,
+        tokens: [String: String]? = nil,
+        geopoliticalProfile: GeopoliticalProfile? = nil,
+        gameplayProfile: CountryGameplayProfile? = nil
+    ) -> Country {
+        Country(
+            id: id,
+            name: name,
+            definiteArticle: definiteArticle,
+            governmentProfileId: nil,
+            attributes: CountryAttributes(population: 1_000_000, gdp: 1_000_000),
+            military: MilitaryStats(
+                strength: 50,
+                nuclearCapable: false,
+                posture: nil,
+                navyPower: 0,
+                cyberCapability: 0,
+                description: nil
+            ),
+            diplomacy: DiplomaticStats(
+                relationship: 0,
+                alignment: "neutral",
+                tradeAgreements: [],
+                tradeRelationships: nil
+            ),
+            region: nil,
+            leaderTitle: nil,
+            leader: nil,
+            difficulty: nil,
+            termLengthYears: nil,
+            currentPopulation: nil,
+            population: nil,
+            gdp: nil,
+            description: nil,
+            subdivisions: nil,
+            blocs: nil,
+            analysisBullets: nil,
+            strengths: nil,
+            weaknesses: nil,
+            vulnerabilities: nil,
+            uniqueCapabilities: nil,
+            tokens: tokens,
+            code: nil,
+            flagUrl: nil,
+            alliances: nil,
+            economy: nil,
+            geopoliticalProfile: geopoliticalProfile,
+            gameplayProfile: gameplayProfile
+        )
+    }
+
+    private func makeGameState(countryId: String) -> GameState {
+        GameState(
+            isSetup: false,
+            countryId: countryId,
+            turn: 1,
+            maxTurns: 10,
+            phase: .early,
+            status: .active,
+            gameLength: "short",
+            metrics: ["metric_approval": 50],
+            metricHistory: ["metric_approval": [50]],
+            cabinet: [],
+            activeEffects: []
+        )
+    }
+
+    func testDecodeCountryProfilesSupportsFirestoreAliases() {
+        let data: [String: Any] = [
+            "geopolitical": [
+                "neighbors": [
+                    [
+                        "country_id": "mexico",
+                        "type": "neutral",
+                        "strength": 15.0,
+                        "shared_border": true,
+                        "treaty": "Border Accord"
+                    ]
+                ],
+                "allies": [
+                    [
+                        "country_id": "uk",
+                        "type": "formal_ally",
+                        "strength": 80.0,
+                        "shared_border": false,
+                        "treaty": "NATO"
+                    ]
+                ],
+                "adversaries": [
+                    [
+                        "country_id": "russia",
+                        "type": "adversary",
+                        "strength": 90.0,
+                        "shared_border": false,
+                        "treaty": "Sanctions"
+                    ]
+                ],
+                "tags": ["regional_power"],
+                "government_category": "liberal_democracy",
+                "regime_stability": 72.0
+            ],
+            "gameplay": [
+                "starting_metrics": ["economy": 55.0],
+                "metric_equilibria": ["approval": 50.0],
+                "bundle_weight_overrides": ["diplomacy": 1.5],
+                "priority_tags": ["trade"],
+                "suppressed_tags": ["war"],
+                "neighbor_event_chance": 0.25
+            ]
+        ]
+
+        let profiles = FirebaseDataService.decodeCountryProfiles(from: data)
+
+        XCTAssertEqual(profiles.geopoliticalProfile?.adversaries.first?.countryId, "russia")
+        XCTAssertEqual(profiles.geopoliticalProfile?.neighbors.first?.sharedBorder, true)
+        XCTAssertEqual(profiles.geopoliticalProfile?.governmentCategory, .liberalDemocracy)
+        XCTAssertEqual(profiles.gameplayProfile?.bundleWeightOverrides?["diplomacy"], 1.5)
+        XCTAssertEqual(profiles.gameplayProfile?.neighborEventChance, 0.25)
+    }
+
+    func testResolveScenarioUsesGeopoliticalRelationshipsWhenTokensAreBlank() {
+        let playerCountry = makeCountry(
+            id: "player",
+            name: "Test Republic",
+            tokens: [
+                "adversary": "",
+                "the_adversary": "",
+                "ally": "",
+                "the_ally": "",
+                "trade_partner": "",
+                "the_trade_partner": "",
+                "partner": "",
+                "the_partner": ""
+            ],
+            geopoliticalProfile: GeopoliticalProfile(
+                neighbors: [],
+                allies: [
+                    CountryRelationship(countryId: "uk", type: "formal_ally", strength: 80.0, treaty: "Alliance", sharedBorder: false),
+                    CountryRelationship(countryId: "eu", type: "strategic_partner", strength: 70.0, treaty: "Trade Pact", sharedBorder: false)
+                ],
+                adversaries: [
+                    CountryRelationship(countryId: "us", type: "adversary", strength: 90.0, treaty: "Sanctions", sharedBorder: false)
+                ],
+                tags: [],
+                governmentCategory: .liberalDemocracy,
+                regimeStability: 60.0
+            )
+        )
+        let adversary = makeCountry(id: "us", name: "United States")
+        let ally = makeCountry(id: "uk", name: "United Kingdom")
+        let partner = makeCountry(id: "eu", name: "European Union", definiteArticle: "the")
+        let scenario = Scenario(
+            id: "sc_relationships",
+            title: "Summit with {the_adversary}",
+            description: "{ally} and {the_trade_partner} responded.",
+            options: [Option(id: "option_1", text: "Brief {adversary} and {partner}.")]
+        )
+
+        TemplateEngine.shared.setCountries([playerCountry, adversary, ally, partner])
+        defer { TemplateEngine.shared.setCountries([]) }
+
+        let resolved = TemplateEngine.shared.resolveScenario(
+            scenario,
+            country: playerCountry,
+            gameState: makeGameState(countryId: playerCountry.id)
+        )
+
+        XCTAssertEqual(resolved.title, "Summit with the United States")
+        XCTAssertEqual(resolved.description, "United Kingdom and the European Union responded.")
+        XCTAssertEqual(resolved.options.first?.text, "Brief United States and European Union.")
+    }
+}
+

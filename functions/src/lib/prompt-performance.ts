@@ -24,7 +24,7 @@ export interface GenerationAttempt {
   severity: string;
   desiredActs: number;
   promptVersion: string;
-  modelUsed: string; // Model name (e.g., 'kimi-k2.5', 'kimi-k2-turbo-preview', 'kimi-k2-0905-preview')
+  modelUsed: string; // Model name (e.g., 'gpt-4o-mini', 'gpt-4o', 'o3-mini')
   phase: 'concept' | 'blueprint' | 'details';
   success: boolean;
   auditScore?: number;
@@ -56,6 +56,7 @@ export interface FailureAnalysis {
 
 export type FailureCategory =
   | 'token-violation'
+  | 'adjacency-token-violation'
   | 'banned-phrase-violation'
   | 'hardcoded-gov-structure'
   | 'readability-violation'
@@ -73,6 +74,8 @@ export type FailureCategory =
   | 'content-quality-violation'
   | 'outcome-voice-violation'
   | 'framing-violation'
+  | 'gdp-as-amount-violation'
+  | 'token-article-form-violation'
   | 'parsing-error'
   | 'other';
 
@@ -166,6 +169,9 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
     .filter(c => !!c);
 
   // Check errors first (highest priority)
+  if (errorCodes.some(code => code === 'adjacency-token-mismatch')) {
+    return 'adjacency-token-violation';
+  }
   if (errorCodes.some(code => code.includes('token') || code === 'invalid-country-name')) {
     return 'token-violation';
   }
@@ -173,7 +179,6 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
     return 'banned-phrase-violation';
   }
   if (errorCodes.some(code =>
-    code === 'jargon-use' ||
     code === 'complex-sentence' ||
     code === 'high-clause-density' ||
     code === 'high-passive-voice' ||
@@ -210,7 +215,10 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   }
 
   // Check warnings
-  if (warningCodes.some(code => code === 'hardcoded-gov-structure')) {
+  if (warningCodes.some(code => code === 'jargon-use' || code === 'complex-sentence' || code === 'high-clause-density' || code === 'high-passive-voice' || code === 'label-complexity')) {
+    return 'readability-violation';
+  }
+  if (warningCodes.some(code => code === 'hardcoded-gov-structure' || code === 'hardcoded-institution-phrase')) {
     return 'hardcoded-gov-structure';
   }
   if (warningCodes.some(code => code === 'informal-tone')) {
@@ -224,6 +232,13 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   }
   if (warningCodes.includes('exceeds-magnitude-cap')) {
     return 'exceeds-magnitude-cap';
+  }
+
+  if (errorCodes.includes('gdp-as-amount') || warningCodes.includes('gdp-as-amount')) {
+    return 'gdp-as-amount-violation';
+  }
+  if (warningCodes.some(code => code === 'hardcoded-the-before-token' || code === 'label-has-token' || code === 'sentence-start-bare-token')) {
+    return 'token-article-form-violation';
   }
 
   return 'other';

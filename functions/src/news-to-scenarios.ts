@@ -18,8 +18,8 @@ import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import RssParser from 'rss-parser';
-import { generateScenarios } from './scenario-engine';
-import { saveScenario } from './storage';
+import { generateScenarios, getGenerationConfig } from './scenario-engine';
+import { saveScenario, getActiveBundleCount } from './storage';
 import { validateConfig } from './lib/config-validator';
 import { callModelProvider } from './lib/model-providers';
 import { isValidBundleId, type BundleId } from './data/schemas/bundleIds';
@@ -31,6 +31,9 @@ import { type NewsItem } from './types';
 
 /** Maximum scenarios to generate per daily run (cost guard). */
 const MAX_SCENARIOS_PER_RUN = 6;
+
+/** Maximum active news-sourced scenarios per bundle (accumulation guard). */
+const MAX_NEWS_SCENARIOS_PER_BUNDLE = 50;
 
 /** Minimum LLM relevance score (0-10) before a headline is used. */
 const MIN_RELEVANCE_SCORE = 7;
@@ -76,6 +79,9 @@ interface IngestionLog {
     headlinesDuplicated: number;
     scenariosGenerated: number;
     scenariosSaved: number;
+    bundlesSaturated: number;
+    headlinesSaturationFiltered?: number;
+    headlinesCeilingSkipped?: number;
     errors: string[];
     savedScenarioIds: string[];
 }
@@ -374,7 +380,7 @@ export const dailyNewsToScenarios = onSchedule(
         timeZone: 'UTC',
         timeoutSeconds: 540,
         memory: '1GiB',
-        secrets: ['OPENAI_API_KEY', 'MOONSHOT_API_KEY'],
+        secrets: ['OPENAI_API_KEY'],
     },
     async () => {
         logger.info('[NewsIngest] Daily news-to-scenarios run starting');
@@ -389,6 +395,7 @@ export const dailyNewsToScenarios = onSchedule(
             headlinesDuplicated: 0,
             scenariosGenerated: 0,
             scenariosSaved: 0,
+            bundlesSaturated: 0,
             errors: [],
             savedScenarioIds: [],
         };
@@ -402,6 +409,8 @@ export const dailyNewsToScenarios = onSchedule(
                 await writeLog(db, log, processedHeadlines);
                 return;
             }
+
+            const genConfig = await getGenerationConfig();
 
             // Step 1 — Fetch headlines
             const headlines = await fetchGlobalNews();
@@ -448,9 +457,55 @@ export const dailyNewsToScenarios = onSchedule(
                 return;
             }
 
+            // Bundle saturation guard — skip bundles that already have enough news scenarios
+            const uniqueBundles = [...new Set(allClassified.map(c => c.bundle))];
+            const bundleCountResults = await Promise.all(
+                uniqueBundles.map(async (bundle) => {
+                    const snap = await db.collection('scenarios')
+                        .where('metadata.bundle', '==', bundle)
+                        .where('metadata.source', '==', 'news')
+                        .where('is_active', '==', true)
+                        .count()
+                        .get();
+                    return { bundle, existingCount: snap.data().count };
+                })
+            );
+            const saturatedBundles = new Set(
+                bundleCountResults
+                    .filter(({ existingCount }) => existingCount >= MAX_NEWS_SCENARIOS_PER_BUNDLE)
+                    .map(({ bundle }) => bundle)
+            );
+            const saturatedFiltered = allClassified.filter(c => saturatedBundles.has(c.bundle));
+            log.bundlesSaturated = saturatedBundles.size;
+            log.headlinesSaturationFiltered = saturatedFiltered.length;
+            if (saturatedFiltered.length > 0) {
+                logger.info(`[NewsIngest] ${saturatedFiltered.length} headlines skipped — saturated bundles: ${[...saturatedBundles].join(', ')}`);
+            }
+            const qualifiedHeadlines = allClassified.filter(c => !saturatedBundles.has(c.bundle));
+
+            // Global ceiling check: skip bundles already at max_active_scenarios_per_bundle across all sources
+            const uniqueBundlesAfterNews = [...new Set(qualifiedHeadlines.map(h => h.bundle))];
+            const ceilingCountEntries = await Promise.all(
+                uniqueBundlesAfterNews.map(async (bundle) => {
+                    const count = await getActiveBundleCount(bundle, db);
+                    return [bundle, count] as [BundleId, number];
+                })
+            );
+            const ceilingCounts = new Map(ceilingCountEntries);
+            const ceilingQualified = qualifiedHeadlines.filter(h => {
+                const count = ceilingCounts.get(h.bundle) ?? 0;
+                if (count >= genConfig.max_active_scenarios_per_bundle!) {
+                    logger.info(`[NewsIngest] Bundle ${h.bundle} at ceiling (${count}/${genConfig.max_active_scenarios_per_bundle}), skipping headline`);
+                    return false;
+                }
+                return true;
+            });
+            const headlinesCeilingSkipped = qualifiedHeadlines.length - ceilingQualified.length;
+            if (headlinesCeilingSkipped > 0) log.headlinesCeilingSkipped = (log.headlinesCeilingSkipped ?? 0) + headlinesCeilingSkipped;
+
             // Sort by relevance score descending; take the top candidates
-            allClassified.sort((a, b) => b.relevance_score - a.relevance_score);
-            const candidates = allClassified.slice(0, MAX_SCENARIOS_PER_RUN * 2); // over-select; some will dedup
+            ceilingQualified.sort((a, b) => b.relevance_score - a.relevance_score);
+            const candidates = ceilingQualified.slice(0, MAX_SCENARIOS_PER_RUN * 2); // over-select; some will dedup
 
             // Step 4 — Deduplicate against existing scenarios (all checks run in parallel)
             const dedupResults = await Promise.all(

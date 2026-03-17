@@ -15,7 +15,7 @@ the-administration/
 │       └── Resources/      # Assets, fonts, config
 ├── functions/              # Firebase Cloud Functions (TypeScript)
 │   └── src/                # Cloud Function source
-├── scripts/                # Admin and maintenance scripts
+├── admin-app/              # Admin CLI (scenario/bundle management: generate, list, delete, export, audit)
 ├── firebase.json           # Firebase project config
 ├── firestore.rules         # Firestore security rules
 ├── firestore.indexes.json  # Composite index definitions
@@ -88,21 +88,117 @@ firebase emulators:start --only functions,firestore,auth
 
 ## Admin Scripts
 
-Scripts in `scripts/` require `ts-node` and Firebase credentials:
+The **admin-app** CLI handles scenario and bundle management (generate, list, audit). Node 18+ required.
+
+**Run from anywhere (recommended):** From the project root, run once:
 
 ```bash
-cd scripts
-npm install
-
-# Generate new scenarios
-npm run scripts:generate
-
-# Pre-flight validation
-npm run scripts:preflight
-
-# Audit existing scenarios
-ts-node audit-existing-scenarios.ts
+cd /path/to/the-administration
+cd admin-app && npm install && cd ..
+npm link
 ```
+
+After that, you can run `admin-app` from any directory:
+
+```bash
+admin-app --help
+admin-app generate    # interactive
+admin-app list
+admin-app stats
+```
+
+**Run from project root only:** Without linking, from the repo root you can run:
+
+```bash
+npm run admin-app -- --help
+# or
+node admin-app/bin/scenario-loops.js --help
+```
+
+### admin-app commands
+
+Run with no arguments for an interactive menu (stats, generate, list, delete, export, audit, help). Each command has an interactive flow with arrow-key lists. Listing scenarios shows **IDs** so you can use them with `delete --id <id>` or `--ids <id1,id2>`.
+
+```bash
+# Help and command list
+admin-app --help
+
+# Scenario counts: total, per bundle, or per bundle and region (interactive or --total / --per-bundle / --per-region)
+admin-app stats
+admin-app stats --per-bundle
+admin-app stats --per-region --json
+
+# Generate: interactive supports single bundle OR multiple bundles with distribution (evenly / by percentage / same count)
+admin-app generate
+admin-app generate --bundle default --count 20
+admin-app generate --confirm-per-batch   # ask after each batch
+
+# Bulk: thousands of scenarios; progress shows rate (scenarios/s), ETA, batch N/M, in-flight count
+admin-app generate --bundle default --count 5000 --concurrency 20 --batch-size 50
+admin-app generate --count 10000 --preflight -y --log-file scenario.log --verbose
+
+# List bundles or scenarios (shows scenario IDs for use with delete)
+admin-app list
+admin-app list --bundles
+admin-app list --bundle default [--region Europe] [--json]
+
+# Delete: by ID(s), by selection from list, or all in bundle (interactive or --bundle, --id/--ids/--all)
+admin-app delete
+admin-app delete --bundle default --id <scenario-id>
+admin-app delete --bundle default --ids id1,id2
+admin-app delete --bundle default --all [-y] [--region X] [--country DE,FR] [--dry-run]
+
+# Export scenarios to JSON file (backup or inspection)
+admin-app export --bundle default [-o scenarios-default.json] [--region X] [--country DE,FR]
+
+# Audit (interactive or --bundle, --preflight, --fix)
+admin-app audit
+admin-app audit --bundle default [--preflight] [--fix] [--json]
+```
+
+**Progress:** Generation shows real-time progress: `Progress: 40/100 (40%) | 12.5/s | ETA 5s Batch 4/10 (2 in flight)`. Updates on every batch completion.
+
+**Generate options**
+
+| Option | Description |
+|--------|-------------|
+| `--bundle <id>` | Bundle ID (default, campaign, tutorial) |
+| `--region <name>` | Restrict to one region |
+| `--country <ids>` | Comma-separated country IDs |
+| `--count <n>` | Number of scenarios (up to 100k) |
+| `--concurrency <n>` | Parallel batches (1–100, default 20) |
+| `--batch-size <n>` | Scenarios per batch (1–200, default 25) |
+| `--retries <n>` | Retries per batch on failure (default 3) |
+| `--retry-delay <ms>` | Delay between retries (default 2000) |
+| `--delay <ms>` | Delay between batches (rate limiting) |
+| `--timeout <ms>` | Timeout per batch in ms (default 120000) |
+| `--preflight` | Run validation first; exit on errors |
+| `-y, --yes` | Skip confirmation for large counts (≥1000) |
+| `--log-file <path>` | Append progress and errors to file |
+| `-q, --quiet` | Only errors to stdout |
+| `-v, --verbose` | Log each batch start/end |
+| `--dry-run` | Show planned operation only |
+| `--skip-existing` | Skip scenarios that already exist (default) |
+| `--no-skip-existing` | Generate even if duplicates exist |
+| `--dedup-within-run` | Avoid duplicates within this run (default) |
+| `--no-dedup-within-run` | Disable within-run dedup |
+| `--confirm-per-batch` | Pause after each batch and ask to continue |
+
+Run `admin-app generate --help` for full option descriptions and an **Options explained** section (concurrency, batch-size, retries, skip-existing, dedup-within-run, etc.). Interactive prompts also show what each choice means (e.g. "Evenly — divide total by number of bundles", "20 — recommended (matches typical OpenAI limit)").
+
+**Stats:** `--total`, `--per-bundle`, `--per-region`, `--json` — scenario counts (total only, per bundle, or per bundle and region).  
+**List:** `--bundles`, `--bundle <id>`, `--region`, `--country`, `--json` — scenario list shows `id: <id>` for use with delete.  
+**Delete:** `--bundle <id>`, `--id <id>`, `--ids <id1,id2>`, `--all`, `--region`, `--country`, `-y`, `--dry-run`.  
+**Export:** `--bundle <id>`, `-o/--output <path>`, `--region`, `--country`.  
+**Audit:** `--bundle <id>`, `--preflight`, `--fix`, `--json`
+
+With Firebase credentials (`FIREBASE_PROJECT_ID` or `GOOGLE_APPLICATION_CREDENTIALS`), admin-app can list/audit against Firestore and trigger the scenario pipeline; without them it runs in stub/dry-run style.
+
+**Concurrency and OpenAI:** Generation runs batches **concurrently** (multiple batches in flight). Default concurrency is **20** to align with the backend `OPENAI_MAX_CONCURRENT` limit. If you set `OPENAI_MAX_CONCURRENT` in the environment, admin-app caps its concurrency to that value. Retries use exponential backoff for rate-limit resilience.
+
+**Deduplication (guard rails):** By default, generation **skips scenarios that already exist** for the chosen bundle/region/country (existing IDs are loaded before run and passed to the backend) and **avoids duplicates within the same run** (backend uses deterministic seeds per batch). Use `--no-skip-existing` to generate even if duplicates exist, or `--no-dedup-within-run` to disable within-run dedup. In interactive mode you can choose these via arrow-key lists.
+
+**Interactive CLI:** All prompts use **list** choices so you can navigate with **arrow keys** and Enter: bundle, region, country filter, count (presets or custom), bulk options (concurrency, batch size, retries, preflight, log file, verbose, dry run), dedup options, and proceed. No typing required except for custom count, custom concurrency/batch size, or country IDs when you choose "Specific countries".
 
 ## Architecture
 
@@ -120,6 +216,7 @@ ts-node audit-existing-scenarios.ts
 - Policy sliders — economic stance, social spending, defence posture, environmental policy
 - Strategic plans — multi-turn goal tracking
 - Trust Your Gut — limited-use AI command override
+- Player mood — updatable with turn-based cooldown (3 turns); tasks, reminders, quests use the same throttle pattern to avoid conflicts
 - Finance view — taxation, budget allocation, market forecast
 - Archive — full turn-by-turn decision log with metric deltas
 - God mode — metric editor, diplomacy editor, scenario control, news injection, save slots

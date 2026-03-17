@@ -89,7 +89,7 @@ Outcome summary: "${(_b = option.outcomeSummary) !== null && _b !== void 0 ? _b 
 Scenario context: "${scenario.description}"
 
 Write a 4–6 sentence news article body (outcomeContext) in THIRD PERSON only:
-- Use: "The administration...", "Cabinet officials...", "{leader_title}", "{player_country} authorities..."
+- Use: "{leader_title}" or "{the_leader_title}" (e.g., "President", "Prime Minister") when referring to the head of government; avoid generic phrases like "The administration" or "the government"
 - NEVER use "you", "your", "Your administration" — this is a news report, NOT addressed to the player
 - Describe the immediate aftermath and downstream effects: economic signals, public reaction, international response
 - Use {token} placeholders for country-specific references from the APPROVED TOKEN WHITELIST above
@@ -108,7 +108,7 @@ The head of government chose: "${option.text}"
 Outcome headline: "${(_a = option.outcomeHeadline) !== null && _a !== void 0 ? _a : ''}"
 
 Write a 2–3 sentence outcomeSummary (news lead) in THIRD PERSON only:
-- Use: "The administration announced...", "{leader_title} ordered...", "Authorities in {player_country}..."
+- Use: "{leader_title} ordered...", "{the_leader_title} said...", "Authorities in {player_country}..." — do not use generic phrasing like "The administration announced..."
 - NEVER use "you", "your", "Your administration" — this is a news report, NOT addressed to the player
 - Summarize the immediate consequence of the decision
 - Use {token} placeholders from the APPROVED TOKEN WHITELIST above
@@ -127,7 +127,7 @@ The head of government chose: "${option.text}"
 Outcome summary: "${(_a = option.outcomeSummary) !== null && _a !== void 0 ? _a : ''}"
 
 Write a single outcomeHeadline in THIRD PERSON only:
-- AP/Reuters headline style: "Administration Imposes Emergency Fuel Controls" or "Central Bank Raises Rates After Policy Pivot"
+- AP/Reuters headline style: refer to the head of government (e.g., "{leader_title} imposes..." or "{the_leader_title} orders...") rather than generic "Administration" phrasing
 - NEVER use "you", "your", "Your administration"
 - Concise, factual, 6–12 words
 - May use {token} placeholders from the APPROVED TOKEN WHITELIST above

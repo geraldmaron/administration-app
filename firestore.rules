@@ -26,6 +26,41 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
+    match /countries/{countryId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+
+      match /locales/{localeId} {
+        allow read: if request.auth != null;
+        allow write: if false;
+      }
+
+      match /parties/{partyId} {
+        allow read: if request.auth != null;
+        allow write: if false;
+      }
+
+      match /legislature_state/{document} {
+        allow read: if request.auth != null;
+        allow write: if false;
+      }
+
+      match /military_state/{document} {
+        allow read: if request.auth != null;
+        allow write: if false;
+      }
+    }
+
+    match /people_pool/{document} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /universities/{universityId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

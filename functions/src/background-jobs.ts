@@ -14,8 +14,9 @@
 import * as admin from 'firebase-admin';
 import * as logger from "firebase-functions/logger";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { generateScenarios, getGenerationConfig } from './scenario-engine';
-import { saveScenario } from './storage';
+import { saveScenario, getActiveBundleCount } from './storage';
 import { ALL_BUNDLE_IDS, isValidBundleId, STANDARD_BUNDLE_IDS, type BundleId } from './data/schemas/bundleIds';
 import { validateConfig, logConfigStatus } from './lib/config-validator';
 import { getProviderRetryTelemetry, resetProviderRetryTelemetry } from './lib/model-providers';
@@ -68,6 +69,14 @@ export interface GenerationJobData {
     requestedAt?: admin.firestore.Timestamp;
     priority?: 'low' | 'normal' | 'high';
     description?: string;
+    modelConfig?: {
+        architectModel?: string;
+        drafterModel?: string;
+        repairModel?: string;
+        contentQualityModel?: string;
+        narrativeReviewModel?: string;
+        embeddingModel?: string;
+    };
     
     // Job status (set by system)
     status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
@@ -88,6 +97,7 @@ export interface CreateJobOptions {
     count: number;
     mode?: 'news' | 'manual';
     distributionConfig?: GenerationJobData['distributionConfig'];
+    modelConfig?: GenerationJobData['modelConfig'];
     requestedBy?: string;
     priority?: 'low' | 'normal' | 'high';
     description?: string;
@@ -134,7 +144,7 @@ export const onScenarioJobCreated = onDocumentCreated({
     document: "generation_jobs/{jobId}",
     timeoutSeconds: 540,
     memory: "1GiB",
-    secrets: ["OPENAI_API_KEY", "MOONSHOT_API_KEY"]
+    secrets: ["OPENAI_API_KEY"]
 }, async (event) => {
     const snapshot = event.data;
     if (!snapshot) return;
@@ -161,19 +171,41 @@ export const onScenarioJobCreated = onDocumentCreated({
         return;
     }
 
-    const configValidation = validateConfig();
+    const configValidation = validateConfig(jobData.modelConfig);
     if (!configValidation.valid) {
         logConfigStatus();
         await snapshot.ref.update({
             status: 'failed',
-            error: 'Scenario generation is misconfigured. Set OPENAI_API_KEY and MOONSHOT_API_KEY in Firebase secrets. ' + configValidation.errors.join('; '),
+            error: 'Scenario generation is misconfigured. Set OPENAI_API_KEY in Firebase secrets (firebase functions:secrets:set OPENAI_API_KEY). ' + configValidation.errors.join('; '),
             completedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         return;
     }
 
+    if (!process.env.FUNCTIONS_EMULATOR && jobData.modelConfig) {
+        const lmModels = [
+            jobData.modelConfig.architectModel,
+            jobData.modelConfig.drafterModel,
+            jobData.modelConfig.repairModel,
+            jobData.modelConfig.contentQualityModel,
+            jobData.modelConfig.narrativeReviewModel,
+            jobData.modelConfig.embeddingModel,
+        ]
+            .filter(m => m?.startsWith('lmstudio:'));
+        if (lmModels.length > 0) {
+            logger.error(`Job ${jobId} failed — LM Studio models cannot be used in deployed Cloud Functions`);
+            await snapshot.ref.update({
+                status: 'failed',
+                error: 'LM Studio models are only available when running locally with the Firebase emulator. Use OpenAI models for deployed functions.',
+                completedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+            return;
+        }
+    }
+
     // Fetch generation config (cached after first call)
     const genConfig = await getGenerationConfig();
+    const db = admin.firestore();
 
     // Validate count
     const count = Math.min(Math.max(1, jobData.count || 1), genConfig.max_scenarios_per_job);
@@ -200,9 +232,23 @@ export const onScenarioJobCreated = onDocumentCreated({
     });
 
     try {
+        let forceCancelled = false;
+        const cancellationPoll = setInterval(async () => {
+            try {
+                const current = await snapshot.ref.get();
+                if (current.data()?.status === 'cancelled') {
+                    forceCancelled = true;
+                    clearInterval(cancellationPoll);
+                    logger.info(`Job ${jobId} cancellation detected — will stop after current operations`);
+                }
+            } catch {
+                // ignore read errors during poll
+            }
+        }, 5000);
+
         let totalCompleted = 0;
         let totalFailed = 0;
-        const allResults: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; auditScore?: number }[] = [];
+        const allResults: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; auditScore?: number; autoFixed?: boolean }[] = [];
         const allErrors: { id?: string; bundle?: string; error: string }[] = [];
         const savedScenarioIds: string[] = [];
 
@@ -223,10 +269,40 @@ export const onScenarioJobCreated = onDocumentCreated({
         };
 
         resetProviderRetryTelemetry();
-        logger.info(`Processing ${validBundles.length} bundles in parallel (API concurrency capped at ${process.env.OPENAI_MAX_CONCURRENT || '20'} requests): ${validBundles.join(', ')}`);
+        logger.info(`Processing ${validBundles.length} bundles with adaptive batching (API concurrency capped at ${process.env.OPENAI_MAX_CONCURRENT || '20'} requests)`);
 
-        await Promise.all(validBundles.map(async (bundle, index) => {
-            logger.info(`[${index + 1}/${validBundles.length}] Processing bundle: ${bundle}`);
+        // Adaptive batching configuration
+        let maxBundleConcurrency = Math.min(genConfig.max_bundle_concurrency ?? 3, 5);
+        let adaptiveBundleConcurrency = maxBundleConcurrency;
+        let consecutiveCleanBatches = 0;
+
+        // Process bundles in adaptive parallel batches — each bundle internally runs concept_concurrency
+        // parallel LLM calls, so total concurrent API calls ≈ adaptiveBundleConcurrency × concept_concurrency.
+        for (let batchStart = 0; batchStart < validBundles.length; batchStart += adaptiveBundleConcurrency) {
+            const batchBundles: BundleId[] = validBundles.slice(batchStart, batchStart + adaptiveBundleConcurrency);
+            logger.info(
+                `[batch] Bundle batch ${Math.floor(batchStart / adaptiveBundleConcurrency) + 1}/${Math.ceil(validBundles.length / adaptiveBundleConcurrency)} ` +
+                `with concurrency=${adaptiveBundleConcurrency}: [${batchBundles.join(', ')}]`
+            );
+
+            resetProviderRetryTelemetry();
+
+            const batchResults = await Promise.all(batchBundles.map(async (bundle, index) => {
+                const batchIndex = batchStart + index + 1;
+                logger.info(`[${batchIndex}/${validBundles.length}] Processing bundle: ${bundle}`);
+
+                if (forceCancelled) {
+                    logger.info(`Job ${jobId} - skipping bundle ${bundle} due to cancellation`);
+                    return { bundle, scenarios: [], error: 'cancelled', skippedReason: undefined, ceilingCount: undefined };
+                }
+
+                const activeCount = await getActiveBundleCount(bundle, db);
+                if (activeCount >= genConfig.max_active_scenarios_per_bundle!) {
+                    logger.warn(
+                        `[ceiling] Bundle ${bundle} at ceiling: ${activeCount}/${genConfig.max_active_scenarios_per_bundle} active scenarios — skipping`
+                    );
+                    return { bundle, scenarios: [], error: null, skippedReason: 'ceiling' as const, ceilingCount: activeCount };
+                }
 
                 try {
                     const scenarios = await generateScenarios({
@@ -236,55 +312,103 @@ export const onScenarioJobCreated = onDocumentCreated({
                         distributionConfig,
                         ...(jobData.region ? { region: jobData.region } : {}),
                         ...(jobData.regions?.length ? { regions: jobData.regions } : {}),
+                        ...(jobData.modelConfig ? { modelConfig: jobData.modelConfig } : {}),
+                        onAttemptFailed: ({ attempt, maxAttempts, score, topIssues }) => {
+                            const msg = `score ${score} — ${topIssues.slice(0, 3).join('; ')}`;
+                            allErrors.push({ bundle, error: `attempt ${attempt}/${maxAttempts} failed: ${msg}` });
+                            void updateProgress();
+                        },
                     });
 
                     logger.info(`Bundle ${bundle}: generated ${scenarios.length} scenarios`);
-
-                    if (scenarios.length === 0) {
-                        const message = `Bundle ${bundle} produced zero scenarios (concept generation or validation rejected all candidates)`;
-                        allErrors.push({ bundle, error: message });
-                        totalFailed += count;
-                        logger.error(message);
-                        await updateProgress();
-                        return;
-                    }
-
-                    for (const s of scenarios) {
-                        try {
-                            const savedResult = await saveScenario(s);
-                            if (savedResult.saved) {
-                                const actCount = s.acts?.length || 1;
-                                const isRoot = s.isRootScenario !== false;
-                                const auditScore = s.metadata?.auditMetadata?.score;
-                                allResults.push({ id: s.id, title: s.title, bundle, difficulty: s.metadata?.difficulty, actCount, isRoot, auditScore });
-                                savedScenarioIds.push(s.id);
-                                totalCompleted++;
-                                logger.info(`Saved: ${s.id} - ${s.title} [${actCount}-act, difficulty: ${s.metadata?.difficulty || '?'}]`);
-                            } else {
-                                allErrors.push({ id: s.id, bundle, error: savedResult.reason || 'Save rejected' });
-                                totalFailed++;
-                                logger.warn(`Rejected: ${s.id} - ${savedResult.reason}`);
-                            }
-                        } catch (saveErr: any) {
-                            allErrors.push({ id: s.id, bundle, error: saveErr.message });
-                            totalFailed++;
-                            logger.error(`Save error for ${s.id}:`, saveErr);
-                        }
-
-                        await updateProgress();
-                    }
+                    return { bundle, scenarios, error: null, skippedReason: undefined, ceilingCount: undefined };
                 } catch (err: any) {
                     logger.error(`Failed to generate bundle ${bundle}:`, err);
-                    allErrors.push({ bundle, error: err.message });
-                    totalFailed += count;
-                    await updateProgress();
+                    return { bundle, scenarios: [], error: err.message, skippedReason: undefined, ceilingCount: undefined };
                 }
             }));
 
+            // Process batch results
+            for (const { bundle, scenarios, error, skippedReason, ceilingCount } of batchResults) {
+                if (error === 'cancelled') continue;
+                if (skippedReason === 'ceiling') {
+                    totalFailed += count;
+                    allErrors.push({ bundle, error: `ceiling:${ceilingCount}/${genConfig.max_active_scenarios_per_bundle}` });
+                    await updateProgress();
+                    continue;
+                }
+                if (error) {
+                    allErrors.push({ bundle, error });
+                    totalFailed += count;
+                    await updateProgress();
+                    continue;
+                }
+
+                if (scenarios.length === 0) {
+                    const message = `Bundle ${bundle} produced zero scenarios (concept generation or validation rejected all candidates)`;
+                    allErrors.push({ bundle, error: message });
+                    totalFailed += count;
+                    logger.error(message);
+                    await updateProgress();
+                    continue;
+                }
+
+                for (const s of scenarios) {
+                    try {
+                        if (forceCancelled) {
+                            logger.info(`Job ${jobId} - skipping save due to cancellation`);
+                            break;
+                        }
+                        const savedResult = await saveScenario(s);
+                        if (savedResult.saved) {
+                            const actCount = s.acts?.length || 1;
+                            const isRoot = s.isRootScenario !== false;
+                            const auditMeta = s.metadata?.auditMetadata;
+                            allResults.push({ id: s.id, title: s.title, bundle, difficulty: s.metadata?.difficulty, actCount, isRoot, auditScore: auditMeta?.score, autoFixed: auditMeta?.autoFixed ?? false });
+                            savedScenarioIds.push(s.id);
+                            totalCompleted++;
+                            logger.info(`Saved: ${s.id} - ${s.title} [${actCount}-act, difficulty: ${s.metadata?.difficulty || '?'}]`);
+                        } else {
+                            allErrors.push({ id: s.id, bundle, error: savedResult.reason || 'Save rejected' });
+                            totalFailed++;
+                            logger.warn(`Rejected: ${s.id} - ${savedResult.reason}`);
+                        }
+                    } catch (saveErr: any) {
+                        allErrors.push({ id: s.id, bundle, error: saveErr.message });
+                        totalFailed++;
+                        logger.error(`Save error for ${s.id}:`, saveErr);
+                    }
+
+                    await updateProgress();
+                }
+            }
+
+            // Adaptive concurrency adjustment based on rate limit telemetry
             const telemetry = getProviderRetryTelemetry();
             if (telemetry.rateLimitRetries > 0) {
-                logger.warn(`[concurrency] Observed ${telemetry.rateLimitRetries} rate-limit retries across all bundles`);
+                consecutiveCleanBatches = 0;
+                if (adaptiveBundleConcurrency > 1) {
+                    adaptiveBundleConcurrency -= 1;
+                    logger.warn(
+                        `[adaptive] Observed ${telemetry.rateLimitRetries} provider 429 retries in batch; ` +
+                        `reducing bundle concurrency to ${adaptiveBundleConcurrency}`
+                    );
+                }
+            } else if (adaptiveBundleConcurrency < maxBundleConcurrency) {
+                consecutiveCleanBatches += 1;
+                if (consecutiveCleanBatches >= 2) {
+                    adaptiveBundleConcurrency += 1;
+                    consecutiveCleanBatches = 0;
+                    logger.info(`[adaptive] Two clean batches; increasing bundle concurrency to ${adaptiveBundleConcurrency}`);
+                }
             }
+        }
+
+        clearInterval(cancellationPoll);
+        const finalTelemetry = getProviderRetryTelemetry();
+        if (finalTelemetry.rateLimitRetries > 0) {
+            logger.warn(`[concurrency] Observed ${finalTelemetry.rateLimitRetries} total rate-limit retries across all batches`);
+        }
 
         // Compute audit score metrics for time-series monitoring
         const scoredResults = allResults.filter(r => typeof r.auditScore === 'number');
@@ -295,6 +419,22 @@ export const onScenarioJobCreated = onDocumentCreated({
             below70Count: scoredResults.filter(r => r.auditScore! < 70).length,
             above90Count: scoredResults.filter(r => r.auditScore! >= 90).length,
         } : null;
+
+        const currentSnap = await snapshot.ref.get();
+        if (currentSnap.data()?.status === 'cancelled') {
+            await snapshot.ref.update({
+                completedAt: admin.firestore.FieldValue.serverTimestamp(),
+                progress: Math.round(((totalCompleted + totalFailed) / totalScenariosExpected) * 100),
+                completedCount: totalCompleted,
+                failedCount: totalFailed,
+                savedScenarioIds,
+                results: allResults.slice(0, 100),
+                errors: allErrors.slice(0, 50),
+                rateLimitRetries: finalTelemetry.rateLimitRetries,
+            });
+            logger.info(`Job ${jobId} stopped by external cancellation: ${totalCompleted} saved`);
+            return;
+        }
 
         // Final update
         const finalStatus = totalCompleted > 0 ? 'completed' : 'failed';
@@ -308,6 +448,7 @@ export const onScenarioJobCreated = onDocumentCreated({
             results: allResults.slice(0, 100),
             errors: allErrors.slice(0, 50),
             ...(auditSummary ? { auditSummary } : {}),
+            rateLimitRetries: finalTelemetry.rateLimitRetries,
         });
 
         logger.info(`Job ${jobId} ${finalStatus}: ${totalCompleted} saved, ${totalFailed} failed`);
@@ -379,6 +520,7 @@ export async function createGenerationJob(
         requestedAt: admin.firestore.Timestamp.now(),
         priority: options.priority || 'normal',
         description: options.description,
+        modelConfig: options.modelConfig,
         status: 'pending'
     };
     
@@ -428,3 +570,56 @@ export async function cancelJob(
     
     return true;
 }
+
+// ---------------------------------------------------------------------------
+// Scheduled: Zombie Job Recovery
+// ---------------------------------------------------------------------------
+
+/** Jobs stuck in 'running' beyond this threshold are considered zombies */
+const ZOMBIE_THRESHOLD_MINUTES = 15;
+
+/**
+ * Detects generation jobs stuck in 'running' state beyond the Cloud Function
+ * timeout window and marks them as failed. Runs every 15 minutes.
+ *
+ * Root cause: Cloud Functions Gen 2 may be killed mid-execution (e.g. due to
+ * rate-limit-induced timeouts exhausting the 540s budget) without reaching the
+ * catch block, leaving the job document permanently in 'running' state.
+ */
+export const recoverZombieJobs = onSchedule({
+    schedule: 'every 15 minutes',
+    timeoutSeconds: 60,
+    memory: '256MiB',
+}, async () => {
+    try {
+        const db = admin.firestore();
+        const cutoff = new Date(Date.now() - ZOMBIE_THRESHOLD_MINUTES * 60 * 1000);
+        const cutoffTimestamp = admin.firestore.Timestamp.fromDate(cutoff);
+
+        const zombies = await db.collection('generation_jobs')
+            .where('status', '==', 'running')
+            .where('startedAt', '<', cutoffTimestamp)
+            .get();
+
+        if (zombies.empty) {
+            logger.info('[ZombieRecovery] No stuck jobs found');
+            return;
+        }
+
+        logger.warn(`[ZombieRecovery] Found ${zombies.size} zombie job(s) — marking as failed`);
+
+        const batch = db.batch();
+        for (const doc of zombies.docs) {
+            logger.warn(`[ZombieRecovery] Marking job ${doc.id} as failed (stuck since ${doc.data().startedAt?.toDate?.()?.toISOString()})`);
+            batch.update(doc.ref, {
+                status: 'failed',
+                error: `Job timed out: no completion signal received within ${ZOMBIE_THRESHOLD_MINUTES} minutes. The Cloud Function likely exceeded its 540s execution limit. Retry the job.`,
+                completedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+        }
+        await batch.commit();
+        logger.info(`[ZombieRecovery] Marked ${zombies.size} zombie job(s) as failed`);
+    } catch (err) {
+        logger.error('[ZombieRecovery] Uncaught error in scheduler handler:', err);
+    }
+});

@@ -13,7 +13,7 @@ struct FinanceView: View {
         gameStore.state.fiscalSettings ?? .defaults
     }
 
-    private let tabs = ["TAXATION", "SPENDING", "FORECAST"]
+    private let tabs = ["Taxation", "Spending", "Forecast"]
 
     var body: some View {
         ZStack {
@@ -23,7 +23,7 @@ struct FinanceView: View {
                 VStack(spacing: 24) {
                     ScreenHeader(
                         protocolLabel: "ECONOMIC_COMMAND_LINK_V8",
-                        title: "FISCAL AUTHORITY"
+                        title: "Finance"
                     )
                     .padding(.horizontal, 16)
 
@@ -51,31 +51,32 @@ struct FinanceView: View {
     // MARK: - Animated Tab Bar
 
     private var animatedTabBar: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 2) {
             ForEach(Array(tabs.enumerated()), id: \.offset) { index, title in
                 Button(action: {
                     HapticEngine.shared.light()
                     withAnimation(AppMotion.quickSnap) { activeTab = index }
                 }) {
-                    VStack(spacing: 0) {
-                        Text(title)
-                            .font(AppTypography.micro)
-                            .foregroundColor(activeTab == index ? AppColors.accentPrimary : AppColors.foregroundSubtle)
-                            .tracking(2)
-                            .padding(.vertical, 12)
-                            .frame(maxWidth: .infinity)
-
-                        Rectangle()
-                            .fill(activeTab == index ? AppColors.accentPrimary : Color.clear)
-                            .frame(height: 2)
-                            .animation(AppMotion.quickSnap, value: activeTab)
-                    }
+                    Text(title)
+                        .font(AppTypography.micro)
+                        .foregroundColor(activeTab == index ? AppColors.background : AppColors.foregroundSubtle)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(activeTab == index ? AppColors.accentPrimary : Color.clear)
+                        )
+                        .animation(AppMotion.quickSnap, value: activeTab)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .background(AppColors.border)
-        .overlay(Rectangle().stroke(AppColors.borderStrong, lineWidth: 1))
+        .padding(3)
+        .background(
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
         .padding(.horizontal, 16)
     }
 
@@ -126,7 +127,7 @@ struct FinanceView: View {
                 label: "Military & National Security",
                 icon: "shield",
                 value: fiscal.spendingMilitary,
-                color: AppColors.error,
+                color: AppColors.accentPrimary,
                 helpTitle: "Military Spending",
                 helpText: "Directly affects military strength metric. Higher spending deters adversaries but strains other services.",
                 onChange: { newValue in
@@ -142,7 +143,7 @@ struct FinanceView: View {
                 label: "Public Welfare & Services",
                 icon: "heart",
                 value: fiscal.spendingSocial,
-                color: AppColors.success,
+                color: AppColors.accentSecondary,
                 helpTitle: "Welfare Spending",
                 helpText: "Raises equality, health, and approval. Essential for long-term political survival.",
                 onChange: { newValue in
@@ -158,7 +159,7 @@ struct FinanceView: View {
                 label: "Infrastructure & Technology",
                 icon: "building.columns",
                 value: fiscal.spendingInfrastructure,
-                color: AppColors.info,
+                color: AppColors.accentTertiary,
                 helpTitle: "Infrastructure Spending",
                 helpText: "Boosts economy and innovation metrics over time. Lower immediate impact but compounds.",
                 onChange: { newValue in
@@ -190,6 +191,9 @@ struct FinanceView: View {
 
     private var forecastView: some View {
         let metrics = gameStore.state.metrics
+        let metricHistory = gameStore.state.metricHistory
+        let econ = gameStore.state.countryEconomicState
+        let pop = gameStore.state.countryPopulationState
         return VStack(spacing: 16) {
             ForecastCard(
                 title: "Economic Strength",
@@ -197,7 +201,8 @@ struct FinanceView: View {
                 value: formatMetric(metrics["metric_economy"]),
                 rawValue: metrics["metric_economy"] ?? 50,
                 trend: trendLabel(metrics["metric_economy"]),
-                trendColor: trendColor(metrics["metric_economy"])
+                trendColor: trendColor(metrics["metric_economy"]),
+                history: metricHistory["metric_economy"] ?? []
             )
             ForecastCard(
                 title: "Public Approval",
@@ -205,7 +210,8 @@ struct FinanceView: View {
                 value: formatMetric(metrics["metric_approval"]),
                 rawValue: metrics["metric_approval"] ?? 50,
                 trend: trendLabel(metrics["metric_approval"]),
-                trendColor: trendColor(metrics["metric_approval"])
+                trendColor: trendColor(metrics["metric_approval"]),
+                history: metricHistory["metric_approval"] ?? []
             )
             ForecastCard(
                 title: "Foreign Relations",
@@ -213,8 +219,30 @@ struct FinanceView: View {
                 value: formatMetric(metrics["metric_foreign_relations"]),
                 rawValue: metrics["metric_foreign_relations"] ?? 50,
                 trend: trendLabel(metrics["metric_foreign_relations"]),
-                trendColor: trendColor(metrics["metric_foreign_relations"])
+                trendColor: trendColor(metrics["metric_foreign_relations"]),
+                history: metricHistory["metric_foreign_relations"] ?? []
             )
+            if let econ {
+                let gdpNormalized = min(100, max(0, econ.gdpIndex))
+                ForecastCard(
+                    title: "GDP Index",
+                    icon: "building.columns",
+                    value: String(format: "$%.1fB", econ.currentGdpBillions),
+                    rawValue: gdpNormalized,
+                    trend: econ.gdpGrowthRate >= 0 ? String(format: "+%.2f%%/turn", econ.gdpGrowthRate) : String(format: "%.2f%%/turn", econ.gdpGrowthRate),
+                    trendColor: econ.gdpGrowthRate >= 0 ? AppColors.success : AppColors.error
+                )
+            }
+            if let pop {
+                ForecastCard(
+                    title: "Population",
+                    icon: "person.2",
+                    value: String(format: "%.2fM", pop.populationMillions),
+                    rawValue: min(100, max(0, pop.populationMillions / 10)),
+                    trend: pop.growthRatePerTurn >= 0 ? "GROWING" : "DECLINING",
+                    trendColor: pop.growthRatePerTurn >= 0 ? AppColors.success : AppColors.warning
+                )
+            }
         }
     }
 
@@ -274,16 +302,15 @@ struct FiscalSliderCard: View {
     let helpText: String
     let onChange: (Double) -> Void
 
-    private var sliderColor: Color { AppColors.metricColor(for: value / range.upperBound * 100) }
+    private var sliderColor: Color { AppColors.accentPrimary }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
                 ZStack {
-                    Rectangle()
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(sliderColor.opacity(0.1))
                         .frame(width: 40, height: 40)
-                        .overlay(Rectangle().stroke(sliderColor.opacity(0.3), lineWidth: 1))
                     Image(systemName: icon)
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(sliderColor)
@@ -291,7 +318,7 @@ struct FiscalSliderCard: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(label)
                         .font(AppTypography.caption)
-                        .fontWeight(.bold)
+                        .fontWeight(.semibold)
                         .foregroundColor(AppColors.foreground)
                     Text(subtitle)
                         .font(AppTypography.micro)
@@ -308,11 +335,6 @@ struct FiscalSliderCard: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("ADJUSTMENT RANGE")
-                    .font(AppTypography.micro)
-                    .foregroundColor(AppColors.foregroundSubtle)
-                    .tracking(2)
-
                 Slider(
                     value: Binding(get: { value }, set: { onChange($0) }),
                     in: range, step: 1
@@ -332,8 +354,10 @@ struct FiscalSliderCard: View {
             }
         }
         .padding(20)
-        .background(AppColors.border)
-        .overlay(Rectangle().stroke(AppColors.borderStrong, lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
     }
 }
 
@@ -395,15 +419,17 @@ struct BudgetSliderCard: View {
                     Rectangle().fill(AppColors.border)
                     Rectangle()
                         .fill(color)
-                        .frame(width: geo.size.width * CGFloat(value / 100))
+                        .frame(width: geo.size.width * CGFloat((value / 100).isNaN ? 0 : min(1, max(0, value / 100))))
                         .animation(AppMotion.quickSnap, value: value)
                 }
             }
             .frame(height: 3)
         }
         .padding(20)
-        .background(AppColors.border)
-        .overlay(Rectangle().stroke(AppColors.borderStrong, lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
     }
 }
 
@@ -416,28 +442,45 @@ struct ForecastCard: View {
     let rawValue: Double
     let trend: String
     let trendColor: Color
+    var history: [Double] = []
+
+    @State private var chartProgress: CGFloat = 0
+
+    private var chartPoints: [Double] {
+        if history.count >= 2 {
+            return Array(history.suffix(12))
+        }
+        let base = rawValue
+        let direction: Double = trendColor == AppColors.success ? 1.0 :
+                                trendColor == AppColors.error ? -1.0 : 0.2
+        return (0..<8).map { i in
+            let noise = Double.random(in: -2...2)
+            return min(100, max(0, base + direction * Double(i) * 0.8 + noise))
+        }
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
                 HStack(spacing: 8) {
                     Image(systemName: icon)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(trendColor)
-                    Text(title.uppercased())
-                        .font(AppTypography.micro)
+                    Text(title)
+                        .font(AppTypography.caption)
+                        .fontWeight(.medium)
                         .foregroundColor(AppColors.foregroundMuted)
-                        .tracking(2)
                 }
                 Spacer()
                 Text(trend)
                     .font(AppTypography.micro)
                     .foregroundColor(trendColor)
-                    .tracking(1)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(trendColor.opacity(0.1))
-                    .overlay(Rectangle().stroke(trendColor.opacity(0.3), lineWidth: 0.5))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(trendColor.opacity(0.12))
+                    )
             }
 
             Text(value)
@@ -445,26 +488,92 @@ struct ForecastCard: View {
                 .foregroundColor(trendColor)
                 .monospacedDigit()
 
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Rectangle().fill(AppColors.border)
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [trendColor.opacity(0.8), trendColor.opacity(0.2)],
-                                startPoint: .leading, endPoint: .trailing
-                            )
+            ZStack {
+                SparklineArea(values: chartPoints)
+                    .fill(
+                        LinearGradient(
+                            colors: [trendColor.opacity(0.20), trendColor.opacity(0.0)],
+                            startPoint: .top, endPoint: .bottom
                         )
-                        .frame(width: geo.size.width * CGFloat(rawValue / 100))
-                        .animation(AppMotion.standard, value: rawValue)
-                }
+                    )
+                SparklinePath(values: chartPoints)
+                    .trim(from: 0, to: chartProgress)
+                    .stroke(trendColor, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
             }
-            .frame(height: 4)
+            .frame(height: 48)
+            .animation(AppMotion.dramatic, value: chartProgress)
+
+            HStack {
+                Text("T-\(min(chartPoints.count - 1, 11))")
+                    .font(AppTypography.micro)
+                    .foregroundColor(AppColors.foregroundSubtle.opacity(0.5))
+                Spacer()
+                Text("NOW")
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .foregroundColor(AppColors.foregroundSubtle.opacity(0.5))
+                    .tracking(1)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(24)
-        .background(AppColors.border)
-        .overlay(Rectangle().stroke(AppColors.borderStrong, lineWidth: 1))
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
+        .onAppear {
+            withAnimation(AppMotion.dramatic.delay(0.1)) {
+                chartProgress = 1.0
+            }
+        }
+        .onChange(of: rawValue) { _, _ in
+            chartProgress = 0
+            withAnimation(AppMotion.dramatic) { chartProgress = 1.0 }
+        }
+    }
+}
+
+private struct SparklinePath: Shape {
+    let values: [Double]
+
+    func path(in rect: CGRect) -> Path {
+        guard values.count >= 2 else { return Path() }
+        var path = Path()
+        let minV = (values.min() ?? 0) - 5
+        let maxV = (values.max() ?? 100) + 5
+        let range = max(1, maxV - minV)
+        let points = values.enumerated().map { i, v -> CGPoint in
+            let x = rect.width * CGFloat(i) / CGFloat(values.count - 1)
+            let y = rect.height * (1 - CGFloat((v - minV) / range))
+            return CGPoint(x: x, y: y)
+        }
+        path.move(to: points[0])
+        for pt in points.dropFirst() {
+            path.addLine(to: pt)
+        }
+        return path
+    }
+}
+
+private struct SparklineArea: Shape {
+    let values: [Double]
+
+    func path(in rect: CGRect) -> Path {
+        guard values.count >= 2 else { return Path() }
+        var path = Path()
+        let minV = (values.min() ?? 0) - 5
+        let maxV = (values.max() ?? 100) + 5
+        let range = max(1, maxV - minV)
+        let points = values.enumerated().map { i, v -> CGPoint in
+            let x = rect.width * CGFloat(i) / CGFloat(values.count - 1)
+            let y = rect.height * (1 - CGFloat((v - minV) / range))
+            return CGPoint(x: x, y: y)
+        }
+        path.move(to: CGPoint(x: 0, y: rect.height))
+        path.addLine(to: points[0])
+        for pt in points.dropFirst() { path.addLine(to: pt) }
+        path.addLine(to: CGPoint(x: rect.width, y: rect.height))
+        path.closeSubpath()
+        return path
     }
 }
 

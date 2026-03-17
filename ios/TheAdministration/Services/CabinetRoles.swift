@@ -19,4 +19,29 @@ enum CabinetRoles {
         Role(id: "role_transport",  title: "Transport Minister",category: "Transport",  priority: 12),
         Role(id: "role_education",  title: "Education Minister",category: "Education",  priority: 13),
     ]
+
+    private static let roleTokenKeys: [String: String] = [
+        "role_executive":    "vice_leader",
+        "role_diplomacy":    "foreign_affairs_role",
+        "role_defense":      "defense_role",
+        "role_economy":      "finance_role",
+        "role_justice":      "justice_role",
+        "role_health":       "health_role",
+        "role_commerce":     "commerce_role",
+        "role_labor":        "labor_role",
+        "role_interior":     "interior_role",
+        "role_energy":       "energy_role",
+        "role_environment":  "environment_role",
+        "role_transport":    "transport_role",
+        "role_education":    "education_role",
+    ]
+
+    static func title(for roleId: String, country: Country?) -> String {
+        guard let country,
+              let tokenKey = roleTokenKeys[roleId],
+              let title = country.tokens?[tokenKey], !title.isEmpty else {
+            return DEFAULT_ROLES.first { $0.id == roleId }?.title ?? roleId
+        }
+        return title
+    }
 }

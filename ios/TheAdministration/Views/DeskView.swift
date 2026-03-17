@@ -16,32 +16,42 @@ struct DeskView: View {
     @State private var dimmedOptionIds: Set<String> = []
     @State private var contentAppeared = false
 
+    @State private var selectedCrisis: ActiveCrisis? = nil
+
     enum ViewMode { case focus, grid }
+    private enum OutcomePhase { case hidden, loading, revealed }
+    @State private var outcomePhase: OutcomePhase = .hidden
+    @State private var scanProgress: CGFloat = 0
 
     var body: some View {
         ZStack {
             AppColors.background.ignoresSafeArea()
+            RadarBackgroundView()
 
             VStack(spacing: 0) {
                 NewsTickerView(gameStore: gameStore)
 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        headerSection
-
-                        if viewMode == .focus {
-                            focusView
-                        } else {
-                            gridView
-                        }
-
-                        metricSelector
-
-                        scenarioCard
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, AppSpacing.tabBarClearance)
+                if !gameStore.state.activeCrises.isEmpty {
+                    crisiBanner
                 }
+
+                 ScrollView {
+                     VStack(spacing: AppSpacing.xxl) { // 32 -> using spacing system
+                         headerSection
+
+                         if viewMode == .focus {
+                             focusView
+                         } else {
+                             gridView
+                         }
+
+                         metricSelector
+
+                         scenarioCard
+                     }
+                     .padding(.horizontal, AppSpacing.sectionPadding) // Using spacing system
+                     .padding(.bottom, AppSpacing.tabBarClearance)
+                 }
             }
 
             if gameStore.showOutcome {
@@ -52,6 +62,18 @@ struct DeskView: View {
         }
         .onAppear {
             withAnimation(AppMotion.standard.delay(0.1)) { contentAppeared = true }
+        }
+        .onChange(of: gameStore.showOutcome) { _, newValue in
+            if newValue {
+                outcomePhase = .loading
+                scanProgress = 0
+                withAnimation(.easeInOut(duration: 1.0)) { scanProgress = 1 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    withAnimation(AppMotion.standard) { outcomePhase = .revealed }
+                }
+            } else {
+                outcomePhase = .hidden
+            }
         }
         .sheet(isPresented: $showTrustYourGut) {
             TrustYourGutSheet(gameStore: gameStore)
@@ -68,34 +90,98 @@ struct DeskView: View {
                 )
             }
         }
+        .sheet(item: $selectedCrisis) { activeCrisis in
+            CrisisDetailSheet(activeCrisis: activeCrisis)
+        }
+    }
+
+    // MARK: - Crisis Banner
+
+    private var crisiBanner: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(gameStore.state.activeCrises, id: \.crisis.id) { activeCrisis in
+                    Button(action: { selectedCrisis = activeCrisis }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(activeCrisis.crisis.severity == .critical ? AppColors.error : AppColors.warning)
+                            Text(activeCrisis.crisis.name)
+                                .font(AppTypography.micro)
+                                .foregroundColor(AppColors.foreground)
+                                .lineLimit(1)
+                            Text("T+\(activeCrisis.currentDuration)")
+                                .font(AppTypography.micro)
+                                .foregroundColor(AppColors.foregroundSubtle)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(AppColors.backgroundElevated)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .strokeBorder(
+                                            activeCrisis.crisis.severity == .critical ? AppColors.error.opacity(0.5) : AppColors.warning.opacity(0.5),
+                                            lineWidth: 1
+                                        )
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .background(AppColors.backgroundElevated.opacity(0.6))
     }
 
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack {
+        HStack(alignment: .top) {
             ScreenHeader(
                 protocolLabel: "EXECUTIVE_COMMAND_LINK",
-                title: "DESK",
+                title: "Desk",
                 subtitle: "Turn \(gameStore.state.turn)"
             )
 
             Spacer()
 
-            Button(action: {
-                HapticEngine.shared.light()
-                withAnimation(AppMotion.quickSnap) {
-                    viewMode = viewMode == .focus ? .grid : .focus
+            VStack(alignment: .trailing, spacing: 6) {
+                if let country = gameStore.playerCountry {
+                    HStack(spacing: 6) {
+                        Text(country.flagEmoji)
+                            .font(.system(size: 16))
+                        Text(country.name)
+                            .font(AppTypography.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppColors.foregroundMuted)
+                            .lineLimit(1)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(AppColors.backgroundElevated)
+                    )
                 }
-            }) {
-                Image(systemName: viewMode == .focus ? "square.grid.2x2" : "chart.pie")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(AppColors.foregroundMuted)
-                    .padding(8)
-                    .background(AppColors.backgroundMuted)
-                    .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+                Button(action: {
+                    HapticEngine.shared.light()
+                    withAnimation(AppMotion.quickSnap) {
+                        viewMode = viewMode == .focus ? .grid : .focus
+                    }
+                }) {
+                    Image(systemName: viewMode == .focus ? "square.grid.2x2" : "chart.pie")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(AppColors.foregroundMuted)
+                        .padding(8)
+                        .background(AppColors.backgroundMuted)
+                        .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+                }
+                .accessibilityLabel(viewMode == .focus ? "Switch to grid view" : "Switch to focus view")
             }
-            .accessibilityLabel(viewMode == .focus ? "Switch to grid view" : "Switch to focus view")
         }
     }
 
@@ -108,17 +194,13 @@ struct DeskView: View {
                 label: metricLabels[activeMetric] ?? "Metric",
                 subLabel: "Current Standing"
             )
-            .frame(width: 300, height: 300)
+            .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppColors.border)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(AppColors.borderStrong, lineWidth: 1)
+                .fill(Color.white.opacity(0.04))
         )
         .opacity(contentAppeared ? 1 : 0)
     }
@@ -133,32 +215,45 @@ struct DeskView: View {
             ForEach(Array(metricLabels.keys.sorted().enumerated()), id: \.element) { index, metricId in
                 let value = gameStore.state.metrics[metricId] ?? 50
                 let isCritical = value < 25
+                let color = AppColors.metricColor(for: CGFloat(value))
 
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
+                    ZStack {
+                        Circle()
+                            .trim(from: 0, to: 0.75)
+                            .stroke(AppColors.border, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                            .rotationEffect(.degrees(135))
+                        Circle()
+                            .trim(from: 0, to: CGFloat(max(0, min(0.75, (value / 100) * 0.75))))
+                            .stroke(
+                                AngularGradient(
+                                    gradient: Gradient(colors: [AppColors.accentPrimary, AppColors.accentTertiary]),
+                                    center: .center,
+                                    startAngle: .degrees(135),
+                                    endAngle: .degrees(135 + 270)
+                                ),
+                                style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(135))
+                    }
+                    .frame(width: 32, height: 32)
+
+                    Text("\(Int(value))%")
+                        .font(AppTypography.data)
+                        .foregroundColor(AppColors.foreground)
+                        .monospacedDigit()
+
                     Text(metricLabels[metricId] ?? metricId)
                         .font(AppTypography.micro)
                         .foregroundColor(AppColors.foregroundSubtle)
                         .textCase(.uppercase)
                         .lineLimit(1)
-
-                    Text("\(Int(value))%")
-                        .font(AppTypography.data)
-                        .foregroundColor(AppColors.metricColor(for: value))
-
-                    GeometryReader { geometry in
-                        ZStack(alignment: .leading) {
-                            Rectangle().fill(AppColors.border)
-                            Rectangle()
-                                .fill(AppColors.metricColor(for: value))
-                                .frame(width: geometry.size.width * CGFloat(value / 100))
-                        }
-                    }
-                    .frame(height: 2)
                 }
                 .padding(12)
-                .background(isCritical ? AppColors.error.opacity(0.06) : AppColors.border)
-                .overlay(Rectangle().stroke(isCritical ? AppColors.error.opacity(0.3) : AppColors.border, lineWidth: isCritical ? 1 : 0.5))
-                .staggerEntrance(index: index, offset: 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(isCritical ? color.opacity(0.10) : Color.white.opacity(0.04))
+                )
             }
         }
     }
@@ -197,44 +292,45 @@ struct DeskView: View {
 
                     // Category badge
                     if let category = scenario.category {
-                        Text(category.uppercased())
+                        Text(category)
                             .font(AppTypography.micro)
                             .foregroundColor(AppColors.foregroundSubtle)
-                            .tracking(1)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(AppColors.backgroundMuted)
-                            .overlay(Rectangle().stroke(AppColors.border, lineWidth: 0.5))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(AppColors.backgroundMuted)
+                            )
                     }
                 } else {
-                    Text("INCOMING DIRECTIVE")
+                    Text("Incoming directive")
                         .font(AppTypography.micro)
                         .foregroundColor(AppColors.error.opacity(0.8))
-                        .tracking(2)
                 }
 
                 Spacer()
 
-                if gameStore.getRemainingTrustYourGutUses() > 0 {
-                    Button {
-                        showTrustYourGut = true
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "bolt.fill")
-                                .font(.system(size: 9))
-                            Text("TRUST YOUR GUT")
-                                .font(AppTypography.micro)
-                                .tracking(1)
+                    if gameStore.getRemainingTrustYourGutUses() > 0 {
+                        Button {
+                            showTrustYourGut = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "bolt.fill")
+                                    .font(.system(size: 9))
+                                Text("Trust Your Gut")
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .foregroundColor(AppColors.background)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(AppColors.accentPrimary)
+                            )
                         }
-                        .foregroundColor(AppColors.background)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(AppColors.accentPrimary)
-                        .accentGlow(color: AppColors.accentPrimary, radius: 8)
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Trust Your Gut — override the scenario")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Trust Your Gut — override the scenario")
-                }
             }
 
             if let scenario = gameStore.currentScenario {
@@ -253,26 +349,20 @@ struct DeskView: View {
                     .italic()
                     .fixedSize(horizontal: false, vertical: true)
 
-                // "Understanding this decision" expandable section
-                if !scenario.options.isEmpty {
-                    DecisionContextView(scenario: scenario, gameStore: gameStore)
-                }
-
                 VStack(spacing: 8) {
                     ForEach(Array(scenario.options.enumerated()), id: \.element.id) { index, option in
                         ScenarioOptionCard(
                             option: option,
                             index: index,
                             isSelected: selectedOptionId == option.id,
-                            isDimmed: !dimmedOptionIds.isEmpty && !dimmedOptionIds.contains(option.id) == false,
+                            isDimmed: !dimmedOptionIds.isEmpty && dimmedOptionIds.contains(option.id),
                             onSelect: {
                                 selectOption(option, scenario: scenario)
                             },
-                            onAdvisor: !(option.advisorFeedback?.isEmpty ?? true) || option.advisorFeedbackString != nil
+                            onAdvisor: !(option.advisorFeedback?.isEmpty ?? true)
                                 ? { advisorOption = option }
                                 : nil
                         )
-                        .staggerEntrance(index: index, offset: 8)
                     }
                 }
             } else {
@@ -287,73 +377,182 @@ struct DeskView: View {
             }
         }
         .padding(20)
-        .background(AppColors.border)
-        .overlay(Rectangle().stroke(AppColors.borderStrong, lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+        )
     }
 
     // MARK: - Outcome Overlay
 
     private var outcomeOverlay: some View {
         ZStack {
-            AppColors.background.opacity(0.75)
+            AppColors.background.opacity(0.85)
                 .ignoresSafeArea()
                 .onTapGesture { closeOutcome() }
 
             if let briefing = gameStore.lastBriefing {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Outcome header
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("DECISION OUTCOME")
-                            .font(AppTypography.micro)
-                            .foregroundColor(AppColors.accentPrimary)
-                            .tracking(3)
-
-                        Text(briefing.title)
-                            .font(AppTypography.headline)
-                            .foregroundColor(AppColors.foreground)
-
-                        Text(briefing.description)
-                            .font(AppTypography.bodySmall)
-                            .foregroundColor(AppColors.foregroundMuted)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    // Metric deltas
-                    if !briefing.metrics.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("METRIC IMPACT")
-                                .font(AppTypography.micro)
-                                .foregroundColor(AppColors.foregroundSubtle)
-                                .tracking(2)
-
-                            ForEach(Array(briefing.metrics.enumerated()), id: \.element.id) { index, metric in
-                                HStack {
-                                    Text(metric.name)
-                                        .font(AppTypography.caption)
-                                        .foregroundColor(AppColors.foregroundMuted)
-                                    Spacer()
-                                    Text(metric.delta >= 0
-                                         ? "+\(String(format: "%.1f", metric.delta))%"
-                                         : "\(String(format: "%.1f", metric.delta))%")
-                                        .font(AppTypography.caption)
-                                        .fontWeight(.bold)
-                                        .monospacedDigit()
-                                        .foregroundColor(metric.delta >= 0 ? AppColors.success : AppColors.error)
-                                }
-                                .staggerEntrance(index: index, offset: 6)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Masthead
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("THE ADMINISTRATION DISPATCH")
+                                    .font(.system(size: 8, weight: .black, design: .monospaced))
+                                    .foregroundColor(AppColors.accentSecondary)
+                                    .tracking(3)
+                                Text("TURN \(gameStore.state.turn) · OFFICIAL RECORD")
+                                    .font(.system(size: 8, weight: .medium, design: .monospaced))
+                                    .foregroundColor(AppColors.foregroundSubtle)
+                                    .tracking(1)
+                            }
+                            Spacer()
+                            Button(action: closeOutcome) {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(AppColors.foregroundMuted)
+                                    .padding(8)
+                                    .background(AppColors.backgroundElevated)
+                                    .clipShape(Circle())
                             }
                         }
-                    }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        .padding(.bottom, 10)
 
-                    Button("CONTINUE") { closeOutcome() }
-                        .buttonStyle(CommandButtonStyle())
-                        .accessibilityLabel("Continue to next decision")
+                        Rectangle().fill(AppColors.accentPrimary).frame(height: 2).padding(.horizontal, 20)
+                        Rectangle().fill(AppColors.accentSecondary).frame(height: 1).padding(.horizontal, 20).padding(.top, 2)
+
+                        if outcomePhase == .loading {
+                            VStack(spacing: 20) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("DECRYPTING INTELLIGENCE DISPATCH")
+                                        .font(.system(size: 9, weight: .black, design: .monospaced))
+                                        .foregroundColor(AppColors.accentPrimary)
+                                        .tracking(2)
+                                    Rectangle()
+                                        .fill(AppColors.accentGradient)
+                                        .frame(height: 2)
+                                        .scaleEffect(x: scanProgress, anchor: .leading)
+                                        .animation(.easeInOut(duration: 1.0), value: scanProgress)
+                                }
+                                .padding(.horizontal, 20)
+
+                                Text("STAND BY")
+                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                    .foregroundColor(AppColors.foregroundSubtle)
+                                    .tracking(3)
+                            }
+                            .padding(40)
+                        } else if outcomePhase == .revealed {
+                            VStack(alignment: .leading, spacing: 14) {
+                                Text(briefing.title)
+                                    .font(.system(size: 20, weight: .black))
+                                    .foregroundColor(AppColors.foreground)
+                                    .fixedSize(horizontal: false, vertical: true)
+
+                                HStack(spacing: 6) {
+                                    Text("BY THE ADMINISTRATION PRESS BUREAU")
+                                        .font(.system(size: 8, weight: .black, design: .monospaced))
+                                        .foregroundColor(AppColors.accentPrimary)
+                                        .tracking(1)
+                                    Text("·")
+                                        .foregroundColor(AppColors.foregroundSubtle)
+                                    Text(Date().formatted(date: .abbreviated, time: .omitted).uppercased())
+                                        .font(.system(size: 8, weight: .medium, design: .monospaced))
+                                        .foregroundColor(AppColors.foregroundSubtle)
+                                        .tracking(1)
+                                }
+
+                                Rectangle().fill(AppColors.border).frame(height: 1)
+
+                                Text(briefing.description)
+                                    .font(.system(size: 14, weight: .regular))
+                                    .foregroundColor(AppColors.foreground.opacity(0.9))
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .lineSpacing(5)
+
+                                if let cost = briefing.humanCost,
+                                   (cost.civilian ?? 0) > 0 || (cost.military ?? 0) > 0 || (cost.displaced ?? 0) > 0 {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Officials confirm the decision carries significant human consequences.")
+                                            .font(.system(size: 13, weight: .regular))
+                                            .foregroundColor(AppColors.error.opacity(0.9))
+                                            .italic()
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+
+                                Rectangle().fill(AppColors.border).frame(height: 1)
+
+                                if !briefing.metrics.isEmpty {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack(spacing: 6) {
+                                            Rectangle()
+                                                .fill(AppColors.accentSecondary)
+                                                .frame(width: 3, height: 12)
+                                            Text("GOVERNANCE IMPACT")
+                                                .font(.system(size: 8, weight: .black, design: .monospaced))
+                                                .foregroundColor(AppColors.accentSecondary)
+                                                .tracking(2)
+                                        }
+
+                                        VStack(spacing: 4) {
+                                            ForEach(Array(briefing.metrics.enumerated()), id: \.element.id) { _, metric in
+                                                let deltaColor: Color = metric.delta >= 0 ? AppColors.success : AppColors.error
+                                                HStack(spacing: 8) {
+                                                    Rectangle()
+                                                        .fill(deltaColor)
+                                                        .frame(width: 2)
+                                                        .frame(height: 28)
+                                                    Text(metric.name)
+                                                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                                        .foregroundColor(AppColors.foregroundMuted)
+                                                    Spacer()
+                                                    HStack(spacing: 3) {
+                                                        Image(systemName: metric.delta >= 0 ? "arrow.up.right" : "arrow.down.right")
+                                                            .font(.system(size: 8, weight: .bold))
+                                                        Text(metric.delta >= 0
+                                                             ? "+\(String(format: "%.1f", metric.delta))%"
+                                                             : "\(String(format: "%.1f", metric.delta))%")
+                                                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                                                            .monospacedDigit()
+                                                    }
+                                                    .foregroundColor(deltaColor)
+                                                }
+                                                .padding(.vertical, 6)
+                                                .padding(.horizontal, 10)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                                        .fill(deltaColor.opacity(0.06))
+                                                )
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                                        .stroke(deltaColor.opacity(0.18), lineWidth: 1)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Button("Continue →") { closeOutcome() }
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(AppColors.background)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(AppColors.accentPrimary)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            }
+                            .padding(20)
+                            .transition(.opacity)
+                        }
+                    }
                 }
-                .padding(24)
                 .background(AppColors.backgroundElevated)
-                .overlay(Rectangle().stroke(AppColors.accentPrimary.opacity(0.2), lineWidth: 1))
-                .padding(.horizontal, 24)
-                .transition(.scale(scale: 0.95).combined(with: .opacity))
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 40)
+                .transition(.scale(scale: 0.96).combined(with: .opacity))
             }
         }
     }
@@ -382,6 +581,7 @@ struct DeskView: View {
 
     private func closeOutcome() {
         withAnimation(AppMotion.standard) { gameStore.showOutcome = false }
+        outcomePhase = .hidden
         HapticEngine.shared.light()
     }
 
@@ -391,11 +591,12 @@ struct DeskView: View {
         Text(label)
             .font(AppTypography.micro)
             .foregroundColor(color)
-            .tracking(1)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(color.opacity(0.1))
-            .overlay(Rectangle().stroke(color.opacity(0.4), lineWidth: 0.5))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(color.opacity(0.12))
+            )
     }
 
     private func severityStyle(_ severity: SeverityLevel?) -> (Color, String) {
@@ -491,62 +692,103 @@ struct DeskView: View {
 
 }
 
-// MARK: - Decision Context View
+// MARK: - Cabinet Feedback View
 
-private struct DecisionContextView: View {
+private struct CabinetFeedbackView: View {
     let scenario: Scenario
     @ObservedObject var gameStore: GameStore
-    @State private var isExpanded = false
+
+    private struct CabinetSignal: Identifiable {
+        let id: String
+        let name: String
+        let roleTitle: String
+        let stance: String
+        let quote: String
+    }
+
+    private var signals: [CabinetSignal] {
+        // Gather all feedback across all options, keeping the strongest signal per member
+        var seen = Set<String>()
+        var result: [CabinetSignal] = []
+
+        for option in scenario.options {
+            guard let feedbacks = option.advisorFeedback else { continue }
+            for fb in feedbacks {
+                guard !seen.contains(fb.roleId) else { continue }
+                guard let member = gameStore.state.cabinet.first(where: {
+                    $0.roleId == fb.roleId && !$0.isVacant
+                }) else { continue }
+                seen.insert(fb.roleId)
+                let name = member.candidate?.name ?? member.name
+                let roleTitle = fb.roleId
+                    .replacingOccurrences(of: "_", with: " ")
+                    .split(separator: " ")
+                    .map { $0.prefix(1).uppercased() + $0.dropFirst() }
+                    .joined(separator: " ")
+                let truncated = fb.feedback.count > 80
+                    ? String(fb.feedback.prefix(80)).trimmingCharacters(in: .whitespaces) + "…"
+                    : fb.feedback
+                result.append(CabinetSignal(
+                    id: fb.roleId,
+                    name: name,
+                    roleTitle: roleTitle,
+                    stance: fb.stance,
+                    quote: truncated
+                ))
+            }
+        }
+        return Array(result.prefix(4))
+    }
+
+    private func stanceColor(_ stance: String) -> Color {
+        switch stance.lowercased() {
+        case "support", "approve", "positive": return AppColors.success
+        case "oppose", "reject", "negative":   return AppColors.error
+        default: return AppColors.foregroundSubtle
+        }
+    }
+
+    private func stanceIcon(_ stance: String) -> String {
+        switch stance.lowercased() {
+        case "support", "approve", "positive": return "checkmark"
+        case "oppose", "reject", "negative":   return "xmark"
+        default: return "minus"
+        }
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button(action: {
-                withAnimation(AppMotion.quickSnap) { isExpanded.toggle() }
-                HapticEngine.shared.light()
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 12))
-                    Text("Understanding this decision")
-                        .font(AppTypography.micro)
-                        .tracking(1)
-                    Spacer()
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 10))
-                }
-                .foregroundColor(AppColors.foregroundSubtle)
-            }
-            .buttonStyle(.plain)
+        if signals.isEmpty { EmptyView() } else {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Cabinet")
+                    .font(AppTypography.label)
+                    .foregroundColor(AppColors.foregroundSubtle)
 
-            if isExpanded {
-                VStack(alignment: .leading, spacing: 6) {
-                    let affectedMetrics = scenario.options
-                        .flatMap { $0.effects ?? [] }
-                        .map(\.targetMetricId)
-                        .uniqued()
-                        .prefix(6)
+                VStack(spacing: 6) {
+                    ForEach(signals) { signal in
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: stanceIcon(signal.stance))
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(stanceColor(signal.stance))
+                                .frame(width: 18, height: 18)
+                                .background(stanceColor(signal.stance).opacity(0.12), in: Circle())
 
-                    ForEach(Array(affectedMetrics), id: \.self) { metricId in
-                        let value = gameStore.state.metrics[metricId] ?? 50
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(AppColors.metricColor(for: value))
-                                .frame(width: 6, height: 6)
-                            Text(metricId.replacingOccurrences(of: "metric_", with: "").replacingOccurrences(of: "_", with: " ").capitalized)
-                                .font(AppTypography.micro)
-                                .foregroundColor(AppColors.foregroundMuted)
-                            Spacer()
-                            Text("\(Int(value))")
-                                .font(AppTypography.micro)
-                                .foregroundColor(AppColors.metricColor(for: value))
-                                .monospacedDigit()
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(signal.name)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(AppColors.foreground)
+                                Text(signal.quote)
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(AppColors.foregroundMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
                     }
                 }
-                .padding(10)
-                .background(AppColors.backgroundMuted)
-                .overlay(Rectangle().stroke(AppColors.border, lineWidth: 0.5))
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.white.opacity(0.04))
+                )
             }
         }
     }
@@ -561,13 +803,49 @@ struct AnimatedCircularGraphView: View {
 
     @State private var animatedValue: Double = 0
 
-    private var color: Color { AppColors.metricColor(for: animatedValue) }
-
     var body: some View {
-        ZStack {
-            ring
-            centerContent
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .trim(from: 0, to: 0.75)
+                    .stroke(AppColors.backgroundMuted, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .rotationEffect(.degrees(135))
+                Circle()
+                    .trim(from: 0, to: CGFloat(max(0, min(0.75, (animatedValue / 100) * 0.75))))
+                    .stroke(
+                        AngularGradient(
+                            gradient: Gradient(colors: [AppColors.accentPrimary, AppColors.accentTertiary, AppColors.accentSecondary]),
+                            center: .center,
+                            startAngle: .degrees(135),
+                            endAngle: .degrees(135 + 270)
+                        ),
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(135))
+                    .animation(AppMotion.dramatic, value: animatedValue)
+                VStack(spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("\(Int(animatedValue))")
+                            .font(.system(size: 64, weight: .bold, design: .monospaced))
+                            .foregroundColor(AppColors.foreground)
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                        Text("%")
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(AppColors.foregroundMuted)
+                    }
+                    Text(label)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(AppColors.foreground)
+                }
+            }
+            .frame(width: 160, height: 160)
+
+            Text(subLabel)
+                .font(AppTypography.caption)
+                .foregroundColor(AppColors.foregroundSubtle)
         }
+        .padding(24)
         .onAppear {
             withAnimation(AppMotion.dramatic) { animatedValue = value }
         }
@@ -575,53 +853,57 @@ struct AnimatedCircularGraphView: View {
             withAnimation(AppMotion.standard) { animatedValue = newVal }
         }
     }
+}
 
-    private var ring: some View {
-        ZStack {
-            Circle()
-                .stroke(AppColors.border, lineWidth: 18)
-                .frame(width: 260, height: 260)
+// MARK: - CrisisDetailSheet
 
-            Circle()
-                .trim(from: 0, to: CGFloat(max(0, min(1, animatedValue / 100))))
-                .stroke(
-                    AppColors.accentGradient,
-                    style: StrokeStyle(lineWidth: 18, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-                .frame(width: 260, height: 260)
-                .shadow(color: color.opacity(0.4), radius: 8)
+struct CrisisDetailSheet: View {
+    let activeCrisis: ActiveCrisis
 
-            // Critical pulse
-            if animatedValue < 25 {
-                Circle()
-                    .stroke(AppColors.error.opacity(0.2), lineWidth: 2)
-                    .frame(width: 280, height: 280)
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(activeCrisis.crisis.severity == .critical ? AppColors.error : AppColors.warning)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(activeCrisis.crisis.name)
+                                .font(AppTypography.title)
+                                .foregroundColor(AppColors.foreground)
+                            Text("SEVERITY: \(activeCrisis.crisis.severity.rawValue.uppercased())")
+                                .font(AppTypography.micro)
+                                .foregroundColor(AppColors.foregroundSubtle)
+                                .tracking(1)
+                        }
+                    }
+
+                    Text(activeCrisis.crisis.description)
+                        .font(AppTypography.body)
+                        .foregroundColor(AppColors.foregroundMuted)
+
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("STARTED").font(AppTypography.micro).foregroundColor(AppColors.foregroundSubtle).tracking(1)
+                            Text("Turn \(activeCrisis.startTurn)").font(AppTypography.caption).foregroundColor(AppColors.foreground)
+                        }
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("DURATION").font(AppTypography.micro).foregroundColor(AppColors.foregroundSubtle).tracking(1)
+                            Text("\(activeCrisis.currentDuration) turns").font(AppTypography.caption).foregroundColor(AppColors.foreground)
+                        }
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.backgroundElevated)
+                    )
+                }
+                .padding(20)
             }
+            .background(AppColors.background.ignoresSafeArea())
+            .navigationTitle("Active Crisis")
+            .navigationBarTitleDisplayMode(.inline)
         }
-    }
-
-    private var centerContent: some View {
-        VStack(spacing: 8) {
-            Text(label.uppercased())
-                .font(AppTypography.label)
-                .foregroundColor(AppColors.foregroundSubtle)
-                .tracking(2)
-
-            Text("\(Int(animatedValue))%")
-                .font(AppTypography.dataLarge)
-                .foregroundColor(color)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-
-            Text(subLabel.uppercased())
-                .font(AppTypography.micro)
-                .foregroundColor(AppColors.foregroundSubtle)
-                .tracking(1)
-        }
-        .padding(40)
-        .background(AppColors.background.opacity(0.8))
-        .clipShape(Circle())
     }
 }
 

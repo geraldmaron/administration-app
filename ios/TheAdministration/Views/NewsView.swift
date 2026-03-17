@@ -4,62 +4,107 @@ struct NewsTickerView: View {
     @ObservedObject var gameStore: GameStore
     @State private var showHistory = false
     @State private var tickerOffset: CGFloat = 0
+    @State private var tickerWidth: CGFloat = 0
+    @State private var containerWidth: CGFloat = 0
 
-    private var latestArticles: [NewsArticle] {
-        Array(gameStore.state.newsHistory.prefix(10))
-    }
+    private static let globalHeadlines: [String] = [
+        "Markets react to central bank policy signals · Investors cautious ahead of G20 summit",
+        "UN Security Council convenes emergency session on regional tensions",
+        "Climate summit delegates reach provisional agreement on emissions targets",
+        "Global supply chain disruptions ease as shipping costs stabilize",
+        "International aid organizations warn of worsening humanitarian situation in conflict zones",
+        "Tech sector faces new regulatory scrutiny across multiple jurisdictions",
+        "Energy prices volatile amid geopolitical uncertainty in key export regions",
+        "World leaders convene at Davos amid rising economic nationalism",
+        "International court delivers landmark ruling on territorial waters dispute",
+        "Pandemic preparedness committee issues stark warning on global health readiness",
+        "Refugee crisis deepens as border disputes escalate in eastern region",
+        "Space agency announces joint mission with international partners",
+        "Global food security index falls for third consecutive year",
+        "Cybersecurity alliance formed following wave of state-sponsored attacks",
+    ]
 
-    private var headlines: [String] {
-        latestArticles.compactMap { $0.headline ?? $0.title }
+    private var allHeadlines: [String] {
+        let playerHeadlines = Array(gameStore.state.newsHistory.prefix(8))
+            .compactMap { $0.headline ?? $0.title }
+        let turn = gameStore.state.turn
+        let globalIdx = turn % Self.globalHeadlines.count
+        let globalSlice = [Self.globalHeadlines[globalIdx],
+                           Self.globalHeadlines[(globalIdx + 3) % Self.globalHeadlines.count]]
+        return (playerHeadlines + globalSlice).uniqued()
     }
 
     private var urgencyColor: Color {
-        latestArticles.first?.isAlert == true ? AppColors.error : AppColors.accentPrimary
+        gameStore.state.newsHistory.first?.isAlert == true ? AppColors.error : AppColors.accentPrimary
     }
 
     var body: some View {
-        if !headlines.isEmpty {
-            Button(action: { showHistory = true }) {
-                HStack(spacing: 0) {
-                    Text("BREAKING")
-                        .font(AppTypography.micro)
+        Button(action: { showHistory = true }) {
+            HStack(spacing: 0) {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(urgencyColor)
+                        .frame(width: 6, height: 6)
+                    Text(gameStore.state.newsHistory.first?.isAlert == true ? "BREAKING" : "LIVE")
+                        .font(.system(size: 8, weight: .black, design: .monospaced))
                         .foregroundColor(AppColors.background)
-                        .tracking(2)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background(urgencyColor)
-
-                    GeometryReader { geo in
-                        let joined = headlines.joined(separator: "   ·   ")
-                        Text(joined)
-                            .font(.system(size: 9, weight: .medium, design: .monospaced))
-                            .foregroundColor(AppColors.foreground.opacity(0.9))
-                            .fixedSize()
-                            .offset(x: tickerOffset)
-                            .onAppear { startAnimation(containerWidth: geo.size.width) }
-                    }
-                    .clipped()
+                        .tracking(1.5)
                 }
-                .frame(height: 28)
-                .background(AppColors.backgroundMuted)
-                .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+                .padding(.horizontal, 9)
+                .padding(.vertical, 0)
+                .frame(height: 26)
+                .background(urgencyColor)
+
+                Rectangle()
+                    .fill(urgencyColor.opacity(0.4))
+                    .frame(width: 1, height: 26)
+
+                GeometryReader { geo in
+                    let full = allHeadlines.joined(separator: "   ·    ")
+                    Text(full)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(AppColors.foreground.opacity(0.92))
+                        .fixedSize()
+                        .offset(x: tickerOffset)
+                        .onAppear {
+                            containerWidth = geo.size.width
+                            startTicker(text: full, width: geo.size.width)
+                        }
+                        .onChange(of: allHeadlines) { _, _ in
+                            let updated = allHeadlines.joined(separator: "   ·    ")
+                            startTicker(text: updated, width: containerWidth)
+                        }
+                }
+                .clipped()
             }
-            .buttonStyle(.plain)
-            .sheet(isPresented: $showHistory) {
-                NewsHistoryView(gameStore: gameStore)
-            }
+            .frame(height: 26)
+            .background(AppColors.backgroundElevated)
+            .overlay(
+                Rectangle()
+                    .stroke(AppColors.border, lineWidth: 0.5)
+            )
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showHistory) {
+            NewsHistoryView(gameStore: gameStore)
         }
     }
 
-    private func startAnimation(containerWidth: CGFloat) {
-        let estimatedTextWidth = CGFloat(headlines.joined(separator: "   ·   ").count) * 6.0
-        tickerOffset = containerWidth
-        withAnimation(
-            .linear(duration: Double(estimatedTextWidth / 60))
-            .repeatForever(autoreverses: false)
-        ) {
-            tickerOffset = -estimatedTextWidth
+    private func startTicker(text: String, width: CGFloat) {
+        let charWidth: CGFloat = 6.2
+        let textWidth = CGFloat(text.count) * charWidth
+        tickerOffset = width
+        withAnimation(Animation.linear(duration: Double(textWidth / 45)).repeatForever(autoreverses: false)) {
+            tickerOffset = -textWidth
         }
+    }
+}
+
+private extension Array where Element: Equatable {
+    func uniqued() -> [Element] {
+        var seen: [Element] = []
+        for item in self { if !seen.contains(item) { seen.append(item) } }
+        return seen
     }
 }
 

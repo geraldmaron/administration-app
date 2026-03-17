@@ -10,8 +10,9 @@ import FirebaseFirestore
 /// Swift equivalent of the web app's per-document Firebase pools
 /// (world_state/names, parties_pool, traits_pool, university_pool, etc.).
 struct AppConfig {
-    // Names by region: region → { "first": [...], "last": [...] }
-    var namesByRegion: [String: [String: [String]]] = [:]
+    // Names by region using gender-aware pools
+    var namePoolsByRegion: [String: RegionNamePool] = [:]
+    var fallbackNamePool: RegionNamePool? = nil
     // Parties
     var genericParties: [String] = []
     var countryParties: [String: [String]] = [:]
@@ -30,10 +31,24 @@ struct AppConfig {
     // Category-level education mappings: category → [{type, field}]
     var categoryMappings: [String: [[String: String]]] = [:]
 
-    /// Resolve names for a given region, falling back to North America
-    func names(for region: String) -> (first: [String], last: [String]) {
-        let key = namesByRegion[region] ?? namesByRegion["North America"] ?? [:]
-        return (first: key["first"] ?? [], last: key["last"] ?? [])
+    func firstName(for region: String, gender: PersonGender) -> String {
+        let pool = namePoolsByRegion[region] ?? namePoolsByRegion["north_america"] ?? fallbackNamePool
+        let names: [String]
+        switch gender {
+        case .male:      names = pool?.firstMale    ?? []
+        case .female:    names = pool?.firstFemale  ?? []
+        case .nonbinary: names = pool?.firstNeutral ?? pool?.firstMale ?? []
+        }
+        return names.randomElement() ?? "Alex"
+    }
+
+    func lastName(for region: String) -> String {
+        let pool = namePoolsByRegion[region] ?? namePoolsByRegion["north_america"] ?? fallbackNamePool
+        return pool?.last.randomElement() ?? "Smith"
+    }
+
+    func fullName(for region: String, gender: PersonGender) -> String {
+        "\(firstName(for: region, gender: gender)) \(lastName(for: region))"
     }
 
     /// Resolve parties for a given countryId, falling back to generic list
@@ -66,7 +81,32 @@ struct AppConfig {
 class FirebaseDataService {
     static let shared = FirebaseDataService()
 
-    private var cache: [String: Any] = [:]
+    static func decodeCountryProfiles(from data: [String: Any]) -> (
+        geopoliticalProfile: GeopoliticalProfile?,
+        gameplayProfile: CountryGameplayProfile?
+    ) {
+        func decodeProfile<T: Decodable>(_ type: T.Type, from dict: [String: Any]?) -> T? {
+            guard let dict,
+                  let data = try? JSONSerialization.data(withJSONObject: dict) else { return nil }
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            return try? decoder.decode(type, from: data)
+        }
+
+        let geopoliticalProfile = decodeProfile(
+            GeopoliticalProfile.self,
+            from: (data["geopoliticalProfile"] as? [String: Any]) ?? (data["geopolitical"] as? [String: Any])
+        )
+        let gameplayProfile = decodeProfile(
+            CountryGameplayProfile.self,
+            from: (data["gameplayProfile"] as? [String: Any]) ?? (data["gameplay"] as? [String: Any])
+        )
+
+        return (geopoliticalProfile, gameplayProfile)
+    }
+
+    private let cacheQueue = DispatchQueue(label: "FirebaseDataService.cache")
+    private var _cache: [String: Any] = [:]
 
     #if canImport(FirebaseFirestore)
     private var db: Firestore?
@@ -81,10 +121,9 @@ class FirebaseDataService {
     // MARK: - Public API
 
     /// Load countries from Firebase
-    /// Matches web WorldDataManager: fetches world_state/countries document
-    /// where each top-level key is a country ID mapping to country data
+    /// Queries the countries/ collection where each document ID is a country ISO code
     func getCountries() async -> [Country] {
-        if let cached = cache["countries"] as? [Country] {
+        if let cached = cacheQueue.sync(execute: { _cache["countries"] as? [Country] }) {
             AppLogger.info("[FirebaseDataService] Returning cached countries")
             return cached
         }
@@ -96,24 +135,14 @@ class FirebaseDataService {
         }
 
         do {
-            let docRef = db.collection("world_state").document("countries")
-            let snapshot = try await docRef.getDocument()
-
-            if snapshot.exists, let data = snapshot.data() {
-                var countries: [Country] = []
-
-                for (countryId, value) in data {
-                    if let countryData = value as? [String: Any] {
-                        if let country = mapCountry(from: countryData, id: countryId) {
-                            countries.append(country)
-                        }
-                    }
-                }
-
-                cache["countries"] = countries
-                AppLogger.info("[FirebaseDataService] Loaded \(countries.count) countries from Firebase")
-                return countries
+            let snapshot = try await db.collection("countries").getDocuments()
+            var countries: [Country] = snapshot.documents.compactMap { doc in
+                mapCountry(from: doc.data(), id: doc.documentID)
             }
+
+            cacheQueue.sync { _cache["countries"] = countries }
+            AppLogger.info("[FirebaseDataService] countries/ collection returned \(countries.count) countries")
+            return countries
         } catch {
             AppLogger.warning("[FirebaseDataService] Error fetching countries: \(error)")
         }
@@ -126,7 +155,7 @@ class FirebaseDataService {
 
     /// Synchronous accessor for countries already in cache
     var cachedCountries: [Country] {
-        return cache["countries"] as? [Country] ?? []
+        return cacheQueue.sync { _cache["countries"] as? [Country] ?? [] }
     }
 
     /// Load all scenarios via the bundle manager.
@@ -136,7 +165,7 @@ class FirebaseDataService {
     /// that to 1 Firestore read (manifest) + Storage GETs only for changed bundles
     /// (~2–4 MB each), with the payload cached to disk across sessions.
     func getAllScenarios() async -> [Scenario] {
-        if let cached = cache["all_scenarios"] as? [Scenario], !cached.isEmpty {
+        if let cached = cacheQueue.sync(execute: { _cache["all_scenarios"] as? [Scenario] }), !cached.isEmpty {
             AppLogger.info("[FirebaseDataService] Returning \(cached.count) in-session cached scenarios")
             return cached
         }
@@ -144,7 +173,7 @@ class FirebaseDataService {
         do {
             let scenarios = try await ScenarioBundleManager.shared.scenarios()
             if !scenarios.isEmpty {
-                cache["all_scenarios"] = scenarios
+                cacheQueue.sync { _cache["all_scenarios"] = scenarios }
                 return scenarios
             }
         } catch {
@@ -163,7 +192,7 @@ class FirebaseDataService {
                 .getDocuments()
             let scenarios = snapshot.documents.compactMap { mapScenario(from: $0.data()) }
             AppLogger.info("[FirebaseDataService] Fallback: loaded \(scenarios.count) scenarios from Firestore")
-            cache["all_scenarios"] = scenarios
+            cacheQueue.sync { _cache["all_scenarios"] = scenarios }
             return scenarios
         } catch {
             AppLogger.warning("[FirebaseDataService] Fallback Firestore query failed: \(error)")
@@ -176,14 +205,14 @@ class FirebaseDataService {
     /// Clears the in-memory scenario cache and forces the bundle manager to
     /// re-check the manifest on the next call. Does NOT delete disk cache.
     func invalidateScenarioCache() {
-        cache.removeValue(forKey: "all_scenarios")
+        cacheQueue.sync { _cache.removeValue(forKey: "all_scenarios") }
         Task { await ScenarioBundleManager.shared.invalidate() }
     }
 
     /// Load scenarios filtered by bundle name
     func getScenariosByBundle(_ bundleName: String) async -> [Scenario] {
         let cacheKey = "bundle_\(bundleName)"
-        if let cached = cache[cacheKey] as? [Scenario] {
+        if let cached = cacheQueue.sync(execute: { _cache[cacheKey] as? [Scenario] }) {
             return cached
         }
 
@@ -195,7 +224,7 @@ class FirebaseDataService {
                 .whereField("metadata.bundle", isEqualTo: bundleName)
                 .getDocuments()
             let scenarios = snapshot.documents.compactMap { mapScenario(from: $0.data()) }
-            cache[cacheKey] = scenarios
+            cacheQueue.sync { _cache[cacheKey] = scenarios }
             return scenarios
         } catch {
             AppLogger.warning("[FirebaseDataService] Error fetching bundle \(bundleName): \(error)")
@@ -207,7 +236,7 @@ class FirebaseDataService {
 
     /// Clear all caches (useful for refreshing data)
     func clearCache() {
-        cache.removeAll()
+        cacheQueue.sync { _cache.removeAll() }
         Task { await ScenarioBundleManager.shared.invalidate() }
         AppLogger.info("[FirebaseDataService] Cache cleared (bundle manager invalidated)")
     }
@@ -251,18 +280,38 @@ class FirebaseDataService {
 
         var config = AppConfig()
 
-        // Names: region → { first: [...], last: [...] }
+        // Names: parse new "regions" key or fall back to old flat structure
         if let namesDoc = namesData {
-            for (region, value) in namesDoc {
-                guard let regionData = value as? [String: Any] else { continue }
-                var first: [String] = []
-                var last: [String] = []
-                if let f = regionData["first"] as? [String] { first = f }
-                else if let f = regionData["first"] as? [String: [String]] {
-                    first = (f["male"] ?? []) + (f["female"] ?? []) + (f["non_binary"] ?? [])
+            if let regionsData = namesDoc["regions"] as? [String: [String: Any]] {
+                var pools: [String: RegionNamePool] = [:]
+                for (regionId, regionData) in regionsData {
+                    let pool = RegionNamePool(
+                        firstMale: (regionData["first_male"] as? [String]) ?? [],
+                        firstFemale: (regionData["first_female"] as? [String]) ?? [],
+                        firstNeutral: (regionData["first_neutral"] as? [String]) ?? [],
+                        last: (regionData["last"] as? [String]) ?? [],
+                        honorifics: nil
+                    )
+                    pools[regionId] = pool
                 }
-                if let l = regionData["last"] as? [String] { last = l }
-                config.namesByRegion[region] = ["first": first, "last": last]
+                config.namePoolsByRegion = pools
+                config.fallbackNamePool = pools["north_america"]
+            } else {
+                // Backward compat: old flat {region: {first:[...], last:[...]}} structure
+                var pools: [String: RegionNamePool] = [:]
+                for (regionId, value) in namesDoc {
+                    guard let regionData = value as? [String: Any] else { continue }
+                    let firstList = (regionData["first"] as? [String]) ?? []
+                    pools[regionId] = RegionNamePool(
+                        firstMale: firstList,
+                        firstFemale: firstList,
+                        firstNeutral: [],
+                        last: (regionData["last"] as? [String]) ?? [],
+                        honorifics: nil
+                    )
+                }
+                config.namePoolsByRegion = pools
+                config.fallbackNamePool = pools["North America"] ?? pools["north_america"]
             }
         }
 
@@ -322,14 +371,110 @@ class FirebaseDataService {
             config.categoryMappings = eduDoc["category_mappings"] as? [String: [[String: String]]] ?? [:]
         }
 
-        AppLogger.info("[FirebaseDataService] AppConfig loaded: \(config.namesByRegion.count) name regions, \(config.traitPool.count) traits, \(config.allUniversities.count) universities")
+        AppLogger.info("[FirebaseDataService] AppConfig loaded: \(config.namePoolsByRegion.count) name regions, \(config.traitPool.count) traits, \(config.allUniversities.count) universities")
         return config
         #else
         return AppConfig()
         #endif
     }
 
+    // MARK: - Subcollection fetchers
+
+    func getPoliticalParties(for countryId: String) async -> [PoliticalParty] {
+        let cacheKey = "parties_\(countryId)"
+        if let cached = cacheQueue.sync(execute: { _cache[cacheKey] as? [PoliticalParty] }) { return cached }
+        #if canImport(FirebaseFirestore)
+        guard let db = db else { return [] }
+        do {
+            let snapshot = try await db
+                .collection("countries")
+                .document(countryId)
+                .collection("parties")
+                .getDocuments()
+            let parties = snapshot.documents.compactMap { doc -> PoliticalParty? in
+                var data = doc.data()
+                data["id"] = doc.documentID
+                guard let jsonData = try? JSONSerialization.data(withJSONObject: data),
+                      let party = try? JSONDecoder().decode(PoliticalParty.self, from: jsonData)
+                else { return nil }
+                return party
+            }
+            cacheQueue.sync { _cache[cacheKey] = parties }
+            return parties
+        } catch {
+            AppLogger.warning("[FirebaseDataService] Failed to fetch parties for \(countryId): \(error)")
+            return []
+        }
+        #else
+        return []
+        #endif
+    }
+
+    func getLocales(for countryId: String) async -> [SubLocale] {
+        let cacheKey = "locales_\(countryId)"
+        if let cached = cacheQueue.sync(execute: { _cache[cacheKey] as? [SubLocale] }) { return cached }
+        #if canImport(FirebaseFirestore)
+        guard let db = db else { return [] }
+        do {
+            let snapshot = try await db
+                .collection("countries")
+                .document(countryId)
+                .collection("locales")
+                .getDocuments()
+            let locales = snapshot.documents.compactMap { doc -> SubLocale? in
+                var data = doc.data()
+                data["id"] = doc.documentID
+                guard let jsonData = try? JSONSerialization.data(withJSONObject: data),
+                      let locale = try? JSONDecoder().decode(SubLocale.self, from: jsonData)
+                else { return nil }
+                return locale
+            }
+            cacheQueue.sync { _cache[cacheKey] = locales }
+            return locales
+        } catch {
+            AppLogger.warning("[FirebaseDataService] Failed to fetch locales for \(countryId): \(error)")
+            return []
+        }
+        #else
+        return []
+        #endif
+    }
+
+    func getMilitaryState(for countryId: String) async -> CountryMilitaryState? {
+        let cacheKey = "military_\(countryId)"
+        if let cached = cacheQueue.sync(execute: { _cache[cacheKey] as? CountryMilitaryState }) { return cached }
+        #if canImport(FirebaseFirestore)
+        guard let db = db else { return nil }
+        do {
+            let doc = try await db
+                .collection("countries")
+                .document(countryId)
+                .collection("military_state")
+                .document("current")
+                .getDocument()
+            guard doc.exists, let data = doc.data() else { return nil }
+            guard let jsonData = try? JSONSerialization.data(withJSONObject: data),
+                  let milState = try? JSONDecoder().decode(CountryMilitaryState.self, from: jsonData)
+            else { return nil }
+            cacheQueue.sync { _cache[cacheKey] = milState }
+            return milState
+        } catch {
+            AppLogger.warning("[FirebaseDataService] Failed to fetch military state for \(countryId): \(error)")
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
     // MARK: - Data Mapping
+
+    private func decode<T: Decodable>(_ type: T.Type, from dict: [String: Any]) -> T? {
+        guard let data = try? JSONSerialization.data(withJSONObject: dict) else { return nil }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try? decoder.decode(type, from: data)
+    }
 
     /// Map Firestore country data to Country model
     /// - Parameters:
@@ -350,7 +495,7 @@ class FirebaseDataService {
         let gdp = attributesData?["gdp"] as? Int ?? 0
         let attributes = CountryAttributes(population: population, gdp: gdp)
 
-        // Extract military stats
+        // Extract military stats (legacy simple schema)
         let militaryData = data["military"] as? [String: Any]
         let military = MilitaryStats(
             strength: militaryData?["strength"] as? Double ?? 50.0,
@@ -361,6 +506,32 @@ class FirebaseDataService {
             description: militaryData?["description"] as? String
         )
 
+        // Decode rich MilitaryProfile if present
+        let militaryProfile: MilitaryProfile? = militaryData.flatMap { decode(MilitaryProfile.self, from: $0) }
+
+        let profiles = Self.decodeCountryProfiles(from: data)
+        let geopoliticalProfile = profiles.geopoliticalProfile
+        let gameplayProfile = profiles.gameplayProfile
+
+        // Decode LegislatureProfile
+        let legislatureProfile: LegislatureProfile? = (data["legislature"] as? [String: Any]).flatMap { decode(LegislatureProfile.self, from: $0) }
+
+        // Decode LegislatureState
+        let legislatureInitialState: LegislatureState? = (data["legislature_initial_state"] as? [String: Any]).flatMap { decode(LegislatureState.self, from: $0) }
+
+        // Decode CountryTraits
+        let countryTraits: [CountryTrait]? = {
+            guard let arr = data["traits"] as? [[String: Any]],
+                  let traitsData = try? JSONSerialization.data(withJSONObject: arr) else { return nil }
+            return try? JSONDecoder().decode([CountryTrait].self, from: traitsData)
+        }()
+
+        // Population and GDP from nested dicts
+        let populationDoc = data["population"] as? [String: Any]
+        let populationMillions = populationDoc?["total_millions"] as? Double
+        let economyDoc = data["economy"] as? [String: Any]
+        let gdpBillions = economyDoc?["gdp_billions"] as? Double
+
         // Extract diplomacy stats
         let diplomacyData = data["diplomacy"] as? [String: Any]
         let diplomacy = DiplomaticStats(
@@ -370,9 +541,14 @@ class FirebaseDataService {
             tradeRelationships: diplomacyData?["tradeRelationships"] as? [String: Double]
         )
 
+        // Firestore may store the definite article as `definiteArticle` (camelCase) or
+        // `definite_article` (snake_case). Preserve backward compatibility.
+        let definiteArticle = (data["definiteArticle"] as? String) ?? (data["definite_article"] as? String)
+
         return Country(
             id: countryId,
             name: name,
+            definiteArticle: definiteArticle,
             governmentProfileId: data["governmentProfileId"] as? String,
             attributes: attributes,
             military: military,
@@ -396,8 +572,16 @@ class FirebaseDataService {
             tokens: tokens,
             code: data["code"] as? String,
             flagUrl: data["flagUrl"] as? String,
-            alliances: nil, // TODO: Map alliances if needed
-            economy: nil // TODO: Map economy if needed
+            alliances: nil,
+            economy: nil,
+            geopoliticalProfile: geopoliticalProfile,
+            gameplayProfile: gameplayProfile,
+            militaryProfile: militaryProfile,
+            legislatureProfile: legislatureProfile,
+            legislatureInitialState: legislatureInitialState,
+            countryTraits: countryTraits,
+            populationMillions: populationMillions,
+            gdpBillions: gdpBillions
         )
     }
 
@@ -464,11 +648,15 @@ class FirebaseDataService {
             id: id,
             text: text,
             label: data["label"] as? String,
-            advisorFeedback: nil,
-            advisorFeedbackString: data["advisor_feedback"] as? String,
+            advisorFeedback: (data["advisorFeedback"] as? [[String: Any]])?.compactMap { item in
+                guard let roleId = item["roleId"] as? String,
+                      let stance = item["stance"] as? String,
+                      let feedback = item["feedback"] as? String else { return nil }
+                return AdvisorFeedback(roleId: roleId, stance: stance, feedback: feedback)
+            },
             effects: effects,
             effectsMap: data["effects"] as? [String: Double],
-            nextScenarioId: data["next_scenario_id"] as? String,
+            nextScenarioId: data["nextScenarioId"] as? String ?? data["next_scenario_id"] as? String,
             impactText: nil,
             impactMap: data["impact"] as? [String: Double],
             relationshipImpact: data["relationship_impact"] as? [String: Double],
@@ -481,11 +669,11 @@ class FirebaseDataService {
             severity: mapSeverityLevel(from: data["severity"] as? String),
             tags: data["tags"] as? [String],
             cooldown: data["cooldown"] as? Int,
-            oncePerGame: data["once_per_game"] as? Bool,
+            oncePerGame: data["oncePerGame"] as? Bool ?? data["once_per_game"] as? Bool,
             outcome: data["outcome"] as? String,
-            outcomeHeadline: data["outcome_headline"] as? String,
-            outcomeSummary: data["outcome_summary"] as? String,
-            outcomeContext: data["outcome_context"] as? String,
+            outcomeHeadline: data["outcomeHeadline"] as? String ?? data["outcome_headline"] as? String,
+            outcomeSummary: data["outcomeSummary"] as? String ?? data["outcome_summary"] as? String,
+            outcomeContext: data["outcomeContext"] as? String ?? data["outcome_context"] as? String,
             isAuthoritarian: data["is_authoritarian"] as? Bool,
             moralWeight: data["moral_weight"] as? Double,
             consequenceScenarioIds: data["consequence_scenario_ids"] as? [String],
@@ -505,7 +693,8 @@ class FirebaseDataService {
             value: value,
             duration: data["duration"] as? Int ?? 1,
             probability: data["probability"] as? Double ?? 1.0,
-            delay: data["delay"] as? Int
+            delay: data["delay"] as? Int,
+            type: data["type"] as? String
         )
     }
 

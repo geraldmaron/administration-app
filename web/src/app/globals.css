@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: oklch(0.09 0 0);
+  --background-elevated: oklch(0.12 0 0);
+  --background-muted: oklch(0.15 0 0);
+  --foreground: oklch(1.0 0 0);
+  --foreground-muted: oklch(0.65 0 0);
+  --foreground-subtle: oklch(0.45 0 0);
+  --border: oklch(0.3 0 0 / 0.1);
+  --border-strong: oklch(0.5 0 0 / 0.15);
+  --accent-primary: oklch(0.62 0.22 275);
+  --accent-muted: oklch(0.62 0.22 275 / 0.15);
+  --success: oklch(0.70 0.19 165);
+  --warning: oklch(0.80 0.20 65);
+  --error: oklch(0.65 0.28 15);
+  --info: oklch(0.70 0.20 230);
+  --grid-color: oklch(0.3 0 0 / 0.05);
+  --radius: 0.125rem;
+  --accent-secondary: oklch(0.65 0.28 15);
+  --accent-tertiary: oklch(0.72 0.19 195);
+  --interactive-hover: oklch(0.68 0.22 275);
+  --interactive-active: oklch(0.55 0.22 275);
+  --focus-ring: oklch(0.62 0.22 275);
+  --shadow-sm: oklch(0 0 0 / 0.1);
+  --shadow-md: oklch(0 0 0 / 0.15);
+  --shadow-lg: oklch(0 0 0 / 0.25);
+}
+
+body {
+  color: var(--foreground);
+  background-color: var(--background);
+  background-image:
+    linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+  font-size: 14px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.tech-border {
+  border: 1px solid var(--border-strong);
+  position: relative;
+}
+
+.tech-border::before,
+.tech-border::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  transition: all 0.3s ease;
+}
+
+.tech-border::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid var(--foreground-muted);
+  border-left: 1px solid var(--foreground-muted);
+}
+
+.tech-border::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1px solid var(--foreground-muted);
+  border-right: 1px solid var(--foreground-muted);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-muted);
+}
+
+.tech-card {
+  background: var(--background-elevated);
+  border: 1px solid var(--border-strong);
+  position: relative;
+}
+.tech-card:hover {
+  background: var(--background-muted);
+  border-color: oklch(0.5 0 0 / 0.25);
+}
+.tech-card::before,
+.tech-card::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  transition: all 0.3s ease;
+}
+.tech-card::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid var(--foreground-muted);
+  border-left: 1px solid var(--foreground-muted);
+}
+.tech-card::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1px solid var(--foreground-muted);
+  border-right: 1px solid var(--foreground-muted);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  display: inline-block;
+  flex-shrink: 0;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 12px;
+    font-family: var(--font-mono, monospace);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius);
+    transition: all 0.15s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .btn-command {
+    background: var(--accent-primary);
+    color: var(--background);
+    border-color: var(--accent-primary);
+  }
+  .btn-command:hover {
+    background: var(--interactive-hover);
+    border-color: var(--interactive-hover);
+  }
+  .btn-tactical {
+    background: transparent;
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+  }
+  .btn-tactical:hover {
+    background: var(--accent-muted);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--foreground-muted);
+    border-color: transparent;
+  }
+  .btn-ghost:hover {
+    color: var(--foreground);
+    background: var(--background-muted);
+  }
+  .btn-destructive {
+    background: transparent;
+    color: var(--error);
+    border-color: oklch(0.65 0.28 15 / 0.4);
+  }
+  .btn-destructive:hover {
+    background: oklch(0.65 0.28 15 / 0.1);
+  }
+}

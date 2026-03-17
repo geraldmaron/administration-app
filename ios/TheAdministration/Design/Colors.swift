@@ -9,29 +9,29 @@ struct AppColors {
     static let background = Color(red: 0, green: 0, blue: 0)
     
     /// Slightly elevated background for cards and panels
-    static let backgroundElevated = Color(red: 0.10, green: 0.10, blue: 0.10)  // #1a1a1a
+    static let backgroundElevated = Color(red: 0.06, green: 0.06, blue: 0.06)
     
     /// Muted background for secondary surfaces
-    static let backgroundMuted = Color(red: 0.15, green: 0.15, blue: 0.15)  // #262626
+    static let backgroundMuted = Color(red: 0.10, green: 0.10, blue: 0.10)
     
     // MARK: - Foreground Colors
     
     /// Pure white for primary text
     static let foreground = Color.white
     
-    /// Muted foreground for secondary text (65% opacity white)
-    static let foregroundMuted = Color(white: 0.65)
+    /// Muted foreground for secondary text
+    static let foregroundMuted = Color(white: 0.70)
     
-    /// Subtle foreground for tertiary text (45% opacity white)
-    static let foregroundSubtle = Color(white: 0.45)
+    /// Subtle foreground for tertiary text
+    static let foregroundSubtle = Color(white: 0.50)
     
     // MARK: - Borders
     
-    /// Standard border color (5% opacity white)
-    static let border = Color(white: 1.0).opacity(0.05)
+    /// Standard border color
+    static let border = Color(white: 1.0).opacity(0.12)
     
-    /// Strong border color (10% opacity white)
-    static let borderStrong = Color(white: 1.0).opacity(0.10)
+    /// Strong border color
+    static let borderStrong = Color(white: 1.0).opacity(0.18)
     
     // MARK: - Accent Colors (theme-adaptive, driven by ThemeManager)
 
@@ -70,7 +70,7 @@ struct AppColors {
     static let metricLow = warning
 
     /// Metric healthy range - used for values 40-70
-    static let metricHealthy = success
+    static var metricHealthy: Color { accentPrimary }
 
     /// Metric high range - used for values 70+ (Cyan/Teal)
     static var metricHigh: Color { accentTertiary }
@@ -133,11 +133,11 @@ struct AppColors {
 
     // MARK: - Glow and Gradient Helpers
 
-    /// Soft accent glow for elevated/interactive surfaces.
+    /// Subtle accent glow — near-invisible, used only for key interactive surfaces.
     static var accentGlow: LinearGradient {
         LinearGradient(
             colors: [
-                accentPrimary.opacity(0.35),
+                accentPrimary.opacity(0.12),
                 accentPrimary.opacity(0.0)
             ],
             startPoint: .topLeading,

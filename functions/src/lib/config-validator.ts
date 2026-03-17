@@ -9,81 +9,126 @@ export interface ConfigValidation {
   warnings: string[];
   config: {
     hasOpenAI: boolean;
-    hasMoonshot: boolean;
     semanticDedupEnabled: boolean;
     models: {
-      concept: string;
+      architect: string;
       blueprint: string;
       drafter: string;
+      repair: string;
+      contentQuality: string;
+      narrativeReview: string;
       embedding: string;
     };
   };
 }
 
+export interface RequestedModelConfig {
+  architectModel?: string;
+  drafterModel?: string;
+  repairModel?: string;
+  contentQualityModel?: string;
+  narrativeReviewModel?: string;
+  embeddingModel?: string;
+}
+
+function isOpenAIModel(model: string): boolean {
+  return model.startsWith('gpt-') || model.startsWith('o1') || model.startsWith('o3') || model.startsWith('text-embedding');
+}
+
+function isLMStudioModel(model: string): boolean {
+  return model.startsWith('lmstudio:');
+}
+
+function getSharedLMStudioModel(modelConfig?: RequestedModelConfig): string | undefined {
+  return [
+    modelConfig?.architectModel,
+    modelConfig?.drafterModel,
+    modelConfig?.repairModel,
+    modelConfig?.contentQualityModel,
+    modelConfig?.narrativeReviewModel,
+  ].find((model): model is string => Boolean(model && isLMStudioModel(model)));
+}
+
+function getDefaultArchitectModel(): string {
+  return process.env.ARCHITECT_MODEL || process.env.CONCEPT_MODEL || 'gpt-4o-mini';
+}
+
 /**
- * Validate configuration for OpenAI-first generation system
+ * Validate configuration for generation providers
  */
-export function validateConfig(): ConfigValidation {
+export function validateConfig(modelConfig?: RequestedModelConfig): ConfigValidation {
   const errors: string[] = [];
   const warnings: string[] = [];
 
   // Check required API keys
   const hasOpenAI = !!process.env.OPENAI_API_KEY;
-  const hasMoonshot = !!process.env.MOONSHOT_API_KEY;
 
-  if (!hasOpenAI) {
-    errors.push('OPENAI_API_KEY is not set - generation and embeddings will fail');
+  if (hasOpenAI) {
+    const key = process.env.OPENAI_API_KEY!.trim();
+    if (!key.startsWith('sk-') && !key.startsWith('sess-')) {
+      warnings.push('OPENAI_API_KEY does not start with expected prefix (sk- or sess-) — verify the key is correct');
+    }
   }
 
-  // Check model configuration
-  const conceptModel = process.env.CONCEPT_MODEL || 'gpt-4o-mini';
-  const blueprintModel = process.env.BLUEPRINT_MODEL || 'gpt-4o-mini';
-  const drafterModel = process.env.DRAFTER_MODEL || 'gpt-4o-mini';
-  const embeddingModel = process.env.EMBEDDING_MODEL || 'text-embedding-3-small';
+  const sharedLMStudioModel = getSharedLMStudioModel(modelConfig);
+  const architectModel = modelConfig?.architectModel || getDefaultArchitectModel();
+  const blueprintModel = architectModel;
+  const drafterModel = modelConfig?.drafterModel || process.env.DRAFTER_MODEL || 'gpt-4o-mini';
+  const repairModel = modelConfig?.repairModel || sharedLMStudioModel || process.env.REPAIR_MODEL || 'gpt-4o-mini';
+  const contentQualityModel = modelConfig?.contentQualityModel || sharedLMStudioModel || 'gpt-4o-mini';
+  const narrativeReviewModel = modelConfig?.narrativeReviewModel || sharedLMStudioModel || process.env.NARRATIVE_REVIEW_MODEL || 'gpt-4o-mini';
+  const embeddingModel = modelConfig?.embeddingModel || process.env.EMBEDDING_MODEL || 'text-embedding-3-small';
 
-  // Validate model-provider alignment
-  if (conceptModel.startsWith('gpt-') && !hasOpenAI) {
-    errors.push(`CONCEPT_MODEL is set to ${conceptModel} but OPENAI_API_KEY is missing`);
-  }
-  if (blueprintModel.startsWith('gpt-') && !hasOpenAI) {
-    errors.push(`BLUEPRINT_MODEL is set to ${blueprintModel} but OPENAI_API_KEY is missing`);
-  }
-  if (!drafterModel.startsWith('gpt-') && !drafterModel.startsWith('o1') && !drafterModel.startsWith('o3')) {
-    errors.push(`DRAFTER_MODEL is set to ${drafterModel} but only OpenAI models are supported in OpenAI-only mode`);
-  }
-  if (embeddingModel.startsWith('text-embedding') && !hasOpenAI) {
-    errors.push(`EMBEDDING_MODEL is set to ${embeddingModel} but OPENAI_API_KEY is missing`);
+  const requiredModels = [
+    ['architectModel', architectModel],
+    ['blueprintModel', blueprintModel],
+    ['drafterModel', drafterModel],
+    ['repairModel', repairModel],
+    ['contentQualityModel', contentQualityModel],
+    ['narrativeReviewModel', narrativeReviewModel],
+  ] as const;
+
+  for (const [label, model] of requiredModels) {
+    if (!isOpenAIModel(model) && !isLMStudioModel(model)) {
+      errors.push(`${label} is set to ${model} but only OpenAI (gpt-*, o1, o3, text-embedding*) and LM Studio (lmstudio:*) models are supported`);
+      continue;
+    }
+    if (isOpenAIModel(model) && !hasOpenAI) {
+      errors.push(`${label} is set to ${model} but OPENAI_API_KEY is missing`);
+    }
   }
 
   // Check semantic deduplication
   const semanticDedupEnabled = process.env.ENABLE_SEMANTIC_DEDUP !== 'false';
-  if (semanticDedupEnabled && !hasOpenAI) {
-    warnings.push('Semantic deduplication is enabled but OPENAI_API_KEY is missing - will fall back to legacy dedup');
+  const lmStudioOnlyRun = requiredModels.every(([, model]) => isLMStudioModel(model));
+  if (semanticDedupEnabled && !hasOpenAI && !lmStudioOnlyRun) {
+    warnings.push('Semantic deduplication is enabled but OPENAI_API_KEY is missing - embedding-based dedup will be unavailable');
+  }
+  if (semanticDedupEnabled && lmStudioOnlyRun) {
+    warnings.push('Semantic deduplication is OpenAI-only and will be skipped for LM Studio-only generation runs');
   }
 
   // Warnings for non-optimal configurations
-  if (conceptModel !== 'gpt-4o-mini') {
-    warnings.push(`CONCEPT_MODEL is ${conceptModel} - recommended: gpt-4o-mini for cost efficiency`);
+  if (architectModel !== 'gpt-4o-mini' && !isLMStudioModel(architectModel)) {
+    warnings.push(`ARCHITECT_MODEL is ${architectModel} - recommended: gpt-4o-mini for cost efficiency`);
   }
-  if (drafterModel !== 'gpt-4o-mini') {
+  if (drafterModel !== 'gpt-4o-mini' && !isLMStudioModel(drafterModel)) {
     warnings.push(`DRAFTER_MODEL is ${drafterModel} - recommended: gpt-4o-mini for low-cost operation`);
   }
-  if (hasMoonshot) {
-    warnings.push('MOONSHOT_API_KEY is set but Moonshot routing is disabled in OpenAI-only mode');
-  }
-
   return {
     valid: errors.length === 0,
     errors,
     warnings,
     config: {
       hasOpenAI,
-      hasMoonshot,
       semanticDedupEnabled,
       models: {
-        concept: conceptModel,
+        architect: architectModel,
         blueprint: blueprintModel,
         drafter: drafterModel,
+        repair: repairModel,
+        contentQuality: contentQualityModel,
+        narrativeReview: narrativeReviewModel,
         embedding: embeddingModel
       }
     }
@@ -96,14 +141,16 @@ export function validateConfig(): ConfigValidation {
 export function logConfigStatus(): void {
   const validation = validateConfig();
   
-  console.log('[Config] OpenAI-only Generation System Configuration:');
+  console.log('[Config] Generation provider configuration:');
   console.log(`  OpenAI API: ${validation.config.hasOpenAI ? '✓' : '✗'}`);
-  console.log(`  Moonshot API (legacy env): ${validation.config.hasMoonshot ? 'present' : 'not set'}`);
   console.log(`  Semantic Dedup: ${validation.config.semanticDedupEnabled ? 'enabled' : 'disabled'}`);
   console.log(`  Models:`);
-  console.log(`    - Concept: ${validation.config.models.concept}`);
+  console.log(`    - Architect: ${validation.config.models.architect}`);
   console.log(`    - Blueprint: ${validation.config.models.blueprint}`);
   console.log(`    - Drafter: ${validation.config.models.drafter}`);
+  console.log(`    - Repair: ${validation.config.models.repair}`);
+  console.log(`    - Content Quality: ${validation.config.models.contentQuality}`);
+  console.log(`    - Narrative Review: ${validation.config.models.narrativeReview}`);
   console.log(`    - Embedding: ${validation.config.models.embedding}`);
 
   if (validation.warnings.length > 0) {

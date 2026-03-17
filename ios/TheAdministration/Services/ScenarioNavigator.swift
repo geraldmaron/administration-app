@@ -325,6 +325,14 @@ extension ScenarioNavigator {
         for country: Country?,
         gameState: GameState
     ) -> Double {
+        // Legislature approval gate
+        if let req = scenario.legislatureRequirement {
+            let legislatureApproval = gameState.legislatureState?.approvalOfPlayer ?? 100
+            if legislatureApproval < req.minApproval {
+                return 0
+            }
+        }
+
         // Base weight
         var score = scenario.weight ?? 1.0
         if score <= 0 {

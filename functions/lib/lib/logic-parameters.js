@@ -47,6 +47,7 @@ exports.TEMPLATE_TOKENS = {
     executive: [
         'leader_title', // President, Prime Minister, Chancellor
         'vice_leader', // Vice President, Deputy PM
+        'head_of_state_title', // Head of State title (may differ from {leader_title} in parliamentary systems)
     ],
     // Legislative Branch
     legislative: [
@@ -55,6 +56,9 @@ exports.TEMPLATE_TOKENS = {
         'lower_house', // House of Representatives, House of Commons
         'ruling_party', // The party in power
         'opposition_party', // Main opposition party / bloc in parliament
+        'legislature_speaker', // Speaker of the house / presiding officer
+        'upper_house_leader', // President of the Senate, Lord Speaker
+        'opposition_leader', // Leader of the opposition
     ],
     // Judicial Branch (use role-based tokens only)
     judicial: [
@@ -92,7 +96,21 @@ exports.TEMPLATE_TOKENS = {
         'special_forces', // Special Operations, SAS
         'naval_commander', // Admiral
         'air_commander', // Air Marshal
-        'military_capability' // Standard military power token
+        'military_capability', // Standard military power token
+        'army_name', // Name of the national army (e.g., "United States Army")
+        'naval_fleet', // Name of the naval fleet (e.g., "Royal Navy")
+        'air_wing', // Name of the air force wing (e.g., "Royal Air Force")
+        'cyber_agency', // Name of the cyber/signals intelligence agency
+        'nuclear_command', // Name of the nuclear command authority
+        'coalition_name', // Name of a military coalition or alliance
+        'armed_forces_name', // Full formal name of all armed forces
+        'military_chief_title', // Title of the top military commander (e.g., "Chief of Defence Staff")
+        'army_branch', // Localised name for the ground forces branch
+        'navy_branch', // Localised name for the maritime branch
+        'air_branch', // Localised name for the air force branch
+        'marine_branch', // Localised name for the marines branch
+        'space_branch', // Localised name for the space force branch
+        'paramilitary_branch', // Localised name for the paramilitary / internal security force
     ],
     // Economic Institutions
     economic: [
@@ -164,6 +182,9 @@ exports.TEMPLATE_TOKENS = {
         'military_budget_amount', // 1.5-4% of GDP — use for defense spending, military procurement
         'disaster_cost', // 1-8% of GDP — use for natural disasters, emergency recovery
         'sanctions_amount', // 2-10% of GDP — use for economic sanctions, trade embargoes
+        'city_name', // Name of a specific city referenced in the scenario
+        'state_name', // Name of a state / province / region
+        'locale_type', // Type label for the locale ("state", "province", "territory", etc.)
     ],
     // Article forms — use these when a token appears as a subject or after a preposition
     // e.g. "{the_adversary}" → "the United States" or "Russia" (adds "the" only for article-requiring countries)
@@ -222,6 +243,19 @@ exports.TEMPLATE_TOKENS = {
         'the_opposition_party',
         'the_major_industry',
         'the_regional_bloc',
+        // Military institution article forms
+        'the_army_name',
+        'the_naval_fleet',
+        'the_air_wing',
+        'the_cyber_agency',
+        'the_nuclear_command',
+        'the_coalition_name',
+    ],
+    // Political parties
+    party: [
+        'ruling_party_leader', // Current leader of the ruling party (by name)
+        'opposition_party_leader', // Current leader of the main opposition party
+        'ruling_party_ideology', // Brief ideological descriptor of the ruling party
     ]
 };
 exports.ALL_TOKENS = [
@@ -237,6 +271,7 @@ exports.ALL_TOKENS = [
     ...exports.TEMPLATE_TOKENS.media,
     ...exports.TEMPLATE_TOKENS.relationships,
     ...exports.TEMPLATE_TOKENS.context,
+    ...exports.TEMPLATE_TOKENS.party,
     ...exports.TEMPLATE_TOKENS.article_forms
 ];
 // Set of bare token names (without the_ prefix) that have a corresponding

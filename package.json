@@ -1,17 +1,16 @@
 {
-    "name": "the-administration",
-    "private": true,
-    "description": "The Administration — iOS political simulation game. Firebase backend managed at project root.",
-    "scripts": {
-        "functions:build": "cd functions && npm run build",
-        "functions:deploy": "firebase deploy --only functions",
-        "functions:emulate": "firebase emulators:start --only functions,firestore,auth",
-        "rules:deploy": "firebase deploy --only firestore:rules,storage",
-        "deploy:all": "firebase deploy",
-        "scripts:generate": "cd scripts && ts-node generate-scenarios.ts",
-        "scripts:preflight": "cd scripts && ts-node pre-flight.ts"
-    },
-    "devDependencies": {
-        "firebase-tools": "^13.0.0"
-    }
+  "name": "the-administration",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Administration — political simulation game",
+  "scripts": {
+    "admin-app": "node admin-app/bin/scenario-loops.js"
+  },
+  "bin": {
+    "admin-app": "admin-app/bin/scenario-loops.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee"
 }

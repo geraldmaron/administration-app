@@ -128,90 +128,78 @@ struct SystemView: View {
     private var godModeLock: some View {
         VStack(spacing: 24) {
             ZStack {
-                Rectangle()
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(AppColors.success.opacity(0.1))
                     .frame(width: 64, height: 64)
-                    .overlay(
-                        Rectangle()
-                            .stroke(AppColors.success.opacity(0.2), lineWidth: 1)
-                    )
                 
-                Image(systemName: "shield")
-                    .font(.system(size: 32, weight: .medium))
+                Image(systemName: "lock")
+                    .font(.system(size: 28, weight: .medium))
                     .foregroundColor(AppColors.success)
             }
             
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text("System Access Restricted")
-                    .font(.system(size: 24, weight: .bold, design: .default))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(AppColors.foreground)
                 
-                Text("Clearance Level 5 Required")
-                    .font(.system(size: 14, weight: .regular, design: .default))
+                Text("God Mode required")
+                    .font(AppTypography.body)
                     .foregroundColor(AppColors.foregroundMuted)
-                
-                Text("Press to enable God Mode")
-                    .font(.system(size: 11, weight: .regular, design: .monospaced))
-                    .foregroundColor(AppColors.foregroundSubtle)
-                    .tracking(1)
             }
             
             Button(action: {
                 godMode = true
             }) {
-                HStack {
+                HStack(spacing: 8) {
                     Image(systemName: "eye")
                         .font(.system(size: 14, weight: .medium))
-                    Text("ENABLE GOD MODE")
-                        .font(.system(size: 14, weight: .bold, design: .default))
-                        .tracking(1)
+                    Text("Enable God Mode")
+                        .font(.system(size: 14, weight: .semibold))
                 }
                 .foregroundColor(AppColors.background)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(AppColors.accentPrimary)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(AppColors.accentPrimary)
+                )
             }
+            .buttonStyle(.plain)
         }
         .padding(32)
     }
     
     private var headerSection: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
                     ZStack {
-                        Rectangle()
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(AppColors.success.opacity(0.1))
-                            .frame(width: 40, height: 40)
-                            .overlay(
-                                Rectangle()
-                                    .stroke(AppColors.success.opacity(0.2), lineWidth: 1)
-                            )
+                            .frame(width: 36, height: 36)
                         
                         Image(systemName: "gearshape")
-                            .font(.system(size: 20, weight: .medium))
+                            .font(.system(size: 16, weight: .medium))
                             .foregroundColor(AppColors.success)
                     }
                     
                     Text("System Control")
-                        .font(.system(size: 24, weight: .bold, design: .default))
+                        .font(.system(size: 22, weight: .semibold))
                         .foregroundColor(AppColors.foreground)
                     
-                    Text("GOD MODE ACTIVE")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    Text("God Mode")
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(AppColors.success)
-                        .tracking(1)
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(AppColors.success.opacity(0.1))
-                        .overlay(
-                            Rectangle()
-                                .stroke(AppColors.success.opacity(0.3), lineWidth: 1)
+                        .padding(.vertical, 3)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(AppColors.success.opacity(0.12))
                         )
                 }
                 
-                Text("Administrative override enabled. Direct state manipulation available.")
-                    .font(.system(size: 13, weight: .regular, design: .default))
+                Text("Administrative override enabled.")
+                    .font(AppTypography.body)
                     .foregroundColor(AppColors.foregroundMuted)
             }
             
@@ -220,20 +208,18 @@ struct SystemView: View {
             Button(action: {
                 godMode = false
             }) {
-                HStack {
+                HStack(spacing: 6) {
                     Image(systemName: "eye.slash")
-                        .font(.system(size: 14, weight: .medium))
-                    Text("DISABLE")
-                        .font(.system(size: 12, weight: .bold, design: .default))
-                        .tracking(1)
+                        .font(.system(size: 13, weight: .medium))
+                    Text("Disable")
+                        .font(.system(size: 13, weight: .medium))
                 }
                 .foregroundColor(AppColors.success)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(AppColors.success.opacity(0.1))
-                .overlay(
-                    Rectangle()
-                        .stroke(AppColors.success.opacity(0.3), lineWidth: 1)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(AppColors.success.opacity(0.1))
                 )
             }
         }
@@ -257,21 +243,21 @@ struct StatCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.system(size: 10, weight: .regular, design: .monospaced))
+                .font(AppTypography.micro)
                 .foregroundColor(AppColors.foregroundSubtle)
                 .textCase(.uppercase)
-                .tracking(1)
             
             Text(value)
-                .font(.system(size: 20, weight: .bold, design: .default))
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(AppColors.foreground)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(AppColors.border)
-        .overlay(
-            Rectangle()
-                .stroke(AppColors.borderStrong, lineWidth: 1)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(AppColors.backgroundElevated)
         )
     }
 }
@@ -287,54 +273,47 @@ struct SectionCard<Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             Button(action: toggle) {
-                HStack {
+                HStack(spacing: 14) {
                     ZStack {
-                        Rectangle()
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(AppColors.success.opacity(0.1))
-                            .frame(width: 40, height: 40)
-                            .overlay(
-                                Rectangle()
-                                    .stroke(AppColors.success.opacity(0.2), lineWidth: 1)
-                            )
+                            .frame(width: 36, height: 36)
                         
                         Image(systemName: icon)
-                            .font(.system(size: 20, weight: .medium))
+                            .font(.system(size: 16, weight: .medium))
                             .foregroundColor(AppColors.success)
                     }
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(title)
-                            .font(.system(size: 20, weight: .bold, design: .default))
+                            .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(AppColors.foreground)
                         
                         Text(subtitle)
-                            .font(.system(size: 13, weight: .regular, design: .default))
+                            .font(AppTypography.micro)
                             .foregroundColor(AppColors.foregroundMuted)
                     }
                     
                     Spacer()
                     
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(AppColors.foregroundSubtle)
                 }
-                .padding(24)
-                .background(AppColors.border)
+                .padding(16)
             }
             
             if isExpanded {
-                Rectangle()
-                    .fill(AppColors.backgroundMuted.opacity(0.5))
-                    .frame(height: 1)
+                Divider()
+                    .background(AppColors.border)
                 
                 content
-                    .padding(24)
+                    .padding(16)
             }
         }
-        .background(AppColors.border)
-        .overlay(
-            Rectangle()
-                .stroke(AppColors.borderStrong, lineWidth: 1)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundElevated)
         )
     }
 }
@@ -372,54 +351,51 @@ struct MetricEditorRow: View {
     @ObservedObject var gameStore: GameStore
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(metricId)
-                .font(.system(size: 12, weight: .regular, design: .monospaced))
+                .font(AppTypography.caption)
                 .foregroundColor(AppColors.foregroundMuted)
             
-            HStack {
+            HStack(spacing: 10) {
                 TextField("", value: $value, format: .number)
-                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    .font(.system(size: 17, weight: .semibold).monospacedDigit())
                     .foregroundColor(AppColors.foreground)
                     .keyboardType(.decimalPad)
                     .frame(width: 80)
                     .padding(8)
-                    .background(AppColors.backgroundElevated)
-                    .overlay(
-                        Rectangle()
-                            .stroke(AppColors.borderStrong, lineWidth: 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(AppColors.backgroundMuted)
                     )
                 
                 Text("\(Int(value))")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
                     .foregroundColor(getScoreColor(value))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(getScoreColor(value).opacity(0.1))
-                    .overlay(
-                        Rectangle()
-                            .stroke(getScoreColor(value).opacity(0.3), lineWidth: 1)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(getScoreColor(value).opacity(0.12))
                     )
             }
             
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    Rectangle()
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
                         .fill(AppColors.backgroundElevated)
-                        .frame(height: 4)
+                        .frame(height: 3)
                     
-                    Rectangle()
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
                         .fill(getScoreColor(value))
-                        .frame(width: geometry.size.width * CGFloat(value / 100), height: 4)
+                        .frame(width: geometry.size.width * CGFloat(value / 100), height: 3)
                 }
             }
-            .frame(height: 4)
+            .frame(height: 3)
         }
-        .padding(16)
-        .background(AppColors.border)
-        .overlay(
-            Rectangle()
-                .stroke(AppColors.borderStrong, lineWidth: 1)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(AppColors.backgroundElevated)
         )
         .onChange(of: value) { _, newValue in
             gameStore.setMetric(metricId, value: newValue)
@@ -454,68 +430,64 @@ struct GameStateView: View {
     @State private var turnValue: Int = 1
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             HStack {
                 Text("Current Turn")
-                    .font(.system(size: 12, weight: .regular, design: .monospaced))
+                    .font(AppTypography.caption)
                     .foregroundColor(AppColors.foregroundSubtle)
-                    .textCase(.uppercase)
                 
                 Spacer()
                 
                 TextField("", value: $turnValue, format: .number)
-                    .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    .font(.system(size: 17, weight: .semibold).monospacedDigit())
                     .foregroundColor(AppColors.foreground)
                     .keyboardType(.numberPad)
                     .frame(width: 80)
                     .padding(8)
-                    .background(AppColors.backgroundMuted)
-                    .overlay(
-                        Rectangle()
-                            .stroke(AppColors.borderStrong, lineWidth: 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(AppColors.backgroundMuted)
                     )
             }
             
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Button(action: {
                     gameStore.saveGame()
                 }) {
-                    HStack {
+                    HStack(spacing: 6) {
                         Image(systemName: "square.and.arrow.down")
                             .font(.system(size: 12, weight: .medium))
-                        Text("SAVE")
-                            .font(.system(size: 12, weight: .bold, design: .default))
-                            .tracking(1)
+                        Text("Save")
+                            .font(.system(size: 13, weight: .semibold))
                     }
                     .foregroundColor(AppColors.foreground)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(AppColors.backgroundMuted)
-                    .overlay(
-                        Rectangle()
-                            .stroke(AppColors.borderStrong, lineWidth: 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(AppColors.backgroundMuted)
                     )
                 }
+                .buttonStyle(.plain)
                 
                 Button(action: {
                     gameStore.resetGame()
                 }) {
-                    HStack {
+                    HStack(spacing: 6) {
                         Image(systemName: "arrow.counterclockwise")
                             .font(.system(size: 12, weight: .medium))
-                        Text("RESET")
-                            .font(.system(size: 12, weight: .bold, design: .default))
-                            .tracking(1)
+                        Text("Reset")
+                            .font(.system(size: 13, weight: .semibold))
                     }
                     .foregroundColor(AppColors.error)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(AppColors.error.opacity(0.1))
-                    .overlay(
-                        Rectangle()
-                            .stroke(AppColors.error.opacity(0.3), lineWidth: 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(AppColors.error.opacity(0.1))
                     )
                 }
+                .buttonStyle(.plain)
             }
         }
         .onAppear {
@@ -542,7 +514,7 @@ struct GodModeSettingsView: View {
             )) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("DICK MODE")
-                        .font(.system(size: 14, weight: .bold, design: .default))
+                        .font(.system(size: 14, weight: .semibold))
                     Text("70% scenario bias towards scandalous content.")
                         .font(.system(size: 11, weight: .regular, design: .default))
                         .foregroundColor(AppColors.foregroundSubtle)
@@ -558,7 +530,7 @@ struct GodModeSettingsView: View {
             )) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("INFINITE PULSE")
-                        .font(.system(size: 14, weight: .bold, design: .default))
+                        .font(.system(size: 14, weight: .semibold))
                     Text("Remove AI intervention limits.")
                         .font(.system(size: 11, weight: .regular, design: .default))
                         .foregroundColor(AppColors.foregroundSubtle)
@@ -568,7 +540,7 @@ struct GodModeSettingsView: View {
             
             VStack(alignment: .leading, spacing: 12) {
                 Text("METRIC LOCK")
-                    .font(.system(size: 14, weight: .bold, design: .default))
+                    .font(.system(size: 14, weight: .semibold))
                 Text("Lock specific indicators to prevent drift.")
                     .font(.system(size: 11, weight: .regular, design: .default))
                     .foregroundColor(AppColors.foregroundSubtle)
@@ -585,16 +557,16 @@ struct GodModeSettingsView: View {
                             }
                             gameStore.state.lockedMetricIds = locked
                         }) {
+                            let isLocked = gameStore.state.lockedMetricIds?.contains(metricId) ?? false
                             Text(metricId.replacingOccurrences(of: "metric_", with: "").replacingOccurrences(of: "_", with: " ").capitalized)
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .font(.system(size: 11, weight: .medium))
                                 .padding(8)
                                 .frame(maxWidth: .infinity)
-                                .background((gameStore.state.lockedMetricIds?.contains(metricId) ?? false) ? AppColors.success.opacity(0.2) : AppColors.backgroundMuted)
-                                .foregroundColor((gameStore.state.lockedMetricIds?.contains(metricId) ?? false) ? AppColors.success : AppColors.foregroundMuted)
-                                .overlay(
-                                    Rectangle()
-                                        .stroke((gameStore.state.lockedMetricIds?.contains(metricId) ?? false) ? AppColors.success.opacity(0.5) : AppColors.borderStrong, lineWidth: 1)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .fill(isLocked ? AppColors.success.opacity(0.15) : AppColors.backgroundMuted)
                                 )
+                                .foregroundColor(isLocked ? AppColors.success : AppColors.foregroundMuted)
                         }
                     }
                 }
@@ -627,7 +599,7 @@ struct ThemeSelectorView: View {
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(isSelected ? theme.accentPrimary : AppColors.foreground)
                             Text(theme.subtitle)
-                                .font(.system(size: 11, design: .monospaced))
+                                .font(AppTypography.micro)
                                 .foregroundColor(AppColors.foregroundMuted)
                         }
 
@@ -640,11 +612,9 @@ struct ThemeSelectorView: View {
                         }
                     }
                     .padding(12)
-                    .background(isSelected ? theme.accentPrimary.opacity(0.08) : AppColors.backgroundElevated)
-                    .overlay(
-                        Rectangle()
-                            .stroke(isSelected ? theme.accentPrimary : AppColors.border,
-                                    lineWidth: isSelected ? 1 : 0.5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(isSelected ? theme.accentPrimary.opacity(0.08) : AppColors.backgroundElevated)
                     )
                 }
                 .buttonStyle(.plain)
@@ -666,6 +636,7 @@ struct SaveSlotsView: View {
 
     var body: some View {
         VStack(spacing: 12) {
+            autoSaveRow
             ForEach(1...PersistenceService.totalSlots, id: \.self) { slot in
                 saveSlotRow(slot: slot, meta: slots.count >= slot ? slots[slot - 1] : nil)
             }
@@ -691,17 +662,18 @@ struct SaveSlotsView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text("SLOT \(slot)")
-                            .font(.system(size: 10, weight: .black, design: .monospaced))
+                        Text("Slot \(slot)")
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(isActive ? AppColors.accentPrimary : AppColors.foregroundMuted)
-                            .tracking(2)
                         if isActive {
-                            Text("ACTIVE")
-                                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                            Text("Active")
+                                .font(.system(size: 10, weight: .semibold))
                                 .foregroundColor(AppColors.accentPrimary)
-                                .padding(.horizontal, 4).padding(.vertical, 2)
-                                .background(AppColors.accentPrimary.opacity(0.1))
-                                .overlay(Rectangle().stroke(AppColors.accentPrimary.opacity(0.3), lineWidth: 0.5))
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                        .fill(AppColors.accentPrimary.opacity(0.12))
+                                )
                         }
                     }
                     if let meta = meta {
@@ -709,7 +681,7 @@ struct SaveSlotsView: View {
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(AppColors.foreground)
                         Text(meta.subtitle)
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(AppTypography.micro)
                             .foregroundColor(AppColors.foregroundMuted)
                     } else {
                         Text("Empty slot")
@@ -721,27 +693,31 @@ struct SaveSlotsView: View {
                 // Action buttons
                 HStack(spacing: 8) {
                     if meta != nil, !isActive {
-                        Button("LOAD") {
+                        Button("Load") {
                             gameStore.loadFromSlot(slot)
                             onRefresh()
                         }
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(AppColors.foreground)
-                        .padding(.horizontal, 8).padding(.vertical, 5)
-                        .background(AppColors.backgroundMuted)
-                        .overlay(Rectangle().stroke(AppColors.borderStrong, lineWidth: 0.5))
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(AppColors.backgroundMuted)
+                        )
                     }
                     if !isActive {
-                        Button("USE") {
+                        Button("Use") {
                             PersistenceService.shared.switchToSlot(slot)
                             onRefresh()
                             loadSlots()
                         }
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(AppColors.accentPrimary)
-                        .padding(.horizontal, 8).padding(.vertical, 5)
-                        .background(AppColors.accentPrimary.opacity(0.08))
-                        .overlay(Rectangle().stroke(AppColors.accentPrimary.opacity(0.3), lineWidth: 0.5))
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(AppColors.accentPrimary.opacity(0.1))
+                        )
                     }
                     if meta != nil {
                         Button(action: {
@@ -750,38 +726,115 @@ struct SaveSlotsView: View {
                         }) {
                             Image(systemName: "trash")
                                 .font(.system(size: 11))
-                                .foregroundColor(AppColors.accentSecondary)
+                                .foregroundColor(AppColors.error)
                         }
-                        .padding(5)
-                        .background(AppColors.accentSecondary.opacity(0.08))
-                        .overlay(Rectangle().stroke(AppColors.accentSecondary.opacity(0.3), lineWidth: 0.5))
+                        .padding(6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(AppColors.error.opacity(0.08))
+                        )
                     }
                 }
             }
 
             // Save current game to this slot shortcut
             if gameStore.state.isSetup {
-                Button("SAVE CURRENT GAME HERE") {
+                Button("Save current game here") {
                     gameStore.saveToSlot(slot)
                     PersistenceService.shared.switchToSlot(slot)
                     onRefresh()
                     loadSlots()
                 }
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(.system(size: 11, weight: .medium))
                 .foregroundColor(AppColors.foregroundMuted)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
-                .background(AppColors.backgroundMuted)
-                .overlay(Rectangle().stroke(AppColors.border, lineWidth: 0.5))
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(AppColors.backgroundMuted)
+                )
             }
         }
         .padding(12)
-        .background(isActive ? AppColors.accentPrimary.opacity(0.04) : AppColors.backgroundElevated)
-        .overlay(Rectangle().stroke(isActive ? AppColors.accentPrimary.opacity(0.3) : AppColors.border, lineWidth: isActive ? 1 : 0.5))
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(isActive ? AppColors.accentPrimary.opacity(0.05) : AppColors.backgroundElevated)
+        )
     }
 
     private func loadSlots() {
         slots = PersistenceService.shared.listSlots()
+    }
+
+    @ViewBuilder
+    private var autoSaveRow: some View {
+        let meta = PersistenceService.shared.autoSaveMeta
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text("AUTO-SAVE")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(AppColors.foregroundMuted)
+                        Text("Every 3 turns")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(AppColors.foregroundMuted)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .fill(AppColors.foregroundMuted.opacity(0.12))
+                            )
+                    }
+                    if let meta = meta {
+                        Text(meta.displayName)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(AppColors.foreground)
+                        Text(meta.subtitle)
+                            .font(AppTypography.micro)
+                            .foregroundColor(AppColors.foregroundMuted)
+                    } else {
+                        Text("No auto-save yet")
+                            .font(.system(size: 12))
+                            .foregroundColor(AppColors.foregroundMuted)
+                    }
+                }
+                Spacer()
+                HStack(spacing: 8) {
+                    if meta != nil {
+                        Button("Load") {
+                            gameStore.loadFromAutoSave()
+                            onRefresh()
+                        }
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(AppColors.foreground)
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(AppColors.backgroundMuted)
+                        )
+                        Button(action: {
+                            PersistenceService.shared.deleteAutoSave()
+                            onRefresh()
+                            loadSlots()
+                        }) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 11))
+                                .foregroundColor(AppColors.error)
+                        }
+                        .padding(6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(AppColors.error.opacity(0.08))
+                        )
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
     }
 }
 
@@ -801,24 +854,30 @@ struct DiplomacyEditorView: View {
 
     private var bulkControls: some View {
         HStack(spacing: 8) {
-            Button("SET ALL TO 50") { gameStore.setAllCountryRelationships(50) }
-                .font(.system(size: 10, weight: .bold))
+            Button("Set to 50") { gameStore.setAllCountryRelationships(50) }
+                .font(.system(size: 11, weight: .medium))
                 .foregroundColor(AppColors.foreground)
-                .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(AppColors.backgroundMuted)
-                .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
-            Button("MAX ALL") { gameStore.setAllCountryRelationships(100) }
-                .font(.system(size: 10, weight: .bold))
+                .padding(.horizontal, 10).padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(AppColors.backgroundMuted)
+                )
+            Button("Max") { gameStore.setAllCountryRelationships(100) }
+                .font(.system(size: 11, weight: .medium))
                 .foregroundColor(AppColors.success)
-                .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(AppColors.success.opacity(0.08))
-                .overlay(Rectangle().stroke(AppColors.success.opacity(0.3), lineWidth: 1))
-            Button("MIN ALL") { gameStore.setAllCountryRelationships(0) }
-                .font(.system(size: 10, weight: .bold))
+                .padding(.horizontal, 10).padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(AppColors.success.opacity(0.1))
+                )
+            Button("Min") { gameStore.setAllCountryRelationships(0) }
+                .font(.system(size: 11, weight: .medium))
                 .foregroundColor(AppColors.error)
-                .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(AppColors.error.opacity(0.08))
-                .overlay(Rectangle().stroke(AppColors.error.opacity(0.3), lineWidth: 1))
+                .padding(.horizontal, 10).padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(AppColors.error.opacity(0.1))
+                )
         }
     }
 }
@@ -843,7 +902,7 @@ private struct DiplomacyRow: View {
             .accentColor(AppColors.accentPrimary)
             .frame(width: 120)
             Text(String(format: "%.0f", country.diplomacy.relationship))
-                .font(.system(size: 11, design: .monospaced))
+                .font(.system(size: 11).monospacedDigit())
                 .foregroundColor(AppColors.foregroundMuted)
                 .frame(width: 30, alignment: .trailing)
         }
@@ -861,34 +920,36 @@ struct NewsEditorView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Inject a news article into the ticker.")
-                .font(.system(size: 11))
+                .font(AppTypography.caption)
                 .foregroundColor(AppColors.foregroundSubtle)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("HEADLINE")
-                    .font(.system(size: 9, weight: .black))
+                Text("Headline")
+                    .font(AppTypography.micro)
                     .foregroundColor(AppColors.foregroundSubtle)
-                    .tracking(1)
                 TextField("Breaking: …", text: $headline)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(AppColors.foreground)
-                    .padding(8)
-                    .background(AppColors.backgroundMuted)
-                    .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(AppColors.backgroundMuted)
+                    )
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text("SUMMARY")
-                    .font(.system(size: 9, weight: .black))
+                Text("Summary")
+                    .font(AppTypography.micro)
                     .foregroundColor(AppColors.foregroundSubtle)
-                    .tracking(1)
                 TextField("Short summary…", text: $summary)
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(AppColors.foreground)
-                    .padding(8)
-                    .background(AppColors.backgroundMuted)
-                    .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(AppColors.backgroundMuted)
+                    )
             }
-            Button("INJECT ARTICLE") {
+            Button("Inject Article") {
                 guard !headline.isEmpty else { return }
                 gameStore.addNewsArticle(
                     title: headline,
@@ -899,17 +960,20 @@ struct NewsEditorView: View {
                 summary = ""
             }
             .disabled(headline.isEmpty)
-            .font(.system(size: 10, weight: .black))
+            .font(.system(size: 13, weight: .semibold))
             .foregroundColor(AppColors.background)
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(headline.isEmpty ? AppColors.border : AppColors.accentPrimary)
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(headline.isEmpty ? AppColors.border : AppColors.accentPrimary)
+            )
             .accessibilityLabel("Inject news article")
 
             Divider().background(AppColors.border)
-            Button("CLEAR ALL NEWS") {
+            Button("Clear All News") {
                 gameStore.clearNewsHistory()
             }
-            .font(.system(size: 10, weight: .bold))
+            .font(.system(size: 13, weight: .medium))
             .foregroundColor(AppColors.error)
             .accessibilityLabel("Clear all news")
         }

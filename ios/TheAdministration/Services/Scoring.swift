@@ -289,6 +289,39 @@ class ScoringEngine {
             }
         }
 
+        // Apply branch-specific readiness deltas to countryMilitaryProfile
+        for effect in option.effects {
+            guard let branchId = effect.targetBranchId, !branchId.isEmpty else { continue }
+            guard Double.random(in: 0...1) <= effect.probability else { continue }
+            guard var profile = newState.countryMilitaryProfile else { continue }
+            if var branch = profile.branches[branchId] {
+                let delta = max(-50, min(50, Int(effect.value.rounded())))
+                branch.readiness = max(0, min(100, branch.readiness + delta))
+                profile.branches[branchId] = branch
+                newState.countryMilitaryProfile = profile
+            }
+        }
+
+        // Apply branch-specific readiness deltas to countryMilitaryState (canonical type)
+        for effect in option.effects {
+            guard let branchType = effect.targetBranchType, !branchType.isEmpty else { continue }
+            guard Double.random(in: 0...1) <= effect.probability else { continue }
+            guard var milState = newState.countryMilitaryState else { continue }
+            let delta = Int((effect.value * 10).rounded())
+            if let idx = milState.branches.firstIndex(where: { $0.canonicalType == branchType }) {
+                var mutableBranches = milState.branches
+                mutableBranches[idx].readiness = max(0, min(100, mutableBranches[idx].readiness + delta))
+                newState.countryMilitaryState = CountryMilitaryState(
+                    branches: mutableBranches,
+                    nuclearProfile: milState.nuclearProfile,
+                    cyberProfile: milState.cyberProfile,
+                    overallReadiness: milState.overallReadiness,
+                    activeConflicts: milState.activeConflicts,
+                    lastUpdatedTurn: milState.lastUpdatedTurn
+                )
+            }
+        }
+
         var relationshipChangesMap: [String: Double] = [:]
         if let relationshipImpact = option.relationshipImpact {
             for (countryId, delta) in relationshipImpact {
@@ -398,7 +431,7 @@ class ScoringEngine {
 
     static func generateBriefingForDecision(option: Option, metricDeltas: [String: Double]) -> Briefing {
         var title = option.outcomeHeadline ?? "Directive Implemented"
-        var description = option.outcomeSummary ?? ""
+        var description = option.outcomeSummary?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         
         if description.isEmpty {
             // Pick a primary delta
@@ -420,11 +453,25 @@ class ScoringEngine {
             }
         }
         
-        if let context = option.outcomeContext {
+        if let context = option.outcomeContext?.trimmingCharacters(in: .whitespacesAndNewlines), !context.isEmpty {
             description += "\n\n\(context)"
         }
         
-        return Briefing(title: title, description: description, metrics: [], boosts: [])
+        let metricDeltaItems: [MetricDelta] = metricDeltas
+            .filter { abs($0.value) > 0.5 }
+            .sorted { abs($0.value) > abs($1.value) }
+            .prefix(6)
+            .map { metricId, delta in
+                let name = metricId
+                    .replacingOccurrences(of: "metric_", with: "")
+                    .replacingOccurrences(of: "_", with: " ")
+                    .split(separator: " ")
+                    .map { $0.prefix(1).uppercased() + $0.dropFirst() }
+                    .joined(separator: " ")
+                return MetricDelta(id: metricId, delta: delta, name: name, cabinetOffset: nil, playerOffset: nil, netChange: nil)
+            }
+
+        return Briefing(title: title, description: description, metrics: Array(metricDeltaItems), boosts: [], humanCost: option.humanCost)
     }
     
     struct Briefing {
@@ -432,6 +479,7 @@ class ScoringEngine {
         let description: String
         let metrics: [MetricDelta]
         let boosts: [Boost]
+        let humanCost: HumanCost?
     }
     
     struct MetricDelta {
@@ -744,7 +792,24 @@ class ScoringEngine {
             newState.metricHistory["metric_approval"] = []
         }
         newState.metricHistory["metric_approval"]?.append(newState.metrics["metric_approval"] ?? INITIAL_METRIC_VALUE)
-        
+
+        // Accumulate hidden metrics from canonical secondary impact rules
+        var hidden = newState.hiddenMetrics ?? [:]
+        let employment = newState.metrics["metric_employment"] ?? 50.0
+        let inflation  = newState.metrics["metric_inflation"]  ?? 30.0
+        let corruption = newState.metrics["metric_corruption"] ?? 25.0
+        if employment < 40 {
+            hidden["unrest"] = min(100, (hidden["unrest"] ?? 0) + 2)
+        }
+        if inflation > 70 {
+            hidden["unrest"] = min(100, (hidden["unrest"] ?? 0) + 1)
+        }
+        if corruption > 60 {
+            let current = newState.metrics["metric_liberty"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_liberty"] = clampMetricInt(current - 1)
+        }
+        newState.hiddenMetrics = hidden
+
         if newState.maxTurns == 0 {
             newState.maxTurns = calculateMaxTurns(newState)
         }

@@ -12,54 +12,56 @@ struct ContentView: View {
     @State private var showOnboarding = false
     @State private var showGameMenu = false
 
-    var body: some View {
-        ZStack {
-            Group {
-                if showWelcome {
-                    WelcomeView(gameStore: gameStore, showWelcome: $showWelcome)
-                } else if !gameStore.state.isSetup {
-                    SetupFlowView(gameStore: gameStore)
-                        .onDisappear {
-                            if gameStore.state.isSetup {
-                                let done = UserDefaults.standard.bool(forKey: "onboarding_complete")
-                                if !done { showOnboarding = true }
-                            }
+var body: some View {
+    ZStack {
+        Group {
+            if showWelcome {
+                WelcomeView(gameStore: gameStore, showWelcome: $showWelcome)
+            } else if !gameStore.state.isSetup {
+                SetupFlowView(gameStore: gameStore)
+                    .onDisappear {
+                        if gameStore.state.isSetup {
+                            let done = UserDefaults.standard.bool(forKey: "onboarding_complete")
+                            if !done { showOnboarding = true }
                         }
-                } else {
-                    MainTabView(gameStore: gameStore, selectedTab: $selectedTab)
-                }
-            }
-            .animation(AppMotion.standard, value: showWelcome)
-            .animation(AppMotion.standard, value: gameStore.state.isSetup)
-
-            if let review = gameStore.endGameReview {
-                EndGameReviewView(review: review) {
-                    gameStore.resetGame()
-                    showWelcome = false
-                    selectedTab = 0
-                }
-                .transition(.opacity)
-                .zIndex(10)
-            }
-
-            if showOnboarding {
-                OnboardingOverlay(isVisible: $showOnboarding)
-                    .zIndex(20)
-            }
-
-            if showGameMenu {
-                GameMenuSheet(gameStore: gameStore) {
-                    showWelcome = true
-                }
-                .transition(
-                    AnyTransition
-                        .move(edge: .bottom)
-                        .combined(with: AnyTransition.opacity)
-                )
-                .zIndex(30)
+                    }
+            } else {
+                MainTabView(gameStore: gameStore, selectedTab: $selectedTab)
             }
         }
+        .animation(AppMotion.standard, value: showWelcome)
+        .animation(AppMotion.standard, value: gameStore.state.isSetup)
+
+        if let review = gameStore.endGameReview {
+            EndGameReviewView(review: review) {
+                gameStore.resetGame()
+                showWelcome = false
+                selectedTab = 0
+            }
+            .transition(.opacity)
+            .zIndex(10)
+        }
+
+        if showOnboarding {
+            OnboardingOverlay(isVisible: $showOnboarding)
+                .zIndex(20)
+        }
+
+        if showGameMenu {
+            GameMenuSheet(gameStore: gameStore) {
+                showWelcome = true
+            }
+            .transition(
+                AnyTransition
+                    .move(edge: .bottom)
+                    .combined(with: AnyTransition.opacity)
+            )
+            .zIndex(30)
+        }
     }
+    // Apply screen background modifier for consistency
+    .screenBackground()
+}
 }
 
 // MARK: - MainTabView
@@ -118,6 +120,12 @@ struct MainTabView: View {
                     }
                 )
         }
+        .onChange(of: gameStore.requestedTab) { _, newTab in
+            if let tab = newTab {
+                withAnimation(AppMotion.quickSnap) { selectedTab = tab }
+                gameStore.requestedTab = nil
+            }
+        }
         .ignoresSafeArea(edges: .bottom)
         .sheet(isPresented: $showMenu) {
             GameMenuSheet(gameStore: gameStore) {
@@ -135,26 +143,21 @@ struct CustomTabBar: View {
     @Binding var selectedTab: Int
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(tabs) { tab in
-                tabButton(tab)
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(AppColors.border)
+                .frame(height: 1)
+
+            HStack(spacing: 0) {
+                ForEach(tabs) { tab in
+                    tabButton(tab)
+                }
             }
+            .padding(.horizontal, 4)
+            .padding(.top, 8)
+            .padding(.bottom, max(safeAreaBottom, 12))
+            .background(AppColors.background)
         }
-        .padding(.horizontal, 8)
-        .padding(.top, 12)
-        .padding(.bottom, max(safeAreaBottom, 16))
-        .background(
-            ZStack {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                Rectangle()
-                    .fill(AppColors.background.opacity(0.7))
-                Rectangle()
-                    .fill(AppColors.border)
-                    .frame(height: 1)
-                    .frame(maxHeight: .infinity, alignment: .top)
-            }
-        )
     }
 
     @ViewBuilder
@@ -167,33 +170,17 @@ struct CustomTabBar: View {
                 withAnimation(AppMotion.quickSnap) { selectedTab = tab.id }
             }
         }) {
-            VStack(spacing: 4) {
+            VStack(spacing: 3) {
                 Image(systemName: isActive ? tab.activeIcon : tab.icon)
-                    .font(.system(size: 18, weight: isActive ? .semibold : .regular))
+                    .font(.system(size: 17, weight: isActive ? .semibold : .regular))
                     .foregroundColor(isActive ? AppColors.accentPrimary : AppColors.foregroundSubtle)
-                    .scaleEffect(isActive ? 1.1 : 1.0)
-                    .animation(AppMotion.quickSnap, value: isActive)
 
                 Text(tab.label)
-                    .font(AppTypography.micro)
+                    .font(.system(size: 10, weight: .regular))
                     .foregroundColor(isActive ? AppColors.accentPrimary : AppColors.foregroundSubtle)
-                    .tracking(0.5)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 4)
-            .background(
-                isActive ? AppColors.accentPrimary.opacity(0.08) : Color.clear
-            )
-            .overlay(
-                Group {
-                    if isActive {
-                        AppColors.accentGradient
-                            .frame(height: 2)
-                            .frame(maxHeight: .infinity, alignment: .top)
-                            .animation(AppMotion.quickSnap, value: isActive)
-                    }
-                }
-            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel(tab.label)

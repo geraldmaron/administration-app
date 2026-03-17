@@ -6,6 +6,7 @@
 import * as admin from 'firebase-admin';
 import { Scenario } from './types';
 import * as crypto from 'crypto';
+import { type BundleId } from './data/schemas/bundleIds';
 import {
     generateEmbedding,
     getEmbeddingText,
@@ -379,4 +380,17 @@ export async function fetchScenarios(hideNewsScenarios: boolean = false, limit: 
     });
 
     return scenarios;
+}
+
+export async function getActiveBundleCount(
+    bundle: BundleId,
+    db: admin.firestore.Firestore
+): Promise<number> {
+    const snap = await db
+        .collection('scenarios')
+        .where('metadata.bundle', '==', bundle)
+        .where('is_active', '==', true)
+        .count()
+        .get();
+    return snap.data().count;
 }

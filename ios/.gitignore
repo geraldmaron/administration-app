@@ -1,6 +1,6 @@
 # Firebase config — download from Firebase console, add to Xcode manually.
 # See GoogleService-Info.plist.template for setup instructions.
-TheAdministration/GoogleService-Info.plist
+TheAdministration/Resources/GoogleService-Info.plist
 
 # Xcode build artifacts
 DerivedData/

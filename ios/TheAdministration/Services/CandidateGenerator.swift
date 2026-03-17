@@ -72,13 +72,20 @@ class CandidateGenerator {
 
     // MARK: - Name picking
 
-    private static func pickNameForRegion(_ rng: RNG, region: String?, config: AppConfig?) -> String {
-        let regionKey = region ?? "North America"
-        let names = config?.names(for: regionKey)
-        let firstPool = names?.first ?? []
-        let lastPool = names?.last ?? []
-        let first = rng.pick(firstPool) ?? "Alex"
-        let last = rng.pick(lastPool) ?? "Smith"
+    private static func pickNameForRegion(_ rng: RNG, region: String?, config: AppConfig?, gender: PersonGender, excludedFirstNames: Set<String> = [], excludedLastNames: Set<String> = []) -> String {
+        let regionKey = region ?? "north_america"
+        let pool = config?.namePoolsByRegion[regionKey] ?? config?.namePoolsByRegion["north_america"] ?? config?.fallbackNamePool
+        let firstPool: [String]
+        switch gender {
+        case .male:      firstPool = pool?.firstMale    ?? []
+        case .female:    firstPool = pool?.firstFemale  ?? []
+        case .nonbinary: firstPool = pool?.firstNeutral ?? pool?.firstMale ?? []
+        }
+        let lastPool = pool?.last ?? []
+        let availableFirst = firstPool.filter { !excludedFirstNames.contains($0) }
+        let availableLast = lastPool.filter { !excludedLastNames.contains($0) }
+        let first = rng.pick(availableFirst.isEmpty ? firstPool : availableFirst) ?? "Alex"
+        let last = rng.pick(availableLast.isEmpty ? lastPool : availableLast) ?? "Smith"
         return "\(first) \(last)"
     }
 
@@ -324,13 +331,14 @@ class CandidateGenerator {
     // MARK: - Public API
 
     /// Generate election candidates for a country using Firebase AppConfig data.
-    static func generateCandidates(country: Country, count: Int = 10, config: AppConfig?) -> [Candidate] {
+    static func generateCandidates(country: Country, count: Int = 10, gender: PersonGender? = nil, config: AppConfig?, partyNames: [String]? = nil) -> [Candidate] {
         let rng = RNG(seed: seedFromString(country.id + String(Date().timeIntervalSince1970)))
-        let parties = config?.parties(for: country.id) ?? ["Independent"]
+        let parties = partyNames?.isEmpty == false ? partyNames! : (config?.parties(for: country.id) ?? ["Independent"])
         let traitPool = config?.traitPool ?? []
         var candidates: [Candidate] = []
 
         for i in 0..<count {
+            let resolvedGender: PersonGender = gender ?? PersonGender.allCases.randomElement() ?? .male
             var stats = PlayerStats(
                 diplomacy: rng.float(15, 85), economics: rng.float(15, 85),
                 military: rng.float(15, 85), management: rng.float(25, 90),
@@ -355,28 +363,40 @@ class CandidateGenerator {
             let careerHistory = [background] + (rng.next() < 0.5 ? ["Senior Advisor", "Research Fellow"] : ["Regional Director", "Municipal Leader"])
 
             var candidate = Candidate(
-                id: "cand_\(country.id)_\(i)", name: pickNameForRegion(rng, region: country.region, config: config),
+                id: "cand_\(country.id)_\(i)", name: pickNameForRegion(rng, region: country.region, config: config, gender: resolvedGender),
                 party: party, background: background, education: degreeInfo.text,
                 experience: "\(yearsOfExperience) Years Tenure", institution: institution,
                 age: age, yearsOfExperience: yearsOfExperience, stats: stats, traits: traits,
                 analysisBullets: analysis, strengths: sw.strengths, weaknesses: sw.weaknesses,
                 degreeType: degreeInfo.type, degreeField: degreeInfo.field, skills: skills,
-                careerHistory: careerHistory, potentialScore: potentialScore, cost: nil
+                careerHistory: careerHistory, potentialScore: potentialScore, cost: nil, gender: resolvedGender
             )
             candidate.cost = CabinetPointsService.calculateCandidateCost(candidate: candidate)
+            candidate.roleAffinity = deriveRoleAffinity(degreeField: candidate.degreeField, skills: candidate.skills)
             candidates.append(candidate)
         }
         return candidates.sorted { $0.name < $1.name }
     }
 
     /// Generate minister candidates for a specific cabinet role using Firebase AppConfig.
-    static func generateMinisters(roleId: String, category: String, region: String?, countryId: String? = nil, seed: Int? = nil, count: Int = 1, config: AppConfig?) -> [Candidate] {
+    static func generateMinisters(roleId: String, category: String, region: String?, countryId: String? = nil, seed: Int? = nil, count: Int = 1, gender: PersonGender? = nil, config: AppConfig?, partyNames: [String]? = nil, excludedFirstNames: Set<String> = [], excludedLastNames: Set<String> = []) -> [Candidate] {
         let rng = RNG(seed: seed ?? Int(Date().timeIntervalSince1970))
-        let parties = config?.parties(for: countryId) ?? ["Independent"]
+        let parties = partyNames?.isEmpty == false ? partyNames! : (config?.parties(for: countryId) ?? ["Independent"])
         let traitPool = config?.traitPool ?? []
         var candidates: [Candidate] = []
+        var usedFirst = excludedFirstNames
+        var usedLast = excludedLastNames
 
         for i in 0..<count {
+            let resolvedGender: PersonGender = gender ?? PersonGender.allCases.randomElement() ?? .male
+            let categoryIdeology: Double
+            switch category {
+            case "Defense", "Security", "Military": categoryIdeology = rng.float(6, 9)
+            case "Diplomacy", "State":              categoryIdeology = rng.float(3, 6)
+            case "Economy", "Treasury":             categoryIdeology = rng.float(4, 7)
+            case "Environment", "Health", "Labor":  categoryIdeology = rng.float(2, 5)
+            default:                                categoryIdeology = rng.float(3, 7)
+            }
             var stats = PlayerStats(
                 diplomacy: rng.float(40, 85), economics: rng.float(40, 85),
                 military: rng.float(40, 85), management: rng.float(45, 92),
@@ -386,18 +406,18 @@ class CandidateGenerator {
 
             switch category {
             case "Diplomacy", "State":
-                stats = PlayerStats(diplomacy: rng.float(50, 95), economics: stats.economics, military: stats.military, management: stats.management, compassion: stats.compassion, integrity: rng.float(40, 90), charisma: nil, competency: nil, ideology: nil, corruption: nil)
+                stats = PlayerStats(diplomacy: rng.float(50, 95), economics: stats.economics, military: stats.military, management: stats.management, compassion: stats.compassion, integrity: rng.float(40, 90), charisma: nil, competency: nil, ideology: categoryIdeology, corruption: nil)
             case "Economy", "Treasury":
-                stats = PlayerStats(diplomacy: stats.diplomacy, economics: rng.float(50, 95), military: stats.military, management: rng.float(40, 90), compassion: stats.compassion, integrity: stats.integrity, charisma: nil, competency: nil, ideology: nil, corruption: nil)
+                stats = PlayerStats(diplomacy: stats.diplomacy, economics: rng.float(50, 95), military: stats.military, management: rng.float(40, 90), compassion: stats.compassion, integrity: stats.integrity, charisma: nil, competency: nil, ideology: categoryIdeology, corruption: nil)
             case "Defense", "Security":
-                stats = PlayerStats(diplomacy: stats.diplomacy, economics: stats.economics, military: rng.float(55, 95), management: rng.float(35, 90), compassion: stats.compassion, integrity: rng.float(35, 85), charisma: nil, competency: nil, ideology: nil, corruption: nil)
+                stats = PlayerStats(diplomacy: stats.diplomacy, economics: stats.economics, military: rng.float(55, 95), management: rng.float(35, 90), compassion: stats.compassion, integrity: rng.float(35, 85), charisma: nil, competency: nil, ideology: categoryIdeology, corruption: nil)
             case "Executive":
-                stats = PlayerStats(diplomacy: stats.diplomacy, economics: stats.economics, military: stats.military, management: rng.float(55, 95), compassion: stats.compassion, integrity: rng.float(35, 90), charisma: nil, competency: nil, ideology: nil, corruption: nil)
+                stats = PlayerStats(diplomacy: stats.diplomacy, economics: stats.economics, military: stats.military, management: rng.float(55, 95), compassion: stats.compassion, integrity: rng.float(35, 90), charisma: nil, competency: nil, ideology: categoryIdeology, corruption: nil)
             default: break
             }
 
             if rng.float(0, 100) < 20 {
-                stats = PlayerStats(diplomacy: rng.float(20, 55), economics: rng.float(20, 55), military: rng.float(20, 55), management: rng.float(25, 60), compassion: rng.float(20, 60), integrity: rng.float(20, 60), charisma: nil, competency: nil, ideology: nil, corruption: nil)
+                stats = PlayerStats(diplomacy: rng.float(20, 55), economics: rng.float(20, 55), military: rng.float(20, 55), management: rng.float(25, 60), compassion: rng.float(20, 60), integrity: rng.float(20, 60), charisma: nil, competency: nil, ideology: categoryIdeology, corruption: nil)
             }
 
             let traits = rng.pickMultiple(traitPool, rng.range(0, 2))
@@ -411,23 +431,78 @@ class CandidateGenerator {
             let potentialScore = rng.float(50, 98)
             let careerHistory = [background] + (rng.next() < 0.5 ? ["Cabinet Liaison", "Senior Technocrat"] : ["Department Head", "Deputy Minister"])
 
+            let generatedName = pickNameForRegion(rng, region: region, config: config, gender: resolvedGender, excludedFirstNames: usedFirst, excludedLastNames: usedLast)
+            let nameParts = generatedName.split(separator: " ", maxSplits: 1)
+            if let fn = nameParts.first { usedFirst.insert(String(fn)) }
+            if nameParts.count > 1 { usedLast.insert(String(nameParts[1])) }
             var candidate = Candidate(
-                id: "minister_\(category)_\(i)", name: pickNameForRegion(rng, region: region, config: config),
+                id: "minister_\(category)_\(i)", name: generatedName,
                 party: rng.pick(parties) ?? "Independent", background: background, education: degreeInfo.text,
                 experience: "\(yearsOfExperience) Years Industry Experience", institution: institution,
                 age: age, yearsOfExperience: yearsOfExperience, stats: stats, traits: traits,
                 analysisBullets: generateAnalysis(stats: stats, traits: traits), strengths: sw.strengths,
                 weaknesses: sw.weaknesses, degreeType: degreeInfo.type, degreeField: degreeInfo.field,
-                skills: skills, careerHistory: careerHistory, potentialScore: potentialScore, cost: nil
+                skills: skills, careerHistory: careerHistory, potentialScore: potentialScore, cost: nil, gender: resolvedGender
             )
             candidate.cost = CabinetPointsService.calculateCandidateCost(candidate: candidate)
+            candidate.roleAffinity = deriveRoleAffinity(degreeField: candidate.degreeField, skills: candidate.skills)
             candidates.append(candidate)
         }
         return candidates
     }
 
+    private static func deriveRoleAffinity(degreeField: String?, skills: [String]?) -> [String] {
+        var affinities: [String] = []
+        let field = (degreeField ?? "").lowercased()
+        let skillSet = (skills ?? []).map { $0.lowercased() }
+
+        let combined = field + " " + skillSet.joined(separator: " ")
+
+        if combined.contains("economics") || combined.contains("finance") || combined.contains("business") {
+            affinities.append(contentsOf: ["role_economy", "role_trade"])
+        }
+        if combined.contains("law") || combined.contains("legal") || combined.contains("justice") {
+            affinities.append(contentsOf: ["role_justice", "role_intelligence"])
+        }
+        if combined.contains("medicine") || combined.contains("health") || combined.contains("medical") {
+            affinities.append("role_health")
+        }
+        if combined.contains("engineering") || combined.contains("infrastructure") || combined.contains("technology") {
+            affinities.append(contentsOf: ["role_infrastructure", "role_science"])
+        }
+        if combined.contains("military") || combined.contains("defense") || combined.contains("security") {
+            affinities.append("role_defense")
+        }
+        if combined.contains("public policy") || combined.contains("administration") || combined.contains("social") {
+            affinities.append(contentsOf: ["role_interior", "role_labor"])
+        }
+        if combined.contains("international") || combined.contains("diplomacy") || combined.contains("foreign") {
+            affinities.append("role_diplomacy")
+        }
+        if combined.contains("environment") || combined.contains("ecology") || combined.contains("climate") {
+            affinities.append("role_environment")
+        }
+        if combined.contains("science") || combined.contains("research") || combined.contains("physics") {
+            affinities.append("role_science")
+        }
+
+        return Array(Set(affinities))
+    }
+
+    private static func computeRoleAffinity(stats: PlayerStats) -> [String] {
+        let ranked: [(String, Double)] = [
+            ("defense",   stats.military),
+            ("diplomacy", stats.diplomacy),
+            ("economy",   stats.economics),
+            ("executive", stats.management),
+            ("social",    stats.compassion),
+            ("justice",   stats.integrity),
+        ]
+        return ranked.sorted { $0.1 > $1.1 }.prefix(3).map { $0.0 }
+    }
+
     /// Generate the player's initial profile using Firebase AppConfig.
-    static func generatePlayerProfile(countryId: String? = nil, config: AppConfig?) -> PlayerProfile {
+    static func generatePlayerProfile(countryId: String? = nil, config: AppConfig?, partyNames: [String]? = nil) -> PlayerProfile {
         let rng = RNG(seed: Int(Date().timeIntervalSince1970))
         var stats = PlayerStats(
             diplomacy: rng.float(30, 80), economics: rng.float(30, 80),
@@ -441,14 +516,14 @@ class CandidateGenerator {
 
         let traitPool = config?.traitPool ?? []
         let traits = rng.pickMultiple(traitPool, 2)
-        let parties = config?.parties(for: countryId) ?? ["Independent"]
+        let parties = partyNames?.isEmpty == false ? partyNames! : (config?.parties(for: countryId) ?? ["Independent"])
         let backgrounds = config?.backgrounds(for: nil) ?? ["Career Politician", "Business Tycoon"]
         let background = rng.pick(backgrounds) ?? "Career Politician"
         let approaches = config?.governmentalApproaches ?? ["Pragmatist", "Idealist"]
         let sw = generateStrengthsWeaknesses(stats: stats, traits: traits, background: background)
 
         return PlayerProfile(
-            name: pickNameForRegion(rng, region: nil, config: config),
+            name: pickNameForRegion(rng, region: nil, config: config, gender: .male),
             party: rng.pick(parties) ?? "Independent",
             approach: rng.pick(approaches) ?? "Pragmatist",
             stats: stats, traits: traits, background: background,
@@ -457,9 +532,9 @@ class CandidateGenerator {
     }
 
     /// Pick a random name for a region using AppConfig.
-    public static func pickName(region: String?, config: AppConfig?) -> String {
+    public static func pickName(region: String?, gender: PersonGender = .male, config: AppConfig?) -> String {
         let rng = RNG(seed: nil)
-        return pickNameForRegion(rng, region: region, config: config)
+        return pickNameForRegion(rng, region: region, config: config, gender: gender)
     }
 
     // MARK: - Helpers

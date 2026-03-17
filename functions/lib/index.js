@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateScenariosManual = exports.getScenarios = exports.rebuildScenarioBundles = exports.dailyNewsToScenarios = exports.onScenarioJobCreated = void 0;
+exports.generateScenariosManual = exports.getScenarios = exports.rebuildScenarioBundles = exports.dailyNewsToScenarios = exports.recoverZombieJobs = exports.onScenarioJobCreated = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
@@ -44,6 +44,7 @@ const config_validator_1 = require("./lib/config-validator");
 const model_providers_1 = require("./lib/model-providers");
 var background_jobs_1 = require("./background-jobs");
 Object.defineProperty(exports, "onScenarioJobCreated", { enumerable: true, get: function () { return background_jobs_1.onScenarioJobCreated; } });
+Object.defineProperty(exports, "recoverZombieJobs", { enumerable: true, get: function () { return background_jobs_1.recoverZombieJobs; } });
 var news_to_scenarios_1 = require("./news-to-scenarios");
 Object.defineProperty(exports, "dailyNewsToScenarios", { enumerable: true, get: function () { return news_to_scenarios_1.dailyNewsToScenarios; } });
 // Admin callable: rebuild all scenario bundle JSON files in Firebase Storage.
@@ -139,7 +140,7 @@ exports.generateScenariosManual = (0, https_1.onCall)({
     enforceAppCheck: false,
     timeoutSeconds: 540,
     memory: '1GiB',
-    secrets: ["OPENAI_API_KEY", "MOONSHOT_API_KEY"]
+    secrets: ["OPENAI_API_KEY"]
 }, async (request) => {
     var _a, _b, _c;
     if (!request.auth) {
@@ -169,6 +170,17 @@ exports.generateScenariosManual = (0, https_1.onCall)({
     if (invalidBundles.length > 0) {
         throw new Error(`Invalid bundle IDs: ${invalidBundles.join(', ')}. Valid bundles: ${bundleIds_1.ALL_BUNDLE_IDS.join(', ')}`);
     }
+    const genConfigSnap = await db.doc('world_state/generation_config').get();
+    const genConfigData = genConfigSnap.data();
+    const maxPendingJobs = (_b = genConfigData === null || genConfigData === void 0 ? void 0 : genConfigData.max_pending_jobs) !== null && _b !== void 0 ? _b : 10;
+    const [pendingSnap, runningSnap] = await Promise.all([
+        db.collection('generation_jobs').where('status', '==', 'pending').count().get(),
+        db.collection('generation_jobs').where('status', '==', 'running').count().get(),
+    ]);
+    const activeJobCount = pendingSnap.data().count + runningSnap.data().count;
+    if (activeJobCount >= maxPendingJobs) {
+        throw new Error(`Too many active jobs (${activeJobCount}/${maxPendingJobs}). Wait for running jobs to complete.`);
+    }
     const results = [];
     const skipped = [];
     let totalSaved = 0;
@@ -197,15 +209,7 @@ exports.generateScenariosManual = (0, https_1.onCall)({
         applicable_countries: Array.isArray(applicable_countries) ? applicable_countries : [],
         modelConfig: modelConfig || null,
     });
-    // Read generation config for bundle-level concurrency (soft-capped at 5 with adaptive backoff)
-    let maxBundleConcurrency = 3;
-    try {
-        const genConfigSnap = await db.doc('world_state/generation_config').get();
-        maxBundleConcurrency = Math.min((_c = (_b = genConfigSnap.data()) === null || _b === void 0 ? void 0 : _b.max_bundle_concurrency) !== null && _c !== void 0 ? _c : 3, 5);
-    }
-    catch (_d) {
-        logger.warn('[generate] Could not read generation_config; using maxBundleConcurrency=3');
-    }
+    const maxBundleConcurrency = Math.min((_c = genConfigData === null || genConfigData === void 0 ? void 0 : genConfigData.max_bundle_concurrency) !== null && _c !== void 0 ? _c : 3, 5);
     let adaptiveBundleConcurrency = maxBundleConcurrency;
     let consecutiveCleanBatches = 0;
     // Process bundles in adaptive parallel batches — each bundle internally runs concept_concurrency
@@ -218,6 +222,14 @@ exports.generateScenariosManual = (0, https_1.onCall)({
         const batchResults = await Promise.all(batchBundles.map(async (bundle) => {
             const bundleSaved = [];
             const bundleSkipped = [];
+            // Ceiling check - skip bundle if active scenario count is at or above configured ceiling
+            const ceiling = await (0, scenario_engine_1.getGenerationConfig)();
+            const bundleActiveCount = await (0, storage_1.getActiveBundleCount)(bundle, db);
+            if (bundleActiveCount >= ceiling.max_active_scenarios_per_bundle) {
+                logger.warn(`[ceiling] Bundle ${bundle} at ceiling: ${bundleActiveCount}/${ceiling.max_active_scenarios_per_bundle} — skipping`);
+                bundleSkipped.push({ bundle, reason: 'ceiling', activeCount: bundleActiveCount });
+                return { bundle, bundleSaved, bundleSkipped };
+            }
             // Check cooldown (shorter for manual: 5 minutes). Skipped when bypassCooldown is set.
             if (!bypassCooldown) {
                 const shouldGenerate = await checkAndUpdateBundleGeneration(bundle, 'manual', 5);
@@ -297,20 +309,21 @@ exports.generateScenariosManual = (0, https_1.onCall)({
                 progress: Math.min(100, Math.round((processedBundles / Math.max(1, bundles.length)) * 100)),
                 completedCount: totalSaved,
                 failedCount: totalSkipped,
-                results: results.slice(0, 100).map((s) => { var _a; return ({ id: s.id, title: s.title, bundle: (_a = s.metadata) === null || _a === void 0 ? void 0 : _a.bundle }); }),
+                results: results.slice(0, 100).map((s) => { var _a, _b, _c, _d, _e, _f; return ({ id: s.id, title: s.title, bundle: (_a = s.metadata) === null || _a === void 0 ? void 0 : _a.bundle, auditScore: (_c = (_b = s.metadata) === null || _b === void 0 ? void 0 : _b.auditMetadata) === null || _c === void 0 ? void 0 : _c.score, autoFixed: (_f = (_e = (_d = s.metadata) === null || _d === void 0 ? void 0 : _d.auditMetadata) === null || _e === void 0 ? void 0 : _e.autoFixed) !== null && _f !== void 0 ? _f : false }); }),
                 errors: skipped.slice(0, 50),
             });
         }
     }
-    await jobRef.update({
-        status: 'completed',
-        completedAt: admin.firestore.FieldValue.serverTimestamp(),
-        progress: 100,
-        completedCount: totalSaved,
-        failedCount: totalSkipped,
-        results: results.slice(0, 100).map((s) => { var _a; return ({ id: s.id, title: s.title, bundle: (_a = s.metadata) === null || _a === void 0 ? void 0 : _a.bundle }); }),
-        errors: skipped.slice(0, 50),
-    });
+    const scoredResults = results.filter(r => { var _a, _b; return typeof ((_b = (_a = r.metadata) === null || _a === void 0 ? void 0 : _a.auditMetadata) === null || _b === void 0 ? void 0 : _b.score) === 'number'; });
+    const auditSummary = scoredResults.length > 0 ? {
+        avgScore: Math.round((scoredResults.reduce((s, r) => { var _a, _b, _c; return s + ((_c = (_b = (_a = r.metadata) === null || _a === void 0 ? void 0 : _a.auditMetadata) === null || _b === void 0 ? void 0 : _b.score) !== null && _c !== void 0 ? _c : 0); }, 0) / scoredResults.length) * 10) / 10,
+        minScore: Math.min(...scoredResults.map(r => { var _a, _b; return (_b = (_a = r.metadata) === null || _a === void 0 ? void 0 : _a.auditMetadata) === null || _b === void 0 ? void 0 : _b.score; })),
+        maxScore: Math.max(...scoredResults.map(r => { var _a, _b; return (_b = (_a = r.metadata) === null || _a === void 0 ? void 0 : _a.auditMetadata) === null || _b === void 0 ? void 0 : _b.score; })),
+        below70Count: scoredResults.filter(r => { var _a, _b, _c; return ((_c = (_b = (_a = r.metadata) === null || _a === void 0 ? void 0 : _a.auditMetadata) === null || _b === void 0 ? void 0 : _b.score) !== null && _c !== void 0 ? _c : 0) < 70; }).length,
+        above90Count: scoredResults.filter(r => { var _a, _b, _c; return ((_c = (_b = (_a = r.metadata) === null || _a === void 0 ? void 0 : _a.auditMetadata) === null || _b === void 0 ? void 0 : _b.score) !== null && _c !== void 0 ? _c : 0) >= 90; }).length,
+    } : null;
+    const finalTelemetry = (0, model_providers_1.getProviderRetryTelemetry)();
+    await jobRef.update(Object.assign(Object.assign({ status: 'completed', completedAt: admin.firestore.FieldValue.serverTimestamp(), progress: 100, completedCount: totalSaved, failedCount: totalSkipped, results: results.slice(0, 100).map((s) => { var _a, _b, _c, _d, _e, _f; return ({ id: s.id, title: s.title, bundle: (_a = s.metadata) === null || _a === void 0 ? void 0 : _a.bundle, auditScore: (_c = (_b = s.metadata) === null || _b === void 0 ? void 0 : _b.auditMetadata) === null || _c === void 0 ? void 0 : _c.score, autoFixed: (_f = (_e = (_d = s.metadata) === null || _d === void 0 ? void 0 : _d.auditMetadata) === null || _e === void 0 ? void 0 : _e.autoFixed) !== null && _f !== void 0 ? _f : false }); }), errors: skipped.slice(0, 50) }, (auditSummary ? { auditSummary } : {})), { rateLimitRetries: finalTelemetry.rateLimitRetries }));
     return {
         success: true,
         jobId: jobRef.id,

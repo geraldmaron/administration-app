@@ -14,6 +14,7 @@ const prompt_templates_1 = require("./lib/prompt-templates");
 const firestore_1 = require("firebase-admin/firestore");
 const model_providers_1 = require("./lib/model-providers");
 const content_quality_1 = require("./lib/content-quality");
+const narrative_review_1 = require("./lib/narrative-review");
 const semantic_dedup_1 = require("./lib/semantic-dedup");
 const grounded_effects_1 = require("./lib/grounded-effects");
 // ------------------------------------------------------------------
@@ -29,14 +30,17 @@ const DRAFTER_MODEL = process.env.DRAFTER_MODEL || 'gpt-4o-mini';
 // Model configurations for generation phases
 // Token limits increased from 8K to accommodate complex scenarios with detailed outcomes
 const ARCHITECT_CONFIG = { maxTokens: 4096, temperature: 0.6 };
-const DRAFTER_CONFIG = { maxTokens: 10240, temperature: 0.7 };
+// Drafter uses ~14K input + 3K output tokens; under Tier 1 rate limits concurrent
+// calls regularly take 60-120s and can exceed 120s when throttled. 300s keeps the
+// call alive while staying well within the Cloud Function's 540s budget.
+const DRAFTER_CONFIG = { maxTokens: 10240, temperature: 0.4, timeoutMs: 300000 };
 const REPAIR_MODEL = process.env.REPAIR_MODEL || 'gpt-4o-mini';
 const REPAIR_CONFIG = { maxTokens: 4096, temperature: 0.3 };
 let _generationConfigCache = null;
 let _generationConfigFetchedAt = 0;
 const GENERATION_CONFIG_TTL_MS = 5 * 60 * 1000; // 5-minute in-memory cache
 async function getGenerationConfig() {
-    var _a, _b, _c;
+    var _a, _b, _c, _d, _e;
     const now = Date.now();
     if (_generationConfigCache && (now - _generationConfigFetchedAt) < GENERATION_CONFIG_TTL_MS) {
         return _generationConfigCache;
@@ -49,7 +53,7 @@ async function getGenerationConfig() {
         throw new Error('[ScenarioEngine] world_state/generation_config not found in Firestore. Run the seed script.');
     }
     const raw = snap.data();
-    _generationConfigCache = Object.assign(Object.assign({}, raw), { llm_repair_enabled: (_a = raw.llm_repair_enabled) !== null && _a !== void 0 ? _a : true, content_quality_gate_enabled: (_b = raw.content_quality_gate_enabled) !== null && _b !== void 0 ? _b : false, max_llm_repair_attempts: (_c = raw.max_llm_repair_attempts) !== null && _c !== void 0 ? _c : 3 });
+    _generationConfigCache = Object.assign(Object.assign({}, raw), { llm_repair_enabled: (_a = raw.llm_repair_enabled) !== null && _a !== void 0 ? _a : true, content_quality_gate_enabled: (_b = raw.content_quality_gate_enabled) !== null && _b !== void 0 ? _b : false, narrative_review_enabled: (_c = raw.narrative_review_enabled) !== null && _c !== void 0 ? _c : false, max_llm_repair_attempts: (_d = raw.max_llm_repair_attempts) !== null && _d !== void 0 ? _d : 3, max_active_scenarios_per_bundle: (_e = raw.max_active_scenarios_per_bundle) !== null && _e !== void 0 ? _e : 500 });
     _generationConfigFetchedAt = now;
     return _generationConfigCache;
 }
@@ -67,7 +71,7 @@ function resetSessionCosts() {
     };
 }
 // ------------------------------------------------------------------
-// Countries data cache (world_state/countries) — shared across context helpers
+// Countries data cache — shared across context helpers
 // ------------------------------------------------------------------
 let _countriesDataCache = null;
 let _countriesDataFetchedAt = 0;
@@ -80,8 +84,17 @@ async function loadCountriesData() {
     const admin = require('firebase-admin');
     if (!admin.apps.length)
         admin.initializeApp();
-    const snap = await admin.firestore().doc('world_state/countries').get();
-    _countriesDataCache = snap.data() || {};
+    const db = admin.firestore();
+    const snap = await db.collection('countries').get();
+    if (!snap.empty) {
+        const result = {};
+        snap.forEach((doc) => { result[doc.id] = doc.data(); });
+        _countriesDataCache = result;
+    }
+    else {
+        console.error('[scenario-engine] countries/ collection is empty — aborting');
+        throw new Error('[scenario-engine] countries/ collection is empty');
+    }
     _countriesDataFetchedAt = now;
     return _countriesDataCache;
 }
@@ -156,7 +169,7 @@ UNIVERSAL SCENARIO: This scenario must work for countries of ANY size, from micr
         }
     }
     if (unknownIds.length > 0) {
-        console.warn(`[ScenarioEngine] getCountryContextBlock: unrecognized country IDs [${unknownIds.join(', ')}] not found in world_state/countries. They will be excluded from context.`);
+        console.warn(`[ScenarioEngine] getCountryContextBlock: unrecognized country IDs [${unknownIds.join(', ')}] not found in countries collection. They will be excluded from context.`);
     }
     const uniqueRegions = [...new Set(regions)];
     const uniqueGeographies = [...new Set(geographies)];
@@ -391,7 +404,7 @@ const SCENARIO_DETAILS_SCHEMA = {
     required: ['title', 'description', 'options', 'metadata']
 };
 async function generateScenarios(request) {
-    var _a, _b;
+    var _a, _b, _c, _d, _e, _f;
     // Validate bundle at entry point
     if (!(0, audit_rules_1.isValidBundleId)(request.bundle)) {
         throw new Error(`Invalid bundle: ${request.bundle}. Valid bundles: ${bundleIds_1.ALL_BUNDLE_IDS.join(', ')}`);
@@ -404,10 +417,12 @@ async function generateScenarios(request) {
     // Concept-level concurrency: how many concepts to expand in parallel per bundle
     // Combined with max_bundle_concurrency in background-jobs.ts:
     // Total concurrent API calls = max_bundle_concurrency × concept_concurrency
-    const CONCURRENCY = (_a = request.concurrency) !== null && _a !== void 0 ? _a : genConfig.concept_concurrency;
-    console.log(`[ScenarioEngine] Generation: Bundle=${request.bundle}, Mode=${request.mode}, Concurrency=${CONCURRENCY}`);
+    const isLMStudio = ((_b = (_a = request.modelConfig) === null || _a === void 0 ? void 0 : _a.architectModel) === null || _b === void 0 ? void 0 : _b.startsWith('lmstudio:')) ||
+        ((_d = (_c = request.modelConfig) === null || _c === void 0 ? void 0 : _c.drafterModel) === null || _d === void 0 ? void 0 : _d.startsWith('lmstudio:'));
+    const CONCURRENCY = isLMStudio ? 1 : ((_e = request.concurrency) !== null && _e !== void 0 ? _e : genConfig.concept_concurrency);
+    console.log(`[ScenarioEngine] Generation: Bundle=${request.bundle}, Mode=${request.mode}, Concurrency=${CONCURRENCY}${isLMStudio ? ' (LM Studio — sequential)' : ''}`);
     // Region-country consistency check: reject if applicable_countries don't match requested region
-    if (request.region && ((_b = request.applicable_countries) === null || _b === void 0 ? void 0 : _b.length)) {
+    if (request.region && ((_f = request.applicable_countries) === null || _f === void 0 ? void 0 : _f.length)) {
         const countriesData = await loadCountriesData();
         const mismatched = [];
         for (const id of request.applicable_countries) {
@@ -538,6 +553,14 @@ const LLM_FIXABLE_RULES = new Set([
     'third-person-framing',
     'short-summary',
     'invalid-role-id',
+    'adjacency-token-mismatch',
+    'banned-phrase',
+    'hardcoded-institution-phrase',
+    'hard-coded-currency',
+    'short-article',
+    'gdp-as-amount',
+    'label-has-token',
+    'title-too-short',
 ]);
 /**
  * Attempt a surgical LLM repair of a scenario using the cheapest available model.
@@ -545,7 +568,7 @@ const LLM_FIXABLE_RULES = new Set([
  * llm_repair_enabled is true in generation config.
  * Returns the patched scenario, or null if the repair made things worse or failed.
  */
-async function llmRepairScenario(scenario, issues, bundle, isNews) {
+async function llmRepairScenario(scenario, issues, bundle, isNews, baselineScore) {
     const fixableIssues = issues.filter(i => LLM_FIXABLE_RULES.has(i.rule));
     if (fixableIssues.length === 0)
         return null;
@@ -557,6 +580,7 @@ async function llmRepairScenario(scenario, issues, bundle, isNews) {
         .join('\n');
     // Extract only the text fields likely to need repair
     const repairTarget = {
+        title: scenario.title,
         description: scenario.description,
         options: scenario.options.map(o => ({
             id: o.id,
@@ -568,22 +592,37 @@ async function llmRepairScenario(scenario, issues, bundle, isNews) {
             advisorFeedback: o.advisorFeedback,
         })),
     };
-    const repairPrompt = `You are a scenario text editor. Fix ONLY the specific issues listed below in the scenario JSON.
-Do NOT change any field not cited in the issues. Do NOT change numeric values, metric IDs, effects, or metadata.
-Return ONLY a valid JSON object containing the changed fields (partial patch — same structure as input).
+    const repairPrompt = `You are a surgical scenario text editor. Fix ONLY the specific audit issues listed below.
 
-${(0, audit_rules_1.getAuditRulesPrompt)()}
+STRICT RULES:
+1. Fix ONLY the fields mentioned in the ISSUES list.
+2. Do NOT rewrite, restructure, or alter any field NOT explicitly cited.
+3. Preserve ALL tokens exactly (e.g. {leader_title}, {the_adversary}, {the_player_country}).
+4. Do NOT change effects, metric IDs, durations, probabilities, or any numeric data.
+5. Return ONLY a partial JSON patch with the changed fields — same structure as input.
+6. Do NOT wrap in markdown.
 
-CONCEPT → TOKEN MAP (government structure — each concept must resolve to the correct token):
+QUICK FIX REFERENCE:
+- third-person-framing: "the administration" → "{leader_title}"; "the government" → "your government" (in second-person fields) or "{leader_title}'s government" (in outcome fields)
+- hardcoded-the-before-token: "the {X}" → "{the_X}" (e.g. "the {adversary}" → "{the_adversary}")
+- high-passive-voice: rewrite passive as active ("was directed to" → "you directed"; "was announced by" → "{leader_title} announced")
+- option-text-word-count / description-length: expand to minimum — add mechanism, trade-off, and affected group
+- short-summary: expand outcomeSummary/outcomeContext — add institutional reaction, market impact, or downstream effect
+- title-too-short: add 1–2 specific words to reach 4 words minimum (no tokens allowed in title)
+- hardcoded-institution-phrase: replace ministry name with role token (e.g. "Interior Ministry" → "{interior_role}")
+- label-has-token: remove the token from the label, replace with plain text (e.g. "Blame {the_neighbor}" → "Blame the Neighbor")
+- advisor-boilerplate: rewrite with concrete mechanism, affected constituency, and causal chain
+
+CONCEPT → TOKEN MAP (government structure):
 ${conceptTokenTable}
 
 ISSUES TO FIX:
 ${issueList}
 
-SCENARIO (partial — text fields only):
+SCENARIO (text fields only):
 ${JSON.stringify(repairTarget, null, 2)}
 
-Return ONLY the patched JSON object with the changed keys. Do not wrap in markdown.`;
+Return ONLY the changed JSON fields as a partial patch.`;
     try {
         const repairResult = await (0, model_providers_1.callModelProvider)(REPAIR_CONFIG, repairPrompt, {}, REPAIR_MODEL);
         if (!repairResult.data) {
@@ -593,20 +632,33 @@ Return ONLY the patched JSON object with the changed keys. Do not wrap in markdo
         const patch = repairResult.data;
         // Merge the patch back onto the scenario
         const patched = Object.assign({}, scenario);
-        if (patch.description)
+        if (patch.title !== undefined)
+            patched.title = patch.title;
+        if (patch.description !== undefined)
             patched.description = patch.description;
         if (patch.options && Array.isArray(patch.options)) {
             patched.options = scenario.options.map(orig => {
                 const patchedOpt = patch.options.find((p) => p.id === orig.id);
                 if (!patchedOpt)
                     return orig;
-                return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, orig), (patchedOpt.text !== undefined ? { text: patchedOpt.text } : {})), (patchedOpt.label !== undefined ? { label: patchedOpt.label } : {})), (patchedOpt.outcomeHeadline !== undefined ? { outcomeHeadline: patchedOpt.outcomeHeadline } : {})), (patchedOpt.outcomeSummary !== undefined ? { outcomeSummary: patchedOpt.outcomeSummary } : {})), (patchedOpt.outcomeContext !== undefined ? { outcomeContext: patchedOpt.outcomeContext } : {})), (patchedOpt.advisorFeedback !== undefined ? { advisorFeedback: patchedOpt.advisorFeedback } : {}));
+                return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, orig), (patchedOpt.text !== undefined ? { text: patchedOpt.text } : {})), (patchedOpt.label !== undefined ? { label: patchedOpt.label } : {})), (patchedOpt.outcomeHeadline !== undefined ? { outcomeHeadline: patchedOpt.outcomeHeadline } : {})), (patchedOpt.outcomeSummary !== undefined ? { outcomeSummary: patchedOpt.outcomeSummary } : {})), (patchedOpt.outcomeContext !== undefined ? { outcomeContext: patchedOpt.outcomeContext } : {})), (patchedOpt.advisorFeedback !== undefined ? {
+                    advisorFeedback: (() => {
+                        var _a;
+                        const patchedAdvisors = patchedOpt.advisorFeedback;
+                        return ((_a = orig.advisorFeedback) !== null && _a !== void 0 ? _a : []).map((origAdvisor) => {
+                            const replacement = patchedAdvisors.find((a) => a.roleId === origAdvisor.roleId);
+                            return replacement !== null && replacement !== void 0 ? replacement : origAdvisor;
+                        });
+                    })(),
+                } : {}));
             });
         }
-        // Verify the repair improved things
+        // Verify the repair improved things.
+        // Compare against the full pre-repair score (not just fixable issues) so the
+        // baseline matches the full re-audit score and we don't discard valid repairs.
         const reauditIssues = (0, audit_rules_1.auditScenario)(patched, bundle, isNews);
         const reauditScore = (0, audit_rules_1.scoreScenario)(reauditIssues);
-        const originalScore = (0, audit_rules_1.scoreScenario)(issues);
+        const originalScore = baselineScore !== null && baselineScore !== void 0 ? baselineScore : (0, audit_rules_1.scoreScenario)(issues);
         if (reauditScore <= originalScore) {
             console.warn(`[ScenarioEngine] LLM repair did not improve ${scenario.id} (${originalScore} → ${reauditScore}). Discarding patch.`);
             return null;
@@ -624,9 +676,55 @@ Return ONLY the patched JSON object with the changed keys. Do not wrap in markdo
 // ------------------------------------------------------------------
 async function auditAndRepair(scenario, bundle, mode) {
     const isNews = mode === 'news';
-    const normalizeScenarioTokens = (_target) => {
-        // Token alias shims removed — data is canonical after migration.
-        // Invalid tokens are now hard errors caught by auditScenario.
+    // Substitute known hallucinated role tokens with valid equivalents before the hard gate.
+    // Keys are bare token names (without braces); values are their valid replacements.
+    const INVENTED_ROLE_TOKEN_MAP = {
+        'culture_role': 'interior_role',
+        'media_role': 'interior_role',
+        'communications_role': 'interior_role',
+        'security_role': 'interior_role',
+        'immigration_role': 'interior_role',
+        'police_role': 'interior_role',
+        'intelligence_role': 'interior_role',
+        'housing_role': 'labor_role',
+        'welfare_role': 'labor_role',
+        'social_role': 'labor_role',
+        'public_health_role': 'health_role',
+        'technology_role': 'commerce_role',
+        'innovation_role': 'commerce_role',
+        'science_role': 'commerce_role',
+        'research_role': 'commerce_role',
+        'budget_role': 'finance_role',
+        'infrastructure_role': 'transport_role',
+        'military_role': 'defense_role',
+        'cyber_role': 'defense_role',
+        'foreign_role': 'foreign_affairs_role',
+    };
+    const normalizeScenarioTokens = (target) => {
+        var _a, _b, _c, _d, _e;
+        const substituteText = (text) => {
+            if (!text)
+                return text;
+            let result = text;
+            for (const [bad, good] of Object.entries(INVENTED_ROLE_TOKEN_MAP)) {
+                result = result.replace(new RegExp(`\\{the_${bad}\\}`, 'gi'), `{the_${good}}`);
+                result = result.replace(new RegExp(`\\{${bad}\\}`, 'gi'), `{${good}}`);
+            }
+            return result;
+        };
+        target.title = (_a = substituteText(target.title)) !== null && _a !== void 0 ? _a : target.title;
+        target.description = (_b = substituteText(target.description)) !== null && _b !== void 0 ? _b : target.description;
+        for (const opt of target.options) {
+            opt.text = (_c = substituteText(opt.text)) !== null && _c !== void 0 ? _c : opt.text;
+            opt.label = (_d = substituteText(opt.label)) !== null && _d !== void 0 ? _d : opt.label;
+            opt.outcomeHeadline = substituteText(opt.outcomeHeadline);
+            opt.outcomeSummary = substituteText(opt.outcomeSummary);
+            opt.outcomeContext = substituteText(opt.outcomeContext);
+            for (const fb of ((_e = opt.advisorFeedback) !== null && _e !== void 0 ? _e : [])) {
+                if (fb.feedback)
+                    fb.feedback = substituteText(fb.feedback);
+            }
+        }
     };
     normalizeScenarioTokens(scenario);
     let issues = (0, audit_rules_1.auditScenario)(scenario, bundle, isNews);
@@ -738,23 +836,38 @@ async function auditAndRepair(scenario, bundle, mode) {
     catch (error) {
         console.warn(`[ScenarioEngine] Grounded effects repair failed:`, error.message);
     }
-    // LLM Repair — attempt a surgical patch when only LLM-fixable issues remain
-    const { llm_repair_enabled } = await getGenerationConfig();
-    if (llm_repair_enabled && issues.length > 0) {
-        const allFixable = issues.every(i => LLM_FIXABLE_RULES.has(i.rule));
-        if (allFixable) {
-            const repaired = await llmRepairScenario(scenario, issues, bundle, isNews);
+    // LLM Repair — attempt a surgical patch when only LLM-fixable issues remain.
+    // Skip if the scenario already meets the pass threshold — repair has shown it
+    // can degrade passing scenarios, and there's nothing to gain by running it.
+    const { llm_repair_enabled, audit_pass_threshold: repairThreshold } = await getGenerationConfig();
+    const preRepairCurrentScore = (0, audit_rules_1.scoreScenario)(issues);
+    if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold) {
+        const fixableIssues = issues.filter(i => LLM_FIXABLE_RULES.has(i.rule));
+        if (fixableIssues.length > 0) {
+            const repaired = await llmRepairScenario(scenario, fixableIssues, bundle, isNews, preRepairCurrentScore);
             if (repaired) {
                 // Adopt the repaired scenario and re-audit with fresh issues
-                Object.assign(scenario, repaired);
+                scenario.title = repaired.title;
+                scenario.description = repaired.description;
+                scenario.options = repaired.options;
                 issues = (0, audit_rules_1.auditScenario)(scenario, bundle, isNews);
             }
         }
     }
     const score = (0, audit_rules_1.scoreScenario)(issues);
-    const hasErrors = issues.some(i => i.severity === 'error');
+    // Only structural defects that break gameplay or the data model block unconditionally.
+    // Quality errors (voice, sentence count, currency phrasing) are already penalised by
+    // the score threshold — they should not add a second hard veto on top.
+    const STRUCTURAL_ERROR_RULES = new Set([
+        'missing-id', 'missing-title', 'missing-desc',
+        'option-count', 'no-effects', 'missing-metric-id',
+        'invalid-metric-id', 'non-finite-value', 'empty-text',
+        'invalid-duration', 'invalid-severity', 'invalid-urgency',
+        'invalid-phase', 'invalid-countries',
+    ]);
+    const hasStructuralErrors = issues.some(i => i.severity === 'error' && STRUCTURAL_ERROR_RULES.has(i.rule));
     const { audit_pass_threshold, content_quality_gate_enabled } = await getGenerationConfig();
-    if (score >= audit_pass_threshold && !hasErrors) {
+    if (score >= audit_pass_threshold && !hasStructuralErrors) {
         // Optional LLM content quality gate — enabled via world_state/generation_config.content_quality_gate_enabled
         if (content_quality_gate_enabled) {
             try {
@@ -791,9 +904,45 @@ async function auditAndRepair(scenario, bundle, mode) {
                 console.warn(`[ScenarioEngine] Content quality gate error (non-fatal): ${qErr.message}`);
             }
         }
+        // Narrative review gate — enabled via world_state/generation_config.narrative_review_enabled
+        const { narrative_review_enabled } = await getGenerationConfig();
+        if (narrative_review_enabled) {
+            try {
+                const narrativeResult = await (0, narrative_review_1.evaluateNarrativeQuality)(scenario);
+                console.log(`[ScenarioEngine] Narrative review ${scenario.id}: overall=${narrativeResult.overallScore.toFixed(2)} ` +
+                    `engagement=${narrativeResult.engagement.score} strategic=${narrativeResult.strategicDepth.score} ` +
+                    `differentiation=${narrativeResult.optionDifferentiation.score} consequence=${narrativeResult.consequenceQuality.score} ` +
+                    `replay=${narrativeResult.replayValue.score} pass=${narrativeResult.pass}`);
+                if (scenario.metadata) {
+                    scenario.metadata.narrativeReview = {
+                        overallScore: narrativeResult.overallScore,
+                        engagement: narrativeResult.engagement.score,
+                        strategicDepth: narrativeResult.strategicDepth.score,
+                        optionDifferentiation: narrativeResult.optionDifferentiation.score,
+                        consequenceQuality: narrativeResult.consequenceQuality.score,
+                        replayValue: narrativeResult.replayValue.score,
+                        pass: narrativeResult.pass,
+                        editorialNotes: narrativeResult.editorialNotes,
+                    };
+                }
+                if (!narrativeResult.pass && narrativeResult.overallScore < 2.0) {
+                    console.warn(`[ScenarioEngine] Scenario ${scenario.id} rejected by narrative review (overallScore=${narrativeResult.overallScore.toFixed(2)})`);
+                    return { scenario: null, score, issues: [...issues, {
+                                severity: 'error',
+                                rule: 'narrative-quality-violation',
+                                target: scenario.id,
+                                message: `Narrative review failed: overall=${narrativeResult.overallScore.toFixed(2)}. Notes: ${narrativeResult.editorialNotes.slice(0, 2).join('; ')}`,
+                                autoFixable: false,
+                            }] };
+                }
+            }
+            catch (nErr) {
+                console.warn(`[ScenarioEngine] Narrative review error (non-fatal): ${nErr.message}`);
+            }
+        }
         return { scenario, score, issues };
     }
-    console.warn(`[ScenarioEngine] Scenario ${scenario.id} failed audit (score: ${score}, hasErrors: ${hasErrors}). REJECTING. Issues:`, issues.map(i => `[${i.severity}] ${i.message}`).join(', '));
+    console.warn(`[ScenarioEngine] Scenario ${scenario.id} failed audit (score: ${score}, hasStructuralErrors: ${hasStructuralErrors}). REJECTING. Issues:`, issues.map(i => `[${i.severity}] ${i.message}`).join(', '));
     return { scenario: null, score, issues };
 }
 async function generateConceptSeeds(request) {
@@ -896,12 +1045,12 @@ async function expandConceptToLoop(concept, bundle, mode, request) {
     });
     const baseId = `gen_${bundle}_${Date.now().toString(36)}`;
     const blueprintSummary = blueprint.acts.map((a) => `Act ${a.actIndex}: ${a.title}`).join(' -> ');
-    const MAX_RETRIES = (await getGenerationConfig()).max_llm_repair_attempts;
+    const MAX_RETRIES = Math.max(1, (await getGenerationConfig()).max_llm_repair_attempts);
     const allExpectedIds = blueprint.acts.map((a) => `${baseId}_act${a.actIndex}`);
     // 2. Draft All Acts in Parallel (Drafter)
     // allSettled so a single failing act doesn't discard in-flight sibling API calls
     const actSettled = await Promise.allSettled(blueprint.acts.map(async (actPlan) => {
-        var _a;
+        var _a, _b;
         let actScenario = null;
         let lastAuditResult = null;
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -965,6 +1114,9 @@ async function expandConceptToLoop(concept, bundle, mode, request) {
 - Prefer active voice over passive voice.
 - Make labels short direct actions (no "if", "unless", colons, or parentheses).\n`;
                 }
+                else if (failureCategory === 'adjacency-token-violation') {
+                    drafterPrompt += `\n**ADJACENCY TOKEN ERROR**: You used border/neighbor language ("bordering", "neighboring", "border closure", "shared border") with a non-adjacent-country token like {the_adversary} or {the_rival}. These tokens do NOT imply geographic proximity.\n- For a neighboring country: use {the_neighbor} or {the_border_rival}\n- For a non-adjacent rival or adversary: use {the_adversary} or {the_rival}\n- ONLY use border/neighboring/bordering language when combined with {the_neighbor} or {the_border_rival}\nRewrite any sentence mentioning borders or shared frontiers to use the correct token.\n`;
+                }
                 else if (failureCategory === 'banned-phrase-violation') {
                     drafterPrompt += `\n**BANNED PHRASE ERROR**: Your description or options contained prohibited terms like real country names (e.g. United States) or directional borders. Use only tokens ({the_player_country}, {the_adversary}) and generic terms.\n`;
                 }
@@ -1017,6 +1169,20 @@ Write as if you are a real cabinet minister briefing the head of government on T
                         .map(({ concept, token }) => `  - ${concept} → ${token}`)
                         .join('\n');
                     drafterPrompt += `\n\nNEVER write: "ruling coalition", "governing coalition", "coalition government", "parliamentary majority/minority/support". Use {ruling_party} and {legislature} tokens instead.\n`;
+                    drafterPrompt += `\nALSO: Never write hardcoded institution names. Use role tokens:\n- "Finance Ministry" / "Treasury Department" → {finance_role}\n- "Justice Ministry" / "Dept of Justice" → {justice_role}\n- "Foreign Ministry" / "State Department" → {foreign_affairs_role}\n- "Defense Ministry" / "Dept of Defense" → {defense_role}\n- "Interior Ministry" / "Home Office" → {interior_role}\n- "Health Ministry" / "Dept of Health" → {health_role}\n- "Education Ministry" / "Dept of Education" → {education_role}\n`;
+                }
+                else if (failureCategory === 'token-article-form-violation') {
+                    drafterPrompt += `\n**TOKEN ARTICLE FORM ERROR**: You wrote "the {token}" which produces broken output like "the a hostile power" at runtime. RULES:
+1. NEVER write "the {something}" — use the pre-built article-form token {the_something} instead.
+   ❌ "the {adversary}" → ✅ "{the_adversary}"
+   ❌ "the {neighbor}" → ✅ "{the_neighbor}"
+   ❌ "the {ally}" → ✅ "{the_ally}"
+   Valid the_{x} tokens: {the_adversary}, {the_neighbor}, {the_ally}, {the_rival}, {the_neutral}, {the_partner}, {the_trade_partner}, {the_border_rival}, {the_regional_rival}, {the_nation}, {the_player_country}
+   If no the_{x} form exists, rewrite the sentence without a definite article before the token.
+2. Option LABELS must be plain text — NO tokens. "Blame {the_neighbor}" → "Blame the Neighbor"\n`;
+                }
+                else if (failureCategory === 'gdp-as-amount-violation') {
+                    drafterPrompt += `\n**GDP DESCRIPTION MISUSE**: You used {gdp_description} as if it were a specific stolen or siphoned amount. {gdp_description} resolves to the ENTIRE national GDP — it is a scale descriptor, not a stealable sum. Replace any reference to stealing/siphoning/diverting {gdp_description} with the token {graft_amount}, which auto-scales to a realistic corruption amount for this country's economy.\n`;
                 }
                 else if (failureCategory === 'outcome-voice-violation' || failureCategory === 'framing-violation') {
                     // Both voice violations can co-occur — inject guidance for each one present
@@ -1144,6 +1310,13 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
                         retryCount: attempt,
                     });
                     console.warn(`[ScenarioEngine] Act ${actPlan.actIndex} attempt ${attempt + 1}/${MAX_RETRIES} failed (score: ${lastAuditResult.score}). Issues:`, JSON.stringify(lastAuditResult.issues, null, 2));
+                    (_b = request === null || request === void 0 ? void 0 : request.onAttemptFailed) === null || _b === void 0 ? void 0 : _b.call(request, {
+                        bundle,
+                        attempt: attempt + 1,
+                        maxAttempts: MAX_RETRIES,
+                        score: lastAuditResult.score,
+                        topIssues: lastAuditResult.issues.slice(0, 5).map((i) => `[${i.severity}] ${i.message}`),
+                    });
                 }
             }
             catch (error) {

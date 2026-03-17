@@ -16,59 +16,59 @@ struct AppTheme: Identifiable, Equatable {
 
     // MARK: - Built-in themes
 
-    /// Aurora Command — default aurora borealis aesthetic
+    /// Statesman — default presidential blue and gold
     static let auroraCommand = AppTheme(
         id: "aurora_command",
-        displayName: "Aurora Command",
-        subtitle: "Strategic aurora aesthetic",
-        accentPrimary: Color(red: 0.0, green: 0.768, blue: 0.655),      // #00C4A7
-        accentSecondary: Color(red: 0.486, green: 0.227, blue: 0.929),  // #7C3AED
-        accentTertiary: Color(red: 0.231, green: 0.513, blue: 0.956),   // #3B82F6
-        accentMuted: Color(red: 0.0, green: 0.768, blue: 0.655).opacity(0.15)
+        displayName: "Statesman",
+        subtitle: "Presidential blue and gold",
+        accentPrimary: Color(red: 0.098, green: 0.412, blue: 0.863),    // #1969DC — deep presidential blue
+        accentSecondary: Color(red: 0.831, green: 0.667, blue: 0.173),  // #D4AA2C — gold
+        accentTertiary: Color(red: 0.298, green: 0.557, blue: 0.922),   // #4C8EEB — lighter presidential blue
+        accentMuted: Color(red: 0.098, green: 0.412, blue: 0.863).opacity(0.15)
     )
 
-    /// Gold Standard — executive authority, deliberate power
+    /// Gold & Blue — gold primary with blue secondary
     static let goldStandard = AppTheme(
         id: "gold_standard",
-        displayName: "Gold Standard",
+        displayName: "Gold & Blue",
         subtitle: "Executive authority",
-        accentPrimary: Color(red: 0.961, green: 0.651, blue: 0.137),    // #F5A623
-        accentSecondary: Color(red: 0.937, green: 0.267, blue: 0.141),
-        accentTertiary: Color(red: 0.024, green: 0.714, blue: 0.839),
-        accentMuted: Color(red: 0.961, green: 0.651, blue: 0.137).opacity(0.15)
+        accentPrimary: Color(red: 0.831, green: 0.667, blue: 0.173),    // #D4AA2C — gold
+        accentSecondary: Color(red: 0.231, green: 0.510, blue: 0.965),  // #3B82F6 — blue
+        accentTertiary: Color(red: 0.941, green: 0.812, blue: 0.376),   // #F0CF60 — pale gold
+        accentMuted: Color(red: 0.831, green: 0.667, blue: 0.173).opacity(0.15)
     )
 
-    /// Cerulean Command — diplomatic clarity, tactical precision
+    /// Royal Blue — deep blue with silver-white accents
     static let ceruleanCommand = AppTheme(
         id: "cerulean_command",
-        displayName: "Cerulean Command",
-        subtitle: "Tactical precision",
-        accentPrimary: Color(red: 0.098, green: 0.612, blue: 1.000),    // #199CFF
-        accentSecondary: Color(red: 0.937, green: 0.267, blue: 0.141),
-        accentTertiary: Color(red: 0.961, green: 0.651, blue: 0.137),
-        accentMuted: Color(red: 0.098, green: 0.612, blue: 1.000).opacity(0.15)
+        displayName: "Royal Blue",
+        subtitle: "Deep navy and white",
+        accentPrimary: Color(red: 0.098, green: 0.412, blue: 0.863),    // #1969DC
+        accentSecondary: Color(red: 0.831, green: 0.667, blue: 0.173),  // gold
+        accentTertiary: Color(red: 0.588, green: 0.733, blue: 0.980),   // pale steel blue
+        accentMuted: Color(red: 0.098, green: 0.412, blue: 0.863).opacity(0.15)
     )
 
-    /// Crimson Authority — hard power, decisive action
+    /// Crimson — red primary with gold accent
     static let crimsonAuthority = AppTheme(
         id: "crimson_authority",
-        displayName: "Crimson Authority",
+        displayName: "Crimson",
         subtitle: "Hard power, decisive action",
-        accentPrimary: Color(red: 0.937, green: 0.267, blue: 0.141),    // #EF4444
-        accentSecondary: Color(.displayP3, red: 0.402, green: 0.438, blue: 0.995),
-        accentTertiary: Color(red: 0.961, green: 0.651, blue: 0.137),
-        accentMuted: Color(red: 0.937, green: 0.267, blue: 0.141).opacity(0.15)
+        accentPrimary: Color(red: 0.863, green: 0.196, blue: 0.196),    // #DC3232
+        accentSecondary: Color(red: 0.831, green: 0.667, blue: 0.173),  // gold
+        accentTertiary: Color(red: 0.980, green: 0.502, blue: 0.447),   // pale red
+        accentMuted: Color(red: 0.863, green: 0.196, blue: 0.196).opacity(0.15)
     )
 
-    /// Operative Green — field operations, ground-level governance
+    /// Monochrome — white accents on black
     static let operativeGreen = AppTheme(
         id: "operative_green",
-        displayName: "Operative Green",
-        subtitle: "Ground-level governance",
-        accentPrimary: Color(red: 0.063, green: 0.725, blue: 0.506),    // #10B981
-        accentSecondary: Color(red: 0.937, green: 0.267, blue: 0.141),
-        accentTertiary: Color(red: 0.024, green: 0.714, blue: 0.839),
-        accentMuted: Color(red: 0.063, green: 0.725, blue: 0.506).opacity(0.15)
+        displayName: "Monochrome",
+        subtitle: "White on black",
+        accentPrimary: Color(white: 0.90),
+        accentSecondary: Color(white: 0.60),
+        accentTertiary: Color(white: 0.75),
+        accentMuted: Color(white: 0.90).opacity(0.15)
     )
 
     // MARK: - All themes list

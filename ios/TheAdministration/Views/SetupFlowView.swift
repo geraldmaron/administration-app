@@ -6,7 +6,7 @@ struct SetupFlowView: View {
     @State private var selectedCountry: Country? = nil
     @State private var selectedGameLength: String = "medium"
     @State private var playerName: String = ""
-    @State private var selectedParty: String = "Unity Coalition"
+    @State private var selectedParty: String = ""
     @State private var selectedApproach: String = "Pragmatist"
 
     var body: some View {
@@ -143,13 +143,27 @@ struct CountrySelectionView: View {
                                 gameStore.setCountry(country.id)
                             }) {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(country.name)
-                                            .font(.system(size: 16, weight: .medium, design: .default))
-                                            .foregroundColor(AppColors.foreground)
-                                        Text("GDP \(formatGDP(country.attributes.gdp))")
-                                            .font(.system(size: 11, weight: .regular, design: .monospaced))
-                                            .foregroundColor(AppColors.foregroundMuted)
+                                    HStack(spacing: 10) {
+                                        Text(country.flagEmoji)
+                                            .font(.system(size: 22))
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(country.name)
+                                                .font(.system(size: 16, weight: .medium, design: .default))
+                                                .foregroundColor(AppColors.foreground)
+                                            Text("GDP \(formatGDP(country.attributes.gdp))")
+                                                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                                                .foregroundColor(AppColors.foregroundMuted)
+                                            if selectedCountry?.id == country.id, let legislature = country.legislatureProfile {
+                                                HStack(spacing: 6) {
+                                                    Image(systemName: legislatureIcon(for: legislature.type))
+                                                        .font(.caption)
+                                                        .foregroundStyle(.secondary)
+                                                    Text(legislatureLabel(for: legislature))
+                                                        .font(.caption)
+                                                        .foregroundStyle(.secondary)
+                                                }
+                                            }
+                                        }
                                     }
 
                                     Spacer()
@@ -207,6 +221,30 @@ struct CountrySelectionView: View {
         }
         return "\(gdp)"
     }
+
+    private func legislatureIcon(for type: LegislatureType) -> String {
+        switch type {
+        case .bicameral: return "building.columns"
+        case .unicameral: return "building.columns.fill"
+        case .noLegislature: return "xmark.circle"
+        case .rubberStamp: return "seal"
+        }
+    }
+
+    private func legislatureLabel(for legislature: LegislatureProfile) -> String {
+        switch legislature.type {
+        case .bicameral:
+            let upper = legislature.upperHouse?.name ?? "Upper House"
+            let lower = legislature.lowerHouse?.name ?? "Lower House"
+            return "\(upper) · \(lower)"
+        case .unicameral:
+            return legislature.singleChamber?.name ?? "Unicameral Legislature"
+        case .noLegislature:
+            return "No Legislature"
+        case .rubberStamp:
+            return legislature.singleChamber?.name ?? "Nominal Legislature"
+        }
+    }
 }
 
 struct GameLengthSelectionView: View {
@@ -223,9 +261,15 @@ struct GameLengthSelectionView: View {
     }
 
     private let options: [LengthOption] = [
-        LengthOption(id: "short",  code: "SHT-030", label: "Short Campaign", turns: "~30 Turns", realTime: "6–9 months in-game",    description: "Rapid crisis response. Every decision carries amplified weight with limited time for recovery."),
-        LengthOption(id: "medium", code: "MED-060", label: "Standard Term",  turns: "~60 Turns", realTime: "1.5–2 years in-game",  description: "Balanced governance. Cascading effects develop meaningfully. The recommended starting point."),
-        LengthOption(id: "long",   code: "LNG-120", label: "Full Mandate",   turns: "~120 Turns", realTime: "3–4 years in-game",   description: "Complete simulation. Entropy, feedback loops, and diplomatic shifts fully develop over an extended term."),
+        LengthOption(id: "short",  code: "SHT-030", label: "Short Campaign",  turns: "~30 Turns",
+                     realTime: "Crisis Pace",
+                     description: "Compressed decisions with amplified consequences. Limited recovery window — every turn carries outsized weight."),
+        LengthOption(id: "medium", code: "MED-060", label: "Standard Term",   turns: "~60 Turns",
+                     realTime: "Standard Pace",
+                     description: "Cascading effects develop meaningfully. Coalitions shift, feedback loops emerge. The recommended starting point."),
+        LengthOption(id: "long",   code: "LNG-120", label: "Full Mandate",    turns: "~120 Turns",
+                     realTime: "Full Pace",
+                     description: "Every system has time to evolve or collapse. Diplomatic drift, domestic entropy, and long-term consequences fully develop."),
     ]
 
     var body: some View {
@@ -414,6 +458,7 @@ struct CabinetFormationView: View {
         let region = country?.region
         let countryId = gameStore.state.countryId
         let config = gameStore.appConfig
+        let partyNames = gameStore.countryParties.isEmpty ? nil : gameStore.countryParties.map { $0.name }
 
         DispatchQueue.global(qos: .userInitiated).async {
             var byRole: [String: [Candidate]] = [:]
@@ -425,7 +470,8 @@ struct CabinetFormationView: View {
                     region: region,
                     countryId: countryId,
                     count: 3,
-                    config: config
+                    config: config,
+                    partyNames: partyNames
                 )
                 byRole[role.id] = candidates
                 if let first = candidates.first {
@@ -460,12 +506,25 @@ struct PlayerIdentityView: View {
     @ObservedObject var gameStore: GameStore
     @Binding var step: Int
 
-    private let parties: [(name: String, desc: String)] = [
-        ("Unity Coalition",      "Centrist, pragmatic governance"),
-        ("Progressive Front",    "Social reform and equality"),
-        ("Conservative Bloc",    "Stability and tradition"),
-        ("Technocratic Alliance","Data-driven policy making")
-    ]
+    private var parties: [(name: String, desc: String)] {
+        if !gameStore.countryParties.isEmpty {
+            return gameStore.countryParties.map { ($0.name, $0.description) }
+        }
+        if !gameStore.partiesLoaded {
+            return []
+        }
+        if let config = gameStore.appConfig {
+            let names = config.parties(for: gameStore.state.countryId)
+            if !names.isEmpty {
+                return names.map { ($0, "") }
+            }
+        }
+        return []
+    }
+
+    private var isLoadingParties: Bool {
+        !gameStore.partiesLoaded && !gameStore.availableCountries.isEmpty
+    }
 
     private let approaches: [String] = ["Pragmatist", "Ideologue", "Technocrat"]
 
@@ -515,6 +574,17 @@ struct PlayerIdentityView: View {
                             .foregroundColor(AppColors.foregroundSubtle)
                             .tracking(2)
 
+                        if isLoadingParties {
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                    .tint(AppColors.foreground)
+                                    .scaleEffect(0.8)
+                                Text("Loading parties\u{2026}")
+                                    .font(AppTypography.micro)
+                                    .foregroundColor(AppColors.foregroundMuted)
+                            }
+                            .padding(.vertical, 8)
+                        } else {
                         VStack(spacing: 10) {
                             ForEach(parties, id: \.name) { party in
                                 Button {
@@ -544,6 +614,7 @@ struct PlayerIdentityView: View {
                                 }
                                 .buttonStyle(.plain)
                             }
+                        }
                         }
                     }
 

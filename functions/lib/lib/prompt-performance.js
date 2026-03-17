@@ -75,14 +75,16 @@ function categorizeFailure(auditIssues) {
         .map(i => i.rule || i.code)
         .filter(c => !!c);
     // Check errors first (highest priority)
+    if (errorCodes.some(code => code === 'adjacency-token-mismatch')) {
+        return 'adjacency-token-violation';
+    }
     if (errorCodes.some(code => code.includes('token') || code === 'invalid-country-name')) {
         return 'token-violation';
     }
     if (errorCodes.some(code => code === 'banned-phrase')) {
         return 'banned-phrase-violation';
     }
-    if (errorCodes.some(code => code === 'jargon-use' ||
-        code === 'complex-sentence' ||
+    if (errorCodes.some(code => code === 'complex-sentence' ||
         code === 'high-clause-density' ||
         code === 'high-passive-voice' ||
         code === 'label-complexity')) {
@@ -116,7 +118,10 @@ function categorizeFailure(auditIssues) {
         return 'effect-count-violation';
     }
     // Check warnings
-    if (warningCodes.some(code => code === 'hardcoded-gov-structure')) {
+    if (warningCodes.some(code => code === 'jargon-use' || code === 'complex-sentence' || code === 'high-clause-density' || code === 'high-passive-voice' || code === 'label-complexity')) {
+        return 'readability-violation';
+    }
+    if (warningCodes.some(code => code === 'hardcoded-gov-structure' || code === 'hardcoded-institution-phrase')) {
         return 'hardcoded-gov-structure';
     }
     if (warningCodes.some(code => code === 'informal-tone')) {
@@ -130,6 +135,12 @@ function categorizeFailure(auditIssues) {
     }
     if (warningCodes.includes('exceeds-magnitude-cap')) {
         return 'exceeds-magnitude-cap';
+    }
+    if (errorCodes.includes('gdp-as-amount') || warningCodes.includes('gdp-as-amount')) {
+        return 'gdp-as-amount-violation';
+    }
+    if (warningCodes.some(code => code === 'hardcoded-the-before-token' || code === 'label-has-token' || code === 'sentence-start-bare-token')) {
+        return 'token-article-form-violation';
     }
     return 'other';
 }

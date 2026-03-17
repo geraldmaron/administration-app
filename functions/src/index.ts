@@ -1,13 +1,13 @@
 import { onCall } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from 'firebase-admin';
-import { generateScenarios } from "./scenario-engine";
+import { generateScenarios, getGenerationConfig } from "./scenario-engine";
 import { type BundleScenario } from "./lib/audit-rules";
 import { isValidBundleId, ALL_BUNDLE_IDS, type BundleId } from "./data/schemas/bundleIds";
-import { saveScenario } from "./storage";
+import { saveScenario, getActiveBundleCount } from "./storage";
 import { validateConfig, logConfigStatus } from "./lib/config-validator";
 import { getProviderRetryTelemetry, resetProviderRetryTelemetry } from './lib/model-providers';
-export { onScenarioJobCreated } from "./background-jobs";
+export { onScenarioJobCreated, recoverZombieJobs } from "./background-jobs";
 export { dailyNewsToScenarios } from "./news-to-scenarios";
 
 // Admin callable: rebuild all scenario bundle JSON files in Firebase Storage.
@@ -112,7 +112,7 @@ export const generateScenariosManual = onCall({
     enforceAppCheck: false,
     timeoutSeconds: 540,
     memory: '1GiB',
-    secrets: ["OPENAI_API_KEY", "MOONSHOT_API_KEY"]
+    secrets: ["OPENAI_API_KEY"]
 }, async (request) => {
     if (!request.auth) {
         throw new Error('Authentication required');
@@ -130,14 +130,14 @@ export const generateScenariosManual = onCall({
         throw new Error('Admin privileges required');
     }
 
-    const configValidation = validateConfig();
+    const { bundles, count, distributionConfig, region, applicable_countries, modelConfig, bypassCooldown } = request.data;
+    const configValidation = validateConfig(modelConfig);
     logger.info(`[generate] Config valid: ${configValidation.valid}`, { errors: configValidation.errors });
     if (!configValidation.valid) {
         logConfigStatus();
-        throw new Error('Scenario generation is misconfigured. Set OPENAI_API_KEY in Firebase secrets (firebase functions:secrets:set). ' + configValidation.errors.join('; '));
+        throw new Error('Scenario generation is misconfigured. ' + configValidation.errors.join('; '));
     }
 
-    const { bundles, count, distributionConfig, region, applicable_countries, modelConfig, bypassCooldown } = request.data;
     logger.info(`[generate] Params: bundles=${JSON.stringify(bundles)}, count=${count}, region=${region}, bypassCooldown=${!!bypassCooldown}`);
 
     if (!bundles || !Array.isArray(bundles)) {
@@ -147,6 +147,18 @@ export const generateScenariosManual = onCall({
     const invalidBundles = bundles.filter((b: string) => !isValidBundleId(b));
     if (invalidBundles.length > 0) {
         throw new Error(`Invalid bundle IDs: ${invalidBundles.join(', ')}. Valid bundles: ${ALL_BUNDLE_IDS.join(', ')}`);
+    }
+
+    const genConfigSnap = await db.doc('world_state/generation_config').get();
+    const genConfigData = genConfigSnap.data();
+    const maxPendingJobs = genConfigData?.max_pending_jobs ?? 10;
+    const [pendingSnap, runningSnap] = await Promise.all([
+        db.collection('generation_jobs').where('status', '==', 'pending').count().get(),
+        db.collection('generation_jobs').where('status', '==', 'running').count().get(),
+    ]);
+    const activeJobCount = pendingSnap.data().count + runningSnap.data().count;
+    if (activeJobCount >= maxPendingJobs) {
+        throw new Error(`Too many active jobs (${activeJobCount}/${maxPendingJobs}). Wait for running jobs to complete.`);
     }
 
     const results: BundleScenario[] = [];
@@ -179,14 +191,7 @@ export const generateScenariosManual = onCall({
         modelConfig: modelConfig || null,
     });
 
-    // Read generation config for bundle-level concurrency (soft-capped at 5 with adaptive backoff)
-    let maxBundleConcurrency = 3;
-    try {
-        const genConfigSnap = await db.doc('world_state/generation_config').get();
-        maxBundleConcurrency = Math.min(genConfigSnap.data()?.max_bundle_concurrency ?? 3, 5);
-    } catch {
-        logger.warn('[generate] Could not read generation_config; using maxBundleConcurrency=3');
-    }
+    const maxBundleConcurrency = Math.min(genConfigData?.max_bundle_concurrency ?? 3, 5);
 
     let adaptiveBundleConcurrency = maxBundleConcurrency;
     let consecutiveCleanBatches = 0;
@@ -211,6 +216,15 @@ export const generateScenariosManual = onCall({
             }> => {
                 const bundleSaved: BundleScenario[] = [];
                 const bundleSkipped: Array<Record<string, unknown>> = [];
+
+                // Ceiling check - skip bundle if active scenario count is at or above configured ceiling
+                const ceiling = await getGenerationConfig();
+                const bundleActiveCount = await getActiveBundleCount(bundle as BundleId, db);
+                if (bundleActiveCount >= ceiling.max_active_scenarios_per_bundle!) {
+                    logger.warn(`[ceiling] Bundle ${bundle} at ceiling: ${bundleActiveCount}/${ceiling.max_active_scenarios_per_bundle} — skipping`);
+                    bundleSkipped.push({ bundle, reason: 'ceiling', activeCount: bundleActiveCount });
+                    return { bundle, bundleSaved, bundleSkipped };
+                }
 
                 // Check cooldown (shorter for manual: 5 minutes). Skipped when bypassCooldown is set.
                 if (!bypassCooldown) {
@@ -300,11 +314,21 @@ export const generateScenariosManual = onCall({
                 progress: Math.min(100, Math.round((processedBundles / Math.max(1, bundles.length)) * 100)),
                 completedCount: totalSaved,
                 failedCount: totalSkipped,
-                results: results.slice(0, 100).map((s) => ({ id: s.id, title: s.title, bundle: s.metadata?.bundle })),
+                results: results.slice(0, 100).map((s) => ({ id: s.id, title: s.title, bundle: s.metadata?.bundle, auditScore: s.metadata?.auditMetadata?.score, autoFixed: s.metadata?.auditMetadata?.autoFixed ?? false })),
                 errors: skipped.slice(0, 50),
             });
         }
     }
+
+    const scoredResults = results.filter(r => typeof r.metadata?.auditMetadata?.score === 'number');
+    const auditSummary = scoredResults.length > 0 ? {
+        avgScore: Math.round((scoredResults.reduce((s, r) => s + (r.metadata?.auditMetadata?.score ?? 0), 0) / scoredResults.length) * 10) / 10,
+        minScore: Math.min(...scoredResults.map(r => r.metadata?.auditMetadata?.score!)),
+        maxScore: Math.max(...scoredResults.map(r => r.metadata?.auditMetadata?.score!)),
+        below70Count: scoredResults.filter(r => (r.metadata?.auditMetadata?.score ?? 0) < 70).length,
+        above90Count: scoredResults.filter(r => (r.metadata?.auditMetadata?.score ?? 0) >= 90).length,
+    } : null;
+    const finalTelemetry = getProviderRetryTelemetry();
 
     await jobRef.update({
         status: 'completed',
@@ -312,8 +336,10 @@ export const generateScenariosManual = onCall({
         progress: 100,
         completedCount: totalSaved,
         failedCount: totalSkipped,
-        results: results.slice(0, 100).map((s) => ({ id: s.id, title: s.title, bundle: s.metadata?.bundle })),
+        results: results.slice(0, 100).map((s) => ({ id: s.id, title: s.title, bundle: s.metadata?.bundle, auditScore: s.metadata?.auditMetadata?.score, autoFixed: s.metadata?.auditMetadata?.autoFixed ?? false })),
         errors: skipped.slice(0, 50),
+        ...(auditSummary ? { auditSummary } : {}),
+        rateLimitRetries: finalTelemetry.rateLimitRetries,
     });
 
     return {

@@ -11,6 +11,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
 import { BundleScenario } from './audit-rules';
+import { buildTokenWhitelistPromptSection } from './token-registry';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -63,11 +64,11 @@ function getFirestore(): FirebaseFirestore.Firestore {
 }
 
 // ---------------------------------------------------------------------------
-// TTL cache — prevents redundant Firestore reads during parallel batch generation
+// Active prompt resolution
 // ---------------------------------------------------------------------------
 
 const _templateCache = new Map<string, { data: PromptTemplate; fetchedAt: number }>();
-const TEMPLATE_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const TEMPLATE_CACHE_TTL_MS = 0;
 
 // ---------------------------------------------------------------------------
 // Local file fallback
@@ -145,6 +146,7 @@ export async function savePromptTemplate(template: PromptTemplate): Promise<void
       ...template,
       updatedAt: Timestamp.now(),
     });
+    _templateCache.delete(template.name);
   } catch (error) {
     console.error('Failed to save prompt template:', error);
     throw error;
@@ -176,6 +178,7 @@ export async function activatePromptVersion(name: string, version: string): Prom
       const targetDoc = db.collection('prompt_templates').doc(`${name}_${version}`);
       transaction.update(targetDoc, { active: true, updatedAt: Timestamp.now() });
     });
+    _templateCache.delete(name);
   } catch (error) {
     console.error('Failed to activate prompt version:', error);
     throw error;
@@ -202,12 +205,13 @@ export async function getCurrentPromptVersions(): Promise<PromptVersion> {
  * Load the active drafter prompt base from Firestore, with local file fallback.
  */
 export async function getDrafterPromptBase(): Promise<string> {
+  const tokenSection = buildTokenWhitelistPromptSection();
   const template = await getPromptTemplate('drafter_details');
-  if (template) return template.sections.constraints;
+  if (template) return template.sections.constraints.replace('{{TOKEN_SYSTEM}}', tokenSection);
   const local = getLocalFallbackPrompt('drafter_details');
   if (local) {
     console.warn('[PromptTemplates] Using local fallback for drafter_details — seed or activate a Firestore template for production.');
-    return local;
+    return local.replace('{{TOKEN_SYSTEM}}', tokenSection);
   }
   throw new Error(
     '[PromptTemplates] No active "drafter_details" prompt template found in Firestore and no local fallback available. ' +

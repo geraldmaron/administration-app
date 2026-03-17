@@ -20,26 +20,23 @@ struct CabinetView: View {
                 VStack(spacing: 24) {
                     headerSection
 
-                    LazyVGrid(
-                        columns: [GridItem(.flexible()), GridItem(.flexible())],
-                        spacing: 16
-                    ) {
+                    VStack(spacing: 12) {
                         ForEach(Array(CabinetRoles.DEFAULT_ROLES.enumerated()), id: \.element.id) { index, role in
                             let member = gameStore.state.cabinet.first { $0.roleId == role.id }
                             CabinetCard(
                                 role: role,
                                 member: member,
+                                country: gameStore.playerCountry,
                                 onHire: { hiringRole = role },
                                 onReplace: { replacingRole = role },
                                 onFire: { fireConfirmRole = role },
                                 onDossier: {
-                                    if let candidate = member?.candidate {
-                                        dossierRoleTitle = role.title
-                                        dossierCandidate = candidate
+                                    if let member = member, !member.isVacant {
+                                        dossierRoleTitle = CabinetRoles.title(for: role.id, country: gameStore.playerCountry)
+                                        dossierCandidate = member.candidate ?? minimalCandidate(from: member)
                                     }
                                 }
                             )
-                            .staggerEntrance(index: index, offset: 14)
                         }
                     }
                 }
@@ -77,32 +74,63 @@ struct CabinetView: View {
         } message: {
             if let role = fireConfirmRole,
                let member = gameStore.state.cabinet.first(where: { $0.roleId == role.id }) {
-                Text("Remove \(member.name) from \(role.title)?")
+                Text("Remove \(member.name) from \(CabinetRoles.title(for: role.id, country: gameStore.playerCountry))?")
             } else {
                 Text("Remove this cabinet member?")
             }
         }
     }
 
+    private func minimalCandidate(from member: CabinetMember) -> Candidate {
+        Candidate(
+            id: member.id,
+            name: member.name,
+            party: "—",
+            background: "No profile available.",
+            education: "—",
+            experience: "—",
+            institution: nil,
+            age: nil,
+            yearsOfExperience: nil,
+            stats: PlayerStats(
+                diplomacy: Double(member.skillLevel),
+                economics: Double(member.skillLevel),
+                military: Double(member.skillLevel),
+                management: Double(member.skillLevel),
+                compassion: Double(member.skillLevel),
+                integrity: Double(member.skillLevel)
+            ),
+            traits: [],
+            analysisBullets: nil,
+            strengths: nil,
+            weaknesses: nil,
+            degreeType: nil,
+            degreeField: nil,
+            skills: nil,
+            careerHistory: nil,
+            potentialScore: nil,
+            cost: member.cost
+        )
+    }
+
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             ScreenHeader(
                 protocolLabel: "CABINET_COMMAND_LINK_V8",
-                title: "CABINET",
+                title: "Cabinet",
                 subtitle: "\(gameStore.state.cabinet.filter { !$0.isVacant }.count) of \(CabinetRoles.DEFAULT_ROLES.count) positions filled"
             )
 
             // Political capital bar
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("POLITICAL CAPITAL")
-                        .font(AppTypography.micro)
+                    Text("Political Capital")
+                        .font(AppTypography.caption)
                         .foregroundColor(AppColors.foregroundMuted)
-                        .tracking(2)
                     Spacer()
-                    Text("\(gameStore.state.personnelSpent ?? 0) / \(gameStore.state.totalBudget ?? 0) PTS")
-                        .font(AppTypography.micro)
-                        .foregroundColor(AppColors.foreground)
+                    Text("\(gameStore.state.personnelSpent ?? 0) / \(gameStore.state.totalBudget ?? 0)")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.foregroundMuted)
                         .monospacedDigit()
                 }
 
@@ -129,111 +157,135 @@ struct CabinetView: View {
 struct CabinetCard: View {
     let role: Role
     let member: CabinetMember?
+    let country: Country?
     let onHire: () -> Void
     let onReplace: () -> Void
     let onFire: () -> Void
     let onDossier: () -> Void
 
-    @State private var pulseVacant = false
-
     private var isFilled: Bool { member != nil && !(member?.isVacant ?? true) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // Portrait + category
-            HStack(alignment: .top) {
-                PersonSilhouette(
-                    name: member?.candidate?.name,
-                    isFilled: isFilled,
-                    size: 48
-                )
+        VStack(alignment: .leading, spacing: 12) {
+            // Row 1: avatar + info + OVR score
+            HStack(alignment: .center, spacing: 12) {
+                PersonSilhouette(name: member?.candidate?.name, isFilled: isFilled, size: 48)
 
-                Spacer()
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(role.category.uppercased())
+                        .font(AppTypography.micro)
+                        .foregroundColor(AppColors.foregroundSubtle)
+                        .tracking(2)
+                    Text(CabinetRoles.title(for: role.id, country: country))
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.foregroundMuted)
+                        .lineLimit(1)
+                    Text(isFilled ? (member?.name ?? "Vacant") : "Vacant")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(isFilled ? AppColors.foreground : AppColors.foregroundSubtle)
+                        .italic(!isFilled)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text(role.category.uppercased())
-                    .font(AppTypography.micro)
-                    .foregroundColor(AppColors.foregroundSubtle)
-                    .tracking(1)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(AppColors.backgroundMuted)
-                    .overlay(Rectangle().stroke(AppColors.border, lineWidth: 0.5))
+                if isFilled, let stats = member?.candidate?.stats {
+                    let overall = (stats.diplomacy + stats.economics + stats.military + stats.management + stats.integrity) / 5
+                    let color = AppColors.metricColor(for: CGFloat(overall))
+                    VStack(spacing: 2) {
+                        Text("\(Int(overall))")
+                            .font(.system(size: 20, weight: .bold, design: .monospaced))
+                            .foregroundColor(color)
+                        Text("OVR")
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundColor(color.opacity(0.7))
+                            .tracking(2)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
             }
 
-            // Role + name
-            VStack(alignment: .leading, spacing: 4) {
-                Text(role.title.uppercased())
-                    .font(AppTypography.micro)
-                    .foregroundColor(AppColors.foregroundSubtle)
-                    .tracking(1)
-
-                Text(isFilled ? (member?.name ?? "VACANT") : "VACANT")
-                    .font(AppTypography.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundColor(isFilled ? AppColors.foreground : AppColors.foregroundSubtle)
-                    .italic(!isFilled)
-            }
-
-            // Competency bars (when filled)
+            // Row 2: stat bars (filled only)
             if isFilled, let stats = member?.candidate?.stats {
                 MiniStatBars(stats: stats)
             }
 
-            // Actions
+            // Row 3: action buttons
             if isFilled {
-                HStack(spacing: 6) {
-                    Button("REPLACE") { onReplace() }
-                        .buttonStyle(SecondaryButtonStyle())
-                        .accessibilityLabel("Replace \(role.title)")
+                HStack(spacing: 8) {
+                    Button(action: onDossier) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "doc.text")
+                                .font(.system(size: 11, weight: .medium))
+                            Text("File")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(AppColors.accentPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background(AppColors.accentPrimary.opacity(0.10), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open dossier for \(member?.name ?? role.title)")
 
-                    Button("FIRE") { onFire() }
-                        .buttonStyle(DestructiveButtonStyle())
-                        .accessibilityLabel("Dismiss \(member?.name ?? role.title)")
+                    Button(action: onReplace) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "arrow.left.arrow.right")
+                                .font(.system(size: 11, weight: .medium))
+                            Text("Replace")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(AppColors.foreground.opacity(0.75))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Replace \(role.title)")
 
-                    Button("FILE") { onDossier() }
-                        .font(AppTypography.micro)
-                        .foregroundColor(AppColors.info)
-                        .tracking(1)
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 6)
-                        .background(AppColors.backgroundElevated)
-                        .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
-                        .accessibilityLabel("Open dossier for \(member?.name ?? role.title)")
+                    Button(action: onFire) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 11, weight: .medium))
+                            Text("Dismiss")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(AppColors.error)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background(AppColors.error.opacity(0.10), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Dismiss \(member?.name ?? role.title)")
                 }
             } else {
                 Button(action: onHire) {
                     HStack(spacing: 6) {
                         Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .bold))
-                        Text("APPOINT")
-                            .font(AppTypography.micro)
-                            .tracking(2)
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("Appoint")
+                            .font(.system(size: 13, weight: .medium))
                     }
-                    .foregroundColor(AppColors.background)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(AppColors.success)
-                    .accentGlow(color: AppColors.success, radius: 6)
+                    .padding(.vertical, 9)
+                    .background(AppColors.accentPrimary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Hire for \(role.title)")
+                .accessibilityLabel("Appoint to \(role.title)")
             }
         }
-        .padding(16)
-        .background(AppColors.backgroundMuted.opacity(isFilled ? 0.5 : 0.2))
-        .overlay(
-            Rectangle()
-                .stroke(
-                    isFilled ? AppColors.success.opacity(0.4) :
-                    (pulseVacant ? AppColors.accentPrimary.opacity(0.5) : AppColors.border),
-                    style: StrokeStyle(lineWidth: isFilled ? 2 : 1, dash: isFilled ? [] : [4, 4])
-                )
+        .padding(AppSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(isFilled ? 0.05 : 0.03))
         )
-        .onAppear {
+        .overlay {
             if !isFilled {
-                withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
-                    pulseVacant = true
-                }
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .foregroundColor(AppColors.border)
             }
         }
     }
@@ -248,14 +300,13 @@ struct PersonSilhouette: View {
 
     var body: some View {
         ZStack {
-            Rectangle()
+            Circle()
                 .fill(isFilled ? AppColors.accentPrimary.opacity(0.15) : AppColors.backgroundElevated)
                 .frame(width: size, height: size)
-                .overlay(Rectangle().stroke(isFilled ? AppColors.accentPrimary.opacity(0.3) : AppColors.border, lineWidth: 1))
 
             if let name = name, isFilled {
                 Text(name.prefix(2).uppercased())
-                    .font(.system(size: size * 0.34, weight: .black, design: .monospaced))
+                    .font(.system(size: size * 0.34, weight: .semibold))
                     .foregroundColor(AppColors.accentPrimary)
             } else {
                 Image(systemName: "person.fill")
@@ -327,7 +378,7 @@ struct CandidateSelectionSheet: View {
                             .font(AppTypography.micro)
                             .foregroundColor(AppColors.accentPrimary)
                             .tracking(3)
-                        Text(role.title.uppercased())
+                        Text(CabinetRoles.title(for: role.id, country: gameStore.playerCountry).uppercased())
                             .font(AppTypography.title)
                             .foregroundColor(AppColors.foreground)
                     }
@@ -370,10 +421,11 @@ struct CandidateSelectionSheet: View {
 
     private func generateCandidates() {
         let country = gameStore.availableCountries.first { $0.id == gameStore.state.countryId }
+        let partyNames = gameStore.countryParties.isEmpty ? nil : gameStore.countryParties.map { $0.name }
         candidates = CandidateGenerator.generateMinisters(
             roleId: role.id, category: role.category,
             region: country?.region, countryId: gameStore.state.countryId,
-            count: 4, config: gameStore.appConfig
+            count: 4, config: gameStore.appConfig, partyNames: partyNames
         )
     }
 }
@@ -384,35 +436,68 @@ struct CandidateRow: View {
     let candidate: Candidate
     let onSelect: () -> Void
 
+    private var suitabilityScore: Double {
+        (candidate.stats.diplomacy + candidate.stats.economics + candidate.stats.military +
+         candidate.stats.management + candidate.stats.integrity) / 5
+    }
+    private var suitabilityColor: Color { AppColors.metricColor(for: CGFloat(suitabilityScore)) }
+    private var strongestStatLabel: String {
+        let pairs: [(String, Double)] = [
+            ("DIP", candidate.stats.diplomacy),
+            ("ECO", candidate.stats.economics),
+            ("MIL", candidate.stats.military),
+            ("MGT", candidate.stats.management),
+            ("INT", candidate.stats.integrity)
+        ]
+        return pairs.max(by: { $0.1 < $1.1 })?.0 ?? "—"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                PersonSilhouette(name: candidate.name, isFilled: true, size: 40)
+            // Row 1: avatar + info + suitability
+            HStack(alignment: .top, spacing: 12) {
+                PersonSilhouette(name: candidate.name, isFilled: true, size: 44)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(candidate.name)
                         .font(AppTypography.subheadline)
-                        .fontWeight(.bold)
+                        .fontWeight(.semibold)
                         .foregroundColor(AppColors.foreground)
-                    Text("\(candidate.party) · \(candidate.background)")
+                    Text(candidate.party)
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.foreground.opacity(0.55))
+                    Text(candidate.background)
                         .font(AppTypography.micro)
-                        .foregroundColor(AppColors.foregroundMuted)
+                        .foregroundColor(AppColors.foregroundSubtle)
                         .lineLimit(1)
                 }
+
                 Spacer()
+
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(candidate.cost ?? 0)")
-                        .font(AppTypography.caption)
-                        .fontWeight(.black)
-                        .foregroundColor(AppColors.accentPrimary)
-                        .monospacedDigit()
-                    Text("PTS")
+                    Text("SUITABILITY")
                         .font(AppTypography.micro)
                         .foregroundColor(AppColors.foregroundSubtle)
                         .tracking(2)
+                    Text("\(Int(suitabilityScore))")
+                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .foregroundColor(suitabilityColor)
+                    Text("PTS")
+                        .font(AppTypography.micro)
+                        .foregroundColor(AppColors.foregroundSubtle)
+                    Text("\(candidate.cost ?? 0)")
+                        .font(AppTypography.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.accentPrimary)
+                        .monospacedDigit()
                 }
             }
 
+            Rectangle()
+                .fill(AppColors.border)
+                .frame(height: 1)
+
+            // Row 2: stat pills
             HStack(spacing: 6) {
                 StatPill(label: "DIP", value: Int(candidate.stats.diplomacy))
                 StatPill(label: "ECO", value: Int(candidate.stats.economics))
@@ -421,14 +506,48 @@ struct CandidateRow: View {
                 StatPill(label: "INT", value: Int(candidate.stats.integrity))
             }
 
-            Button(action: onSelect) {
-                Text("SELECT CANDIDATE")
+            // Row 3: strongest stat callout + appoint button
+            HStack {
+                HStack(spacing: 8) {
+                    Rectangle()
+                        .fill(suitabilityColor)
+                        .frame(width: 2, height: 20)
+                    Text("Strongest: \(strongestStatLabel)")
+                        .font(AppTypography.micro)
+                        .foregroundColor(AppColors.foregroundSubtle)
+                }
+
+                Spacer()
+
+                Button(action: onSelect) {
+                    HStack(spacing: 6) {
+                        Text("Appoint")
+                            .font(.system(size: 13, weight: .semibold))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(suitabilityColor)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(suitabilityColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(CommandButtonStyle())
         }
         .padding(16)
-        .background(AppColors.backgroundMuted)
-        .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+        .background(AppColors.backgroundElevated, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(AppColors.border, lineWidth: 1)
+        }
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(suitabilityColor)
+                .frame(width: 3)
+                .clipShape(
+                    UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 12)
+                )
+        }
     }
 }
 

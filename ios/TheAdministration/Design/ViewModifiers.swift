@@ -2,6 +2,15 @@
 /// Reusable SwiftUI ViewModifiers for The Administration design system.
 /// Replaces hundreds of inline style applications across all view files.
 import SwiftUI
+import UIKit
+
+// MARK: - Safe SF Symbol
+
+/// Returns an SF Symbol name that exists on this OS, or a fallback to avoid "No symbol named '…' found" console errors.
+func safeSystemImageName(_ name: String, fallback: String = "star.fill") -> String {
+    guard !name.isEmpty, UIImage(systemName: name) != nil else { return fallback }
+    return name
+}
 
 // MARK: - Card Variant
 
@@ -93,8 +102,7 @@ struct AccentGlowModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .shadow(color: color.opacity(0.5), radius: radius, x: 0, y: 0)
-            .shadow(color: color.opacity(0.2), radius: radius * 2, x: 0, y: 0)
+            .shadow(color: color.opacity(0.2), radius: min(radius, 6), x: 0, y: 0)
     }
 }
 
@@ -136,11 +144,8 @@ struct StaggerEntranceModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(appeared ? 1 : 0)
-            .offset(y: appeared ? 0 : offset)
             .onAppear {
-                withAnimation(
-                    AppMotion.standard.delay(AppMotion.staggerDelay(for: index))
-                ) {
+                withAnimation(AppMotion.standard) {
                     appeared = true
                 }
             }

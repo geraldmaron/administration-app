@@ -14,9 +14,14 @@ function validateConfig() {
     const warnings = [];
     // Check required API keys
     const hasOpenAI = !!process.env.OPENAI_API_KEY;
-    const hasMoonshot = !!process.env.MOONSHOT_API_KEY;
     if (!hasOpenAI) {
         errors.push('OPENAI_API_KEY is not set - generation and embeddings will fail');
+    }
+    if (hasOpenAI) {
+        const key = process.env.OPENAI_API_KEY.trim();
+        if (!key.startsWith('sk-') && !key.startsWith('sess-')) {
+            warnings.push('OPENAI_API_KEY does not start with expected prefix (sk- or sess-) — verify the key is correct');
+        }
     }
     // Check model configuration
     const conceptModel = process.env.CONCEPT_MODEL || 'gpt-4o-mini';
@@ -48,16 +53,12 @@ function validateConfig() {
     if (drafterModel !== 'gpt-4o-mini') {
         warnings.push(`DRAFTER_MODEL is ${drafterModel} - recommended: gpt-4o-mini for low-cost operation`);
     }
-    if (hasMoonshot) {
-        warnings.push('MOONSHOT_API_KEY is set but Moonshot routing is disabled in OpenAI-only mode');
-    }
     return {
         valid: errors.length === 0,
         errors,
         warnings,
         config: {
             hasOpenAI,
-            hasMoonshot,
             semanticDedupEnabled,
             models: {
                 concept: conceptModel,
@@ -75,7 +76,6 @@ function logConfigStatus() {
     const validation = validateConfig();
     console.log('[Config] OpenAI-only Generation System Configuration:');
     console.log(`  OpenAI API: ${validation.config.hasOpenAI ? '✓' : '✗'}`);
-    console.log(`  Moonshot API (legacy env): ${validation.config.hasMoonshot ? 'present' : 'not set'}`);
     console.log(`  Semantic Dedup: ${validation.config.semanticDedupEnabled ? 'enabled' : 'disabled'}`);
     console.log(`  Models:`);
     console.log(`    - Concept: ${validation.config.models.concept}`);

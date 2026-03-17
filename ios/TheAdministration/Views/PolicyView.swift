@@ -7,6 +7,7 @@ import SwiftUI
 struct PolicyView: View {
     @ObservedObject var gameStore: GameStore
     @State private var showStrategicPlanSheet = false
+    @State private var showMilitarySheet = false
 
     private var policy: PolicySettings {
         gameStore.state.policySettings ?? PolicySettings(
@@ -28,6 +29,7 @@ struct PolicyView: View {
                     capitalBanner
                     policySliders
                     strategicPlanCard
+                    militaryStatusCard
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, AppSpacing.tabBarClearance)
@@ -36,14 +38,17 @@ struct PolicyView: View {
         .sheet(isPresented: $showStrategicPlanSheet) {
             StrategicPlanSheet(gameStore: gameStore)
         }
+        .sheet(isPresented: $showMilitarySheet) {
+            MilitarySheet(gameStore: gameStore)
+        }
     }
 
     // MARK: - Header
     private var header: some View {
         ScreenHeader(
             protocolLabel: "POLICY_COMMAND_LINK_V8",
-            title: "POLICY COMMAND",
-            subtitle: "Strategic Posture & Resource Allocation"
+            title: "Policy",
+            subtitle: "Strategic posture and resource allocation"
         )
         .accessibilityLabel("Policy Command — Strategic Posture and Resource Allocation")
     }
@@ -55,28 +60,30 @@ struct PolicyView: View {
         let net = capital - cost
         return HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("POLITICAL CAPITAL")
-                    .font(.system(size: 9, weight: .black))
+                Text("Political Capital")
+                    .font(AppTypography.micro)
                     .foregroundColor(AppColors.foregroundSubtle)
-                    .tracking(2)
                 Text("\(capital)")
-                    .font(.system(size: 28, weight: .black, design: .monospaced))
+                    .font(.system(size: 28, weight: .semibold, design: .monospaced))
                     .foregroundColor(AppColors.foreground)
+                    .monospacedDigit()
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text("POLICY COST / NET")
-                    .font(.system(size: 9, weight: .black))
+                Text("Cost / Net")
+                    .font(AppTypography.micro)
                     .foregroundColor(AppColors.foregroundSubtle)
-                    .tracking(2)
                 Text("\(cost) / \(net > 0 ? "+" : "")\(net)")
-                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .font(.system(size: 16, weight: .semibold, design: .monospaced))
                     .foregroundColor(net >= 0 ? AppColors.success : AppColors.error)
+                    .monospacedDigit()
             }
         }
         .padding(16)
-        .background(AppColors.backgroundElevated)
-        .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Political capital: \(capital). Policy cost: \(cost). Net: \(net).")
     }
@@ -131,36 +138,37 @@ struct PolicyView: View {
     private var strategicPlanCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("STRATEGIC PLAN")
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundColor(AppColors.foregroundSubtle)
-                    .tracking(2)
+                Text("Strategic Plan")
+                    .font(AppTypography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(AppColors.foregroundMuted)
                 Spacer()
                 Button("Set Plan") { showStrategicPlanSheet = true }
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundColor(AppColors.accentPrimary)
                     .accessibilityLabel("Set strategic plan")
             }
             if let plan = gameStore.state.strategicPlan {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(plan.name)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.foreground)
                     Text(plan.description)
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(AppColors.foregroundMuted)
                     if let turns = plan.durationTurns {
                         let elapsed = (gameStore.state.turn) - (plan.activeTurn ?? 0)
-                        let progress = min(1.0, Double(elapsed) / Double(turns))
+                        let progress: Double = turns > 0 ? min(1.0, Double(elapsed) / Double(turns)) : 0
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text("Progress")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(AppTypography.micro)
                                     .foregroundColor(AppColors.foregroundSubtle)
                                 Spacer()
                                 Text("\(elapsed)/\(turns) turns")
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .font(AppTypography.micro)
                                     .foregroundColor(AppColors.foregroundMuted)
+                                    .monospacedDigit()
                             }
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
@@ -170,20 +178,101 @@ struct PolicyView: View {
                                         .frame(width: geo.size.width * CGFloat(progress))
                                 }
                             }
-                            .frame(height: 4)
+                            .frame(height: 3)
                         }
                     }
                 }
             } else {
                 Text("No active strategic plan. Set a plan to guide your administration's direction.")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundColor(AppColors.foregroundSubtle)
                     .italic()
             }
         }
         .padding(16)
-        .background(AppColors.backgroundElevated)
-        .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
+    }
+
+    // MARK: - Military Status Card
+    private var militaryStatusCard: some View {
+        let mil = gameStore.countryMilitaryState
+        let readiness = mil?.overallReadiness ?? 0
+        let readinessColor = AppColors.metricColor(for: CGFloat(readiness))
+        let conflictCount = mil?.activeConflicts.count ?? 0
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "shield.fill")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(readinessColor)
+                    Text("MILITARY STATUS")
+                        .font(.system(size: 10, weight: .black))
+                        .foregroundColor(AppColors.foregroundSubtle)
+                        .tracking(2)
+                }
+                Spacer()
+                if conflictCount > 0 {
+                    Text("\(conflictCount) ACTIVE CONFLICT\(conflictCount > 1 ? "S" : "")")
+                        .font(AppTypography.micro)
+                        .foregroundColor(AppColors.error)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(AppColors.error.opacity(0.12), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                }
+            }
+            if mil != nil {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("READINESS")
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundColor(AppColors.foregroundSubtle)
+                            .tracking(2)
+                        Text("\(readiness)")
+                            .font(.system(size: 28, weight: .bold, design: .monospaced))
+                            .foregroundColor(readinessColor)
+                    }
+                    ZStack {
+                        Circle()
+                            .stroke(AppColors.border, lineWidth: 4)
+                        Circle()
+                            .trim(from: 0, to: CGFloat(readiness) / 100)
+                            .stroke(readinessColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                    }
+                    .frame(width: 44, height: 44)
+                    Spacer()
+                    Button {
+                        showMilitarySheet = true
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text("Full Briefing")
+                                .font(.system(size: 12, weight: .medium))
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .foregroundColor(AppColors.accentPrimary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(AppColors.accentPrimary.opacity(0.10), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open full military briefing")
+                }
+            } else {
+                Text("No military data available")
+                    .font(AppTypography.bodySmall)
+                    .foregroundColor(AppColors.foregroundSubtle)
+                    .italic()
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
     }
 }
 
@@ -202,12 +291,12 @@ struct PolicySliderRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(label)
-                        .font(AppTypography.label)
-                        .foregroundColor(AppColors.foregroundSubtle)
-                        .tracking(2)
+                        .font(AppTypography.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(AppColors.foreground)
                     Text(subtitle)
                         .font(AppTypography.micro)
-                        .foregroundColor(AppColors.foregroundSubtle.opacity(0.7))
+                        .foregroundColor(AppColors.foregroundSubtle)
                 }
                 Spacer()
                 Text(String(format: "%.0f", value))
@@ -229,22 +318,12 @@ struct PolicySliderRow: View {
                     .font(AppTypography.micro)
                     .foregroundColor(AppColors.foregroundSubtle)
             }
-
-            // Position indicator bar
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Rectangle().fill(AppColors.border)
-                    Rectangle()
-                        .fill(sliderColor)
-                        .frame(width: geo.size.width * CGFloat(value / 100))
-                        .animation(AppMotion.quickSnap, value: value)
-                }
-            }
-            .frame(height: 2)
         }
         .padding(14)
-        .background(AppColors.backgroundElevated)
-        .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label). Current value: \(Int(value)). Range from \(leftLabel) to \(rightLabel).")
         .accessibilityAdjustableAction { direction in

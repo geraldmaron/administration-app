@@ -1,6 +1,6 @@
 /// Cards
 /// Reusable card components for The Administration design system.
-/// Consolidates the many inline card patterns across all view files.
+/// Clean, minimal surfaces — whitespace over decoration.
 import SwiftUI
 
 // MARK: - CommandCard
@@ -27,7 +27,6 @@ struct CommandCard<Content: View>: View {
                     Text(title)
                         .font(AppTypography.label)
                         .foregroundColor(AppColors.foregroundSubtle)
-                        .tracking(2)
                         .textCase(.uppercase)
                     if let subtitle = subtitle {
                         Text(subtitle)
@@ -39,7 +38,10 @@ struct CommandCard<Content: View>: View {
             content
         }
         .padding(AppSpacing.cardPadding)
-        .cardStyle(.elevated)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+        )
     }
 }
 
@@ -52,23 +54,14 @@ struct MetricCard: View {
     let isActive: Bool
     let onTap: () -> Void
 
-    private var color: Color { AppColors.metricColor(for: value) }
+    private var color: Color { AppColors.metricColor(for: CGFloat(value)) }
 
     var body: some View {
         Button(action: {
             HapticEngine.shared.light()
             onTap()
         }) {
-            VStack(spacing: 8) {
-                ZStack {
-                    Circle()
-                        .fill(isActive ? color.opacity(0.15) : AppColors.backgroundElevated)
-                        .frame(width: 36, height: 36)
-                    Image(systemName: icon)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(isActive ? color : AppColors.foregroundSubtle)
-                }
-
+            VStack(spacing: 6) {
                 Text("\(Int(value))")
                     .font(AppTypography.data)
                     .foregroundColor(color)
@@ -78,21 +71,34 @@ struct MetricCard: View {
                     .foregroundColor(isActive ? color : AppColors.foregroundSubtle)
                     .textCase(.uppercase)
                     .multilineTextAlignment(.center)
-                    .lineLimit(2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
 
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        Rectangle().fill(AppColors.border)
-                        Rectangle()
-                            .fill(color)
-                            .frame(width: geometry.size.width * CGFloat(value / 100))
-                    }
+                ZStack {
+                    Circle()
+                        .trim(from: 0, to: 0.75)
+                        .stroke(AppColors.border, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                        .rotationEffect(.degrees(135))
+                    Circle()
+                        .trim(from: 0, to: CGFloat(max(0, min(0.75, (value / 100) * 0.75))))
+                        .stroke(
+                            LinearGradient(
+                                colors: [color.opacity(0.5), color],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            style: StrokeStyle(lineWidth: 3.5, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(135))
                 }
-                .frame(height: 2)
+                .frame(width: 28, height: 28)
+                .animation(AppMotion.standard, value: value)
             }
-            .padding(AppSpacing.md)
-            .background(isActive ? color.opacity(0.08) : AppColors.border)
-            .overlay(Rectangle().stroke(isActive ? color.opacity(0.4) : AppColors.border, lineWidth: isActive ? 1 : 0.5))
+            .padding(AppSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isActive ? color.opacity(0.08) : Color.white.opacity(0.04))
+            )
         }
         .buttonStyle(.plain)
     }
@@ -120,10 +126,9 @@ struct InteractiveCard<Content: View>: View {
                 .padding(AppSpacing.md)
         }
         .buttonStyle(.plain)
-        .background(isHighlighted ? AppColors.accentPrimary.opacity(0.08) : AppColors.backgroundElevated)
-        .overlay(
-            Rectangle()
-                .stroke(isHighlighted ? AppColors.accentPrimary.opacity(0.4) : AppColors.border, lineWidth: 1)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(isHighlighted ? AppColors.accentPrimary.opacity(0.08) : Color.white.opacity(0.05))
         )
     }
 }
@@ -149,7 +154,6 @@ struct DossierCard<Content: View>: View {
                 Text(category.uppercased())
                     .font(AppTypography.micro)
                     .foregroundColor(AppColors.accentPrimary)
-                    .tracking(3)
                 Spacer()
                 if let detail = detail {
                     Text(detail)
@@ -158,10 +162,6 @@ struct DossierCard<Content: View>: View {
                 }
             }
 
-            Rectangle()
-                .fill(AppColors.accentPrimary)
-                .frame(height: 1)
-
             Text(title)
                 .font(AppTypography.headline)
                 .foregroundColor(AppColors.foreground)
@@ -169,8 +169,10 @@ struct DossierCard<Content: View>: View {
             content
         }
         .padding(AppSpacing.md)
-        .background(AppColors.backgroundElevated)
-        .overlay(Rectangle().stroke(AppColors.accentPrimary.opacity(0.2), lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.backgroundElevated)
+        )
     }
 }
 
@@ -195,63 +197,69 @@ struct ScenarioOptionCard: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
+        ZStack(alignment: .topTrailing) {
             Button(action: {
                 HapticEngine.shared.medium()
                 onSelect()
             }) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .top, spacing: 8) {
-                        Text(Self.optionLetters[safe: index] ?? "")
-                            .font(AppTypography.micro)
-                            .foregroundColor(isSelected ? AppColors.background : AppColors.accentPrimary)
-                            .frame(width: 20, height: 20)
-                            .background(isSelected ? AppColors.accentPrimary : AppColors.accentPrimary.opacity(0.12))
-                            .clipShape(Circle())
+                HStack(alignment: .top, spacing: 10) {
+                    Text(Self.optionLetters[safe: index] ?? "")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(isSelected ? .white : AppColors.accentPrimary)
+                        .frame(width: 22, height: 22)
+                        .background(isSelected ? AppColors.accentPrimary : AppColors.accentPrimary.opacity(0.12), in: Circle())
 
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(option.text)
                             .font(AppTypography.bodySmall)
-                            .fontWeight(.semibold)
+                            .fontWeight(.medium)
                             .foregroundColor(isDimmed ? AppColors.foregroundSubtle : AppColors.foreground)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
-                    }
+                            .padding(.trailing, onAdvisor != nil ? 28 : 0)
 
-                    if !impactBadges.isEmpty {
-                        HStack(spacing: 6) {
-                            ForEach(impactBadges, id: \.metricId) { badge in
-                                HStack(spacing: 3) {
-                                    Text(metricShortLabel(badge.metricId))
-                                        .font(AppTypography.micro)
-                                    Text(badge.value >= 0 ? "+\(Int(badge.value))" : "\(Int(badge.value))")
-                                        .font(AppTypography.micro)
+                        if let feedback = option.advisorFeedback, !feedback.isEmpty {
+                            let supports = feedback.filter { ["support", "approve", "positive"].contains($0.stance.lowercased()) }.count
+                            let opposes = feedback.filter { ["oppose", "reject", "negative"].contains($0.stance.lowercased()) }.count
+                            if supports > 0 || opposes > 0 {
+                                HStack(spacing: 10) {
+                                    if supports > 0 {
+                                        HStack(spacing: 3) {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.system(size: 9))
+                                                .foregroundColor(AppColors.success)
+                                            Text("\(supports)")
+                                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                                                .foregroundColor(AppColors.success)
+                                        }
+                                    }
+                                    if opposes > 0 {
+                                        HStack(spacing: 3) {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .font(.system(size: 9))
+                                                .foregroundColor(AppColors.error)
+                                            Text("\(opposes)")
+                                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                                                .foregroundColor(AppColors.error)
+                                        }
+                                    }
+                                    Text("cabinet")
+                                        .font(.system(size: 9))
+                                        .foregroundColor(AppColors.foregroundSubtle)
                                 }
-                                .foregroundColor(badge.value >= 0 ? AppColors.success : AppColors.error)
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 2)
-                                .background((badge.value >= 0 ? AppColors.success : AppColors.error).opacity(0.1))
-                                .overlay(
-                                    Rectangle().stroke(
-                                        (badge.value >= 0 ? AppColors.success : AppColors.error).opacity(0.3),
-                                        lineWidth: 0.5
-                                    )
-                                )
                             }
                         }
                     }
                 }
-                .padding(12)
+                .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
-                    isSelected ? AppColors.accentPrimary.opacity(0.1) :
-                    isDimmed ? AppColors.background : AppColors.border
-                )
-                .overlay(
-                    Rectangle().stroke(
-                        isSelected ? AppColors.accentPrimary.opacity(0.5) : AppColors.borderStrong,
-                        lineWidth: 1
-                    )
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(
+                            isSelected ? AppColors.accentPrimary.opacity(0.10) :
+                            isDimmed ? Color.white.opacity(0.02) : Color.white.opacity(0.05)
+                        )
                 )
             }
             .buttonStyle(.plain)
@@ -259,13 +267,11 @@ struct ScenarioOptionCard: View {
             if let onAdvisor = onAdvisor {
                 Button(action: onAdvisor) {
                     Image(systemName: "person.text.rectangle")
-                        .font(.system(size: 16))
-                        .foregroundColor(AppColors.foregroundMuted)
-                        .padding(12)
-                        .background(AppColors.backgroundElevated)
-                        .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+                        .font(.system(size: 13))
+                        .foregroundColor(AppColors.foregroundSubtle)
+                        .padding(8)
                 }
-                .accessibilityLabel("View advisor briefing for this option")
+                .accessibilityLabel("View cabinet briefing for this option")
             }
         }
     }

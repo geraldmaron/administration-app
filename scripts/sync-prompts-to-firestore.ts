@@ -84,8 +84,10 @@ async function main() {
     max_llm_repair_attempts: 3,
     llm_repair_enabled: true,
     content_quality_gate_enabled: true,
+    audit_pass_threshold: 80,
+    audit_warning_penalty: 4,
   }, { merge: true });
-  console.log('  ✅ max_llm_repair_attempts: 3, llm_repair_enabled: true, content_quality_gate_enabled: true');
+  console.log('  ✅ max_llm_repair_attempts: 3, llm_repair_enabled: true, content_quality_gate_enabled: true, audit_pass_threshold: 80, audit_warning_penalty: 4');
 
   console.log('\nDone.');
   process.exit(0);

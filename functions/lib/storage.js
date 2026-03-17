@@ -50,6 +50,7 @@ exports.findSimilarScenario = findSimilarScenario;
 exports.generateUniqueScenarioId = generateUniqueScenarioId;
 exports.saveScenario = saveScenario;
 exports.fetchScenarios = fetchScenarios;
+exports.getActiveBundleCount = getActiveBundleCount;
 /**
  * Storage module: scenario persistence, similarity checks, and theme-based visibility.
  * Saves scenarios to Firestore and optional Cloud Storage JSON; applies conditions for
@@ -342,5 +343,14 @@ async function fetchScenarios(hideNewsScenarios = false, limit = 100) {
         scenarios.push(scenarioData);
     });
     return scenarios;
+}
+async function getActiveBundleCount(bundle, db) {
+    const snap = await db
+        .collection('scenarios')
+        .where('metadata.bundle', '==', bundle)
+        .where('is_active', '==', true)
+        .count()
+        .get();
+    return snap.data().count;
 }
 //# sourceMappingURL=storage.js.map

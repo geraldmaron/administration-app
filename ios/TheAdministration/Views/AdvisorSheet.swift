@@ -11,9 +11,16 @@ struct AdvisorSheet: View {
     @Environment(\.dismiss) private var dismiss
     let onConfirm: () -> Void
 
-    private var cabinetFeedback: [(member: CabinetMember, feedback: AdvisorFeedback?)] {
-        gameStore.state.cabinet.map { member in
-            let fb = option.advisorFeedback?.first(where: { $0.roleId == member.roleId })
+    private var cabinetFeedback: [(member: CabinetMember, feedback: AdvisorFeedback)] {
+        guard let feedbacks = option.advisorFeedback else { return [] }
+        var seen = Set<String>()
+        return feedbacks.compactMap { fb in
+            guard let member = gameStore.state.cabinet.first(where: {
+                $0.roleId == fb.roleId && !$0.isVacant
+            }) else { return nil }
+            // Deduplicate by the unique cabinet member id (member.id)
+            guard !seen.contains(member.id) else { return nil }
+            seen.insert(member.id)
             return (member: member, feedback: fb)
         }
     }
@@ -61,7 +68,7 @@ struct AdvisorSheet: View {
     // MARK: - Advisors
     private var advisorsList: some View {
         VStack(spacing: 12) {
-            Text("CABINET POSITIONS")
+            Text("CABINET FEEDBACK")
                 .font(.system(size: 10, weight: .black))
                 .foregroundColor(AppColors.foregroundSubtle)
                 .tracking(2)
@@ -73,26 +80,11 @@ struct AdvisorSheet: View {
                     .foregroundColor(AppColors.foregroundSubtle)
                     .italic()
             } else {
-                ForEach(cabinetFeedback, id: \.member.roleId) { item in
-                    AdvisorFeedbackCard(member: item.member, feedback: item.feedback)
+                ForEach(cabinetFeedback, id: \.member.id) { item in
+                    AdvisorFeedbackCard(member: item.member, feedback: item.feedback, country: gameStore.playerCountry)
                 }
             }
 
-            if let freeformFeedback = option.advisorFeedbackString {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("GENERAL ADVISORY")
-                        .font(.system(size: 9, weight: .black))
-                        .foregroundColor(AppColors.foregroundSubtle)
-                        .tracking(2)
-                    Text(freeformFeedback)
-                        .font(.system(size: 13))
-                        .foregroundColor(AppColors.foregroundMuted)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(12)
-                .background(AppColors.backgroundElevated)
-                .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
-            }
         }
     }
 
@@ -117,11 +109,11 @@ struct AdvisorSheet: View {
 // MARK: - AdvisorFeedbackCard
 private struct AdvisorFeedbackCard: View {
     let member: CabinetMember
-    let feedback: AdvisorFeedback?
+    let feedback: AdvisorFeedback
+    let country: Country?
 
     private var stanceColor: Color {
-        guard let s = feedback?.stance else { return AppColors.foregroundSubtle }
-        switch s.lowercased() {
+        switch feedback.stance.lowercased() {
         case "support", "approve", "positive": return AppColors.success
         case "oppose", "reject", "negative":   return AppColors.error
         default: return AppColors.foregroundSubtle
@@ -134,7 +126,7 @@ private struct AdvisorFeedbackCard: View {
                 .fill(stanceColor.opacity(0.2))
                 .frame(width: 40, height: 40)
                 .overlay(
-                    Text(member.candidate?.name.prefix(1) ?? "?")
+                    Text(String((member.candidate?.name ?? member.name).prefix(1)))
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(stanceColor)
                 )
@@ -142,37 +134,28 @@ private struct AdvisorFeedbackCard: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(member.candidate?.name ?? "Advisor")
+                    Text(member.candidate?.name ?? member.name)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(AppColors.foreground)
                     Spacer()
-                    if let s = feedback?.stance {
-                        Text(s.uppercased())
-                            .font(.system(size: 8, weight: .black))
-                            .foregroundColor(stanceColor)
-                            .tracking(1)
-                    }
+                    Text(feedback.stance.uppercased())
+                        .font(.system(size: 8, weight: .black))
+                        .foregroundColor(stanceColor)
+                        .tracking(1)
                 }
-                Text(member.roleId.replacingOccurrences(of: "_", with: " ").capitalized)
+                Text(CabinetRoles.title(for: member.roleId, country: country))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(AppColors.foregroundSubtle)
-                if let msg = feedback?.feedback {
-                    Text(msg)
-                        .font(.system(size: 12))
-                        .foregroundColor(AppColors.foregroundMuted)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    Text("No position on this matter.")
-                        .font(.system(size: 12))
-                        .foregroundColor(AppColors.foregroundSubtle)
-                        .italic()
-                }
+                Text(feedback.feedback)
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColors.foregroundMuted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(12)
         .background(AppColors.backgroundElevated)
         .overlay(Rectangle().stroke(stanceColor.opacity(0.2), lineWidth: 1))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(member.candidate?.name ?? "Advisor"). Stance: \(feedback?.stance ?? "unknown"). \(feedback?.feedback ?? "No position.")")
+        .accessibilityLabel("\(member.candidate?.name ?? member.name), \(CabinetRoles.title(for: member.roleId, country: country)). Stance: \(feedback.stance). \(feedback.feedback)")
     }
 }

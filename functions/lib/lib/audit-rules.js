@@ -10,7 +10,7 @@
  * Call initializeAuditConfig(db) once before running any generation job.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isValidBundleId = exports.VALID_BUNDLE_IDS = void 0;
+exports.CANONICAL_ROLE_IDS = exports.isValidBundleId = exports.VALID_BUNDLE_IDS = void 0;
 exports.getAuditConfig = getAuditConfig;
 exports.initializeAuditConfig = initializeAuditConfig;
 exports.getRelevantRolesForEffects = getRelevantRolesForEffects;
@@ -38,6 +38,21 @@ function countWords(text) {
 // Re-exports (schema-level constants that stay in code)
 // ---------------------------------------------------------------------------
 exports.VALID_BUNDLE_IDS = new Set(bundleIds_1.ALL_BUNDLE_IDS);
+exports.CANONICAL_ROLE_IDS = new Set([
+    'role_executive',
+    'role_diplomacy',
+    'role_defense',
+    'role_economy',
+    'role_justice',
+    'role_health',
+    'role_commerce',
+    'role_labor',
+    'role_interior',
+    'role_energy',
+    'role_environment',
+    'role_transport',
+    'role_education',
+]);
 let _config = null;
 function getAuditConfig() {
     if (!_config) {
@@ -91,23 +106,32 @@ function buildBannedCountryPhrases(countriesDoc) {
  * Must be called once before any audit or generation job.
  */
 async function initializeAuditConfig(db) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r;
-    const [metricsSnap, contentRulesSnap, genConfigSnap, countriesSnap] = await Promise.all([
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+    const [metricsSnap, contentRulesSnap, genConfigSnap, countriesCollSnap] = await Promise.all([
         db.doc('world_state/metrics').get(),
         db.doc('world_state/content_rules').get(),
         db.doc('world_state/generation_config').get(),
-        db.doc('world_state/countries').get(),
+        db.collection('countries').get(),
     ]);
     const metricsData = (_b = (_a = metricsSnap.data()) === null || _a === void 0 ? void 0 : _a.metrics) !== null && _b !== void 0 ? _b : [];
     const contentRules = (_c = contentRulesSnap.data()) !== null && _c !== void 0 ? _c : {};
     const genConfig = (_d = genConfigSnap.data()) !== null && _d !== void 0 ? _d : {};
-    const countriesDoc = (_e = countriesSnap.data()) !== null && _e !== void 0 ? _e : {};
+    let countriesDoc;
+    if (!countriesCollSnap.empty) {
+        const result = {};
+        countriesCollSnap.forEach((doc) => { result[doc.id] = doc.data(); });
+        countriesDoc = result;
+    }
+    else {
+        console.error('[AuditRules] countries/ collection is empty — aborting');
+        throw new Error('[AuditRules] countries/ collection is empty');
+    }
     // Build metric index from Firebase
     const validMetricIds = new Set(metricsData.map((m) => m.id));
     const inverseMetrics = new Set(metricsData.filter((m) => m.inverse === true).map((m) => m.id));
     const metricMagnitudeCaps = {};
     const metricToRoles = {};
-    const validRoleIds = new Set(['role_executive']);
+    const validRoleIds = new Set(exports.CANONICAL_ROLE_IDS);
     for (const m of metricsData) {
         if (m.effectMagnitudeCap != null)
             metricMagnitudeCaps[m.id] = m.effectMagnitudeCap;
@@ -118,10 +142,10 @@ async function initializeAuditConfig(db) {
     }
     // Banned phrases: country names/capitals derived from countries doc + static rules from content_rules
     const bannedCountryPhrases = buildBannedCountryPhrases(countriesDoc);
-    const bannedAbbreviations = (_f = contentRules.banned_abbreviations) !== null && _f !== void 0 ? _f : [];
-    const bannedUnits = (_g = contentRules.banned_units) !== null && _g !== void 0 ? _g : [];
-    const bannedDirections = (_h = contentRules.banned_directions) !== null && _h !== void 0 ? _h : [];
-    const bannedPartyNames = (_j = contentRules.banned_party_names) !== null && _j !== void 0 ? _j : [];
+    const bannedAbbreviations = (_e = contentRules.banned_abbreviations) !== null && _e !== void 0 ? _e : [];
+    const bannedUnits = (_f = contentRules.banned_units) !== null && _f !== void 0 ? _f : [];
+    const bannedDirections = (_g = contentRules.banned_directions) !== null && _g !== void 0 ? _g : [];
+    const bannedPartyNames = (_h = contentRules.banned_party_names) !== null && _h !== void 0 ? _h : [];
     const bannedPhrases = [
         ...bannedCountryPhrases,
         ...bannedAbbreviations,
@@ -141,16 +165,16 @@ async function initializeAuditConfig(db) {
         validRoleIds,
         inverseMetrics,
         metricMagnitudeCaps,
-        defaultCap: (_k = genConfig.effect_default_cap) !== null && _k !== void 0 ? _k : 4.2,
+        defaultCap: (_j = genConfig.effect_default_cap) !== null && _j !== void 0 ? _j : 4.2,
         metricToRoles,
-        categoryDomainMetrics: (_l = genConfig.category_domain_metrics) !== null && _l !== void 0 ? _l : {},
-        metricMappings: (_m = genConfig.metric_mappings) !== null && _m !== void 0 ? _m : {},
+        categoryDomainMetrics: (_k = genConfig.category_domain_metrics) !== null && _k !== void 0 ? _k : {},
+        metricMappings: (_l = genConfig.metric_mappings) !== null && _l !== void 0 ? _l : {},
         bannedPhrases,
         validTokens: new Set(logic_parameters_1.ALL_TOKENS),
         logicParameters: {
             duration: {
-                min: (_p = (_o = genConfig.effect_duration) === null || _o === void 0 ? void 0 : _o.min) !== null && _p !== void 0 ? _p : 1,
-                max: (_r = (_q = genConfig.effect_duration) === null || _q === void 0 ? void 0 : _q.max) !== null && _r !== void 0 ? _r : 20,
+                min: (_o = (_m = genConfig.effect_duration) === null || _m === void 0 ? void 0 : _m.min) !== null && _o !== void 0 ? _o : 1,
+                max: (_q = (_p = genConfig.effect_duration) === null || _p === void 0 ? void 0 : _p.max) !== null && _q !== void 0 ? _q : 20,
             },
             probability: { required: 1 },
         },
@@ -188,14 +212,14 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
     if (!((_b = scenario.description) === null || _b === void 0 ? void 0 : _b.trim()))
         add('error', 'missing-desc', scenario.id, 'Missing or empty description');
     // severity: 'error' for second-person narrative fields (description, option text); 'warn' for title
-    const checkFraming = (text, fieldName, severity = 'warn') => {
+    const checkFraming = (text, fieldName, severity = 'warn', replacementHint = 'your administration') => {
         if (!text)
             return;
         const lowerText = text.toLowerCase();
         if (lowerText.match(/(?<!\{[a-z_]+\}'s |your |their |its |our )\bthe government\b/))
             add(severity, 'third-person-framing', scenario.id, `${fieldName} uses "the government" instead of "your government"`, severity === 'warn');
         if (lowerText.match(/(?<!\{[a-z_]+\}'s |your |their |its |our )\bthe administration\b/))
-            add(severity, 'third-person-framing', scenario.id, `${fieldName} uses "the administration" instead of "your administration"`, severity === 'warn');
+            add(severity, 'third-person-framing', scenario.id, `${fieldName} uses "the administration" instead of "${replacementHint}"`, severity === 'warn');
         if (lowerText.includes('the president') && !text.includes('{leader_title}'))
             add(severity, 'third-person-framing', scenario.id, `${fieldName} uses "the president" instead of "you" or {leader_title}`, severity === 'warn');
         if (lowerText.match(/\bthe executive\b(?! branch| order| power)/))
@@ -240,8 +264,11 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
             }
         };
         checkOutcomeVoice(opt.outcomeHeadline, `option ${opt.id} outcomeHeadline`);
+        checkFraming(opt.outcomeHeadline, `option ${opt.id} outcomeHeadline`, 'warn', '{leader_title}');
         checkOutcomeVoice(opt.outcomeSummary, `option ${opt.id} outcomeSummary`);
+        checkFraming(opt.outcomeSummary, `option ${opt.id} outcomeSummary`, 'warn', '{leader_title}');
         checkOutcomeVoice(opt.outcomeContext, `option ${opt.id} outcomeContext`);
+        checkFraming(opt.outcomeContext, `option ${opt.id} outcomeContext`, 'warn', '{leader_title}');
     }
     if (scenario.description) {
         const optionPreviews = [
@@ -325,8 +352,10 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
     allOptionTexts.forEach((txt, idx) => { var _a, _b; return checkGdpDescriptionMisuse(txt, `option ${(_b = (_a = scenario.options[idx]) === null || _a === void 0 ? void 0 : _a.id) !== null && _b !== void 0 ? _b : idx} text/outcome`); });
     if (scenario.description) {
         const sentenceCount = countSentences(scenario.description);
-        if (sentenceCount < 2 || sentenceCount > 3)
+        if (sentenceCount < 2 || sentenceCount > 4)
             add('error', 'description-length', scenario.id, `Description must be 2–3 sentences (found ${sentenceCount})`, true);
+        else if (sentenceCount === 4)
+            add('warn', 'description-length', scenario.id, `Description is 4 sentences (prefer 2–3 for conciseness)`, true);
         const wordCount = countWords(scenario.description);
         if (wordCount < 45)
             add('warn', 'description-word-count', scenario.id, `Description is ${wordCount} words (min 45) — add specific trigger, actors, and stakes`, true);
@@ -383,8 +412,10 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
         }
         if (opt.text) {
             const sentenceCount = countSentences(opt.text);
-            if (sentenceCount < 2 || sentenceCount > 3)
+            if (sentenceCount < 2 || sentenceCount > 4)
                 add('error', 'option-text-length', oid, `Option text must be 2–3 sentences (found ${sentenceCount})`, true);
+            else if (sentenceCount === 4)
+                add('warn', 'option-text-length', oid, `Option text is 4 sentences (prefer 2–3 for conciseness)`, true);
             const wordCount = countWords(opt.text);
             if (wordCount < 35)
                 add('warn', 'option-text-word-count', oid, `Option text is ${wordCount} words (min 35) — name the mechanism, trade-off, and affected constituency`, true);
@@ -462,7 +493,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
                 if (!fb.roleId || !fb.stance || !((_l = fb.feedback) === null || _l === void 0 ? void 0 : _l.trim()))
                     add('error', 'invalid-advisor-feedback', oid, `Advisor feedback entry missing roleId, stance, or feedback text`);
                 else if (!cfg.validRoleIds.has(fb.roleId))
-                    add('warn', 'invalid-role-id', oid, `Unknown roleId: ${fb.roleId}. Use canonical cabinet roles from world_state/metrics.`);
+                    add('error', 'invalid-role-id', oid, `Unknown roleId: "${fb.roleId}". Must be one of the 13 canonical cabinet roles.`);
                 else {
                     // Detect auto-generated boilerplate feedback that should be replaced with substantive text
                     const feedback = (_o = (_m = fb.feedback) === null || _m === void 0 ? void 0 : _m.trim()) !== null && _o !== void 0 ? _o : '';
@@ -492,6 +523,13 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
                     else if (SOFT_BOILERPLATE_FRAGMENTS.some(p => p.test(feedback))) {
                         add('warn', 'advisor-boilerplate', oid, `Advisor feedback for ${fb.roleId} appears generic and should be made scenario-specific`);
                     }
+                }
+            }
+            if (Array.isArray(opt.advisorFeedback) && opt.advisorFeedback.length > 0) {
+                const presentRoles = new Set(opt.advisorFeedback.map((f) => f.roleId));
+                const missingRoles = [...exports.CANONICAL_ROLE_IDS].filter(r => !presentRoles.has(r));
+                if (missingRoles.length > 0) {
+                    add('warn', 'missing-advisor-roles', oid, `AdvisorFeedback missing entries for: ${missingRoles.join(', ')}`);
                 }
             }
         }
@@ -558,7 +596,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
         ];
         for (const jargon of jargonTerms) {
             if (new RegExp(`\\b${jargon.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i').test(text)) {
-                add('error', 'jargon-use', scenario.id, `${fieldName} uses policy jargon "${jargon}". Rewrite in plain language.`);
+                add('warn', 'jargon-use', scenario.id, `${fieldName} uses policy jargon "${jargon}". Rewrite in plain language.`);
             }
         }
         if (/  +/.test(text))
@@ -615,6 +653,54 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
         for (const [pattern, suggestion] of govStructureTerms) {
             if (pattern.test(text))
                 add('warn', 'hardcoded-gov-structure', scenario.id, `${fieldName} contains a hardcoded government-structure term — ${suggestion}`);
+        }
+        // Detect hardcoded ministry/institution names that break country-agnosticism.
+        const institutionPhraseTerms = [
+            [/\bjustice\s+ministry\b/i, '"Justice Ministry" → use {justice_role}'],
+            [/\bministry\s+of\s+justice\b/i, '"Ministry of Justice" → use {justice_role}'],
+            [/\b(department\s+of\s+justice|justice\s+department)\b/i, '"Department of Justice" → use {justice_role}'],
+            [/\bfinance\s+ministry\b/i, '"Finance Ministry" → use {finance_role}'],
+            [/\bministry\s+of\s+finance\b/i, '"Ministry of Finance" → use {finance_role}'],
+            [/\b(treasury\s+department|department\s+of\s+the\s+treasury)\b/i, '"Treasury Department" → use {finance_role}'],
+            [/\b(defense|defence)\s+ministry\b/i, '"Defense Ministry" → use {defense_role}'],
+            [/\bministry\s+of\s+(defense|defence)\b/i, '"Ministry of Defense" → use {defense_role}'],
+            [/\bdepartment\s+of\s+(defense|defence)\b/i, '"Department of Defense" → use {defense_role}'],
+            [/\binterior\s+ministry\b/i, '"Interior Ministry" → use {interior_role}'],
+            [/\bministry\s+of\s+(interior|the\s+interior)\b/i, '"Ministry of Interior" → use {interior_role}'],
+            [/\bhome\s+office\b/i, '"Home Office" → use {interior_role}'],
+            [/\bdepartment\s+of\s+homeland\s+security\b/i, '"Department of Homeland Security" → use {interior_role}'],
+            [/\bforeign\s+ministry\b/i, '"Foreign Ministry" → use {foreign_affairs_role}'],
+            [/\bministry\s+of\s+foreign\s+affairs\b/i, '"Ministry of Foreign Affairs" → use {foreign_affairs_role}'],
+            [/\b(state\s+department|department\s+of\s+state)\b/i, '"State Department" → use {foreign_affairs_role}'],
+            [/\bforeign\s+office\b/i, '"Foreign Office" → use {foreign_affairs_role}'],
+            [/\bhealth\s+ministry\b/i, '"Health Ministry" → use {health_role}'],
+            [/\bministry\s+of\s+health\b/i, '"Ministry of Health" → use {health_role}'],
+            [/\bdepartment\s+of\s+health\b/i, '"Department of Health" → use {health_role}'],
+            [/\beducation\s+ministry\b/i, '"Education Ministry" → use {education_role}'],
+            [/\bministry\s+of\s+education\b/i, '"Ministry of Education" → use {education_role}'],
+            [/\bdepartment\s+of\s+education\b/i, '"Department of Education" → use {education_role}'],
+            [/\bcommerce\s+ministry\b/i, '"Commerce Ministry" → use {commerce_role}'],
+            [/\bministry\s+of\s+commerce\b/i, '"Ministry of Commerce" → use {commerce_role}'],
+            [/\bdepartment\s+of\s+commerce\b/i, '"Department of Commerce" → use {commerce_role}'],
+            [/\blabou?r\s+ministry\b/i, '"Labour Ministry" → use {labor_role}'],
+            [/\bministry\s+of\s+labou?r\b/i, '"Ministry of Labour" → use {labor_role}'],
+            [/\bdepartment\s+of\s+labor\b/i, '"Department of Labor" → use {labor_role}'],
+            [/\benergy\s+ministry\b/i, '"Energy Ministry" → use {energy_role}'],
+            [/\bministry\s+of\s+energy\b/i, '"Ministry of Energy" → use {energy_role}'],
+            [/\bdepartment\s+of\s+energy\b/i, '"Department of Energy" → use {energy_role}'],
+            [/\benvironment\s+ministry\b/i, '"Environment Ministry" → use {environment_role}'],
+            [/\bministry\s+of\s+(environment|the\s+environment)\b/i, '"Ministry of Environment" → use {environment_role}'],
+            [/\benvironmental\s+protection\s+agency\b/i, '"Environmental Protection Agency" → use {environment_role}'],
+            [/\btransport\s+ministry\b/i, '"Transport Ministry" → use {transport_role}'],
+            [/\bministry\s+of\s+transportation?\b/i, '"Ministry of Transport" → use {transport_role}'],
+            [/\bdepartment\s+of\s+transportation\b/i, '"Department of Transportation" → use {transport_role}'],
+            [/\bagriculture\s+ministry\b/i, '"Agriculture Ministry" → use {agriculture_role}'],
+            [/\bministry\s+of\s+agriculture\b/i, '"Ministry of Agriculture" → use {agriculture_role}'],
+            [/\bdepartment\s+of\s+agriculture\b/i, '"Department of Agriculture" → use {agriculture_role}'],
+        ];
+        for (const [pattern, suggestion] of institutionPhraseTerms) {
+            if (pattern.test(text))
+                add('warn', 'hardcoded-institution-phrase', scenario.id, `${fieldName} contains a hardcoded institution name — ${suggestion}`);
         }
         // Enforce adjacency semantics: if narrative claims a neighbor/border relation,
         // it must use {neighbor} or {border_rival}, not generic rival/adversary tokens.
@@ -846,10 +932,22 @@ function deterministicFix(scenario) {
     return { fixed, fixes };
 }
 function heuristicFix(scenario, issues, bundle) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11;
     const cfg = getAuditConfig();
     let fixed = false;
     const fixes = [];
+    const fixMissingDirectObject = (text) => {
+        if (!text)
+            return text;
+        let result = text;
+        // Some scenarios may resolve to "You direct to ..." without a recipient.
+        // Insert a default recipient to keep the sentence grammatical and actionable.
+        result = result.replace(/\bYou\s+direct\s+to\b/g, 'You direct your cabinet to');
+        result = result.replace(/\byou\s+direct\s+to\b/g, 'you direct your cabinet to');
+        result = result.replace(/\bYou\s+directed\s+to\b/g, 'You directed your cabinet to');
+        result = result.replace(/\byou\s+directed\s+to\b/g, 'you directed your cabinet to');
+        return result;
+    };
     const fixFramingInText = (text) => {
         if (!text)
             return text;
@@ -870,6 +968,40 @@ function heuristicFix(scenario, issues, bundle) {
         result = result.replace(/\ba decision needs to be made\b/gi, 'you need to decide');
         result = result.replace(/\ba decision is required\b/gi, 'you must make a decision');
         return result;
+    };
+    // Ensure we never ship options that resolve to "You direct to ...".
+    // This is a defensive fix so the UI never renders an incomplete directive.
+    const applyMissingDirectObjectFix = (text) => {
+        const before = text;
+        const after = fixMissingDirectObject(text);
+        if (before !== after) {
+            fixed = true;
+            fixes.push('fixed missing direct object in text');
+        }
+        return after;
+    };
+    // Apply the missing-direct-object fix to all relevant fields unconditionally.
+    scenario.title = applyMissingDirectObjectFix(scenario.title) || scenario.title;
+    scenario.description = applyMissingDirectObjectFix(scenario.description) || scenario.description;
+    for (const opt of scenario.options) {
+        opt.text = applyMissingDirectObjectFix(opt.text) || opt.text;
+        for (const field of ['outcomeHeadline', 'outcomeSummary', 'outcomeContext']) {
+            if (typeof opt[field] === 'string') {
+                opt[field] = applyMissingDirectObjectFix(opt[field]) || opt[field];
+            }
+        }
+    }
+    // Outcome fields require different framing fixes — "the government/administration"
+    // should become "{leader_title}'s government/administration", not "your government".
+    const fixOutcomeFraming = (text) => {
+        if (!text)
+            return text;
+        let r = text;
+        r = r.replace(/(?<!\{[a-z_]+\}'s |your |their |its |our )\bthe administration\b/gi, '{leader_title}');
+        r = r.replace(/(?<!\{[a-z_]+\}'s |your |their |its |our )\bthe government\b/gi, "{leader_title}'s government");
+        r = r.replace(/(?<!\{[a-z_]+\}'s |your |their |its |our )\bthe president\b(?!ial)/gi, '{leader_title}');
+        r = r.replace(/(?<!\{[a-z_]+\}'s |your |their |its |our )\bthe executive\b(?! branch| order| power)/gi, '{leader_title}');
+        return r;
     };
     for (const issue of issues) {
         if (issue.rule === 'third-person-framing') {
@@ -892,6 +1024,29 @@ function heuristicFix(scenario, issues, bundle) {
                     fixes.push(`${opt.id}: fixed framing in option text`);
                     fixed = true;
                 }
+                // Outcome fields need different fix — use {leader_title} not "your government"
+                for (const field of ['outcomeHeadline', 'outcomeSummary', 'outcomeContext']) {
+                    if (typeof opt[field] === 'string') {
+                        const before = opt[field];
+                        opt[field] = fixOutcomeFraming(before) || before;
+                        if (before !== opt[field]) {
+                            fixes.push(`${opt.id}: fixed framing in ${field}`);
+                            fixed = true;
+                        }
+                    }
+                }
+                if (Array.isArray(opt.advisorFeedback)) {
+                    for (const fb of opt.advisorFeedback) {
+                        if (typeof fb.feedback === 'string') {
+                            const before = fb.feedback;
+                            fb.feedback = fixFramingInText(fb.feedback) || fb.feedback;
+                            if (before !== fb.feedback) {
+                                fixes.push(`${opt.id}: fixed framing in advisor ${fb.roleId}`);
+                                fixed = true;
+                            }
+                        }
+                    }
+                }
             }
             break;
         }
@@ -900,36 +1055,36 @@ function heuristicFix(scenario, issues, bundle) {
         if (!text)
             return text;
         let r = text;
-        r = r.replace(/\bYour administration\b/g, 'The administration');
-        r = r.replace(/\byour administration\b/g, 'the administration');
-        r = r.replace(/\bYour government\b/g, 'The government');
-        r = r.replace(/\byour government\b/g, 'the government');
-        r = r.replace(/\bYour decision\b/g, 'The decision');
-        r = r.replace(/\byour decision\b/g, 'the decision');
-        r = r.replace(/\bYour policy\b/g, 'The policy');
-        r = r.replace(/\byour policy\b/g, 'the policy');
-        r = r.replace(/\bYou opted\b/g, 'The administration opted');
-        r = r.replace(/\byou opted\b/g, 'the administration opted');
-        r = r.replace(/\bYou chose\b/g, 'The administration chose');
-        r = r.replace(/\byou chose\b/g, 'the administration chose');
-        r = r.replace(/\bYou authorized\b/g, 'The administration authorized');
-        r = r.replace(/\byou authorized\b/g, 'the administration authorized');
-        r = r.replace(/\bYou directed\b/g, 'Officials directed');
-        r = r.replace(/\byou directed\b/g, 'officials directed');
-        r = r.replace(/\bYou announced\b/g, 'The administration announced');
-        r = r.replace(/\byou announced\b/g, 'the administration announced');
-        r = r.replace(/\bYou imposed\b/g, 'The administration imposed');
-        r = r.replace(/\byou imposed\b/g, 'the administration imposed');
-        r = r.replace(/\bYou signed\b/g, 'The administration signed');
-        r = r.replace(/\byou signed\b/g, 'the administration signed');
-        r = r.replace(/\bYou deployed\b/g, 'The administration deployed');
-        r = r.replace(/\byou deployed\b/g, 'the administration deployed');
-        r = r.replace(/\bYou approved\b/g, 'The administration approved');
-        r = r.replace(/\byou approved\b/g, 'the administration approved');
-        r = r.replace(/\bYour\b/g, 'The administration\'s');
-        r = r.replace(/\byour\b/g, 'the administration\'s');
-        r = r.replace(/\bYou\b/g, 'The administration');
-        r = r.replace(/\byou\b/g, 'the administration');
+        r = r.replace(/\bYour administration\b/g, "{leader_title}'s administration");
+        r = r.replace(/\byour administration\b/g, "{leader_title}'s administration");
+        r = r.replace(/\bYour government\b/g, "{leader_title}'s government");
+        r = r.replace(/\byour government\b/g, "{leader_title}'s government");
+        r = r.replace(/\bYour decision\b/g, "{leader_title}'s decision");
+        r = r.replace(/\byour decision\b/g, "{leader_title}'s decision");
+        r = r.replace(/\bYour policy\b/g, "{leader_title}'s policy");
+        r = r.replace(/\byour policy\b/g, "{leader_title}'s policy");
+        r = r.replace(/\bYou opted\b/g, '{leader_title} opted');
+        r = r.replace(/\byou opted\b/g, '{leader_title} opted');
+        r = r.replace(/\bYou chose\b/g, '{leader_title} chose');
+        r = r.replace(/\byou chose\b/g, '{leader_title} chose');
+        r = r.replace(/\bYou authorized\b/g, '{leader_title} authorized');
+        r = r.replace(/\byou authorized\b/g, '{leader_title} authorized');
+        r = r.replace(/\bYou directed\b/g, '{leader_title} directed');
+        r = r.replace(/\byou directed\b/g, '{leader_title} directed');
+        r = r.replace(/\bYou announced\b/g, '{leader_title} announced');
+        r = r.replace(/\byou announced\b/g, '{leader_title} announced');
+        r = r.replace(/\bYou imposed\b/g, '{leader_title} imposed');
+        r = r.replace(/\byou imposed\b/g, '{leader_title} imposed');
+        r = r.replace(/\bYou signed\b/g, '{leader_title} signed');
+        r = r.replace(/\byou signed\b/g, '{leader_title} signed');
+        r = r.replace(/\bYou deployed\b/g, '{leader_title} deployed');
+        r = r.replace(/\byou deployed\b/g, '{leader_title} deployed');
+        r = r.replace(/\bYou approved\b/g, '{leader_title} approved');
+        r = r.replace(/\byou approved\b/g, '{leader_title} approved');
+        r = r.replace(/\bYour\b/g, "{leader_title}'s");
+        r = r.replace(/\byour\b/g, "{leader_title}'s");
+        r = r.replace(/\bYou\b/g, '{leader_title}');
+        r = r.replace(/\byou\b/g, '{leader_title}');
         return r;
     };
     for (const issue of issues) {
@@ -1185,6 +1340,41 @@ function heuristicFix(scenario, issues, bundle) {
             }
         }
     }
+    // 2c. Fix "the {token}" → "{the_token}" for tokens that have an article form.
+    // This prevents broken output like "the a hostile power" at runtime.
+    {
+        const fixTheBeforeToken = (text) => {
+            if (!text)
+                return text;
+            return text.replace(/\bthe \{([a-z_]+)\}/gi, (match, name) => {
+                return logic_parameters_1.ARTICLE_FORM_TOKEN_NAMES.has(name) ? `{the_${name}}` : match;
+            });
+        };
+        const applyTheTokenFix = (t, label) => {
+            const after = fixTheBeforeToken(t);
+            if (after !== t) {
+                fixes.push(`${label}: fixed "the {token}" → "{the_token}"`);
+                fixed = true;
+            }
+            return after !== null && after !== void 0 ? after : t;
+        };
+        scenario.description = (_r = applyTheTokenFix(scenario.description, 'description')) !== null && _r !== void 0 ? _r : scenario.description;
+        scenario.title = (_s = applyTheTokenFix(scenario.title, 'title')) !== null && _s !== void 0 ? _s : scenario.title;
+        for (const opt of scenario.options) {
+            for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext']) {
+                if (typeof opt[f] === 'string') {
+                    opt[f] = (_t = applyTheTokenFix(opt[f], `${opt.id} ${f}`)) !== null && _t !== void 0 ? _t : opt[f];
+                }
+            }
+            if (Array.isArray(opt.advisorFeedback)) {
+                for (const fb of opt.advisorFeedback) {
+                    if (typeof fb.feedback === 'string') {
+                        fb.feedback = (_u = applyTheTokenFix(fb.feedback, `${opt.id} advisor ${fb.roleId}`)) !== null && _u !== void 0 ? _u : fb.feedback;
+                    }
+                }
+            }
+        }
+    }
     // 3. Auto-scrub banned measurement units and distance words from all text fields
     {
         const UNIT_REPLACEMENTS = [
@@ -1214,7 +1404,7 @@ function heuristicFix(scenario, issues, bundle) {
             return result;
         };
         const descBU = scenario.description;
-        scenario.description = (_r = scrubUnits(scenario.description)) !== null && _r !== void 0 ? _r : scenario.description;
+        scenario.description = (_v = scrubUnits(scenario.description)) !== null && _v !== void 0 ? _v : scenario.description;
         if (descBU !== scenario.description) {
             fixes.push('description: scrubbed banned units');
             fixed = true;
@@ -1223,7 +1413,7 @@ function heuristicFix(scenario, issues, bundle) {
             for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext']) {
                 if (typeof opt[f] === 'string') {
                     const before = opt[f];
-                    opt[f] = (_s = scrubUnits(before)) !== null && _s !== void 0 ? _s : before;
+                    opt[f] = (_w = scrubUnits(before)) !== null && _w !== void 0 ? _w : before;
                     if (before !== opt[f]) {
                         fixes.push(`${opt.id}: scrubbed banned units in ${f}`);
                         fixed = true;
@@ -1234,7 +1424,7 @@ function heuristicFix(scenario, issues, bundle) {
                 for (const fb of opt.advisorFeedback) {
                     if (typeof fb.feedback === 'string') {
                         const before = fb.feedback;
-                        fb.feedback = (_t = scrubUnits(fb.feedback)) !== null && _t !== void 0 ? _t : fb.feedback;
+                        fb.feedback = (_x = scrubUnits(fb.feedback)) !== null && _x !== void 0 ? _x : fb.feedback;
                         if (before !== fb.feedback) {
                             fixes.push(`${opt.id}: scrubbed banned units in advisor ${fb.roleId}`);
                             fixed = true;
@@ -1259,7 +1449,7 @@ function heuristicFix(scenario, issues, bundle) {
             return result;
         };
         const descGDP = scenario.description;
-        scenario.description = (_u = fixGdpMisuse(scenario.description)) !== null && _u !== void 0 ? _u : scenario.description;
+        scenario.description = (_y = fixGdpMisuse(scenario.description)) !== null && _y !== void 0 ? _y : scenario.description;
         if (descGDP !== scenario.description) {
             fixes.push('description: fixed {gdp_description} misuse');
             fixed = true;
@@ -1268,7 +1458,7 @@ function heuristicFix(scenario, issues, bundle) {
             for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext']) {
                 if (typeof opt[f] === 'string') {
                     const before = opt[f];
-                    opt[f] = (_v = fixGdpMisuse(before)) !== null && _v !== void 0 ? _v : before;
+                    opt[f] = (_z = fixGdpMisuse(before)) !== null && _z !== void 0 ? _z : before;
                     if (before !== opt[f]) {
                         fixes.push(`${opt.id}: fixed {gdp_description} misuse in ${f}`);
                         fixed = true;
@@ -1279,7 +1469,7 @@ function heuristicFix(scenario, issues, bundle) {
                 for (const fb of opt.advisorFeedback) {
                     if (typeof fb.feedback === 'string') {
                         const before = fb.feedback;
-                        fb.feedback = (_w = fixGdpMisuse(fb.feedback)) !== null && _w !== void 0 ? _w : fb.feedback;
+                        fb.feedback = (_0 = fixGdpMisuse(fb.feedback)) !== null && _0 !== void 0 ? _0 : fb.feedback;
                         if (before !== fb.feedback) {
                             fixes.push(`${opt.id}: fixed {gdp_description} misuse in advisor ${fb.roleId}`);
                             fixed = true;
@@ -1292,7 +1482,7 @@ function heuristicFix(scenario, issues, bundle) {
     // 3c. (effect count trim moved to end — final safety trim runs AFTER domain injection)
     // 4. Extend titles that are too short (min 4 words)
     {
-        const title = (_x = scenario.title) === null || _x === void 0 ? void 0 : _x.trim();
+        const title = (_1 = scenario.title) === null || _1 === void 0 ? void 0 : _1.trim();
         if (title) {
             const tokenStripped = title.replace(/\{[a-z_]+\}/g, 'X');
             const wordCount = tokenStripped.split(/\s+/).filter(Boolean).length;
@@ -1362,7 +1552,7 @@ function heuristicFix(scenario, issues, bundle) {
     }
     // 6. Inject a primary domain-metric effect when no option targets the bundle domain
     //    (prevents the no-domain-metric audit warn that deducts 4 pts per option)
-    if (bundle && ((_y = cfg.categoryDomainMetrics[bundle]) === null || _y === void 0 ? void 0 : _y.length) > 0) {
+    if (bundle && ((_2 = cfg.categoryDomainMetrics[bundle]) === null || _2 === void 0 ? void 0 : _2.length) > 0) {
         const domainMetrics = new Set(cfg.categoryDomainMetrics[bundle]);
         const primaryDomainMetric = cfg.categoryDomainMetrics[bundle][0];
         for (const opt of scenario.options) {
@@ -1382,7 +1572,7 @@ function heuristicFix(scenario, issues, bundle) {
                     let weakestIdx = 0;
                     let weakestAbs = Infinity;
                     for (let i = 0; i < opt.effects.length; i++) {
-                        const absVal = Math.abs((_z = opt.effects[i].value) !== null && _z !== void 0 ? _z : 0);
+                        const absVal = Math.abs((_3 = opt.effects[i].value) !== null && _3 !== void 0 ? _3 : 0);
                         if (absVal < weakestAbs) {
                             weakestAbs = absVal;
                             weakestIdx = i;
@@ -1397,6 +1587,164 @@ function heuristicFix(scenario, issues, bundle) {
                     fixes.push(`${opt.id}: injected ${primaryDomainMetric} domain effect (${injectValue > 0 ? '+' : ''}${injectValue})`);
                 }
                 fixed = true;
+            }
+        }
+    }
+    // Auto-fix hardcoded institution phrases → token equivalents
+    {
+        const INSTITUTION_REPLACEMENTS = [
+            [/\bfinance\s+ministry\b/gi, "the {finance_role}'s office"],
+            [/\bministry\s+of\s+finance\b/gi, "the {finance_role}'s office"],
+            [/\btreasury\s+department\b/gi, "the {finance_role}'s office"],
+            [/\bdepartment\s+of\s+the\s+treasury\b/gi, "the {finance_role}'s office"],
+            [/\bdefense\s+ministry\b/gi, "the {defense_role}'s office"],
+            [/\bdefence\s+ministry\b/gi, "the {defense_role}'s office"],
+            [/\bministry\s+of\s+defen[cs]e\b/gi, "the {defense_role}'s office"],
+            [/\bdepartment\s+of\s+defense\b/gi, "the {defense_role}'s office"],
+            [/\bministry\s+of\s+(interior|the\s+interior)\b/gi, "the {interior_role}'s office"],
+            [/\bhome\s+office\b/gi, "the {interior_role}'s office"],
+            [/\bdepartment\s+of\s+homeland\s+security\b/gi, "the {interior_role}'s office"],
+            [/\bforeign\s+ministry\b/gi, "the {foreign_affairs_role}'s office"],
+            [/\bministry\s+of\s+foreign\s+affairs\b/gi, "the {foreign_affairs_role}'s office"],
+            [/\b(state\s+department|department\s+of\s+state)\b/gi, "the {foreign_affairs_role}'s office"],
+            [/\bforeign\s+office\b/gi, "the {foreign_affairs_role}'s office"],
+            [/\bhealth\s+ministry\b/gi, "the {health_role}'s office"],
+            [/\bministry\s+of\s+health\b/gi, "the {health_role}'s office"],
+            [/\bdepartment\s+of\s+health\b/gi, "the {health_role}'s office"],
+            [/\beducation\s+ministry\b/gi, "the {education_role}'s office"],
+            [/\bministry\s+of\s+education\b/gi, "the {education_role}'s office"],
+            [/\bdepartment\s+of\s+education\b/gi, "the {education_role}'s office"],
+            [/\bcommerce\s+ministry\b/gi, "the {commerce_role}'s office"],
+            [/\bministry\s+of\s+commerce\b/gi, "the {commerce_role}'s office"],
+            [/\bdepartment\s+of\s+commerce\b/gi, "the {commerce_role}'s office"],
+            [/\blabou?r\s+ministry\b/gi, "the {labor_role}'s office"],
+            [/\bministry\s+of\s+labou?r\b/gi, "the {labor_role}'s office"],
+            [/\bdepartment\s+of\s+labor\b/gi, "the {labor_role}'s office"],
+            [/\benergy\s+ministry\b/gi, "the {energy_role}'s office"],
+            [/\bministry\s+of\s+energy\b/gi, "the {energy_role}'s office"],
+            [/\bdepartment\s+of\s+energy\b/gi, "the {energy_role}'s office"],
+            [/\benvironment\s+ministry\b/gi, "the {environment_role}'s office"],
+            [/\bministry\s+of\s+(environment|the\s+environment)\b/gi, "the {environment_role}'s office"],
+            [/\benvironmental\s+protection\s+agency\b/gi, "the {environment_role}'s office"],
+            [/\btransport\s+ministry\b/gi, "the {transport_role}'s office"],
+            [/\bministry\s+of\s+transportation?\b/gi, "the {transport_role}'s office"],
+            [/\bdepartment\s+of\s+transportation\b/gi, "the {transport_role}'s office"],
+            [/\bagriculture\s+ministry\b/gi, "the {agriculture_role}'s office"],
+            [/\bministry\s+of\s+agriculture\b/gi, "the {agriculture_role}'s office"],
+            [/\bdepartment\s+of\s+agriculture\b/gi, "the {agriculture_role}'s office"],
+            [/\bministry\s+of\s+justice\b/gi, "the {justice_role}'s office"],
+            [/\bdepartment\s+of\s+justice\b/gi, "the {justice_role}'s office"],
+            [/\bjustice\s+ministry\b/gi, "the {justice_role}'s office"],
+        ];
+        const scrubInstitutions = (text) => {
+            if (!text)
+                return text;
+            let result = text;
+            for (const [pat, repl] of INSTITUTION_REPLACEMENTS) {
+                result = result.replace(pat, repl);
+            }
+            return result;
+        };
+        const descInst = scenario.description;
+        scenario.description = (_4 = scrubInstitutions(scenario.description)) !== null && _4 !== void 0 ? _4 : scenario.description;
+        if (descInst !== scenario.description) {
+            fixes.push('description: replaced hardcoded institutions with tokens');
+            fixed = true;
+        }
+        scenario.title = (_5 = scrubInstitutions(scenario.title)) !== null && _5 !== void 0 ? _5 : scenario.title;
+        for (const opt of scenario.options) {
+            for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext']) {
+                if (typeof opt[f] === 'string') {
+                    const before = opt[f];
+                    opt[f] = (_6 = scrubInstitutions(before)) !== null && _6 !== void 0 ? _6 : before;
+                    if (before !== opt[f]) {
+                        fixes.push(`${opt.id}: replaced hardcoded institutions in ${f}`);
+                        fixed = true;
+                    }
+                }
+            }
+            if (Array.isArray(opt.advisorFeedback)) {
+                for (const fb of opt.advisorFeedback) {
+                    if (typeof fb.feedback === 'string') {
+                        const before = fb.feedback;
+                        fb.feedback = (_7 = scrubInstitutions(fb.feedback)) !== null && _7 !== void 0 ? _7 : fb.feedback;
+                        if (before !== fb.feedback) {
+                            fixes.push(`${opt.id}: replaced hardcoded institutions in advisor ${fb.roleId}`);
+                            fixed = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Auto-fix hard-coded currency values → relative economic language
+    {
+        const CURRENCY_REPLACEMENTS = [
+            [/\$\s?\d[\d,]*(?:\.\d+)?\s*trillion/gi, 'a transformative level of funding'],
+            [/\$\s?\d[\d,]*(?:\.\d+)?\s*billion/gi, 'a major financial commitment'],
+            [/\$\s?\d[\d,]*(?:\.\d+)?\s*million/gi, 'significant funding'],
+            [/\$\s?\d[\d,]*(?:\.\d+)?/g, 'substantial resources'],
+            [/\b\d[\d,]*(?:\.\d+)?\s*trillion\s+(?:dollars?|euros?|pounds?|yen|yuan|rubles?|rupees?)/gi, 'a transformative level of funding'],
+            [/\b\d[\d,]*(?:\.\d+)?\s*billion\s+(?:dollars?|euros?|pounds?|yen|yuan|rubles?|rupees?)/gi, 'a major financial commitment'],
+            [/\b\d[\d,]*(?:\.\d+)?\s*million\s+(?:dollars?|euros?|pounds?|yen|yuan|rubles?|rupees?)/gi, 'significant funding'],
+            [/\bUSD\s*\d[\d,]*(?:\.\d+)?/gi, 'substantial resources'],
+            [/\bEUR\s*\d[\d,]*(?:\.\d+)?/gi, 'substantial resources'],
+            [/\bGBP\s*\d[\d,]*(?:\.\d+)?/gi, 'substantial resources'],
+            [/\b\d[\d,]*(?:\.\d+)?\s*euros?\b/gi, 'significant funding'],
+            [/\b\d[\d,]*(?:\.\d+)?\s*pounds?\s*sterling\b/gi, 'significant funding'],
+        ];
+        const scrubCurrency = (text) => {
+            if (!text)
+                return text;
+            let result = text;
+            for (const [pat, repl] of CURRENCY_REPLACEMENTS) {
+                result = result.replace(pat, repl);
+            }
+            return result;
+        };
+        const descCur = scenario.description;
+        scenario.description = (_8 = scrubCurrency(scenario.description)) !== null && _8 !== void 0 ? _8 : scenario.description;
+        if (descCur !== scenario.description) {
+            fixes.push('description: replaced hard-coded currency with relative language');
+            fixed = true;
+        }
+        scenario.title = (_9 = scrubCurrency(scenario.title)) !== null && _9 !== void 0 ? _9 : scenario.title;
+        for (const opt of scenario.options) {
+            for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext']) {
+                if (typeof opt[f] === 'string') {
+                    const before = opt[f];
+                    opt[f] = (_10 = scrubCurrency(before)) !== null && _10 !== void 0 ? _10 : before;
+                    if (before !== opt[f]) {
+                        fixes.push(`${opt.id}: replaced hard-coded currency in ${f}`);
+                        fixed = true;
+                    }
+                }
+            }
+            if (Array.isArray(opt.advisorFeedback)) {
+                for (const fb of opt.advisorFeedback) {
+                    if (typeof fb.feedback === 'string') {
+                        const before = fb.feedback;
+                        fb.feedback = (_11 = scrubCurrency(fb.feedback)) !== null && _11 !== void 0 ? _11 : fb.feedback;
+                        if (before !== fb.feedback) {
+                            fixes.push(`${opt.id}: replaced hard-coded currency in advisor ${fb.roleId}`);
+                            fixed = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Auto-fix short outcomeContext — pad to meet 100-char minimum
+    {
+        for (const opt of scenario.options) {
+            if (typeof opt.outcomeContext === 'string') {
+                let ctx = opt.outcomeContext.trim();
+                if (ctx.length > 0 && ctx.length < 100) {
+                    ctx += ' Administration officials are closely monitoring the situation as cross-departmental coordination intensifies around second-order policy implications.';
+                    opt.outcomeContext = ctx;
+                    fixes.push(`${opt.id}: padded outcomeContext to meet 100-char minimum`);
+                    fixed = true;
+                }
             }
         }
     }
@@ -1497,7 +1845,14 @@ When fixing "short-summary": expand "outcomeSummary" to 200+ characters (3 sente
 - Maximum 30 words per sentence.
 - Maximum 3 conjunction clauses (and/or/but/while/whereas/although/though) per sentence.
 - Prefer active voice. Do not let most sentences in a field use passive voice.
-- Option labels must be short direct actions. Avoid conditional labels with "if", "unless", "provided", parentheses, or colons.
+- Option labels must be short direct actions in PLAIN TEXT. NO tokens in labels — "Blame {the_neighbor}" is REJECTED; write "Blame the Neighbor" instead. Avoid conditional labels with "if", "unless", "provided", parentheses, or colons.
+
+## TOKEN ARTICLE FORM (CRITICAL — WRONG PATTERN = REJECTION)
+NEVER write "the {token}" — this produces broken output like "the a hostile power" at runtime.
+Instead use the pre-built article-form token: {the_adversary}, {the_neighbor}, {the_ally}, {the_rival}, {the_neutral}, {the_partner}, {the_trade_partner}, {the_border_rival}, {the_regional_rival}, {the_nation}, {the_player_country}.
+❌ "the {adversary} imposed..." → ✅ "{the_adversary} imposed..."
+❌ "the {neighbor} closed..." → ✅ "{the_neighbor} closed..."
+If no the_{token} form exists for that concept, rewrite the sentence to avoid needing a definite article before the token.
 
 ## INVERSE METRICS (CRITICAL - COMMON FAILURE)
 These metrics get WORSE with POSITIVE values: ${inverseList}

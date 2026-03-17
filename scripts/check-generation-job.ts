@@ -29,6 +29,11 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function renderBar(done: number, total: number, width = 10): string {
+  const filled = total > 0 ? Math.round((done / total) * width) : 0;
+  return '▓'.repeat(filled) + '▒'.repeat(width - filled);
+}
+
 async function main() {
   const jobId = process.argv[2];
   if (!jobId) {
@@ -54,7 +59,23 @@ async function main() {
       data.scenarioIds ||
       (Array.isArray(data.results) ? data.results.map((r: any) => r?.id).filter(Boolean) : []);
 
-    console.log(JSON.stringify({ status, idsCount: ids.length, error: data.error || null }));
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const completed: number = data.completedCount ?? ids.length;
+    const failed: number = data.failedCount ?? 0;
+    const total: number = data.totalCount ?? data.count ?? 0;
+    const pct = total > 0 ? Math.round((100 * (completed + failed)) / total) : 0;
+    const bar = renderBar(completed + failed, total);
+
+    if (status === 'pending') {
+      process.stdout.write(`  ${time}  … Pending — waiting for Cloud Function trigger\n`);
+    } else if (status === 'running') {
+      const failStr = failed > 0 ? `, ${failed} failed` : '';
+      process.stdout.write(`  ${time}  [${bar}] ${completed + failed}/${total || '?'} (${pct}%) — ${completed} saved${failStr}\n`);
+    } else if (status === 'completed') {
+      process.stdout.write(`  ${time}  ✓ Completed — ${completed} scenarios generated\n`);
+    } else {
+      process.stdout.write(`  ${time}  ✗ ${status}: ${data.error || 'unknown error'}\n`);
+    }
 
     if (['completed', 'failed', 'error', 'cancelled'].includes(status)) {
       break;
@@ -145,9 +166,31 @@ async function main() {
     scenariosAbove90: valid.filter((r) => r.score >= 90).length,
   };
 
-  console.log('FINAL_SUMMARY', JSON.stringify(summary, null, 2));
-  console.log('RULE_BREAKDOWN', JSON.stringify(ruleBreakdown, null, 2));
-  console.log('SCENARIO_AUDIT', JSON.stringify(results, null, 2));
+  console.log('');
+  console.log(`Summary for job ${jobId}`);
+  console.log(`  Generated : ${summary.generated}`);
+  console.log(`  Avg score : ${summary.avgScore}`);
+  console.log(`  Hard errors: ${summary.totalHardErrors}`);
+  console.log(`  Below 70  : ${summary.scenariosBelow70}`);
+  console.log(`  Above 90  : ${summary.scenariosAbove90}`);
+  if (totalVoiceViolations > 0) console.log(`  Voice violations: ${totalVoiceViolations}`);
+
+  if (ruleBreakdown.length > 0) {
+    console.log('\nTop audit rule hits:');
+    ruleBreakdown.slice(0, 10).forEach(({ rule, count }) =>
+      console.log(`  ${count}x  ${rule}`)
+    );
+  }
+
+  console.log('\nPer-scenario scores:');
+  results.forEach((r) => {
+    if (r.missing) {
+      console.log(`  ${r.id}  MISSING from scenarios collection`);
+    } else {
+      const flag = r.score < 70 ? ' ⚠' : r.score >= 90 ? ' ✓' : '';
+      console.log(`  ${r.id}  score=${r.score}${flag}  errors=${r.hardErrors}  issues=${r.totalIssues}`);
+    }
+  });
 }
 
 main().catch((error) => {

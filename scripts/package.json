@@ -6,10 +6,14 @@
         "pre-flight": "ts-node pre-flight.ts",
         "audit": "ts-node audit-existing-scenarios.ts",
         "token-audit": "ts-node token-usage-audit.ts",
-        "check-gen": "ts-node check-generation-job.ts"
+        "check-gen": "ts-node check-generation-job.ts",
+        "seed-metrics": "ts-node seed-metrics.ts"
     },
     "engines": {
         "node": "22"
+    },
+    "dependencies": {
+        "firebase-admin": "^13.7.0"
     },
     "devDependencies": {
         "@types/node": "^22.0.0",

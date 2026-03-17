@@ -13,7 +13,7 @@ Before outputting your scenario JSON, verify every item below. Fix anything that
 ### Structure
 - [ ] Exactly 3 options
 - [ ] description = 2–3 sentences **and 45–110 words** — count words; under 45 is a hard fail
-- [ ] Each option text = 2–3 sentences **and 35–90 words** — count words; under 35 is a hard fail
+- [ ] Each option text = 2–3 sentences **and 35–60 words** — count words; under 35 is too thin; over 60, consolidate sentences
 - [ ] outcomeHeadline: 3–8 words
 - [ ] outcomeSummary: ≥200 characters, 2–3 sentences
 - [ ] outcomeContext: ≥300 characters, 4–6 sentences; names specific institution/group, mechanism, reaction, implication
@@ -61,7 +61,7 @@ Count every word in each option `text`. If fewer than 35: do not submit — rewr
 - [ ] Inverse metrics (corruption, crime, inflation, bureaucracy): NEGATIVE values to improve
 
 ### Advisor Feedback
-- [ ] Every option has advisorFeedback[] with role_executive + all roles whose metrics appear in effects
+- [ ] Every option has advisorFeedback[] with **ALL 13 canonical roles** — not only effect-relevant roles. Required: `role_executive`, `role_diplomacy`, `role_defense`, `role_economy`, `role_justice`, `role_health`, `role_commerce`, `role_labor`, `role_interior`, `role_energy`, `role_environment`, `role_transport`, `role_education`. Each missing role deducts 4 points from the audit score and will cause rejection.
 - [ ] Each feedback names the SPECIFIC policy, affected constituency, and causal impact — not generic boilerplate
 - [ ] No forbidden phrases: "aligns with our", "our department", "course of action", "careful monitoring", "no strong position"
 

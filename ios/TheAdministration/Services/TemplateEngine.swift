@@ -60,25 +60,14 @@ class TemplateEngine {
 
     /// Resolve tokens in a single option
     func resolveOption(_ option: Option, with context: [String: String]) -> Option {
-        // Handle both array and string formats for advisorFeedback
-        let resolvedAdvisorFeedback: [AdvisorFeedback]?
-        let resolvedAdvisorFeedbackString: String?
-        
-        if let feedbackArray = option.advisorFeedback {
-            resolvedAdvisorFeedback = feedbackArray.map { feedback in
+        let resolvedAdvisorFeedback: [AdvisorFeedback]? = option.advisorFeedback.map { feedbackArray in
+            feedbackArray.map { feedback in
                 AdvisorFeedback(
                     roleId: feedback.roleId,
                     stance: feedback.stance,
                     feedback: resolveTokens(in: feedback.feedback, with: context)
                 )
             }
-            resolvedAdvisorFeedbackString = nil
-        } else if let feedbackString = option.advisorFeedbackString {
-            resolvedAdvisorFeedback = nil
-            resolvedAdvisorFeedbackString = resolveTokens(in: feedbackString, with: context)
-        } else {
-            resolvedAdvisorFeedback = nil
-            resolvedAdvisorFeedbackString = nil
         }
         
         return Option(
@@ -86,7 +75,6 @@ class TemplateEngine {
             text: resolveTokens(in: option.text, with: context),
             label: option.label,
             advisorFeedback: resolvedAdvisorFeedback,
-            advisorFeedbackString: resolvedAdvisorFeedbackString,
             effects: option.effects,
             effectsMap: option.effectsMap,
             nextScenarioId: option.nextScenarioId,
@@ -130,6 +118,7 @@ class TemplateEngine {
         // Add computed tokens
         context["country"] = country.name
         context["player_country"] = country.name
+        context["the_player_country"] = country.nameWithDefiniteArticle
         context["leader"] = country.leader ?? "the Leader"
 
         if let leaderTitle = country.leaderTitle {
@@ -144,6 +133,188 @@ class TemplateEngine {
         if let tokenMap = scenario.tokenMap {
             for (key, value) in tokenMap {
                 context[key] = resolveNestedToken(value, in: context)
+            }
+        }
+
+        // Ensure neighbor tokens provide both bare and definite forms
+        if let neighborName = context["neighbor"], !neighborName.isEmpty {
+            if context["the_neighbor"] == nil || context["the_neighbor"]?.isEmpty == true {
+                if let neighborCountry = countries.first(where: { $0.name.lowercased() == neighborName.lowercased() }) {
+                    context["the_neighbor"] = neighborCountry.nameWithDefiniteArticle
+                } else if let article = Country.defaultDefiniteArticle(for: neighborName) {
+                    context["the_neighbor"] = "\(article) \(neighborName)"
+                } else {
+                    context["the_neighbor"] = neighborName
+                }
+            }
+        }
+
+        // Resolve party tokens from countryParties in gameState
+        let rulingParty = gameState.countryParties.first(where: { $0.isRuling })
+        let coalitionParty = gameState.countryParties.first(where: { $0.isCoalitionMember && !$0.isRuling })
+        let oppositionParty = gameState.countryParties.first(where: { !$0.isRuling && !$0.isCoalitionMember })
+
+        if let ruling = rulingParty {
+            context["ruling_party"] = ruling.name
+            context["ruling_party_leader"] = ruling.currentLeader ?? ""
+            context["ruling_party_ideology"] = ruling.ideologyLabel
+            if let short = ruling.shortName {
+                context["ruling_party_short"] = short
+            }
+        }
+        if let coalition = coalitionParty {
+            context["coalition_party"] = coalition.name
+        }
+        if let opposition = oppositionParty {
+            context["opposition_party"] = opposition.name
+            context["opposition_party_leader"] = opposition.currentLeader ?? ""
+            context["opposition_leader"] = opposition.currentLeader ?? ""
+        }
+
+        // Resolve locale tokens if an active locale is set
+        if let locale = gameState.activeLocale {
+            context["locale_name"] = locale.localeTokens.localeName
+            context["locale_type"] = locale.localeTokens.localeType
+            context["region_type"] = locale.localeTokens.regionType
+            context["terrain"] = locale.localeTokens.terrain
+            context["city_name"] = locale.name
+            context["state_name"] = locale.name
+        }
+
+        // Derive relationship tokens from geopoliticalProfile when not already set via country.tokens
+        if let geo = country.geopoliticalProfile {
+            func isMissing(_ key: String) -> Bool {
+                guard let value = context[key] else { return true }
+                return value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+
+            func resolveRelationship(_ rel: CountryRelationship) -> (bare: String, definite: String)? {
+                guard let relCountry = self.countries.first(where: { $0.id == rel.countryId }) else { return nil }
+                return (relCountry.name, relCountry.nameWithDefiniteArticle)
+            }
+
+            // adversary / the_adversary
+            if let top = geo.adversaries.sorted(by: { $0.strength > $1.strength }).first,
+               let names = resolveRelationship(top) {
+                if isMissing("adversary") { context["adversary"] = names.bare }
+                if isMissing("the_adversary") { context["the_adversary"] = names.definite }
+            }
+
+            // ally / the_ally — formal allies sorted by strength
+            if let top = geo.allies.filter({ $0.type == "formal_ally" })
+                .sorted(by: { $0.strength > $1.strength }).first,
+               let names = resolveRelationship(top) {
+                if isMissing("ally") { context["ally"] = names.bare }
+                if isMissing("the_ally") { context["the_ally"] = names.definite }
+            }
+
+            // trade_partner / the_trade_partner + partner / the_partner — strategic partners
+            if let top = geo.allies.filter({ $0.type == "strategic_partner" })
+                .sorted(by: { $0.strength > $1.strength }).first,
+               let names = resolveRelationship(top) {
+                if isMissing("trade_partner") { context["trade_partner"] = names.bare }
+                if isMissing("the_trade_partner") { context["the_trade_partner"] = names.definite }
+                if isMissing("partner") { context["partner"] = names.bare }
+                if isMissing("the_partner") { context["the_partner"] = names.definite }
+            }
+
+            // rival / the_rival — adversaries typed "rival", fallback to neighbor typed "rival"
+            let rivalFromAdversaries = geo.adversaries.filter({ $0.type == "rival" })
+                .sorted(by: { $0.strength > $1.strength }).first
+            let rivalFromNeighbors = geo.neighbors.filter({ $0.type == "rival" })
+                .sorted(by: { $0.strength > $1.strength }).first
+            if let top = rivalFromAdversaries ?? rivalFromNeighbors,
+               let names = resolveRelationship(top) {
+                if isMissing("rival") { context["rival"] = names.bare }
+                if isMissing("the_rival") { context["the_rival"] = names.definite }
+            }
+
+            // border_rival / the_border_rival — neighbors typed "rival"
+            if let top = geo.neighbors.filter({ $0.type == "rival" })
+                .sorted(by: { $0.strength > $1.strength }).first,
+               let names = resolveRelationship(top) {
+                if isMissing("border_rival") { context["border_rival"] = names.bare }
+                if isMissing("the_border_rival") { context["the_border_rival"] = names.definite }
+            }
+
+            // regional_rival / the_regional_rival — adversaries typed "rival"
+            if let top = geo.adversaries.filter({ $0.type == "rival" })
+                .sorted(by: { $0.strength > $1.strength }).first,
+               let names = resolveRelationship(top) {
+                if isMissing("regional_rival") { context["regional_rival"] = names.bare }
+                if isMissing("the_regional_rival") { context["the_regional_rival"] = names.definite }
+            }
+
+            // neutral / the_neutral — allies or neighbors typed "neutral"
+            let neutralFromAllies = geo.allies.filter({ $0.type == "neutral" })
+                .sorted(by: { $0.strength > $1.strength }).first
+            let neutralFromNeighbors = geo.neighbors.filter({ $0.type == "neutral" })
+                .sorted(by: { $0.strength > $1.strength }).first
+            if let top = neutralFromAllies ?? neutralFromNeighbors,
+               let names = resolveRelationship(top) {
+                if context["neutral"] == nil { context["neutral"] = names.bare }
+                if context["the_neutral"] == nil { context["the_neutral"] = names.definite }
+            }
+
+            // nation / the_nation — generic fallback, use first neighbor
+            if let top = geo.neighbors.first,
+               let names = resolveRelationship(top) {
+                if context["nation"] == nil { context["nation"] = names.bare }
+                if context["the_nation"] == nil { context["the_nation"] = names.definite }
+            }
+        }
+
+        // Derive the_* article forms for role/institution/party tokens that don't already have a value.
+        // Geo-relationship article forms (the_adversary, the_ally, etc.) are handled above.
+        let articleFormPairs: [(bare: String, article: String)] = [
+            ("leader_title", "the_leader_title"),
+            ("vice_leader", "the_vice_leader"),
+            ("finance_role", "the_finance_role"),
+            ("defense_role", "the_defense_role"),
+            ("interior_role", "the_interior_role"),
+            ("foreign_affairs_role", "the_foreign_affairs_role"),
+            ("justice_role", "the_justice_role"),
+            ("health_role", "the_health_role"),
+            ("education_role", "the_education_role"),
+            ("commerce_role", "the_commerce_role"),
+            ("labor_role", "the_labor_role"),
+            ("energy_role", "the_energy_role"),
+            ("environment_role", "the_environment_role"),
+            ("transport_role", "the_transport_role"),
+            ("agriculture_role", "the_agriculture_role"),
+            ("prosecutor_role", "the_prosecutor_role"),
+            ("ruling_party", "the_ruling_party"),
+            ("opposition_party", "the_opposition_party"),
+            ("intelligence_agency", "the_intelligence_agency"),
+            ("domestic_intelligence", "the_domestic_intelligence"),
+            ("security_council", "the_security_council"),
+            ("police_force", "the_police_force"),
+            ("central_bank", "the_central_bank"),
+            ("legislature", "the_legislature"),
+            ("upper_house", "the_upper_house"),
+            ("lower_house", "the_lower_house"),
+            ("judicial_role", "the_judicial_role"),
+            ("state_media", "the_state_media"),
+            ("press_secretary", "the_press_secretary"),
+            ("military_branch", "the_military_branch"),
+            ("military_general", "the_military_general"),
+            ("cabinet_secretary", "the_cabinet_secretary"),
+            ("senior_official", "the_senior_official"),
+            ("capital_mayor", "the_capital_mayor"),
+            ("regional_governor", "the_regional_governor"),
+            ("major_industry", "the_major_industry"),
+            ("regional_bloc", "the_regional_bloc"),
+            ("army_name", "the_army_name"),
+            ("naval_fleet", "the_naval_fleet"),
+            ("air_wing", "the_air_wing"),
+            ("cyber_agency", "the_cyber_agency"),
+            ("nuclear_command", "the_nuclear_command"),
+            ("coalition_name", "the_coalition_name"),
+        ]
+        for (bare, article) in articleFormPairs {
+            guard let value = context[bare], !value.isEmpty else { continue }
+            if context[article] == nil || context[article]?.isEmpty == true {
+                context[article] = "the \(value)"
             }
         }
 
@@ -169,6 +340,7 @@ class TemplateEngine {
         // Computed tokens
         context["country"] = country.name
         context["player_country"] = country.name
+        context["the_player_country"] = country.nameWithDefiniteArticle
         context["leader"] = country.leader ?? "the Leader"
 
         if let leaderTitle = country.leaderTitle {
@@ -177,6 +349,60 @@ class TemplateEngine {
 
         // Merge scenario data
         context.merge(scenarioData) { _, new in new }
+
+        // Derive the_* article forms for role/institution/party tokens that don't already have a value.
+        // Geo-relationship article forms (the_adversary, the_ally, etc.) are handled above.
+        let articleFormPairs: [(bare: String, article: String)] = [
+            ("leader_title", "the_leader_title"),
+            ("vice_leader", "the_vice_leader"),
+            ("finance_role", "the_finance_role"),
+            ("defense_role", "the_defense_role"),
+            ("interior_role", "the_interior_role"),
+            ("foreign_affairs_role", "the_foreign_affairs_role"),
+            ("justice_role", "the_justice_role"),
+            ("health_role", "the_health_role"),
+            ("education_role", "the_education_role"),
+            ("commerce_role", "the_commerce_role"),
+            ("labor_role", "the_labor_role"),
+            ("energy_role", "the_energy_role"),
+            ("environment_role", "the_environment_role"),
+            ("transport_role", "the_transport_role"),
+            ("agriculture_role", "the_agriculture_role"),
+            ("prosecutor_role", "the_prosecutor_role"),
+            ("ruling_party", "the_ruling_party"),
+            ("opposition_party", "the_opposition_party"),
+            ("intelligence_agency", "the_intelligence_agency"),
+            ("domestic_intelligence", "the_domestic_intelligence"),
+            ("security_council", "the_security_council"),
+            ("police_force", "the_police_force"),
+            ("central_bank", "the_central_bank"),
+            ("legislature", "the_legislature"),
+            ("upper_house", "the_upper_house"),
+            ("lower_house", "the_lower_house"),
+            ("judicial_role", "the_judicial_role"),
+            ("state_media", "the_state_media"),
+            ("press_secretary", "the_press_secretary"),
+            ("military_branch", "the_military_branch"),
+            ("military_general", "the_military_general"),
+            ("cabinet_secretary", "the_cabinet_secretary"),
+            ("senior_official", "the_senior_official"),
+            ("capital_mayor", "the_capital_mayor"),
+            ("regional_governor", "the_regional_governor"),
+            ("major_industry", "the_major_industry"),
+            ("regional_bloc", "the_regional_bloc"),
+            ("army_name", "the_army_name"),
+            ("naval_fleet", "the_naval_fleet"),
+            ("air_wing", "the_air_wing"),
+            ("cyber_agency", "the_cyber_agency"),
+            ("nuclear_command", "the_nuclear_command"),
+            ("coalition_name", "the_coalition_name"),
+        ]
+        for (bare, article) in articleFormPairs {
+            guard let value = context[bare], !value.isEmpty else { continue }
+            if context[article] == nil || context[article]?.isEmpty == true {
+                context[article] = "the \(value)"
+            }
+        }
 
         return context
     }
@@ -202,6 +428,12 @@ class TemplateEngine {
             return text
         }
 
+        let optionalBranchTokens: Set<String> = [
+            "marine_branch", "space_branch", "paramilitary_branch",
+            "coast_guard_branch", "intel_branch", "cyber_branch",
+            "sovereign_fund", "special_forces", "strategic_nuclear_branch"
+        ]
+
         let range = NSRange(text.startIndex..., in: text)
         let matches = regex.matches(in: text, options: [], range: range).reversed()
 
@@ -223,6 +455,8 @@ class TemplateEngine {
             // Try both the original case and lowercase version
             if let value = context[tokenName] ?? context[tokenLower] {
                 result.replaceSubrange(fullRange, with: value)
+            } else if optionalBranchTokens.contains(tokenLower) {
+                result.replaceSubrange(fullRange, with: "")
             } else {
                 #if DEBUG
                 print("⚠️ [TemplateEngine] Unresolved token: {\(tokenName)}")
@@ -231,7 +465,154 @@ class TemplateEngine {
             }
         }
 
+        // Strip any remaining unresolved token placeholders so the UI doesn't show raw markers.
+        // We still log them in DEBUG builds to aid troubleshooting.
+        let unresolvedPattern = #"\{\{?[a-zA-Z_]+\}?\}"#
+        if let unresolvedRegex = try? NSRegularExpression(pattern: unresolvedPattern, options: []) {
+            let unresolvedRange = NSRange(result.startIndex..., in: result)
+            let unresolvedMatches = unresolvedRegex.matches(in: result, options: [], range: unresolvedRange)
+
+            if !unresolvedMatches.isEmpty {
+                #if DEBUG
+                let unresolvedTokens = unresolvedMatches.compactMap { match -> String? in
+                    guard let range = Range(match.range(at: 0), in: result) else { return nil }
+                    return String(result[range])
+                }
+                print("⚠️ [TemplateEngine] Unresolved tokens after resolution: \(unresolvedTokens.joined(separator: ", "))")
+                #endif
+
+                result = unresolvedRegex.stringByReplacingMatches(in: result, options: [], range: unresolvedRange, withTemplate: "")
+            }
+        }
+
+        result = normalizeHardcodedInstitutionPhrases(in: result, context: context)
+        result = insertMissingDirectObject(in: result)
         return result
+    }
+
+    private func normalizeHardcodedInstitutionPhrases(
+        in text: String,
+        context: [String: String]
+    ) -> String {
+        // Article-form patterns (the X) must precede bare patterns to prevent
+        // partial matching of "the Justice Ministry" by the bare "justice ministry" rule.
+        let phrases: [(pattern: String, tokenKey: String)] = [
+            // justice
+            (#"the\s+justice\s+ministry"#, "the_justice_role"),
+            (#"the\s+ministry\s+of\s+justice"#, "the_justice_role"),
+            (#"the\s+(?:department\s+of\s+justice|justice\s+department)"#, "the_justice_role"),
+            (#"justice\s+ministry"#, "justice_role"),
+            (#"ministry\s+of\s+justice"#, "justice_role"),
+            (#"(?:department\s+of\s+justice|justice\s+department)"#, "justice_role"),
+            // finance
+            (#"the\s+finance\s+ministry"#, "the_finance_role"),
+            (#"the\s+ministry\s+of\s+finance"#, "the_finance_role"),
+            (#"the\s+(?:treasury\s+department|department\s+of\s+the\s+treasury)"#, "the_finance_role"),
+            (#"finance\s+ministry"#, "finance_role"),
+            (#"ministry\s+of\s+finance"#, "finance_role"),
+            (#"(?:treasury\s+department|department\s+of\s+the\s+treasury)"#, "finance_role"),
+            // defense
+            (#"the\s+(?:defense|defence)\s+ministry"#, "the_defense_role"),
+            (#"the\s+ministry\s+of\s+(?:defense|defence)"#, "the_defense_role"),
+            (#"the\s+department\s+of\s+(?:defense|defence)"#, "the_defense_role"),
+            (#"(?:defense|defence)\s+ministry"#, "defense_role"),
+            (#"ministry\s+of\s+(?:defense|defence)"#, "defense_role"),
+            (#"department\s+of\s+(?:defense|defence)"#, "defense_role"),
+            // interior
+            (#"the\s+interior\s+ministry"#, "the_interior_role"),
+            (#"the\s+ministry\s+of\s+(?:interior|the\s+interior)"#, "the_interior_role"),
+            (#"the\s+home\s+office"#, "the_interior_role"),
+            (#"the\s+department\s+of\s+homeland\s+security"#, "the_interior_role"),
+            (#"interior\s+ministry"#, "interior_role"),
+            (#"ministry\s+of\s+(?:interior|the\s+interior)"#, "interior_role"),
+            (#"home\s+office"#, "interior_role"),
+            (#"department\s+of\s+homeland\s+security"#, "interior_role"),
+            // foreign affairs
+            (#"the\s+foreign\s+ministry"#, "the_foreign_affairs_role"),
+            (#"the\s+ministry\s+of\s+foreign\s+affairs"#, "the_foreign_affairs_role"),
+            (#"the\s+(?:state\s+department|department\s+of\s+state)"#, "the_foreign_affairs_role"),
+            (#"the\s+foreign\s+office"#, "the_foreign_affairs_role"),
+            (#"foreign\s+ministry"#, "foreign_affairs_role"),
+            (#"ministry\s+of\s+foreign\s+affairs"#, "foreign_affairs_role"),
+            (#"(?:state\s+department|department\s+of\s+state)"#, "foreign_affairs_role"),
+            (#"foreign\s+office"#, "foreign_affairs_role"),
+            // health
+            (#"the\s+health\s+ministry"#, "the_health_role"),
+            (#"the\s+ministry\s+of\s+health"#, "the_health_role"),
+            (#"the\s+department\s+of\s+health"#, "the_health_role"),
+            (#"health\s+ministry"#, "health_role"),
+            (#"ministry\s+of\s+health"#, "health_role"),
+            (#"department\s+of\s+health"#, "health_role"),
+            // education
+            (#"the\s+education\s+ministry"#, "the_education_role"),
+            (#"the\s+ministry\s+of\s+education"#, "the_education_role"),
+            (#"the\s+department\s+of\s+education"#, "the_education_role"),
+            (#"education\s+ministry"#, "education_role"),
+            (#"ministry\s+of\s+education"#, "education_role"),
+            (#"department\s+of\s+education"#, "education_role"),
+            // commerce
+            (#"the\s+commerce\s+ministry"#, "the_commerce_role"),
+            (#"the\s+ministry\s+of\s+commerce"#, "the_commerce_role"),
+            (#"the\s+department\s+of\s+commerce"#, "the_commerce_role"),
+            (#"commerce\s+ministry"#, "commerce_role"),
+            (#"ministry\s+of\s+commerce"#, "commerce_role"),
+            (#"department\s+of\s+commerce"#, "commerce_role"),
+            // labor
+            (#"the\s+labou?r\s+ministry"#, "the_labor_role"),
+            (#"the\s+ministry\s+of\s+labou?r"#, "the_labor_role"),
+            (#"the\s+department\s+of\s+labor"#, "the_labor_role"),
+            (#"labou?r\s+ministry"#, "labor_role"),
+            (#"ministry\s+of\s+labou?r"#, "labor_role"),
+            (#"department\s+of\s+labor"#, "labor_role"),
+            // energy
+            (#"the\s+energy\s+ministry"#, "the_energy_role"),
+            (#"the\s+ministry\s+of\s+energy"#, "the_energy_role"),
+            (#"the\s+department\s+of\s+energy"#, "the_energy_role"),
+            (#"energy\s+ministry"#, "energy_role"),
+            (#"ministry\s+of\s+energy"#, "energy_role"),
+            (#"department\s+of\s+energy"#, "energy_role"),
+            // environment
+            (#"the\s+environment\s+ministry"#, "the_environment_role"),
+            (#"the\s+ministry\s+of\s+(?:environment|the\s+environment)"#, "the_environment_role"),
+            (#"the\s+environmental\s+protection\s+agency"#, "the_environment_role"),
+            (#"environment\s+ministry"#, "environment_role"),
+            (#"ministry\s+of\s+(?:environment|the\s+environment)"#, "environment_role"),
+            (#"environmental\s+protection\s+agency"#, "environment_role"),
+            // transport
+            (#"the\s+transport\s+ministry"#, "the_transport_role"),
+            (#"the\s+ministry\s+of\s+transportation?"#, "the_transport_role"),
+            (#"the\s+department\s+of\s+transportation"#, "the_transport_role"),
+            (#"transport\s+ministry"#, "transport_role"),
+            (#"ministry\s+of\s+transportation?"#, "transport_role"),
+            (#"department\s+of\s+transportation"#, "transport_role"),
+            // agriculture
+            (#"the\s+agriculture\s+ministry"#, "the_agriculture_role"),
+            (#"the\s+ministry\s+of\s+agriculture"#, "the_agriculture_role"),
+            (#"the\s+department\s+of\s+agriculture"#, "the_agriculture_role"),
+            (#"agriculture\s+ministry"#, "agriculture_role"),
+            (#"ministry\s+of\s+agriculture"#, "agriculture_role"),
+            (#"department\s+of\s+agriculture"#, "agriculture_role"),
+        ]
+        var out = text
+        for (pattern, tokenKey) in phrases {
+            guard let replacement = context[tokenKey], !replacement.isEmpty else { continue }
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { continue }
+            let range = NSRange(out.startIndex..., in: out)
+            out = regex.stringByReplacingMatches(in: out, options: [], range: range, withTemplate: replacement)
+        }
+        return out
+    }
+
+    private func insertMissingDirectObject(in text: String) -> String {
+        // Some legacy scenarios can resolve to "You direct to ..." without a recipient.
+        // If so, we insert a default recipient to form a complete sentence.
+        let pattern = #"\b(you)\s+direct\s+to\b(?!\s+(?:your|the)\s+cabinet)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+            return text
+        }
+
+        let range = NSRange(text.startIndex..., in: text)
+        return regex.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "$1 direct your cabinet to")
     }
 
     /// Resolve nested token references

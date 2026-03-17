@@ -41,15 +41,28 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const admin = __importStar(require("firebase-admin"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 const BATCH_SIZE = 100;
 const BUCKET = 'the-administration-3a072.firebasestorage.app';
 if (!admin.apps.length) {
     const projectId = process.env.FIREBASE_PROJECT_ID || 'the-administration-3a072';
     console.log(`[Nuke] Initializing Firebase Admin for project: ${projectId}`);
-    admin.initializeApp({
+    const saKeyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+        path.join(__dirname, '../../../../serviceAccountKey.json');
+    const appOptions = {
         projectId,
         storageBucket: `${projectId}.firebasestorage.app`,
-    });
+    };
+    if (fs.existsSync(saKeyPath)) {
+        console.log(`[Nuke] Using service account key: ${saKeyPath}`);
+        const sa = JSON.parse(fs.readFileSync(saKeyPath, 'utf8'));
+        appOptions.credential = admin.credential.cert(sa);
+    }
+    else {
+        console.log('[Nuke] No service account key found, falling back to ADC');
+    }
+    admin.initializeApp(appOptions);
 }
 const db = admin.firestore();
 const storage = admin.storage();
@@ -95,8 +108,11 @@ async function main() {
     console.log('3. Deleting Cloud Storage scenarios/ prefix...');
     const storageCount = await deleteStoragePrefix('scenarios/');
     console.log(`   Done. ${storageCount} files deleted.\n`);
+    console.log('4. Deleting Cloud Storage scenario-bundles/ prefix...');
+    const bundlesCount = await deleteStoragePrefix('scenario-bundles/');
+    console.log(`   Done. ${bundlesCount} files deleted.\n`);
     console.log('=== COMPLETE ===');
-    console.log(`Firestore: ${scenariosCount} scenarios, ${embeddingsCount} embeddings | Storage: ${storageCount} files`);
+    console.log(`Firestore: ${scenariosCount} scenarios, ${embeddingsCount} embeddings | Storage: ${storageCount} scenario files, ${bundlesCount} bundle files`);
 }
 main().catch((err) => {
     console.error('FATAL:', err);

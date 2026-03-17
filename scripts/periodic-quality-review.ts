@@ -49,6 +49,7 @@ function parseArgs() {
         sampleSize: parseInt(getArg('--sample', '50'), 10),
         llmSampleSize: parseInt(getArg('--llm-sample', '10'), 10),
         bundle: getArg('--bundle', ''),
+        openaiKey: getArg('--openai-key', ''),
         dryRun: args.includes('--dry-run'),
     };
 }
@@ -141,11 +142,11 @@ interface QualityReview {
 
 async function loadPreviousReview(bundle?: string): Promise<QualityReview | null> {
     try {
-        const q = db.collection('admin_quality_reviews')
-            .where('bundle', '==', bundle ?? null)
-            .orderBy('timestamp', 'desc')
-            .limit(1);
-        const snap = await q.get();
+        let q: admin.firestore.Query = db.collection('admin_quality_reviews');
+        if (bundle) {
+            q = q.where('bundle', '==', bundle);
+        }
+        const snap = await q.orderBy('timestamp', 'desc').limit(1).get();
         if (snap.empty) return null;
         return snap.docs[0].data() as QualityReview;
     } catch {
@@ -206,7 +207,21 @@ async function main() {
     // 3. LLM quality check on a subsample
     const llmSample = shuffled(scenarios).slice(0, args.llmSampleSize);
     let contentQuality: QualityReview['contentQuality'] | undefined;
-    if (args.llmSampleSize > 0 && llmSample.length > 0) {
+
+    const openaiKeySource = args.openaiKey
+        ? 'CLI'
+        : process.env.OPENAI_API_KEY
+        ? 'OPENAI_API_KEY'
+        : process.env.OPENAI_KEY
+        ? 'OPENAI_KEY'
+        : 'none';
+    const openaiKey = args.openaiKey || process.env.OPENAI_API_KEY || process.env.OPENAI_KEY || '';
+    console.log(`OpenAI key source: ${openaiKeySource}`);
+
+    if (!openaiKey) {
+        console.log('\nSkipping LLM quality check: no OpenAI API key provided.');
+    } else if (args.llmSampleSize > 0 && llmSample.length > 0) {
+        process.env.OPENAI_API_KEY = openaiKey;
         console.log(`\nRunning LLM quality check on ${llmSample.length} scenarios...`);
         try {
             const qualityReports = await evaluateBatchQuality(llmSample, 3);
@@ -254,7 +269,7 @@ async function main() {
         timestamp: new Date().toISOString(),
         sampleSize: scenarios.length,
         llmSampleSize: llmSample.length,
-        bundle: args.bundle || undefined,
+        ...(args.bundle ? { bundle: args.bundle } : {}),
         structural: {
             avgScore,
             passRate,
@@ -263,8 +278,8 @@ async function main() {
             failingScenarios,
             ruleFrequency,
         },
-        contentQuality,
-        drift,
+        ...(contentQuality ? { contentQuality } : {}),
+        ...(drift ? { drift } : {}),
     };
 
     // 6. Write to Firestore
