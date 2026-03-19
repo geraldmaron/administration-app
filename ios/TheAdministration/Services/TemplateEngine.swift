@@ -7,6 +7,14 @@ import Foundation
 class TemplateEngine {
     static let shared = TemplateEngine()
 
+    private static let placeholderPattern = #"\{\{?([a-zA-Z_]+)\}?\}"#
+    private static let unresolvedPlaceholderPattern = #"\{\{?[a-zA-Z_]+\}?\}"#
+    private static let optionalBranchTokens: Set<String> = [
+        "marine_branch", "space_branch", "paramilitary_branch",
+        "coast_guard_branch", "intel_branch", "cyber_branch",
+        "sovereign_fund", "special_forces", "strategic_nuclear_branch"
+    ]
+
     private var countries: [Country] = []
 
     private init() {}
@@ -412,6 +420,69 @@ class TemplateEngine {
         self.countries = countries
     }
 
+    private static let fallbackTokenValues: [String: String] = [
+        "the_player_country": "the country",
+        "player_country": "the country",
+        "country": "the country",
+        "the_adversary": "the opposing state",
+        "adversary": "an opposing state",
+        "the_ally": "the allied state",
+        "ally": "an allied state",
+        "the_neighbor": "the neighboring state",
+        "neighbor": "a neighboring state",
+        "the_border_rival": "the border rival",
+        "border_rival": "a border rival",
+        "the_regional_rival": "the regional rival",
+        "regional_rival": "a regional rival",
+        "the_rival": "the rival state",
+        "rival": "a rival state",
+        "the_trade_partner": "the trade partner",
+        "trade_partner": "a trade partner",
+        "the_partner": "the partner state",
+        "partner": "a partner state",
+        "the_nation": "the nation",
+        "nation": "a nation",
+        "leader_title": "national leader",
+        "the_leader_title": "the national leader",
+        "legislature": "legislature",
+        "the_legislature": "the legislature",
+        "ruling_party": "ruling party",
+        "the_ruling_party": "the ruling party"
+    ]
+
+    private func titleCaseToken(_ token: String) -> String {
+        token
+            .split(separator: "_")
+            .map { $0.capitalized }
+            .joined(separator: " ")
+    }
+
+    private func fallbackValue(for tokenLower: String, context: [String: String]) -> String {
+        if let exact = TemplateEngine.fallbackTokenValues[tokenLower] {
+            return exact
+        }
+
+        if tokenLower.hasPrefix("the_") {
+            let bare = String(tokenLower.dropFirst(4))
+            if let fromContext = context[bare], !fromContext.isEmpty {
+                return "the \(fromContext)"
+            }
+            if let exactBare = TemplateEngine.fallbackTokenValues[bare] {
+                return exactBare.hasPrefix("the ") ? exactBare : "the \(exactBare)"
+            }
+            if bare.hasSuffix("_role") {
+                return "the \(titleCaseToken(bare.replacingOccurrences(of: "_role", with: ""))) Minister"
+            }
+            return "the \(titleCaseToken(bare).lowercased())"
+        }
+
+        if tokenLower.hasSuffix("_role") {
+            return "\(titleCaseToken(tokenLower.replacingOccurrences(of: "_role", with: ""))) Minister"
+        }
+
+        return titleCaseToken(tokenLower).lowercased()
+    }
+
     // MARK: - Token Replacement
 
     /// Replace all tokens in text with values from context
@@ -421,18 +492,12 @@ class TemplateEngine {
         var result = text
 
         // Pattern matches both {token} and {{token}}
-        let pattern = #"\{\{?([a-zA-Z_]+)\}?\}"#
+        let pattern = TemplateEngine.placeholderPattern
 
         guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
             print("⚠️ [TemplateEngine] Failed to create regex pattern")
             return text
         }
-
-        let optionalBranchTokens: Set<String> = [
-            "marine_branch", "space_branch", "paramilitary_branch",
-            "coast_guard_branch", "intel_branch", "cyber_branch",
-            "sovereign_fund", "special_forces", "strategic_nuclear_branch"
-        ]
 
         let range = NSRange(text.startIndex..., in: text)
         let matches = regex.matches(in: text, options: [], range: range).reversed()
@@ -455,22 +520,22 @@ class TemplateEngine {
             // Try both the original case and lowercase version
             if let value = context[tokenName] ?? context[tokenLower] {
                 result.replaceSubrange(fullRange, with: value)
-            } else if optionalBranchTokens.contains(tokenLower) {
+            } else if TemplateEngine.optionalBranchTokens.contains(tokenLower) {
                 result.replaceSubrange(fullRange, with: "")
             } else {
+                let fallback = fallbackValue(for: tokenLower, context: context)
+                result.replaceSubrange(fullRange, with: fallback)
                 #if DEBUG
                 print("⚠️ [TemplateEngine] Unresolved token: {\(tokenName)}")
                 #endif
-                // Leave token unchanged in text for debugging
             }
         }
 
-        // Strip any remaining unresolved token placeholders so the UI doesn't show raw markers.
-        // We still log them in DEBUG builds to aid troubleshooting.
+        // Resolve any remaining placeholders that slipped through with the same fallback strategy.
         let unresolvedPattern = #"\{\{?[a-zA-Z_]+\}?\}"#
         if let unresolvedRegex = try? NSRegularExpression(pattern: unresolvedPattern, options: []) {
-            let unresolvedRange = NSRange(result.startIndex..., in: result)
-            let unresolvedMatches = unresolvedRegex.matches(in: result, options: [], range: unresolvedRange)
+            var unresolvedRange = NSRange(result.startIndex..., in: result)
+            let unresolvedMatches = unresolvedRegex.matches(in: result, options: [], range: unresolvedRange).reversed()
 
             if !unresolvedMatches.isEmpty {
                 #if DEBUG
@@ -481,13 +546,205 @@ class TemplateEngine {
                 print("⚠️ [TemplateEngine] Unresolved tokens after resolution: \(unresolvedTokens.joined(separator: ", "))")
                 #endif
 
+                for match in unresolvedMatches {
+                    guard let fullRange = Range(match.range(at: 0), in: result) else { continue }
+                    let raw = String(result[fullRange])
+                    let token = raw
+                        .replacingOccurrences(of: "{{", with: "")
+                        .replacingOccurrences(of: "}}", with: "")
+                        .replacingOccurrences(of: "{", with: "")
+                        .replacingOccurrences(of: "}", with: "")
+                        .lowercased()
+                    let fallback = fallbackValue(for: token, context: context)
+                    result.replaceSubrange(fullRange, with: fallback)
+                }
+                unresolvedRange = NSRange(result.startIndex..., in: result)
                 result = unresolvedRegex.stringByReplacingMatches(in: result, options: [], range: unresolvedRange, withTemplate: "")
             }
         }
 
         result = normalizeHardcodedInstitutionPhrases(in: result, context: context)
         result = insertMissingDirectObject(in: result)
+        result = normalizePresentationText(in: result)
         return result
+    }
+
+    private func normalizePresentationText(in text: String) -> String {
+        var result = text
+        result = collapseWhitespaceAndPunctuation(in: result)
+        result = collapseAdjacentRepeatedPhrases(in: result)
+        result = collapseAdjacentRepeatedWords(in: result)
+        result = collapseRepeatedSentences(in: result)
+        result = collapseWhitespaceAndPunctuation(in: result)
+        result = capitalizeFirstNarrativeLetter(in: result)
+        result = capitalizeSentenceBoundaries(in: result)
+        return result
+    }
+
+    private func collapseWhitespaceAndPunctuation(in text: String) -> String {
+        var result = text.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+        result = result.replacingOccurrences(of: ". .", with: ".")
+        result = result.replacingOccurrences(of: #"(?<!\.)\.{2}(?!\.)"#, with: ".", options: .regularExpression)
+        result = result.replacingOccurrences(of: ", ,", with: ",")
+        result = result.replacingOccurrences(of: #"\s+([.!?,;:])"#, with: "$1", options: .regularExpression)
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func collapseAdjacentRepeatedWords(in text: String) -> String {
+        var result = text
+        while true {
+            let next = result.replacingOccurrences(
+                of: #"\b([A-Za-z][A-Za-z'’-]{1,})\s+\1\b"#,
+                with: "$1",
+                options: [.regularExpression, .caseInsensitive]
+            )
+            if next == result { return next }
+            result = next
+        }
+    }
+
+    private func collapseAdjacentRepeatedPhrases(in text: String) -> String {
+        var result = text
+        while true {
+            var changed = false
+            for wordCount in stride(from: 5, through: 2, by: -1) {
+                let pattern = #"\b((?:[A-Za-z][A-Za-z'’-]*\s+){WORD_COUNT}[A-Za-z][A-Za-z'’-]*)\s+\1\b"#
+                    .replacingOccurrences(of: "WORD_COUNT", with: String(wordCount - 1))
+                let next = result.replacingOccurrences(
+                    of: pattern,
+                    with: "$1",
+                    options: [.regularExpression, .caseInsensitive]
+                )
+                if next != result {
+                    result = next
+                    changed = true
+                }
+            }
+            if !changed { return result }
+        }
+    }
+
+    private func collapseRepeatedSentences(in text: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: #"[^.!?]+[.!?]*"#) else {
+            return text
+        }
+
+        let range = NSRange(text.startIndex..., in: text)
+        let segments = regex.matches(in: text, options: [], range: range).compactMap { match -> String? in
+            guard let range = Range(match.range, in: text) else { return nil }
+            return String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        guard !segments.isEmpty else { return text }
+
+        func normalized(_ segment: String) -> String {
+            segment
+                .lowercased()
+                .replacingOccurrences(of: #"\{([a-zA-Z_]+)\}"#, with: "{$1}", options: .regularExpression)
+                .replacingOccurrences(of: #"[^a-z0-9{}]+"#, with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        var deduped: [String] = []
+        var previous = ""
+        for segment in segments {
+            let compact = normalized(segment)
+            guard !compact.isEmpty else { continue }
+            if compact == previous { continue }
+            deduped.append(segment)
+            previous = compact
+        }
+
+        return deduped.joined(separator: " ")
+    }
+
+    private func capitalizeFirstNarrativeLetter(in text: String) -> String {
+        var result = text
+        var inToken = false
+        var previousBoundary = true
+
+        for index in result.indices {
+            let character = result[index]
+            if character == "{" {
+                inToken = true
+                continue
+            }
+            if character == "}" {
+                inToken = false
+                previousBoundary = true
+                continue
+            }
+            if inToken { continue }
+            if character.isWhitespace {
+                previousBoundary = true
+                continue
+            }
+            if character.isLetter {
+                if previousBoundary, character.isLowercase {
+                    result.replaceSubrange(index...index, with: String(character).uppercased())
+                }
+                return result
+            }
+            previousBoundary = false
+        }
+
+        return result
+    }
+
+    private func capitalizeSentenceBoundaries(in text: String) -> String {
+        var characters = Array(text)
+        var inToken = false
+        var capitalizeNext = false
+        var tokenClosedWhilePending = false
+
+        for index in characters.indices {
+            let character = characters[index]
+
+            if character == "{" {
+                inToken = true
+                continue
+            }
+            if character == "}" {
+                inToken = false
+                if capitalizeNext { tokenClosedWhilePending = true }
+                continue
+            }
+            if inToken { continue }
+
+            if capitalizeNext {
+                if character.isLetter {
+                    if character.isLowercase {
+                        let uppercased = Array(String(character).uppercased())
+                        if let first = uppercased.first {
+                            characters[index] = first
+                        }
+                    }
+                    capitalizeNext = false
+                    tokenClosedWhilePending = false
+                    continue
+                }
+                if character.isWhitespace || character == "\"" || character == "(" || character == "[" {
+                    continue
+                }
+                if tokenClosedWhilePending && character == "'" {
+                    capitalizeNext = false
+                    tokenClosedWhilePending = false
+                    continue
+                }
+                if character == ")" || character == "}" || character == "]" || character == "”" {
+                    continue
+                }
+                capitalizeNext = false
+                tokenClosedWhilePending = false
+            }
+
+            if character == "." || character == "!" || character == "?" {
+                capitalizeNext = true
+                tokenClosedWhilePending = false
+            }
+        }
+
+        return String(characters)
     }
 
     private func normalizeHardcodedInstitutionPhrases(
@@ -667,6 +924,114 @@ class TemplateEngine {
     ) -> (valid: Bool, missing: [String]) {
         let missing = requiredTokens.filter { !context.keys.contains($0) }
         return (missing.isEmpty, missing)
+    }
+
+    func missingRequiredTokens(
+        for scenario: Scenario,
+        country: Country,
+        gameState: GameState
+    ) -> [String] {
+        let context = buildContext(country: country, scenario: scenario, gameState: gameState)
+        return referencedTokens(in: scenario).filter { token in
+            let normalizedToken = token.lowercased()
+            if TemplateEngine.optionalBranchTokens.contains(normalizedToken) {
+                return false
+            }
+
+            guard let value = context[token] ?? context[normalizedToken] else {
+                return true
+            }
+
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty {
+                return true
+            }
+
+            let range = NSRange(trimmed.startIndex..., in: trimmed)
+            guard let regex = try? NSRegularExpression(pattern: TemplateEngine.unresolvedPlaceholderPattern, options: []) else {
+                return false
+            }
+            return regex.firstMatch(in: trimmed, options: [], range: range) != nil
+        }
+    }
+
+    func canResolveScenarioWithoutFallback(
+        _ scenario: Scenario,
+        country: Country,
+        gameState: GameState
+    ) -> Bool {
+        missingRequiredTokens(for: scenario, country: country, gameState: gameState).isEmpty
+    }
+
+    private func referencedTokens(in scenario: Scenario) -> [String] {
+        let fragments = scenarioTextFragments(scenario)
+        guard let regex = try? NSRegularExpression(pattern: TemplateEngine.placeholderPattern, options: []) else {
+            return []
+        }
+
+        var tokens = Set<String>()
+        for fragment in fragments where !fragment.isEmpty {
+            let range = NSRange(fragment.startIndex..., in: fragment)
+            for match in regex.matches(in: fragment, options: [], range: range) {
+                guard match.numberOfRanges >= 2,
+                      let tokenRange = Range(match.range(at: 1), in: fragment) else {
+                    continue
+                }
+                tokens.insert(String(fragment[tokenRange]).lowercased())
+            }
+        }
+
+        return tokens.sorted()
+    }
+
+    private func scenarioTextFragments(_ scenario: Scenario) -> [String] {
+        var fragments: [String] = []
+        fragments.append(scenario.title)
+        fragments.append(scenario.description)
+        fragments.append(scenario.titleTemplate ?? "")
+        fragments.append(scenario.descriptionTemplate ?? "")
+        fragments.append(scenario.actor ?? "")
+        fragments.append(contentsOf: locationFragments(scenario.location))
+
+        for option in scenario.options {
+            fragments.append(option.text)
+            fragments.append(option.label ?? "")
+            fragments.append(option.impactText ?? "")
+            fragments.append(option.outcome ?? "")
+            fragments.append(option.outcomeHeadline ?? "")
+            fragments.append(option.outcomeSummary ?? "")
+            fragments.append(option.outcomeContext ?? "")
+            fragments.append(option.actor ?? "")
+            fragments.append(contentsOf: locationFragments(option.location))
+
+            if let advisorFeedback = option.advisorFeedback {
+                fragments.append(contentsOf: advisorFeedback.map(\.feedback))
+            }
+        }
+
+        if let tokenMap = scenario.tokenMap {
+            fragments.append(contentsOf: tokenMap.values)
+        }
+
+        return fragments
+    }
+
+    private func locationFragments(_ location: ScenarioLocation?) -> [String] {
+        guard let location else {
+            return []
+        }
+
+        return [
+            location.countryId,
+            location.region,
+            location.city,
+            location.site,
+            location.cityId,
+            location.regionId,
+            location.siteId,
+            location.localeTemplate,
+            location.cityIds?.joined(separator: " ")
+        ].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
     }
 }
 

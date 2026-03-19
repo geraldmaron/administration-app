@@ -45,7 +45,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.recoverZombieJobs = exports.onScenarioJobCreated = exports.MAX_SCENARIOS_PER_JOB = exports.MAX_PENDING_JOBS = exports.MAX_BUNDLE_CONCURRENCY = void 0;
+exports.recoverZombieJobs = exports.onScenarioJobCreated = exports.GENERATION_JOB_TRIGGER_CONCURRENCY = exports.GENERATION_JOB_MAX_INSTANCES = exports.MAX_SCENARIOS_PER_JOB = exports.MAX_PENDING_JOBS = exports.MAX_BUNDLE_CONCURRENCY = void 0;
 exports.resolveBundles = resolveBundles;
 exports.createGenerationJob = createGenerationJob;
 exports.getJobStatus = getJobStatus;
@@ -66,7 +66,7 @@ const model_providers_1 = require("./lib/model-providers");
  * Concurrency Configuration for OpenAI API
  *
  * Concurrent HTTP requests are capped via semaphore in model-providers.ts
- * (OPENAI_MAX_CONCURRENT env var, default 20).
+ * (OPENAI_MAX_CONCURRENT env var, default 3 in deployed functions).
  * All bundles run in parallel — each gets its own concurrent slot.
  * Rate-limit backoff is handled per-call inside model-providers.ts.
  */
@@ -76,6 +76,60 @@ exports.MAX_BUNDLE_CONCURRENCY = 5;
 exports.MAX_PENDING_JOBS = 10;
 /** Maximum scenarios per job to prevent runaway costs */
 exports.MAX_SCENARIOS_PER_JOB = 50;
+/** Hard cap on parallel function instances processing generation jobs */
+exports.GENERATION_JOB_MAX_INSTANCES = 2;
+/** Process a single Firestore trigger event per instance to prevent request fanout. */
+exports.GENERATION_JOB_TRIGGER_CONCURRENCY = 1;
+function inferDefaultSourceKind(mode) {
+    return mode === 'news' ? 'news' : 'evergreen';
+}
+function normalizeJobScopeFields(jobData) {
+    var _a, _b, _c, _d, _e;
+    const scopeTier = (_a = jobData.scopeTier) !== null && _a !== void 0 ? _a : 'universal';
+    const sourceKind = (_b = jobData.sourceKind) !== null && _b !== void 0 ? _b : inferDefaultSourceKind(jobData.mode);
+    const applicableCountries = Array.isArray(jobData.applicable_countries)
+        ? jobData.applicable_countries.filter((countryId) => typeof countryId === 'string' && countryId.trim().length > 0)
+        : undefined;
+    const primaryRegion = (_c = jobData.region) !== null && _c !== void 0 ? _c : (_d = jobData.regions) === null || _d === void 0 ? void 0 : _d[0];
+    const scopeKey = (_e = jobData.scopeKey) !== null && _e !== void 0 ? _e : (() => {
+        switch (scopeTier) {
+            case 'regional':
+                return primaryRegion ? `region:${primaryRegion}` : '';
+            case 'cluster':
+                return jobData.clusterId ? `cluster:${jobData.clusterId}` : '';
+            case 'exclusive':
+                return (applicableCountries === null || applicableCountries === void 0 ? void 0 : applicableCountries.length) === 1 ? `country:${applicableCountries[0]}` : '';
+            default:
+                return 'universal';
+        }
+    })();
+    if (!scopeKey) {
+        return { ok: false, error: `Missing scopeKey for scope tier ${scopeTier}.`, scopeTier, scopeKey: '', sourceKind };
+    }
+    if (scopeTier === 'regional' && !primaryRegion) {
+        return { ok: false, error: 'Regional jobs require region or regions.', scopeTier, scopeKey, sourceKind };
+    }
+    if (scopeTier === 'cluster' && !jobData.clusterId) {
+        return { ok: false, error: 'Cluster jobs require clusterId.', scopeTier, scopeKey, sourceKind };
+    }
+    if (scopeTier === 'exclusive') {
+        if (!jobData.exclusivityReason) {
+            return { ok: false, error: 'Exclusive jobs require exclusivityReason.', scopeTier, scopeKey, sourceKind };
+        }
+        if (!(applicableCountries === null || applicableCountries === void 0 ? void 0 : applicableCountries.length)) {
+            return { ok: false, error: 'Exclusive jobs require applicable_countries.', scopeTier, scopeKey, sourceKind };
+        }
+    }
+    return {
+        ok: true,
+        scopeTier,
+        scopeKey,
+        clusterId: jobData.clusterId,
+        exclusivityReason: jobData.exclusivityReason,
+        applicable_countries: applicableCountries,
+        sourceKind,
+    };
+}
 // ---------------------------------------------------------------------------
 // Helper Functions
 // ---------------------------------------------------------------------------
@@ -105,6 +159,15 @@ async function checkPendingJobLimit(db, maxPendingJobs = exports.MAX_PENDING_JOB
         currentCount
     };
 }
+function estimateExpectedScenarios(bundleCount, count, distributionConfig) {
+    if ((distributionConfig === null || distributionConfig === void 0 ? void 0 : distributionConfig.mode) === 'fixed' && distributionConfig.loopLength) {
+        return bundleCount * count * Math.max(1, Math.min(3, distributionConfig.loopLength));
+    }
+    if (!distributionConfig || distributionConfig.mode === 'auto') {
+        return bundleCount * count;
+    }
+    return Math.ceil(bundleCount * count * 3);
+}
 // ---------------------------------------------------------------------------
 // Firestore Trigger: Process Generation Jobs
 // ---------------------------------------------------------------------------
@@ -112,9 +175,11 @@ exports.onScenarioJobCreated = (0, firestore_1.onDocumentCreated)({
     document: "generation_jobs/{jobId}",
     timeoutSeconds: 540,
     memory: "1GiB",
+    maxInstances: exports.GENERATION_JOB_MAX_INSTANCES,
+    concurrency: exports.GENERATION_JOB_TRIGGER_CONCURRENCY,
     secrets: ["OPENAI_API_KEY"]
 }, async (event) => {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
     const snapshot = event.data;
     if (!snapshot)
         return;
@@ -122,6 +187,16 @@ exports.onScenarioJobCreated = (0, firestore_1.onDocumentCreated)({
     const jobId = event.params.jobId;
     if (jobData.status !== 'pending') {
         logger.info(`Job ${jobId} skipped - status is ${jobData.status}`);
+        return;
+    }
+    const normalizedScope = normalizeJobScopeFields(jobData);
+    if (!normalizedScope.ok) {
+        logger.error(`Job ${jobId} failed - invalid scope configuration: ${normalizedScope.error}`);
+        await snapshot.ref.update({
+            status: 'failed',
+            error: normalizedScope.error,
+            completedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
         return;
     }
     // Validate bundles
@@ -136,7 +211,7 @@ exports.onScenarioJobCreated = (0, firestore_1.onDocumentCreated)({
         });
         return;
     }
-    const configValidation = (0, config_validator_1.validateConfig)();
+    const configValidation = (0, config_validator_1.validateConfig)(jobData.modelConfig);
     if (!configValidation.valid) {
         (0, config_validator_1.logConfigStatus)();
         await snapshot.ref.update({
@@ -147,7 +222,14 @@ exports.onScenarioJobCreated = (0, firestore_1.onDocumentCreated)({
         return;
     }
     if (!process.env.FUNCTIONS_EMULATOR && jobData.modelConfig) {
-        const lmModels = [jobData.modelConfig.architectModel, jobData.modelConfig.drafterModel]
+        const lmModels = [
+            jobData.modelConfig.architectModel,
+            jobData.modelConfig.drafterModel,
+            jobData.modelConfig.repairModel,
+            jobData.modelConfig.contentQualityModel,
+            jobData.modelConfig.narrativeReviewModel,
+            jobData.modelConfig.embeddingModel,
+        ]
             .filter(m => m === null || m === void 0 ? void 0 : m.startsWith('lmstudio:'));
         if (lmModels.length > 0) {
             logger.error(`Job ${jobId} failed — LM Studio models cannot be used in deployed Cloud Functions`);
@@ -166,12 +248,7 @@ exports.onScenarioJobCreated = (0, firestore_1.onDocumentCreated)({
     const count = Math.min(Math.max(1, jobData.count || 1), genConfig.max_scenarios_per_job);
     const mode = jobData.mode || 'manual';
     const distributionConfig = jobData.distributionConfig || { mode: 'auto' };
-    const loopLength = distributionConfig.mode === 'fixed' && distributionConfig.loopLength
-        ? distributionConfig.loopLength
-        : undefined;
-    const totalScenariosExpected = loopLength != null
-        ? count * loopLength * validBundles.length
-        : Math.ceil(count * validBundles.length * 3);
+    const totalScenariosExpected = estimateExpectedScenarios(validBundles.length, count, distributionConfig);
     logger.info(`Job ${jobId} starting: ${validBundles.length} bundles, ${count} scenarios each, mode=${mode}`);
     // Update status to running
     await snapshot.ref.update({
@@ -221,7 +298,7 @@ exports.onScenarioJobCreated = (0, firestore_1.onDocumentCreated)({
             }
         };
         (0, model_providers_1.resetProviderRetryTelemetry)();
-        logger.info(`Processing ${validBundles.length} bundles with adaptive batching (API concurrency capped at ${process.env.OPENAI_MAX_CONCURRENT || '20'} requests)`);
+        logger.info(`Processing ${validBundles.length} bundles with adaptive batching (API concurrency capped at ${process.env.OPENAI_MAX_CONCURRENT || '3'} requests, max instances ${exports.GENERATION_JOB_MAX_INSTANCES}, trigger concurrency ${exports.GENERATION_JOB_TRIGGER_CONCURRENCY})`);
         // Adaptive batching configuration
         let maxBundleConcurrency = Math.min((_a = genConfig.max_bundle_concurrency) !== null && _a !== void 0 ? _a : 3, 5);
         let adaptiveBundleConcurrency = maxBundleConcurrency;
@@ -234,7 +311,7 @@ exports.onScenarioJobCreated = (0, firestore_1.onDocumentCreated)({
                 `with concurrency=${adaptiveBundleConcurrency}: [${batchBundles.join(', ')}]`);
             (0, model_providers_1.resetProviderRetryTelemetry)();
             const batchResults = await Promise.all(batchBundles.map(async (bundle, index) => {
-                var _a;
+                var _a, _b;
                 const batchIndex = batchStart + index + 1;
                 logger.info(`[${batchIndex}/${validBundles.length}] Processing bundle: ${bundle}`);
                 if (forceCancelled) {
@@ -247,10 +324,10 @@ exports.onScenarioJobCreated = (0, firestore_1.onDocumentCreated)({
                     return { bundle, scenarios: [], error: null, skippedReason: 'ceiling', ceilingCount: activeCount };
                 }
                 try {
-                    const scenarios = await (0, scenario_engine_1.generateScenarios)(Object.assign(Object.assign(Object.assign(Object.assign({ mode,
+                    const scenarios = await (0, scenario_engine_1.generateScenarios)(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ mode,
                         bundle,
                         count,
-                        distributionConfig }, (jobData.region ? { region: jobData.region } : {})), (((_a = jobData.regions) === null || _a === void 0 ? void 0 : _a.length) ? { regions: jobData.regions } : {})), (jobData.modelConfig ? { modelConfig: jobData.modelConfig } : {})), { onAttemptFailed: ({ attempt, maxAttempts, score, topIssues }) => {
+                        distributionConfig }, (jobData.region ? { region: jobData.region } : {})), (((_a = jobData.regions) === null || _a === void 0 ? void 0 : _a.length) ? { regions: jobData.regions } : {})), { scopeTier: normalizedScope.scopeTier, scopeKey: normalizedScope.scopeKey }), (normalizedScope.clusterId ? { clusterId: normalizedScope.clusterId } : {})), (normalizedScope.exclusivityReason ? { exclusivityReason: normalizedScope.exclusivityReason } : {})), (((_b = normalizedScope.applicable_countries) === null || _b === void 0 ? void 0 : _b.length) ? { applicable_countries: normalizedScope.applicable_countries } : {})), { sourceKind: normalizedScope.sourceKind }), (jobData.modelConfig ? { modelConfig: jobData.modelConfig } : {})), { onAttemptFailed: ({ attempt, maxAttempts, score, topIssues }) => {
                             const msg = `score ${score} — ${topIssues.slice(0, 3).join('; ')}`;
                             allErrors.push({ bundle, error: `attempt ${attempt}/${maxAttempts} failed: ${msg}` });
                             void updateProgress();
@@ -298,10 +375,25 @@ exports.onScenarioJobCreated = (0, firestore_1.onDocumentCreated)({
                             const actCount = ((_b = s.acts) === null || _b === void 0 ? void 0 : _b.length) || 1;
                             const isRoot = s.isRootScenario !== false;
                             const auditMeta = (_c = s.metadata) === null || _c === void 0 ? void 0 : _c.auditMetadata;
-                            allResults.push({ id: s.id, title: s.title, bundle, difficulty: (_d = s.metadata) === null || _d === void 0 ? void 0 : _d.difficulty, actCount, isRoot, auditScore: auditMeta === null || auditMeta === void 0 ? void 0 : auditMeta.score, autoFixed: (_e = auditMeta === null || auditMeta === void 0 ? void 0 : auditMeta.autoFixed) !== null && _e !== void 0 ? _e : false });
+                            const acceptanceMeta = (_d = s.metadata) === null || _d === void 0 ? void 0 : _d.acceptanceMetadata;
+                            allResults.push({
+                                id: s.id,
+                                title: s.title,
+                                bundle,
+                                difficulty: (_e = s.metadata) === null || _e === void 0 ? void 0 : _e.difficulty,
+                                actCount,
+                                isRoot,
+                                auditScore: auditMeta === null || auditMeta === void 0 ? void 0 : auditMeta.score,
+                                autoFixed: (_f = auditMeta === null || auditMeta === void 0 ? void 0 : auditMeta.autoFixed) !== null && _f !== void 0 ? _f : false,
+                                countrySource: (_g = acceptanceMeta === null || acceptanceMeta === void 0 ? void 0 : acceptanceMeta.countrySource) === null || _g === void 0 ? void 0 : _g.kind,
+                                policyVersion: acceptanceMeta === null || acceptanceMeta === void 0 ? void 0 : acceptanceMeta.policyVersion,
+                                scopeTier: (_h = s.metadata) === null || _h === void 0 ? void 0 : _h.scopeTier,
+                                scopeKey: (_j = s.metadata) === null || _j === void 0 ? void 0 : _j.scopeKey,
+                                sourceKind: (_k = s.metadata) === null || _k === void 0 ? void 0 : _k.sourceKind,
+                            });
                             savedScenarioIds.push(s.id);
                             totalCompleted++;
-                            logger.info(`Saved: ${s.id} - ${s.title} [${actCount}-act, difficulty: ${((_f = s.metadata) === null || _f === void 0 ? void 0 : _f.difficulty) || '?'}]`);
+                            logger.info(`Saved: ${s.id} - ${s.title} [${actCount}-act, difficulty: ${((_l = s.metadata) === null || _l === void 0 ? void 0 : _l.difficulty) || '?'}, countrySource: ${((_m = acceptanceMeta === null || acceptanceMeta === void 0 ? void 0 : acceptanceMeta.countrySource) === null || _m === void 0 ? void 0 : _m.kind) || 'unknown'}]`);
                         }
                         else {
                             allErrors.push({ id: s.id, bundle, error: savedResult.reason || 'Save rejected' });
@@ -351,7 +443,7 @@ exports.onScenarioJobCreated = (0, firestore_1.onDocumentCreated)({
             above90Count: scoredResults.filter(r => r.auditScore >= 90).length,
         } : null;
         const currentSnap = await snapshot.ref.get();
-        if (((_g = currentSnap.data()) === null || _g === void 0 ? void 0 : _g.status) === 'cancelled') {
+        if (((_o = currentSnap.data()) === null || _o === void 0 ? void 0 : _o.status) === 'cancelled') {
             await snapshot.ref.update({
                 completedAt: admin.firestore.FieldValue.serverTimestamp(),
                 progress: Math.round(((totalCompleted + totalFailed) / totalScenariosExpected) * 100),
@@ -424,14 +516,33 @@ async function createGenerationJob(db, options) {
         requestedAt: admin.firestore.Timestamp.now(),
         priority: options.priority || 'normal',
         description: options.description,
+        modelConfig: options.modelConfig,
+        region: options.region,
+        regions: options.regions,
+        scopeTier: options.scopeTier,
+        scopeKey: options.scopeKey,
+        clusterId: options.clusterId,
+        exclusivityReason: options.exclusivityReason,
+        applicable_countries: options.applicable_countries,
+        sourceKind: options.sourceKind,
         status: 'pending'
     };
+    const normalizedScope = normalizeJobScopeFields(jobData);
+    if (!normalizedScope.ok) {
+        throw new Error(normalizedScope.error);
+    }
+    jobData.scopeTier = normalizedScope.scopeTier;
+    jobData.scopeKey = normalizedScope.scopeKey;
+    jobData.clusterId = normalizedScope.clusterId;
+    jobData.exclusivityReason = normalizedScope.exclusivityReason;
+    jobData.applicable_countries = normalizedScope.applicable_countries;
+    jobData.sourceKind = normalizedScope.sourceKind;
     await jobRef.set(jobData);
     logger.info(`Created job ${jobRef.id}: ${bundles.length} bundles, ${count} scenarios each`);
     return {
         jobId: jobRef.id,
         bundles,
-        expectedScenarios: bundles.length * count
+        expectedScenarios: estimateExpectedScenarios(bundles.length, count, options.distributionConfig)
     };
 }
 /**
@@ -463,7 +574,7 @@ async function cancelJob(db, jobId) {
 // Scheduled: Zombie Job Recovery
 // ---------------------------------------------------------------------------
 /** Jobs stuck in 'running' beyond this threshold are considered zombies */
-const ZOMBIE_THRESHOLD_MINUTES = 15;
+const ZOMBIE_THRESHOLD_MINUTES = 10;
 /**
  * Detects generation jobs stuck in 'running' state beyond the Cloud Function
  * timeout window and marks them as failed. Runs every 15 minutes.
@@ -473,7 +584,7 @@ const ZOMBIE_THRESHOLD_MINUTES = 15;
  * catch block, leaving the job document permanently in 'running' state.
  */
 exports.recoverZombieJobs = (0, scheduler_1.onSchedule)({
-    schedule: 'every 15 minutes',
+    schedule: 'every 5 minutes',
     timeoutSeconds: 60,
     memory: '256MiB',
 }, async () => {

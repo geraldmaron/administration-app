@@ -34,6 +34,14 @@ export interface GenerationAttempt {
     input: number;
     output: number;
   };
+  // Per-phase funnel tracking
+  phase_concept_seeds_count?: number;
+  phase_concept_novelty_rejected?: number;
+  phase_standard_path_count?: number;
+  phase_premium_path_count?: number;
+  phase_editorial_review_count?: number;
+  phase_dedup_rejected_count?: number;
+  cost_per_accepted_scenario?: number;
 }
 
 export interface FailureAnalysis {

@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import PageHeader from '@/components/PageHeader';
+import CommandPanel from '@/components/CommandPanel';
+import OperationsNav from '@/components/OperationsNav';
+import ScreenHeader from '@/components/ScreenHeader';
 
 interface LMStudioStatus {
   connected: boolean;
   models: string[];
   baseUrl: string;
   error?: string;
+  remoteStatus: { url: string; connected: boolean; error?: string } | null;
 }
 
 interface GenerationConfig {
@@ -20,6 +23,7 @@ interface GenerationConfig {
   concept_concurrency?: number;
   dedup_similarity_threshold?: number;
   max_llm_repair_attempts?: number;
+  lmstudio_base_url?: string;
 }
 
 export default function SettingsPage() {
@@ -29,6 +33,8 @@ export default function SettingsPage() {
   const [configLoading, setConfigLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [tunnelUrl, setTunnelUrl] = useState('');
+  const [tunnelSaving, setTunnelSaving] = useState(false);
 
   const fetchLMStudio = useCallback(async () => {
     setLmLoading(true);
@@ -37,7 +43,7 @@ export default function SettingsPage() {
       const data = await res.json();
       setLmStatus(data);
     } catch {
-      setLmStatus({ connected: false, models: [], baseUrl: '', error: 'Fetch failed' });
+      setLmStatus({ connected: false, models: [], baseUrl: '', error: 'Fetch failed', remoteStatus: null });
     } finally {
       setLmLoading(false);
     }
@@ -50,6 +56,7 @@ export default function SettingsPage() {
       if (res.ok) {
         const data = await res.json();
         setConfig(data);
+        setTunnelUrl(data.lmstudio_base_url || '');
       }
     } catch {
       // ignore
@@ -109,14 +116,44 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleSaveTunnelUrl() {
+    setTunnelSaving(true);
+    setSaveMessage(null);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lmstudio_base_url: tunnelUrl || null }),
+      });
+      if (res.ok) {
+        setConfig(prev => prev ? { ...prev, lmstudio_base_url: tunnelUrl || undefined } : prev);
+        setSaveMessage('Tunnel URL saved');
+        fetchLMStudio();
+      } else {
+        setSaveMessage('Failed to save');
+      }
+    } catch {
+      setSaveMessage('Network error');
+    } finally {
+      setTunnelSaving(false);
+      setTimeout(() => setSaveMessage(null), 3000);
+    }
+  }
+
   return (
-    <div className="p-6 max-w-3xl">
-      <PageHeader section="Configuration" title="Settings" />
+    <div className="mx-auto max-w-[1400px]">
+      <ScreenHeader
+        section="Content Operations"
+        title="Settings"
+        subtitle="Review local model connectivity and tune generation pipeline controls without leaving the command surface."
+        eyebrow="Configuration"
+        nav={<OperationsNav />}
+      />
 
       {/* LM Studio Connection */}
-      <div className="tech-border bg-background-elevated p-4 mb-6">
+      <CommandPanel className="mb-6 p-5 md:p-6">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle">
+          <div className="section-kicker">
             Local Models — LM Studio
           </div>
           <button
@@ -187,13 +224,65 @@ export default function SettingsPage() {
               <span className="text-foreground">LMSTUDIO_MODEL</span> environment variables, or prefix model names
               with <span className="text-foreground">lmstudio:</span> (e.g. lmstudio:llama-3.1-8b-instruct).
             </div>
+
+            <div className="text-[10px] font-mono text-foreground-subtle border-t border-[var(--border)] pt-2 mt-2">
+              LM Studio is intended for local debugging and prompt iteration only. It is not the shipping iPhone on-device runtime, and embedding-based semantic dedup is skipped for LM Studio generation jobs.
+            </div>
+
+            {/* Remote tunnel URL */}
+            <div className="border-t border-[var(--border)] pt-3 mt-2 space-y-2">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle">
+                Remote Tunnel URL
+              </div>
+              <div className="text-[10px] font-mono text-foreground-subtle">
+                Set a public URL that tunnels to your local LM Studio (port 1234). Deployed Cloud Functions will use this URL.
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={tunnelUrl}
+                  onChange={e => setTunnelUrl(e.target.value)}
+                  placeholder="https://your-tunnel.ngrok.io/v1"
+                  className="flex-1 bg-background-muted border border-[var(--border)] text-xs font-mono text-foreground px-2 py-1.5 rounded focus:outline-none focus:border-[var(--accent)]"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveTunnelUrl}
+                  disabled={tunnelSaving}
+                  className="btn btn-tactical disabled:opacity-50"
+                >
+                  {tunnelSaving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+              {lmStatus.remoteStatus && (
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      lmStatus.remoteStatus.connected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'
+                    }`}
+                  />
+                  <span
+                    className={`text-[10px] font-mono ${
+                      lmStatus.remoteStatus.connected ? 'text-[var(--success)]' : 'text-[var(--error)]'
+                    }`}
+                  >
+                    {lmStatus.remoteStatus.connected ? 'Tunnel reachable' : 'Tunnel unreachable'}
+                  </span>
+                  {lmStatus.remoteStatus.error && (
+                    <span className="text-[10px] font-mono text-foreground-subtle">
+                      — {lmStatus.remoteStatus.error}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
-      </div>
+      </CommandPanel>
 
       {/* Generation Pipeline Config */}
-      <div className="tech-border bg-background-elevated p-4 mb-6">
-        <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-3">
+      <CommandPanel className="mb-6 p-5 md:p-6">
+        <div className="section-kicker mb-3">
           Generation Pipeline
         </div>
 
@@ -270,11 +359,11 @@ export default function SettingsPage() {
             {saveMessage}
           </div>
         )}
-      </div>
+      </CommandPanel>
 
       {/* Pipeline Info */}
-      <div className="tech-border bg-background-elevated p-4">
-        <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-3">
+      <CommandPanel className="p-5 md:p-6">
+        <div className="section-kicker mb-3">
           Pipeline Stages
         </div>
         <div className="space-y-2 text-xs font-mono">
@@ -325,7 +414,7 @@ export default function SettingsPage() {
             <span className="text-foreground-subtle ml-auto">Embedding model</span>
           </div>
         </div>
-      </div>
+      </CommandPanel>
     </div>
   );
 }

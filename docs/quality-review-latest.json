@@ -1,31 +1,34 @@
 {
-  "reviewId": "review_1773633384412",
-  "timestamp": "2026-03-16T03:56:24.412Z",
+  "reviewId": "review_1773794325749",
+  "timestamp": "2026-03-18T00:38:45.749Z",
   "sampleSize": 4,
   "llmSampleSize": 4,
   "structural": {
-    "avgScore": 79,
-    "passRate": 0.5,
-    "errorRate": 0.5,
-    "warnRate": 3.75,
+    "avgScore": 73,
+    "passRate": 0.75,
+    "errorRate": 0,
+    "warnRate": 6.75,
     "failingScenarios": [
       {
-        "id": "gen_tech_mmsmx6q5_act1",
-        "score": 56,
-        "topIssue": "[third-person-framing] option option_1 outcomeSummary uses \"the government\" instead of \"your government\""
-      },
-      {
-        "id": "gen_economy_mmsn4tjc_act1",
+        "id": "gen_politics_mmvathpt_act1",
         "score": 68,
-        "topIssue": "[third-person-framing] option option_a outcomeContext uses \"the government\" instead of \"your government\""
+        "topIssue": "[description-length] Description is 4 sentences (prefer 2–3 for conciseness)"
       }
     ],
     "ruleFrequency": {
-      "high-passive-voice": 4,
-      "description-word-count": 1,
-      "third-person-framing": 7,
-      "hardcoded-institution-phrase": 2,
-      "option-text-word-count": 3
+      "high-passive-voice": 13,
+      "option-text-word-count": 4,
+      "lowercase-start": 9,
+      "description-length": 1
     }
+  },
+  "contentQuality": {
+    "avgOverallScore": 4.75,
+    "avgGrammar": 4.75,
+    "avgTone": 5,
+    "avgCoherence": 4.75,
+    "avgAdvisorQuality": 4.5,
+    "passRate": 1,
+    "lowQualityScenarios": []
   }
 }

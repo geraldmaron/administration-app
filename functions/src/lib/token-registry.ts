@@ -254,12 +254,14 @@ export const ARTICLE_FORM_TOKEN_NAMES: ReadonlySet<string> = new Set(
 
 export const TOKEN_ALIAS_MAP: Readonly<Record<string, string>> = {
   'culture_role':        'interior_role',
+  'culture_ministry':    'interior_role',
   'media_role':          'interior_role',
   'communications_role': 'interior_role',
   'security_role':       'interior_role',
   'immigration_role':    'interior_role',
   'police_role':         'interior_role',
   'intelligence_role':   'interior_role',
+  'ministry_of_interior':'interior_role',
   'housing_role':        'labor_role',
   'welfare_role':        'labor_role',
   'social_role':         'labor_role',
@@ -273,6 +275,7 @@ export const TOKEN_ALIAS_MAP: Readonly<Record<string, string>> = {
   'military_role':       'defense_role',
   'cyber_role':          'defense_role',
   'foreign_role':        'foreign_affairs_role',
+  'diplomacy_role':      'foreign_affairs_role',
 };
 
 // ---------------------------------------------------------------------------
@@ -379,6 +382,22 @@ export function normalizeTokenAliases(text: string): string {
   for (const [bad, good] of Object.entries(TOKEN_ALIAS_MAP)) {
     result = result.replace(new RegExp(`\\{the_${bad}\\}`, 'gi'), `{the_${good}}`);
     result = result.replace(new RegExp(`\\{${bad}\\}`, 'gi'), `{${good}}`);
+  }
+  const exactPlaceholderReplacements: ReadonlyArray<[RegExp, string]> = [
+    [/\{the_legislature_speaker\}/gi, 'the speaker of {the_legislature}'],
+    [/\{legislature_speaker\}/gi, 'speaker of {the_legislature}'],
+    [/\{the_capital_city\}/gi, '{capital_city}'],
+    [/\{the_economy\}/gi, 'the economy'],
+    [/\{economy\}/gi, 'the economy'],
+    [/\{metric_public_order\}/gi, 'public order'],
+    [/\{the_public_order\}/gi, 'public order'],
+    [/\{public_order\}/gi, 'public order'],
+    [/\{metric_approval\}/gi, 'public approval'],
+    [/\{the_approval\}/gi, 'public approval'],
+    [/\{approval\}/gi, 'public approval'],
+  ];
+  for (const [pattern, replacement] of exactPlaceholderReplacements) {
+    result = result.replace(pattern, replacement);
   }
   return result;
 }
@@ -490,6 +509,7 @@ ${invalidTokenEntries}
 - \`{president}\`, \`{prime_minister}\` — use \`{leader_title}\` instead.
 - \`{country}\`, \`{country_name}\` — use \`{the_player_country}\` instead.
 - \`{border_ival}\` — typo. Use \`{border_rival}\`.
+- \`{legislature_speaker}\`, \`{the_legislature_speaker}\` — NOT supported runtime tokens. Rewrite as \`speaker of {the_legislature}\` or plain language.
 - Any token not in the approved list fails validation. When in doubt, use approved tokens only.
 
 ### Hardcoded Government Structure Terms — Always Banned

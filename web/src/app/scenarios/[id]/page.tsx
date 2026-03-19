@@ -5,6 +5,7 @@ import SeverityBadge from '@/components/SeverityBadge';
 import AuditScore from '@/components/AuditScore';
 import StanceBadge from '@/components/StanceBadge';
 import MetricEffect from '@/components/MetricEffect';
+import CommandPanel from '@/components/CommandPanel';
 import type { ScenarioDetail, Option } from '@/lib/types';
 import { METRIC_DISPLAY } from '@/lib/constants';
 import ScenarioActions from './ScenarioActions';
@@ -24,9 +25,9 @@ const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
 function OptionSection({ option, index }: { option: Option; index: number }) {
   return (
-    <div className="tech-border p-4 bg-background-elevated">
+    <CommandPanel className="p-5">
       <div className="flex items-center gap-2 mb-3">
-        <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-mono font-bold bg-accent/20 text-accent rounded-[2px]">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[rgba(25,105,220,0.14)] text-[10px] font-mono font-bold text-[var(--accent-primary)]">
           {OPTION_LABELS[index] ?? index + 1}
         </span>
         {option.label && (
@@ -58,7 +59,7 @@ function OptionSection({ option, index }: { option: Option; index: number }) {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
             {option.advisorFeedback.map((af, i) => (
-              <div key={i} className="bg-background p-2 border border-[var(--border)]">
+              <div key={i} className="control-surface p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle">
                     {af.roleId.replace(/_/g, ' ')}
@@ -75,7 +76,7 @@ function OptionSection({ option, index }: { option: Option; index: number }) {
       )}
 
       {(option.outcomeHeadline || option.outcomeSummary) && (
-        <div className="bg-background p-3 border border-[var(--border)]">
+        <div className="control-surface p-4">
           <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-1">
             Outcome
           </div>
@@ -92,7 +93,7 @@ function OptionSection({ option, index }: { option: Option; index: number }) {
           )}
         </div>
       )}
-    </div>
+    </CommandPanel>
   );
 }
 
@@ -104,7 +105,7 @@ export default async function ScenarioDetailPage({ params }: { params: { id: str
   }
 
   return (
-    <div className="p-6 max-w-5xl">
+    <div className="mx-auto max-w-[1200px]">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-xs font-mono text-foreground-subtle mb-4">
         <Link href="/scenarios" className="hover:text-foreground transition-colors">
@@ -126,10 +127,11 @@ export default async function ScenarioDetailPage({ params }: { params: { id: str
       </div>
 
       {/* Header */}
-      <div className="tech-border bg-background-elevated p-4 mb-4">
+      <CommandPanel className="mb-4 p-5 md:p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-semibold text-foreground mb-2">{scenario.title}</h1>
+            <div className="section-kicker mb-2">Scenario Record</div>
+            <h1 className="text-2xl font-semibold text-foreground mb-3">{scenario.title}</h1>
             <div className="flex items-center gap-2 flex-wrap">
               {scenario.metadata?.bundle && <BundleBadge bundle={scenario.metadata.bundle} />}
               <SeverityBadge severity={scenario.metadata?.severity ?? null} />
@@ -145,19 +147,19 @@ export default async function ScenarioDetailPage({ params }: { params: { id: str
           </div>
           <ScenarioActions id={scenario.id} isActive={scenario.is_active} />
         </div>
-      </div>
+      </CommandPanel>
 
       {/* Description */}
-      <div className="tech-border bg-background-elevated p-4 mb-4">
+      <CommandPanel className="mb-4 p-5">
         <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-2">
           Description
         </div>
         <p className="text-sm text-foreground leading-relaxed">{scenario.description}</p>
-      </div>
+      </CommandPanel>
 
       {/* Conditions */}
       {scenario.conditions && scenario.conditions.length > 0 && (
-        <div className="tech-border bg-background-elevated p-4 mb-4">
+        <CommandPanel className="mb-4 p-5">
           <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-2">
             Conditions
           </div>
@@ -173,12 +175,12 @@ export default async function ScenarioDetailPage({ params }: { params: { id: str
               </span>
             ))}
           </div>
-        </div>
+        </CommandPanel>
       )}
 
       {/* Legislature requirement */}
       {scenario.legislature_requirement && (
-        <div className="tech-border bg-background-elevated p-4 mb-4">
+        <CommandPanel className="mb-4 p-5">
           <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-2">
             Legislature Requirement
           </div>
@@ -188,7 +190,7 @@ export default async function ScenarioDetailPage({ params }: { params: { id: str
               <span> ({scenario.legislature_requirement.chamber} chamber)</span>
             )}
           </p>
-        </div>
+        </CommandPanel>
       )}
 
       {/* Options */}
@@ -204,7 +206,7 @@ export default async function ScenarioDetailPage({ params }: { params: { id: str
       </div>
 
       {/* Metadata */}
-      <details className="tech-border bg-background-elevated">
+      <details className="tech-border">
         <summary className="px-4 py-3 cursor-pointer text-[10px] font-mono uppercase tracking-wider text-foreground-subtle hover:text-foreground transition-colors">
           Metadata
         </summary>

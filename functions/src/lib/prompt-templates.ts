@@ -12,6 +12,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { BundleScenario } from './audit-rules';
 import { buildTokenWhitelistPromptSection } from './token-registry';
+import { ALL_BUNDLE_IDS, type BundleId } from '../data/schemas/bundleIds';
+import type { ScenarioScopeTier } from '../types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,6 +47,94 @@ export interface PromptVersion {
   drafter: string;
   reflection: string;
 }
+
+export interface BundlePromptOverlay {
+  architect: string;
+  drafter: string;
+}
+
+export interface ScopePromptOverlay {
+  architect: string;
+  drafter: string;
+}
+
+const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
+  economy: {
+    architect: 'Center the blueprint on fiscal tradeoffs, inflation pressure, jobs, market confidence, and knock-on budget consequences.',
+    drafter: 'Favor concrete economic levers such as taxes, subsidies, debt issuance, price controls, labor support, trade exposure, and central-bank tension. Make option tradeoffs legible for budget, employment, inflation, and approval.',
+  },
+  politics: {
+    architect: 'Frame the arc around legitimacy, coalition pressure, scandals, constitutional stress, electoral fallout, and elite factional conflict.',
+    drafter: 'Favor political maneuvering, legitimacy management, party discipline, institutional brinkmanship, and public narrative control. Options should create visible tradeoffs between stability, democracy, liberty, and approval.',
+  },
+  military: {
+    architect: 'Frame the conflict around escalation risk, deterrence credibility, readiness, civilian costs, alliance signaling, and strategic uncertainty.',
+    drafter: 'Favor mobilization, procurement, border security, intelligence, force posture, veterans, and wartime tradeoffs. Keep consequences grounded in military readiness, public order, budget, foreign relations, and approval.',
+  },
+  tech: {
+    architect: 'Center the arc on cyber risk, AI governance, digital dependence, innovation upside, privacy costs, and infrastructure fragility.',
+    drafter: 'Favor cybersecurity, platform regulation, AI deployment, digital sovereignty, surveillance, semiconductor dependence, and broadband or grid resilience. Make the tradeoffs explicit between innovation, liberty, security, and employment.',
+  },
+  environment: {
+    architect: 'Frame the arc around climate shocks, adaptation costs, environmental regulation, resource stress, infrastructure resilience, and public backlash.',
+    drafter: 'Favor natural disasters, pollution, emissions controls, land use, resilience spending, relocation, and ecological restoration. Options should force tradeoffs between environment, economy, health, infrastructure, and social stability.',
+  },
+  social: {
+    architect: 'Center the arc on inequality, education strain, labor unrest, demographic pressure, service delivery, and social cohesion.',
+    drafter: 'Favor strikes, welfare reforms, education access, housing stress, migration integration, and inequality-driven backlash. Make the consequences visible across equality, employment, housing, liberty, and approval.',
+  },
+  health: {
+    architect: 'Frame the arc around public-health capacity, outbreak control, medical scarcity, trust in institutions, and unequal access to care.',
+    drafter: 'Favor outbreaks, hospital overload, medicine shortages, vaccine politics, mental health strain, and emergency public-health measures. Keep tradeoffs clear between health, liberty, budget, public order, and approval.',
+  },
+  diplomacy: {
+    architect: 'Center the blueprint on alliances, sanctions, trade leverage, crisis signaling, regional credibility, and diplomatic blowback.',
+    drafter: 'Favor sanctions, summit diplomacy, hostage crises, treaty leverage, recognition disputes, tariffs, aid, and alliance bargaining. Make every option expose tradeoffs in foreign relations, trade, sovereignty, military posture, and approval.',
+  },
+  justice: {
+    architect: 'Frame the arc around judicial legitimacy, policing strain, civil liberties, sentencing choices, and the state’s response to disorder.',
+    drafter: 'Favor court reform, prosecutorial discretion, prison policy, crime waves, emergency powers, and judicial independence. Make the tradeoffs visible between public order, liberty, equality, democracy, and corruption.',
+  },
+  corruption: {
+    architect: 'Center the arc on graft networks, procurement abuse, elite impunity, anti-corruption drives, and the political cost of enforcement.',
+    drafter: 'Favor bribery scandals, procurement fraud, shell companies, whistleblowers, watchdog bodies, and integrity crackdowns. Make the tradeoffs explicit between corruption, bureaucracy, economy, democracy, and approval.',
+  },
+  culture: {
+    architect: 'Frame the arc around identity conflict, media narratives, censorship pressure, education symbolism, and social polarization.',
+    drafter: 'Favor cultural heritage disputes, broadcasting rules, censorship fights, language policy, artistic backlash, and symbolic national controversies. Keep the tradeoffs clear between liberty, equality, public order, and approval.',
+  },
+  infrastructure: {
+    architect: 'Center the arc on service reliability, maintenance backlogs, disaster resilience, logistics bottlenecks, and capital-investment tradeoffs.',
+    drafter: 'Favor transit breakdowns, grid failures, water systems, ports, rail, telecoms, and public works. Make option tradeoffs explicit for infrastructure, economy, housing, environment, and budget.',
+  },
+  resources: {
+    architect: 'Frame the arc around extraction, scarcity, energy security, water stress, export leverage, and local backlash from resource decisions.',
+    drafter: 'Favor mining, drilling, water allocation, food or fuel scarcity, export controls, and commodity dependence. Make the tradeoffs legible across energy, trade, environment, sovereignty, and public order.',
+  },
+  dick_mode: {
+    architect: 'Frame the arc around coercion, repression, fear-based control, moral compromise, and strategic cruelty while keeping the scenario politically grounded.',
+    drafter: 'Favor authoritarian, censorial, and morally dark options, but keep them plausible state actions rather than cartoon villainy. Make the costs explicit in liberty, equality, democracy, foreign relations, unrest, and approval.',
+  },
+};
+
+const SCOPE_PROMPT_OVERLAYS: Record<ScenarioScopeTier, ScopePromptOverlay> = {
+  universal: {
+    architect: 'Optimize for transferability. Avoid country-unique constitutional assumptions, preserve tokenized institutions, and prefer mechanisms that can plausibly occur across many states.',
+    drafter: 'Write broadly reusable governance dilemmas with concrete mechanisms and stakeholders. Reject disguised single-country assumptions, hardcoded constitutional structures, and narrow historical framing.',
+  },
+  regional: {
+    architect: 'Optimize for regional realism. Use geography, blocs, corridors, migration routes, weather systems, and spillover effects that make causal sense within the target region.',
+    drafter: 'Inject region-relevant causal chains and pressure sources without hardcoding country names. Favor regional trade, border, climate, and alliance dynamics that still transfer within the same region.',
+  },
+  cluster: {
+    architect: 'Optimize for shared-structure realism. The concept should fit multiple countries in the same cluster and be stronger than a universal prompt without becoming country-exclusive.',
+    drafter: 'Use the cluster brief to produce scenarios that feel institutionally specific yet still portable across the cluster. Reject single-country assumptions unless they are justified by the cluster itself.',
+  },
+  exclusive: {
+    architect: 'Optimize for controlled uniqueness. The concept must justify why it cannot be generalized beyond the narrow target set and must remain tokenized.',
+    drafter: 'Use exclusivity sparingly. The scenario must honor the exclusivity reason, fit only the intended countries, and fail if the same idea could be expressed at cluster scope.',
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Firestore
@@ -251,6 +341,18 @@ export async function getArchitectPromptBase(): Promise<string> {
     '[PromptTemplates] No active "architect_drafter" prompt template found in Firestore and no local fallback available. ' +
     'Run the seed script or activate a version via activatePromptVersion().'
   );
+}
+
+export function getBundlePromptOverlay(bundle: BundleId): BundlePromptOverlay {
+  return BUNDLE_PROMPT_OVERLAYS[bundle];
+}
+
+export function getScopePromptOverlay(scopeTier: ScenarioScopeTier): ScopePromptOverlay {
+  return SCOPE_PROMPT_OVERLAYS[scopeTier];
+}
+
+export function getBundlesWithPromptOverlays(): readonly BundleId[] {
+  return ALL_BUNDLE_IDS.filter((bundleId) => Boolean(BUNDLE_PROMPT_OVERLAYS[bundleId]));
 }
 
 // ---------------------------------------------------------------------------

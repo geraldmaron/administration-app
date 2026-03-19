@@ -411,6 +411,64 @@ Deduplication: before appending, existing crises with the same ID prefix are rem
 | `condition` | EffectCondition? | Gate on metric state |
 | `scaling` | EffectScaling? | Scale value by a metric |
 
+### 9.4 Scope Tier Architecture (Approved Architecture and Migration State)
+
+The scenario library remains tokenized, but scenario planning and inventory management are defined by four scope tiers:
+
+| `metadata.scopeTier` | Purpose | Primary Selector Inputs |
+|----------------------|---------|-------------------------|
+| `universal` | Reusable evergreen scenarios for nearly any country | bundle, severity, tags, cooldown |
+| `regional` | Region-shaped scenarios transferable across a theater | `region_tags`, `regionalBoost`, geopolitical tags |
+| `cluster` | Shared-structure realism across similar countries | `clusterId`, government category, geopolitical tags, region |
+| `exclusive` | Country-unique or tightly bounded content | `applicable_countries`, `exclusivityReason` |
+
+**Required additive metadata for new scenarios**:
+
+| Field | Meaning |
+|-------|---------|
+| `scopeTier` | `universal`, `regional`, `cluster`, or `exclusive` |
+| `scopeKey` | Stable scope identifier such as `universal`, `region:caribbean`, `cluster:petrostate_authoritarian`, `country:jp` |
+| `sourceKind` | `evergreen`, `news`, `neighbor`, or `consequence` |
+| `clusterId` | Canonical cluster identifier for cluster scenarios |
+| `exclusivityReason` | Required for exclusive scenarios |
+
+`metadata.applicableCountries` remains the canonical hard country gate. It should be reserved primarily for `exclusive` scenarios and narrow news-driven scenarios.
+
+Current implementation note:
+
+1. The Firebase model is sufficient as a base and should not be replaced.
+2. The live `ScenarioMetadata` interface does not yet formally include all of these fields.
+3. The required migration set is `scopeTier`, `scopeKey`, `clusterId`, `exclusivityReason`, `sourceKind`, and `region_tags`.
+
+### 9.5 Cluster Taxonomy (Approved Architecture and Migration State)
+
+Cluster scenarios are the primary realism layer between universal and exclusive content. The initial canonical cluster set is:
+
+1. `alliance_anchor_democracy`
+2. `aging_industrial_democracy`
+3. `fragile_multifaction_democracy`
+4. `resource_nationalist_state`
+5. `export_manufacturing_power`
+6. `commodity_exporter_democracy`
+7. `petrostate_authoritarian`
+8. `food_import_dependent_state`
+9. `migrant_destination_service_economy`
+10. `small_island_tourism_state`
+11. `climate_exposed_coastal_state`
+12. `water_stressed_agro_state`
+13. `landlocked_trade_corridor_state`
+14. `frontier_security_state`
+15. `sanctions_exposed_authoritarian`
+16. `nuclear_deterrent_rivalry_state`
+17. `post_conflict_reconstruction_state`
+
+Rules:
+
+1. A country may belong to multiple clusters.
+2. A cluster must map to multiple countries.
+3. If a cluster resolves to only one country, it should be merged or treated as `exclusive`.
+4. Cluster scenarios remain fully tokenized.
+
 ---
 
 ## 10. Scenario Selection Pipeline (`generateNextScenario`)
@@ -461,13 +519,67 @@ finalWeight = baseScore * tagPenalty * bundleBoost
 6. Bundle multiplier: `max(0.1, min(rawMult, 3.0))`
 7. Regional boost: `max(0.1, min(rawBoost, 3.0))`
 
+### 10.1 Approved Target Weighting Additions
+
+The current runtime selector remains valid, but the approved target state adds explicit scope-tier balancing on top of the existing hard gates and geopolitical weighting.
+
+**Selection lanes remain ordered**:
+
+1. Pending consequence
+2. Neighbor event
+3. General pool
+4. AI queue
+5. Real-time AI fallback
+
+**Target general-pool scope mix by phase**:
+
+| Phase | Universal | Regional | Cluster | Exclusive |
+|-------|-----------|----------|---------|-----------|
+| Early | 50% | 20% | 20% | 10% |
+| Mid | 35% | 25% | 30% | 10% |
+| Late | 25% | 25% | 35% | 15% |
+| Endgame | 20% | 20% | 40% | 20% |
+
+**Target formula for eligible general-pool scenarios**:
+
+```text
+finalWeight =
+   baseWeight
+   * bundleFit
+   * geopoliticalFit
+   * regionalFit
+   * scopeNeed
+   * novelty
+   * tagDiversity
+   * chainContext
+```
+
+Definitions:
+
+1. `baseWeight = max(1.0, scenario.weight)`
+2. `bundleFit = clamp(country.bundleWeightOverrides[bundle], 0.1, 3.0)`
+3. `geopoliticalFit = 1.0 + min(requiredTagOverlap * 0.5, 2.0)` when required tags exist; otherwise `1.0`
+4. `regionalFit = clamp(metadata.regionalBoost[country.region], 0.1, 3.0)` when present; otherwise `1.0`
+5. `scopeNeed = clamp(1.0 + ((targetShare - recentShare) * 2.0), 0.65, 1.5)` over the last 12 selected scenarios
+6. `novelty = recencyPenalty * similarityPenalty`
+7. `tagDiversity = 0.75` when recent high-salience tag overlap is excessive; otherwise `1.0`
+8. `chainContext = 1.20` when closing or continuing an active arc; otherwise `1.0`
+
+Implementation prerequisites:
+
+1. `scopeTier` and `scopeKey` must be present on saved scenarios.
+2. The runtime must track recent scope history.
+3. Scope mix should not be enforced aggressively until enough existing inventory is backfilled.
+
+Hard country, government-category, and geopolitical exclusions never relax.
+
 ### Tier 4 — AI Scenario Queue
 
 `state.aiScenarioQueue.readyChains.first` (pre-generated AI queue).
 
 ### Tier 5 — AI Service
 
-`aiService.generateScenario(context:)` — real-time generation via Moonshot API.
+`aiService.generateScenario(context:)` — real-time generation via the configured model provider path. OpenAI is the canonical production default; LM Studio is local-only.
 
 ### Tier 6 — Hard Fallback
 
@@ -571,6 +683,17 @@ Values scaled to country GDP context.
 ### 13.4 Optional Tokens
 
 May resolve to nil/empty: `{sovereign_fund}`, `{marine_branch}`, `{space_branch}`, `{paramilitary_branch}`
+
+### 13.5 Token Policy Under Scope Tiers
+
+The approved architecture does **not** replace tokenization.
+
+Rules:
+
+1. All stored scenarios remain tokenized, including `exclusive` scenarios.
+2. `exclusive` means narrow eligibility, not hardcoded prose.
+3. Country names, party names, minister names, titles, and institutions continue to resolve at runtime.
+4. Scope tiers control scenario targeting and generation prompts, not token resolution behavior.
 
 ---
 
@@ -898,19 +1021,59 @@ Length adjustments: `long: +3/+1.5`, `short: -3/-1.0` to approval/avgChange thre
 
 ### Models
 
-| Role | Model | Temperature |
-|------|-------|-------------|
-| Architect | `kimi-k2.5` (Moonshot) | 0.7 |
-| Drafter | `kimi-k2.5` (Moonshot) | 0.4 |
-| Embeddings | `text-embedding-3-small` (OpenAI) | — |
+| Role | Production Default | Local Default | Notes |
+|------|--------------------|---------------|-------|
+| Architect | `gpt-4o-mini` | `lmstudio:*` | Concept seeding |
+| Drafter | `gpt-4o-mini` | `lmstudio:*` | Scenario drafting |
+| Repair | `gpt-4o-mini` | `lmstudio:*` | Local repair stays on LM Studio |
+| Content quality | `gpt-4o-mini` | `lmstudio:*` | Quality gate |
+| Narrative review | `gpt-4o-mini` | `lmstudio:*` | Editorial gate |
+| Embeddings | `text-embedding-3-small` | `lmstudio:*` | Local semantic dedup should remain local |
+
+LM Studio is the required local and emulator-only path across the full generation pipeline. OpenAI remains the canonical production path for authoritative saved content.
+
+Current implementation gaps:
+
+1. `GenerationJobData` is still primarily bundle-oriented.
+2. `training_scenarios` retrieval is still bundle plus score driven.
+3. `scenario_embeddings` dedup is currently bundle-scoped and OpenAI-based.
+4. Local LM Studio generation therefore requires either a local embedding model or an explicit local-only fallback dedup strategy.
 
 ### Pipeline Stages
 
-1. **Concept Seeding** (Architect): Generate narrative concepts for the requested bundle.
-2. **Blueprint Planning**: Expand concept into structural skeleton.
-3. **Act Drafting** (Drafter): Produce full scenario JSON — title, description, 3 options, effects, advisor feedback, outcomes.
-4. **Audit & Repair**: Score against audit rules → LLM repair if below threshold (up to `max_llm_repair_attempts = 2`, if `llm_repair_enabled = true`).
-5. **Storage**: Write passing scenarios to Firestore `scenarios/` collection.
+1. **Inventory Planning**: Identify deficits by `bundle x scopeTier x region-or-cluster x severity x difficulty`.
+2. **Concept Seeding** (Architect): Generate concepts for the requested bundle and scope tier.
+3. **Blueprint Planning**: Expand concept into structural skeleton when using premium multi-act flow.
+4. **Act Drafting** (Drafter): Produce full scenario JSON — title, description, 3 options, effects, advisor feedback, outcomes.
+5. **Audit & Repair**: Score against audit rules, run deterministic fixes, then run bounded LLM repair for fixable failures.
+6. **Scope Integrity Review**: Verify the scenario genuinely matches its declared scope tier.
+7. **Semantic Dedup**: Run scope-aware dedup against nearby scope tiers in the same bundle.
+8. **Storage**: Write passing scenarios and acceptance metadata to Firestore `scenarios/` collection.
+
+### Generation Job Contract (Approved Target State)
+
+New jobs should carry explicit scope metadata:
+
+```json
+{
+   "bundle": "diplomacy",
+   "count": 24,
+   "scopeTier": "cluster",
+   "scopeKey": "cluster:small_island_tourism_state",
+   "clusterId": "small_island_tourism_state",
+   "region": "caribbean",
+   "applicable_countries": [],
+   "sourceKind": "evergreen"
+}
+```
+
+Rules:
+
+1. `scopeTier` and `scopeKey` are required for new generation jobs.
+2. `clusterId` is required for cluster jobs.
+3. `applicable_countries` should be used mainly for exclusive and narrow news jobs.
+4. Generation planning should fill inventory deficits, not raw bundle counts.
+5. Local `modelConfig` should keep all supported phases on `lmstudio:*` models and fail fast instead of silently routing local work to OpenAI.
 
 ### Generation Config (`world_state/generation_config`)
 
@@ -929,7 +1092,15 @@ narrative_review_enabled: true
 
 ### Deduplication
 
-Cosine similarity on `text-embedding-3-small` vectors. Threshold: 0.85. Scenarios above threshold discarded.
+Cosine similarity on `text-embedding-3-small` vectors remains the canonical dedup mechanism.
+
+Approved target behavior:
+
+1. `universal` scenarios compare against universal, regional, and adjacent cluster content in the same bundle.
+2. `regional` scenarios compare against regional and universal content in the same bundle.
+3. `cluster` scenarios compare against same-cluster content and broader-scope analogs.
+4. `exclusive` scenarios compare against same-country content and nearby broad-scope analogs.
+5. Local generation should keep dedup local as well, using an LM Studio embedding model or a documented local-only fallback.
 
 ### Execution Modes
 
@@ -939,6 +1110,15 @@ Cosine similarity on `text-embedding-3-small` vectors. Threshold: 0.85. Scenario
 | Manual callable | `generateScenarios` HTTP callable |
 | CLI | `functions/src/tools/generate-bundle.ts` |
 | Daily news batch | `news-to-scenarios.ts` |
+
+### Scope Prompt Modes (Approved Target State)
+
+Prompt overlays should branch by `scopeTier`:
+
+1. `universal`: maximize transferability and anti-boilerplate rigor.
+2. `regional`: inject regional pressures, border dynamics, blocs, and geography.
+3. `cluster`: inject shared political-economic structure for the target cluster.
+4. `exclusive`: require `exclusivityReason` and reject content that can be generalized.
 
 ---
 
@@ -967,14 +1147,31 @@ Pass threshold: read from `world_state/generation_config.audit_pass_threshold`.
 
 **Warnings (reduce score)**: extreme effect magnitudes, hardcoded currency/country names instead of tokens, similar outcomes across options, missing advisor feedback, weak narrative.
 
+### Scope Integrity Rules (Approved Target State)
+
+An additional audit family should validate scenario scope:
+
+| Scope Tier | Required Validation |
+|------------|---------------------|
+| `universal` | Reject country-unique institutional assumptions |
+| `regional` | Reject decorative regional labeling without regional causality |
+| `cluster` | Reject incoherent clusters or disguised one-country scenarios |
+| `exclusive` | Require `exclusivityReason` and narrow justified country restriction |
+
 ### Auto-Fix Passes
 
 - **Deterministic fixes**: clamp values, fix duration, fill missing defaults.
 - **AI-assisted fixes**: `llm_repair_enabled = true` → re-prompt Drafter to generate missing text fields (up to 2 attempts).
 
-### Notable Rule: Third-Person Framing
+### Notable Rule: Voice Separation
 
-Scenarios must use second-person government voice:
+Scenario voice is split by field:
+
+1. `description`, `options[].text`, and `advisorFeedback[].feedback` use second person.
+2. `outcomeHeadline`, `outcomeSummary`, and `outcomeContext` use third-person journalistic voice.
+
+Examples:
+
 - `"the government"` → `"your government"`
 - `"the administration"` → appropriate pronoun
 - `"the president"` → `"you"` or `{leader_title}`
@@ -1009,6 +1206,39 @@ Scenarios must use second-person government voice:
 | `scenarios` | `metadata.bundle`, `metadata.severity`, `is_active` |
 | `generation_tracking` | `bundle`, `timestamp` |
 | `prompt_templates` | `name`, `active`, `updatedAt` |
+
+Additional indexes required for the approved scope-tier architecture:
+
+1. `scenarios`: `metadata.bundle`, `metadata.scopeTier`, `is_active`
+2. `scenarios`: `metadata.bundle`, `metadata.scopeKey`, `is_active`
+3. `scenarios`: `metadata.bundle`, `metadata.clusterId`, `is_active`
+4. `scenarios`: `metadata.bundle`, `metadata.sourceKind`, `is_active`
+5. `training_scenarios`: `bundle`, `scopeTier`, `isGolden`, `auditScore`
+
+### Firebase Schema Verdict
+
+The current Firebase architecture should be evolved rather than replaced.
+
+Keep:
+
+1. flat `scenarios`
+2. `generation_jobs`
+3. `prompt_templates`
+4. `training_scenarios`
+5. `scenario_embeddings`
+6. canonical 14-bundle taxonomy
+
+Expand:
+
+1. scenario metadata for scope-tier architecture
+2. generation jobs for scope-targeted planning
+3. golden-example metadata and retrieval for scope diversity
+4. dedup strategy so local LM Studio flows have explicit behavior
+
+Clean up:
+
+1. prompt collection naming drift in rules versus code
+2. legacy dual-source country catalog support once migration is complete
 
 ### Bundle IDs (14)
 

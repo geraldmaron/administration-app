@@ -231,7 +231,47 @@ function generateUniqueScenarioId(baseId, scenario) {
     return `${cleanBaseId}_${timestamp}_${hash}`;
 }
 async function saveScenario(scenario, options = {}) {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+    const acceptanceMetadata = (_a = scenario.metadata) === null || _a === void 0 ? void 0 : _a.acceptanceMetadata;
+    const scopeTier = (_b = scenario.metadata) === null || _b === void 0 ? void 0 : _b.scopeTier;
+    const scopeKey = (_c = scenario.metadata) === null || _c === void 0 ? void 0 : _c.scopeKey;
+    const sourceKind = (_d = scenario.metadata) === null || _d === void 0 ? void 0 : _d.sourceKind;
+    if (!(acceptanceMetadata === null || acceptanceMetadata === void 0 ? void 0 : acceptanceMetadata.policyVersion) ||
+        !((_e = acceptanceMetadata === null || acceptanceMetadata === void 0 ? void 0 : acceptanceMetadata.countrySource) === null || _e === void 0 ? void 0 : _e.kind) ||
+        !(acceptanceMetadata === null || acceptanceMetadata === void 0 ? void 0 : acceptanceMetadata.acceptedAt) ||
+        !(acceptanceMetadata === null || acceptanceMetadata === void 0 ? void 0 : acceptanceMetadata.scopeTier) ||
+        !(acceptanceMetadata === null || acceptanceMetadata === void 0 ? void 0 : acceptanceMetadata.scopeKey) ||
+        !(acceptanceMetadata === null || acceptanceMetadata === void 0 ? void 0 : acceptanceMetadata.sourceKind) ||
+        !(acceptanceMetadata === null || acceptanceMetadata === void 0 ? void 0 : acceptanceMetadata.modelFamily)) {
+        console.warn(`[Storage] Scenario ${scenario.id} is missing acceptance metadata. Rejecting save.`);
+        return { saved: false, reason: 'missing_acceptance_metadata' };
+    }
+    if (!scopeTier || !scopeKey || !sourceKind) {
+        console.warn(`[Storage] Scenario ${scenario.id} is missing scope metadata. Rejecting save.`);
+        return { saved: false, reason: 'missing_scope_metadata' };
+    }
+    if (acceptanceMetadata.scopeTier !== scopeTier || acceptanceMetadata.scopeKey !== scopeKey || acceptanceMetadata.sourceKind !== sourceKind) {
+        console.warn(`[Storage] Scenario ${scenario.id} has mismatched acceptance metadata. Rejecting save.`);
+        return { saved: false, reason: 'mismatched_acceptance_scope_metadata' };
+    }
+    if (scopeTier === 'cluster' && !((_f = scenario.metadata) === null || _f === void 0 ? void 0 : _f.clusterId)) {
+        console.warn(`[Storage] Scenario ${scenario.id} is missing clusterId for cluster scope. Rejecting save.`);
+        return { saved: false, reason: 'missing_cluster_id' };
+    }
+    if (scopeTier === 'regional' && (!Array.isArray((_g = scenario.metadata) === null || _g === void 0 ? void 0 : _g.region_tags) || scenario.metadata.region_tags.length === 0)) {
+        console.warn(`[Storage] Scenario ${scenario.id} is missing region_tags for regional scope. Rejecting save.`);
+        return { saved: false, reason: 'missing_region_tags' };
+    }
+    if (scopeTier === 'exclusive') {
+        if (!((_h = scenario.metadata) === null || _h === void 0 ? void 0 : _h.exclusivityReason)) {
+            console.warn(`[Storage] Scenario ${scenario.id} is missing exclusivityReason for exclusive scope. Rejecting save.`);
+            return { saved: false, reason: 'missing_exclusivity_reason' };
+        }
+        if (!Array.isArray((_j = scenario.metadata) === null || _j === void 0 ? void 0 : _j.applicable_countries) || scenario.metadata.applicable_countries.length === 0) {
+            console.warn(`[Storage] Scenario ${scenario.id} is missing applicable_countries for exclusive scope. Rejecting save.`);
+            return { saved: false, reason: 'missing_applicable_countries' };
+        }
+    }
     // 1. Fast pre-check for exact ID collision (non-transactional, quick exit)
     if (!options.skipDuplicateCheck) {
         const exists = await scenarioExists(scenario.id);
@@ -266,8 +306,8 @@ async function saveScenario(scenario, options = {}) {
                 metadata: {
                     created: new Date().toISOString(),
                     scenarioId: scenarioToSave.id,
-                    severity: ((_a = scenarioToSave.metadata) === null || _a === void 0 ? void 0 : _a.severity) || 'medium',
-                    source: ((_b = scenarioToSave.metadata) === null || _b === void 0 ? void 0 : _b.source) || 'manual'
+                    severity: ((_k = scenarioToSave.metadata) === null || _k === void 0 ? void 0 : _k.severity) || 'medium',
+                    source: ((_l = scenarioToSave.metadata) === null || _l === void 0 ? void 0 : _l.source) || 'manual'
                 }
             });
             console.log(`[Storage] Saved JSON backup to ${storagePath}`);
@@ -279,7 +319,7 @@ async function saveScenario(scenario, options = {}) {
     // 4. Atomically check existence and write to Firestore via transaction.
     // Closes the race condition where two parallel saves of the same scenario ID
     // could both pass the pre-check above and then both commit.
-    const firestoreData = Object.assign(Object.assign(Object.assign({}, scenarioToSave), (storagePath ? { storage_path: storagePath } : {})), { metadata: Object.assign(Object.assign({}, (scenarioToSave.metadata || {})), { mode_availability: ((_c = scenarioToSave.metadata) === null || _c === void 0 ? void 0 : _c.mode_availability) || [] }), created_at: admin.firestore.FieldValue.serverTimestamp(), type: 'generated', source: ((_d = scenarioToSave.metadata) === null || _d === void 0 ? void 0 : _d.source) || 'manual', is_active: true });
+    const firestoreData = Object.assign(Object.assign(Object.assign({}, scenarioToSave), (storagePath ? { storage_path: storagePath } : {})), { metadata: Object.assign(Object.assign({}, (scenarioToSave.metadata || {})), { mode_availability: ((_m = scenarioToSave.metadata) === null || _m === void 0 ? void 0 : _m.mode_availability) || [] }), created_at: admin.firestore.FieldValue.serverTimestamp(), type: 'generated', source: ((_o = scenarioToSave.metadata) === null || _o === void 0 ? void 0 : _o.source) || 'manual', is_active: true });
     const docRef = db.collection('scenarios').doc(scenario.id);
     const committed = await db.runTransaction(async (tx) => {
         const existing = await tx.get(docRef);
@@ -294,7 +334,7 @@ async function saveScenario(scenario, options = {}) {
         return { saved: false, reason: 'duplicate_id', existingId: scenario.id };
     }
     // 5. Save embedding if semantic dedup is enabled
-    const bundle = ((_e = scenario.metadata) === null || _e === void 0 ? void 0 : _e.bundle) || 'general';
+    const bundle = ((_p = scenario.metadata) === null || _p === void 0 ? void 0 : _p.bundle) || 'general';
     if ((0, semantic_dedup_1.isSemanticDedupEnabled)()) {
         try {
             // Check if embedding was pre-computed during generation
@@ -316,7 +356,7 @@ async function saveScenario(scenario, options = {}) {
     }
     // Invalidate cache for this bundle to ensure fresh data on next similarity check
     invalidateBundleCache(bundle);
-    console.log(`Saved scenario ${scenario.id} to Firestore${storagePath ? ` and Storage (${storagePath})` : ''} [source: ${((_f = scenario.metadata) === null || _f === void 0 ? void 0 : _f.source) || 'manual'}].`);
+    console.log(`Saved scenario ${scenario.id} to Firestore${storagePath ? ` and Storage (${storagePath})` : ''} [source: ${((_q = scenario.metadata) === null || _q === void 0 ? void 0 : _q.source) || 'manual'}].`);
     return { saved: true };
 }
 /**

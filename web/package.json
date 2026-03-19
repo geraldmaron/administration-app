@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "node scripts/next-port-launcher.mjs dev",
     "build": "next build",
-    "start": "next start -p 3001"
+    "start": "node scripts/next-port-launcher.mjs start"
   },
   "dependencies": {
     "next": "^14.2.0",

@@ -7,7 +7,7 @@
  * - ScenarioNavigator: filter eligible scenarios for the player's country
  *
  * Region strings here must match the `region` field stored on each country
- * document in world_state/countries. The DISPLAY_REGIONS map is the canonical
+ * document in the Firestore countries collection. The DISPLAY_REGIONS map is the canonical
  * source; REGION_LABEL is used for prompt injection and user-facing text.
  */
 

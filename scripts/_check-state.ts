@@ -28,7 +28,6 @@ async function main() {
 
   console.log('--- world_state documents ---');
   const worldStateDocs = [
-    'world_state/countries',
     'world_state/secondary_impact_rules',
     'world_state/feedback_loops',
     'world_state/names',
@@ -45,9 +44,10 @@ async function main() {
     console.log('  countries collection: EMPTY');
   } else {
     for (const doc of countriesSnap.docs) {
+      const data = doc.data() || {};
       const mil = await db.doc(`countries/${doc.id}/military_state/current`).get();
       const leg = await db.doc(`countries/${doc.id}/legislature_state/current`).get();
-      console.log(`  ${doc.id}: military=${mil.exists ? 'OK' : 'MISSING'}  legislature=${leg.exists ? 'OK' : 'MISSING'}`);
+      console.log(`  ${doc.id}: geopolitical=${data.geopolitical ? 'OK' : 'MISSING'} gameplay=${data.gameplay ? 'OK' : 'MISSING'} military=${mil.exists ? 'OK' : 'MISSING'} legislature=${leg.exists ? 'OK' : 'MISSING'}`);
     }
     const total = await countCollection('countries');
     console.log(`  (${total} total country docs)`);

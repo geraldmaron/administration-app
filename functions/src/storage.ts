@@ -238,6 +238,55 @@ export async function saveScenario(
     scenario: Scenario,
     options: { skipDuplicateCheck?: boolean; skipSimilarityCheck?: boolean } = {}
 ): Promise<{ saved: boolean; reason?: string; existingId?: string }> {
+    const acceptanceMetadata = (scenario.metadata as any)?.acceptanceMetadata;
+    const scopeTier = scenario.metadata?.scopeTier;
+    const scopeKey = scenario.metadata?.scopeKey;
+    const sourceKind = scenario.metadata?.sourceKind;
+
+    if (
+        !acceptanceMetadata?.policyVersion ||
+        !acceptanceMetadata?.countrySource?.kind ||
+        !acceptanceMetadata?.acceptedAt ||
+        !acceptanceMetadata?.scopeTier ||
+        !acceptanceMetadata?.scopeKey ||
+        !acceptanceMetadata?.sourceKind ||
+        !acceptanceMetadata?.modelFamily
+    ) {
+        console.warn(`[Storage] Scenario ${scenario.id} is missing acceptance metadata. Rejecting save.`);
+        return { saved: false, reason: 'missing_acceptance_metadata' };
+    }
+
+    if (!scopeTier || !scopeKey || !sourceKind) {
+        console.warn(`[Storage] Scenario ${scenario.id} is missing scope metadata. Rejecting save.`);
+        return { saved: false, reason: 'missing_scope_metadata' };
+    }
+
+    if (acceptanceMetadata.scopeTier !== scopeTier || acceptanceMetadata.scopeKey !== scopeKey || acceptanceMetadata.sourceKind !== sourceKind) {
+        console.warn(`[Storage] Scenario ${scenario.id} has mismatched acceptance metadata. Rejecting save.`);
+        return { saved: false, reason: 'mismatched_acceptance_scope_metadata' };
+    }
+
+    if (scopeTier === 'cluster' && !scenario.metadata?.clusterId) {
+        console.warn(`[Storage] Scenario ${scenario.id} is missing clusterId for cluster scope. Rejecting save.`);
+        return { saved: false, reason: 'missing_cluster_id' };
+    }
+
+    if (scopeTier === 'regional' && (!Array.isArray(scenario.metadata?.region_tags) || scenario.metadata.region_tags.length === 0)) {
+        console.warn(`[Storage] Scenario ${scenario.id} is missing region_tags for regional scope. Rejecting save.`);
+        return { saved: false, reason: 'missing_region_tags' };
+    }
+
+    if (scopeTier === 'exclusive') {
+        if (!scenario.metadata?.exclusivityReason) {
+            console.warn(`[Storage] Scenario ${scenario.id} is missing exclusivityReason for exclusive scope. Rejecting save.`);
+            return { saved: false, reason: 'missing_exclusivity_reason' };
+        }
+        if (!Array.isArray(scenario.metadata?.applicable_countries) || scenario.metadata.applicable_countries.length === 0) {
+            console.warn(`[Storage] Scenario ${scenario.id} is missing applicable_countries for exclusive scope. Rejecting save.`);
+            return { saved: false, reason: 'missing_applicable_countries' };
+        }
+    }
+
     // 1. Fast pre-check for exact ID collision (non-transactional, quick exit)
     if (!options.skipDuplicateCheck) {
         const exists = await scenarioExists(scenario.id);

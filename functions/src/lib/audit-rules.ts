@@ -11,6 +11,8 @@
 
 import { ALL_TOKENS, ARTICLE_FORM_TOKEN_NAMES, CANONICAL_ROLE_IDS, ROLE_ALIAS_MAP, buildTokenWhitelistPromptSection } from './token-registry';
 import { ALL_BUNDLE_IDS, isValidBundleId } from '../data/schemas/bundleIds';
+import { loadCountryCatalog } from './country-catalog';
+import type { ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind } from '../types';
 
 // Counts real sentence-ending punctuation, ignoring periods inside common
 // abbreviations (U.S., U.K., Dr., Mr., Mrs., St., vs., etc.) that would
@@ -24,6 +26,257 @@ function countSentences(text: string): number {
 
 function countWords(text: string): number {
     return text.trim().split(/\s+/).filter(w => w.length > 0).length;
+}
+
+function capitalizeFirstNarrativeLetter(text: string | undefined): string | undefined {
+    if (!text) return text;
+    let inToken = false;
+    let prevType: 'boundary' | 'other' = 'boundary';
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '{') {
+            inToken = true;
+            continue;
+        }
+        if (ch === '}') {
+            inToken = false;
+            prevType = 'boundary';
+            continue;
+        }
+        if (inToken) continue;
+        if (/\s/.test(ch)) {
+            prevType = 'boundary';
+            continue;
+        }
+        if (/[A-Za-z]/.test(ch)) {
+            if (prevType === 'boundary' && /[a-z]/.test(ch)) {
+                return text.slice(0, i) + ch.toUpperCase() + text.slice(i + 1);
+            }
+            return text;
+        }
+        prevType = 'other';
+    }
+    return text;
+}
+
+function capitalizeSentenceBoundaries(text: string): string {
+    const chars = text.split('');
+    let inToken = false;
+    let capitalizeNextNarrativeLetter = false;
+    let tokenClosedWhilePending = false;
+
+    for (let i = 0; i < chars.length; i++) {
+        const ch = chars[i];
+
+        if (ch === '{') {
+            inToken = true;
+            continue;
+        }
+        if (ch === '}') {
+            inToken = false;
+            if (capitalizeNextNarrativeLetter) tokenClosedWhilePending = true;
+            continue;
+        }
+        if (inToken) continue;
+
+        if (capitalizeNextNarrativeLetter) {
+            if (/[A-Za-z]/.test(ch)) {
+                if (/[a-z]/.test(ch)) chars[i] = ch.toUpperCase();
+                capitalizeNextNarrativeLetter = false;
+                tokenClosedWhilePending = false;
+                continue;
+            }
+            if (/\s|["(\[]/.test(ch)) {
+                continue;
+            }
+            if (tokenClosedWhilePending && ch === '\'') {
+                capitalizeNextNarrativeLetter = false;
+                tokenClosedWhilePending = false;
+                continue;
+            }
+            if (/[)}\]”]/.test(ch)) {
+                continue;
+            }
+            capitalizeNextNarrativeLetter = false;
+            tokenClosedWhilePending = false;
+        }
+
+        if (/[.!?]/.test(ch)) {
+            capitalizeNextNarrativeLetter = true;
+            tokenClosedWhilePending = false;
+        }
+    }
+
+    return chars.join('');
+}
+
+function normalizeTokenCasing(text: string | undefined): string | undefined {
+    return text?.replace(/\{([a-zA-Z_]+)\}/g, (_, tokenName) => `{${String(tokenName).toLowerCase()}}`);
+}
+
+function normalizeWhitespaceAndPunctuation(text: string | undefined): string | undefined {
+    if (!text) return text;
+    return text
+        .replace(/\s+/g, ' ')
+        .replace(/\. \./g, '.')
+        .replace(/(?<!\.)\.{2}(?!\.)/g, '.')
+        .replace(/, ,/g, ',')
+        .replace(/\s+([.!?,;:])/g, '$1')
+        .trim();
+}
+
+function collapseAdjacentRepeatedWords(text: string | undefined): string | undefined {
+    if (!text) return text;
+    let result = text;
+    let changed = true;
+    while (changed) {
+        changed = false;
+        const next = result.replace(/\b([A-Za-z][A-Za-z'’-]{1,})\s+\1\b/gi, '$1');
+        if (next !== result) {
+            result = next;
+            changed = true;
+        }
+    }
+    return result;
+}
+
+function collapseAdjacentRepeatedPhrases(text: string | undefined): string | undefined {
+    if (!text) return text;
+    let result = text;
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (let wordCount = 5; wordCount >= 2; wordCount--) {
+            const pattern = new RegExp(
+                `\\b((?:[A-Za-z][A-Za-z'’-]*\\s+){${wordCount - 1}}[A-Za-z][A-Za-z'’-]*)\\s+\\1\\b`,
+                'gi'
+            );
+            const next = result.replace(pattern, '$1');
+            if (next !== result) {
+                result = next;
+                changed = true;
+            }
+        }
+    }
+    return result;
+}
+
+function collapseRepeatedSentences(text: string | undefined): string | undefined {
+    if (!text) return text;
+    const segments = text.match(/[^.!?]+[.!?]*/g);
+    if (!segments) return text;
+
+    const normalized = (segment: string): string => segment
+        .toLowerCase()
+        .replace(/\{([a-zA-Z_]+)\}/g, (_, token) => `{${String(token).toLowerCase()}}`)
+        .replace(/[^a-z0-9{}]+/g, ' ')
+        .trim();
+
+    const deduped: string[] = [];
+    let previous = '';
+    for (const segment of segments) {
+        const compact = normalized(segment);
+        if (!compact) continue;
+        if (compact === previous) continue;
+        deduped.push(segment.trim());
+        previous = compact;
+    }
+
+    const result = deduped.join(' ').trim();
+    return result || text;
+}
+
+function findDuplicateNarrativeIssue(text: string | undefined): string | null {
+    if (!text) return null;
+    const repeatedWord = /\b([A-Za-z][A-Za-z'’-]{1,})\s+\1\b/i.exec(text);
+    if (repeatedWord) {
+        return `Adjacent repeated word "${repeatedWord[1]}"`;
+    }
+
+    for (let wordCount = 5; wordCount >= 2; wordCount--) {
+        const pattern = new RegExp(
+            `\\b((?:[A-Za-z][A-Za-z'’-]*\\s+){${wordCount - 1}}[A-Za-z][A-Za-z'’-]*)\\s+\\1\\b`,
+            'i'
+        );
+        const match = pattern.exec(text);
+        if (match) {
+            return `Adjacent repeated phrase "${match[1]}"`;
+        }
+    }
+
+    const segments = text.match(/[^.!?]+[.!?]*/g);
+    if (!segments) return null;
+
+    const normalized = (segment: string): string => segment
+        .toLowerCase()
+        .replace(/\{([a-zA-Z_]+)\}/g, (_, token) => `{${String(token).toLowerCase()}}`)
+        .replace(/[^a-z0-9{}]+/g, ' ')
+        .trim();
+
+    let previous = '';
+    for (const segment of segments) {
+        const compact = normalized(segment);
+        if (!compact) continue;
+        if (compact === previous) {
+            return `Repeated sentence "${segment.trim()}"`;
+        }
+        previous = compact;
+    }
+
+    return null;
+}
+
+function normalizeScenarioTextField(text: string | undefined, options?: { capitalizeSentences?: boolean }): string | undefined {
+    if (!text) return text;
+    let result = text;
+    result = normalizeTokenCasing(result) ?? result;
+    result = normalizeWhitespaceAndPunctuation(result) ?? result;
+    result = collapseAdjacentRepeatedPhrases(result) ?? result;
+    result = collapseAdjacentRepeatedWords(result) ?? result;
+    result = collapseRepeatedSentences(result) ?? result;
+    result = normalizeWhitespaceAndPunctuation(result) ?? result;
+    result = capitalizeFirstNarrativeLetter(result) ?? result;
+    if (options?.capitalizeSentences !== false) {
+        result = capitalizeSentenceBoundaries(result);
+    }
+    return result;
+}
+
+export function normalizeScenarioTextFields(scenario: BundleScenario): { fixed: boolean; fixes: string[] } {
+    let fixed = false;
+    const fixes: string[] = [];
+
+    const apply = (current: string | undefined, label: string, options?: { capitalizeSentences?: boolean }): string | undefined => {
+        const normalized = normalizeScenarioTextField(current, options);
+        if (typeof current === 'string' && normalized !== current) {
+            fixed = true;
+            fixes.push(`normalized ${label}`);
+        }
+        return normalized;
+    };
+
+    scenario.title = apply(scenario.title, 'title', { capitalizeSentences: false }) ?? scenario.title;
+    scenario.description = apply(scenario.description, 'description') ?? scenario.description;
+
+    for (const opt of scenario.options) {
+        opt.text = apply(opt.text, `${opt.id}.text`) ?? opt.text;
+        if (typeof opt.outcomeHeadline === 'string') {
+            opt.outcomeHeadline = apply(opt.outcomeHeadline, `${opt.id}.outcomeHeadline`, { capitalizeSentences: false }) ?? opt.outcomeHeadline;
+        }
+        if (typeof opt.outcomeSummary === 'string') {
+            opt.outcomeSummary = apply(opt.outcomeSummary, `${opt.id}.outcomeSummary`) ?? opt.outcomeSummary;
+        }
+        if (typeof opt.outcomeContext === 'string') {
+            opt.outcomeContext = apply(opt.outcomeContext, `${opt.id}.outcomeContext`) ?? opt.outcomeContext;
+        }
+        for (const fb of ((opt.advisorFeedback ?? []) as any[])) {
+            if (typeof fb?.feedback === 'string') {
+                fb.feedback = apply(fb.feedback, `${opt.id}.advisor.${fb.roleId}`) ?? fb.feedback;
+            }
+        }
+    }
+
+    return { fixed, fixes };
 }
 
 // ---------------------------------------------------------------------------
@@ -70,12 +323,20 @@ export interface BundleScenario {
     title: string;
     description: string;
     options: BundleOption[];
+    _generationPath?: 'standard' | 'premium';
     metadata?: {
         bundle?: string;
         severity?: string;
         urgency?: string;
         difficulty?: 1 | 2 | 3 | 4 | 5;
         tags?: string[];
+        scopeTier?: ScenarioScopeTier;
+        scopeKey?: string;
+        clusterId?: string;
+        exclusivityReason?: ScenarioExclusivityReason;
+        sourceKind?: ScenarioSourceKind;
+        actorPattern?: 'domestic' | 'ally' | 'adversary' | 'border_rival' | 'legislature' | 'cabinet' | 'judiciary' | 'mixed';
+        region_tags?: string[];
         mode_availability?: string[];
         applicable_countries?: string[] | string;
         requires_tags?: string[];
@@ -148,7 +409,7 @@ export function getAuditConfig(): AuditConfig {
 }
 
 /**
- * Extract banned phrases from the world_state/countries document.
+ * Extract banned phrases from the Firestore countries collection data.
  * Derives country names, capitals, and common partial name variants.
  */
 function buildBannedCountryPhrases(countriesDoc: Record<string, any>): string[] {
@@ -190,26 +451,18 @@ function buildBannedCountryPhrases(countriesDoc: Record<string, any>): string[] 
  * Must be called once before any audit or generation job.
  */
 export async function initializeAuditConfig(db: FirebaseFirestore.Firestore): Promise<void> {
-    const [metricsSnap, contentRulesSnap, genConfigSnap, countriesCollSnap] = await Promise.all([
+    const [metricsSnap, contentRulesSnap, genConfigSnap, countryCatalog] = await Promise.all([
         db.doc('world_state/metrics').get(),
         db.doc('world_state/content_rules').get(),
         db.doc('world_state/generation_config').get(),
-        db.collection('countries').get(),
+        loadCountryCatalog(db),
     ]);
 
     const metricsData: any[] = metricsSnap.data()?.metrics ?? [];
     const contentRules = contentRulesSnap.data() ?? {};
     const genConfig = genConfigSnap.data() ?? {};
 
-    let countriesDoc: Record<string, any>;
-    if (!countriesCollSnap.empty) {
-        const result: Record<string, any> = {};
-        countriesCollSnap.forEach((doc: FirebaseFirestore.QueryDocumentSnapshot) => { result[doc.id] = doc.data(); });
-        countriesDoc = result;
-    } else {
-        console.error('[AuditRules] countries/ collection is empty — aborting');
-        throw new Error('[AuditRules] countries/ collection is empty');
-    }
+    const countriesDoc = countryCatalog.countries;
 
     // Build metric index from Firebase
     const validMetricIds = new Set(metricsData.map((m: any) => m.id as string));
@@ -249,6 +502,10 @@ export async function initializeAuditConfig(db: FirebaseFirestore.Firestore): Pr
         }
     }
 
+    const defaultMetricMappings: Record<string, string> = {
+        metric_commerce_role: 'metric_trade',
+    };
+
     _config = {
         validMetricIds,
         validRoleIds,
@@ -257,7 +514,7 @@ export async function initializeAuditConfig(db: FirebaseFirestore.Firestore): Pr
         defaultCap: genConfig.effect_default_cap ?? 4.2,
         metricToRoles,
         categoryDomainMetrics: genConfig.category_domain_metrics ?? {},
-        metricMappings: genConfig.metric_mappings ?? {},
+        metricMappings: { ...defaultMetricMappings, ...(genConfig.metric_mappings ?? {}) },
         bannedPhrases,
         validTokens: new Set<string>(ALL_TOKENS),
         logicParameters: {
@@ -272,7 +529,7 @@ export async function initializeAuditConfig(db: FirebaseFirestore.Firestore): Pr
 
     console.log(
         `[AuditRules] Config initialized: ${validMetricIds.size} metrics, ${validRoleIds.size} roles, ` +
-        `${bannedPhrases.length} banned phrases (${bannedCountryPhrases.length} from countries)`
+        `${bannedPhrases.length} banned phrases (${bannedCountryPhrases.length} from countries, source=${countryCatalog.source.path})`
     );
 }
 
@@ -304,6 +561,7 @@ export function auditScenario(
     const issues: Issue[] = [];
     const add = (severity: Issue['severity'], rule: string, target: string, message: string, autoFixable = false) =>
         issues.push({ severity, rule, target, message, autoFixable });
+    const actorPattern = scenario.metadata?.actorPattern;
 
     if (!scenario.id) add('error', 'missing-id', scenario.id || '(none)', 'Scenario missing id');
     if (!scenario.title?.trim()) add('error', 'missing-title', scenario.id, 'Missing or empty title');
@@ -531,6 +789,8 @@ export function auditScenario(
     if (scenario.metadata) {
         const meta = scenario.metadata;
         const validSeverities = ['low', 'medium', 'high', 'extreme', 'critical'];
+        const validScopeTiers: ScenarioScopeTier[] = ['universal', 'regional', 'cluster', 'exclusive'];
+        const validSourceKinds: ScenarioSourceKind[] = ['evergreen', 'news', 'neighbor', 'consequence'];
         if (meta.severity && !validSeverities.includes(meta.severity))
             add('error', 'invalid-severity', scenario.id, `Severity "${meta.severity}" is invalid`);
         const validUrgencies = ['low', 'medium', 'high', 'immediate'];
@@ -540,6 +800,48 @@ export function auditScenario(
             add('warn', 'invalid-difficulty', scenario.id, `Difficulty ${meta.difficulty} must be integer 1-5`, true);
         if (meta.applicable_countries && meta.applicable_countries !== 'all' && !Array.isArray(meta.applicable_countries))
             add('error', 'invalid-countries', scenario.id, 'applicable_countries must be "all" or string[]');
+        if (!meta.scopeTier)
+            add('error', 'missing-scope-tier', scenario.id, 'Scenario metadata must include scopeTier');
+        else if (!validScopeTiers.includes(meta.scopeTier))
+            add('error', 'invalid-scope-tier', scenario.id, `scopeTier "${meta.scopeTier}" is invalid`);
+        if (!meta.scopeKey?.trim())
+            add('error', 'missing-scope-key', scenario.id, 'Scenario metadata must include scopeKey');
+        if (!meta.sourceKind)
+            add('error', 'missing-source-kind', scenario.id, 'Scenario metadata must include sourceKind');
+        else if (!validSourceKinds.includes(meta.sourceKind))
+            add('error', 'invalid-source-kind', scenario.id, `sourceKind "${meta.sourceKind}" is invalid`);
+
+        if (meta.scopeTier === 'regional' && (!Array.isArray(meta.region_tags) || meta.region_tags.length === 0))
+            add('error', 'regional-missing-tags', scenario.id, 'Regional scenarios must include region_tags');
+
+        if (meta.scopeTier === 'cluster') {
+            if (!meta.clusterId?.trim()) {
+                add('error', 'missing-cluster-id', scenario.id, 'Cluster scenarios must include clusterId');
+            }
+            if (meta.scopeKey && !meta.scopeKey.startsWith('cluster:')) {
+                add('error', 'invalid-scope-key', scenario.id, 'Cluster scenarios must use a cluster:* scopeKey');
+            }
+        }
+
+        if (meta.scopeTier === 'exclusive') {
+            if (!meta.exclusivityReason) {
+                add('error', 'missing-exclusivity-reason', scenario.id, 'Exclusive scenarios must include exclusivityReason');
+            }
+            if (!Array.isArray(meta.applicable_countries) || meta.applicable_countries.length === 0) {
+                add('error', 'exclusive-missing-countries', scenario.id, 'Exclusive scenarios must include applicable_countries');
+            }
+            if (meta.scopeKey && !meta.scopeKey.startsWith('country:')) {
+                add('error', 'invalid-scope-key', scenario.id, 'Exclusive scenarios must use a country:* scopeKey');
+            }
+        }
+
+        if (meta.scopeTier === 'regional' && meta.scopeKey && !meta.scopeKey.startsWith('region:')) {
+            add('error', 'invalid-scope-key', scenario.id, 'Regional scenarios must use a region:* scopeKey');
+        }
+
+        if (meta.scopeTier === 'universal' && meta.scopeKey && meta.scopeKey !== 'universal') {
+            add('error', 'invalid-scope-key', scenario.id, 'Universal scenarios must use the scopeKey "universal"');
+        }
     }
 
     const validPhases = ['root', 'mid', 'final'];
@@ -716,6 +1018,49 @@ export function auditScenario(
         checkTokens(opt.outcomeContext, `option ${opt.id} context`);
     }
 
+    const scenarioTextCorpus = [
+        scenario.description,
+        ...scenario.options.flatMap((opt) => [
+            opt.text,
+            opt.outcomeHeadline,
+            opt.outcomeSummary,
+            opt.outcomeContext,
+        ]),
+    ].filter((text): text is string => Boolean(text)).join(' ');
+
+    const hasRequiredRelationshipToken = (() => {
+        switch (actorPattern) {
+            case 'ally':
+                return /\{the_ally\}|\{ally\}'s/i.test(scenarioTextCorpus);
+            case 'adversary':
+                return /\{the_adversary\}|\{adversary\}'s/i.test(scenarioTextCorpus);
+            case 'border_rival':
+                return /\{the_border_rival\}|\{border_rival\}'s|\{the_neighbor\}|\{neighbor\}'s/i.test(scenarioTextCorpus);
+            case 'mixed':
+                return /\{the_(adversary|border_rival|regional_rival|ally|trade_partner|neutral|rival|partner|neighbor|player_country)\}|\{(adversary|border_rival|regional_rival|ally|trade_partner|neutral|rival|partner|neighbor|player_country)\}'s/i.test(scenarioTextCorpus);
+            default:
+                return true;
+        }
+    })();
+
+    if (!hasRequiredRelationshipToken) {
+        const expectedTokenByPattern: Record<'ally' | 'adversary' | 'border_rival' | 'mixed', string> = {
+            ally: '{the_ally}',
+            adversary: '{the_adversary}',
+            border_rival: '{the_border_rival} or {the_neighbor}',
+            mixed: 'at least one relationship token such as {the_ally}, {the_adversary}, or {the_border_rival}',
+        };
+        if (actorPattern === 'ally' || actorPattern === 'adversary' || actorPattern === 'border_rival' || actorPattern === 'mixed') {
+            add(
+                'error',
+                'missing-required-relationship-token',
+                scenario.id,
+                `Scenario metadata actorPattern=${actorPattern} but the narrative never uses ${expectedTokenByPattern[actorPattern]}`,
+                false
+            );
+        }
+    }
+
     // Title word count — 4 to 10 words (tokens count as 1 word each)
     if (scenario.title?.trim()) {
         const wordCount = scenario.title.trim().split(/\s+/).length;
@@ -749,6 +1094,9 @@ export function auditScenario(
             add('error', 'double-space', scenario.id, `${fieldName} contains double spaces`, true);
         if (/(?<!\.)\.{2}(?!\.)/.test(text) || /\. \./.test(text) || /, ,/.test(text))
             add('error', 'orphaned-punctuation', scenario.id, `${fieldName} contains orphaned or doubled punctuation`, true);
+        const duplicateNarrativeIssue = findDuplicateNarrativeIssue(text);
+        if (duplicateNarrativeIssue)
+            add('warn', 'duplicate-narrative-text', scenario.id, `${fieldName} contains duplicated text: ${duplicateNarrativeIssue}`, true);
         // Detect hardcoded "the {token}" which will produce "the a hostile power"-style
         // artifacts at runtime. Use {the_adversary}/{the_ally}/etc. instead.
         if (/\bthe \{[a-z_]+\}/i.test(text))
@@ -769,6 +1117,18 @@ export function auditScenario(
                     true);
         }
 
+        const startsWithAcceptableTokenLedPhrase = (() => {
+            const trimmed = text.trim();
+            const tokenLead = trimmed.match(/^\{[a-z_]+\}((?:'s|’s)?)/i);
+            if (!tokenLead) return false;
+            if (tokenLead[1]) return true;
+
+            const rest = trimmed.slice(tokenLead[0].length);
+            const nextLetter = rest.match(/[A-Za-z]/);
+            if (!nextLetter) return true;
+            return nextLetter[0] === nextLetter[0].toUpperCase();
+        })();
+
         const firstNarrativeChar = (() => {
             let inToken = false;
             for (const ch of text) {
@@ -785,7 +1145,7 @@ export function auditScenario(
             }
             return '';
         })();
-        if (firstNarrativeChar && firstNarrativeChar === firstNarrativeChar.toLowerCase()) {
+        if (!startsWithAcceptableTokenLedPhrase && firstNarrativeChar && firstNarrativeChar === firstNarrativeChar.toLowerCase()) {
             add('warn', 'lowercase-start', scenario.id, `${fieldName} begins with lowercase wording`, true);
         }
         // Detect hardcoded government-structure terms that break country-agnosticism.
@@ -803,7 +1163,7 @@ export function auditScenario(
         ];
         for (const [pattern, suggestion] of govStructureTerms) {
             if (pattern.test(text))
-                add('warn', 'hardcoded-gov-structure', scenario.id, `${fieldName} contains a hardcoded government-structure term — ${suggestion}`);
+                    add('error', 'hardcoded-gov-structure', scenario.id, `${fieldName} contains a hardcoded government-structure term — ${suggestion}`);
         }
         // Detect hardcoded ministry/institution names that break country-agnosticism.
         const institutionPhraseTerms: Array<[RegExp, string]> = [
@@ -851,7 +1211,7 @@ export function auditScenario(
         ];
         for (const [pattern, suggestion] of institutionPhraseTerms) {
             if (pattern.test(text))
-                add('warn', 'hardcoded-institution-phrase', scenario.id, `${fieldName} contains a hardcoded institution name — ${suggestion}`);
+                    add('error', 'hardcoded-institution-phrase', scenario.id, `${fieldName} contains a hardcoded institution name — ${suggestion}`);
         }
         // Enforce adjacency semantics: if narrative claims a neighbor/border relation,
         // it must use {neighbor} or {border_rival}, not generic rival/adversary tokens.
@@ -938,38 +1298,6 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
     let fixed = false;
     const fixes: string[] = [];
 
-    const capitalizeFirstNarrativeLetter = (text: string | undefined): string | undefined => {
-        if (!text) return text;
-        let inToken = false;
-        // 'boundary' = start of string, post-whitespace, or just after a closing token brace.
-        // Only capitalize a letter when we last crossed a boundary — this prevents
-        // wrongly capitalizing possessives like {token}'s → {token}'S.
-        let prevType: 'boundary' | 'other' = 'boundary';
-        for (let i = 0; i < text.length; i++) {
-            const ch = text[i];
-            if (ch === '{') { inToken = true; continue; }
-            if (ch === '}') { inToken = false; prevType = 'boundary'; continue; }
-            if (inToken) continue;
-            if (/\s/.test(ch)) { prevType = 'boundary'; continue; }
-            if (/[A-Za-z]/.test(ch)) {
-                if (prevType === 'boundary' && /[a-z]/.test(ch)) {
-                    return text.slice(0, i) + ch.toUpperCase() + text.slice(i + 1);
-                }
-                // First letter found at a non-boundary position (e.g. mid-possessive) — leave unchanged.
-                return text;
-            }
-            // Apostrophe, dash, or any other non-letter non-space char ends the boundary window.
-            prevType = 'other';
-        }
-        return text;
-    };
-
-    // Capitalize the first letter that appears directly after sentence-ending punctuation
-    // (period, exclamation, question mark) followed by whitespace. Does NOT capitalize
-    // through {tokens} to avoid raising verbs after token subjects ({rival} refused → correct).
-    const capitalizeSentenceBoundaries = (text: string): string =>
-        text.replace(/([.!?]\s+)([a-z])/g, (_, punct, letter) => `${punct}${letter.toUpperCase()}`);
-
     for (const opt of scenario.options) {
         for (const eff of opt.effects) {
             if (cfg.metricMappings[eff.targetMetricId]) {
@@ -1015,81 +1343,11 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         }
     }
 
-    // Auto-fix double spaces and orphaned/doubled punctuation in all text fields
-    const fixWhitespace = (text: string | undefined): string | undefined => {
-        if (!text) return text;
-        return text
-            .replace(/  +/g, ' ')
-            .replace(/\. \./g, '.')
-            .replace(/(?<!\.)\.{2}(?!\.)/g, '.')
-            .replace(/, ,/g, ',')
-            .replace(/\s+([.!?,;:])/g, '$1')
-            .trim();
-    };
-    const applyWhitespaceToScenario = (): void => {
-        const titleBefore = scenario.title;
-        scenario.title = fixWhitespace(scenario.title) ?? scenario.title;
-        if (titleBefore !== scenario.title) { fixes.push('fixed whitespace in title'); fixed = true; }
-        const descBefore = scenario.description;
-        scenario.description = fixWhitespace(scenario.description) ?? scenario.description;
-        if (descBefore !== scenario.description) { fixes.push('fixed whitespace in description'); fixed = true; }
-        for (const opt of scenario.options) {
-            for (const field of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
-                if (typeof opt[field] === 'string') {
-                    const before = opt[field] as string;
-                    (opt[field] as string) = fixWhitespace(before) ?? before;
-                    if (before !== opt[field]) { fixes.push(`${opt.id}: fixed whitespace in ${field}`); fixed = true; }
-                }
-            }
-            for (const fb of ((opt.advisorFeedback ?? []) as any[])) {
-                if (typeof fb?.feedback === 'string') {
-                    const before = fb.feedback as string;
-                    fb.feedback = fixWhitespace(before) ?? before;
-                    if (before !== fb.feedback) { fixes.push(`${opt.id}: fixed whitespace in advisor ${fb.roleId} feedback`); fixed = true; }
-                }
-            }
-        }
-
-        const capTitleBefore = scenario.title;
-        scenario.title = capitalizeFirstNarrativeLetter(scenario.title) ?? scenario.title;
-        if (capTitleBefore !== scenario.title) { fixes.push('capitalized start of title'); fixed = true; }
-
-        const capDescBefore = scenario.description;
-        scenario.description = capitalizeFirstNarrativeLetter(scenario.description) ?? scenario.description;
-        if (capDescBefore !== scenario.description) { fixes.push('capitalized start of description'); fixed = true; }
-
-        const sentDescBefore = scenario.description;
-        scenario.description = capitalizeSentenceBoundaries(scenario.description ?? '');
-        if (sentDescBefore !== scenario.description) { fixes.push('capitalized sentence starts in description'); fixed = true; }
-
-        for (const opt of scenario.options) {
-            for (const field of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
-                if (typeof opt[field] === 'string') {
-                    const before = opt[field] as string;
-                    (opt[field] as string) = capitalizeFirstNarrativeLetter(before) ?? before;
-                    if (before !== opt[field]) { fixes.push(`${opt.id}: capitalized start of ${field}`); fixed = true; }
-                }
-            }
-            for (const field of ['outcomeSummary', 'outcomeContext'] as const) {
-                if (typeof opt[field] === 'string') {
-                    const before = opt[field] as string;
-                    (opt[field] as string) = capitalizeSentenceBoundaries(before);
-                    if (before !== opt[field]) { fixes.push(`${opt.id}: capitalized sentence starts in ${field}`); fixed = true; }
-                }
-            }
-            for (const fb of ((opt.advisorFeedback ?? []) as any[])) {
-                if (typeof fb?.feedback === 'string') {
-                    const before = fb.feedback as string;
-                    fb.feedback = capitalizeFirstNarrativeLetter(before) ?? before;
-                    if (before !== fb.feedback) { fixes.push(`${opt.id}: capitalized start of advisor ${fb.roleId} feedback`); fixed = true; }
-                    const sentFbBefore = fb.feedback as string;
-                    fb.feedback = capitalizeSentenceBoundaries(fb.feedback);
-                    if (sentFbBefore !== fb.feedback) { fixes.push(`${opt.id}: capitalized sentence starts in advisor ${fb.roleId} feedback`); fixed = true; }
-                }
-            }
-        }
-    };
-    applyWhitespaceToScenario();
+    const textNormalization = normalizeScenarioTextFields(scenario);
+    if (textNormalization.fixed) {
+        fixed = true;
+        fixes.push(...textNormalization.fixes);
+    }
 
     return { fixed, fixes };
 }
@@ -1465,7 +1723,7 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
     {
         const fixTheBeforeToken = (text: string | undefined): string | undefined => {
             if (!text) return text;
-            return text.replace(/\bthe \{([a-z_]+)\}/gi, (match, name) => {
+            return text.replace(/\bthe \{(the_)?([a-z_]+)\}/gi, (match, _prefixed, name) => {
                 return ARTICLE_FORM_TOKEN_NAMES.has(name) ? `{the_${name}}` : match;
             });
         };

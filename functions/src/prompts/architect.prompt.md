@@ -58,5 +58,18 @@ Return an array of concept objects with:
 - `theme`: the specific sub-topic within the bundle (e.g., "trade tariffs", "military procurement")
 - `severity`: one of `low`, `medium`, `high`, `extreme`, `critical`
 - `difficulty`: integer 1–5
+- `primaryMetrics`: array of 1–3 metric IDs most directly affected. Use only the 27 canonical IDs: `economy, public_order, health, education, infrastructure, environment, foreign_relations, military, liberty, equality, employment, innovation, trade, energy, housing, democracy, sovereignty, immigration, corruption, inflation, crime, bureaucracy, approval, budget, unrest, economic_bubble, foreign_influence`
+- `secondaryMetrics`: array of 0–3 metric IDs secondarily affected (optional)
+- `actorPattern`: one of `domestic` | `ally` | `adversary` | `border_rival` | `legislature` | `cabinet` | `judiciary` | `mixed`
+  - `domestic`: internal actor (protest, industry, regional faction)
+  - `ally`: friendly foreign power is the central actor
+  - `adversary`: hostile foreign power is the central actor
+  - `border_rival`: neighboring rival country is the central actor
+  - `legislature`: `{legislature}` is blocking or pushing action
+  - `cabinet`: a cabinet minister or internal faction is the central actor
+  - `judiciary`: courts or rule-of-law tensions are the central actor
+  - `mixed`: multiple actor types are equally central
+- `optionShape`: one of `redistribute` | `regulate` | `escalate` | `negotiate` | `invest` | `cut` | `reform` | `delay`
+- `loopEligible`: `true` if acts 2–5 naturally follow from this concept's premise; `false` for self-contained decisions
 
 Aim for variety across difficulty levels. At least one concept per batch should be difficulty 4 or 5.

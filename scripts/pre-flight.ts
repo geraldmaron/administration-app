@@ -58,6 +58,11 @@ async function checkGenerationConfig(): Promise<CheckResult[]> {
   const results: CheckResult[] = [
     { label: 'generation_config exists', pass: true },
     {
+      label: 'audit_pass_threshold configured',
+      pass: typeof cfg.audit_pass_threshold === 'number' && Number.isFinite(cfg.audit_pass_threshold),
+      detail: typeof cfg.audit_pass_threshold === 'number' ? `Current: ${cfg.audit_pass_threshold}` : 'Not set',
+    },
+    {
       label: 'llm_repair_enabled = true',
       pass: cfg.llm_repair_enabled === true,
       detail: cfg.llm_repair_enabled === true ? undefined : `Current value: ${cfg.llm_repair_enabled}`,
@@ -72,8 +77,49 @@ async function checkGenerationConfig(): Promise<CheckResult[]> {
       pass: cfg.content_quality_gate_enabled === true,
       detail: cfg.content_quality_gate_enabled === true ? undefined : `Current value: ${cfg.content_quality_gate_enabled}`,
     },
+    {
+      label: 'narrative_review_enabled = true',
+      pass: cfg.narrative_review_enabled === true,
+      detail: cfg.narrative_review_enabled === true ? undefined : `Current value: ${cfg.narrative_review_enabled}`,
+    },
   ];
   return results;
+}
+
+async function checkCountryCatalog(): Promise<CheckResult[]> {
+  const countriesSnap = await db.collection('countries').get();
+  const countries = countriesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+  if (countries.length === 0) {
+    return [
+      {
+        label: 'countries collection available',
+        pass: false,
+        detail: 'countries collection is empty.',
+      },
+    ];
+  }
+
+  const missingGeopolitical = countries.filter((country) => !country.geopolitical).map((country) => country.id);
+  const missingGameplay = countries.filter((country) => !country.gameplay).map((country) => country.id);
+
+  return [
+    {
+      label: 'countries collection available',
+      pass: true,
+      detail: `${countries.length} country entries`,
+    },
+    {
+      label: 'countries.geopolitical populated',
+      pass: missingGeopolitical.length === 0,
+      detail: missingGeopolitical.length === 0 ? undefined : `Missing on ${missingGeopolitical.length} countries: ${missingGeopolitical.slice(0, 10).join(', ')}${missingGeopolitical.length > 10 ? ', ...' : ''}`,
+    },
+    {
+      label: 'countries.gameplay populated',
+      pass: missingGameplay.length === 0,
+      detail: missingGameplay.length === 0 ? undefined : `Missing on ${missingGameplay.length} countries: ${missingGameplay.slice(0, 10).join(', ')}${missingGameplay.length > 10 ? ', ...' : ''}`,
+    },
+  ];
 }
 
 async function checkBundleConfig(): Promise<CheckResult[]> {
@@ -169,14 +215,15 @@ async function main() {
     process.exit(1);
   }
 
-  const [configChecks, bundleChecks, promptChecks, goldenChecks] = await Promise.all([
+  const [configChecks, bundleChecks, promptChecks, goldenChecks, countryChecks] = await Promise.all([
     checkGenerationConfig(),
     checkBundleConfig(),
     checkPromptSync(),
     checkGoldenExamples(),
+    checkCountryCatalog(),
   ]);
 
-  for (const check of [...configChecks, ...bundleChecks, ...promptChecks, ...goldenChecks]) {
+  for (const check of [...configChecks, ...bundleChecks, ...promptChecks, ...goldenChecks, ...countryChecks]) {
     allChecks.push(check);
   }
 

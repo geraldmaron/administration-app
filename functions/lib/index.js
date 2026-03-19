@@ -155,13 +155,13 @@ exports.generateScenariosManual = (0, https_1.onCall)({
         logger.warn(`Access denied for User: ${userId}, Email: ${userEmail}`);
         throw new Error('Admin privileges required');
     }
-    const configValidation = (0, config_validator_1.validateConfig)();
+    const { bundles, count, distributionConfig, region, applicable_countries, modelConfig, bypassCooldown } = request.data;
+    const configValidation = (0, config_validator_1.validateConfig)(modelConfig);
     logger.info(`[generate] Config valid: ${configValidation.valid}`, { errors: configValidation.errors });
     if (!configValidation.valid) {
         (0, config_validator_1.logConfigStatus)();
-        throw new Error('Scenario generation is misconfigured. Set OPENAI_API_KEY in Firebase secrets (firebase functions:secrets:set). ' + configValidation.errors.join('; '));
+        throw new Error('Scenario generation is misconfigured. ' + configValidation.errors.join('; '));
     }
-    const { bundles, count, distributionConfig, region, applicable_countries, modelConfig, bypassCooldown } = request.data;
     logger.info(`[generate] Params: bundles=${JSON.stringify(bundles)}, count=${count}, region=${region}, bypassCooldown=${!!bypassCooldown}`);
     if (!bundles || !Array.isArray(bundles)) {
         throw new Error("Invalid arguments: 'bundles' must be an array of strings.");

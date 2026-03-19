@@ -6,6 +6,7 @@ import Link from 'next/link';
 import BundleBadge from '@/components/BundleBadge';
 import SeverityBadge from '@/components/SeverityBadge';
 import AuditScore from '@/components/AuditScore';
+import CommandPanel from '@/components/CommandPanel';
 import PageHeader from '@/components/PageHeader';
 import { ALL_BUNDLES, formatRelativeTime } from '@/lib/constants';
 import type { ScenarioSummary } from '@/lib/types';
@@ -175,14 +176,22 @@ function ScenariosInner() {
   }
 
   return (
-    <div className="p-6">
-      <PageHeader section="Browse" title="Scenarios" />
+    <div className="mx-auto max-w-[1500px]">
+      <PageHeader
+        section="Browse"
+        title="Scenarios"
+        subtitle="Review stored scenarios, filter by bundle or activation state, and manage records from a single command library."
+      />
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-3 mb-4 p-3 tech-border bg-background-elevated">
+      <CommandPanel className="mb-4 p-4 md:p-5">
+        <div className="mb-4">
+          <div className="section-kicker mb-2">Filters</div>
+          <h2 className="panel-title">Library Controls</h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
         {/* Bundle select */}
         <div className="flex items-center gap-2">
-          <label className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle">
+          <label className="section-kicker">
             Bundle
           </label>
           <select
@@ -191,7 +200,7 @@ function ScenariosInner() {
               setCursors([]);
               setParam('bundle', e.target.value);
             }}
-            className="bg-background border border-[var(--border-strong)] text-foreground text-xs font-mono px-2 py-1 rounded-[2px] focus:outline-none focus:border-accent"
+            className="input-shell min-w-[180px] py-3"
           >
             {bundleOptions.map((b) => (
               <option key={b.id} value={b.id}>
@@ -207,10 +216,10 @@ function ScenariosInner() {
             <button
               key={v}
               onClick={() => { setCursors([]); setParam('active', v); }}
-              className={`px-2 py-1 text-[10px] font-mono uppercase tracking-wider rounded-[2px] transition-colors ${
+              className={`min-h-[40px] rounded-[10px] border px-3 py-2 text-[10px] font-mono uppercase tracking-[0.16em] transition-colors ${
                 active === v
-                  ? 'bg-accent/20 text-accent'
-                  : 'text-foreground-subtle hover:text-foreground hover:bg-background-muted'
+                  ? 'border-[var(--accent-primary)] bg-[rgba(25,105,220,0.12)] text-foreground'
+                  : 'border-[var(--border)] bg-[rgba(255,255,255,0.02)] text-foreground-subtle hover:text-foreground hover:bg-background-muted'
               }`}
             >
               {v === 'all' ? 'All' : v === 'true' ? 'Active' : 'Inactive'}
@@ -224,15 +233,16 @@ function ScenariosInner() {
           placeholder="Search titles..."
           value={localSearch}
           onChange={(e) => setLocalSearch(e.target.value)}
-          className="bg-background border border-[var(--border-strong)] text-foreground text-xs font-mono px-2 py-1 rounded-[2px] focus:outline-none focus:border-accent placeholder-[var(--foreground-subtle)] min-w-[180px]"
+          className="input-shell min-w-[220px]"
         />
 
         {data && (
-          <span className="text-[10px] font-mono text-foreground-subtle ml-auto">
+          <span className="ml-auto text-[10px] font-mono uppercase tracking-[0.18em] text-foreground-subtle">
             {data.total} total
           </span>
         )}
-      </div>
+        </div>
+      </CommandPanel>
 
       {/* Content */}
       {loading && (
@@ -262,7 +272,7 @@ function ScenariosInner() {
       )}
 
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 mb-3 px-3 py-2 bg-background-elevated border border-[var(--border-strong)] rounded-[2px]">
+        <div className="mb-3 flex items-center gap-3 rounded-[var(--radius)] border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-4 py-3">
           <span className="text-xs font-mono text-foreground-subtle">{selectedIds.size} selected</span>
           <button
             onClick={deleteSelected}
@@ -284,7 +294,7 @@ function ScenariosInner() {
         <div className="tech-border overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--border-strong)] bg-background-elevated">
+              <tr className="border-b border-[var(--border-strong)] bg-[rgba(255,255,255,0.04)]">
                 <th className="px-4 py-2 w-8">
                   <input
                     type="checkbox"
@@ -327,7 +337,7 @@ function ScenariosInner() {
                     router.push(`/scenarios/${scenario.id}`);
                   }}
                   className={`border-b border-[var(--border)] hover:bg-background-muted transition-colors cursor-pointer ${
-                    i % 2 === 0 ? 'bg-background' : 'bg-background-elevated/50'
+                    i % 2 === 0 ? 'bg-background' : 'bg-[rgba(255,255,255,0.02)]'
                   }`}
                 >
                   <td className="px-4 py-3">
@@ -398,7 +408,7 @@ function ScenariosInner() {
 
       {/* Pagination */}
       {data && (data.hasMore || page > 1) && (
-        <div className="flex items-center gap-2 mt-4">
+        <div className="mt-4 flex items-center gap-2">
           {page > 1 && (
             <button
               onClick={() => setParam('page', String(page - 1))}

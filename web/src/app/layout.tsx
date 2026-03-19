@@ -11,12 +11,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Nav />
-        <main className="ml-[200px] min-h-screen pb-16">
+        <main className="min-h-screen px-4 pb-20 pt-4 lg:ml-[var(--rail-width)] lg:px-8 lg:pt-8">
           {children}
         </main>
-        <footer className="h-8 fixed bottom-0 left-[200px] right-0 border-t border-[var(--border-strong)] bg-background-elevated text-[10px] font-mono uppercase tracking-widest text-foreground-subtle px-4 flex items-center justify-between z-40">
+        <footer className="fixed bottom-0 left-0 right-0 z-40 flex h-11 items-center justify-between border-t border-[var(--border)] bg-[rgba(0,0,0,0.92)] px-4 text-[10px] font-mono uppercase tracking-[0.22em] text-[var(--foreground-subtle)] backdrop-blur lg:left-[var(--rail-width)] lg:px-8">
           <span>Admin Protocol</span>
-          <span>The Administration</span>
+          <span>Statesman Theme</span>
         </footer>
       </body>
     </html>

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = (await request.json()) as GenerationJobRequest;
-    const { bundles, count, regions, region, description, priority, modelConfig } = body;
+    const { bundles, count, regions, region, description, priority, modelConfig, dryRun } = body;
 
     if (!Array.isArray(bundles) || bundles.length === 0) {
       return NextResponse.json({ error: 'At least one bundle is required' }, { status: 400 });
@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
         modelConfig.narrativeReviewModel ||
         modelConfig.embeddingModel
       ) ? { modelConfig } : {}),
+      ...(dryRun ? { dryRun: true } : {}),
     };
 
     const ref = await db.collection('generation_jobs').add(jobData);

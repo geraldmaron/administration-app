@@ -28,7 +28,9 @@ The player is always **you** — never "the government", "the president", or "th
   - `outcomeContext` must be **300+ characters AND at least 3 sentences (50–80 words)**. The "MAX 100 words" cap in the structural section is an upper bound — not permission to write briefly. 282 characters is a direct scoring penalty. Aim for 4 sentences: name an institution, describe the mechanism, include a reaction (opposition, market, or public), and close with a broader implication.
 - **Prohibited phrasing in second-person fields** (`description`, `options[].text`, `advisorFeedback[].feedback`): never use the phrases **"the government"** or **"the administration"** (including with any capitalization).
 - **Token usage:** never use **"the {token}"**; prefer the `{the_token}` form where appropriate (e.g., `{the_leader_title}`, `{the_finance_role}`, `{the_player_country}`).
+- **Literal substring ban:** the final JSON must never contain the exact substring **`the {`** anywhere. Replace it with the correct article-form token or rewrite the sentence.
 - **Token-followed word capitalization (outcome fields only):** In `outcomeSummary` and `outcomeContext`, avoid opening the field with a `{token}` placeholder — restructure so the first word is a capitalized narrative word (e.g., `"Emergency measures were ordered..."`, `"A new trade framework took effect..."`). If a token must appear first, the word immediately after the closing `}` **must be capitalized**: `{the_player_country} Has signed the accord.` ✅  NOT  `{the_player_country} has signed the accord.` ❌. Grammar validation checks that no sentence-start token is followed by a lowercase word.
+- **Unknown token fallback:** if the exact placeholder you want is not on the approved list, do not invent it. Rewrite with plain language such as `opposition lawmakers`, `senior legislators`, `cabinet aides`, `market traders`, or `military officers`.
 - Any violation of these requirements will cause the scenario to be rejected/failed audit.
 
 ---
@@ -70,12 +72,19 @@ Use `the_*` forms for all country relationship tokens in narrative text. For rol
 - `{president}`, `{prime_minister}` — use `{leader_title}` instead.
 - `{country}`, `{country_name}` — use `{the_player_country}` instead.
 - `{border_ival}` — typo. Use `{border_rival}`.
+- `{legislature_speaker}`, `{the_legislature_speaker}` — NOT valid. Rewrite as `speaker of {the_legislature}` or use plain language.
 - `{culture_role}`, `{media_role}`, `{communications_role}` — NOT valid tokens. Culture/media policy falls under `{interior_role}`.
 - `{technology_role}`, `{innovation_role}`, `{science_role}`, `{research_role}` — NOT valid tokens. Use `{commerce_role}`.
 - `{infrastructure_role}` — NOT valid. Use `{transport_role}`.
 - `{military_role}` — NOT valid. Use `{defense_role}`.
 - `{housing_role}`, `{welfare_role}`, `{social_role}` — NOT valid. Use `{labor_role}`.
 - Any token not in the approved list fails validation. When in doubt, use approved tokens only.
+
+**FINAL SELF-CHECK BEFORE OUTPUT:**
+1. Search your JSON for the literal substring `the {` — if it appears anywhere, fix it before responding.
+2. Search your JSON for any placeholder not in the approved whitelist — remove or rewrite it.
+3. In `outcomeSummary` and `outcomeContext`, every sentence must begin with either a capitalized narrative word or an approved token followed by a capitalized word.
+4. In `advisorFeedback`, prefer active voice: `X approved Y`, `X warned Y`, `X blocked Y`; avoid `Y was approved`, `concerns were raised`, `it was decided`.
 
 **HARDCODED GOVERNMENT STRUCTURE TERMS — ALWAYS BANNED:**
 These terms assume a specific government system and will read as wrong for presidential, authoritarian, or monarchic countries.
@@ -166,14 +175,27 @@ Invalid role redirects (never use these):
 
 ### Scenario Level
 - `title`: 4–8 words — **count every word**. Minimum 4 is a hard requirement; 3-word titles fail validation. No tokens, no punctuation
-- `description`: **2–3 sentences, 45–110 words** — establish the situation with a named trigger or actors, state the concrete stakes, and (in a third sentence) sharpen what specifically hangs in the balance. Do not preview options.
-  - **Minimum 45 words is a hard floor.** A description like “A drought threatens food security. Your government faces pressure.” fails — it is too thin. Name the mechanism, the pressure group, the minister, the market condition, or the affected population.
-  - The third sentence is encouraged whenever it adds specificity about the conflict, affected institution, or decision window.
+- `description`: **2–3 sentences, 45–110 words** — establish the situation with a named trigger or actors, state the concrete facts on the ground, and (in a third sentence) define what must be decided. Do not preview options. **Do not forecast consequences or frame the decision as "balancing X against Y."** Present the situation as a briefing: here is what happened, here is who is involved, here is the decision before you.
+  - **Minimum 45 words is a hard floor.** A description like "A drought threatens food security. Your government faces pressure." fails — it is too thin. Name the mechanism, the pressure group, the minister, the market condition, or the affected population.
+  - The third sentence is encouraged whenever it sharpens the specific decision window, deadline, or institutional stakes — not to preview consequences.
+  - **BANNED in description**: "balancing X against Y", "risks provoking", "could lead to", "threatens to" — these telegraph outcomes. State facts, not projections.
 
 ### Options (exactly 3)
-- `text`: **2–3 sentences, 35–60 words** — renders on a mobile iOS card. Write what the player decides, the specific mechanism used, the trade-off accepted, and who is most affected. The third sentence is encouraged when it names the constituency bearing the cost or a concrete downstream consequence.
-  - ❌ Too short (10 words): “You impose export controls on grain shipments. Prices stabilize.”
-  - ✅ Target (32 words): “You direct the Commerce Ministry to impose emergency export controls on staple grain shipments, capping volumes at 60% of last year’s quota. Domestic farmers absorb short-term losses while urban consumers see immediate relief.”
+- `text`: **2–3 sentences, 35–60 words** — renders on a mobile iOS card. Write what the player decides and the specific mechanism used. **Do not spell out who wins, who loses, or what the consequences will be.** State the action, the instrument, and the scope or procedural reality. Let the player feel the weight without being handed the outcome.
+  - ❌ Telegraphs result: "You impose export controls. Domestic farmers absorb losses while urban consumers see relief."
+  - ❌ Meta-framing: "This approach aims to reduce inflation but risks triggering public unrest."
+  - ❌ Meta-framing: "The policy balances fiscal discipline with social stability."
+  - ❌ Meta-framing: "This strategy prioritizes short-term cohesion over fiscal restraint."
+  - ✅ Action + mechanism: "You direct {the_commerce_role} to impose emergency export controls on staple grain shipments, capping volumes at 60% of last year's quota. The measure takes effect within 48 hours by executive order and does not require {legislature} approval."
+
+**BANNED PATTERNS IN `options[].text`** (these specific constructions cause immediate rejection):
+- `"This [approach/policy/strategy/measure] aims to"` — never open a sentence with this meta-framing
+- `"but risks"` / `"but may"` / `"but could"` — telegraphs consequence; remove the clause entirely
+- `"could lead to"` / `"threatens to"` / `"may result in"` — consequence telegraph; forbidden
+- `"at the cost of"` / `"at the expense of"` — forbidden trade-off framing
+- `"balances X with Y"` / `"prioritizes X over Y"` — forbidden meta-framing; describe the action, not its philosophical positioning
+- `"The policy will [test/shape/determine/protect/limit]"` — meta-commentary; forbidden
+- Any sentence that explains what the option is "designed to do" rather than what it actually does
 - `label`: **MAX 3 words, prefer 1–2 words**, plain text (e.g., “Negotiate”, “Impose Tariffs”). **No `{token}` placeholders allowed in labels.** Renders as a small badge on iOS — keep it tight.
 - `effects`: **exactly 3 effects per option** (minimum 2, hard maximum 4 — prefer 3). probability = 1.0, duration 1–20 turns, values typically ±1.2 to ±4.0. Scenarios with more than 4 effects per option are IMMEDIATELY REJECTED.
   - **DOMAIN REQUIREMENT**: at least one effect per option MUST target a metric in the scenario's bundle domain. For example:
@@ -186,6 +208,20 @@ Invalid role redirects (never use these):
     - `environment` bundle → at least one of: `metric_environment`, `metric_health`, `metric_energy`
     - `social` bundle → at least one of: `metric_equality`, `metric_education`, `metric_health`, `metric_housing`, `metric_immigration`, `metric_crime`
     - `dick_mode` bundle → at least one of: `metric_liberty`, `metric_democracy`, `metric_public_order`, `metric_corruption`, `metric_sovereignty`, `metric_foreign_relations`
+- `conditions` (optional, scenario-level): Array of `{ metricId, min?, max? }` objects that gate when this scenario can appear. Output conditions **only** when the scenario's premise would be implausible without that metric state — not for neutral governance scenarios or diplomatic/military events that can occur regardless of metrics. Maximum 2 conditions per scenario.
+
+  **CANONICAL CONDITION RULES — apply exactly when the scenario describes:**
+  - Unemployment crisis / mass layoffs / workers out of jobs → `{ "metricId": "metric_employment", "max": 42 }`
+  - Economic collapse / recession / budget crisis → `{ "metricId": "metric_economy", "max": 38 }`
+  - Inflation crisis / price surge / cost-of-living emergency → `{ "metricId": "metric_inflation", "min": 58 }` *(inflation is inverse: higher = worse)*
+  - Crime wave / widespread lawlessness → `{ "metricId": "metric_crime", "min": 60 }` *(inverse)*
+  - Civil unrest / riots / large-scale protests → `{ "metricId": "metric_public_order", "max": 40 }`
+  - Corruption scandal / systemic bribery / embezzlement exposed → `{ "metricId": "metric_corruption", "min": 55 }` *(inverse)*
+  - Economic boom / surplus / growth surge → `{ "metricId": "metric_economy", "min": 62 }`
+  - Labor shortage / full employment overheat → `{ "metricId": "metric_employment", "min": 70 }`
+
+  If the scenario does not match any canonical rule above, output `"conditions": []` or omit the field.
+
 - `outcomeHeadline`: 3–15 words, **MAX 15 words** — **newspaper headline style**, no "you"/"your". Renders as a prominent headline on iOS.
 - `outcomeSummary`: **2–3 sentences, 40–80 words** — **news article lede**: third person, past tense, journalistic. Lead with the concrete action taken and its immediate consequence. The first sentence must be **≤25 words**. ❌ "You've imposed emergency fuel controls..." → ✅ "{leader_title} ordered emergency fuel controls, raising import costs for domestic suppliers."
 - `outcomeContext`: **50–100 words (minimum 300 characters)**, 3–5 sentences — **news article body**: third person, journalistic. The ≤100-word cap is a ceiling, not permission to write briefly. Name at least one specific institution, party, ministry, or market segment (e.g., `{the_legislature}`, `{the_opposition_party}`, `{the_finance_role}`, bond markets). Describe the downstream mechanism, include at least one reaction (opposition, ally, public, market), and close with a broader implication. No "you" or "your".
@@ -240,7 +276,9 @@ Feedback must reference the **concrete policy action, affected institution, and 
 
 ### Depth & Specificity (Strict)
 - Name the real mechanism: don't say "the economy suffers" — say which sector, which population, which institution.
-- Every option should carry a distinct trade-off that a non-expert can feel: who gains, who loses, what risk is accepted.
+- **Do not telegraph outcomes in descriptions or option text.** Present facts, actors, instruments, and the decision. The player must think — do not hand them the ledger of gains and losses before they choose.
+- Options should feel meaningfully different in *approach and instrument*, not in *explicitly stated consequence*. The weight comes from the decision itself, not from a parenthetical "(but risks…)".
+- Scenarios should feel like a classified briefing on a real situation: here is what happened, here is who is involved, here is what each response entails. The outcome is unknown. The player decides.
 - Scenarios should feel grounded in a concrete situation, not like generic policy exercises. Name the trigger event, the pressure group, the minister, the market.
 
 ### Layman-Friendly Language (Strict)
@@ -288,3 +326,4 @@ Feedback must reference the **concrete policy action, affected institution, and 
 - Confirm each option's `advisorFeedback` array contains exactly **13 entries** covering all canonical roles.
 - Confirm no banned phrases or boilerplate substrings remain.
 - Confirm each option includes concrete trade-offs and scenario-specific causal logic.
+- Confirm no `options[].text` contains the banned consequence-telegraph patterns: "aims to", "but risks", "but may", "but could", "could lead to", "threatens to", "balances X with Y", "prioritizes X over Y", "at the cost of", "The policy will". If any of these appear in option text, rewrite the sentence to state the action and mechanism only.

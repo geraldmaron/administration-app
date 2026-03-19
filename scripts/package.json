@@ -2,12 +2,15 @@
     "name": "the-administration-scripts",
     "description": "Admin and maintenance scripts for The Administration Firebase backend",
     "scripts": {
-        "generate": "ts-node generate-scenarios.ts",
-        "pre-flight": "ts-node pre-flight.ts",
-        "audit": "ts-node audit-existing-scenarios.ts",
-        "token-audit": "ts-node token-usage-audit.ts",
-        "check-gen": "ts-node check-generation-job.ts",
-        "seed-metrics": "ts-node seed-metrics.ts"
+        "generate": "tsx generate-scenarios.ts",
+        "deficits": "tsx report-scenario-deficits.ts",
+        "backfill-scope": "tsx backfill-scenario-scope.ts",
+        "populate-country-profiles": "tsx populate-country-profiles.ts",
+        "pre-flight": "tsx pre-flight.ts",
+        "audit": "tsx audit-existing-scenarios.ts",
+        "token-audit": "tsx token-usage-audit.ts",
+        "check-gen": "tsx check-generation-job.ts",
+        "seed-metrics": "tsx seed-metrics.ts"
     },
     "engines": {
         "node": "22"
@@ -18,6 +21,7 @@
     "devDependencies": {
         "@types/node": "^22.0.0",
         "ts-node": "^10.9.0",
+        "tsx": "^4.20.5",
         "typescript": "^5.0.0"
     },
     "private": true

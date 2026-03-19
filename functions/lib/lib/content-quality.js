@@ -114,10 +114,10 @@ Evaluate and return scores + specific issues found. If no issues exist for a dim
 // ---------------------------------------------------------------------------
 // Main evaluation function
 // ---------------------------------------------------------------------------
-async function evaluateContentQuality(scenario) {
+async function evaluateContentQuality(scenario, modelOverride) {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t;
     const prompt = buildQualityPrompt(scenario);
-    const result = await (0, model_providers_1.callModelProvider)({ maxTokens: 2048, temperature: 0.2 }, prompt, QUALITY_SCHEMA, 'gpt-4o-mini');
+    const result = await (0, model_providers_1.callModelProvider)({ maxTokens: 2048, temperature: 0.2 }, prompt, QUALITY_SCHEMA, modelOverride || 'gpt-4o-mini');
     if (!result.data) {
         console.warn(`[ContentQuality] LLM call failed for ${scenario.id}: ${result.error}`);
         // Return a neutral pass on API failure to avoid blocking generation

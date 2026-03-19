@@ -1,321 +1,239 @@
 # Plan: The Administration
 
-> Current development state and outstanding work. Update this when tasks are completed or priorities change.
+Status: engineering execution plan as of 2026-03-17.
 
----
+This plan replaces the corrupted prior file and focuses on the next implementation sequence for the scenario architecture, Firebase schema evolution, and runtime alignment work.
 
-## Project State
+## Current State
 
-All core data infrastructure is complete. The country system (50 countries), token system, geopolitical profiles, military branches, legislature system, political parties, and sub-locale system have been seeded and are live in Firestore. Scenario generation is operational via Cloud Functions and CLI scripts.
+The base platform is already live and usable.
 
----
+Completed baseline:
 
-## Web Admin App
+1. Country catalog, token system, geopolitical metadata, parties, legislature data, and military data exist.
+2. Scenario generation runs through Functions and CLI.
+3. Scenario selection already supports country, legislature, government, geopolitical, and neighbor-event filtering.
+4. Prompt templates are Firestore-first with local fallback.
+5. Golden examples exist in `training_scenarios`.
 
-Next.js 14 app at `web/`. Provides a browser UI for scenario management, generation jobs, and bundle health monitoring.
+Confirmed architectural gap:
 
-### Setup (first run)
+The codebase is still bundle-centric in storage, generation jobs, dedup, and exemplar selection, while the approved content architecture now requires scope-tier, cluster, and source-aware planning.
 
-```
-cd web && npm install && npm run dev
-```
+## Primary Goal
 
-`node_modules/` is not committed. Must run `npm install` before development. After install, also restart the TypeScript server to clear any `Cannot find module 'next/*'` errors.
+Move from bundle-only content operations to `bundle x scopeTier x scopeKey` operations without replacing the existing Firebase model.
 
-### Routes
+## Non-Goals
 
-| Route | Status | Notes |
-|-------|--------|-------|
-| `/` | ✅ Implemented | Dashboard ? Plan: The Administration
+1. No per-country scenario collections.
+2. No removal of tokenization.
+3. No new bundle explosion.
+4. No production dependence on LM Studio.
+5. No broad rewrite of the iOS runtime before schema and inventory support exist.
 
-> Current development statar
-> Current development stFil
----
+## Execution Order
 
-## Project State
+## Phase 1. Canonical Schema Upgrade
 
-All core data infrastructure is complete. The country system (50 countries), token  vi
-# wi
-All core data e/d
----
+Objective: make the TypeScript contracts and Firestore documents capable of representing the approved architecture.
 
-## Web Admin App
+Deliverables:
 
-Next.js 14 app at `web/`. Provides a browser UI for scenario management, generation jobs, and bundle health monitoring.
+1. Extend `ScenarioMetadata` with:
+   - `scopeTier`
+   - `scopeKey`
+   - `clusterId`
+   - `exclusivityReason`
+   - `sourceKind`
+   - `region_tags`
+2. Extend `GenerationJobData` with scope-targeting fields so jobs can request deficits intentionally rather than only by bundle.
+3. Define canonical string unions for scope tiers, source kinds, and exclusivity reasons in shared types.
+4. Update any save-path validation to reject incomplete acceptance metadata for new-scope scenarios.
 
-### Setup (first run)
+Files expected:
 
-```
-cd web && npm install && npm run dev
-```
+1. `functions/src/types.ts`
+2. `functions/src/background-jobs.ts`
+3. `functions/src/storage.ts`
+4. `functions/src/scenario-engine.ts`
 
-`node_modules/` is not committed. Must run `npm install` before development. After install, al---
-#-|
+Acceptance criteria:
 
-Next.js 14 app| B
-### Setup (first run)
+1. `npx tsc --noEmit` passes for Functions.
+2. Existing scenario saves still work.
+3. New scenario saves can persist full scope metadata.
 
-```
-cd web && npm install && npm run dev
-```
+## Phase 2. Firestore Query and Index Upgrade
 
-`node_modules/` is not committed. Must run `npm er=
-```
-cd web && npm os/[cd]````
+Objective: make inventory planning and retrieval efficient for the new metadata model.
 
-`node_modules/` is not committenario 
-### Routes
+Deliverables:
 
-| Route | Status | Notes |
-|-------|--------|-------|
-| `/` | ✅ Implemented | Dashboard ? Plan: The Administration
+1. Add indexes for active scenario inventory queries by:
+   - `metadata.bundle + metadata.scopeTier + is_active`
+   - `metadata.bundle + metadata.scopeKey + is_active`
+   - `metadata.bundle + metadata.clusterId + is_active`
+   - `metadata.bundle + metadata.sourceKind + is_active`
+   - `metadata.bundle + metadata.region_tags + is_active`
+2. Add `training_scenarios` indexes for bundle plus scope metadata plus audit score.
+3. Confirm vector index strategy for `scenario_embeddings` under scope-aware dedup.
+4. Correct rules drift where needed, especially prompt-template collection naming.
 
-> Current development statar
-> Current deve th
-| Route oul|-------|--------|-------/[| `/` | ✅ Implemented |d 
-> Currenently the user has no way to track the job they just star> Current development stFilting to Jobs.
+Files expected:
 
-File: `web/src/
-#p/g
-All core data x`
-# wi
-All core data e/d
----
+1. `firestore.indexes.json`
+2. `firestore.rules`
 
-## Web Admin Ap `/jobs/[id]` page should display a timestamAll, ---
+Acceptance criteria:
 
-## Web Admiog
-#f g
-Next.js 14 ogress
-### Setup (first run)
+1. New inventory queries are representable without table-scan style logic.
+2. Rules are consistent with the live prompt collection names.
 
-```
-cd web && npm install && npm run dev
-```
+## Phase 3. Inventory Backfill and Migration
 
-`node_modules/` is not committed. Must run `npm t i
-```
-cd web && npm i a cdog```
+Objective: classify the existing scenario library into the new architecture without regenerating everything.
 
-`node_modules/` is not committce
-`
+Deliverables:
 
-F#-|
-
-Next.js 14 app| B
-### Setup (first run)
-
-```
-cd web && npm install && npm run dev
-```
-
-`nodenarios### Setup (firstables should sort by thatcdol```
-
-`node_modules/` is not committti
-`col```
-cd web && npm os/[cd]````
-
-`node_modules/` is sxcd `
-`node_modules/` is not x`
-### Routes
-
-| Route | Status | Notes g
-| Route vie|-------|--------|-------ti| `/` | ✅ Implemented |d 
-> Current development statar
-> Current deve th
-| Route oul|---ggl> Current deve th
-| Route oee| Route oul|----rs> Currenently the user has no way to track the job they just stad 
-File: `web/src/
-#p/g
-All core data x`
-# wi
-All core data e/d
----
-
-## Web Admin Ap `/jobs/[id]` page shodat#p/g
-All core thAllur# wi
-All core d pAller---
-
-## Web Admier
-#est
-## Web Admiog
-#f g
-Next.js 14 ogress
-### Setup (first run)
-
-```
-c as#f g
-Next.jsplNexnt### Setup (firstp.
-```
-cd web && npm ig icd F```
-
-`s
-
-**1. Party selection fix**
-I
-``Se```
-cd web && npm i a cdog```
-
-`node_tyView.parties`cdom
-`node_modules/` is not oug`
-
-F#-|
-
-Next.js 14 app| B
-###  when
-Neame### Setup (firstti
-```
-cd web && npm iingcdur```
-
-`nodenarios### Setup (firstablo 
-`e c
-`node_modules/` is not committti
-`col```
-cd web && npm osx: `col```
-cd web && npm os/[cd]``lbcd webti
-`node_modules/` is sxcdew``node_modules/` is not x!g### Routes
-
-| Route | St& 
-| Route sEm| Route vie|-------|-----tr> Current development statar
-> Current deve th
-| Route oul|---ggle> Current deve th
-| Route oew| Route oul|---gsw| Route oee| Route oul|----rsropertyFile: `web/src/
-#p/g
-All core data x`
-# wi
-All core data e/d
----
-
-## Web Admin Ap `/jobs/[id]`s #p/g
-All core naAllTh# wi
-All core d:
-Allim---
-
-## Web Admi A
-I) fAll core thAllur# wi
-All core d pAller---
-
-asAll core d pAller--it
-## Web Admier
-#estue
-#est
-## Westem## th#f g
-Next.js tNexsh### Setup (firsted
-```
-c as#f g
-Next.jg-3csmaNext.jswn```
-cd web && npm ig icd F```
-
- rcdre
-`s
-
-**1. Party selectioper
-odiI
-``Se```
-cd web && npm its bcd webno
-`node_tyView.parties`cdall`node_modules/` is not ona
-F#-|
-
-Next.js 14 app| B
-#dai
-Nebut###  when
-Neame#icNeame###ri```
-cd web && npm well. cdni
-`nodenarios### Setup (f/` `e c
-`node_modules/` is not comas`noed`col```
-cd web && npm osx: `coliocd webldcd web iewed before each Ap`node_modules/` is sxcdew``node_an
-| Route | St& 
-| Route sEm| Route vie|-------|-----tr> Currem w| Route sEm|  w> Current deve th
-| Route oul|---ggle> Current deve th
-| Route oe || Route oul|---g--| Route oew| Route oul|---gsw| Routsc#p/g
-All core data x`
-# wi
-All core data e/d
----
-
-## Web Admin Ap `/jobs/[id]`sstAll-s# wi
-All core d--Alldl---
-
-## Web Admil`
-# AuAll core naAllTh# wi
-All core d:
-itAll core d:
-Allim--mpAllim---
-
-st
-## Web| (I) fAll coreusAll core d pAller---
-
-a t
-asAll core d pAlle/` ## Web Admier
-#estue
-#ob#estue
-#est
- <#est
-| ## l Next.js tNexsh###st```
-c as#f g
-Next.jg-3csmaNext.s c (nNext.jg |cd web && npm ig icd F``as
- rcdre
-`s
-
-**1. Party s pe`s
-
-*c-
-ualodiI
-``Se```
-cd web &rg``S| cd web a`node_tyView.parties`cdall|
-F#-|
-
-Next.js 14 app| B
-#dai
-Nebut###  when
-Neame#i a
-Necon#dai
-Nebut###  wheNebstNeame#icNeamearcd web && npm well. t `nodenarios### Setup (fit`node_modules/` is not comas`rgcd web && npm osx: `coliocd webldcd web || Route | St& 
-| Route sEm| Route vie|-------|-----tr> Currem w| Route sEm|  w> Current deve po| Route sEm| --| Route oul|---ggle> Current deve th
-| Route oe || Route oul|---g--| Route oew|jo| Route oe || Route oul|---g--| Rou |All core data x`
-# wi
-All core data e/d
----
-
-## Web Admin Ap `/jobs/[i rebuildScenarioBunAlls ---
-
-## Web Admierate aAll core d--Alldl---
-
-## Web Admil`
-# ASc
-## Web Admil`
-# AuiOS# AuAll coretcAll core d:
-itAdailyNewsTitAll core |Allim--mpAllda
-st
-## Web| (I) SS #ew
-a t
-asAll core d pAlle/` ## Web Admier
-#eloy --o#estue
-#ob#estue
-#est
- <#est
-| ##at#ob#erg#est
- <#un <# ||Minimuc as#f g
-Next.jg-3csmaNext.s|-Next.jg-- rcdre
-`s
-
-**1. Party s pe`s
-
-*c-
-ualodiI
-``Se```
-cd web &us`s
-
-*ays be
-*c-
-ualodiI
-``S| buadl``Se``ticd web0 F#-|
-
-Next.js 14 app| B
-#dai
-Nebut###  when
-Neameun
-Ne_mi#dai
-Nebut###  w| NebdlNeame#i a
-Nec |Necon#dadlNebut### || Route sEm| Route vie|-------|-----tr> Currem w| Route sEm|  w> Current deve po| Route sEm| --| Route oul|---ggle> Current deve th
-| Route oe || Route oul|---g--| R || Route oe || Route oul|---g--| Route oew|jo| Rck_mode | 15 | Review before each App Store release |
+1. Build a backfill script to infer `scopeTier`, `scopeKey`, `sourceKind`, and where possible `clusterId`.
+2. Default migration behavior:
+   - broad evergreen content -> `universal`
+   - region-driven content -> `regional`
+   - country-locked content -> `exclusive`
+   - unresolved middle cases -> manual review queue or provisional cluster assignment
+3. Record backfill provenance in acceptance or migration metadata.
+4. Produce inventory report by `bundle x scopeTier x scopeKey` after backfill.
+
+Files expected:
+
+1. new or existing migration script under `scripts/`
+2. `functions/src/storage.ts` if migration metadata is persisted there
+
+Acceptance criteria:
+
+1. Existing active scenarios can be counted by scope tier.
+2. The report exposes obvious bundle or scope deficits.
+
+## Phase 4. Golden Example and Prompt Upgrade
+
+Objective: make training references and prompt overlays support scope-aware generation.
+
+Deliverables:
+
+1. Expand `training_scenarios` selection and seeding to preserve:
+   - `scopeTier`
+   - `scopeKey`
+   - `clusterId`
+   - `sourceKind`
+   - severity and difficulty coverage
+2. Keep `prompt_templates` as the base system.
+3. Add scope-tier overlays rather than creating separate prompt systems.
+4. Preserve bundle overlays, but layer scope overlays on top.
+
+Files expected:
+
+1. `scripts/seed-golden-examples.ts`
+2. `functions/src/scenario-engine.ts`
+3. `functions/src/lib/prompt-templates.ts`
+
+Acceptance criteria:
+
+1. Few-shot selection is no longer bundle-only.
+2. Prompt assembly is deterministic and scope-aware.
+
+## Phase 5. Dedup and Generation Alignment
+
+Objective: make generation and dedup consistent with the documented local and production model policy.
+
+Deliverables:
+
+1. Update generation planning to operate on deficits, not raw bundle counts.
+2. Make semantic dedup scope-aware.
+3. Resolve the current local mismatch where LM Studio local generation skips embedding-based dedup.
+4. Choose and implement one explicit local path:
+   - LM Studio embedding model, or
+   - documented local-only fallback dedup strategy
+5. Keep deployed Cloud Functions on production-safe providers only.
+
+Files expected:
+
+1. `functions/src/lib/semantic-dedup.ts`
+2. `functions/src/scenario-engine.ts`
+3. `functions/src/background-jobs.ts`
+4. CLI tooling under `functions/src/tools/`
+
+Acceptance criteria:
+
+1. Production dedup remains authoritative.
+2. Local runs have an explicit and non-silent dedup behavior.
+3. Scope-aware generation requests can be executed end to end.
+
+## Phase 6. Runtime Selection Upgrade
+
+Objective: let the game runtime use the new metadata to improve realism and variety.
+
+Deliverables:
+
+1. Add `scopeNeed` balancing to the selector.
+2. Track recent scope history alongside recent tags and played IDs.
+3. Log selector decisions with scope metadata and weighting contributions.
+4. Preserve current hard gates and consequence or neighbor precedence.
+
+Files expected:
+
+1. `ios/TheAdministration/Services/ScenarioNavigator.swift`
+2. `ios/TheAdministration/ViewModels/GameStore.swift`
+
+Acceptance criteria:
+
+1. Selection behavior remains deterministic enough to tune.
+2. End-to-end runs show the intended early or mid or late scope mix.
+
+## Phase 7. Validation and Quality Gates
+
+Objective: make the migration measurable and safe.
+
+Deliverables:
+
+1. Add tests for new shared metadata contracts.
+2. Add script-level validation for backfill and inventory reporting.
+3. Add smoke coverage for generation jobs with scope metadata.
+4. Add a validation report for bundles with missing scope coverage.
+
+Suggested checks:
+
+1. `npx tsc --noEmit`
+2. targeted Jest coverage for Functions
+3. dry-run backfill report
+4. dry-run golden-example seeding report
+
+## Recommended Immediate Sequence
+
+Execute in this order:
+
+1. Phase 1 schema upgrade.
+2. Phase 2 indexes and rules cleanup.
+3. Phase 3 backfill report.
+4. Phase 4 exemplar and prompt upgrade.
+5. Phase 5 dedup alignment.
+6. Phase 6 runtime selector upgrade.
+7. Phase 7 validation hardening.
+
+## Risks To Manage
+
+1. Backfill heuristics may overuse `universal` unless cluster mapping is explicit.
+2. Local LM Studio policy is currently stricter than the live dedup implementation.
+3. Query/index growth can become noisy if scope fields are added inconsistently.
+4. Exclusive content can sprawl if cluster definitions are too weak.
+
+## Done Definition
+
+This work is complete when all of the following are true:
+
+1. Scenario docs, job docs, and training docs all carry canonical scope metadata.
+2. Firestore indexes support scope-aware inventory and retrieval.
+3. Existing scenarios are backfilled enough to report real deficits.
+4. Prompting and few-shot selection are scope-aware.
+5. Dedup behavior is explicit for both production and local runs.
+6. The iOS selector uses scope metadata to shape run-level variety.

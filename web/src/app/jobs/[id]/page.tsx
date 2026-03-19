@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import CommandPanel from '@/components/CommandPanel';
+import DataStat from '@/components/DataStat';
 import BundleBadge from '@/components/BundleBadge';
 import AuditScore from '@/components/AuditScore';
+import StatusBadge from '@/components/StatusBadge';
 import { ALL_BUNDLES } from '@/lib/constants';
 import type { JobDetail, JobResult, JobError } from '@/lib/types';
 
@@ -125,6 +128,37 @@ function buildLog(job: JobDetail): LogEntry[] {
       text: `In progress — ${done} of ${total} scenarios processed (${job.failedCount ?? 0} failed)`,
       time: undefined,
     });
+  }
+
+  if (job.liveActivity && job.liveActivity.totalAttempts > 0) {
+    entries.push({
+      icon: '↻',
+      color: 'text-[var(--info)]',
+      text: `Live pipeline activity — ${job.liveActivity.totalAttempts} generation attempts${job.liveActivity.lastMetricAt ? ` (last ${formatTimestamp(job.liveActivity.lastMetricAt)})` : ''}`,
+      time: undefined,
+    });
+
+    for (const [bundle, activity] of Object.entries(job.liveActivity.byBundle)) {
+      const parts = [
+        `attempts ${activity.attempts}`,
+        `concept ${activity.concept}`,
+        `blueprint ${activity.blueprint}`,
+        `details ${activity.details}`,
+      ];
+      if (activity.successes > 0) {
+        parts.push(`success ${activity.successes}`);
+      }
+      if (activity.avgAuditScore !== undefined) {
+        parts.push(`avg score ${activity.avgAuditScore}`);
+      }
+
+      entries.push({
+        icon: '·',
+        color: 'text-foreground-subtle',
+        text: `${bundle}: ${parts.join(' | ')}`,
+        time: undefined,
+      });
+    }
   }
 
   if (job.results && job.results.length > 0) {
@@ -359,26 +393,26 @@ export default function JobDetailPage() {
 
   if (notFound) {
     return (
-      <div className="p-6">
-        <Link href="/jobs" className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle hover:text-foreground transition-colors mb-6 block">
+      <div className="mx-auto max-w-[1300px]">
+        <Link href="/jobs" className="mb-6 block text-[10px] font-mono uppercase tracking-wider text-foreground-subtle transition-colors hover:text-foreground">
           ← Back to Jobs
         </Link>
-        <div className="tech-border bg-background-elevated p-8 text-center text-foreground-muted text-sm">
+        <CommandPanel className="p-8 text-center text-sm text-foreground-muted">
           Job not found.
-        </div>
+        </CommandPanel>
       </div>
     );
   }
 
   if (!job) {
     return (
-      <div className="p-6">
+      <div className="mx-auto max-w-[1300px]">
         <div className="h-4 bg-background-muted rounded w-32 mb-6 animate-pulse" />
-        <div className="tech-border bg-background-elevated p-6 animate-pulse space-y-3">
+        <CommandPanel className="space-y-3 p-6 animate-pulse">
           <div className="h-4 bg-background-muted rounded w-1/4" />
           <div className="h-3 bg-background-muted rounded w-1/2" />
           <div className="h-3 bg-background-muted rounded w-2/3" />
-        </div>
+        </CommandPanel>
       </div>
     );
   }
@@ -399,67 +433,74 @@ export default function JobDetailPage() {
     return sortDir === 'asc' ? cmp : -cmp;
   });
   const remediatedCount = (job.results ?? []).filter((r) => r.autoFixed).length;
+  const savedCount = job.completedCount ?? job.results?.length ?? 0;
+  const failedCount = job.failedCount ?? 0;
+  const liveProgress = total > 0 ? Math.min(100, Math.round(((savedCount + failedCount) / total) * 100)) : progress;
 
   return (
-    <div className="p-6 max-w-[1100px]">
+    <div className="mx-auto max-w-[1300px]">
       {/* Nav */}
       <Link
         href="/jobs"
-        className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle hover:text-foreground transition-colors mb-6 block"
+        className="mb-6 block text-[10px] font-mono uppercase tracking-wider text-foreground-subtle transition-colors hover:text-foreground"
       >
         ← Back to Jobs
       </Link>
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <div className="text-[10px] font-mono uppercase tracking-widest text-foreground-subtle mb-1">
-            Job Detail
-          </div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-foreground font-mono">
-              {job.id.slice(0, 12)}…
-            </h1>
-            <div className={`flex items-center gap-1.5 px-2 py-0.5 border rounded-[2px] ${statusStyle.ring}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot} ${job.status === 'running' ? 'animate-pulse' : ''}`} />
-              <span className={`text-[10px] font-mono uppercase tracking-wider ${statusStyle.text}`}>
-                {job.status}
-              </span>
+      <CommandPanel className="mb-6 p-5 md:p-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <div className="section-kicker mb-2">Run Dossier</div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-semibold text-foreground data-value">
+                {job.id.slice(0, 12)}…
+              </h1>
+              <StatusBadge status={job.status} pulse={job.status === 'running' || job.status === 'pending'} />
             </div>
+            {job.description && (
+              <p className="mt-2 text-sm text-foreground-muted">{job.description}</p>
+            )}
           </div>
-          {job.description && (
-            <p className="text-sm text-foreground-muted mt-1">{job.description}</p>
-          )}
+          <div className="flex items-center gap-2">
+            {job.status === 'pending' && (
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="btn btn-destructive disabled:opacity-50"
+              >
+                {cancelling ? 'Cancelling…' : 'Cancel Job'}
+              </button>
+            )}
+            {job.status === 'running' && (
+              <button
+                onClick={handleStop}
+                disabled={stopping}
+                className="btn btn-destructive disabled:opacity-50"
+              >
+                {stopping ? 'Stopping…' : 'Stop Job'}
+              </button>
+            )}
+          </div>
         </div>
-        {job.status === 'pending' && (
-          <button
-            onClick={handleCancel}
-            disabled={cancelling}
-            className="text-xs font-mono text-foreground-muted hover:text-[var(--error)] border border-[var(--border-strong)] px-3 py-1.5 rounded-[2px] transition-colors disabled:opacity-50"
-          >
-            {cancelling ? 'Cancelling…' : 'Cancel Job'}
-          </button>
-        )}
-        {job.status === 'running' && (
-          <button
-            onClick={handleStop}
-            disabled={stopping}
-            className="text-xs font-mono text-foreground-muted hover:text-[#f59e0b] border border-[var(--border-strong)] px-3 py-1.5 rounded-[2px] transition-colors disabled:opacity-50"
-          >
-            {stopping ? 'Stopping…' : 'Stop Job'}
-          </button>
-        )}
+      </CommandPanel>
+
+      <div className="mb-6 grid gap-4 md:grid-cols-4">
+        <DataStat label="Saved" value={savedCount} accent="success" />
+        <DataStat label="Failed" value={failedCount} accent={failedCount > 0 ? 'warning' : undefined} />
+        <DataStat label="Expected" value={total} accent="blue" />
+        <DataStat label="Remediated" value={remediatedCount} accent={remediatedCount > 0 ? 'gold' : undefined} />
       </div>
 
       {/* Progress bar (running/pending) */}
       {(job.status === 'running' || job.status === 'pending') && (
-        <div className="mb-6 tech-border bg-background-elevated p-4 space-y-4">
+        <CommandPanel className="mb-6 p-5 md:p-6">
           <div className="flex items-center justify-between">
             <div className="text-[10px] font-mono text-foreground-subtle">
-              <span className="text-foreground font-medium">{job.completedCount ?? 0}</span>
+              <span className="text-foreground font-medium">{savedCount}</span>
               <span> / {total} scenarios</span>
-              {(job.failedCount ?? 0) > 0 && (
-                <span className="text-[var(--error)] ml-2">· {job.failedCount} failed</span>
+              {failedCount > 0 && (
+                <span className="text-[var(--error)] ml-2">· {failedCount} failed</span>
               )}
               {(job.rateLimitRetries ?? 0) > 0 && (
                 <span className="text-[#f59e0b] ml-2">· {job.rateLimitRetries} rate retries</span>
@@ -469,15 +510,12 @@ export default function JobDetailPage() {
               {elapsedMs !== null && job.startedAt && (
                 <span>{formatElapsed(elapsedMs)}</span>
               )}
-              <span>{Math.round(progress)}%</span>
+              <span>{Math.round(liveProgress)}%</span>
             </div>
           </div>
 
-          <div className="h-1.5 bg-background-muted overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-tertiary)] transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
+          <div className="app-progress">
+            <span style={{ width: `${liveProgress}%` }} />
           </div>
 
           {job.bundles.length > 1 && (
@@ -487,7 +525,7 @@ export default function JobDetailPage() {
                 const bundleLabel = ALL_BUNDLES.find((b) => b.id === bundleId)?.label ?? bundleId;
                 const complete = saved >= job.count;
                 return (
-                  <div key={bundleId} className="border border-[var(--border)] bg-background p-2">
+                  <div key={bundleId} className="control-surface p-3">
                     <div className="text-[9px] font-mono uppercase tracking-wide text-foreground-subtle truncate mb-0.5">
                       {bundleLabel}
                     </div>
@@ -523,14 +561,14 @@ export default function JobDetailPage() {
               </div>
             </div>
           )}
-        </div>
+        </CommandPanel>
       )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left: Meta + Log */}
         <div className="xl:col-span-1 flex flex-col gap-4">
           {/* Meta */}
-          <div className="tech-border bg-background-elevated divide-y divide-[var(--border-strong)]">
+          <CommandPanel className="divide-y divide-[var(--border-strong)] overflow-hidden p-0">
             <div className="px-4 py-2.5 text-[10px] font-mono uppercase tracking-widest text-foreground-subtle">
               Details
             </div>
@@ -567,10 +605,10 @@ export default function JobDetailPage() {
                 <span className="text-xs font-mono text-[var(--error)]">{job.failedCount}</span>
               </div>
             )}
-          </div>
+          </CommandPanel>
 
           {/* Activity log */}
-          <div className="tech-border bg-background-elevated">
+          <CommandPanel className="overflow-hidden p-0">
             <div className="px-4 py-2.5 text-[10px] font-mono uppercase tracking-widest text-foreground-subtle border-b border-[var(--border-strong)]">
               Activity Log
             </div>
@@ -589,14 +627,14 @@ export default function JobDetailPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </CommandPanel>
         </div>
 
         {/* Right: Results + Errors */}
         <div className="xl:col-span-2 flex flex-col gap-4">
           {/* Audit quality summary */}
           {job.auditSummary && (
-            <div className="tech-border bg-background-elevated divide-y divide-[var(--border-strong)]">
+            <CommandPanel className="divide-y divide-[var(--border-strong)] overflow-hidden p-0">
               <div className="px-4 py-2.5 text-[10px] font-mono uppercase tracking-widest text-foreground-subtle">
                 Audit Quality
               </div>
@@ -617,7 +655,7 @@ export default function JobDetailPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </CommandPanel>
           )}
 
           {/* Results */}
@@ -631,7 +669,7 @@ export default function JobDetailPage() {
               <div className="tech-border overflow-hidden">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-[var(--border-strong)] bg-background-elevated">
+                    <tr className="border-b border-[var(--border-strong)] bg-[rgba(255,255,255,0.04)]">
                       <th className="text-left px-4 py-2.5">
                         <SortHeader field="title" label="Title" current={sortField} dir={sortDir} onSort={handleSort} />
                       </th>
@@ -654,7 +692,7 @@ export default function JobDetailPage() {
                       <tr
                         key={r.id}
                         className={`border-b border-[var(--border)] hover:bg-background-muted transition-colors ${
-                          i % 2 === 0 ? 'bg-background' : 'bg-background-elevated/50'
+                          i % 2 === 0 ? 'bg-background' : 'bg-[rgba(255,255,255,0.02)]'
                         }`}
                       >
                         <td className="px-4 py-2.5">
@@ -705,7 +743,7 @@ export default function JobDetailPage() {
                         <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--error)] mb-2">
                           Generation Errors — {generationErrors.length}
                         </div>
-                        <div className="tech-border bg-background-elevated divide-y divide-[var(--border)]">
+                        <CommandPanel className="divide-y divide-[var(--border)] overflow-hidden p-0">
                           {generationErrors.map((e, i) => (
                             <div key={i} className="px-4 py-3 flex items-start gap-3">
                               <span className="text-[var(--error)] font-mono text-xs mt-0.5 shrink-0">✗</span>
@@ -717,7 +755,7 @@ export default function JobDetailPage() {
                               </div>
                             </div>
                           ))}
-                        </div>
+                        </CommandPanel>
                       </div>
                     )}
                     {auditAttempts.length > 0 && (
@@ -728,7 +766,7 @@ export default function JobDetailPage() {
                             (scenarios rejected by quality audit)
                           </span>
                         </div>
-                        <div className="tech-border bg-background-elevated divide-y divide-[var(--border)]">
+                        <CommandPanel className="divide-y divide-[var(--border)] overflow-hidden p-0">
                           {auditAttempts.map((e, i) => (
                             <div key={i} className="px-4 py-2.5 flex items-start gap-3">
                               <span className="text-[#f59e0b] font-mono text-xs mt-0.5 shrink-0">↻</span>
@@ -740,7 +778,7 @@ export default function JobDetailPage() {
                               </div>
                             </div>
                           ))}
-                        </div>
+                        </CommandPanel>
                       </div>
                     )}
                     {dedupSkips.length > 0 && (
@@ -751,7 +789,7 @@ export default function JobDetailPage() {
                             (semantic or ID match — expected)
                           </span>
                         </div>
-                        <div className="tech-border bg-background-elevated divide-y divide-[var(--border)]">
+                        <CommandPanel className="divide-y divide-[var(--border)] overflow-hidden p-0">
                           {dedupSkips.map((e, i) => (
                             <div key={i} className="px-4 py-2 flex items-start gap-3">
                               <span className="text-foreground-subtle font-mono text-xs mt-0.5 shrink-0">·</span>
@@ -761,7 +799,7 @@ export default function JobDetailPage() {
                               </div>
                             </div>
                           ))}
-                        </div>
+                        </CommandPanel>
                       </div>
                     )}
                     {cooldownSkips.length > 0 && (
@@ -772,7 +810,7 @@ export default function JobDetailPage() {
                             (bundle generated too recently)
                           </span>
                         </div>
-                        <div className="tech-border bg-background-elevated divide-y divide-[var(--border)]">
+                        <CommandPanel className="divide-y divide-[var(--border)] overflow-hidden p-0">
                           {cooldownSkips.map((e, i) => (
                             <div key={i} className="px-4 py-2 flex items-start gap-3">
                               <span className="text-[var(--info)] font-mono text-xs mt-0.5 shrink-0">·</span>
@@ -782,7 +820,7 @@ export default function JobDetailPage() {
                               </div>
                             </div>
                           ))}
-                        </div>
+                        </CommandPanel>
                       </div>
                     )}
                   </div>
@@ -792,18 +830,18 @@ export default function JobDetailPage() {
           )}
 
           {job.error && (
-            <div className="tech-border bg-background-elevated p-4">
+            <CommandPanel className="p-4">
               <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--error)] mb-2">Fatal Error</div>
               <div className="text-xs font-mono text-[var(--error)]">{job.error}</div>
-            </div>
+            </CommandPanel>
           )}
 
           {sortedResults.length === 0 && !job.errors?.length && !job.error && (
-            <div className="tech-border bg-background-elevated p-6 text-center text-foreground-subtle text-sm">
+            <CommandPanel className="p-6 text-center text-sm text-foreground-subtle">
               {job.status === 'pending' || job.status === 'running'
                 ? 'Results will appear as scenarios are generated…'
                 : 'No results recorded for this job.'}
-            </div>
+            </CommandPanel>
           )}
         </div>
       </div>

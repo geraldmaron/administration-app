@@ -1,0 +1,18 @@
+import { normalizeTokenAliases } from '../lib/token-registry';
+
+describe('normalizeTokenAliases', () => {
+    test('normalizes hallucinated ministry and culture tokens to valid role tokens', () => {
+        const text = 'You direct {the_culture_ministry} while {culture_role} briefs {the_ministry_of_interior}.';
+        expect(normalizeTokenAliases(text)).toBe('You direct {the_interior_role} while {interior_role} briefs {the_interior_role}.');
+    });
+
+    test('normalizes invalid economy and metric placeholders to plain language', () => {
+        const text = '{the_economy} remains fragile while {metric_public_order} and {the_approval} continue to deteriorate.';
+        expect(normalizeTokenAliases(text)).toBe('the economy remains fragile while public order and public approval continue to deteriorate.');
+    });
+
+    test('rewrites unsupported legislature speaker placeholders to supported narrative text', () => {
+        const text = '{the_legislature_speaker} warned that {legislature_speaker} could delay the vote.';
+        expect(normalizeTokenAliases(text)).toBe('the speaker of {the_legislature} warned that speaker of {the_legislature} could delay the vote.');
+    });
+});

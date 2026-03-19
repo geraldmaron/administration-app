@@ -1,105 +1,82 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ALL_BUNDLES, ALL_REGIONS, BUNDLE_ACCENT_COLORS } from '@/lib/constants';
-import type { CountrySummary, JobDetail, JobError } from '@/lib/types';
 import BundleBadge from '@/components/BundleBadge';
-import PageHeader from '@/components/PageHeader';
+import CommandPanel from '@/components/CommandPanel';
+import DataStat from '@/components/DataStat';
+import OperationsNav from '@/components/OperationsNav';
+import ScreenHeader from '@/components/ScreenHeader';
+import StatusBadge from '@/components/StatusBadge';
+import { ALL_BUNDLES, ALL_REGIONS, BUNDLE_ACCENT_COLORS } from '@/lib/constants';
+import type { CountrySummary, JobDetail } from '@/lib/types';
 
 type TargetMode = 'all' | 'regions' | 'country';
 type DistMode = 'auto' | 'fixed';
 type Priority = 'low' | 'normal' | 'high';
 
-function categorizeErrors(errors: JobError[]) {
-  const dedupSkips = errors.filter((e) =>
-    /duplicate_id|similar_content|similar/i.test(e.error)
-  );
-  const cooldownSkips = errors.filter(
-    (e) => !!e.bundle && /cooldown/i.test(e.error)
-  );
-  const generationErrors = errors.filter(
-    (e) =>
-      !/duplicate_id|similar_content|similar/i.test(e.error) &&
-      !(!!e.bundle && /cooldown/i.test(e.error))
-  );
-  return { generationErrors, dedupSkips, cooldownSkips };
+interface BundleStat {
+  id: string;
+  total: number;
+  active: number;
 }
 
-function deriveDisplayStatus(job: JobDetail): string {
-  if (job.status === 'running') return 'running';
-  if (job.status === 'pending') return 'pending';
-  if (job.status === 'failed') return 'failed';
-  if (job.status === 'cancelled') return 'cancelled';
-
-  const completed = job.completedCount ?? 0;
-  const failed = job.failedCount ?? 0;
-
-  if (failed === 0) return 'completed';
-
-  const errors = job.errors ?? [];
-  const { generationErrors } = categorizeErrors(errors);
-  if (generationErrors.length === 0 && completed > 0) return 'remediated';
-
-  const failureRate = failed / (completed + failed);
-  if (completed > 0 && failureRate <= 0.5) return 'partial';
-  return 'partial_failure';
+interface StatsResponse {
+  bundles: BundleStat[];
 }
 
-const DS_STYLES: Record<string, { dot: string; text: string }> = {
-  pending:         { dot: 'bg-[var(--info)]',                text: 'text-[var(--info)]' },
-  running:         { dot: 'bg-[var(--accent-primary)]',      text: 'text-[var(--accent-primary)]' },
-  completed:       { dot: 'bg-[var(--success)]',             text: 'text-[var(--success)]' },
-  remediated:      { dot: 'bg-[var(--success)]',             text: 'text-[var(--success)]' },
-  partial:         { dot: 'bg-[#f59e0b]',                    text: 'text-[#f59e0b]' },
-  partial_failure: { dot: 'bg-[#f97316]',                    text: 'text-[#f97316]' },
-  failed:          { dot: 'bg-[var(--error)]',               text: 'text-[var(--error)]' },
-  cancelled:       { dot: 'bg-[var(--foreground-muted)]',    text: 'text-[var(--foreground-muted)]' },
-};
+function formatRuntime(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  if (minutes === 0) return `${seconds}s`;
+  return `${minutes}m ${seconds % 60}s`;
+}
 
-const DS_LABELS: Record<string, string> = {
-  running: 'RUNNING', pending: 'PENDING', completed: 'COMPLETED',
-  remediated: 'REMEDIATED', partial: 'PARTIAL', partial_failure: 'PARTIAL FAILURE',
-  failed: 'FAILED', cancelled: 'CANCELLED',
-};
+function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: ReadonlyArray<{ value: T; label: string }>;
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-[12px] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-1">
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            className={`min-h-[40px] rounded-[10px] px-4 py-2 text-[11px] font-mono uppercase tracking-[0.18em] transition-colors ${
+              active
+                ? 'bg-[rgba(25,105,220,0.14)] text-foreground'
+                : 'text-[var(--foreground-muted)] hover:bg-background-muted hover:text-foreground'
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
-function JobProgressCard({ jobId }: { jobId: string }) {
+function JobMonitor({ jobId }: { jobId: string }) {
   const [job, setJob] = useState<JobDetail | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const statusRef = useRef<string>('pending');
-
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
-
-  useEffect(() => {
-    const active = job?.status === 'running' || job?.status === 'pending';
-    if (!job?.startedAt || !active) {
-      setElapsedMs(null);
-      return;
-    }
-    function tick() {
-      setElapsedMs(Date.now() - new Date(job!.startedAt!).getTime());
-    }
-    tick();
-    const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
-  }, [job?.startedAt, job?.status]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     function poll() {
       fetch(`/api/jobs/${jobId}`)
-        .then((r) => r.json())
+        .then((response) => response.json())
         .then((data: JobDetail) => {
           setJob(data);
-          const isActive = data.status === 'running' || data.status === 'pending';
-
-          if (statusRef.current !== data.status && isActive && intervalRef.current) {
-            clearInterval(intervalRef.current);
-            const ms = data.status === 'running' ? 2000 : 3000;
-            intervalRef.current = setInterval(poll, ms);
-          }
-          statusRef.current = data.status;
-
-          if (!isActive && intervalRef.current) {
+          const active = data.status === 'running' || data.status === 'pending' || data.status === 'pending_review';
+          if (!active && intervalRef.current) {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
           }
@@ -108,214 +85,94 @@ function JobProgressCard({ jobId }: { jobId: string }) {
     }
 
     poll();
-    intervalRef.current = setInterval(poll, 3000);
+    intervalRef.current = setInterval(poll, 2500);
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [jobId]);
 
+  useEffect(() => {
+    if (!job?.startedAt || (job.status !== 'running' && job.status !== 'pending' && job.status !== 'pending_review')) {
+      setElapsedMs(null);
+      return;
+    }
+
+    const startedAt = job.startedAt;
+
+    function tick() {
+      setElapsedMs(Date.now() - new Date(startedAt).getTime());
+    }
+
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [job?.startedAt, job?.status]);
+
   if (!job) {
     return (
-      <div className="animate-pulse space-y-2">
-        <div className="h-3 bg-[var(--background-muted)] rounded w-1/4" />
-        <div className="h-2 bg-[var(--background-muted)] rounded w-1/2" />
-      </div>
+      <CommandPanel className="p-5">
+        <div className="section-kicker mb-3">Active Submission</div>
+        <div className="text-sm text-[var(--foreground-muted)]">Loading current job state…</div>
+      </CommandPanel>
     );
   }
 
-  const ds = deriveDisplayStatus(job);
-  const dsStyle = DS_STYLES[ds] ?? DS_STYLES.pending;
-  const dsLabel = DS_LABELS[ds] ?? ds.toUpperCase();
   const total = job.total ?? job.count * job.bundles.length;
-  const progress = job.progress ?? 0;
-  const isActive = job.status === 'running' || job.status === 'pending';
-  const isDone = !isActive;
-  const isError = ds === 'failed' || ds === 'partial_failure';
-  const autoFixedCount = (job.results ?? []).filter((r) => r.autoFixed).length;
-  const recentErrors = (job.errors ?? []).slice(-10);
-  const { generationErrors, dedupSkips } = categorizeErrors(recentErrors);
+  const completed = job.completedCount ?? 0;
+  const failed = job.failedCount ?? 0;
+  const progress = total > 0 ? Math.min(100, Math.round(((completed + failed) / total) * 100)) : 0;
 
   return (
-    <div className={isError ? 'text-[var(--error)]' : ''}>
-      <div className="flex items-center gap-2 mb-3">
-        <span className={`w-2 h-2 rounded-full shrink-0 ${dsStyle.dot} ${isActive ? 'animate-pulse' : ''}`} />
-        <span className={`text-[10px] font-mono uppercase tracking-wider ${dsStyle.text}`}>{dsLabel}</span>
-        <span className="text-[10px] font-mono text-[var(--foreground-subtle)] ml-auto">{job.id.slice(0, 12)}…</span>
+    <CommandPanel className="p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <div className="section-kicker mb-2">Active Submission</div>
+          <div className="text-lg font-semibold text-foreground">Job {job.id.slice(0, 8)}</div>
+        </div>
+        <StatusBadge status={job.status} pulse={job.status === 'running' || job.status === 'pending'} />
       </div>
 
-      {isActive && (
-        <div className="mb-4">
-          <div className="flex justify-between text-[10px] font-mono text-[var(--foreground-subtle)] mb-1">
-            <span>
-              {job.completedCount ?? 0} / {total} scenarios
-              {(job.failedCount ?? 0) > 0 && (
-                <span className="text-[#f97316] ml-2">· {job.failedCount} failed</span>
-              )}
-            </span>
-            <span className="flex gap-2">
-              {elapsedMs !== null && job.startedAt && (
-                <span>{Math.floor(elapsedMs / 60000)}m {Math.floor((elapsedMs % 60000) / 1000)}s</span>
-              )}
-              <span>{Math.round(progress)}%</span>
-            </span>
-          </div>
-          <div className="h-1.5 bg-[var(--background-muted)] overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-tertiary)] transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          {job.bundles.length > 1 && (() => {
-            const perBundle: Record<string, number> = {};
-            for (const b of job.bundles) perBundle[b] = 0;
-            for (const r of job.results ?? []) perBundle[r.bundle] = (perBundle[r.bundle] ?? 0) + 1;
-            return (
-              <div className="mt-2 grid gap-1" style={{ gridTemplateColumns: `repeat(${Math.min(job.bundles.length, 3)}, minmax(0, 1fr))` }}>
-                {job.bundles.map((bundleId) => {
-                  const saved = perBundle[bundleId] ?? 0;
-                  const label = ALL_BUNDLES.find((b) => b.id === bundleId)?.label ?? bundleId;
-                  const done = saved >= job.count;
-                  return (
-                    <div key={bundleId} className="border border-[var(--border)] p-1.5">
-                      <div className="text-[9px] font-mono text-foreground-subtle truncate">{label}</div>
-                      <div className={`text-[10px] font-mono ${done ? 'text-[var(--success)]' : 'text-foreground-muted'}`}>
-                        {saved}<span className="text-foreground-subtle">/{job.count}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
-      )}
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <DataStat label="Processed" value={`${completed}/${total}`} accent="blue" />
+        <DataStat label="Failed" value={failed} accent={failed > 0 ? 'warning' : undefined} />
+      </div>
 
-      {isActive && recentErrors.length > 0 && (
-        <div className="mb-4">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--foreground-subtle)] mb-1">Recent activity</div>
-          <div className="max-h-[80px] overflow-y-auto space-y-0.5 border border-[var(--border)] bg-[var(--background)] p-2">
-            {recentErrors.map((e, i) => {
-              const isDedup = /duplicate_id|similar_content|similar/i.test(e.error);
-              return (
-                <div key={i} className={`text-[10px] font-mono ${isDedup ? 'text-[var(--foreground-subtle)]' : 'text-[var(--error)]'}`}>
-                  {e.bundle && <span className="text-[var(--foreground-subtle)] mr-1">[{e.bundle}]</span>}
-                  {e.error}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <div className="mb-3 flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">
+        <span>Progress</span>
+        <span>{progress}%</span>
+      </div>
+      <div className="app-progress mb-4">
+        <span style={{ width: `${progress}%` }} />
+      </div>
 
-      {isDone && (
-        <div className="mb-4 text-xs font-mono space-y-1">
-          <div>
-            <span className="text-[var(--success)]">{job.completedCount ?? job.results?.length ?? 0} saved</span>
-            {(job.failedCount ?? 0) > 0 && (
-              <span className="text-[#f97316] ml-2">· {job.failedCount} failed</span>
-            )}
-            {job.auditSummary && (
-              <span className="text-[var(--foreground-muted)] ml-2">· avg {job.auditSummary.avgScore}</span>
-            )}
-          </div>
-          {autoFixedCount > 0 && (
-            <div className="text-[var(--success)] text-[10px]">({autoFixedCount} remediated by LLM repair)</div>
-          )}
-        </div>
-      )}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {job.bundles.map((bundle) => (
+          <BundleBadge key={bundle} bundle={bundle} />
+        ))}
+      </div>
 
-      {isDone && job.results && job.results.length > 0 && (
-        <div className="mb-4">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--foreground-subtle)] mb-2">
-            Results ({job.results.length})
-          </div>
-          <div className="space-y-1 max-h-48 overflow-y-auto">
-            {job.results.map((r) => (
-              <div key={r.id} className="flex items-center gap-2 text-xs font-mono hover:bg-[var(--background-muted)] px-2 py-1 -mx-2 transition-colors">
-                <span className="text-[var(--foreground-subtle)] shrink-0">{r.id.slice(0, 8)}…</span>
-                <span className="text-[var(--foreground)] flex-1 truncate">{r.title}</span>
-                <BundleBadge bundle={r.bundle} />
-                {r.auditScore !== undefined && (
-                  <span className="text-[var(--foreground-subtle)] shrink-0">{r.auditScore}</span>
-                )}
-                {r.autoFixed && <span className="text-[var(--success)] text-[10px] shrink-0">✓</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="flex items-center justify-between text-xs text-[var(--foreground-muted)]">
+        <span>{job.priority} priority</span>
+        <span>{elapsedMs !== null ? formatRuntime(elapsedMs) : 'queued'}</span>
+      </div>
 
-      {isDone && generationErrors.length > 0 && (
-        <div className="mb-4">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--error)] mb-1">
-            Errors ({generationErrors.length})
-          </div>
-          <div className="space-y-0.5">
-            {generationErrors.map((e, i) => (
-              <div key={i} className="text-[10px] font-mono text-[var(--error)]">
-                {e.bundle && <span className="text-[var(--foreground-subtle)] mr-1">[{e.bundle}]</span>}
-                {e.error}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {isDone && dedupSkips.length > 0 && (
-        <div className="mb-3">
-          <div className="text-[10px] font-mono text-[var(--foreground-subtle)]">
-            {dedupSkips.length} dedup/cooldown skips (expected)
-          </div>
-        </div>
-      )}
-
-      {job.error && <div className="text-xs font-mono text-[var(--error)] mb-3">{job.error}</div>}
-
-      <div className="pt-3 border-t border-[var(--border)]">
-        <Link
-          href={`/jobs/${job.id}`}
-          className="text-[10px] font-mono uppercase tracking-wider text-[var(--foreground-subtle)] hover:text-[var(--foreground)] transition-colors"
-        >
-          View full job →
+      <div className="mt-4 flex flex-wrap gap-3 border-t border-[var(--border)] pt-4">
+        <Link href={`/jobs/${job.id}`} className="btn btn-tactical">
+          Open Job Dossier
         </Link>
+        {job.status === 'pending_review' ? (
+          <Link href={`/jobs/${job.id}/review`} className="btn btn-command">
+            Review Scenarios
+          </Link>
+        ) : null}
       </div>
-    </div>
-  );
-}
-
-function SegmentedControl<T extends string | number>({
-  options,
-  value,
-  onChange,
-  labelMap,
-}: {
-  options: readonly T[];
-  value: T;
-  onChange: (v: T) => void;
-  labelMap?: Partial<Record<string, string>>;
-}) {
-  return (
-    <div className="flex border border-[var(--border-strong)] w-fit">
-      {options.map((opt) => (
-        <button
-          key={String(opt)}
-          type="button"
-          onClick={() => onChange(opt)}
-          className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-wide transition-colors border-r border-[var(--border-strong)] last:border-r-0 ${
-            value === opt
-              ? 'bg-[var(--accent-primary)] text-[var(--background)]'
-              : 'bg-transparent text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-muted)]'
-          }`}
-        >
-          {labelMap?.[String(opt)] ?? String(opt)}
-        </button>
-      ))}
-    </div>
+    </CommandPanel>
   );
 }
 
 export default function GeneratePage() {
-  const [selectedBundles, setSelectedBundles] = useState<Set<string>>(new Set());
+  const [selectedBundles, setSelectedBundles] = useState<Set<string>>(new Set(['economy']));
   const [count, setCount] = useState(5);
   const [targetMode, setTargetMode] = useState<TargetMode>('all');
   const [selectedRegions, setSelectedRegions] = useState<Set<string>>(new Set());
@@ -328,77 +185,55 @@ export default function GeneratePage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [countries, setCountries] = useState<CountrySummary[]>([]);
+  const [bundleCounts, setBundleCounts] = useState<Record<string, { total: number; active: number }>>({});
+  const [dryRun, setDryRun] = useState(false);
   const [useLMStudio, setUseLMStudio] = useState(false);
   const [lmModels, setLmModels] = useState<string[]>([]);
   const [lmConnected, setLmConnected] = useState(false);
   const [lmLoading, setLmLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState('');
-  const [emulatorMode, setEmulatorMode] = useState(false);
-  const [emulatorStatus, setEmulatorStatus] = useState<'unknown' | 'stopped' | 'starting' | 'ready' | 'error'>('unknown');
-  const [emulatorStartError, setEmulatorStartError] = useState<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     fetch('/api/countries')
-      .then((r) => r.json())
-      .then((d: { countries: CountrySummary[] }) => setCountries(d.countries))
+      .then((response) => response.json())
+      .then((data: { countries: CountrySummary[] }) => setCountries(data.countries))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then((response) => response.json())
+      .then((data: StatsResponse) => {
+        const next: Record<string, { total: number; active: number }> = {};
+        for (const bundle of data.bundles ?? []) {
+          next[bundle.id] = { total: bundle.total ?? 0, active: bundle.active ?? 0 };
+        }
+        setBundleCounts(next);
+      })
       .catch(() => undefined);
   }, []);
 
   useEffect(() => {
     fetch('/api/settings/lmstudio')
-      .then((r) => r.json())
-      .then((data: { connected: boolean; models: string[]; baseUrl: string; emulatorMode?: boolean }) => {
-        setEmulatorMode(data.emulatorMode ?? false);
+      .then((response) => response.json())
+      .then((data: { connected: boolean; models: string[] }) => {
         setLmConnected(data.connected);
         setLmModels(data.models);
-        if (data.models.length > 0) {
-          setSelectedModel(data.models[0]);
-        }
+        if (data.models.length > 0) setSelectedModel(data.models[0]);
       })
       .catch(() => undefined);
-  }, []);
 
-  useEffect(() => {
-    if (!emulatorMode) setUseLMStudio(false);
-  }, [emulatorMode]);
-
-  useEffect(() => {
-    fetch('/api/emulator')
-      .then((r) => r.json())
-      .then((d: { status: string; error?: string }) => {
-        setEmulatorStatus(d.status as 'stopped' | 'starting' | 'ready' | 'error');
-        if (d.error) setEmulatorStartError(d.error);
-      })
-      .catch(() => undefined);
     return () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   }, []);
 
-  function toggleBundle(id: string) {
-    setSelectedBundles((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function toggleRegion(id: string) {
-    setSelectedRegions((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
   function refreshLmStudio() {
     setLmLoading(true);
     fetch('/api/settings/lmstudio')
-      .then((r) => r.json())
-      .then((data: { connected: boolean; models: string[]; baseUrl: string }) => {
+      .then((response) => response.json())
+      .then((data: { connected: boolean; models: string[] }) => {
         setLmConnected(data.connected);
         setLmModels(data.models);
         if (data.models.length > 0) setSelectedModel(data.models[0]);
@@ -407,67 +242,49 @@ export default function GeneratePage() {
       .finally(() => setLmLoading(false));
   }
 
-  function pollEmulatorStatus() {
-    let attempts = 0;
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    pollIntervalRef.current = setInterval(() => {
-      attempts++;
-      if (attempts > 60) {
-        clearInterval(pollIntervalRef.current!);
-        pollIntervalRef.current = null;
-        setEmulatorStatus('error');
-        setEmulatorStartError('Emulator did not start within 2 minutes');
-        return;
-      }
-      fetch('/api/emulator')
-        .then((r) => r.json())
-        .then((d: { status: string; error?: string }) => {
-          if (d.status === 'ready') {
-            clearInterval(pollIntervalRef.current!);
-            pollIntervalRef.current = null;
-            setEmulatorStatus('ready');
-            refreshLmStudio();
-          } else if (d.status === 'error') {
-            clearInterval(pollIntervalRef.current!);
-            pollIntervalRef.current = null;
-            setEmulatorStatus('error');
-            setEmulatorStartError(d.error ?? 'Emulator failed to start');
-          }
-        })
-        .catch(() => undefined);
-    }, 2000);
+  function toggleBundle(id: string) {
+    setSelectedBundles((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
-  async function startEmulator() {
-    setEmulatorStatus('starting');
-    setEmulatorStartError(null);
-    try {
-      const res = await fetch('/api/emulator', { method: 'POST' });
-      const data = await res.json() as { status: string };
-      if (data.status === 'ready') {
-        setEmulatorStatus('ready');
-        refreshLmStudio();
-        return;
-      }
-      pollEmulatorStatus();
-    } catch {
-      setEmulatorStatus('error');
-      setEmulatorStartError('Failed to start emulator');
-    }
+  function toggleRegion(id: string) {
+    setSelectedRegions((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+
     if (selectedBundles.size === 0) {
-      setSubmitError('Select at least one bundle');
+      setSubmitError('Select at least one bundle.');
       return;
     }
+
     if (count < 1 || count > 50) {
-      setSubmitError('Count must be between 1 and 50');
+      setSubmitError('Count must be between 1 and 50.');
       return;
     }
-    if (useLMStudio && emulatorStatus !== 'ready') {
-      setSubmitError('Firebase emulator is not ready — wait for it to start');
+
+    if (targetMode === 'regions' && selectedRegions.size === 0) {
+      setSubmitError('Pick at least one region or switch target mode.');
+      return;
+    }
+
+    if (targetMode === 'country' && !selectedCountry) {
+      setSubmitError('Pick a country or switch target mode.');
+      return;
+    }
+
+    if (useLMStudio && !lmConnected) {
+      setSubmitError('LM Studio is not reachable. Start LM Studio locally and refresh models before submitting.');
       return;
     }
 
@@ -480,457 +297,449 @@ export default function GeneratePage() {
       priority,
       distributionConfig: distMode === 'fixed' ? { mode: 'fixed', loopLength } : { mode: 'auto' },
       ...(description ? { description } : {}),
-      ...(useLMStudio && selectedModel ? {
-        modelConfig: {
-          architectModel: `lmstudio:${selectedModel}`,
-          drafterModel: `lmstudio:${selectedModel}`,
-          repairModel: `lmstudio:${selectedModel}`,
-          contentQualityModel: `lmstudio:${selectedModel}`,
-          narrativeReviewModel: `lmstudio:${selectedModel}`,
-        },
-      } : {}),
+      ...(dryRun ? { dryRun: true } : {}),
+      ...(useLMStudio && selectedModel
+        ? {
+            modelConfig: {
+              architectModel: `lmstudio:${selectedModel}`,
+              drafterModel: `lmstudio:${selectedModel}`,
+              repairModel: `lmstudio:${selectedModel}`,
+              contentQualityModel: `lmstudio:${selectedModel}`,
+              narrativeReviewModel: `lmstudio:${selectedModel}`,
+            },
+          }
+        : {}),
     };
 
-    if (targetMode === 'regions' && selectedRegions.size > 0) {
+    if (targetMode === 'regions') {
       body.regions = Array.from(selectedRegions);
-    } else if (targetMode === 'country' && selectedCountry) {
+    } else if (targetMode === 'country') {
       body.region = selectedCountry;
     }
 
     try {
-      const res = await fetch('/api/generate', {
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = (await res.json()) as { jobId?: string; error?: string };
-      if (!res.ok) {
-        setSubmitError(data.error ?? 'Failed to create job');
+
+      const data = (await response.json()) as { jobId?: string; error?: string };
+      if (!response.ok) {
+        setSubmitError(data.error ?? 'Failed to create job.');
         return;
       }
-      setJobId(data.jobId!);
+
+      setJobId(data.jobId ?? null);
     } catch {
-      setSubmitError('Network error');
+      setSubmitError('Network error while creating the job.');
     } finally {
       setSubmitting(false);
     }
   }
 
   const expectedCount = selectedBundles.size * count;
+  const selectedBundleData = ALL_BUNDLES.filter((bundle) => selectedBundles.has(bundle.id));
+  const targetSummary =
+    targetMode === 'all'
+      ? 'Global pool'
+      : targetMode === 'regions'
+        ? `${selectedRegions.size || 0} region${selectedRegions.size === 1 ? '' : 's'} tagged`
+        : selectedCountry || 'Single country target';
+
+  const selectedCountrySummary = useMemo(
+    () => countries.find((country) => country.id === selectedCountry),
+    [countries, selectedCountry]
+  );
 
   return (
-    <div className="p-6 max-w-[1200px]">
-      <PageHeader section="Generation" title="Generate Scenarios" />
+    <div className="mx-auto max-w-[1600px]">
+      <ScreenHeader
+        section="Content Operations"
+        title="Scenario Generation"
+        subtitle="Compose a generation job as a single mission plan: choose bundle coverage, target scope, distribution profile, and provider routing, then monitor the job in the same command surface."
+        eyebrow="Create"
+        nav={<OperationsNav />}
+        actions={
+          <>
+            <Link href="/jobs" className="btn btn-ghost">
+              Review Queue
+            </Link>
+            <Link href="/scenarios" className="btn btn-tactical">
+              Open Library
+            </Link>
+          </>
+        }
+      />
 
-      <form onSubmit={handleSubmit}>
-        <div className="grid xl:grid-cols-[1fr_340px] gap-6 items-start">
+      <div className="mb-6 grid gap-4 lg:grid-cols-4">
+        <DataStat label="Bundle Targets" value={selectedBundles.size} detail="Selected content domains" accent="blue" />
+        <DataStat label="Scenario Output" value={expectedCount || 0} detail={`${count} per bundle`} accent="gold" />
+        <DataStat label="Target Scope" value={targetSummary} detail={targetMode === 'country' && selectedCountrySummary ? selectedCountrySummary.name : 'Route definition'} />
+        <DataStat label="Provider Path" value={useLMStudio ? 'LM Studio' : 'Default stack'} detail={useLMStudio ? `${selectedModel || 'model pending'} · ${lmConnected ? 'connected' : 'unreachable'}` : 'standard generation route'} />
+      </div>
 
-          {/* LEFT — Configuration */}
-          <div className="space-y-4">
-
-            {/* Bundles */}
-            <div className="tech-border bg-[var(--background-elevated)] p-5">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--foreground-subtle)]">
-                  Bundles <span className="text-[var(--error)]">*</span>
-                </span>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedBundles(new Set(ALL_BUNDLES.map((b) => b.id)))}
-                    className="text-[10px] font-mono uppercase tracking-wider text-[var(--foreground-subtle)] hover:text-[var(--foreground)] transition-colors"
-                  >
-                    Select All
-                  </button>
-                  <span className="text-[var(--foreground-subtle)]">·</span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedBundles(new Set())}
-                    className="text-[10px] font-mono uppercase tracking-wider text-[var(--foreground-subtle)] hover:text-[var(--foreground)] transition-colors"
-                  >
-                    Clear
-                  </button>
-                </div>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_420px]">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <CommandPanel className="p-5 md:p-6">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <div className="section-kicker mb-2">Bundle Selection</div>
+                <h2 className="text-xl font-semibold text-foreground">Mission Coverage</h2>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {ALL_BUNDLES.map((bundle) => {
-                  const selected = selectedBundles.has(bundle.id);
-                  const color = BUNDLE_ACCENT_COLORS[bundle.id];
+              <div className="text-xs text-[var(--foreground-muted)]">Pick one or more content lanes.</div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+              {ALL_BUNDLES.map((bundle) => {
+                const active = selectedBundles.has(bundle.id);
+                const counts = bundleCounts[bundle.id];
+                return (
+                  <button
+                    key={bundle.id}
+                    type="button"
+                    onClick={() => toggleBundle(bundle.id)}
+                    className={`rounded-[var(--radius-tight)] border p-4 text-left transition-colors ${
+                      active
+                        ? 'border-[var(--accent-primary)] bg-[rgba(25,105,220,0.12)]'
+                        : 'border-[var(--border)] bg-[rgba(255,255,255,0.02)] hover:border-[var(--border-strong)] hover:bg-[rgba(255,255,255,0.03)]'
+                    }`}
+                    style={{ boxShadow: active ? `inset 3px 0 0 ${BUNDLE_ACCENT_COLORS[bundle.id]}` : undefined }}
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">{bundle.label}</div>
+                        <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">
+                          {counts ? `${counts.total} total · ${counts.active} active` : 'count loading'}
+                        </div>
+                      </div>
+                      <span
+                        className={`h-2.5 w-2.5 rounded-full ${active ? 'bg-[var(--accent-secondary)]' : 'bg-[var(--foreground-subtle)]'}`}
+                      />
+                    </div>
+                    <p className="text-sm leading-6 text-[var(--foreground-muted)]">{bundle.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </CommandPanel>
+
+          <CommandPanel className="p-5 md:p-6">
+            <div className="mb-5">
+              <div className="section-kicker mb-2">Targeting</div>
+              <h2 className="text-xl font-semibold text-foreground">Scope Control</h2>
+            </div>
+
+            <div className="mb-5">
+              <SegmentedControl
+                value={targetMode}
+                onChange={setTargetMode}
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'regions', label: 'Regions' },
+                  { value: 'country', label: 'Country' },
+                ]}
+              />
+            </div>
+
+            {targetMode === 'regions' ? (
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {ALL_REGIONS.map((region) => {
+                  const active = selectedRegions.has(region.id);
                   return (
                     <button
-                      key={bundle.id}
+                      key={region.id}
                       type="button"
-                      onClick={() => toggleBundle(bundle.id)}
-                      className={`flex items-start gap-2 p-3 text-left transition-all rounded-[2px] ${
-                        selected
-                          ? 'border border-[var(--border-strong)]'
-                          : 'border border-[var(--border)] hover:border-[var(--border-strong)] hover:bg-[var(--background-muted)]'
+                      onClick={() => toggleRegion(region.id)}
+                      className={`rounded-[var(--radius-tight)] border px-4 py-3 text-left text-sm transition-colors ${
+                        active
+                          ? 'border-[var(--accent-secondary)] bg-[rgba(212,170,44,0.1)] text-foreground'
+                          : 'border-[var(--border)] text-[var(--foreground-muted)] hover:border-[var(--border-strong)] hover:text-foreground'
                       }`}
-                      style={
-                        selected
-                          ? { borderLeft: `3px solid ${color}`, background: `${color}14` }
-                          : undefined
-                      }
                     >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-mono font-medium text-[var(--foreground)]">{bundle.label}</span>
-                          {bundle.id === 'dick_mode' && (
-                            <span className="text-[9px] font-mono uppercase text-[var(--error)] border border-[var(--error)]/30 px-0.5">
-                              Dark
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[10px] text-[var(--foreground-subtle)] leading-tight mt-0.5">
-                          {bundle.description}
-                        </p>
-                      </div>
+                      {region.label}
                     </button>
                   );
                 })}
               </div>
-            </div>
+            ) : null}
 
-            {/* Count */}
-            <div className="tech-border bg-[var(--background-elevated)] p-5">
-              <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--foreground-subtle)] mb-4">
-                Count per Bundle
-              </div>
-              <div className="flex items-center gap-6">
-                <input
-                  type="range"
-                  min={1}
-                  max={50}
-                  value={count}
-                  onChange={(e) => setCount(parseInt(e.target.value, 10))}
-                  className="flex-1 accent-[var(--accent-primary)]"
-                />
-                <div className="text-right">
-                  <span className="text-4xl font-mono font-bold text-[var(--foreground)]">{count}</span>
-                  <div className="text-[10px] font-mono text-[var(--foreground-subtle)]">per bundle</div>
-                </div>
-              </div>
-              {selectedBundles.size > 0 && (
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-xl font-mono font-bold text-[var(--accent-primary)]">{expectedCount}</span>
-                  <span className="text-xs font-mono text-[var(--foreground-muted)]">
-                    scenarios expected · {selectedBundles.size} bundles × {count}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Targeting */}
-            <div className="tech-border bg-[var(--background-elevated)] p-5">
-              <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--foreground-subtle)] mb-4">
-                Targeting
-              </div>
-              <div className="flex gap-0 border border-[var(--border-strong)] w-fit mb-4">
-                {(['all', 'regions', 'country'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setTargetMode(mode)}
-                    className={`px-4 py-1.5 text-xs font-mono uppercase tracking-wide transition-colors border-r border-[var(--border-strong)] last:border-r-0 ${
-                      targetMode === mode
-                        ? 'bg-[var(--accent-primary)] text-[var(--background)]'
-                        : 'bg-transparent text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-muted)]'
-                    }`}
-                  >
-                    {mode === 'all' ? 'All Regions' : mode}
-                  </button>
-                ))}
-              </div>
-
-              {targetMode === 'regions' && (
-                <div className="grid grid-cols-3 gap-1.5">
-                  {ALL_REGIONS.map((r) => {
-                    const checked = selectedRegions.has(r.id);
-                    return (
-                      <label
-                        key={r.id}
-                        className={`flex items-center gap-1.5 px-2 py-1 cursor-pointer border rounded-[2px] text-xs transition-colors ${
-                          checked
-                            ? 'border-[var(--accent-primary)]/40 bg-[var(--accent-muted)] text-[var(--foreground)]'
-                            : 'border-[var(--border)] text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-muted)]'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleRegion(r.id)}
-                          className="accent-[var(--accent-primary)]"
-                        />
-                        {r.label}
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-
-              {targetMode === 'country' && (
+            {targetMode === 'country' ? (
+              <div>
+                <label className="section-kicker mb-2 block">Country Target</label>
                 <select
                   value={selectedCountry}
-                  onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="w-full bg-[var(--background)] border border-[var(--border-strong)] text-[var(--foreground)] text-sm font-mono px-2 py-1.5 rounded-[2px] focus:outline-none focus:border-[var(--accent-primary)]"
+                  onChange={(event) => setSelectedCountry(event.target.value)}
+                  className="input-shell"
                 >
-                  <option value="">— Select country —</option>
-                  {countries.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.region})
+                  <option value="">Select a country</option>
+                  {countries.map((country) => (
+                    <option key={country.id} value={country.id}>
+                      {country.name} · {country.region}
                     </option>
                   ))}
                 </select>
-              )}
-            </div>
-
-            {/* Distribution */}
-            <div className="tech-border bg-[var(--background-elevated)] p-5">
-              <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--foreground-subtle)] mb-4">
-                Distribution Mode
               </div>
-              <div className="flex gap-0 border border-[var(--border-strong)] w-fit mb-4">
-                {(['auto', 'fixed'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setDistMode(mode)}
-                    className={`px-4 py-1.5 text-xs font-mono uppercase tracking-wide transition-colors border-r border-[var(--border-strong)] last:border-r-0 ${
-                      distMode === mode
-                        ? 'bg-[var(--accent-primary)] text-[var(--background)]'
-                        : 'bg-transparent text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-muted)]'
-                    }`}
-                  >
-                    {mode}
-                  </button>
-                ))}
+            ) : null}
+          </CommandPanel>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <CommandPanel className="p-5 md:p-6">
+              <div className="mb-5">
+                <div className="section-kicker mb-2">Distribution</div>
+                <h2 className="text-xl font-semibold text-foreground">Pacing Profile</h2>
               </div>
 
-              {distMode === 'fixed' && (
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-[var(--foreground-muted)]">Loop length:</span>
-                  <div className="flex gap-0 border border-[var(--border-strong)] w-fit">
-                    {([1, 2, 3] as const).map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => setLoopLength(v)}
-                        className={`px-4 py-1.5 text-xs font-mono uppercase tracking-wide transition-colors border-r border-[var(--border-strong)] last:border-r-0 ${
-                          loopLength === v
-                            ? 'bg-[var(--accent-primary)] text-[var(--background)]'
-                            : 'bg-transparent text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-muted)]'
-                        }`}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
+              <div className="space-y-5">
+                <div>
+                  <label className="section-kicker mb-2 block">Scenarios Per Bundle</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={count}
+                    onChange={(event) => setCount(Number(event.target.value))}
+                    className="input-shell"
+                  />
                 </div>
-              )}
-            </div>
 
-            {/* Priority */}
-            <div className="tech-border bg-[var(--background-elevated)] p-5">
-              <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--foreground-subtle)] mb-4">
-                Priority
-              </div>
-              <div className="flex gap-0 border border-[var(--border-strong)] w-fit">
-                {(['low', 'normal', 'high'] as const).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPriority(p)}
-                    className={`px-4 py-1.5 text-xs font-mono uppercase tracking-wide transition-colors border-r border-[var(--border-strong)] last:border-r-0 ${
-                      priority === p
-                        ? 'bg-[var(--accent-primary)] text-[var(--background)]'
-                        : 'bg-transparent text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-muted)]'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="tech-border bg-[var(--background-elevated)] p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--foreground-subtle)]">
-                  Model Provider
-                </span>
-              </div>
-              <SegmentedControl
-                options={['openai', 'lmstudio'] as const}
-                value={useLMStudio ? 'lmstudio' : 'openai'}
-                onChange={(v) => {
-                  const selecting = v === 'lmstudio';
-                  setUseLMStudio(selecting);
-                  if (selecting) startEmulator();
-                }}
-                labelMap={{ openai: 'OpenAI', lmstudio: 'LM Studio' }}
-              />
-              {useLMStudio && (
-                <div className="mt-4">
-                  {emulatorStatus === 'starting' ? (
-                    <div className="text-[10px] font-mono text-[var(--foreground-subtle)]">Starting Firebase emulator…</div>
-                  ) : emulatorStatus === 'error' ? (
-                    <div className="text-[10px] font-mono text-[var(--error)]">
-                      {emulatorStartError ?? 'Emulator failed to start'}
-                    </div>
-                  ) : lmLoading ? (
-                    <div className="text-[10px] font-mono text-[var(--foreground-subtle)]">Checking connection…</div>
-                  ) : !lmConnected ? (
-                    <div className="text-[10px] font-mono text-[var(--warning)]">
-                      LM Studio not reachable at localhost:1234
-                    </div>
-                  ) : lmModels.length === 0 ? (
-                    <div className="text-[10px] font-mono text-[var(--foreground-subtle)]">
-                      Connected — no models loaded
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="text-[10px] font-mono text-[var(--foreground-subtle)] mb-1">Model</div>
-                      <select
-                        value={selectedModel}
-                        onChange={(e) => setSelectedModel(e.target.value)}
-                        className="w-full bg-[var(--background)] border border-[var(--border-strong)] text-[var(--foreground)] text-sm font-mono px-2 py-1.5 rounded-[2px] focus:outline-none focus:border-[var(--accent-primary)]"
-                      >
-                        {lmModels.map((m) => (
-                          <option key={m} value={m}>{m}</option>
-                        ))}
-                      </select>
-                      <div className="text-[10px] font-mono text-[var(--foreground-subtle)] mt-2">
-                        Local inference is sequential — expect 5–30 min per bundle
-                      </div>
-                    </div>
-                  )}
+                <div>
+                  <label className="section-kicker mb-2 block">Distribution Mode</label>
+                  <SegmentedControl
+                    value={distMode}
+                    onChange={setDistMode}
+                    options={[
+                      { value: 'auto', label: 'Auto' },
+                      { value: 'fixed', label: 'Fixed' },
+                    ]}
+                  />
                 </div>
-              )}
-            </div>
 
-            {/* Description */}
-            <div className="tech-border bg-[var(--background-elevated)] p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--foreground-subtle)]">
-                  Description
-                </span>
-                <span className="text-[10px] font-mono text-[var(--foreground-subtle)]">(optional)</span>
-              </div>
-              <input
-                type="text"
-                maxLength={200}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of this generation run..."
-                className="w-full bg-[var(--background)] border border-[var(--border-strong)] text-[var(--foreground)] text-sm font-mono px-2 py-1.5 rounded-[2px] focus:outline-none focus:border-[var(--accent-primary)] placeholder-[var(--foreground-subtle)]"
-              />
-              <div className="text-[10px] font-mono text-[var(--foreground-subtle)] mt-1 text-right">
-                {description.length}/200
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT — Sticky mission brief */}
-          <div className="self-start sticky top-6">
-            <div className="tech-border bg-[var(--background-elevated)] p-5">
-              <div className="text-[10px] font-mono uppercase tracking-widest text-[var(--foreground-subtle)] mb-4">
-                Mission Brief
-              </div>
-
-              {selectedBundles.size === 0 ? (
-                <div className="text-xs font-mono text-[var(--foreground-subtle)] py-2">
-                  — select bundles to configure —
-                </div>
-              ) : (
-                <div className="space-y-4">
+                {distMode === 'fixed' ? (
                   <div>
-                    <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--foreground-subtle)] mb-1">
-                      Scenarios
-                    </div>
-                    <div className="text-3xl font-mono font-bold text-[var(--accent-primary)] tabular-nums">
-                      {expectedCount}
+                    <label className="section-kicker mb-2 block">Loop Length</label>
+                    <SegmentedControl
+                      value={String(loopLength) as '1' | '2' | '3'}
+                      onChange={(value) => setLoopLength(Number(value) as 1 | 2 | 3)}
+                      options={[
+                        { value: '1', label: '1' },
+                        { value: '2', label: '2' },
+                        { value: '3', label: '3' },
+                      ]}
+                    />
+                  </div>
+                ) : null}
+
+                <div>
+                  <label className="section-kicker mb-2 block">Priority</label>
+                  <SegmentedControl
+                    value={priority}
+                    onChange={setPriority}
+                    options={[
+                      { value: 'low', label: 'Low' },
+                      { value: 'normal', label: 'Normal' },
+                      { value: 'high', label: 'High' },
+                    ]}
+                  />
+                </div>
+              </div>
+            </CommandPanel>
+
+            <CommandPanel className="p-5 md:p-6">
+              <div className="mb-5">
+                <div className="section-kicker mb-2">Provider Routing</div>
+                <h2 className="text-xl font-semibold text-foreground">Execution Path</h2>
+              </div>
+
+              <div className="space-y-5">
+                <div className="flex items-center justify-between gap-4 rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3">
+                  <div>
+                    <div className="text-sm font-medium text-foreground">LM Studio local model</div>
+                    <div className="text-xs text-[var(--foreground-muted)]">
+                      Route generation through a local LM Studio model. Requires the Firebase emulator running locally — generation in deployed Cloud Functions cannot reach localhost.
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setUseLMStudio((value) => !value)}
+                    className={`rounded-full border px-3 py-2 text-[10px] font-mono uppercase tracking-[0.18em] ${
+                      useLMStudio
+                        ? 'border-[var(--accent-secondary)] bg-[rgba(212,170,44,0.12)] text-foreground'
+                        : 'border-[var(--border)] text-[var(--foreground-muted)]'
+                    }`}
+                  >
+                    {useLMStudio ? 'Enabled' : 'Disabled'}
+                  </button>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-                    <div>
-                      <div className="text-[10px] text-[var(--foreground-subtle)] uppercase tracking-wider mb-0.5">
-                        Bundles
-                      </div>
-                      <div className="text-[var(--foreground)]">{selectedBundles.size}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[var(--foreground-subtle)] uppercase tracking-wider mb-0.5">
-                        Priority
-                      </div>
-                      <div className={priority === 'high' ? 'text-[var(--warning)]' : priority === 'low' ? 'text-[var(--foreground-muted)]' : 'text-[var(--foreground)]'}>
-                        {priority.toUpperCase()}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[var(--foreground-subtle)] uppercase tracking-wider mb-0.5">
-                        Target
-                      </div>
-                      <div className="text-[var(--foreground)]">
-                        {targetMode === 'all' ? 'All Regions' : targetMode}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[var(--foreground-subtle)] uppercase tracking-wider mb-0.5">
-                        Distribution
-                      </div>
-                      <div className="text-[var(--foreground)]">
-                        {distMode === 'fixed' ? `Fixed ×${loopLength}` : 'Auto'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[var(--foreground-subtle)] uppercase tracking-wider mb-0.5">
-                        Model
-                      </div>
-                      <div className="text-[var(--foreground)]">
-                        {useLMStudio && selectedModel
-                          ? `LM Studio (${selectedModel})`
-                          : 'OpenAI (default)'}
-                      </div>
-                    </div>
+                <div className="rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <span className="section-kicker">LM Studio Status</span>
+                    <StatusBadge status={lmConnected ? 'completed' : 'pending'} />
                   </div>
-
-                  <div className="pt-3 border-t border-[var(--border)] flex flex-wrap gap-1">
-                    {Array.from(selectedBundles).map((id) => (
-                      <BundleBadge key={id} bundle={id} />
-                    ))}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={refreshLmStudio} className="btn btn-ghost" disabled={lmLoading}>
+                      {lmLoading ? 'Refreshing…' : 'Refresh Models'}
+                    </button>
+                    <span className="text-xs text-[var(--foreground-muted)]">
+                      {lmConnected ? `${lmModels.length} model${lmModels.length === 1 ? '' : 's'} available` : 'Not reachable at localhost:1234'}
+                    </span>
                   </div>
                 </div>
+
+                {useLMStudio ? (
+                  <div>
+                    <label className="section-kicker mb-2 block">Local Model</label>
+                    <select
+                      value={selectedModel}
+                      onChange={(event) => setSelectedModel(event.target.value)}
+                      className="input-shell"
+                    >
+                      <option value="">Select a model</option>
+                      {lmModels.map((model) => (
+                        <option key={model} value={model}>
+                          {model}
+                        </option>
+                      ))}
+                    </select>
+                    {lmModels.length === 0 ? (
+                      <div className="mt-2 text-xs text-[var(--warning)]">
+                        No models found. Start LM Studio, load a model, then click Refresh Models.
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </CommandPanel>
+          </div>
+
+          <CommandPanel className="p-5 md:p-6">
+            <div className="mb-4">
+              <div className="section-kicker mb-2">Mission Note</div>
+              <h2 className="text-xl font-semibold text-foreground">Instruction Overlay</h2>
+            </div>
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Optional guidance for this run: editorial focus, current event framing, excluded topics, or pacing instructions."
+              rows={5}
+              className="input-shell resize-y"
+            />
+          </CommandPanel>
+
+          <CommandPanel className="p-5 md:p-6">
+            <div className="mb-4">
+              <div className="section-kicker mb-2">Output Mode</div>
+              <h2 className="text-xl font-semibold text-foreground">Dry Run</h2>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-sm font-medium text-foreground">Hold for review before saving</div>
+                <div className="text-xs text-[var(--foreground-muted)]">
+                  Generate scenarios but stage them in a review queue. Accept or reject each one before they enter the library.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDryRun((v) => !v)}
+                className={`rounded-full border px-3 py-2 text-[10px] font-mono uppercase tracking-[0.18em] ${
+                  dryRun
+                    ? 'border-[var(--accent-secondary)] bg-[rgba(212,170,44,0.12)] text-foreground'
+                    : 'border-[var(--border)] text-[var(--foreground-muted)]'
+                }`}
+              >
+                {dryRun ? 'On' : 'Off'}
+              </button>
+            </div>
+          </CommandPanel>
+
+          {submitError ? (
+            <CommandPanel tone="danger" className="p-4 text-sm text-[var(--error)]">
+              {submitError}
+            </CommandPanel>
+          ) : null}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="submit" className="btn btn-command" disabled={submitting}>
+              {submitting ? 'Submitting Mission…' : dryRun ? 'Launch Dry Run' : 'Launch Generation Job'}
+            </button>
+            <Link href="/jobs" className="btn btn-ghost">
+              Open Job Queue
+            </Link>
+          </div>
+        </form>
+
+        <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+          <CommandPanel className="p-5 md:p-6">
+            <div className="mb-5">
+              <div className="section-kicker mb-2">Mission Brief</div>
+              <h2 className="text-xl font-semibold text-foreground">Current Submission</h2>
+            </div>
+
+            <div className="mb-5 flex flex-wrap gap-2">
+              {selectedBundleData.length > 0 ? (
+                selectedBundleData.map((bundle) => <BundleBadge key={bundle.id} bundle={bundle.id} />)
+              ) : (
+                <span className="text-sm text-[var(--foreground-muted)]">No bundles selected.</span>
               )}
+            </div>
 
-              <div className="mt-6 pt-4 border-t border-[var(--border)]">
-                {submitError && (
-                  <div className="text-xs text-[var(--error)] font-mono mb-3">{submitError}</div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={submitting || selectedBundles.size === 0 || (useLMStudio && emulatorStatus === 'starting')}
-                  className="btn btn-command w-full py-3 text-sm tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {submitting
-                    ? '— CREATING JOB —'
-                    : selectedBundles.size === 0
-                    ? 'SELECT BUNDLES TO DEPLOY'
-                    : `DEPLOY — ${expectedCount} SCENARIOS`}
-                </button>
+            <div className="space-y-4 text-sm text-[var(--foreground-muted)]">
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+                <span>Targeting</span>
+                <span className="data-value text-foreground">{targetSummary}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+                <span>Distribution</span>
+                <span className="data-value text-foreground">{distMode === 'fixed' ? `Fixed loop ${loopLength}` : 'Auto'}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+                <span>Priority</span>
+                <span className="data-value text-foreground">{priority}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Provider</span>
+                <span className="data-value text-foreground">{useLMStudio ? selectedModel || 'LM Studio' : 'Default'}</span>
               </div>
             </div>
 
-            {jobId && (
-              <div className="mt-6">
-                <div className="tech-border bg-[var(--background-elevated)] p-5">
-                  <JobProgressCard jobId={jobId} />
-                </div>
+            {description ? (
+              <div className="mt-5 rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-4 py-3 text-sm leading-6 text-[var(--foreground-muted)]">
+                {description}
               </div>
-            )}
-          </div>
+            ) : null}
+          </CommandPanel>
+
+          {jobId ? <JobMonitor jobId={jobId} /> : null}
+
+          <CommandPanel className="p-5 md:p-6">
+            <div className="mb-4">
+              <div className="section-kicker mb-2">Readiness</div>
+              <h2 className="text-xl font-semibold text-foreground">Launch Gate</h2>
+            </div>
+            <div className="space-y-3 text-sm text-[var(--foreground-muted)]">
+              <div className="flex items-center justify-between gap-3 rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3">
+                <span>Bundle selection</span>
+                <span className={`data-value ${selectedBundles.size > 0 ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`}>
+                  {selectedBundles.size > 0 ? 'ready' : 'missing'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3">
+                <span>Target scope</span>
+                <span className={`data-value ${(targetMode === 'all' || (targetMode === 'regions' && selectedRegions.size > 0) || (targetMode === 'country' && selectedCountry)) ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`}>
+                  {(targetMode === 'all' || (targetMode === 'regions' && selectedRegions.size > 0) || (targetMode === 'country' && selectedCountry)) ? 'ready' : 'incomplete'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3">
+                <span>Local routing</span>
+                <span className={`data-value ${!useLMStudio || lmConnected ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`}>
+                  {!useLMStudio ? 'default' : lmConnected ? 'ready' : 'unreachable'}
+                </span>
+              </div>
+            </div>
+          </CommandPanel>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

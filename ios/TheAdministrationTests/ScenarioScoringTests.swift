@@ -399,5 +399,84 @@ final class TemplateEngineTests: XCTestCase {
         XCTAssertEqual(resolved.description, "United Kingdom and the European Union responded.")
         XCTAssertEqual(resolved.options.first?.text, "Brief United States and European Union.")
     }
+
+    func testMissingRequiredTokensFlagsBorderRivalScenarioWhenCountryHasNoBorderRival() {
+        let playerCountry = makeCountry(
+            id: "player",
+            name: "United States",
+            geopoliticalProfile: GeopoliticalProfile(
+                neighbors: [
+                    CountryRelationship(countryId: "canada", type: "neutral", strength: 40.0, treaty: nil, sharedBorder: true),
+                    CountryRelationship(countryId: "mexico", type: "neutral", strength: 35.0, treaty: nil, sharedBorder: true)
+                ],
+                allies: [],
+                adversaries: [],
+                tags: [],
+                governmentCategory: .liberalDemocracy,
+                regimeStability: 70.0
+            )
+        )
+        let canada = makeCountry(id: "canada", name: "Canada")
+        let mexico = makeCountry(id: "mexico", name: "Mexico")
+        let scenario = Scenario(
+            id: "sc_border_rival",
+            title: "Responding To Neighbor Tariffs",
+            description: "{the_border_rival} has imposed significant tariffs on key exports.",
+            options: [Option(id: "option_1", text: "Call {the_border_rival}.")]
+        )
+
+        TemplateEngine.shared.setCountries([playerCountry, canada, mexico])
+        defer { TemplateEngine.shared.setCountries([]) }
+
+        let missing = TemplateEngine.shared.missingRequiredTokens(
+            for: scenario,
+            country: playerCountry,
+            gameState: makeGameState(countryId: playerCountry.id)
+        )
+
+        XCTAssertEqual(missing, ["the_border_rival"])
+        XCTAssertFalse(
+            TemplateEngine.shared.canResolveScenarioWithoutFallback(
+                scenario,
+                country: playerCountry,
+                gameState: makeGameState(countryId: playerCountry.id)
+            )
+        )
+    }
+
+    func testMissingRequiredTokensAllowsScenarioWhenBorderRivalExists() {
+        let playerCountry = makeCountry(
+            id: "player",
+            name: "Test Republic",
+            geopoliticalProfile: GeopoliticalProfile(
+                neighbors: [
+                    CountryRelationship(countryId: "neighbor_rival", type: "rival", strength: 80.0, treaty: nil, sharedBorder: true)
+                ],
+                allies: [],
+                adversaries: [],
+                tags: [],
+                governmentCategory: .liberalDemocracy,
+                regimeStability: 70.0
+            )
+        )
+        let borderRival = makeCountry(id: "neighbor_rival", name: "Hostile Neighbor")
+        let scenario = Scenario(
+            id: "sc_border_rival_present",
+            title: "Border Incident",
+            description: "{the_border_rival} has moved troops closer to the frontier.",
+            options: [Option(id: "option_1", text: "Warn {the_border_rival}.")]
+        )
+
+        TemplateEngine.shared.setCountries([playerCountry, borderRival])
+        defer { TemplateEngine.shared.setCountries([]) }
+
+        XCTAssertTrue(
+            TemplateEngine.shared.canResolveScenarioWithoutFallback(
+                scenario,
+                country: playerCountry,
+                gameState: makeGameState(countryId: playerCountry.id)
+            )
+        )
+    }
 }
 

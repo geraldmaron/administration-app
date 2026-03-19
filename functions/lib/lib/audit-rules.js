@@ -20,9 +20,11 @@ exports.deterministicFix = deterministicFix;
 exports.heuristicFix = heuristicFix;
 exports.getAuditRulesPrompt = getAuditRulesPrompt;
 exports.validateConceptConfig = validateConceptConfig;
-const logic_parameters_1 = require("./logic-parameters");
+const token_registry_1 = require("./token-registry");
+Object.defineProperty(exports, "CANONICAL_ROLE_IDS", { enumerable: true, get: function () { return token_registry_1.CANONICAL_ROLE_IDS; } });
 const bundleIds_1 = require("../data/schemas/bundleIds");
 Object.defineProperty(exports, "isValidBundleId", { enumerable: true, get: function () { return bundleIds_1.isValidBundleId; } });
+const country_catalog_1 = require("./country-catalog");
 // Counts real sentence-ending punctuation, ignoring periods inside common
 // abbreviations (U.S., U.K., Dr., Mr., Mrs., St., vs., etc.) that would
 // otherwise produce false positive sentence-count audit errors.
@@ -38,21 +40,6 @@ function countWords(text) {
 // Re-exports (schema-level constants that stay in code)
 // ---------------------------------------------------------------------------
 exports.VALID_BUNDLE_IDS = new Set(bundleIds_1.ALL_BUNDLE_IDS);
-exports.CANONICAL_ROLE_IDS = new Set([
-    'role_executive',
-    'role_diplomacy',
-    'role_defense',
-    'role_economy',
-    'role_justice',
-    'role_health',
-    'role_commerce',
-    'role_labor',
-    'role_interior',
-    'role_energy',
-    'role_environment',
-    'role_transport',
-    'role_education',
-]);
 let _config = null;
 function getAuditConfig() {
     if (!_config) {
@@ -107,31 +94,22 @@ function buildBannedCountryPhrases(countriesDoc) {
  */
 async function initializeAuditConfig(db) {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
-    const [metricsSnap, contentRulesSnap, genConfigSnap, countriesCollSnap] = await Promise.all([
+    const [metricsSnap, contentRulesSnap, genConfigSnap, countryCatalog] = await Promise.all([
         db.doc('world_state/metrics').get(),
         db.doc('world_state/content_rules').get(),
         db.doc('world_state/generation_config').get(),
-        db.collection('countries').get(),
+        (0, country_catalog_1.loadCountryCatalog)(db),
     ]);
     const metricsData = (_b = (_a = metricsSnap.data()) === null || _a === void 0 ? void 0 : _a.metrics) !== null && _b !== void 0 ? _b : [];
     const contentRules = (_c = contentRulesSnap.data()) !== null && _c !== void 0 ? _c : {};
     const genConfig = (_d = genConfigSnap.data()) !== null && _d !== void 0 ? _d : {};
-    let countriesDoc;
-    if (!countriesCollSnap.empty) {
-        const result = {};
-        countriesCollSnap.forEach((doc) => { result[doc.id] = doc.data(); });
-        countriesDoc = result;
-    }
-    else {
-        console.error('[AuditRules] countries/ collection is empty — aborting');
-        throw new Error('[AuditRules] countries/ collection is empty');
-    }
+    const countriesDoc = countryCatalog.countries;
     // Build metric index from Firebase
     const validMetricIds = new Set(metricsData.map((m) => m.id));
     const inverseMetrics = new Set(metricsData.filter((m) => m.inverse === true).map((m) => m.id));
     const metricMagnitudeCaps = {};
     const metricToRoles = {};
-    const validRoleIds = new Set(exports.CANONICAL_ROLE_IDS);
+    const validRoleIds = new Set(token_registry_1.CANONICAL_ROLE_IDS);
     for (const m of metricsData) {
         if (m.effectMagnitudeCap != null)
             metricMagnitudeCaps[m.id] = m.effectMagnitudeCap;
@@ -160,6 +138,9 @@ async function initializeAuditConfig(db) {
             govTypesByCountryId[id] = govType;
         }
     }
+    const defaultMetricMappings = {
+        metric_commerce_role: 'metric_trade',
+    };
     _config = {
         validMetricIds,
         validRoleIds,
@@ -168,9 +149,9 @@ async function initializeAuditConfig(db) {
         defaultCap: (_j = genConfig.effect_default_cap) !== null && _j !== void 0 ? _j : 4.2,
         metricToRoles,
         categoryDomainMetrics: (_k = genConfig.category_domain_metrics) !== null && _k !== void 0 ? _k : {},
-        metricMappings: (_l = genConfig.metric_mappings) !== null && _l !== void 0 ? _l : {},
+        metricMappings: Object.assign(Object.assign({}, defaultMetricMappings), ((_l = genConfig.metric_mappings) !== null && _l !== void 0 ? _l : {})),
         bannedPhrases,
-        validTokens: new Set(logic_parameters_1.ALL_TOKENS),
+        validTokens: new Set(token_registry_1.ALL_TOKENS),
         logicParameters: {
             duration: {
                 min: (_o = (_m = genConfig.effect_duration) === null || _m === void 0 ? void 0 : _m.min) !== null && _o !== void 0 ? _o : 1,
@@ -181,7 +162,7 @@ async function initializeAuditConfig(db) {
         govTypesByCountryId,
     };
     console.log(`[AuditRules] Config initialized: ${validMetricIds.size} metrics, ${validRoleIds.size} roles, ` +
-        `${bannedPhrases.length} banned phrases (${bannedCountryPhrases.length} from countries)`);
+        `${bannedPhrases.length} banned phrases (${bannedCountryPhrases.length} from countries, source=${countryCatalog.source.path})`);
 }
 // ---------------------------------------------------------------------------
 // Role helpers (using loaded config)
@@ -201,15 +182,16 @@ function getRelevantRolesForEffects(effects) {
 // Audit Logic
 // ---------------------------------------------------------------------------
 function auditScenario(scenario, bundleCategory, genMode = false) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u;
     const cfg = getAuditConfig();
     const issues = [];
     const add = (severity, rule, target, message, autoFixable = false) => issues.push({ severity, rule, target, message, autoFixable });
+    const actorPattern = (_a = scenario.metadata) === null || _a === void 0 ? void 0 : _a.actorPattern;
     if (!scenario.id)
         add('error', 'missing-id', scenario.id || '(none)', 'Scenario missing id');
-    if (!((_a = scenario.title) === null || _a === void 0 ? void 0 : _a.trim()))
+    if (!((_b = scenario.title) === null || _b === void 0 ? void 0 : _b.trim()))
         add('error', 'missing-title', scenario.id, 'Missing or empty title');
-    if (!((_b = scenario.description) === null || _b === void 0 ? void 0 : _b.trim()))
+    if (!((_c = scenario.description) === null || _c === void 0 ? void 0 : _c.trim()))
         add('error', 'missing-desc', scenario.id, 'Missing or empty description');
     // severity: 'error' for second-person narrative fields (description, option text); 'warn' for title
     const checkFraming = (text, fieldName, severity = 'warn', replacementHint = 'your administration') => {
@@ -372,7 +354,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
             containsRulingPartyToken(opt.outcomeHeadline) ||
             containsRulingPartyToken(opt.outcomeSummary) ||
             containsRulingPartyToken(opt.outcomeContext));
-    if (anyTextUsesRulingPartyToken && ((_c = scenario.metadata) === null || _c === void 0 ? void 0 : _c.applicable_countries) && scenario.metadata.applicable_countries !== 'all') {
+    if (anyTextUsesRulingPartyToken && ((_d = scenario.metadata) === null || _d === void 0 ? void 0 : _d.applicable_countries) && scenario.metadata.applicable_countries !== 'all') {
         const govTypesByCountryId = cfg.govTypesByCountryId || {};
         const ids = Array.isArray(scenario.metadata.applicable_countries)
             ? scenario.metadata.applicable_countries
@@ -391,6 +373,8 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
     if (scenario.metadata) {
         const meta = scenario.metadata;
         const validSeverities = ['low', 'medium', 'high', 'extreme', 'critical'];
+        const validScopeTiers = ['universal', 'regional', 'cluster', 'exclusive'];
+        const validSourceKinds = ['evergreen', 'news', 'neighbor', 'consequence'];
         if (meta.severity && !validSeverities.includes(meta.severity))
             add('error', 'invalid-severity', scenario.id, `Severity "${meta.severity}" is invalid`);
         const validUrgencies = ['low', 'medium', 'high', 'immediate'];
@@ -400,13 +384,50 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
             add('warn', 'invalid-difficulty', scenario.id, `Difficulty ${meta.difficulty} must be integer 1-5`, true);
         if (meta.applicable_countries && meta.applicable_countries !== 'all' && !Array.isArray(meta.applicable_countries))
             add('error', 'invalid-countries', scenario.id, 'applicable_countries must be "all" or string[]');
+        if (!meta.scopeTier)
+            add('error', 'missing-scope-tier', scenario.id, 'Scenario metadata must include scopeTier');
+        else if (!validScopeTiers.includes(meta.scopeTier))
+            add('error', 'invalid-scope-tier', scenario.id, `scopeTier "${meta.scopeTier}" is invalid`);
+        if (!((_e = meta.scopeKey) === null || _e === void 0 ? void 0 : _e.trim()))
+            add('error', 'missing-scope-key', scenario.id, 'Scenario metadata must include scopeKey');
+        if (!meta.sourceKind)
+            add('error', 'missing-source-kind', scenario.id, 'Scenario metadata must include sourceKind');
+        else if (!validSourceKinds.includes(meta.sourceKind))
+            add('error', 'invalid-source-kind', scenario.id, `sourceKind "${meta.sourceKind}" is invalid`);
+        if (meta.scopeTier === 'regional' && (!Array.isArray(meta.region_tags) || meta.region_tags.length === 0))
+            add('error', 'regional-missing-tags', scenario.id, 'Regional scenarios must include region_tags');
+        if (meta.scopeTier === 'cluster') {
+            if (!((_f = meta.clusterId) === null || _f === void 0 ? void 0 : _f.trim())) {
+                add('error', 'missing-cluster-id', scenario.id, 'Cluster scenarios must include clusterId');
+            }
+            if (meta.scopeKey && !meta.scopeKey.startsWith('cluster:')) {
+                add('error', 'invalid-scope-key', scenario.id, 'Cluster scenarios must use a cluster:* scopeKey');
+            }
+        }
+        if (meta.scopeTier === 'exclusive') {
+            if (!meta.exclusivityReason) {
+                add('error', 'missing-exclusivity-reason', scenario.id, 'Exclusive scenarios must include exclusivityReason');
+            }
+            if (!Array.isArray(meta.applicable_countries) || meta.applicable_countries.length === 0) {
+                add('error', 'exclusive-missing-countries', scenario.id, 'Exclusive scenarios must include applicable_countries');
+            }
+            if (meta.scopeKey && !meta.scopeKey.startsWith('country:')) {
+                add('error', 'invalid-scope-key', scenario.id, 'Exclusive scenarios must use a country:* scopeKey');
+            }
+        }
+        if (meta.scopeTier === 'regional' && meta.scopeKey && !meta.scopeKey.startsWith('region:')) {
+            add('error', 'invalid-scope-key', scenario.id, 'Regional scenarios must use a region:* scopeKey');
+        }
+        if (meta.scopeTier === 'universal' && meta.scopeKey && meta.scopeKey !== 'universal') {
+            add('error', 'invalid-scope-key', scenario.id, 'Universal scenarios must use the scopeKey "universal"');
+        }
     }
     const validPhases = ['root', 'mid', 'final'];
     if (scenario.phase && !validPhases.includes(scenario.phase))
         add('error', 'invalid-phase', scenario.id, `Phase "${scenario.phase}" is invalid`);
     for (const opt of scenario.options) {
         const oid = `${scenario.id}/${opt.id}`;
-        if (!((_d = opt.text) === null || _d === void 0 ? void 0 : _d.trim())) {
+        if (!((_g = opt.text) === null || _g === void 0 ? void 0 : _g.trim())) {
             add('error', 'empty-text', oid, 'Option text is empty');
             continue;
         }
@@ -446,7 +467,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
                 add('error', 'non-finite-value', eid, `Value non-finite: ${eff.value}`);
             }
             else {
-                const cap = (_e = cfg.metricMagnitudeCaps[eff.targetMetricId]) !== null && _e !== void 0 ? _e : cfg.defaultCap;
+                const cap = (_h = cfg.metricMagnitudeCaps[eff.targetMetricId]) !== null && _h !== void 0 ? _h : cfg.defaultCap;
                 if (Math.abs(eff.value) > cap)
                     add('warn', 'extreme-value', eid, `|${eff.value}| exceeds cap ${cap}`, true);
             }
@@ -464,15 +485,15 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
             if (cfg.inverseMetrics.has(eff.targetMetricId) && eff.value > 0)
                 add('error', 'inverse-positive', `${oid}/${eff.targetMetricId}`, `Positive val on inverse metric`, true);
         }
-        if (!((_f = opt.outcomeHeadline) === null || _f === void 0 ? void 0 : _f.trim()))
+        if (!((_j = opt.outcomeHeadline) === null || _j === void 0 ? void 0 : _j.trim()))
             add('error', 'missing-headline', oid, 'Missing headline', true);
-        if (!((_g = opt.outcomeSummary) === null || _g === void 0 ? void 0 : _g.trim()))
+        if (!((_k = opt.outcomeSummary) === null || _k === void 0 ? void 0 : _k.trim()))
             add('error', 'missing-summary', oid, 'Missing summary', true);
-        if (!((_h = opt.outcomeContext) === null || _h === void 0 ? void 0 : _h.trim()))
+        if (!((_l = opt.outcomeContext) === null || _l === void 0 ? void 0 : _l.trim()))
             add('error', 'missing-context', oid, 'Missing context', true);
-        if (((_j = opt.outcomeSummary) === null || _j === void 0 ? void 0 : _j.trim()) && opt.outcomeSummary.trim().length < 200)
+        if (((_m = opt.outcomeSummary) === null || _m === void 0 ? void 0 : _m.trim()) && opt.outcomeSummary.trim().length < 200)
             add('warn', 'short-summary', oid, `outcomeSummary is ${opt.outcomeSummary.trim().length} chars (min 200)`, true);
-        if ((_k = opt.outcomeContext) === null || _k === void 0 ? void 0 : _k.trim()) {
+        if ((_o = opt.outcomeContext) === null || _o === void 0 ? void 0 : _o.trim()) {
             const ctxLen = opt.outcomeContext.trim().length;
             if (ctxLen < 100)
                 add('error', 'short-article', oid, `outcomeContext is ${ctxLen} chars (min 100)`, true);
@@ -490,13 +511,13 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
                     add('error', 'missing-role-feedback', oid, `Missing feedback for ${role}`, true);
             }
             for (const fb of opt.advisorFeedback) {
-                if (!fb.roleId || !fb.stance || !((_l = fb.feedback) === null || _l === void 0 ? void 0 : _l.trim()))
+                if (!fb.roleId || !fb.stance || !((_p = fb.feedback) === null || _p === void 0 ? void 0 : _p.trim()))
                     add('error', 'invalid-advisor-feedback', oid, `Advisor feedback entry missing roleId, stance, or feedback text`);
                 else if (!cfg.validRoleIds.has(fb.roleId))
                     add('error', 'invalid-role-id', oid, `Unknown roleId: "${fb.roleId}". Must be one of the 13 canonical cabinet roles.`);
                 else {
                     // Detect auto-generated boilerplate feedback that should be replaced with substantive text
-                    const feedback = (_o = (_m = fb.feedback) === null || _m === void 0 ? void 0 : _m.trim()) !== null && _o !== void 0 ? _o : '';
+                    const feedback = (_r = (_q = fb.feedback) === null || _q === void 0 ? void 0 : _q.trim()) !== null && _r !== void 0 ? _r : '';
                     const HARD_FAIL_BOILERPLATE_PATTERNS = [
                         /^This aligns well with our .+ priorities\.$/i,
                         /^Our department supports this course of action\.$/i,
@@ -527,7 +548,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
             }
             if (Array.isArray(opt.advisorFeedback) && opt.advisorFeedback.length > 0) {
                 const presentRoles = new Set(opt.advisorFeedback.map((f) => f.roleId));
-                const missingRoles = [...exports.CANONICAL_ROLE_IDS].filter(r => !presentRoles.has(r));
+                const missingRoles = [...token_registry_1.CANONICAL_ROLE_IDS].filter(r => !presentRoles.has(r));
                 if (missingRoles.length > 0) {
                     add('warn', 'missing-advisor-roles', oid, `AdvisorFeedback missing entries for: ${missingRoles.join(', ')}`);
                 }
@@ -545,7 +566,8 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
             }
             const startsWithToken = /^\{[a-z_]+\}/i.test(opt.outcomeSummary.trim());
             const firstNonTokenChar = opt.outcomeSummary.trim().replace(/^\{[a-z_]+\}\s*/i, '')[0];
-            if (startsWithToken && firstNonTokenChar === (firstNonTokenChar === null || firstNonTokenChar === void 0 ? void 0 : firstNonTokenChar.toLowerCase()))
+            // Only flag actual lowercase word starts — exclude possessives/contractions ({token}'s, {token}'t)
+            if (startsWithToken && firstNonTokenChar && /[a-z]/.test(firstNonTokenChar))
                 add('warn', 'token-grammar-issue', oid, `Grammar issue after token placeholder`, true);
         }
     }
@@ -570,8 +592,42 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
         checkTokens(opt.outcomeSummary, `option ${opt.id} summary`);
         checkTokens(opt.outcomeContext, `option ${opt.id} context`);
     }
+    const scenarioTextCorpus = [
+        scenario.description,
+        ...scenario.options.flatMap((opt) => [
+            opt.text,
+            opt.outcomeHeadline,
+            opt.outcomeSummary,
+            opt.outcomeContext,
+        ]),
+    ].filter((text) => Boolean(text)).join(' ');
+    const hasRequiredRelationshipToken = (() => {
+        switch (actorPattern) {
+            case 'ally':
+                return /\{the_ally\}|\{ally\}'s/i.test(scenarioTextCorpus);
+            case 'adversary':
+                return /\{the_adversary\}|\{adversary\}'s/i.test(scenarioTextCorpus);
+            case 'border_rival':
+                return /\{the_border_rival\}|\{border_rival\}'s|\{the_neighbor\}|\{neighbor\}'s/i.test(scenarioTextCorpus);
+            case 'mixed':
+                return /\{the_(adversary|border_rival|regional_rival|ally|trade_partner|neutral|rival|partner|neighbor|player_country)\}|\{(adversary|border_rival|regional_rival|ally|trade_partner|neutral|rival|partner|neighbor|player_country)\}'s/i.test(scenarioTextCorpus);
+            default:
+                return true;
+        }
+    })();
+    if (!hasRequiredRelationshipToken) {
+        const expectedTokenByPattern = {
+            ally: '{the_ally}',
+            adversary: '{the_adversary}',
+            border_rival: '{the_border_rival} or {the_neighbor}',
+            mixed: 'at least one relationship token such as {the_ally}, {the_adversary}, or {the_border_rival}',
+        };
+        if (actorPattern === 'ally' || actorPattern === 'adversary' || actorPattern === 'border_rival' || actorPattern === 'mixed') {
+            add('error', 'missing-required-relationship-token', scenario.id, `Scenario metadata actorPattern=${actorPattern} but the narrative never uses ${expectedTokenByPattern[actorPattern]}`, false);
+        }
+    }
     // Title word count — 4 to 10 words (tokens count as 1 word each)
-    if ((_p = scenario.title) === null || _p === void 0 ? void 0 : _p.trim()) {
+    if ((_s = scenario.title) === null || _s === void 0 ? void 0 : _s.trim()) {
         const wordCount = scenario.title.trim().split(/\s+/).length;
         if (wordCount < 4)
             add('error', 'title-too-short', scenario.id, `Title has ${wordCount} words (min 4)`);
@@ -612,10 +668,23 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
         // "United States must decide" instead of "The United States must decide" for
         // article-requiring countries. Use the_{token} form instead.
         {
-            const sentenceStartPattern = new RegExp(`(^|[.!?]\\s+)\\{(${Array.from(logic_parameters_1.ARTICLE_FORM_TOKEN_NAMES).join('|')})\\}`, 'g');
+            const sentenceStartPattern = new RegExp(`(^|[.!?]\\s+)\\{(${Array.from(token_registry_1.ARTICLE_FORM_TOKEN_NAMES).join('|')})\\}`, 'g');
             if (sentenceStartPattern.test(text))
                 add('warn', 'sentence-start-bare-token', scenario.id, `${fieldName} uses a bare {token} at a sentence-start position — use {the_token} to ensure correct article rendering`, true);
         }
+        const startsWithAcceptableTokenLedPhrase = (() => {
+            const trimmed = text.trim();
+            const tokenLead = trimmed.match(/^\{[a-z_]+\}((?:'s|’s)?)/i);
+            if (!tokenLead)
+                return false;
+            if (tokenLead[1])
+                return true;
+            const rest = trimmed.slice(tokenLead[0].length);
+            const nextLetter = rest.match(/[A-Za-z]/);
+            if (!nextLetter)
+                return true;
+            return nextLetter[0] === nextLetter[0].toUpperCase();
+        })();
         const firstNarrativeChar = (() => {
             let inToken = false;
             for (const ch of text) {
@@ -634,7 +703,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
             }
             return '';
         })();
-        if (firstNarrativeChar && firstNarrativeChar === firstNarrativeChar.toLowerCase()) {
+        if (!startsWithAcceptableTokenLedPhrase && firstNarrativeChar && firstNarrativeChar === firstNarrativeChar.toLowerCase()) {
             add('warn', 'lowercase-start', scenario.id, `${fieldName} begins with lowercase wording`, true);
         }
         // Detect hardcoded government-structure terms that break country-agnosticism.
@@ -652,7 +721,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
         ];
         for (const [pattern, suggestion] of govStructureTerms) {
             if (pattern.test(text))
-                add('warn', 'hardcoded-gov-structure', scenario.id, `${fieldName} contains a hardcoded government-structure term — ${suggestion}`);
+                add('error', 'hardcoded-gov-structure', scenario.id, `${fieldName} contains a hardcoded government-structure term — ${suggestion}`);
         }
         // Detect hardcoded ministry/institution names that break country-agnosticism.
         const institutionPhraseTerms = [
@@ -700,7 +769,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
         ];
         for (const [pattern, suggestion] of institutionPhraseTerms) {
             if (pattern.test(text))
-                add('warn', 'hardcoded-institution-phrase', scenario.id, `${fieldName} contains a hardcoded institution name — ${suggestion}`);
+                add('error', 'hardcoded-institution-phrase', scenario.id, `${fieldName} contains a hardcoded institution name — ${suggestion}`);
         }
         // Enforce adjacency semantics: if narrative claims a neighbor/border relation,
         // it must use {neighbor} or {border_rival}, not generic rival/adversary tokens.
@@ -747,14 +816,14 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
         checkTextQuality(opt.outcomeHeadline, `option ${opt.id} headline`);
         checkTextQuality(opt.outcomeSummary, `option ${opt.id} summary`);
         checkTextQuality(opt.outcomeContext, `option ${opt.id} context`);
-        for (const fb of ((_q = opt.advisorFeedback) !== null && _q !== void 0 ? _q : [])) {
+        for (const fb of ((_t = opt.advisorFeedback) !== null && _t !== void 0 ? _t : [])) {
             if (fb === null || fb === void 0 ? void 0 : fb.feedback)
                 checkTextQuality(fb.feedback, `option ${opt.id} advisor ${fb.roleId}`);
         }
     }
     // Option label quality — plain text, 1-6 words, no tokens
     for (const opt of scenario.options) {
-        if ((_r = opt.label) === null || _r === void 0 ? void 0 : _r.trim()) {
+        if ((_u = opt.label) === null || _u === void 0 ? void 0 : _u.trim()) {
             const labelWords = opt.label.trim().split(/\s+/).length;
             if (labelWords > 6)
                 add('warn', 'label-too-long', `${scenario.id}/${opt.id}`, `Label "${opt.label}" is ${labelWords} words (max 6)`);
@@ -782,6 +851,10 @@ function deterministicFix(scenario) {
         if (!text)
             return text;
         let inToken = false;
+        // 'boundary' = start of string, post-whitespace, or just after a closing token brace.
+        // Only capitalize a letter when we last crossed a boundary — this prevents
+        // wrongly capitalizing possessives like {token}'s → {token}'S.
+        let prevType = 'boundary';
         for (let i = 0; i < text.length; i++) {
             const ch = text[i];
             if (ch === '{') {
@@ -790,18 +863,77 @@ function deterministicFix(scenario) {
             }
             if (ch === '}') {
                 inToken = false;
+                prevType = 'boundary';
                 continue;
             }
             if (inToken)
                 continue;
+            if (/\s/.test(ch)) {
+                prevType = 'boundary';
+                continue;
+            }
             if (/[A-Za-z]/.test(ch)) {
-                if (/[a-z]/.test(ch)) {
+                if (prevType === 'boundary' && /[a-z]/.test(ch)) {
                     return text.slice(0, i) + ch.toUpperCase() + text.slice(i + 1);
                 }
+                // First letter found at a non-boundary position (e.g. mid-possessive) — leave unchanged.
                 return text;
             }
+            // Apostrophe, dash, or any other non-letter non-space char ends the boundary window.
+            prevType = 'other';
         }
         return text;
+    };
+    // Capitalize the first letter that appears directly after sentence-ending punctuation
+    // (period, exclamation, question mark) followed by whitespace. Does NOT capitalize
+    // through {tokens} to avoid raising verbs after token subjects ({rival} refused → correct).
+    const capitalizeSentenceBoundaries = (text) => {
+        const chars = text.split('');
+        let inToken = false;
+        let capitalizeNextNarrativeLetter = false;
+        let tokenClosedWhilePending = false;
+        for (let i = 0; i < chars.length; i++) {
+            const ch = chars[i];
+            if (ch === '{') {
+                inToken = true;
+                continue;
+            }
+            if (ch === '}') {
+                inToken = false;
+                if (capitalizeNextNarrativeLetter)
+                    tokenClosedWhilePending = true;
+                continue;
+            }
+            if (inToken)
+                continue;
+            if (capitalizeNextNarrativeLetter) {
+                if (/[A-Za-z]/.test(ch)) {
+                    if (/[a-z]/.test(ch))
+                        chars[i] = ch.toUpperCase();
+                    capitalizeNextNarrativeLetter = false;
+                    tokenClosedWhilePending = false;
+                    continue;
+                }
+                if (/\s|["(\[]/.test(ch)) {
+                    continue;
+                }
+                if (tokenClosedWhilePending && ch === '\'') {
+                    capitalizeNextNarrativeLetter = false;
+                    tokenClosedWhilePending = false;
+                    continue;
+                }
+                if (/[)}\]”]/.test(ch)) {
+                    continue;
+                }
+                capitalizeNextNarrativeLetter = false;
+                tokenClosedWhilePending = false;
+            }
+            if (/[.!?]/.test(ch)) {
+                capitalizeNextNarrativeLetter = true;
+                tokenClosedWhilePending = false;
+            }
+        }
+        return chars.join('');
     };
     for (const opt of scenario.options) {
         for (const eff of opt.effects) {
@@ -858,7 +990,7 @@ function deterministicFix(scenario) {
             .trim();
     };
     const applyWhitespaceToScenario = () => {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         const titleBefore = scenario.title;
         scenario.title = (_a = fixWhitespace(scenario.title)) !== null && _a !== void 0 ? _a : scenario.title;
         if (titleBefore !== scenario.title) {
@@ -905,23 +1037,45 @@ function deterministicFix(scenario) {
             fixes.push('capitalized start of description');
             fixed = true;
         }
+        const sentDescBefore = scenario.description;
+        scenario.description = capitalizeSentenceBoundaries((_h = scenario.description) !== null && _h !== void 0 ? _h : '');
+        if (sentDescBefore !== scenario.description) {
+            fixes.push('capitalized sentence starts in description');
+            fixed = true;
+        }
         for (const opt of scenario.options) {
             for (const field of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext']) {
                 if (typeof opt[field] === 'string') {
                     const before = opt[field];
-                    opt[field] = (_h = capitalizeFirstNarrativeLetter(before)) !== null && _h !== void 0 ? _h : before;
+                    opt[field] = (_j = capitalizeFirstNarrativeLetter(before)) !== null && _j !== void 0 ? _j : before;
                     if (before !== opt[field]) {
                         fixes.push(`${opt.id}: capitalized start of ${field}`);
                         fixed = true;
                     }
                 }
             }
-            for (const fb of ((_j = opt.advisorFeedback) !== null && _j !== void 0 ? _j : [])) {
+            for (const field of ['outcomeSummary', 'outcomeContext']) {
+                if (typeof opt[field] === 'string') {
+                    const before = opt[field];
+                    opt[field] = capitalizeSentenceBoundaries(before);
+                    if (before !== opt[field]) {
+                        fixes.push(`${opt.id}: capitalized sentence starts in ${field}`);
+                        fixed = true;
+                    }
+                }
+            }
+            for (const fb of ((_k = opt.advisorFeedback) !== null && _k !== void 0 ? _k : [])) {
                 if (typeof (fb === null || fb === void 0 ? void 0 : fb.feedback) === 'string') {
                     const before = fb.feedback;
-                    fb.feedback = (_k = capitalizeFirstNarrativeLetter(before)) !== null && _k !== void 0 ? _k : before;
+                    fb.feedback = (_l = capitalizeFirstNarrativeLetter(before)) !== null && _l !== void 0 ? _l : before;
                     if (before !== fb.feedback) {
                         fixes.push(`${opt.id}: capitalized start of advisor ${fb.roleId} feedback`);
+                        fixed = true;
+                    }
+                    const sentFbBefore = fb.feedback;
+                    fb.feedback = capitalizeSentenceBoundaries(fb.feedback);
+                    if (sentFbBefore !== fb.feedback) {
+                        fixes.push(`${opt.id}: capitalized sentence starts in advisor ${fb.roleId} feedback`);
                         fixed = true;
                     }
                 }
@@ -1259,7 +1413,7 @@ function heuristicFix(scenario, issues, bundle) {
             if (!text)
                 return text;
             return text.replace(/\bthe \{([a-z_]+)\}/g, (match, name) => {
-                return logic_parameters_1.ARTICLE_FORM_TOKEN_NAMES.has(name) ? `{the_${name}}` : match;
+                return token_registry_1.ARTICLE_FORM_TOKEN_NAMES.has(name) ? `{the_${name}}` : match;
             });
         };
         const descB = scenario.description;
@@ -1304,10 +1458,10 @@ function heuristicFix(scenario, issues, bundle) {
         const fixSentenceStartTokens = (text) => {
             if (!text)
                 return text;
-            const pattern = new RegExp(`(^|([.!?])\\s+)\\{(${Array.from(logic_parameters_1.ARTICLE_FORM_TOKEN_NAMES).join('|')})\\}`, 'g');
+            const pattern = new RegExp(`(^|([.!?])\\s+)\\{(${Array.from(token_registry_1.ARTICLE_FORM_TOKEN_NAMES).join('|')})\\}`, 'g');
             return text.replace(pattern, (match, prefix, punctChar, name) => {
                 const theForm = `the_${name}`;
-                if (!logic_parameters_1.ARTICLE_FORM_TOKEN_NAMES.has(name))
+                if (!token_registry_1.ARTICLE_FORM_TOKEN_NAMES.has(name))
                     return match;
                 const replacement = `{${theForm}}`;
                 if (prefix === '' || prefix === undefined)
@@ -1346,8 +1500,8 @@ function heuristicFix(scenario, issues, bundle) {
         const fixTheBeforeToken = (text) => {
             if (!text)
                 return text;
-            return text.replace(/\bthe \{([a-z_]+)\}/gi, (match, name) => {
-                return logic_parameters_1.ARTICLE_FORM_TOKEN_NAMES.has(name) ? `{the_${name}}` : match;
+            return text.replace(/\bthe \{(the_)?([a-z_]+)\}/gi, (match, _prefixed, name) => {
+                return token_registry_1.ARTICLE_FORM_TOKEN_NAMES.has(name) ? `{the_${name}}` : match;
             });
         };
         const applyTheTokenFix = (t, label) => {
@@ -1518,29 +1672,11 @@ function heuristicFix(scenario, issues, bundle) {
     }
     // 5. Remap unknown advisor roleIds to nearest canonical role
     {
-        const ROLE_ALIAS_MAP = {
-            'role_innovation': 'role_commerce',
-            'role_science': 'role_commerce',
-            'role_technology': 'role_commerce',
-            'role_research': 'role_commerce',
-            'role_finance': 'role_economy',
-            'role_foreign_affairs': 'role_diplomacy',
-            'role_security': 'role_interior',
-            'role_welfare': 'role_labor',
-            'role_social': 'role_labor',
-            'role_public_health': 'role_health',
-            'role_police': 'role_interior',
-            'role_intelligence': 'role_interior',
-            'role_cyber': 'role_defense',
-            'role_budget': 'role_economy',
-            'role_housing': 'role_labor',
-            'role_immigration': 'role_interior',
-        };
         for (const opt of scenario.options) {
             if (!Array.isArray(opt.advisorFeedback))
                 continue;
             for (const fb of opt.advisorFeedback) {
-                const alias = ROLE_ALIAS_MAP[fb.roleId];
+                const alias = token_registry_1.ROLE_ALIAS_MAP[fb.roleId];
                 if (alias) {
                     const before = fb.roleId;
                     fb.roleId = alias;
@@ -1812,13 +1948,9 @@ function getAuditRulesPrompt() {
     const cfg = getAuditConfig();
     const inverseList = Array.from(cfg.inverseMetrics).join(', ');
     const metricList = Array.from(cfg.validMetricIds).join(', ');
-    const tokenList = Array.from(cfg.validTokens).sort().join(', ');
     return `**AUDIT COMPLIANCE RULES (VIOLATIONS = REJECTION):**
 
-## APPROVED TOKEN WHITELIST (ONLY THESE ARE VALID — NEVER INVENT NEW TOKENS)
-${tokenList}
-Any {token} NOT in this list is an immediate hard rejection. When in doubt, rewrite without a token.
-Common invalid tokens that fail: {budget}, {president}, {prime_minister}, {country}, {country_name}, {national_bank}, {federal_police}, {senate_majority}, {coalition}, {parliament}
+${(0, token_registry_1.buildTokenWhitelistPromptSection)()}
 
 ## VALID METRICS (USE EXACT NAMES)
 ${metricList}

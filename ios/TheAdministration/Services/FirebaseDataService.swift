@@ -95,11 +95,11 @@ class FirebaseDataService {
 
         let geopoliticalProfile = decodeProfile(
             GeopoliticalProfile.self,
-            from: (data["geopoliticalProfile"] as? [String: Any]) ?? (data["geopolitical"] as? [String: Any])
+            from: data["geopolitical"] as? [String: Any]
         )
         let gameplayProfile = decodeProfile(
             CountryGameplayProfile.self,
-            from: (data["gameplayProfile"] as? [String: Any]) ?? (data["gameplay"] as? [String: Any])
+            from: data["gameplay"] as? [String: Any]
         )
 
         return (geopoliticalProfile, gameplayProfile)

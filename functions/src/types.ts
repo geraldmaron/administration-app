@@ -7,6 +7,32 @@ import type { CapabilityId } from './data/schemas/capabilityIds';
 import type { CountryTrait, PersonTrait } from './data/schemas/traitTypes';
 import type { LegislatureProfile, LegislatureState, PersonGender } from './data/schemas/legislatureTypes';
 
+export type ScenarioScopeTier = 'universal' | 'regional' | 'cluster' | 'exclusive';
+
+export type ScenarioSourceKind = 'evergreen' | 'news' | 'neighbor' | 'consequence';
+
+export type ScenarioExclusivityReason =
+    | 'constitution'
+    | 'historical'
+    | 'bilateral_dispute'
+    | 'unique_institution'
+    | 'unique_military_doctrine';
+
+export interface CountryCatalogSourceMetadataSnapshot {
+    kind: 'firestore';
+    path: 'countries';
+}
+
+export interface ScenarioAcceptanceMetadata {
+    policyVersion: string;
+    acceptedAt: string;
+    scopeTier: ScenarioScopeTier;
+    scopeKey: string;
+    sourceKind: ScenarioSourceKind;
+    modelFamily: string;
+    countrySource: CountryCatalogSourceMetadataSnapshot;
+}
+
 export type GovernmentCategory =
     | 'liberal_democracy'
     | 'illiberal_democracy'
@@ -49,6 +75,13 @@ export interface ScenarioMetadata {
     urgency?: 'low' | 'medium' | 'high' | 'immediate' | string;
     difficulty?: 1 | 2 | 3 | 4 | 5;
     tags?: string[];
+    actorPattern?: 'domestic' | 'ally' | 'adversary' | 'border_rival' | 'legislature' | 'cabinet' | 'judiciary' | 'mixed';
+    scopeTier?: ScenarioScopeTier;
+    scopeKey?: string;
+    clusterId?: string;
+    exclusivityReason?: ScenarioExclusivityReason;
+    sourceKind?: ScenarioSourceKind;
+    region_tags?: RegionId[] | string[];
     applicable_countries?: string[] | string;
     source?: 'news' | 'manual';
     source_news?: {
@@ -63,6 +96,7 @@ export interface ScenarioMetadata {
         issues: string[];
         autoFixed?: boolean;
     };
+    acceptanceMetadata?: ScenarioAcceptanceMetadata;
     // Geopolitical realism extensions
     requiredGeopoliticalTags?: GeopoliticalTag[];
     excludedGeopoliticalTags?: GeopoliticalTag[];

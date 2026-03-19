@@ -214,7 +214,7 @@ class TpmThrottle {
 
 // Conservative Tier 1 defaults — override via env vars when on higher tiers:
 //   OPENAI_MAX_CONCURRENT=10 OPENAI_TPM_LIMIT=2000000 for Tier 2
-const OPENAI_MAX_CONCURRENT = parseInt(process.env.OPENAI_MAX_CONCURRENT || '3', 10);
+const OPENAI_MAX_CONCURRENT = parseInt(process.env.OPENAI_MAX_CONCURRENT || (process.env.K_SERVICE ? '1' : '3'), 10);
 const OPENAI_TPM_LIMIT = parseInt(process.env.OPENAI_TPM_LIMIT || '200000', 10);
 const openAISemaphore = new Semaphore(OPENAI_MAX_CONCURRENT);
 const openAITpmThrottle = new TpmThrottle(OPENAI_TPM_LIMIT);
@@ -230,7 +230,7 @@ async function callOpenAI<T>(
 ): Promise<CallResult<T>> {
   const modelToUse = modelOverride || 'gpt-4o-mini';
   const timeout = config.timeoutMs ?? getModelTimeout(modelToUse);
-  const maxRetries = 3;
+  const maxRetries = parseInt(process.env.OPENAI_MAX_RETRIES || (process.env.K_SERVICE ? '1' : '3'), 10);
   const baseDelay = 2000;
 
   const apiKey = getOpenAIApiKey();

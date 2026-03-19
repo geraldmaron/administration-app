@@ -639,20 +639,35 @@ class GameStore: ObservableObject {
         self.showOutcome = true
 
         // Generate news article for this decision
-        let headline: String
-        if let h = option.outcomeHeadline, !h.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            headline = h
-        } else {
-            headline = scenario.title.isEmpty ? "Executive Decision Issued" : scenario.title
-        }
-        let summary: String
-        if let s = option.outcomeSummary, !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            summary = s
-        } else if let o = option.outcome, !o.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            summary = o
-        } else {
-            summary = "The administration has acted on this matter."
-        }
+        let headlineCandidates = [
+            option.outcomeHeadline,
+            option.label,
+            scenario.title.isEmpty ? nil : scenario.title,
+            "Executive Decision Issued"
+        ]
+        let headline = headlineCandidates
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first(where: { !$0.isEmpty }) ?? "Executive Decision Issued"
+
+        let normalizedHeadline = headline
+            .lowercased()
+            .replacingOccurrences(of: #"[^a-z0-9]+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let summaryCandidates = [
+            option.outcomeSummary,
+            option.outcome,
+            option.outcomeContext,
+            scenario.description,
+            "A government decision has been recorded."
+        ]
+        let summary = summaryCandidates
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first(where: {
+                !$0.isEmpty &&
+                $0.lowercased()
+                    .replacingOccurrences(of: #"[^a-z0-9]+"#, with: " ", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespacesAndNewlines) != normalizedHeadline
+            }) ?? "A government decision has been recorded."
         let content: String?
         if let ctx = option.outcomeContext, !ctx.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             content = ctx
@@ -734,6 +749,9 @@ class GameStore: ObservableObject {
         print("🎯 [GameStore] Firebase scenario count: \(scenarioCount)")
         
         let allScenarios = await FirebaseDataService.shared.getAllScenarios()
+        let currentCountry = state.countryId.flatMap { countryId in
+            state.countries.first(where: { $0.id == countryId }) ?? availableCountries.first(where: { $0.id == countryId })
+        }
         
         print("🎯 [GameStore] Total scenarios available: \(allScenarios.count)")
 
@@ -767,6 +785,18 @@ class GameStore: ObservableObject {
                     if let ac = scenario.metadata?.applicableCountries, !ac.isEmpty {
                         let matches = ac.contains { $0.lowercased() == cid.lowercased() }
                         if !matches { return false }
+                    }
+                    // Border-rival actor pattern gate: only show border_rival scenarios
+                    // to countries with an actual land-adjacent adversarial neighbor
+                    if scenario.dynamicProfile?.actorPattern == "border_rival" {
+                        let hasBorderAdversary = geo.neighbors.contains {
+                            $0.sharedBorder && ["rival", "adversary", "conflict"].contains($0.type)
+                        }
+                        if !hasBorderAdversary { return false }
+                    }
+                    if let currentCountry,
+                       !TemplateEngine.shared.canResolveScenarioWithoutFallback(scenario, country: currentCountry, gameState: state) {
+                        return false
                     }
                     return true
                 }
@@ -807,6 +837,19 @@ class GameStore: ObservableObject {
             if let req = scenario.legislatureRequirement {
                 let legislatureApproval = state.legislatureState?.approvalOfPlayer ?? 100
                 if legislatureApproval < req.minApproval { return false }
+            }
+            // Border-rival actor pattern gate: only show border_rival scenarios
+            // to countries with an actual land-adjacent adversarial neighbor
+            if scenario.dynamicProfile?.actorPattern == "border_rival",
+               let geo = currentCountry?.geopoliticalProfile {
+                let hasBorderAdversary = geo.neighbors.contains {
+                    $0.sharedBorder && ["rival", "adversary", "conflict"].contains($0.type)
+                }
+                if !hasBorderAdversary { return false }
+            }
+            if let currentCountry,
+               !TemplateEngine.shared.canResolveScenarioWithoutFallback(scenario, country: currentCountry, gameState: state) {
+                return false
             }
             return true
         }

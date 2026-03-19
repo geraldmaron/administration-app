@@ -480,6 +480,41 @@ struct ScenarioMetadata: Codable {
     }
 }
 
+struct StateTrigger: Codable {
+    var metricId: String
+    var condition: String
+    var threshold: Double
+    var weightBoost: Double
+
+    enum CodingKeys: String, CodingKey {
+        case metricId = "metric_id"
+        case condition, threshold
+        case weightBoost = "weight_boost"
+    }
+}
+
+struct ScenarioDynamicProfile: Codable {
+    var stateTriggers: [StateTrigger]?
+    var actorPattern: String?
+    var narrativeFingerprint: [String]?
+    var pressureSources: [String]?
+    var governingLens: String?
+    var followUpHooks: [String]?
+    var recurrenceGroup: String?
+    var suppressionTags: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case stateTriggers = "state_triggers"
+        case actorPattern = "actor_pattern"
+        case narrativeFingerprint = "narrative_fingerprint"
+        case pressureSources = "pressure_sources"
+        case governingLens = "governing_lens"
+        case followUpHooks = "follow_up_hooks"
+        case recurrenceGroup = "recurrence_group"
+        case suppressionTags = "suppression_tags"
+    }
+}
+
 struct Scenario: Identifiable, Codable {
     let id: String
     let title: String
@@ -507,6 +542,7 @@ struct Scenario: Identifiable, Codable {
     let storagePath: String?
     let metadata: ScenarioMetadata?
     let legislatureRequirement: LegislatureRequirement?
+    var dynamicProfile: ScenarioDynamicProfile?
 
     init(
         id: String, title: String, description: String,
@@ -522,7 +558,8 @@ struct Scenario: Identifiable, Codable {
         oncePerGame: Bool? = nil, titleTemplate: String? = nil,
         descriptionTemplate: String? = nil, tokenMap: [String: String]? = nil,
         storagePath: String? = nil, metadata: ScenarioMetadata? = nil,
-        legislatureRequirement: LegislatureRequirement? = nil
+        legislatureRequirement: LegislatureRequirement? = nil,
+        dynamicProfile: ScenarioDynamicProfile? = nil
     ) {
         self.id = id; self.title = title; self.description = description
         self.conditions = conditions; self.phase = phase; self.severity = severity
@@ -535,6 +572,7 @@ struct Scenario: Identifiable, Codable {
         self.descriptionTemplate = descriptionTemplate; self.tokenMap = tokenMap
         self.storagePath = storagePath; self.metadata = metadata
         self.legislatureRequirement = legislatureRequirement
+        self.dynamicProfile = dynamicProfile
     }
 
     enum CodingKeys: String, CodingKey {
@@ -551,6 +589,7 @@ struct Scenario: Identifiable, Codable {
         case storagePath = "storage_path"
         case metadata
         case legislatureRequirement = "legislature_requirement"
+        case dynamicProfile = "dynamic_profile"
     }
 }
 
@@ -1084,7 +1123,10 @@ struct GameState: Codable {
     var pendingConsequences: [PendingConsequence]?
     var dickMode: DickModeConfig?
     var aiScenarioQueue: AIScenarioQueue?
-    
+
+    // NEW: Scenario Director memory
+    var scenarioDirectorState: ScenarioDirectorState?
+
     // NEW: Advanced features from web
     var achievements: [String]?
     var milestones: [Milestone]?
@@ -1372,6 +1414,18 @@ struct OutcomeRecord: Codable {
     let optionText: String
     let metricDeltas: [String: Double]
     let consequenceScenarioIds: [String]?
+}
+
+struct ScenarioDirectorState: Codable {
+    var recentFingerprints: [[String]]
+    var activeThreads: [String]
+    var actorMemory: [String: String]
+
+    init() {
+        recentFingerprints = []
+        activeThreads = []
+        actorMemory = [:]
+    }
 }
 
 struct PendingConsequence: Codable {

@@ -34,6 +34,11 @@ function renderBar(done: number, total: number, width = 10): string {
   return '▓'.repeat(filled) + '▒'.repeat(width - filled);
 }
 
+function extractJobScenarioIds(data: any): string[] {
+  return data.createdScenarioIds || data.savedScenarioIds || data.scenarioIds ||
+    (Array.isArray(data.results) ? data.results.map((r: any) => r?.id).filter(Boolean) : []);
+}
+
 async function main() {
   const jobId = process.argv[2];
   if (!jobId) {
@@ -54,15 +59,12 @@ async function main() {
 
     data = snap.data() || {};
     const status = String(data.status || 'unknown');
-    const ids =
-      data.createdScenarioIds ||
-      data.scenarioIds ||
-      (Array.isArray(data.results) ? data.results.map((r: any) => r?.id).filter(Boolean) : []);
+    const ids = extractJobScenarioIds(data);
 
     const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const completed: number = data.completedCount ?? ids.length;
     const failed: number = data.failedCount ?? 0;
-    const total: number = data.totalCount ?? data.count ?? 0;
+    const total: number = data.totalCount ?? data.total ?? data.count ?? 0;
     const pct = total > 0 ? Math.round((100 * (completed + failed)) / total) : 0;
     const bar = renderBar(completed + failed, total);
 
@@ -89,16 +91,16 @@ async function main() {
   }
 
   const finalStatus = String(data.status || 'unknown');
-  if (finalStatus !== 'completed') {
-    throw new Error(`Job ${jobId} ended with status=${finalStatus} error=${JSON.stringify(data.error || null)}`);
+  const ids: string[] = extractJobScenarioIds(data);
+  if (!ids.length) {
+    throw new Error(`Job ${jobId} ended with status=${finalStatus} and produced no scenario IDs`);
   }
 
-  const ids: string[] =
-    data.createdScenarioIds ||
-    data.scenarioIds ||
-    (Array.isArray(data.results) ? data.results.map((r: any) => r?.id).filter(Boolean) : []);
-  if (!ids.length) {
-    throw new Error(`Job ${jobId} completed but produced no scenario IDs`);
+  if (finalStatus !== 'completed') {
+    console.log(`\nProceeding with audit for ${ids.length} scenario(s) saved before job ended with status=${finalStatus}.`);
+    if (data.error) {
+      console.log(`Job error: ${data.error}`);
+    }
   }
 
   const results: any[] = [];
@@ -157,6 +159,7 @@ async function main() {
 
   const summary = {
     jobId,
+    status: finalStatus,
     generated: ids.length,
     avgScore: Math.round(avgScore * 10) / 10,
     totalHardErrors: valid.reduce((sum, r) => sum + r.hardErrors, 0),

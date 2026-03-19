@@ -6,6 +6,12 @@
  * Usage: npx tsx scripts/generate-scenarios.ts [count] [bundle1] [bundle2]... [--regions=region1,region2]
  * Default count: 5. Uses first N bundles from world_state/bundles (standard_bundle_ids).
  * --regions: optional comma-separated canonical region IDs (e.g. caribbean, europe, africa)
+ * --scope-tier: universal | regional | cluster | exclusive
+ * --cluster-id: required for cluster jobs
+ * --countries: comma-separated country IDs for exclusive jobs
+ * --country: single-country shorthand for exclusive jobs
+ * --exclusivity-reason: required for exclusive jobs
+ * --source-kind: evergreen | news | neighbor | consequence
  */
 
 // @ts-nocheck
@@ -31,9 +37,51 @@ const VALID_BUNDLE_IDS = new Set([
   'economy', 'politics', 'military', 'tech', 'environment', 'social', 'health',
   'diplomacy', 'justice', 'corruption', 'culture', 'infrastructure', 'resources', 'dick_mode'
 ]);
+const VALID_REGIONS = new Set([
+  'africa', 'asia', 'caribbean', 'east_asia', 'europe', 'eurasia',
+  'middle_east', 'north_america', 'oceania', 'south_america', 'south_asia', 'southeast_asia'
+]);
+const VALID_SCOPE_TIERS = new Set(['universal', 'regional', 'cluster', 'exclusive']);
+const VALID_SOURCE_KINDS = new Set(['evergreen', 'news', 'neighbor', 'consequence']);
+const VALID_EXCLUSIVITY_REASONS = new Set([
+  'constitution', 'historical', 'bilateral_dispute', 'unique_institution', 'unique_military_doctrine'
+]);
 
 function isValidBundleId(id: string): boolean {
   return VALID_BUNDLE_IDS.has(id);
+}
+
+function getArgValue(args: string[], flag: string): string | undefined {
+  const index = args.indexOf(flag);
+  if (index >= 0) return args[index + 1];
+  const prefix = `${flag}=`;
+  const entry = args.find((arg) => arg.startsWith(prefix));
+  return entry ? entry.slice(prefix.length) : undefined;
+}
+
+function parseCsv(value?: string): string[] | undefined {
+  if (!value) return undefined;
+  const items = value.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean);
+  return items.length > 0 ? items : undefined;
+}
+
+function inferScopeKey(scopeTier: string | undefined, options: {
+  regions?: string[];
+  clusterId?: string;
+  countries?: string[];
+}): string | undefined {
+  switch (scopeTier) {
+    case 'regional':
+      return options.regions?.[0] ? `region:${options.regions[0]}` : undefined;
+    case 'cluster':
+      return options.clusterId ? `cluster:${options.clusterId}` : undefined;
+    case 'exclusive':
+      return options.countries?.length === 1 ? `country:${options.countries[0]}` : undefined;
+    case 'universal':
+      return 'universal';
+    default:
+      return undefined;
+  }
 }
 
 async function main() {
@@ -43,24 +91,65 @@ async function main() {
   const count = Math.max(1, Math.min(50, parseInt(filteredArgv[0] || '5', 10) || 5));
   const explicitBundles = filteredArgv.filter((a) => typeof a === 'string' && isValidBundleId(a));
 
-  // Parse optional --regions=africa,europe or --regions africa,europe flag
-  const VALID_REGIONS = new Set([
-    'africa', 'asia', 'caribbean', 'east_asia', 'europe', 'eurasia',
-    'middle_east', 'north_america', 'oceania', 'south_america', 'south_asia', 'southeast_asia'
-  ]);
-  let requestedRegions: string[] | undefined;
-  for (let i = 0; i < filteredArgv.length; i++) {
-    const arg = filteredArgv[i];
-    const match = arg.match(/^--regions(?:=(.+))?$/);
-    if (match) {
-      const regionStr = match[1] ?? filteredArgv[i + 1] ?? '';
-      requestedRegions = regionStr.split(',').map(r => r.trim().toLowerCase()).filter(r => VALID_REGIONS.has(r));
-      if (requestedRegions.length === 0) {
-        console.warn(`Invalid or unrecognized regions: "${regionStr}". Valid: ${[...VALID_REGIONS].join(', ')}`);
-        requestedRegions = undefined;
-      }
-      break;
+  const regionStr = getArgValue(filteredArgv, '--regions');
+  const requestedRegions = parseCsv(regionStr)?.filter((region) => VALID_REGIONS.has(region));
+  if (regionStr && (!requestedRegions || requestedRegions.length === 0)) {
+    console.warn(`Invalid or unrecognized regions: "${regionStr}". Valid: ${[...VALID_REGIONS].join(', ')}`);
+  }
+
+  const scopeTierArg = getArgValue(filteredArgv, '--scope-tier')?.trim().toLowerCase();
+  const scopeTier = scopeTierArg && VALID_SCOPE_TIERS.has(scopeTierArg) ? scopeTierArg : undefined;
+  if (scopeTierArg && !scopeTier) {
+    console.error(`Invalid --scope-tier: "${scopeTierArg}". Valid: ${[...VALID_SCOPE_TIERS].join(', ')}`);
+    process.exit(1);
+  }
+
+  const sourceKindArg = getArgValue(filteredArgv, '--source-kind')?.trim().toLowerCase();
+  const sourceKind = sourceKindArg && VALID_SOURCE_KINDS.has(sourceKindArg) ? sourceKindArg : undefined;
+  if (sourceKindArg && !sourceKind) {
+    console.error(`Invalid --source-kind: "${sourceKindArg}". Valid: ${[...VALID_SOURCE_KINDS].join(', ')}`);
+    process.exit(1);
+  }
+
+  const exclusivityReasonArg = getArgValue(filteredArgv, '--exclusivity-reason')?.trim();
+  const exclusivityReason = exclusivityReasonArg && VALID_EXCLUSIVITY_REASONS.has(exclusivityReasonArg)
+    ? exclusivityReasonArg
+    : undefined;
+  if (exclusivityReasonArg && !exclusivityReason) {
+    console.error(`Invalid --exclusivity-reason: "${exclusivityReasonArg}". Valid: ${[...VALID_EXCLUSIVITY_REASONS].join(', ')}`);
+    process.exit(1);
+  }
+
+  const clusterId = getArgValue(filteredArgv, '--cluster-id')?.trim();
+  const explicitScopeKey = getArgValue(filteredArgv, '--scope-key')?.trim();
+  const description = getArgValue(filteredArgv, '--description')?.trim();
+  const countries = [
+    ...(parseCsv(getArgValue(filteredArgv, '--countries')) ?? []),
+    ...(parseCsv(getArgValue(filteredArgv, '--country')) ?? []),
+  ].filter(Boolean);
+  const scopeKey = explicitScopeKey ?? inferScopeKey(scopeTier, { regions: requestedRegions, clusterId, countries });
+
+  if (scopeTier === 'regional' && (!requestedRegions || requestedRegions.length === 0)) {
+    console.error('Regional jobs require --regions.');
+    process.exit(1);
+  }
+  if (scopeTier === 'cluster' && !clusterId) {
+    console.error('Cluster jobs require --cluster-id.');
+    process.exit(1);
+  }
+  if (scopeTier === 'exclusive') {
+    if (countries.length === 0) {
+      console.error('Exclusive jobs require --country or --countries.');
+      process.exit(1);
     }
+    if (!exclusivityReason) {
+      console.error('Exclusive jobs require --exclusivity-reason.');
+      process.exit(1);
+    }
+  }
+  if (scopeTier && !scopeKey) {
+    console.error(`Unable to infer scopeKey for scope tier ${scopeTier}. Provide --scope-key explicitly.`);
+    process.exit(1);
   }
 
   let bundleIds;
@@ -105,9 +194,19 @@ async function main() {
     jobData.regions = requestedRegions;
     jobData.region = requestedRegions[0];
   }
+  if (scopeTier) jobData.scopeTier = scopeTier;
+  if (scopeKey) jobData.scopeKey = scopeKey;
+  if (clusterId) jobData.clusterId = clusterId;
+  if (countries.length > 0) jobData.applicable_countries = countries;
+  if (exclusivityReason) jobData.exclusivityReason = exclusivityReason;
+  if (sourceKind) jobData.sourceKind = sourceKind;
+  if (description) jobData.description = description;
 
   const regionNote = requestedRegions?.length ? ` | regions: [${requestedRegions.join(', ')}]` : '';
-  const preview = `${bundleIds.length} bundles (${bundleIds.join(', ')}), ${conceptsPerBundle} concept(s) each (~${bundleIds.length * conceptsPerBundle} scenarios total)${regionNote}`;
+  const scopeNote = scopeTier
+    ? ` | scope: ${scopeTier}${scopeKey ? ` (${scopeKey})` : ''}${clusterId ? ` | cluster=${clusterId}` : ''}${countries.length ? ` | countries=[${countries.join(', ')}]` : ''}${sourceKind ? ` | source=${sourceKind}` : ''}`
+    : '';
+  const preview = `${bundleIds.length} bundles (${bundleIds.join(', ')}), ${conceptsPerBundle} concept(s) each (~${bundleIds.length * conceptsPerBundle} scenarios total)${regionNote}${scopeNote}`;
 
   if (dryRun) {
     console.log('[DRY RUN] Job payload (no write to Firestore):');
@@ -132,6 +231,11 @@ function fmt(ts: number): string {
   return new Date(ts).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
+function extractJobScenarioIds(data: any): string[] {
+  return data.createdScenarioIds || data.savedScenarioIds || data.scenarioIds ||
+    (Array.isArray(data.results) ? data.results.map((r: any) => r?.id).filter(Boolean) : []);
+}
+
 async function watchJob(jobId: string) {
   const timeoutMs = 10 * 60 * 1000;
   const start = Date.now();
@@ -149,9 +253,10 @@ async function watchJob(jobId: string) {
 
     const data = snap.data() || {};
     const status: string = String(data.status || 'unknown');
-    const completed: number = data.completedCount ?? 0;
+    const ids = extractJobScenarioIds(data);
+    const completed: number = data.completedCount ?? ids.length ?? 0;
     const failed: number = data.failedCount ?? 0;
-    const total: number = data.totalCount ?? data.count ?? 0;
+    const total: number = data.totalCount ?? data.total ?? data.count ?? 0;
     const pct: number = total > 0 ? Math.round((100 * (completed + failed)) / total) : 0;
     const elapsedSec = ((Date.now() - start) / 1000).toFixed(0);
     const time = fmt(Date.now());

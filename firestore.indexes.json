@@ -23,8 +23,61 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "metadata.scopeTier", "order": "ASCENDING" },
+        { "fieldPath": "is_active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "metadata.scopeKey", "order": "ASCENDING" },
+        { "fieldPath": "is_active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "metadata.clusterId", "order": "ASCENDING" },
+        { "fieldPath": "is_active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "metadata.sourceKind", "order": "ASCENDING" },
+        { "fieldPath": "is_active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "metadata.region_tags", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "is_active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
         { "fieldPath": "metadata.source", "order": "ASCENDING" },
         { "fieldPath": "is_active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.source", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
@@ -114,6 +167,26 @@
       ]
     },
     {
+      "collectionGroup": "training_scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "bundle", "order": "ASCENDING" },
+        { "fieldPath": "isGolden", "order": "ASCENDING" },
+        { "fieldPath": "scopeTier", "order": "ASCENDING" },
+        { "fieldPath": "auditScore", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "training_scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "bundle", "order": "ASCENDING" },
+        { "fieldPath": "isGolden", "order": "ASCENDING" },
+        { "fieldPath": "scopeKey", "order": "ASCENDING" },
+        { "fieldPath": "auditScore", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "countries",
       "queryScope": "COLLECTION",
       "fields": [
@@ -194,6 +267,40 @@
           "fieldPath": "embedding",
           "vectorConfig": { "dimension": 1536, "flat": {} }
         }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.source", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "metadata.source", "order": "ASCENDING" },
+        { "fieldPath": "is_active", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "prompt_templates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "name", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "failure_analysis",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "failureCategory", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
     }
   ],

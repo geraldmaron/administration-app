@@ -4,7 +4,10 @@
   "private": true,
   "description": "The Administration — political simulation game",
   "scripts": {
-    "admin-app": "node admin-app/bin/scenario-loops.js"
+    "admin-app": "node admin-app/bin/scenario-loops.js",
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "start": "npm --prefix web run start"
   },
   "bin": {
     "admin-app": "admin-app/bin/scenario-loops.js"

@@ -105,9 +105,36 @@ export interface JobError {
   error: string;
 }
 
+export interface JobLiveActivityBundle {
+  attempts: number;
+  concept: number;
+  blueprint: number;
+  details: number;
+  successes: number;
+  avgAuditScore?: number;
+}
+
+export interface JobLiveActivity {
+  totalAttempts: number;
+  lastMetricAt?: string;
+  byBundle: Record<string, JobLiveActivityBundle>;
+}
+
 export interface DistributionConfig {
   mode: 'fixed' | 'auto';
   loopLength?: 1 | 2 | 3;
+}
+
+export interface PendingScenario {
+  id: string;
+  title: string;
+  description: string;
+  bundle: string;
+  difficulty?: number;
+  auditScore?: number;
+  options: Option[];
+  metadata?: ScenarioMetadata;
+  conditions?: ScenarioCondition[];
 }
 
 export interface JobSummary {
@@ -140,6 +167,9 @@ export interface JobDetail extends JobSummary {
   error?: string;
   auditSummary?: AuditSummary;
   rateLimitRetries?: number;
+  liveActivity?: JobLiveActivity;
+  dryRun?: boolean;
+  pendingScenarioCount?: number;
 }
 
 export interface CountrySummary {
@@ -156,6 +186,7 @@ export interface GenerationJobRequest {
   description?: string;
   priority?: 'low' | 'normal' | 'high';
   distributionConfig?: DistributionConfig;
+  dryRun?: boolean;
   modelConfig?: {
     architectModel?: string;
     drafterModel?: string;

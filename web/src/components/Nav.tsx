@@ -54,40 +54,82 @@ export default function Nav() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[200px] border-r border-[var(--border-strong)] bg-background flex flex-col z-50">
-      <div className="px-4 py-5 border-b border-[var(--border-strong)]">
-        <div className="flex items-center gap-2">
-          <span className="status-dot" />
-          <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-foreground">
-            The Administration
-          </span>
+    <>
+      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[rgba(0,0,0,0.92)] px-4 py-4 backdrop-blur lg:hidden">
+        <div className="space-y-3">
+          <div>
+            <div className="section-kicker text-[var(--accent-secondary)]">Command Surface</div>
+            <div className="mt-1 text-base font-semibold tracking-[0.01em] text-foreground">The Administration</div>
+          </div>
+          <nav className="grid grid-cols-3 gap-2 overflow-x-auto pb-1">
+            {NAV_ITEMS.map((item) => {
+              const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`inline-flex min-h-[44px] items-center justify-center rounded-[var(--radius-tight)] border px-3 py-2 text-center text-[10px] font-mono uppercase tracking-[0.16em] ${
+                    isActive
+                      ? 'border-[var(--accent-primary)] bg-[rgba(25,105,220,0.12)] text-foreground'
+                      : 'border-[var(--border)] bg-[rgba(255,255,255,0.02)] text-[var(--foreground-muted)]'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-        <div className="text-[9px] font-mono uppercase tracking-widest text-foreground-subtle mt-1 pl-4">
-          Admin Protocol
+      </header>
+
+      <aside className="fixed inset-y-0 left-0 hidden w-[var(--rail-width)] border-r border-[var(--border)] bg-[rgba(0,0,0,0.94)] lg:flex lg:flex-col">
+        <div className="border-b border-[var(--border)] px-6 py-7">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="h-2 w-2 rounded-full bg-[var(--accent-secondary)]" />
+            <span className="section-kicker">Admin Protocol</span>
+          </div>
+          <div className="text-[26px] font-semibold tracking-[-0.02em] text-foreground">The Administration</div>
+          <p className="mt-3 text-sm leading-6 text-[var(--foreground-muted)]">
+            Scenario operations, generation control, and editorial review.
+          </p>
         </div>
-      </div>
-      <nav className="flex flex-col gap-1 p-3 flex-1">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors rounded-[2px] ${
-                isActive
-                  ? 'text-foreground bg-background-muted border-l-2 border-accent pl-[10px]'
-                  : 'text-foreground-muted hover:text-foreground hover:bg-background-muted border-l-2 border-transparent pl-[10px]'
-              }`}
-            >
-              <span className={isActive ? 'text-accent' : ''}>
-                <item.Icon />
-              </span>
-              <span className="text-xs font-mono tracking-wide">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+
+        <nav className="flex-1 px-4 py-6">
+          <div className="space-y-2.5">
+            {NAV_ITEMS.map((item) => {
+              const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`surface-rule flex items-center gap-3 rounded-[var(--radius)] border px-4 py-3.5 transition-colors ${
+                    isActive
+                      ? 'border-[rgba(25,105,220,0.34)] bg-[rgba(25,105,220,0.12)] text-foreground'
+                      : 'border-transparent bg-transparent text-[var(--foreground-muted)] hover:border-[var(--border)] hover:bg-[rgba(255,255,255,0.03)] hover:text-foreground'
+                  }`}
+                >
+                  <span className={isActive ? 'text-[var(--accent-secondary)]' : 'text-[var(--foreground-subtle)]'}>
+                    <item.Icon />
+                  </span>
+                  <div>
+                    <div className="text-sm font-medium">{item.label}</div>
+                    <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--foreground-subtle)]">
+                      {item.href === '/' ? 'Overview' : item.href.slice(1)}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        <div className="border-t border-[var(--border)] px-6 py-5">
+          <div className="section-kicker">Current Protocol</div>
+          <div className="mt-3 rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-4 py-3 text-xs leading-5 text-[var(--foreground-muted)]">
+            Statesman theme active. Black field, blue command accents, gold highlight actions.
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

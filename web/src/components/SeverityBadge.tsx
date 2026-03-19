@@ -13,7 +13,7 @@ export default function SeverityBadge({ severity }: SeverityBadgeProps) {
   if (!severity) return <span className="text-foreground-subtle text-xs">—</span>;
   const cls = SEVERITY_CLASSES[severity] ?? 'bg-slate-400/15 text-slate-400';
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider rounded-[2px] ${cls}`}>
+    <span className={`inline-flex min-h-[24px] items-center border border-[var(--border)] px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.18em] rounded-[10px] ${cls}`}>
       {severity}
     </span>
   );

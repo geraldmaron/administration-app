@@ -11,7 +11,13 @@ import {
   getAuditRulesPrompt,
   isValidBundleId,
   initializeAuditConfig,
+  normalizeScenarioTextFields,
 } from './lib/audit-rules';
+import {
+  assertRequestedCountryIdsAvailable,
+  loadCountryCatalog,
+  type CountryCatalogSourceMetadata,
+} from './lib/country-catalog';
 import { ALL_BUNDLE_IDS, type BundleId } from './data/schemas/bundleIds';
 import {
   logGenerationAttempt,
@@ -22,6 +28,8 @@ import {
 } from './lib/prompt-performance';
 import {
   buildDrafterPrompt,
+  getBundlePromptOverlay,
+  getScopePromptOverlay,
   getCurrentPromptVersions,
   getDrafterPromptBase,
   getReflectionPrompt,
@@ -41,9 +49,31 @@ import {
   validateGroundedEffects,
   suggestEffectCorrections
 } from './lib/grounded-effects';
+import {
+  decideScenarioAcceptance,
+  SCENARIO_ACCEPTANCE_POLICY_VERSION,
+} from './lib/scenario-acceptance';
+import type { ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind } from './types';
 
 // ------------------------------------------------------------------
-// Model Configuration - OpenAI-only
+// Rich Concept Type
+// ------------------------------------------------------------------
+
+export type GeneratedConcept = {
+  concept: string;
+  theme: string;
+  severity: string;
+  difficulty: 1 | 2 | 3 | 4 | 5;
+  primaryMetrics?: string[];
+  secondaryMetrics?: string[];
+  actorPattern?: 'domestic' | 'ally' | 'adversary' | 'border_rival' | 'legislature' | 'cabinet' | 'judiciary' | 'mixed';
+  optionShape?: 'redistribute' | 'regulate' | 'escalate' | 'negotiate' | 'invest' | 'cut' | 'reform' | 'delay';
+  loopEligible?: boolean;
+  // Internal: assigned by buildLoopLengthPlan
+  desiredActs?: number;
+  // Internal: generation path tag (not persisted)
+  _generationPath?: 'standard' | 'premium';
+};
 // 
 // Strategy:
 //   - Architect (concepts/blueprints): GPT-4o-mini
@@ -72,6 +102,31 @@ interface GenerationModelConfig {
   embeddingModel?: string;
 }
 
+interface ResolvedGenerationScope {
+  scopeTier: ScenarioScopeTier;
+  scopeKey: string;
+  clusterId?: string;
+  exclusivityReason?: ScenarioExclusivityReason;
+  sourceKind: ScenarioSourceKind;
+  regions: string[];
+  applicableCountries?: string[];
+}
+
+function buildActorTokenRequirement(actorPattern?: GeneratedConcept['actorPattern']): string {
+  switch (actorPattern) {
+    case 'ally':
+      return '- Because actorPattern=ally, the scenario must explicitly use {the_ally} (or possessive {ally}\'s) in the description or outcomes. Do not replace the ally with generic phrasing like "regional partners" or "friendly states".';
+    case 'adversary':
+      return '- Because actorPattern=adversary, the scenario must explicitly use {the_adversary} (or possessive {adversary}\'s) in the description or outcomes. Do not replace the adversary with generic phrasing like "foreign rivals" or "hostile powers".';
+    case 'border_rival':
+      return '- Because actorPattern=border_rival, the scenario must explicitly use {the_border_rival} or {the_neighbor} (or possessive bare forms) in the description or outcomes. Border incidents must not be written with generic wording like "a neighboring country".';
+    case 'mixed':
+      return '- Because actorPattern=mixed, the scenario must explicitly use at least one concrete relationship token such as {the_ally}, {the_adversary}, {the_border_rival}, {the_neighbor}, or {the_trade_partner}. Do not collapse external actors into generic wording.';
+    default:
+      return '';
+  }
+}
+
 function isLMStudioModel(model?: string): boolean {
   return Boolean(model?.startsWith('lmstudio:'));
 }
@@ -88,6 +143,74 @@ function getSharedLMStudioModel(modelConfig?: GenerationModelConfig): string | u
 
 function isLMStudioGeneration(modelConfig?: GenerationModelConfig): boolean {
   return Boolean(getSharedLMStudioModel(modelConfig));
+}
+
+function getModelFamily(modelConfig?: GenerationModelConfig): string {
+  return isLMStudioGeneration(modelConfig) ? 'lmstudio' : 'openai';
+}
+
+function inferScopeKey(scopeTier: ScenarioScopeTier, options: {
+  region?: string;
+  regions?: string[];
+  clusterId?: string;
+  applicableCountries?: string[];
+}): string {
+  const primaryRegion = options.region ?? options.regions?.[0];
+  switch (scopeTier) {
+    case 'regional':
+      return primaryRegion ? `region:${primaryRegion}` : '';
+    case 'cluster':
+      return options.clusterId ? `cluster:${options.clusterId}` : '';
+    case 'exclusive':
+      return options.applicableCountries?.length === 1 ? `country:${options.applicableCountries[0]}` : '';
+    default:
+      return 'universal';
+  }
+}
+
+function normalizeGenerationScope(request: Pick<GenerationRequest, 'mode' | 'region' | 'regions' | 'scopeTier' | 'scopeKey' | 'clusterId' | 'exclusivityReason' | 'sourceKind' | 'applicable_countries'>): ResolvedGenerationScope {
+  const scopeTier = request.scopeTier ?? 'universal';
+  const applicableCountries = request.applicable_countries?.filter((countryId) => countryId.trim().length > 0);
+  const sourceKind = request.sourceKind ?? (request.mode === 'news' ? 'news' : 'evergreen');
+  const regions = request.regions?.length
+    ? request.regions
+    : request.region
+      ? [request.region]
+      : [];
+  const scopeKey = request.scopeKey ?? inferScopeKey(scopeTier, {
+    region: request.region,
+    regions,
+    clusterId: request.clusterId,
+    applicableCountries,
+  });
+
+  if (!scopeKey) {
+    throw new Error(`[ScenarioEngine] Missing scopeKey for scope tier ${scopeTier}`);
+  }
+  if (scopeTier === 'regional' && regions.length === 0) {
+    throw new Error('[ScenarioEngine] Regional generation requires region or regions');
+  }
+  if (scopeTier === 'cluster' && !request.clusterId) {
+    throw new Error('[ScenarioEngine] Cluster generation requires clusterId');
+  }
+  if (scopeTier === 'exclusive') {
+    if (!request.exclusivityReason) {
+      throw new Error('[ScenarioEngine] Exclusive generation requires exclusivityReason');
+    }
+    if (!applicableCountries?.length) {
+      throw new Error('[ScenarioEngine] Exclusive generation requires applicable_countries');
+    }
+  }
+
+  return {
+    scopeTier,
+    scopeKey,
+    clusterId: request.clusterId,
+    exclusivityReason: request.exclusivityReason,
+    sourceKind,
+    regions,
+    applicableCountries,
+  };
 }
 
 function resolvePhaseModel(
@@ -128,6 +251,12 @@ interface GenerationConfig {
   content_quality_gate_enabled?: boolean;
   narrative_review_enabled?: boolean;
   max_active_scenarios_per_bundle?: number;
+  // Feature flags
+  enable_funnel_telemetry?: boolean;
+  enable_standard_direct_draft?: boolean;
+  enable_conditional_editorial_review?: boolean;
+  enable_concept_novelty_gate?: boolean;
+  lmstudio_base_url?: string;
 }
 
 let _generationConfigCache: GenerationConfig | null = null;
@@ -153,6 +282,10 @@ export async function getGenerationConfig(): Promise<GenerationConfig> {
     narrative_review_enabled: raw.narrative_review_enabled ?? false,
     max_llm_repair_attempts: raw.max_llm_repair_attempts ?? 3,
     max_active_scenarios_per_bundle: raw.max_active_scenarios_per_bundle ?? 500,
+    enable_funnel_telemetry: raw.enable_funnel_telemetry ?? true,
+    enable_standard_direct_draft: raw.enable_standard_direct_draft ?? false,
+    enable_conditional_editorial_review: raw.enable_conditional_editorial_review ?? false,
+    enable_concept_novelty_gate: raw.enable_concept_novelty_gate ?? false,
   };
   _generationConfigFetchedAt = now;
   return _generationConfigCache;
@@ -182,33 +315,11 @@ export function resetSessionCosts(): void {
 
 export type { ModelConfig };
 
-// ------------------------------------------------------------------
-// Countries data cache — shared across context helpers
-// ------------------------------------------------------------------
-
-let _countriesDataCache: Record<string, any> | null = null;
-let _countriesDataFetchedAt = 0;
-const COUNTRIES_DATA_TTL_MS = 5 * 60 * 1000;
-
-async function loadCountriesData(): Promise<Record<string, any>> {
-  const now = Date.now();
-  if (_countriesDataCache && (now - _countriesDataFetchedAt) < COUNTRIES_DATA_TTL_MS) {
-    return _countriesDataCache;
-  }
+async function loadCountriesData(): Promise<{ countries: Record<string, any>; source: CountryCatalogSourceMetadata }> {
   const admin = require('firebase-admin');
   if (!admin.apps.length) admin.initializeApp();
-  const db = admin.firestore();
-  const snap = await db.collection('countries').get();
-  if (!snap.empty) {
-    const result: Record<string, any> = {};
-    snap.forEach((doc: any) => { result[doc.id] = doc.data(); });
-    _countriesDataCache = result;
-  } else {
-    console.error('[scenario-engine] countries/ collection is empty — aborting');
-    throw new Error('[scenario-engine] countries/ collection is empty');
-  }
-  _countriesDataFetchedAt = now;
-  return _countriesDataCache!;
+  const catalog = await loadCountryCatalog(admin.firestore());
+  return { countries: catalog.countries, source: catalog.source };
 }
 
 // ------------------------------------------------------------------
@@ -221,7 +332,7 @@ async function getCountryContextBlock(applicableCountryIds: string[] | undefined
 UNIVERSAL SCENARIO: This scenario must work for countries of ANY size, from micro island states to major powers. Use relative terms ("a significant portion of GDP", "thousands of workers", "major fiscal impact") rather than hard-coded dollar amounts. Use the tokens {economic_scale}, {gdp_description}, {population_scale}, {geography_type}, {climate_risk} so the narrative adapts at runtime, and avoid treating {gdp_description} itself as a specific budget line item.`;
   }
 
-  const data = await loadCountriesData();
+  const { countries: data, source } = await loadCountriesData();
 
   const normalizeGdpToMillions = (rawGdp: number): number => {
     if (!Number.isFinite(rawGdp) || rawGdp <= 0) return 0;
@@ -269,8 +380,8 @@ UNIVERSAL SCENARIO: This scenario must work for countries of ANY size, from micr
       (profile.strengths || []).forEach((s: string) => allStrengths.add(s));
       if (profile.geography) geographies.push(profile.geography);
     }
-    if (c.geopoliticalProfile) {
-      const gp = c.geopoliticalProfile;
+    if (c.geopolitical) {
+      const gp = c.geopolitical;
       if (gp.governmentCategory) {
         governmentCategories.add(gp.governmentCategory);
       }
@@ -284,7 +395,7 @@ UNIVERSAL SCENARIO: This scenario must work for countries of ANY size, from micr
   }
 
   if (unknownIds.length > 0) {
-    console.warn(`[ScenarioEngine] getCountryContextBlock: unrecognized country IDs [${unknownIds.join(', ')}] not found in countries collection. They will be excluded from context.`);
+    console.warn(`[ScenarioEngine] getCountryContextBlock: unrecognized country IDs [${unknownIds.join(', ')}] not found in ${source.path}. They will be excluded from context.`);
   }
 
   const uniqueRegions = [...new Set(regions)];
@@ -376,7 +487,7 @@ Use the tokens {economic_scale}, {gdp_description}, {population_scale}, {geograp
 // More informative than a generic "keep themes appropriate" sentence.
 async function buildCountryNote(applicableCountryIds: string[] | undefined): Promise<string> {
   if (!applicableCountryIds?.length) return '';
-  const data = await loadCountriesData();
+  const { countries: data } = await loadCountriesData();
 
   const found: Array<{ region: string; geography: string; vulnerabilities: string[] }> = [];
   for (const id of applicableCountryIds) {
@@ -419,7 +530,18 @@ const CONCEPT_SCHEMA = {
           concept: { type: 'string' },
           theme: { type: 'string' },
           severity: { type: 'string', enum: ['low', 'medium', 'high', 'extreme', 'critical'] },
-          difficulty: { type: 'integer', minimum: 1, maximum: 5 }
+          difficulty: { type: 'integer', minimum: 1, maximum: 5 },
+          primaryMetrics: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 3 },
+          secondaryMetrics: { type: 'array', items: { type: 'string' }, maxItems: 3 },
+          actorPattern: {
+            type: 'string',
+            enum: ['domestic', 'ally', 'adversary', 'border_rival', 'legislature', 'cabinet', 'judiciary', 'mixed']
+          },
+          optionShape: {
+            type: 'string',
+            enum: ['redistribute', 'regulate', 'escalate', 'negotiate', 'invest', 'cut', 'reform', 'delay']
+          },
+          loopEligible: { type: 'boolean' }
         },
         required: ['concept', 'theme', 'severity', 'difficulty']
       }
@@ -539,6 +661,11 @@ export interface GenerationRequest {
   region?: string;
   /** Explicit region IDs to tag on generated scenarios (e.g. ['caribbean']). If not set, derived from applicable_countries. */
   regions?: string[];
+  scopeTier?: ScenarioScopeTier;
+  scopeKey?: string;
+  clusterId?: string;
+  exclusivityReason?: ScenarioExclusivityReason;
+  sourceKind?: ScenarioSourceKind;
   /** Optional country IDs; generated scenarios will have metadata.applicable_countries set to this array. */
   applicable_countries?: string[];
   /** Optional per-request model overrides. Falls back to ARCHITECT_MODEL/DRAFTER_MODEL env vars when not set. */
@@ -552,6 +679,7 @@ export interface GenerationRequest {
   };
   /** Called after each failed generation attempt so callers can surface live audit failure detail. */
   onAttemptFailed?: (info: { bundle: string; attempt: number; maxAttempts: number; score: number; topIssues: string[] }) => void;
+  lowLatencyMode?: boolean;
 }
 
 export async function generateScenarios(request: GenerationRequest): Promise<BundleScenario[]> {
@@ -562,23 +690,34 @@ export async function generateScenarios(request: GenerationRequest): Promise<Bun
 
   const admin = require('firebase-admin');
   if (!admin.apps.length) admin.initializeApp();
-  await initializeAuditConfig(admin.firestore());
+  const db = admin.firestore();
+  await initializeAuditConfig(db);
+  const countryCatalog = await loadCountryCatalog(db);
 
   const genConfig = await getGenerationConfig();
+  const resolvedScope = normalizeGenerationScope(request);
+  const isDeployedFunction = !process.env.FUNCTIONS_EMULATOR && Boolean(process.env.K_SERVICE);
+  const isBulkSafeMode = request.lowLatencyMode ?? (isDeployedFunction && request.count <= 1);
 
   // Concept-level concurrency: how many concepts to expand in parallel per bundle
   // Combined with max_bundle_concurrency in background-jobs.ts:
   // Total concurrent API calls = max_bundle_concurrency × concept_concurrency
   const isLMStudio = isLMStudioGeneration(request.modelConfig);
-  const CONCURRENCY = isLMStudio ? 1 : (request.concurrency ?? genConfig.concept_concurrency);
-  console.log(`[ScenarioEngine] Generation: Bundle=${request.bundle}, Mode=${request.mode}, Concurrency=${CONCURRENCY}${isLMStudio ? ' (LM Studio — sequential)' : ''}`);
+  const configuredConcurrency = request.concurrency ?? genConfig.concept_concurrency;
+  const CONCURRENCY = isLMStudio ? 1 : (isBulkSafeMode ? 1 : configuredConcurrency);
+  console.log(`[ScenarioEngine] Generation: Bundle=${request.bundle}, Mode=${request.mode}, Concurrency=${CONCURRENCY}${isLMStudio ? ' (LM Studio — sequential)' : ''}${isBulkSafeMode ? ' (bulk-safe)' : ''}`);
+
+  console.log(`[ScenarioEngine] Country catalog source: ${countryCatalog.source.path}`);
+
+  if (request.applicable_countries?.length) {
+    assertRequestedCountryIdsAvailable(countryCatalog.countries, request.applicable_countries, 'ScenarioEngine');
+  }
 
   // Region-country consistency check: reject if applicable_countries don't match requested region
   if (request.region && request.applicable_countries?.length) {
-    const countriesData = await loadCountriesData();
     const mismatched: string[] = [];
     for (const id of request.applicable_countries) {
-      const c = countriesData[id];
+      const c = countryCatalog.countries[id];
       if (c?.region && c.region !== request.region) {
         mismatched.push(`${c.name || id} (belongs to region "${c.region}", not "${request.region}")`);
       }
@@ -605,12 +744,21 @@ export async function generateScenarios(request: GenerationRequest): Promise<Bun
     console.log(`[ScenarioEngine] Expanding concept ${idx + 1}/${concepts.length}: ${concept.concept}`);
 
     const runAttempt = async (): Promise<BundleScenario[]> => {
-      const loop = await expandConceptToLoop(concept, request.bundle, request.mode, request);
+      const loop = await expandConceptToLoop(concept, request.bundle, request.mode, {
+        ...request,
+        countryCatalogSource: countryCatalog.source,
+        scopeTier: resolvedScope.scopeTier,
+        scopeKey: resolvedScope.scopeKey,
+        clusterId: resolvedScope.clusterId,
+        exclusivityReason: resolvedScope.exclusivityReason,
+        sourceKind: resolvedScope.sourceKind,
+        lowLatencyMode: isBulkSafeMode,
+      });
       normalizeLoopStructure(loop);
 
       const validatedLoop: BundleScenario[] = [];
       for (const act of loop) {
-        const result = await auditAndRepair(act, request.bundle, request.mode, request.modelConfig);
+        const result = await auditAndRepair(act, request.bundle, request.mode, countryCatalog.source, request.modelConfig, isBulkSafeMode);
         if (result.scenario) validatedLoop.push(result.scenario);
       }
 
@@ -629,6 +777,11 @@ export async function generateScenarios(request: GenerationRequest): Promise<Bun
       const validation = validateLoopComplete(validatedLoop, concept.desiredActs);
       if (!validation.valid) {
         console.warn(`[ScenarioEngine] Loop validation failed: ${validation.reason}`);
+        const fallbackLoop = collapseLoopToStandalone(validatedLoop);
+        if (fallbackLoop.length > 0) {
+          console.warn(`[ScenarioEngine] Falling back to standalone scenario for concept ${idx + 1}`);
+          return fallbackLoop;
+        }
         return [];
       }
 
@@ -671,10 +824,10 @@ export async function generateScenarios(request: GenerationRequest): Promise<Bun
 
   // Derive region_tags from explicit regions or from applicable_countries
   const derivedRegionTags: string[] = (() => {
-    if (request.regions?.length) return request.regions;
-    if (request.applicable_countries?.length) {
+    if (resolvedScope.regions.length) return resolvedScope.regions;
+    if (resolvedScope.applicableCountries?.length) {
       const uniqueRegions = [...new Set(
-        request.applicable_countries
+        resolvedScope.applicableCountries
           .map(id => getRegionForCountry(id))
           .filter((r): r is NonNullable<typeof r> => r !== undefined)
       )];
@@ -690,8 +843,13 @@ export async function generateScenarios(request: GenerationRequest): Promise<Bun
       ...scenario.metadata,
       bundle: request.bundle,
       source: request.mode as 'news' | 'manual',
+      scopeTier: resolvedScope.scopeTier,
+      scopeKey: resolvedScope.scopeKey,
+      ...(resolvedScope.clusterId ? { clusterId: resolvedScope.clusterId } : {}),
+      ...(resolvedScope.exclusivityReason ? { exclusivityReason: resolvedScope.exclusivityReason } : {}),
+      sourceKind: resolvedScope.sourceKind,
       difficulty: scenario.metadata?.difficulty || 3,
-      ...(request.applicable_countries?.length ? { applicable_countries: request.applicable_countries } : {}),
+      ...(resolvedScope.applicableCountries?.length ? { applicable_countries: resolvedScope.applicableCountries } : {}),
       ...(derivedRegionTags.length ? { region_tags: derivedRegionTags } : {})
     }
   }));
@@ -708,6 +866,7 @@ const LLM_FIXABLE_RULES = new Set([
   'hardcoded-gov-structure',
   'advisor-boilerplate',
   'hardcoded-the-before-token',
+  'sentence-start-bare-token',
   'informal-tone',
   'double-space',
   'orphaned-punctuation',
@@ -723,6 +882,7 @@ const LLM_FIXABLE_RULES = new Set([
   'label-complexity',
   'outcome-second-person',
   'third-person-framing',
+  'lowercase-start',
   'short-summary',
   'invalid-role-id',
   'adjacency-token-mismatch',
@@ -781,13 +941,17 @@ STRICT RULES:
 1. Fix ONLY the fields mentioned in the ISSUES list.
 2. Do NOT rewrite, restructure, or alter any field NOT explicitly cited.
 3. Preserve ALL tokens exactly (e.g. {leader_title}, {the_adversary}, {the_player_country}).
-4. Do NOT change effects, metric IDs, durations, probabilities, or any numeric data.
-5. Return ONLY a partial JSON patch with the changed fields — same structure as input.
-6. Do NOT wrap in markdown.
+4. The returned JSON must never contain the literal substring "the {" anywhere.
+5. Never introduce a placeholder that is not already present in the approved whitelist or the scenario input. If a token is unavailable, rewrite with plain language.
+6. Do NOT change effects, metric IDs, durations, probabilities, or any numeric data.
+7. Return ONLY a partial JSON patch with the changed fields — same structure as input.
+8. Do NOT wrap in markdown.
 
 QUICK FIX REFERENCE:
 - third-person-framing: "the administration" → "{leader_title}"; "the government" → "your government" (in second-person fields) or "{leader_title}'s government" (in outcome fields)
 - hardcoded-the-before-token: "the {X}" → "{the_X}" (e.g. "the {adversary}" → "{the_adversary}")
+- sentence-start-bare-token: sentence-opening "{X}" → "{the_X}" when an article-form token exists
+- lowercase-start: capitalize the first narrative word of the field; if a field starts with a token, capitalize the first narrative word after the token
 - high-passive-voice: rewrite passive as active ("was directed to" → "you directed"; "was announced by" → "{leader_title} announced")
 - option-text-word-count / description-length: expand to minimum — add mechanism, trade-off, and affected group
 - short-summary: expand outcomeSummary/outcomeContext — add institutional reaction, market impact, or downstream effect
@@ -795,6 +959,7 @@ QUICK FIX REFERENCE:
 - hardcoded-institution-phrase: replace ministry name with role token (e.g. "Interior Ministry" → "{interior_role}")
 - label-has-token: remove the token from the label, replace with plain text (e.g. "Blame {the_neighbor}" → "Blame the Neighbor")
 - advisor-boilerplate: rewrite with concrete mechanism, affected constituency, and causal chain
+- invalid-token: never output {legislature_speaker} or {the_legislature_speaker}; rewrite as "speaker of {the_legislature}" or plain language
 
 CONCEPT → TOKEN MAP (government structure):
 ${conceptTokenTable}
@@ -880,7 +1045,9 @@ async function auditAndRepair(
   scenario: BundleScenario,
   bundle: string,
   mode: string,
-  modelConfig?: GenerationModelConfig
+  countryCatalogSource: CountryCatalogSourceMetadata,
+  modelConfig?: GenerationModelConfig,
+  skipEditorialReview?: boolean
 ): Promise<{ scenario: BundleScenario | null; score: number; issues: any[] }> {
   const isNews = mode === 'news';
 
@@ -899,6 +1066,8 @@ async function auditAndRepair(
       }
     }
   }
+
+  normalizeScenarioTextFields(scenario);
 
   let issues = auditScenario(scenario, bundle, isNews);
 
@@ -966,8 +1135,6 @@ async function auditAndRepair(
   // Always run boilerplate scrub and structural repairs regardless of audit result
   heuristicFix(scenario, [], bundle);
 
-  if (issues.length === 0) return { scenario, score: 100, issues: [] };
-
   // 3. Apply Deterministic Fixes (Phase normalization, metric mapping, etc.)
   if (scenario.metadata) {
     if (scenario.metadata.severity) scenario.metadata.severity = scenario.metadata.severity.toLowerCase();
@@ -1025,7 +1192,7 @@ async function auditAndRepair(
   // can degrade passing scenarios, and there's nothing to gain by running it.
   const { llm_repair_enabled, audit_pass_threshold: repairThreshold } = await getGenerationConfig();
   const preRepairCurrentScore = scoreScenario(issues);
-  if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold) {
+  if (!skipEditorialReview && llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold) {
     const fixableIssues = issues.filter(i => LLM_FIXABLE_RULES.has(i.rule));
     if (fixableIssues.length > 0) {
       const repaired = await llmRepairScenario(scenario, fixableIssues, bundle, isNews, preRepairCurrentScore, modelConfig);
@@ -1034,6 +1201,7 @@ async function auditAndRepair(
         scenario.title = repaired.title;
         scenario.description = repaired.description;
         scenario.options = repaired.options;
+        normalizeScenarioTextFields(scenario);
         deterministicFix(scenario);
         issues = auditScenario(scenario, bundle, isNews);
       }
@@ -1041,105 +1209,161 @@ async function auditAndRepair(
   }
 
   const score = scoreScenario(issues);
+  const {
+    audit_pass_threshold,
+    content_quality_gate_enabled,
+    narrative_review_enabled,
+    enable_conditional_editorial_review,
+  } = await getGenerationConfig();
 
-  // Only structural defects that break gameplay or the data model block unconditionally.
-  // Quality errors (voice, sentence count, currency phrasing) are already penalised by
-  // the score threshold — they should not add a second hard veto on top.
-  const STRUCTURAL_ERROR_RULES = new Set([
-    'missing-id', 'missing-title', 'missing-desc',
-    'option-count', 'no-effects', 'missing-metric-id',
-    'invalid-metric-id', 'non-finite-value', 'empty-text',
-    'invalid-duration', 'invalid-severity', 'invalid-urgency',
-    'invalid-phase', 'invalid-countries',
-  ]);
-  const hasStructuralErrors = issues.some(i => i.severity === 'error' && STRUCTURAL_ERROR_RULES.has(i.rule));
+  const effectiveContentQualityEnabled = Boolean(content_quality_gate_enabled) &&
+    !skipEditorialReview &&
+    !(skipEditorialReview && Boolean(enable_conditional_editorial_review));
+  const effectiveNarrativeReviewEnabled = Boolean(narrative_review_enabled) &&
+    !skipEditorialReview &&
+    !(skipEditorialReview && Boolean(enable_conditional_editorial_review));
 
-  const { audit_pass_threshold, content_quality_gate_enabled } = await getGenerationConfig();
-  if (score >= audit_pass_threshold && !hasStructuralErrors) {
-    // Optional LLM content quality gate — enabled via world_state/generation_config.content_quality_gate_enabled
-    if (content_quality_gate_enabled) {
-      try {
-        const qualityResult = await evaluateContentQuality(scenario, resolvePhaseModel(modelConfig, 'contentQuality'));
-        console.log(
-          `[ScenarioEngine] Quality gate ${scenario.id}: overall=${qualityResult.overallScore.toFixed(2)} ` +
-          `grammar=${qualityResult.grammar.score} tone=${qualityResult.tone.score} ` +
-          `coherence=${qualityResult.coherence.score} readability=${qualityResult.readability.score} pass=${qualityResult.pass}`
-        );
-        // Attach quality scores to audit metadata for monitoring
-        if (scenario.metadata) {
-          (scenario.metadata as any).contentQuality = {
-            overallScore: qualityResult.overallScore,
-            grammar: qualityResult.grammar.score,
-            tone: qualityResult.tone.score,
-            coherence: qualityResult.coherence.score,
-            readability: qualityResult.readability.score,
-            optionConsistency: qualityResult.optionConsistency.score,
-            advisorQuality: qualityResult.advisorQuality.score,
-            pass: qualityResult.pass,
-          };
-        }
-        // Hard fail only if overall quality is critically low (< 2.0) — avoids over-blocking on API edge cases
-        if (!qualityResult.pass && qualityResult.overallScore < 2.0) {
-          console.warn(`[ScenarioEngine] Scenario ${scenario.id} rejected by content quality gate (overallScore=${qualityResult.overallScore.toFixed(2)})`);
-          return { scenario: null, score, issues: [...issues, {
-            severity: 'error' as const,
-            rule: 'content-quality-violation',
-            target: scenario.id,
-            message: `Content quality gate failed: overall=${qualityResult.overallScore.toFixed(2)}. Issues: ${[...qualityResult.grammar.issues, ...qualityResult.tone.issues, ...qualityResult.coherence.issues, ...qualityResult.readability.issues].slice(0, 3).join('; ')}`,
-            autoFixable: false,
-          }] };
-        }
-      } catch (qErr: any) {
-        console.warn(`[ScenarioEngine] Content quality gate error (non-fatal): ${qErr.message}`);
+  const isNeutralContentQualityFallback = (qualityResult: Awaited<ReturnType<typeof evaluateContentQuality>> | undefined): boolean => {
+    if (!qualityResult) return true;
+    return qualityResult.pass === true &&
+      qualityResult.warn === false &&
+      qualityResult.overallScore === 3 &&
+      qualityResult.regenerateFields.length === 0 &&
+      [
+        qualityResult.grammar,
+        qualityResult.tone,
+        qualityResult.coherence,
+        qualityResult.readability,
+        qualityResult.optionConsistency,
+        qualityResult.advisorQuality,
+      ].every((dimension) => dimension.score === 3 && dimension.issues.length === 0);
+  };
+
+  const isNeutralNarrativeFallback = (narrativeResult: Awaited<ReturnType<typeof evaluateNarrativeQuality>> | undefined): boolean => {
+    if (!narrativeResult) return true;
+    return narrativeResult.pass === true &&
+      narrativeResult.overallScore === 3 &&
+      narrativeResult.editorialNotes.length === 0 &&
+      [
+        narrativeResult.engagement,
+        narrativeResult.strategicDepth,
+        narrativeResult.optionDifferentiation,
+        narrativeResult.consequenceQuality,
+        narrativeResult.replayValue,
+      ].every((dimension) => dimension.score === 3 && /review unavailable/i.test(dimension.reasoning || ''));
+  };
+
+  const contentQualityGate = {
+    enabled: effectiveContentQualityEnabled,
+    usable: false,
+    result: undefined as Awaited<ReturnType<typeof evaluateContentQuality>> | undefined,
+    error: undefined as string | undefined,
+  };
+
+  if (contentQualityGate.enabled) {
+    try {
+      const qualityResult = await evaluateContentQuality(scenario, resolvePhaseModel(modelConfig, 'contentQuality'));
+      console.log(
+        `[ScenarioEngine] Quality gate ${scenario.id}: overall=${qualityResult.overallScore.toFixed(2)} ` +
+        `grammar=${qualityResult.grammar.score} tone=${qualityResult.tone.score} ` +
+        `coherence=${qualityResult.coherence.score} readability=${qualityResult.readability.score} pass=${qualityResult.pass}`
+      );
+      if (scenario.metadata) {
+        (scenario.metadata as any).contentQuality = {
+          overallScore: qualityResult.overallScore,
+          grammar: qualityResult.grammar.score,
+          tone: qualityResult.tone.score,
+          coherence: qualityResult.coherence.score,
+          readability: qualityResult.readability.score,
+          optionConsistency: qualityResult.optionConsistency.score,
+          advisorQuality: qualityResult.advisorQuality.score,
+          pass: qualityResult.pass,
+        };
       }
-    }
-    // Narrative review gate — enabled via world_state/generation_config.narrative_review_enabled
-    const { narrative_review_enabled } = await getGenerationConfig();
-    if (narrative_review_enabled) {
-      try {
-        const narrativeResult = await evaluateNarrativeQuality(scenario, resolvePhaseModel(modelConfig, 'narrativeReview'));
-        console.log(
-          `[ScenarioEngine] Narrative review ${scenario.id}: overall=${narrativeResult.overallScore.toFixed(2)} ` +
-          `engagement=${narrativeResult.engagement.score} strategic=${narrativeResult.strategicDepth.score} ` +
-          `differentiation=${narrativeResult.optionDifferentiation.score} consequence=${narrativeResult.consequenceQuality.score} ` +
-          `replay=${narrativeResult.replayValue.score} pass=${narrativeResult.pass}`
-        );
-        if (scenario.metadata) {
-          (scenario.metadata as any).narrativeReview = {
-            overallScore: narrativeResult.overallScore,
-            engagement: narrativeResult.engagement.score,
-            strategicDepth: narrativeResult.strategicDepth.score,
-            optionDifferentiation: narrativeResult.optionDifferentiation.score,
-            consequenceQuality: narrativeResult.consequenceQuality.score,
-            replayValue: narrativeResult.replayValue.score,
-            pass: narrativeResult.pass,
-            editorialNotes: narrativeResult.editorialNotes,
-          };
-        }
-        if (!narrativeResult.pass && narrativeResult.overallScore < 2.0) {
-          console.warn(`[ScenarioEngine] Scenario ${scenario.id} rejected by narrative review (overallScore=${narrativeResult.overallScore.toFixed(2)})`);
-          return { scenario: null, score, issues: [...issues, {
-            severity: 'error' as const,
-            rule: 'narrative-quality-violation',
-            target: scenario.id,
-            message: `Narrative review failed: overall=${narrativeResult.overallScore.toFixed(2)}. Notes: ${narrativeResult.editorialNotes.slice(0, 2).join('; ')}`,
-            autoFixable: false,
-          }] };
-        }
-      } catch (nErr: any) {
-        console.warn(`[ScenarioEngine] Narrative review error (non-fatal): ${nErr.message}`);
+      contentQualityGate.result = qualityResult;
+      contentQualityGate.usable = !isNeutralContentQualityFallback(qualityResult);
+      if (!contentQualityGate.usable) {
+        contentQualityGate.error = 'Content quality gate returned neutral fallback result while enabled.';
       }
+    } catch (qErr: any) {
+      contentQualityGate.error = qErr.message;
+      console.warn(`[ScenarioEngine] Content quality gate error: ${qErr.message}`);
     }
+  }
+
+  const narrativeReviewGate = {
+    enabled: effectiveNarrativeReviewEnabled,
+    usable: false,
+    result: undefined as Awaited<ReturnType<typeof evaluateNarrativeQuality>> | undefined,
+    error: undefined as string | undefined,
+  };
+
+  if (narrativeReviewGate.enabled) {
+    try {
+      const narrativeResult = await evaluateNarrativeQuality(scenario, resolvePhaseModel(modelConfig, 'narrativeReview'));
+      console.log(
+        `[ScenarioEngine] Narrative review ${scenario.id}: overall=${narrativeResult.overallScore.toFixed(2)} ` +
+        `engagement=${narrativeResult.engagement.score} strategic=${narrativeResult.strategicDepth.score} ` +
+        `differentiation=${narrativeResult.optionDifferentiation.score} consequence=${narrativeResult.consequenceQuality.score} ` +
+        `replay=${narrativeResult.replayValue.score} pass=${narrativeResult.pass}`
+      );
+      if (scenario.metadata) {
+        (scenario.metadata as any).narrativeReview = {
+          overallScore: narrativeResult.overallScore,
+          engagement: narrativeResult.engagement.score,
+          strategicDepth: narrativeResult.strategicDepth.score,
+          optionDifferentiation: narrativeResult.optionDifferentiation.score,
+          consequenceQuality: narrativeResult.consequenceQuality.score,
+          replayValue: narrativeResult.replayValue.score,
+          pass: narrativeResult.pass,
+          editorialNotes: narrativeResult.editorialNotes,
+        };
+      }
+      narrativeReviewGate.result = narrativeResult;
+      narrativeReviewGate.usable = !isNeutralNarrativeFallback(narrativeResult);
+      if (!narrativeReviewGate.usable) {
+        narrativeReviewGate.error = 'Narrative review gate returned neutral fallback result while enabled.';
+      }
+    } catch (nErr: any) {
+      narrativeReviewGate.error = nErr.message;
+      console.warn(`[ScenarioEngine] Narrative review error: ${nErr.message}`);
+    }
+  }
+
+  const acceptanceDecision = decideScenarioAcceptance({
+    auditScore: score,
+    auditPassThreshold: audit_pass_threshold,
+    issues,
+    contentQualityGate,
+    narrativeReviewGate,
+  });
+
+  if (acceptanceDecision.accepted) {
+    const metadata = scenario.metadata ?? {};
+    scenario.metadata = {
+      ...metadata,
+    };
+    (scenario.metadata as any).acceptanceMetadata = {
+      policyVersion: SCENARIO_ACCEPTANCE_POLICY_VERSION,
+      countrySource: countryCatalogSource,
+      acceptedAt: new Date().toISOString(),
+      scopeTier: metadata.scopeTier ?? 'universal',
+      scopeKey: metadata.scopeKey ?? 'universal',
+      sourceKind: metadata.sourceKind ?? (mode === 'news' ? 'news' : 'evergreen'),
+      modelFamily: getModelFamily(modelConfig),
+    };
     return { scenario, score, issues };
   }
 
-  console.warn(`[ScenarioEngine] Scenario ${scenario.id} failed audit (score: ${score}, hasStructuralErrors: ${hasStructuralErrors}). REJECTING. Issues:`,
-
-    issues.map(i => `[${i.severity}] ${i.message}`).join(', '));
-  return { scenario: null, score, issues };
+  const rejectionIssues = [...issues, ...acceptanceDecision.rejectionIssues];
+  console.warn(
+    `[ScenarioEngine] Scenario ${scenario.id} rejected by acceptance policy ${acceptanceDecision.policyVersion}: ${acceptanceDecision.rejectionReasons.join('; ')}`
+  );
+  return { scenario: null, score, issues: rejectionIssues };
 }
 
 async function generateConceptSeeds(request: GenerationRequest): Promise<any[]> {
+  const resolvedScope = normalizeGenerationScope(request);
   let headlines = '';
   if (request.mode === 'news' && request.newsContext) {
     headlines = request.newsContext.slice(0, 30).map(n => `- ${n.title}`).join('\n');
@@ -1150,6 +1374,15 @@ async function generateConceptSeeds(request: GenerationRequest): Promise<any[]> 
     getCountryContextBlock(request.applicable_countries),
     buildCountryNote(request.applicable_countries),
   ]);
+  const scopeOverlay = getScopePromptOverlay(resolvedScope.scopeTier);
+
+  const CANONICAL_METRIC_IDS = [
+    'economy', 'public_order', 'health', 'education', 'infrastructure', 'environment',
+    'foreign_relations', 'military', 'liberty', 'equality', 'employment', 'innovation',
+    'trade', 'energy', 'housing', 'democracy', 'sovereignty', 'immigration',
+    'corruption', 'inflation', 'crime', 'bureaucracy', 'approval', 'budget',
+    'unrest', 'economic_bubble', 'foreign_influence'
+  ].join(', ');
 
   const prompt = `
     You are 'The Architect'. Generate ${request.count} unique scenario concepts for the '${request.bundle}' bundle.
@@ -1163,14 +1396,49 @@ async function generateConceptSeeds(request: GenerationRequest): Promise<any[]> 
     Aim for a spread across difficulty levels. At least one concept should be difficulty 4-5.
 
     ${headlines ? `News Context (Seed Material):\n${headlines}\n\nINTEGRATION: Transform these news items into country-agnostic, tokenized concepts.` : `Theme: Focus on geopolitical strategies for '${request.bundle}'.`}
+    SCOPE TARGET:
+    - scopeTier: ${resolvedScope.scopeTier}
+    - scopeKey: ${resolvedScope.scopeKey}
+    - sourceKind: ${resolvedScope.sourceKind}
+    ${resolvedScope.clusterId ? `- clusterId: ${resolvedScope.clusterId}` : ''}
+    ${resolvedScope.exclusivityReason ? `- exclusivityReason: ${resolvedScope.exclusivityReason}` : ''}
     ${request.region ? `\nTARGET REGION: ${request.region}. Generate concepts that feel relevant to this region (e.g. small island states, regional dynamics, local stakes).` : ''}
     ${countryNote}
 
     ${countryContextBlock}
 
+    SCOPE-SPECIFIC GUIDANCE:
+    ${scopeOverlay.architect}
+
     ${architectPromptBase}
 
-    Return exactly ${request.count} concepts in JSON with fields: concept, theme, severity, difficulty.
+    CANONICAL METRIC IDs (use only these for primaryMetrics and secondaryMetrics):
+    ${CANONICAL_METRIC_IDS}
+
+    RICH CONCEPT FIELDS — include these in every concept object:
+    - primaryMetrics: array of 1–3 metric IDs most directly affected (from canonical list above)
+    - secondaryMetrics: array of 0–3 metric IDs secondarily affected (optional but encouraged)
+    - actorPattern: one of 'domestic' | 'ally' | 'adversary' | 'border_rival' | 'legislature' | 'cabinet' | 'judiciary' | 'mixed'
+      - domestic: internal actor (protest group, industry, regional faction)
+      - ally: a friendly foreign power is the central actor
+      - adversary: a hostile foreign power is the central actor
+      - border_rival: a neighboring rival country is the central actor
+      - legislature: {legislature} is the central actor blocking or pushing action
+      - cabinet: a cabinet minister or internal faction is the central actor
+      - judiciary: courts or rule-of-law tensions are the central actor
+      - mixed: multiple actor types are equally central
+    - optionShape: one of 'redistribute' | 'regulate' | 'escalate' | 'negotiate' | 'invest' | 'cut' | 'reform' | 'delay'
+      - redistribute: moving resources from one group to another
+      - regulate: imposing or relaxing rules on an actor
+      - escalate: increasing pressure, stakes, or force
+      - negotiate: diplomatic or coalition-building action
+      - invest: committing budget or effort to build capacity
+      - cut: reducing spending, programs, or engagement
+      - reform: structural change to an institution or policy
+      - delay: deferring a decision with interim measures
+    - loopEligible: true if this concept has a multi-act narrative arc (acts 2–5 naturally follow from act 1); false for standalone scenarios
+
+    Return exactly ${request.count} concepts in JSON with fields: concept, theme, severity, difficulty, primaryMetrics, secondaryMetrics, actorPattern, optionShape, loopEligible.
   `;
 
   const result = await callModel(ARCHITECT_CONFIG, prompt, CONCEPT_SCHEMA, resolvePhaseModel(request.modelConfig, 'architect'));
@@ -1186,15 +1454,26 @@ async function generateConceptSeeds(request: GenerationRequest): Promise<any[]> 
 }
 
 async function expandConceptToLoop(
-  concept: any,
+  concept: GeneratedConcept,
   bundle: string,
   mode: string,
-  request?: { region?: string; applicable_countries?: string[]; modelConfig?: GenerationModelConfig; onAttemptFailed?: GenerationRequest['onAttemptFailed'] }
+  request?: { region?: string; regions?: string[]; applicable_countries?: string[]; countryCatalogSource?: CountryCatalogSourceMetadata; modelConfig?: GenerationModelConfig; onAttemptFailed?: GenerationRequest['onAttemptFailed']; scopeTier?: ScenarioScopeTier; scopeKey?: string; clusterId?: string; exclusivityReason?: ScenarioExclusivityReason; sourceKind?: ScenarioSourceKind; lowLatencyMode?: boolean }
 ): Promise<BundleScenario[]> {
+  const bundleOverlay = getBundlePromptOverlay(bundle as BundleId);
+  const scopeTier = request?.scopeTier ?? 'universal';
+  const scopeKey = request?.scopeKey ?? 'universal';
+  const scopeOverlay = getScopePromptOverlay(scopeTier);
+
+  const genConfig = await getGenerationConfig();
+  const isStandardDirectDraft = Boolean(genConfig.enable_standard_direct_draft);
+  const isPremium = (concept.difficulty ?? 3) >= 4 || concept.loopEligible === true;
+  const useStandardPath = Boolean(request?.lowLatencyMode) || (isStandardDirectDraft && !isPremium);
+  concept._generationPath = useStandardPath ? 'standard' : 'premium';
+
   // Load Firebase-managed prompts and supporting data
   const [promptVersions, goldenExamples, drafterPromptBase, reflectionPrompt, architectPromptBase, countryContextBlock, countryNote] = await Promise.all([
     getCurrentPromptVersions(),
-    getGoldenExamples(bundle, 2),
+    getGoldenExamples(bundle, scopeTier, scopeKey, 2),
     getDrafterPromptBase(),
     getReflectionPrompt(),
     getArchitectPromptBase(),
@@ -1203,13 +1482,35 @@ async function expandConceptToLoop(
   ]);
 
   const regionNote = request?.region ? ` Target region: ${request.region}.` : '';
+  const scopeNote = ` Scope tier: ${scopeTier}. Scope key: ${scopeKey}.`;
+  const requestedRegions = request?.regions?.length ? request.regions : request?.region ? [request.region] : undefined;
 
-  // 1. Generate Narrative Blueprint (Architect)
-  const blueprintPrompt = `
+  // Build a synthetic single-act blueprint for the standard path so the rest of the
+  // drafting loop can be reused without duplication.
+  let blueprint: { acts: Array<{ actIndex: number; title: string; summary: string }> };
+
+  if (useStandardPath) {
+    blueprint = {
+      acts: [{
+        actIndex: 1,
+        title: concept.concept.split('.')[0].trim().slice(0, 80),
+        summary: concept.concept,
+      }]
+    };
+    console.log(`[ScenarioEngine] Standard path (direct draft) for concept: ${concept.concept.slice(0, 60)}`);
+  } else {
+    // Premium path: generate full narrative blueprint via Architect
+    const blueprintPrompt = `
     Create a ${concept.desiredActs || 3}-act narrative blueprint for this concept: "${concept.concept}" (Severity: ${concept.severity}).
-    Bundle: ${bundle}.${regionNote}${countryNote}
+    Bundle: ${bundle}.${regionNote}${scopeNote}${countryNote}
 
     ${countryContextBlock}
+
+    BUNDLE-SPECIFIC GUIDANCE:
+    ${bundleOverlay.architect}
+
+    SCOPE-SPECIFIC GUIDANCE:
+    ${scopeOverlay.architect}
 
     CRITICAL: You must generate EXACTLY ${concept.desiredActs || 3} acts. Do not generate more or less.
 
@@ -1218,10 +1519,28 @@ async function expandConceptToLoop(
     ${architectPromptBase}
   `;
 
-  const blueprintAttemptId = generateAttemptId(bundle, 'blueprint');
+    const blueprintAttemptId = generateAttemptId(bundle, 'blueprint');
 
-  const blueprintResult = await callModel(ARCHITECT_CONFIG, blueprintPrompt, BLUEPRINT_SCHEMA, resolvePhaseModel(request?.modelConfig, 'architect'));
-  if (!blueprintResult?.data || !blueprintResult.data.acts) {
+    const blueprintResult = await callModel(ARCHITECT_CONFIG, blueprintPrompt, BLUEPRINT_SCHEMA, resolvePhaseModel(request?.modelConfig, 'architect'));
+    if (!blueprintResult?.data || !blueprintResult.data.acts) {
+      await logGenerationAttempt({
+        attemptId: blueprintAttemptId,
+        timestamp: Timestamp.now(),
+        bundle,
+        severity: concept.severity,
+        desiredActs: concept.desiredActs || 3,
+        promptVersion: promptVersions.architect,
+        modelUsed: ARCHITECT_MODEL,
+        phase: 'blueprint',
+        success: false,
+        retryCount: 0,
+        failureReasons: ['Blueprint generation failed'],
+      });
+      throw new Error("Failed to generate blueprint");
+    }
+
+    blueprint = blueprintResult.data;
+
     await logGenerationAttempt({
       attemptId: blueprintAttemptId,
       timestamp: Timestamp.now(),
@@ -1231,31 +1550,16 @@ async function expandConceptToLoop(
       promptVersion: promptVersions.architect,
       modelUsed: ARCHITECT_MODEL,
       phase: 'blueprint',
-      success: false,
+      success: true,
       retryCount: 0,
-      failureReasons: ['Blueprint generation failed'],
     });
-    throw new Error("Failed to generate blueprint");
   }
-
-  const blueprint = blueprintResult.data;
-
-  await logGenerationAttempt({
-    attemptId: blueprintAttemptId,
-    timestamp: Timestamp.now(),
-    bundle,
-    severity: concept.severity,
-    desiredActs: concept.desiredActs || 3,
-    promptVersion: promptVersions.architect,
-    modelUsed: ARCHITECT_MODEL,
-    phase: 'blueprint',
-    success: true,
-    retryCount: 0,
-  });
 
   const baseId = `gen_${bundle}_${Date.now().toString(36)}`;
   const blueprintSummary = blueprint.acts.map((a: any) => `Act ${a.actIndex}: ${a.title}`).join(' -> ');
-  const MAX_RETRIES = Math.max(1, (await getGenerationConfig()).max_llm_repair_attempts);
+  const MAX_RETRIES = request?.lowLatencyMode
+    ? 1
+    : Math.max(1, (await getGenerationConfig()).max_llm_repair_attempts);
   const allExpectedIds = blueprint.acts.map((a: any) => `${baseId}_act${a.actIndex}`);
 
   // 2. Draft All Acts in Parallel (Drafter)
@@ -1268,6 +1572,11 @@ async function expandConceptToLoop(
       const attemptId = generateAttemptId(bundle, `act${actPlan.actIndex}`);
 
       // Build prompt with guard rails first (prevention before writing — reduce token waste)
+      const conceptContextBlock = useStandardPath && (concept.primaryMetrics?.length || concept.actorPattern || concept.optionShape)
+        ? `\nCONCEPT CONTEXT:\n- Primary metrics affected: ${(concept.primaryMetrics ?? []).join(', ')}\n- Actor pattern: ${concept.actorPattern ?? 'unspecified'}\n- Option shape: ${concept.optionShape ?? 'unspecified'}\n`
+        : '';
+      const actorTokenRequirementBlock = buildActorTokenRequirement(concept.actorPattern);
+
       let drafterPrompt = `
       **OUTPUT GUARD RAILS (comply first)**:
       description = 2–3 sentences. Each option text = 2–3 sentences. Each option: 2, 3, or 4 effects only — not 5 or more. title = 4–8 words, no tokens in title.
@@ -1277,12 +1586,20 @@ async function expandConceptToLoop(
       Full Loop Arc: ${blueprintSummary}
       Act Summary: ${actPlan.summary}
       Difficulty: ${concept.difficulty || 3}/5 (1=routine, 5=existential crisis)
-      ${regionNote}${countryNote}
+      ${conceptContextBlock}
+      ${actorTokenRequirementBlock ? `${actorTokenRequirementBlock}\n` : ''}
+      ${regionNote}${scopeNote}${countryNote}
 
       ${countryContextBlock}
 
-      ${getLogicParametersPrompt(concept.severity)}
+      ${getLogicParametersPrompt(concept.severity as 'low' | 'medium' | 'high' | 'extreme' | 'critical' | undefined)}
       ${getAuditRulesPrompt()}
+
+      BUNDLE-SPECIFIC GUIDANCE:
+      ${bundleOverlay.drafter}
+
+      SCOPE-SPECIFIC GUIDANCE:
+      ${scopeOverlay.drafter}
 
       METADATA REQUIREMENTS:
       - severity: must be one of 'low', 'medium', 'high', 'extreme', 'critical'
@@ -1432,18 +1749,39 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
           actIndex: actPlan.actIndex,
           metadata: {
             ...actDetails.metadata,
-            source: mode as any
+            source: mode as any,
+            actorPattern: concept.actorPattern,
+            scopeTier,
+            scopeKey,
+            ...(request?.clusterId ? { clusterId: request.clusterId } : {}),
+            ...(request?.exclusivityReason ? { exclusivityReason: request.exclusivityReason } : {}),
+            ...(request?.sourceKind ? { sourceKind: request.sourceKind } : {}),
+            ...(request?.applicable_countries?.length ? { applicable_countries: request.applicable_countries } : {}),
+            ...(requestedRegions?.length ? { region_tags: requestedRegions } : {}),
           }
         };
 
-        // Audit the generated act
-        lastAuditResult = await auditAndRepair(act, bundle, mode, request?.modelConfig);
+        // Audit the generated act — skip editorial review for standard-path scenarios (10% always pass through)
+        const skipEditorial = Boolean(request?.lowLatencyMode) || (
+          useStandardPath
+          && Boolean(genConfig.enable_conditional_editorial_review)
+          && Math.random() >= 0.1
+        );
+        lastAuditResult = await auditAndRepair(
+          act,
+          bundle,
+          mode,
+          request?.countryCatalogSource ?? { kind: 'firestore', path: 'countries' },
+          request?.modelConfig,
+          skipEditorial
+        );
 
         if (lastAuditResult.scenario) {
           // Success! Attach audit metadata so it persists to Firestore and the client
           const wasAutoFixed = lastAuditResult.issues.length > 0;
           actScenario = {
             ...lastAuditResult.scenario,
+            _generationPath: concept._generationPath,
             metadata: {
               ...lastAuditResult.scenario.metadata,
               auditMetadata: {
@@ -1615,7 +1953,7 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
 /**
  * Fetch golden examples for few-shot learning
  */
-async function getGoldenExamples(bundle: string, limit: number = 2): Promise<BundleScenario[]> {
+async function getGoldenExamples(bundle: string, scopeTier: ScenarioScopeTier, scopeKey: string, limit: number = 2): Promise<BundleScenario[]> {
   try {
     const admin = require('firebase-admin');
     if (!admin.apps.length) {
@@ -1623,19 +1961,77 @@ async function getGoldenExamples(bundle: string, limit: number = 2): Promise<Bun
     }
     const db = admin.firestore();
 
-    const snapshot = await db.collection('training_scenarios')
-      .where('bundle', '==', bundle)
-      .where('isGolden', '==', true)
-      .orderBy('auditScore', 'desc')
-      .limit(limit)
-      .get();
+    let snapshot;
+    try {
+      snapshot = await db.collection('training_scenarios')
+        .where('bundle', '==', bundle)
+        .where('isGolden', '==', true)
+        .where('scopeTier', '==', scopeTier)
+        .orderBy('auditScore', 'desc')
+        .limit(Math.max(limit * 4, 8))
+        .get();
+    } catch (scopeQueryError) {
+      console.warn(`[ScenarioEngine] Scope-filtered golden example query failed for ${bundle}/${scopeTier}:`, scopeQueryError);
+      snapshot = await db.collection('training_scenarios')
+        .where('bundle', '==', bundle)
+        .where('isGolden', '==', true)
+        .orderBy('auditScore', 'desc')
+        .limit(Math.max(limit * 6, 12))
+        .get();
+    }
 
     if (snapshot.empty) {
       console.log(`[ScenarioEngine] No golden examples found for bundle: ${bundle}`);
       return [];
     }
 
-    return snapshot.docs.map((doc: any) => doc.data() as BundleScenario);
+    const examples = snapshot.docs.map((doc: any) => doc.data() as BundleScenario);
+    const prioritizedExamples = examples.sort((left: BundleScenario, right: BundleScenario) => {
+      const leftMeta: any = left.metadata ?? {};
+      const rightMeta: any = right.metadata ?? {};
+      const leftExact = leftMeta.scopeKey === scopeKey ? 1 : 0;
+      const rightExact = rightMeta.scopeKey === scopeKey ? 1 : 0;
+      if (leftExact !== rightExact) return rightExact - leftExact;
+      return 0;
+    });
+    const selected: BundleScenario[] = [];
+    const usedChainIds = new Set<string>();
+    const usedLanes = new Set<string>();
+
+    const buildLane = (scenario: BundleScenario): string => {
+      const metadata: any = scenario.metadata ?? {};
+      return [
+        metadata.severity ?? 'unknown',
+        metadata.difficulty ?? 'unknown',
+        metadata.scopeTier ?? 'universal',
+        metadata.scopeKey === scopeKey ? 'exact-scope' : 'adjacent-scope',
+      ].join('|');
+    };
+
+    const addScenario = (scenario: BundleScenario): boolean => {
+      const chainId = (scenario as any).chainId ?? String(scenario.id).replace(/_act\d+$/i, '');
+      if (usedChainIds.has(chainId) || selected.length >= limit) {
+        return false;
+      }
+      usedChainIds.add(chainId);
+      selected.push(scenario);
+      return true;
+    };
+
+    for (const scenario of prioritizedExamples) {
+      const lane = buildLane(scenario);
+      if (usedLanes.has(lane)) continue;
+      if (addScenario(scenario)) {
+        usedLanes.add(lane);
+      }
+    }
+
+    for (const scenario of prioritizedExamples) {
+      if (selected.length >= limit) break;
+      addScenario(scenario);
+    }
+
+    return selected;
   } catch (error) {
     console.error('[ScenarioEngine] Error fetching golden examples:', error);
     return [];
@@ -1745,6 +2141,25 @@ function normalizeLoopStructure(loop: BundleScenario[]) {
   console.log(`[LoopStructure] Normalized ${loop.length}-act loop with chainId: ${chainId}`);
 }
 
+function collapseLoopToStandalone(loop: BundleScenario[]): BundleScenario[] {
+  if (loop.length === 0) return [];
+
+  const rootScenario: BundleScenario = {
+    ...loop[0],
+    phase: 'root',
+    actIndex: 1,
+    chainsTo: [],
+    options: loop[0].options.map((option) => {
+      const normalizedOption = { ...option } as any;
+      normalizedOption.consequenceScenarioIds = [];
+      delete normalizedOption.consequenceDelay;
+      return normalizedOption;
+    }),
+  };
+
+  return [rootScenario];
+}
+
 function buildLoopLengthPlan(count: number, config?: any): number[] {
   // Fixed mode: all scenarios share one act count (capped at 3)
   if (config?.mode === 'fixed' && config?.loopLength) {
@@ -1768,10 +2183,11 @@ function buildLoopLengthPlan(count: number, config?: any): number[] {
     return plan.slice(0, count).sort(() => Math.random() - 0.5);
   }
 
-  // Auto mode: weighted by gameLength hint (mirrors UI presets, max 3 acts each)
-  // short  = 60% 1-act, 30% 2-act, 10% 3-act
-  // medium = 40% 1-act, 30% 2-act, 30% 3-act  (default)
-  // long   = 20% 1-act, 20% 2-act, 60% 3-act
+  if (!config || config.mode === 'auto') {
+    return Array(count).fill(1);
+  }
+
+  // Legacy weighted mode: preserved for explicit gameLength-based configs.
   const GAME_LENGTH_WEIGHTS: Record<string, number[]> = {
     short:  [1, 1, 1, 1, 1, 1, 2, 2, 2, 3],
     medium: [1, 1, 1, 1, 2, 2, 2, 3, 3, 3],

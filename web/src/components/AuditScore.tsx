@@ -16,9 +16,9 @@ export default function AuditScore({ score }: AuditScoreProps) {
   }
   const { letter, className } = getGrade(score);
   return (
-    <span className="font-mono text-sm">
+    <span className="inline-flex min-h-[24px] items-center gap-2 rounded-[10px] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.16em]">
       <span className={`font-bold ${className}`}>{letter}</span>
-      <span className="text-foreground-muted ml-1">{score}</span>
+      <span className="text-foreground-muted">{score}</span>
     </span>
   );
 }

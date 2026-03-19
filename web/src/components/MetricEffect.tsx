@@ -20,8 +20,8 @@ export default function MetricEffect({ effect }: MetricEffectProps) {
   const sign = value > 0 ? '+' : '';
 
   return (
-    <div className="flex items-center gap-2 text-xs font-mono">
-      <span className="text-foreground-muted w-36 truncate">{label}</span>
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 rounded-[10px] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-xs font-mono">
+      <span className="truncate text-foreground-muted">{label}</span>
       <span className={`font-bold ${valueClass}`}>
         {sign}{value}
       </span>
@@ -29,7 +29,7 @@ export default function MetricEffect({ effect }: MetricEffectProps) {
         {duration}t
       </span>
       {probability < 1 && (
-        <span className="text-foreground-subtle">
+        <span className="col-span-full text-[10px] uppercase tracking-[0.16em] text-foreground-subtle">
           ({Math.round(probability * 100)}%)
         </span>
       )}

@@ -52,6 +52,27 @@ const audit_rules_1 = require("../lib/audit-rules");
 const prompt_builder_1 = require("../lib/prompt-builder");
 const content_quality_1 = require("../lib/content-quality");
 const model_providers_1 = require("../lib/model-providers");
+function loadEnvFromFile() {
+    const envPaths = ['.env.cli', '.env.local', '.env'].map((fileName) => path.join(__dirname, '..', '..', fileName));
+    for (const envPath of envPaths) {
+        if (!fs.existsSync(envPath))
+            continue;
+        const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#'))
+                continue;
+            const eq = trimmed.indexOf('=');
+            if (eq < 1)
+                continue;
+            const key = trimmed.slice(0, eq).trim();
+            const val = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
+            if (!(key in process.env))
+                process.env[key] = val;
+        }
+    }
+}
+loadEnvFromFile();
 // ---------------------------------------------------------------------------
 // Firebase init
 // ---------------------------------------------------------------------------

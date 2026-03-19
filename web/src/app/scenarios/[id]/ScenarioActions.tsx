@@ -41,7 +41,7 @@ export default function ScenarioActions({ id, isActive }: ScenarioActionsProps) 
         className={`btn ${
           active
             ? 'border-[var(--success)]/30 text-[var(--success)] hover:bg-[var(--success)]/10'
-            : 'border-[var(--border-strong)] text-foreground-muted hover:text-foreground hover:bg-background-muted'
+            : 'border-[var(--border)] text-foreground-muted hover:text-foreground hover:bg-background-muted'
         }`}
       >
         <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-[var(--success)]' : 'bg-[var(--foreground-subtle)]'}`} />
