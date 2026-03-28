@@ -61,7 +61,7 @@ export interface ScopePromptOverlay {
 const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
   economy: {
     architect: 'Center the blueprint on fiscal tradeoffs, inflation pressure, jobs, market confidence, and knock-on budget consequences.',
-    drafter: 'Favor concrete economic levers such as taxes, subsidies, debt issuance, price controls, labor support, trade exposure, and central-bank tension. Make option tradeoffs legible for budget, employment, inflation, and approval.',
+    drafter: 'Favor concrete economic levers such as taxes, subsidies, debt issuance, price controls, labor support, trade exposure, and central-bank tension. Make option tradeoffs legible for budget, employment, inflation, and approval. When an option raises or lowers taxes, changes spending allocations, or shifts trade policy, include policyImplications targeting the relevant fiscal/policy settings (e.g. fiscal.taxIncome, fiscal.spendingSocial, policy.tradeOpenness).',
   },
   politics: {
     architect: 'Frame the arc around legitimacy, coalition pressure, scandals, constitutional stress, electoral fallout, and elite factional conflict.',
@@ -69,7 +69,7 @@ const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
   },
   military: {
     architect: 'Frame the conflict around escalation risk, deterrence credibility, readiness, civilian costs, alliance signaling, and strategic uncertainty.',
-    drafter: 'Favor mobilization, procurement, border security, intelligence, force posture, veterans, and wartime tradeoffs. Keep consequences grounded in military readiness, public order, budget, foreign relations, and approval.',
+    drafter: 'Favor mobilization, procurement, border security, intelligence, force posture, veterans, and wartime tradeoffs. Keep consequences grounded in military readiness, public order, budget, foreign relations, and approval. When an option increases or decreases military spending or shifts defense posture, include policyImplications targeting fiscal.spendingMilitary and/or policy.defenseSpending.',
   },
   tech: {
     architect: 'Center the arc on cyber risk, AI governance, digital dependence, innovation upside, privacy costs, and infrastructure fragility.',
@@ -77,11 +77,11 @@ const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
   },
   environment: {
     architect: 'Frame the arc around climate shocks, adaptation costs, environmental regulation, resource stress, infrastructure resilience, and public backlash.',
-    drafter: 'Favor natural disasters, pollution, emissions controls, land use, resilience spending, relocation, and ecological restoration. Options should force tradeoffs between environment, economy, health, infrastructure, and social stability.',
+    drafter: 'Favor natural disasters, pollution, emissions controls, land use, resilience spending, relocation, and ecological restoration. Options should force tradeoffs between environment, economy, health, infrastructure, and social stability. When an option tightens or relaxes environmental regulation, include policyImplications targeting policy.environmentalPolicy and/or policy.environmentalProtection.',
   },
   social: {
     architect: 'Center the arc on inequality, education strain, labor unrest, demographic pressure, service delivery, and social cohesion.',
-    drafter: 'Favor strikes, welfare reforms, education access, housing stress, migration integration, and inequality-driven backlash. Make the consequences visible across equality, employment, housing, liberty, and approval.',
+    drafter: 'Favor strikes, welfare reforms, education access, housing stress, migration integration, and inequality-driven backlash. Make the consequences visible across equality, employment, housing, liberty, and approval. When an option changes social spending, healthcare access, education funding, or immigration policy, include policyImplications targeting the relevant settings (e.g. fiscal.spendingSocial, policy.healthcareAccess, policy.educationFunding, policy.immigration).',
   },
   health: {
     architect: 'Frame the arc around public-health capacity, outbreak control, medical scarcity, trust in institutions, and unequal access to care.',
@@ -119,11 +119,11 @@ const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
 
 const SCOPE_PROMPT_OVERLAYS: Record<ScenarioScopeTier, ScopePromptOverlay> = {
   universal: {
-    architect: 'Optimize for transferability. Avoid country-unique constitutional assumptions, preserve tokenized institutions, and prefer mechanisms that can plausibly occur across many states.',
-    drafter: 'Write broadly reusable governance dilemmas with concrete mechanisms and stakeholders. Reject disguised single-country assumptions, hardcoded constitutional structures, and narrow historical framing.',
+    architect: 'Optimize for transferability. Avoid country-unique constitutional assumptions, preserve tokenized institutions, and prefer mechanisms that can plausibly occur across many states. CRITICAL: use only domestic, legislature, cabinet, or judiciary for actorPattern — never ally, adversary, border_rival, or mixed. Relationship tokens ({the_ally}, {the_adversary}, {the_border_rival}, etc.) resolve against country-specific geopolitical profiles and are prohibited in universal scenarios. Do not generate concepts that involve foreign countries, neighboring states, rival nations, or bilateral disputes — not even as generic phrases like "a neighboring country". Universal scenarios must be entirely domestic: internal governance crises, institutional disputes, economic policy dilemmas, domestic security decisions, public health emergencies, civil unrest. If a concept cannot exist without a foreign counterpart, it is not universal.',
+    drafter: 'Write broadly reusable governance dilemmas grounded in domestic institutions. Reject disguised single-country assumptions, hardcoded constitutional structures, and narrow historical framing. CRITICAL: do not use any relationship tokens ({the_ally}, {the_adversary}, {the_border_rival}, {the_neighbor}, {the_rival}, {the_trade_partner}, {the_regional_rival}, {the_partner}, {the_neutral}) — these tokens depend on country-specific geopolitical data and will fail for most countries. Use domestic political actors, cabinet roles, legislature, or judiciary instead.',
   },
   regional: {
-    architect: 'Optimize for regional realism. Use geography, blocs, corridors, migration routes, weather systems, and spillover effects that make causal sense within the target region.',
+    architect: 'Optimize for regional realism. Use geography, regional alliances, migration routes, weather systems, and cross-border knock-on effects that make causal sense within the target region. Prefer plain-language news wording over think-tank jargon.',
     drafter: 'Inject region-relevant causal chains and pressure sources without hardcoding country names. Favor regional trade, border, climate, and alliance dynamics that still transfer within the same region.',
   },
   cluster: {
@@ -365,9 +365,15 @@ export function getBundlesWithPromptOverlays(): readonly BundleId[] {
 export function buildDrafterPrompt(
   basePrompt: string,
   fewShotExamples?: BundleScenario[],
-  reflectionPrompt?: string
+  reflectionPrompt?: string,
+  options?: { lowLatencyMode?: boolean }
 ): string {
   let prompt = basePrompt;
+
+  if (options?.lowLatencyMode) {
+    prompt += '\n\n# LOW-LATENCY MODE\nReturn the smallest valid JSON that still satisfies every schema and audit requirement. Do not add extra explanation or decorative prose beyond what the fields require.\n';
+    return prompt;
+  }
 
   if (fewShotExamples && fewShotExamples.length > 0) {
     prompt += '\n\n# PERFECT EXAMPLES\n\nStudy these examples of PERFECT scenarios that meet all requirements:\n\n';
@@ -382,4 +388,29 @@ export function buildDrafterPrompt(
   }
 
   return prompt;
+}
+
+export function buildArchitectPrompt(
+  basePrompt: string,
+  options?: { lowLatencyMode?: boolean }
+): string {
+  if (!options?.lowLatencyMode) {
+    return basePrompt;
+  }
+
+  return `# LOW-LATENCY MODE
+You are The Architect for The Administration.
+
+Return valid JSON only.
+
+Rules:
+- Write plain-language, human-readable governance dilemmas.
+- Use approved tokens only for countries, leaders, institutions, alliances, and money.
+- Never use literal country names, capitals, party names, or real alliance names.
+- Keep each concept realistic, politically grounded, and appropriate for the requested bundle and scope.
+- Make the dilemma clear, with real tradeoffs and no obvious best answer.
+- Use only canonical metric IDs in primaryMetrics and secondaryMetrics.
+- Keep each concept concise: 2 short sentences are enough.
+- Prefer domestic actors unless scope clearly justifies foreign actors.
+- Do not add explanation outside the requested JSON shape.`;
 }

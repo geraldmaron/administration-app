@@ -11,11 +11,14 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CANONICAL_ROLE_IDS = exports.isValidBundleId = exports.VALID_BUNDLE_IDS = void 0;
+exports.repairTextIntegrity = repairTextIntegrity;
 exports.getAuditConfig = getAuditConfig;
+exports.setAuditConfigForTests = setAuditConfigForTests;
 exports.initializeAuditConfig = initializeAuditConfig;
 exports.getRelevantRolesForEffects = getRelevantRolesForEffects;
 exports.auditScenario = auditScenario;
 exports.scoreScenario = scoreScenario;
+exports.normalizeScenarioTextFields = normalizeScenarioTextFields;
 exports.deterministicFix = deterministicFix;
 exports.heuristicFix = heuristicFix;
 exports.getAuditRulesPrompt = getAuditRulesPrompt;
@@ -36,16 +39,119 @@ function countSentences(text) {
 function countWords(text) {
     return text.trim().split(/\s+/).filter(w => w.length > 0).length;
 }
+const REPEATED_WORD_PATTERN = /\b([A-Za-z][A-Za-z'-]*)\s+\1\b/gi;
+const DANGLING_ENDING_PATTERN = /\b(a|an|the|to|for|with|from|into|onto|of|in|on|at|by)\s*([.!?])?\s*$/i;
+function repairTextIntegrity(text) {
+    if (!text)
+        return text;
+    return text
+        .replace(REPEATED_WORD_PATTERN, '$1')
+        .replace(/\b(a|an|the|to|for|with|from|into|onto|of|in|on|at|by)\s+([,.;:!?])/gi, '$2')
+        .replace(DANGLING_ENDING_PATTERN, (_match, _word, punctuation) => punctuation !== null && punctuation !== void 0 ? punctuation : '')
+        .replace(/([.!?]){2,}/g, '$1')
+        .replace(/\s+([.!?,;:])/g, '$1')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+}
+function hasRepeatedWord(text) {
+    REPEATED_WORD_PATTERN.lastIndex = 0;
+    return REPEATED_WORD_PATTERN.test(text);
+}
+function hasDanglingEnding(text) {
+    return DANGLING_ENDING_PATTERN.test(text.trim());
+}
+function isHeadlineFragment(text) {
+    const trimmed = text.trim();
+    if (!trimmed)
+        return false;
+    if (countWords(trimmed) >= 3)
+        return false;
+    return !/[.!?]$/.test(trimmed);
+}
 // ---------------------------------------------------------------------------
 // Re-exports (schema-level constants that stay in code)
 // ---------------------------------------------------------------------------
 exports.VALID_BUNDLE_IDS = new Set(bundleIds_1.ALL_BUNDLE_IDS);
 let _config = null;
+const RELATIONSHIP_TOKEN_NAMES = new Set([
+    'ally',
+    'adversary',
+    'border_rival',
+    'regional_rival',
+    'trade_partner',
+    'neutral',
+    'rival',
+    'partner',
+    'neighbor',
+    'nation',
+]);
 function getAuditConfig() {
     if (!_config) {
         throw new Error('[AuditRules] Audit config not initialized. Call initializeAuditConfig(db) before running audits.');
     }
     return _config;
+}
+function setAuditConfigForTests(config) {
+    _config = config;
+}
+function getCountryGeopoliticalProfile(country) {
+    var _a, _b;
+    return (_b = (_a = country === null || country === void 0 ? void 0 : country.geopoliticalProfile) !== null && _a !== void 0 ? _a : country === null || country === void 0 ? void 0 : country.geopolitical) !== null && _b !== void 0 ? _b : {};
+}
+function getRelationshipEntries(value) {
+    return Array.isArray(value) ? value : [];
+}
+function hasRelationshipOfType(entries, types) {
+    return entries.some((entry) => {
+        const entryType = typeof (entry === null || entry === void 0 ? void 0 : entry.type) === 'string' ? entry.type.toLowerCase() : '';
+        return types.includes(entryType);
+    });
+}
+function supportsRelationshipToken(country, tokenName) {
+    const geopolitical = getCountryGeopoliticalProfile(country);
+    const allies = getRelationshipEntries(geopolitical.allies);
+    const adversaries = getRelationshipEntries(geopolitical.adversaries);
+    const neighbors = getRelationshipEntries(geopolitical.neighbors);
+    switch (tokenName) {
+        case 'ally':
+            return hasRelationshipOfType(allies, ['formal_ally']);
+        case 'trade_partner':
+        case 'partner':
+            return hasRelationshipOfType(allies, ['strategic_partner']);
+        case 'adversary':
+            return adversaries.length > 0;
+        case 'border_rival':
+            return hasRelationshipOfType(neighbors, ['rival']);
+        case 'regional_rival':
+            return hasRelationshipOfType(adversaries, ['rival']);
+        case 'rival':
+            return hasRelationshipOfType(adversaries, ['rival']) || hasRelationshipOfType(neighbors, ['rival']);
+        case 'neutral':
+            return hasRelationshipOfType(allies, ['neutral']) || hasRelationshipOfType(neighbors, ['neutral']);
+        case 'neighbor':
+        case 'nation':
+            return neighbors.length > 0;
+        default:
+            return false;
+    }
+}
+function collectRelationshipTokens(text) {
+    const matches = text.match(/\{([a-z_]+)\}(?:'s|’s)?/gi) || [];
+    const found = new Set();
+    for (const match of matches) {
+        const normalized = match.replace(/[{}]/g, '').replace(/(?:'s|’s)$/i, '').toLowerCase();
+        const baseName = normalized.startsWith('the_') ? normalized.slice(4) : normalized;
+        if (RELATIONSHIP_TOKEN_NAMES.has(baseName)) {
+            found.add(baseName);
+        }
+    }
+    return Array.from(found);
+}
+function formatRelationshipToken(tokenName) {
+    if (tokenName === 'partner' || tokenName === 'nation' || tokenName === 'neighbor') {
+        return `{the_${tokenName}}`;
+    }
+    return `{the_${tokenName}}`;
 }
 /**
  * Extract banned phrases from the world_state/countries document.
@@ -160,6 +266,7 @@ async function initializeAuditConfig(db) {
             probability: { required: 1 },
         },
         govTypesByCountryId,
+        countriesById: countriesDoc,
     };
     console.log(`[AuditRules] Config initialized: ${validMetricIds.size} metrics, ${validRoleIds.size} roles, ` +
         `${bannedPhrases.length} banned phrases (${bannedCountryPhrases.length} from countries, source=${countryCatalog.source.path})`);
@@ -182,7 +289,7 @@ function getRelevantRolesForEffects(effects) {
 // Audit Logic
 // ---------------------------------------------------------------------------
 function auditScenario(scenario, bundleCategory, genMode = false) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z;
     const cfg = getAuditConfig();
     const issues = [];
     const add = (severity, rule, target, message, autoFixable = false) => issues.push({ severity, rule, target, message, autoFixable });
@@ -469,7 +576,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
             else {
                 const cap = (_h = cfg.metricMagnitudeCaps[eff.targetMetricId]) !== null && _h !== void 0 ? _h : cfg.defaultCap;
                 if (Math.abs(eff.value) > cap)
-                    add('warn', 'extreme-value', eid, `|${eff.value}| exceeds cap ${cap}`, true);
+                    add('error', 'effect-cap-exceeded', eid, `|${eff.value}| exceeds configured cap ${cap}; runtime would clamp or reinterpret the outcome`, true);
             }
             if (!Number.isFinite(eff.duration) || eff.duration < cfg.logicParameters.duration.min)
                 add('error', 'invalid-duration', eid, `Duration < ${cfg.logicParameters.duration.min}`, true);
@@ -601,6 +708,27 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
             opt.outcomeContext,
         ]),
     ].filter((text) => Boolean(text)).join(' ');
+    const relationshipTokensUsed = collectRelationshipTokens(scenarioTextCorpus);
+    if (((_s = scenario.metadata) === null || _s === void 0 ? void 0 : _s.scopeTier) === 'universal' && relationshipTokensUsed.length > 0) {
+        add('error', 'universal-relationship-token', scenario.id, `Universal scenarios cannot depend on country relationship tokens (${relationshipTokensUsed
+            .map(formatRelationshipToken)
+            .join(', ')}). Scope the scenario to compatible countries or rewrite it with universal framing.`, false);
+    }
+    const applicableCountries = Array.isArray((_t = scenario.metadata) === null || _t === void 0 ? void 0 : _t.applicable_countries)
+        ? (_u = scenario.metadata) === null || _u === void 0 ? void 0 : _u.applicable_countries
+        : [];
+    const countriesById = (_v = cfg.countriesById) !== null && _v !== void 0 ? _v : {};
+    if (relationshipTokensUsed.length > 0 && applicableCountries.length > 0) {
+        for (const tokenName of relationshipTokensUsed) {
+            const unsupportedCountryIds = applicableCountries.filter((countryId) => {
+                const country = countriesById[countryId];
+                return !country || !supportsRelationshipToken(country, tokenName);
+            });
+            if (unsupportedCountryIds.length > 0) {
+                add('error', 'country-relationship-token-mismatch', scenario.id, `Scenario uses ${formatRelationshipToken(tokenName)} but applicable_countries include countries that cannot resolve it: ${unsupportedCountryIds.join(', ')}`, false);
+            }
+        }
+    }
     const hasRequiredRelationshipToken = (() => {
         switch (actorPattern) {
             case 'ally':
@@ -615,7 +743,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
                 return true;
         }
     })();
-    if (!hasRequiredRelationshipToken) {
+    if (!hasRequiredRelationshipToken && ((_w = scenario.metadata) === null || _w === void 0 ? void 0 : _w.scopeTier) !== 'universal') {
         const expectedTokenByPattern = {
             ally: '{the_ally}',
             adversary: '{the_adversary}',
@@ -627,7 +755,7 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
         }
     }
     // Title word count — 4 to 10 words (tokens count as 1 word each)
-    if ((_s = scenario.title) === null || _s === void 0 ? void 0 : _s.trim()) {
+    if ((_x = scenario.title) === null || _x === void 0 ? void 0 : _x.trim()) {
         const wordCount = scenario.title.trim().split(/\s+/).length;
         if (wordCount < 4)
             add('error', 'title-too-short', scenario.id, `Title has ${wordCount} words (min 4)`);
@@ -659,6 +787,14 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
             add('error', 'double-space', scenario.id, `${fieldName} contains double spaces`, true);
         if (/(?<!\.)\.{2}(?!\.)/.test(text) || /\. \./.test(text) || /, ,/.test(text))
             add('error', 'orphaned-punctuation', scenario.id, `${fieldName} contains orphaned or doubled punctuation`, true);
+        if (hasRepeatedWord(text))
+            add('warn', 'repeated-word', scenario.id, `${fieldName} repeats a word consecutively`, true);
+        if (hasDanglingEnding(text))
+            add('warn', 'dangling-ending', scenario.id, `${fieldName} ends with a dangling article or preposition`, true);
+        if (fieldName.includes('headline') && isHeadlineFragment(text))
+            add('warn', 'headline-fragment', scenario.id, `${fieldName} reads like an incomplete fragment`, true);
+        if (fieldName.includes('option') && /\b(You|you)\s+direct(ed)?\s+to\b/.test(text))
+            add('warn', 'missing-direct-object', scenario.id, `${fieldName} is missing a direct object after "direct to"`, true);
         // Detect hardcoded "the {token}" which will produce "the a hostile power"-style
         // artifacts at runtime. Use {the_adversary}/{the_ally}/etc. instead.
         if (/\bthe \{[a-z_]+\}/i.test(text))
@@ -816,14 +952,14 @@ function auditScenario(scenario, bundleCategory, genMode = false) {
         checkTextQuality(opt.outcomeHeadline, `option ${opt.id} headline`);
         checkTextQuality(opt.outcomeSummary, `option ${opt.id} summary`);
         checkTextQuality(opt.outcomeContext, `option ${opt.id} context`);
-        for (const fb of ((_t = opt.advisorFeedback) !== null && _t !== void 0 ? _t : [])) {
+        for (const fb of ((_y = opt.advisorFeedback) !== null && _y !== void 0 ? _y : [])) {
             if (fb === null || fb === void 0 ? void 0 : fb.feedback)
                 checkTextQuality(fb.feedback, `option ${opt.id} advisor ${fb.roleId}`);
         }
     }
     // Option label quality — plain text, 1-6 words, no tokens
     for (const opt of scenario.options) {
-        if ((_u = opt.label) === null || _u === void 0 ? void 0 : _u.trim()) {
+        if ((_z = opt.label) === null || _z === void 0 ? void 0 : _z.trim()) {
             const labelWords = opt.label.trim().split(/\s+/).length;
             if (labelWords > 6)
                 add('warn', 'label-too-long', `${scenario.id}/${opt.id}`, `Label "${opt.label}" is ${labelWords} words (max 6)`);
@@ -841,6 +977,141 @@ function scoreScenario(issues) {
         score -= issue.severity === 'error' ? 12 : 4;
     }
     return Math.max(0, score);
+}
+function normalizeScenarioTextFields(scenario) {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    let fixed = false;
+    const fixes = [];
+    const normalizeTokenCase = (text) => text === null || text === void 0 ? void 0 : text.replace(/\{([a-zA-Z_]+)\}/g, (_match, token) => `{${String(token).toLowerCase()}}`);
+    const collapseRepeatedPhrase = (text) => text.replace(/\b([A-Za-z][A-Za-z'-]*(?:\s+[A-Za-z][A-Za-z'-]*){0,3})\s+\1\b/gi, '$1');
+    const collapseRepeatedSentences = (text) => {
+        var _a;
+        const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+        const deduped = [];
+        for (const sentence of sentences) {
+            if (((_a = deduped[deduped.length - 1]) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === sentence.toLowerCase())
+                continue;
+            deduped.push(sentence);
+        }
+        return deduped.join(' ');
+    };
+    const capitalizeFirstNarrativeLetter = (text) => {
+        if (!text)
+            return text;
+        let inToken = false;
+        let prevType = 'boundary';
+        for (let i = 0; i < text.length; i++) {
+            const ch = text[i];
+            if (ch === '{') {
+                inToken = true;
+                continue;
+            }
+            if (ch === '}') {
+                inToken = false;
+                prevType = 'boundary';
+                continue;
+            }
+            if (inToken)
+                continue;
+            if (/\s/.test(ch)) {
+                prevType = 'boundary';
+                continue;
+            }
+            if (/[A-Za-z]/.test(ch)) {
+                if (prevType === 'boundary' && /[a-z]/.test(ch)) {
+                    return text.slice(0, i) + ch.toUpperCase() + text.slice(i + 1);
+                }
+                return text;
+            }
+            prevType = 'other';
+        }
+        return text;
+    };
+    const capitalizeSentenceBoundaries = (text) => {
+        const chars = text.split('');
+        let inToken = false;
+        let capitalizeNextNarrativeLetter = false;
+        let tokenClosedWhilePending = false;
+        for (let i = 0; i < chars.length; i++) {
+            const ch = chars[i];
+            if (ch === '{') {
+                inToken = true;
+                continue;
+            }
+            if (ch === '}') {
+                inToken = false;
+                if (capitalizeNextNarrativeLetter)
+                    tokenClosedWhilePending = true;
+                continue;
+            }
+            if (inToken)
+                continue;
+            if (capitalizeNextNarrativeLetter) {
+                if (/[A-Za-z]/.test(ch)) {
+                    if (/[a-z]/.test(ch))
+                        chars[i] = ch.toUpperCase();
+                    capitalizeNextNarrativeLetter = false;
+                    tokenClosedWhilePending = false;
+                    continue;
+                }
+                if (/\s|["(\[]/.test(ch))
+                    continue;
+                if (tokenClosedWhilePending && ch === '\'') {
+                    capitalizeNextNarrativeLetter = false;
+                    tokenClosedWhilePending = false;
+                    continue;
+                }
+                if (/[)}\]”]/.test(ch))
+                    continue;
+                capitalizeNextNarrativeLetter = false;
+                tokenClosedWhilePending = false;
+            }
+            if (/[.!?]/.test(ch)) {
+                capitalizeNextNarrativeLetter = true;
+                tokenClosedWhilePending = false;
+            }
+        }
+        return chars.join('');
+    };
+    const normalizeText = (text) => {
+        var _a, _b, _c, _d;
+        if (!text)
+            return text;
+        let result = (_a = normalizeTokenCase(text)) !== null && _a !== void 0 ? _a : text;
+        result = (_b = repairTextIntegrity(result)) !== null && _b !== void 0 ? _b : result;
+        result = collapseRepeatedPhrase(result);
+        result = collapseRepeatedSentences(result);
+        result = (_c = repairTextIntegrity(result)) !== null && _c !== void 0 ? _c : result;
+        result = (_d = capitalizeFirstNarrativeLetter(result)) !== null && _d !== void 0 ? _d : result;
+        result = capitalizeSentenceBoundaries(result);
+        return result;
+    };
+    const apply = (value, label) => {
+        const normalized = normalizeText(value);
+        if (value !== normalized) {
+            fixed = true;
+            fixes.push(label);
+        }
+        return normalized;
+    };
+    scenario.title = (_a = apply(scenario.title, 'normalized title')) !== null && _a !== void 0 ? _a : scenario.title;
+    scenario.description = (_b = apply(scenario.description, 'normalized description')) !== null && _b !== void 0 ? _b : scenario.description;
+    for (const option of scenario.options) {
+        option.text = (_c = apply(option.text, `${option.id}: normalized text`)) !== null && _c !== void 0 ? _c : option.text;
+        if (typeof option.outcomeHeadline === 'string') {
+            option.outcomeHeadline = (_d = apply(option.outcomeHeadline, `${option.id}: normalized outcomeHeadline`)) !== null && _d !== void 0 ? _d : option.outcomeHeadline;
+        }
+        if (typeof option.outcomeSummary === 'string') {
+            option.outcomeSummary = (_e = apply(option.outcomeSummary, `${option.id}: normalized outcomeSummary`)) !== null && _e !== void 0 ? _e : option.outcomeSummary;
+        }
+        if (typeof option.outcomeContext === 'string') {
+            option.outcomeContext = (_f = apply(option.outcomeContext, `${option.id}: normalized outcomeContext`)) !== null && _f !== void 0 ? _f : option.outcomeContext;
+        }
+        for (const feedback of (_g = option.advisorFeedback) !== null && _g !== void 0 ? _g : []) {
+            feedback.feedback = (_h = apply(feedback.feedback, `${option.id}: normalized advisor feedback`)) !== null && _h !== void 0 ? _h : feedback.feedback;
+        }
+    }
+    return { fixed, fixes };
 }
 function deterministicFix(scenario) {
     var _a, _b;
@@ -979,9 +1250,10 @@ function deterministicFix(scenario) {
     }
     // Auto-fix double spaces and orphaned/doubled punctuation in all text fields
     const fixWhitespace = (text) => {
+        var _a;
         if (!text)
             return text;
-        return text
+        return ((_a = repairTextIntegrity(text)) !== null && _a !== void 0 ? _a : text)
             .replace(/  +/g, ' ')
             .replace(/\. \./g, '.')
             .replace(/(?<!\.)\.{2}(?!\.)/g, '.')

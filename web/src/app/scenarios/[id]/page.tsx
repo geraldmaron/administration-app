@@ -145,9 +145,72 @@ export default async function ScenarioDetailPage({ params }: { params: { id: str
               )}
             </div>
           </div>
-          <ScenarioActions id={scenario.id} isActive={scenario.is_active} />
+          <ScenarioActions id={scenario.id} isActive={scenario.is_active} isGolden={scenario.isGolden ?? false} bundle={scenario.metadata?.bundle} />
         </div>
       </CommandPanel>
+
+      <CommandPanel className="mb-4 px-5 py-4">
+        <div className="flex flex-wrap gap-x-8 gap-y-3">
+          <div>
+            <div className="section-kicker-sm mb-0.5">Lifecycle</div>
+            <div className={`data-value text-sm leading-none ${scenario.is_active ? 'text-[var(--success)]' : 'text-[var(--foreground-muted)]'}`}>
+              {scenario.is_active ? 'Active' : 'Inactive'}
+            </div>
+            <div className="mt-0.5 text-[11px] text-[var(--foreground-muted)]">
+              {scenario.updatedAt ? `Updated ${new Date(scenario.updatedAt).toLocaleString()}` : 'No update timestamp'}
+            </div>
+          </div>
+          <div>
+            <div className="section-kicker-sm mb-0.5">Scope</div>
+            <div className="data-value text-sm leading-none text-foreground">
+              {scenario.metadata?.scopeTier ?? 'Unspecified'}
+            </div>
+            <div className="mt-0.5 text-[11px] text-[var(--foreground-muted)]">
+              {scenario.metadata?.scopeKey ?? 'No scope key'}
+            </div>
+          </div>
+          <div>
+            <div className="section-kicker-sm mb-0.5">Source</div>
+            <div className="data-value text-sm leading-none text-foreground">
+              {scenario.metadata?.sourceKind ?? scenario.metadata?.source ?? 'Unknown'}
+            </div>
+            <div className="mt-0.5 text-[11px] text-[var(--foreground-muted)]">
+              {scenario.metadata?.source ?? 'No source label'}
+            </div>
+          </div>
+          <div>
+            <div className="section-kicker-sm mb-0.5">Created</div>
+            <div className="data-value text-sm leading-none text-foreground">{new Date(scenario.createdAt).toLocaleString()}</div>
+          </div>
+        </div>
+      </CommandPanel>
+
+      {scenario.generationProvenance && (
+        <CommandPanel className="mb-4 px-5 py-4">
+          <div className="flex flex-wrap gap-x-8 gap-y-3">
+            <div>
+              <div className="section-kicker-sm mb-0.5">Job</div>
+              <a href={`/jobs/${scenario.generationProvenance.jobId}`} className="text-sm font-mono text-[var(--accent-primary)] hover:underline">
+                {scenario.generationProvenance.jobId.slice(0, 12)}
+              </a>
+            </div>
+            <div>
+              <div className="section-kicker-sm mb-0.5">Provider</div>
+              <div className="data-value text-sm text-foreground">
+                {scenario.generationProvenance.executionTarget === 'n8n' ? 'AI Server' : 'OpenAI'}
+              </div>
+            </div>
+            <div>
+              <div className="section-kicker-sm mb-0.5">Model</div>
+              <div className="text-sm font-mono text-foreground">{scenario.generationProvenance.modelUsed}</div>
+            </div>
+            <div>
+              <div className="section-kicker-sm mb-0.5">Generated</div>
+              <div className="text-sm text-foreground">{new Date(scenario.generationProvenance.generatedAt).toLocaleString()}</div>
+            </div>
+          </div>
+        </CommandPanel>
+      )}
 
       {/* Description */}
       <CommandPanel className="mb-4 p-5">
@@ -157,39 +220,58 @@ export default async function ScenarioDetailPage({ params }: { params: { id: str
         <p className="text-sm text-foreground leading-relaxed">{scenario.description}</p>
       </CommandPanel>
 
-      {/* Conditions */}
-      {scenario.conditions && scenario.conditions.length > 0 && (
+      {/* Constraints (conditions, relationships, legislature) */}
+      {((scenario.conditions && scenario.conditions.length > 0) ||
+        (scenario.relationship_conditions && scenario.relationship_conditions.length > 0) ||
+        scenario.legislature_requirement) && (
         <CommandPanel className="mb-4 p-5">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-2">
-            Conditions
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {scenario.conditions.map((c, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center px-2 py-1 text-xs font-mono bg-background border border-[var(--border-strong)] text-foreground-muted rounded-[2px]"
-              >
-                {METRIC_DISPLAY[c.metricId] ?? c.metricId}
-                {c.min !== undefined && ` ≥ ${c.min}`}
-                {c.max !== undefined && ` ≤ ${c.max}`}
-              </span>
-            ))}
-          </div>
-        </CommandPanel>
-      )}
+          {scenario.conditions && scenario.conditions.length > 0 && (
+            <div>
+              <div className="section-kicker-sm mb-2">Conditions</div>
+              <div className="flex flex-wrap gap-2">
+                {scenario.conditions.map((c, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center px-2 py-1 text-xs font-mono bg-background border border-[var(--border-strong)] text-foreground-muted rounded-[2px]"
+                  >
+                    {METRIC_DISPLAY[c.metricId] ?? c.metricId}
+                    {c.min !== undefined && ` ≥ ${c.min}`}
+                    {c.max !== undefined && ` ≤ ${c.max}`}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* Legislature requirement */}
-      {scenario.legislature_requirement && (
-        <CommandPanel className="mb-4 p-5">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-2">
-            Legislature Requirement
-          </div>
-          <p className="text-sm text-foreground-muted font-mono">
-            Requires approval ≥ {scenario.legislature_requirement.min_approval}%
-            {scenario.legislature_requirement.chamber && (
-              <span> ({scenario.legislature_requirement.chamber} chamber)</span>
-            )}
-          </p>
+          {scenario.relationship_conditions && scenario.relationship_conditions.length > 0 && (
+            <div className={scenario.conditions && scenario.conditions.length > 0 ? 'mt-4 pt-4 border-t border-[var(--border)]' : ''}>
+              <div className="section-kicker-sm mb-2">Relationship Conditions</div>
+              <div className="flex flex-wrap gap-2">
+                {scenario.relationship_conditions.map((c, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center px-2 py-1 text-xs font-mono bg-background border border-[var(--border-strong)] text-foreground-muted rounded-[2px]"
+                  >
+                    {c.relationshipId}
+                    {c.min !== undefined && ` ≥ ${c.min}`}
+                    {c.max !== undefined && ` ≤ ${c.max}`}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {scenario.legislature_requirement && (
+            <div className={(scenario.conditions?.length || scenario.relationship_conditions?.length) ? 'mt-4 pt-4 border-t border-[var(--border)]' : ''}>
+              <div className="section-kicker-sm mb-2">Legislature Requirement</div>
+              <p className="text-sm text-foreground-muted font-mono">
+                Requires approval ≥ {scenario.legislature_requirement.min_approval}%
+                {scenario.legislature_requirement.chamber && (
+                  <span> ({scenario.legislature_requirement.chamber} chamber)</span>
+                )}
+              </p>
+            </div>
+          )}
         </CommandPanel>
       )}
 
@@ -205,73 +287,71 @@ export default async function ScenarioDetailPage({ params }: { params: { id: str
         </div>
       </div>
 
-      {/* Metadata */}
-      <details className="tech-border">
-        <summary className="px-4 py-3 cursor-pointer text-[10px] font-mono uppercase tracking-wider text-foreground-subtle hover:text-foreground transition-colors">
-          Metadata
-        </summary>
-        <div className="p-4 border-t border-[var(--border)] grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-          {scenario.metadata?.tags && scenario.metadata.tags.length > 0 && (
-            <div>
-              <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-1">Tags</div>
-              <div className="flex flex-wrap gap-1">
-                {scenario.metadata.tags.map((t) => (
-                  <span key={t} className="px-1.5 py-0.5 bg-background text-foreground-muted font-mono text-[10px] border border-[var(--border)]">
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {scenario.metadata?.difficulty !== undefined && (
-            <div>
-              <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-1">Difficulty</div>
-              <span className="font-mono text-foreground-muted">{scenario.metadata.difficulty}/5</span>
-            </div>
-          )}
-          {scenario.metadata?.source && (
-            <div>
-              <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-1">Source</div>
-              <span className="font-mono text-foreground-muted">{scenario.metadata.source}</span>
-            </div>
-          )}
-          {scenario.metadata?.applicable_countries && (
-            <div>
-              <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-1">Countries</div>
-              <span className="font-mono text-foreground-muted">
-                {Array.isArray(scenario.metadata.applicable_countries)
+      <CommandPanel className="mb-4 p-5">
+        <div className="mb-3">
+          <div className="section-kicker-sm mb-1">Metadata</div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-3 text-sm">
+          <div className="border-b border-[var(--border)] pb-2">
+            <div className="section-kicker-sm mb-0.5">Bundle</div>
+            <div className="text-foreground">{scenario.metadata?.bundle ?? 'Unassigned'}</div>
+          </div>
+          <div className="border-b border-[var(--border)] pb-2">
+            <div className="section-kicker-sm mb-0.5">Severity</div>
+            <div className="text-foreground">{scenario.metadata?.severity ?? 'Unset'}</div>
+          </div>
+          <div className="border-b border-[var(--border)] pb-2">
+            <div className="section-kicker-sm mb-0.5">Difficulty</div>
+            <div className="text-foreground">{scenario.metadata?.difficulty !== undefined ? `${scenario.metadata.difficulty}/5` : 'Unset'}</div>
+          </div>
+          <div className="border-b border-[var(--border)] pb-2">
+            <div className="section-kicker-sm mb-0.5">Countries</div>
+            <div className="text-foreground">
+              {scenario.metadata?.applicable_countries
+                ? Array.isArray(scenario.metadata.applicable_countries)
                   ? scenario.metadata.applicable_countries.join(', ')
-                  : scenario.metadata.applicable_countries}
-              </span>
+                  : scenario.metadata.applicable_countries
+                : 'Global'}
             </div>
-          )}
-          {scenario.metadata?.isNeighborEvent && (
-            <div>
-              <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-1">Neighbor Event</div>
-              <span className="font-mono text-[var(--warning)]">Yes</span>
+          </div>
+          <div className="col-span-2 border-b border-[var(--border)] pb-2">
+            <div className="section-kicker-sm mb-0.5">Tags</div>
+            <div className="flex flex-wrap gap-1.5">
+              {scenario.metadata?.tags && scenario.metadata.tags.length > 0 ? (
+                scenario.metadata.tags.map((tag) => (
+                  <span key={tag} className="text-[11px] font-mono text-[var(--foreground-muted)]">
+                    {tag}
+                  </span>
+                ))
+              ) : (
+                <span className="text-[var(--foreground-muted)]">None</span>
+              )}
+            </div>
+          </div>
+          {scenario.metadata?.region_tags && scenario.metadata.region_tags.length > 0 && (
+            <div className="border-b border-[var(--border)] pb-2">
+              <div className="section-kicker-sm mb-0.5">Region Tags</div>
+              <div className="text-foreground">{scenario.metadata.region_tags.join(', ')}</div>
             </div>
           )}
           {scenario.metadata?.auditMetadata && (
-            <div className="col-span-full">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-1">Audit</div>
-              <div className="space-y-0.5">
-                <div className="font-mono text-foreground-muted">Score: {scenario.metadata.auditMetadata.score}</div>
-                <div className="font-mono text-foreground-muted">Audited: {scenario.metadata.auditMetadata.lastAudited}</div>
-                {scenario.metadata.auditMetadata.issues.length > 0 && (
-                  <div>
-                    <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mt-2 mb-1">Issues</div>
-                    <ul className="space-y-0.5">
-                      {scenario.metadata.auditMetadata.issues.map((issue, i) => (
-                        <li key={i} className="font-mono text-[var(--warning)] text-[10px]">• {issue}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+            <div className="col-span-full border-b border-[var(--border)] pb-2">
+              <div className="section-kicker-sm mb-0.5">Audit</div>
+              <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm font-mono text-foreground-muted">
+                <span>Score: {scenario.metadata.auditMetadata.score}</span>
+                <span>Audited: {scenario.metadata.auditMetadata.lastAudited}</span>
               </div>
+              {scenario.metadata.auditMetadata.issues.length > 0 && (
+                <ul className="mt-1 space-y-0.5">
+                  {scenario.metadata.auditMetadata.issues.map((issue, i) => (
+                    <li key={i} className="font-mono text-[var(--warning)] text-[10px]">{issue}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </div>
-      </details>
+      </CommandPanel>
     </div>
   );
 }

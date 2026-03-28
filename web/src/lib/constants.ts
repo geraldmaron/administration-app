@@ -60,39 +60,45 @@ export const METRIC_DISPLAY: Record<string, string> = {
   metric_foreign_influence: 'Foreign Influence',
 };
 
-export const BUNDLE_ACCENT_COLORS: Record<string, string> = {
-  economy: '#fbbf24',
-  politics: '#a78bfa',
-  military: '#f87171',
-  tech: '#22d3ee',
-  environment: '#34d399',
-  social: '#fb923c',
-  health: '#f472b6',
-  diplomacy: '#60a5fa',
-  justice: '#818cf8',
-  corruption: '#fb7185',
-  culture: '#e879f9',
-  infrastructure: '#94a3b8',
-  resources: '#a3e635',
-  dick_mode: '#fca5a5',
+export const BUNDLE_THEMES: Record<string, string> = {
+  economy: 'fiscal',
+  resources: 'fiscal',
+  infrastructure: 'fiscal',
+  politics: 'governance',
+  justice: 'governance',
+  corruption: 'governance',
+  military: 'security',
+  diplomacy: 'security',
+  tech: 'security',
+  environment: 'welfare',
+  health: 'welfare',
+  social: 'society',
+  culture: 'society',
+  dick_mode: 'society',
 };
 
-export const BUNDLE_BADGE_CLASSES: Record<string, { bg: string; text: string }> = {
-  economy: { bg: 'bg-amber-400/15', text: 'text-amber-400' },
-  politics: { bg: 'bg-violet-400/15', text: 'text-violet-400' },
-  military: { bg: 'bg-red-400/15', text: 'text-red-400' },
-  tech: { bg: 'bg-cyan-400/15', text: 'text-cyan-400' },
-  environment: { bg: 'bg-emerald-400/15', text: 'text-emerald-400' },
-  social: { bg: 'bg-orange-400/15', text: 'text-orange-400' },
-  health: { bg: 'bg-pink-400/15', text: 'text-pink-400' },
-  diplomacy: { bg: 'bg-blue-400/15', text: 'text-blue-400' },
-  justice: { bg: 'bg-indigo-400/15', text: 'text-indigo-400' },
-  corruption: { bg: 'bg-rose-600/15', text: 'text-rose-400' },
-  culture: { bg: 'bg-fuchsia-400/15', text: 'text-fuchsia-400' },
-  infrastructure: { bg: 'bg-slate-400/15', text: 'text-slate-400' },
-  resources: { bg: 'bg-lime-400/15', text: 'text-lime-400' },
-  dick_mode: { bg: 'bg-rose-400/15', text: 'text-rose-300' },
+const THEME_COLORS: Record<string, { hex: string; bg: string; text: string }> = {
+  fiscal:     { hex: '#fbbf24', bg: 'bg-amber-400/15',   text: 'text-amber-400' },
+  governance: { hex: '#a78bfa', bg: 'bg-violet-400/15',  text: 'text-violet-400' },
+  security:   { hex: '#60a5fa', bg: 'bg-blue-400/15',    text: 'text-blue-400' },
+  welfare:    { hex: '#34d399', bg: 'bg-emerald-400/15', text: 'text-emerald-400' },
+  society:    { hex: '#fb923c', bg: 'bg-orange-400/15',  text: 'text-orange-400' },
 };
+
+function themeFor(bundle: string) {
+  return THEME_COLORS[BUNDLE_THEMES[bundle] ?? 'society'] ?? THEME_COLORS.society;
+}
+
+export const BUNDLE_ACCENT_COLORS: Record<string, string> = Object.fromEntries(
+  Object.keys(BUNDLE_THEMES).map((b) => [b, themeFor(b).hex])
+);
+
+export const BUNDLE_BADGE_CLASSES: Record<string, { bg: string; text: string }> = Object.fromEntries(
+  Object.keys(BUNDLE_THEMES).map((b) => {
+    const t = themeFor(b);
+    return [b, { bg: t.bg, text: t.text }];
+  })
+);
 
 export const STANCE_CLASSES: Record<string, string> = {
   support: 'text-[var(--success)]',

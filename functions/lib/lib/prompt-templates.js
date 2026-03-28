@@ -119,8 +119,8 @@ const BUNDLE_PROMPT_OVERLAYS = {
 };
 const SCOPE_PROMPT_OVERLAYS = {
     universal: {
-        architect: 'Optimize for transferability. Avoid country-unique constitutional assumptions, preserve tokenized institutions, and prefer mechanisms that can plausibly occur across many states.',
-        drafter: 'Write broadly reusable governance dilemmas with concrete mechanisms and stakeholders. Reject disguised single-country assumptions, hardcoded constitutional structures, and narrow historical framing.',
+        architect: 'Optimize for transferability. Avoid country-unique constitutional assumptions, preserve tokenized institutions, and prefer mechanisms that can plausibly occur across many states. CRITICAL: use only domestic, legislature, cabinet, or judiciary for actorPattern — never ally, adversary, border_rival, or mixed. Relationship tokens ({the_ally}, {the_adversary}, {the_border_rival}, etc.) resolve against country-specific geopolitical profiles and are prohibited in universal scenarios.',
+        drafter: 'Write broadly reusable governance dilemmas grounded in domestic institutions. Reject disguised single-country assumptions, hardcoded constitutional structures, and narrow historical framing. CRITICAL: do not use any relationship tokens ({the_ally}, {the_adversary}, {the_border_rival}, {the_neighbor}, {the_rival}, {the_trade_partner}, {the_regional_rival}, {the_partner}, {the_neutral}) — these tokens depend on country-specific geopolitical data and will fail for most countries. Use domestic political actors, cabinet roles, legislature, or judiciary instead.',
     },
     regional: {
         architect: 'Optimize for regional realism. Use geography, blocs, corridors, migration routes, weather systems, and spillover effects that make causal sense within the target region.',

@@ -91,7 +91,7 @@ final class ScoringParityTests: XCTestCase {
 
     func testInverseMetrics() {
         // Web and iOS agree on which metrics are inverse.
-        let inverseIds = ["metric_corruption", "metric_inflation", "metric_pollution", "metric_inequality", "metric_crime"]
+        let inverseIds = ["metric_corruption", "metric_inflation", "metric_crime", "metric_bureaucracy"]
         for id in inverseIds {
             XCTAssertTrue(ScoringEngine.isInverseMetric(id), "\(id) should be inverse")
         }

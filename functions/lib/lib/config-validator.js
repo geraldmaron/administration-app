@@ -6,24 +6,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateConfig = validateConfig;
 exports.logConfigStatus = logConfigStatus;
-function isOpenAIModel(model) {
-    return model.startsWith('gpt-') || model.startsWith('o1') || model.startsWith('o3') || model.startsWith('text-embedding');
-}
-function isLMStudioModel(model) {
-    return model.startsWith('lmstudio:');
-}
-function getSharedLMStudioModel(modelConfig) {
-    return [
-        modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.architectModel,
-        modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.drafterModel,
-        modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.repairModel,
-        modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.contentQualityModel,
-        modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.narrativeReviewModel,
-    ].find((model) => Boolean(model && isLMStudioModel(model)));
-}
-function getDefaultArchitectModel() {
-    return process.env.ARCHITECT_MODEL || process.env.CONCEPT_MODEL || 'gpt-4o-mini';
-}
+const generation_models_1 = require("./generation-models");
 /**
  * Validate configuration for generation providers
  */
@@ -38,14 +21,14 @@ function validateConfig(modelConfig) {
             warnings.push('OPENAI_API_KEY does not start with expected prefix (sk- or sess-) — verify the key is correct');
         }
     }
-    const sharedLMStudioModel = getSharedLMStudioModel(modelConfig);
-    const architectModel = (modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.architectModel) || getDefaultArchitectModel();
-    const blueprintModel = architectModel;
-    const drafterModel = (modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.drafterModel) || process.env.DRAFTER_MODEL || 'gpt-4o-mini';
-    const repairModel = (modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.repairModel) || sharedLMStudioModel || process.env.REPAIR_MODEL || 'gpt-4o-mini';
-    const contentQualityModel = (modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.contentQualityModel) || sharedLMStudioModel || 'gpt-4o-mini';
-    const narrativeReviewModel = (modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.narrativeReviewModel) || sharedLMStudioModel || process.env.NARRATIVE_REVIEW_MODEL || 'gpt-4o-mini';
-    const embeddingModel = (modelConfig === null || modelConfig === void 0 ? void 0 : modelConfig.embeddingModel) || process.env.EMBEDDING_MODEL || 'text-embedding-3-small';
+    const resolvedModels = (0, generation_models_1.getResolvedGenerationModels)(modelConfig);
+    const architectModel = resolvedModels.architect;
+    const blueprintModel = resolvedModels.blueprint;
+    const drafterModel = resolvedModels.drafter;
+    const repairModel = resolvedModels.repair;
+    const contentQualityModel = resolvedModels.contentQuality;
+    const narrativeReviewModel = resolvedModels.narrativeReview;
+    const embeddingModel = resolvedModels.embedding;
     const requiredModels = [
         ['architectModel', architectModel],
         ['blueprintModel', blueprintModel],
@@ -55,28 +38,28 @@ function validateConfig(modelConfig) {
         ['narrativeReviewModel', narrativeReviewModel],
     ];
     for (const [label, model] of requiredModels) {
-        if (!isOpenAIModel(model) && !isLMStudioModel(model)) {
-            errors.push(`${label} is set to ${model} but only OpenAI (gpt-*, o1, o3, text-embedding*) and LM Studio (lmstudio:*) models are supported`);
+        if (!(0, generation_models_1.isOpenAIModel)(model) && !(0, generation_models_1.isOllamaModel)(model)) {
+            errors.push(`${label} is set to ${model} but only OpenAI (gpt-*, o1, o3, text-embedding*) and Ollama (ollama:*) models are supported`);
             continue;
         }
-        if (isOpenAIModel(model) && !hasOpenAI) {
+        if ((0, generation_models_1.isOpenAIModel)(model) && !hasOpenAI) {
             errors.push(`${label} is set to ${model} but OPENAI_API_KEY is missing`);
         }
     }
     // Check semantic deduplication
     const semanticDedupEnabled = process.env.ENABLE_SEMANTIC_DEDUP !== 'false';
-    const lmStudioOnlyRun = requiredModels.every(([, model]) => isLMStudioModel(model));
-    if (semanticDedupEnabled && !hasOpenAI && !lmStudioOnlyRun) {
+    const ollamaOnlyRun = requiredModels.every(([, model]) => (0, generation_models_1.isOllamaModel)(model));
+    if (semanticDedupEnabled && !hasOpenAI && !ollamaOnlyRun) {
         warnings.push('Semantic deduplication is enabled but OPENAI_API_KEY is missing - embedding-based dedup will be unavailable');
     }
-    if (semanticDedupEnabled && lmStudioOnlyRun) {
-        warnings.push('Semantic deduplication is OpenAI-only and will be skipped for LM Studio-only generation runs');
+    if (semanticDedupEnabled && ollamaOnlyRun) {
+        warnings.push('Semantic deduplication is OpenAI-only and will be skipped for Ollama-only generation runs');
     }
     // Warnings for non-optimal configurations
-    if (architectModel !== 'gpt-4o-mini' && !isLMStudioModel(architectModel)) {
+    if (architectModel !== 'gpt-4o-mini' && !(0, generation_models_1.isOllamaModel)(architectModel)) {
         warnings.push(`ARCHITECT_MODEL is ${architectModel} - recommended: gpt-4o-mini for cost efficiency`);
     }
-    if (drafterModel !== 'gpt-4o-mini' && !isLMStudioModel(drafterModel)) {
+    if (drafterModel !== 'gpt-4o-mini' && !(0, generation_models_1.isOllamaModel)(drafterModel)) {
         warnings.push(`DRAFTER_MODEL is ${drafterModel} - recommended: gpt-4o-mini for low-cost operation`);
     }
     return {

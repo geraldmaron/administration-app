@@ -1,40 +1,265 @@
-import { onCall } from "firebase-functions/v2/https";
+import { onCall, onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
-import * as admin from 'firebase-admin';
-import { generateScenarios, getGenerationConfig } from "./scenario-engine";
-import { type BundleScenario } from "./lib/audit-rules";
-import { isValidBundleId, ALL_BUNDLE_IDS, type BundleId } from "./data/schemas/bundleIds";
-import { saveScenario, getActiveBundleCount } from "./storage";
+import * as admin from "firebase-admin";
+import { type CreateJobOptions, createGenerationJob, getJobStatus } from "./background-jobs";
+import { isValidBundleId, type BundleId } from "./data/schemas/bundleIds";
 import { validateConfig, logConfigStatus } from "./lib/config-validator";
-import { getProviderRetryTelemetry, resetProviderRetryTelemetry } from './lib/model-providers';
+
 export { onScenarioJobCreated, recoverZombieJobs } from "./background-jobs";
 export { dailyNewsToScenarios } from "./news-to-scenarios";
+export { processGenerationBundle, updateJobProgress } from "./generation-services";
+export { resolveAction } from "./action-resolution";
 
-// Admin callable: rebuild all scenario bundle JSON files in Firebase Storage.
-// Invoke after bulk imports, schema changes, or any time the manifest is stale.
-// Requires admin auth (same gate as generateScenariosManual).
-export const rebuildScenarioBundles = onCall({
-    cors: true,
-    enforceAppCheck: false,
-    timeoutSeconds: 540,
-    memory: '1GiB',
-}, async (request) => {
-    if (!request.auth) throw new Error('Authentication required');
+if (!admin.apps.length) {
+    admin.initializeApp();
+}
 
-    const userEmail = request.auth.token?.email || '';
+interface CallableRequestLike {
+    auth?: {
+        uid: string;
+        token?: {
+            email?: string;
+        };
+    };
+}
+
+interface GenerationRequestBody {
+    bundles?: string[];
+    count?: number;
+    lowLatencyMode?: boolean;
+    distributionConfig?: CreateJobOptions["distributionConfig"];
+    region?: string;
+    regions?: string[];
+    scopeTier?: CreateJobOptions["scopeTier"];
+    scopeKey?: string;
+    clusterId?: string;
+    exclusivityReason?: CreateJobOptions["exclusivityReason"];
+    applicable_countries?: string[];
+    sourceKind?: CreateJobOptions["sourceKind"];
+    description?: string;
+    priority?: CreateJobOptions["priority"];
+    modelConfig?: CreateJobOptions["modelConfig"];
+    dryRun?: boolean;
+    newsContext?: CreateJobOptions["newsContext"];
+    mode?: "manual" | "news";
+    executionTarget?: "cloud_function" | "n8n";
+}
+
+const db = admin.firestore();
+
+function isAdminUser(request: CallableRequestLike): boolean {
+    if (!request.auth) {
+        return false;
+    }
+
+    const userEmail = request.auth.token?.email || "";
     const userId = request.auth.uid;
     const adminUid = process.env.ADMIN_UID;
     const adminEmail = process.env.ADMIN_EMAIL;
 
-    if ((adminUid || adminEmail) && userId !== adminUid && userEmail !== adminEmail) {
-        throw new Error('Admin privileges required');
+    return !((adminUid || adminEmail) && userId !== adminUid && userEmail !== adminEmail);
+}
+
+function getIntakeSecret(): string | undefined {
+    return process.env.GENERATION_INTAKE_SECRET || process.env.ADMIN_SECRET;
+}
+
+function readBearerToken(headerValue?: string): string | undefined {
+    if (!headerValue) {
+        return undefined;
+    }
+
+    const [scheme, token] = headerValue.split(" ", 2);
+    if (scheme?.toLowerCase() !== "bearer" || !token) {
+        return undefined;
+    }
+
+    return token;
+}
+
+function isLocalServerRequest(hostname?: string, forwardedHost?: string): boolean {
+    const candidates = [hostname, forwardedHost].filter((value): value is string => Boolean(value));
+    return candidates.some((value) => value.startsWith("localhost") || value.startsWith("127.0.0.1"));
+}
+
+function isAuthorizedServerRequest(request: { get(name: string): string | undefined; hostname?: string }): boolean {
+    const secret = getIntakeSecret();
+    const headerSecret = request.get("x-admin-secret") ?? readBearerToken(request.get("authorization"));
+
+    if (secret && headerSecret === secret) {
+        return true;
+    }
+
+    if (process.env.FUNCTIONS_EMULATOR === "true" && isLocalServerRequest(request.hostname, request.get("x-forwarded-host"))) {
+        return true;
+    }
+
+    return false;
+}
+
+function parseGenerationRequestBody(body: unknown): GenerationRequestBody {
+    if (!body) {
+        return {};
+    }
+
+    if (typeof body === "string") {
+        return JSON.parse(body) as GenerationRequestBody;
+    }
+
+    if (typeof body === "object") {
+        return body as GenerationRequestBody;
+    }
+
+    return {};
+}
+
+function toCreateJobOptions(body: GenerationRequestBody, requestedBy: string): CreateJobOptions {
+    if (!Array.isArray(body.bundles) || body.bundles.length === 0) {
+        throw new Error("At least one bundle is required.");
+    }
+
+    const invalidBundles = body.bundles.filter((bundle) => !isValidBundleId(bundle));
+    if (invalidBundles.length > 0) {
+        throw new Error(`Invalid bundle IDs: ${invalidBundles.join(", ")}`);
+    }
+
+    if (!Number.isInteger(body.count) || (body.count ?? 0) < 1 || (body.count ?? 0) > 50) {
+        throw new Error("count must be an integer between 1 and 50.");
+    }
+
+    const count = body.count;
+    if (count === undefined) {
+        throw new Error("count must be an integer between 1 and 50.");
+    }
+
+    const configValidation = validateConfig(body.modelConfig);
+    logger.info(`[generate] Config valid: ${configValidation.valid}`, { errors: configValidation.errors });
+    if (!configValidation.valid) {
+        logConfigStatus();
+        throw new Error("Scenario generation is misconfigured. " + configValidation.errors.join("; "));
+    }
+
+    return {
+        bundles: body.bundles as BundleId[],
+        count,
+        mode: body.mode === "news" ? "news" : "manual",
+        requestedBy,
+        priority: body.priority ?? "normal",
+        executionTarget: body.executionTarget === "n8n" ? "n8n" : "cloud_function",
+        currentPhase: "queued",
+        currentMessage: body.executionTarget === "n8n" ? "Queued for n8n orchestration" : "Queued for background processing",
+        ...(body.lowLatencyMode !== undefined ? { lowLatencyMode: body.lowLatencyMode } : {}),
+        ...(body.distributionConfig !== undefined ? { distributionConfig: body.distributionConfig } : {}),
+        ...(body.dryRun !== undefined ? { dryRun: body.dryRun } : {}),
+        ...(body.newsContext !== undefined ? { newsContext: body.newsContext } : {}),
+        ...(body.region !== undefined ? { region: body.region } : {}),
+        ...(body.regions !== undefined ? { regions: body.regions } : {}),
+        ...(body.scopeTier !== undefined ? { scopeTier: body.scopeTier } : {}),
+        ...(body.scopeKey !== undefined ? { scopeKey: body.scopeKey } : {}),
+        ...(body.clusterId !== undefined ? { clusterId: body.clusterId } : {}),
+        ...(body.exclusivityReason !== undefined ? { exclusivityReason: body.exclusivityReason } : {}),
+        ...(body.applicable_countries !== undefined ? { applicable_countries: body.applicable_countries } : {}),
+        ...(body.sourceKind !== undefined ? { sourceKind: body.sourceKind } : {}),
+        ...(body.modelConfig !== undefined ? { modelConfig: body.modelConfig } : {}),
+        ...(body.description !== undefined ? { description: body.description } : {}),
+    };
+}
+
+async function enqueueGenerationJob(body: GenerationRequestBody, requestedBy: string) {
+    const options = toCreateJobOptions(body, requestedBy);
+    return createGenerationJob(db, options);
+}
+
+export const submitGenerationJob = onRequest({
+    cors: true,
+    timeoutSeconds: 60,
+    memory: "256MiB",
+    secrets: ["GENERATION_INTAKE_SECRET", "OPENAI_API_KEY"],
+}, async (request, response) => {
+    if (request.method !== "POST") {
+        response.status(405).json({ error: "Method not allowed" });
+        return;
+    }
+
+    if (!isAuthorizedServerRequest(request)) {
+        response.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+
+    try {
+        const body = parseGenerationRequestBody(request.body);
+        const requestedBy = request.get("x-request-origin") || "server-intake";
+        const result = await enqueueGenerationJob(body, requestedBy);
+
+        response.status(202).json({
+            success: true,
+            queued: true,
+            ...result,
+        });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Internal server error";
+        logger.error("submitGenerationJob failed", error);
+        response.status(message === "Internal server error" ? 500 : 400).json({ error: message });
+    }
+});
+
+export const getGenerationJob = onRequest({
+    cors: true,
+    timeoutSeconds: 60,
+    memory: "256MiB",
+    secrets: ["GENERATION_INTAKE_SECRET", "OPENAI_API_KEY"],
+}, async (request, response) => {
+    if (request.method !== "GET") {
+        response.status(405).json({ error: "Method not allowed" });
+        return;
+    }
+
+    if (!isAuthorizedServerRequest(request)) {
+        response.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+
+    const jobId = request.query.jobId;
+    if (typeof jobId !== "string" || !jobId.trim()) {
+        response.status(400).json({ error: "jobId is required" });
+        return;
+    }
+
+    try {
+        const job = await getJobStatus(db, jobId.trim());
+        if (!job) {
+            response.status(404).json({ error: "Job not found" });
+            return;
+        }
+
+        response.status(200).json({
+            success: true,
+            jobId: jobId.trim(),
+            job,
+        });
+    } catch (error) {
+        logger.error("getGenerationJob failed", error);
+        response.status(500).json({ error: "Internal server error" });
+    }
+});
+
+export const rebuildScenarioBundles = onCall({
+    cors: true,
+    enforceAppCheck: false,
+    timeoutSeconds: 540,
+    memory: "1GiB",
+}, async (request) => {
+    if (!isAdminUser(request)) {
+        throw new Error("Admin privileges required");
     }
 
     const { bundleId } = request.data || {};
-    const { exportBundle, exportAllBundles } = await import('./bundle-exporter');
+    const { exportBundle, exportAllBundles } = await import("./bundle-exporter");
 
     if (bundleId) {
-        if (!isValidBundleId(bundleId)) throw new Error(`Invalid bundle ID: ${bundleId}`);
+        if (!isValidBundleId(bundleId)) {
+            throw new Error(`Invalid bundle ID: ${bundleId}`);
+        }
         const count = await exportBundle(bundleId);
         return { success: true, summary: { [bundleId]: count } };
     }
@@ -43,53 +268,6 @@ export const rebuildScenarioBundles = onCall({
     return { success: true, summary };
 });
 
-// Ensure Firebase Admin is initialized
-if (!admin.apps.length) {
-    admin.initializeApp();
-}
-
-const db = admin.firestore();
-
-/**
- * Atomically check and update bundle generation cooldown via Firestore transaction.
- * Using a transaction prevents two simultaneous requests for the same bundle from
- * both passing the cooldown gate (TOCTOU race condition).
- */
-async function checkAndUpdateBundleGeneration(
-    bundle: string,
-    mode: 'news' | 'manual',
-    cooldownMinutes: number = 30
-): Promise<boolean> {
-    const trackingDoc = db.collection('generation_tracking').doc(`${bundle}_${mode}`);
-    try {
-        return await db.runTransaction(async (tx) => {
-            const doc = await tx.get(trackingDoc);
-            if (doc.exists && cooldownMinutes > 0) {
-                const lastGenerated = doc.data()?.timestamp?.toDate();
-                if (lastGenerated) {
-                    const minutesSinceLastGen = (Date.now() - lastGenerated.getTime()) / 1000 / 60;
-                    if (minutesSinceLastGen < cooldownMinutes) {
-                        logger.warn(`Bundle ${bundle} (${mode}) was generated ${minutesSinceLastGen.toFixed(1)} minutes ago. Skipping (cooldown: ${cooldownMinutes}m).`);
-                        return false;
-                    }
-                }
-            }
-            tx.set(trackingDoc, {
-                bundle,
-                mode,
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                lastGenerationDate: new Date().toISOString()
-            });
-            return true;
-        });
-    } catch (err: any) {
-        // On transaction failure (e.g. contention), allow generation rather than silently drop
-        logger.warn(`[generate] Cooldown transaction failed for ${bundle}: ${err.message}. Allowing generation.`);
-        return true;
-    }
-}
-
-// Callable: Fetch Scenarios
 export const getScenarios = onCall({
     cors: true,
     enforceAppCheck: false,
@@ -97,258 +275,39 @@ export const getScenarios = onCall({
     const { hideNewsScenarios = false, limit = 100 } = request.data || {};
 
     try {
-        const { fetchScenarios } = await import('./storage');
+        const { fetchScenarios } = await import("./storage");
         const scenarios = await fetchScenarios(hideNewsScenarios, limit);
         return { success: true, scenarios, count: scenarios.length };
     } catch (error) {
-        logger.error('Error fetching scenarios:', error);
-        throw new Error('Failed to fetch scenarios');
+        logger.error("Error fetching scenarios:", error);
+        throw new Error("Failed to fetch scenarios");
     }
 });
 
-// Callable: Manual Generation (Dev Tools) - Requires admin authentication
 export const generateScenariosManual = onCall({
     cors: true,
     enforceAppCheck: false,
-    timeoutSeconds: 540,
-    memory: '1GiB',
-    secrets: ["OPENAI_API_KEY"]
+    timeoutSeconds: 60,
+    memory: "256MiB",
 }, async (request) => {
-    if (!request.auth) {
-        throw new Error('Authentication required');
+    if (!isAdminUser(request)) {
+        throw new Error("Admin privileges required");
     }
 
-    const userEmail = request.auth.token?.email || '';
-    const userId = request.auth.uid;
-    const adminUid = process.env.ADMIN_UID;
-    const adminEmail = process.env.ADMIN_EMAIL;
+    const userEmail = request.auth?.token?.email || "";
+    const userId = request.auth?.uid || "unknown";
 
     logger.info(`Manual generation request from: ${userId} (${userEmail})`);
 
-    if ((adminUid || adminEmail) && userId !== adminUid && userEmail !== adminEmail) {
-        logger.warn(`Access denied for User: ${userId}, Email: ${userEmail}`);
-        throw new Error('Admin privileges required');
-    }
-
-    const { bundles, count, distributionConfig, region, applicable_countries, modelConfig, bypassCooldown } = request.data;
-    const configValidation = validateConfig(modelConfig);
-    logger.info(`[generate] Config valid: ${configValidation.valid}`, { errors: configValidation.errors });
-    if (!configValidation.valid) {
-        logConfigStatus();
-        throw new Error('Scenario generation is misconfigured. ' + configValidation.errors.join('; '));
-    }
-
-    logger.info(`[generate] Params: bundles=${JSON.stringify(bundles)}, count=${count}, region=${region}, bypassCooldown=${!!bypassCooldown}`);
-
-    if (!bundles || !Array.isArray(bundles)) {
-        throw new Error("Invalid arguments: 'bundles' must be an array of strings.");
-    }
-
-    const invalidBundles = bundles.filter((b: string) => !isValidBundleId(b));
-    if (invalidBundles.length > 0) {
-        throw new Error(`Invalid bundle IDs: ${invalidBundles.join(', ')}. Valid bundles: ${ALL_BUNDLE_IDS.join(', ')}`);
-    }
-
-    const genConfigSnap = await db.doc('world_state/generation_config').get();
-    const genConfigData = genConfigSnap.data();
-    const maxPendingJobs = genConfigData?.max_pending_jobs ?? 10;
-    const [pendingSnap, runningSnap] = await Promise.all([
-        db.collection('generation_jobs').where('status', '==', 'pending').count().get(),
-        db.collection('generation_jobs').where('status', '==', 'running').count().get(),
-    ]);
-    const activeJobCount = pendingSnap.data().count + runningSnap.data().count;
-    if (activeJobCount >= maxPendingJobs) {
-        throw new Error(`Too many active jobs (${activeJobCount}/${maxPendingJobs}). Wait for running jobs to complete.`);
-    }
-
-    const results: BundleScenario[] = [];
-    const skipped: Array<Record<string, unknown>> = [];
-    let totalSaved = 0;
-    let totalSkipped = 0;
-    let processedBundles = 0;
-
-    const normalizedCount = Math.max(1, Number(count) || 1);
-    const estimatedTotal = Math.max(1, bundles.length * normalizedCount * 3);
-    const jobRef = db.collection('generation_jobs').doc();
-    await jobRef.set({
-        bundles,
-        count: normalizedCount,
-        mode: 'manual',
-        distributionConfig: distributionConfig || { mode: 'auto' },
-        requestedBy: userEmail || userId,
-        requestedAt: admin.firestore.FieldValue.serverTimestamp(),
-        startedAt: admin.firestore.FieldValue.serverTimestamp(),
-        priority: 'normal',
-        description: 'Manual generation via /dev/generator',
-        status: 'running',
-        progress: 0,
-        total: estimatedTotal,
-        completedCount: 0,
-        failedCount: 0,
-        source: 'generateScenariosManual',
-        region: region || null,
-        applicable_countries: Array.isArray(applicable_countries) ? applicable_countries : [],
-        modelConfig: modelConfig || null,
-    });
-
-    const maxBundleConcurrency = Math.min(genConfigData?.max_bundle_concurrency ?? 3, 5);
-
-    let adaptiveBundleConcurrency = maxBundleConcurrency;
-    let consecutiveCleanBatches = 0;
-
-    // Process bundles in adaptive parallel batches — each bundle internally runs concept_concurrency
-    // parallel LLM calls, so total concurrent API calls ≈ adaptiveBundleConcurrency × concept_concurrency.
-    for (let batchStart = 0; batchStart < bundles.length; batchStart += adaptiveBundleConcurrency) {
-        const batchBundles: string[] = bundles.slice(batchStart, batchStart + adaptiveBundleConcurrency);
-        logger.info(
-            `[generate] Bundle batch ${Math.floor(batchStart / adaptiveBundleConcurrency) + 1}/${Math.ceil(bundles.length / adaptiveBundleConcurrency)} ` +
-            `with concurrency=${adaptiveBundleConcurrency}: [${batchBundles.join(', ')}]`
-        );
-
-        resetProviderRetryTelemetry();
-
-        const batchResults = await Promise.all(
-            batchBundles.map(async (bundle): Promise<{
-                bundle: string;
-                bundleSaved: BundleScenario[];
-                bundleSkipped: Array<Record<string, unknown>>;
-                error?: string;
-            }> => {
-                const bundleSaved: BundleScenario[] = [];
-                const bundleSkipped: Array<Record<string, unknown>> = [];
-
-                // Ceiling check - skip bundle if active scenario count is at or above configured ceiling
-                const ceiling = await getGenerationConfig();
-                const bundleActiveCount = await getActiveBundleCount(bundle as BundleId, db);
-                if (bundleActiveCount >= ceiling.max_active_scenarios_per_bundle!) {
-                    logger.warn(`[ceiling] Bundle ${bundle} at ceiling: ${bundleActiveCount}/${ceiling.max_active_scenarios_per_bundle} — skipping`);
-                    bundleSkipped.push({ bundle, reason: 'ceiling', activeCount: bundleActiveCount });
-                    return { bundle, bundleSaved, bundleSkipped };
-                }
-
-                // Check cooldown (shorter for manual: 5 minutes). Skipped when bypassCooldown is set.
-                if (!bypassCooldown) {
-                    const shouldGenerate = await checkAndUpdateBundleGeneration(bundle, 'manual', 5);
-                    if (!shouldGenerate) {
-                        logger.warn(`Bundle ${bundle} skipped - generated too recently`);
-                        bundleSkipped.push({ bundle, reason: 'cooldown' });
-                        return { bundle, bundleSaved, bundleSkipped };
-                    }
-                } else {
-                    // Still update timestamp so subsequent calls know when it was last generated
-                    await checkAndUpdateBundleGeneration(bundle, 'manual', 0);
-                }
-
-                logger.info(`[generate] Calling generateScenarios for bundle: ${bundle}`);
-                let scenarios: BundleScenario[];
-                try {
-                    scenarios = await generateScenarios({
-                        mode: 'manual',
-                        bundle: bundle as BundleId,
-                        count: count || 1,
-                        distributionConfig,
-                        ...(region ? { region: String(region) } : {}),
-                        ...(Array.isArray(applicable_countries) && applicable_countries.length > 0 ? { applicable_countries } : {}),
-                        ...(modelConfig ? { modelConfig } : {})
-                    });
-                } catch (err: any) {
-                    logger.error(`[generate] generateScenarios threw for bundle ${bundle}: ${err.message}`, { stack: err.stack });
-                    return { bundle, bundleSaved, bundleSkipped, error: err.message };
-                }
-                logger.info(`[generate] generateScenarios returned ${scenarios.length} scenarios for bundle: ${bundle}`);
-
-                // Save all scenarios in this bundle in parallel
-                const saveResults = await Promise.all(
-                    scenarios.map(s => saveScenario(s).then(r => ({ s, r })))
-                );
-                for (const { s, r } of saveResults) {
-                    if (r.saved) {
-                        bundleSaved.push(s);
-                    } else {
-                        logger.info(`Skipped scenario ${s.id}: ${r.reason}`);
-                        bundleSkipped.push({ scenarioId: s.id, reason: r.reason, existingId: r.existingId });
-                    }
-                }
-
-                return { bundle, bundleSaved, bundleSkipped };
-            })
-        );
-
-        const telemetry = getProviderRetryTelemetry();
-        if (telemetry.rateLimitRetries > 0) {
-            consecutiveCleanBatches = 0;
-            if (adaptiveBundleConcurrency > 1) {
-                adaptiveBundleConcurrency -= 1;
-                logger.warn(
-                    `[generate] Observed ${telemetry.rateLimitRetries} provider 429 retries in batch; ` +
-                    `reducing bundle concurrency to ${adaptiveBundleConcurrency}`
-                );
-            }
-        } else if (adaptiveBundleConcurrency < maxBundleConcurrency) {
-            consecutiveCleanBatches += 1;
-            if (consecutiveCleanBatches >= 2) {
-                adaptiveBundleConcurrency += 1;
-                consecutiveCleanBatches = 0;
-                logger.info(`[generate] Two clean batches; increasing bundle concurrency to ${adaptiveBundleConcurrency}`);
-            }
-        }
-
-        // Accumulate batch results; surface first generation error
-        for (const { bundle, bundleSaved, bundleSkipped, error } of batchResults) {
-            if (error) {
-                await jobRef.update({
-                    status: 'failed',
-                    completedAt: admin.firestore.FieldValue.serverTimestamp(),
-                    failedCount: totalSkipped + 1,
-                    completedCount: totalSaved,
-                    progress: Math.min(100, Math.round((processedBundles / Math.max(1, bundles.length)) * 100)),
-                    errors: admin.firestore.FieldValue.arrayUnion({ bundle, error }),
-                });
-                throw new Error(`Bundle ${bundle} failed: ${error}`);
-            }
-            for (const s of bundleSaved) { results.push(s); totalSaved++; }
-            for (const sk of bundleSkipped) { skipped.push(sk); totalSkipped++; }
-
-            processedBundles++;
-            await jobRef.update({
-                progress: Math.min(100, Math.round((processedBundles / Math.max(1, bundles.length)) * 100)),
-                completedCount: totalSaved,
-                failedCount: totalSkipped,
-                results: results.slice(0, 100).map((s) => ({ id: s.id, title: s.title, bundle: s.metadata?.bundle, auditScore: s.metadata?.auditMetadata?.score, autoFixed: s.metadata?.auditMetadata?.autoFixed ?? false })),
-                errors: skipped.slice(0, 50),
-            });
-        }
-    }
-
-    const scoredResults = results.filter(r => typeof r.metadata?.auditMetadata?.score === 'number');
-    const auditSummary = scoredResults.length > 0 ? {
-        avgScore: Math.round((scoredResults.reduce((s, r) => s + (r.metadata?.auditMetadata?.score ?? 0), 0) / scoredResults.length) * 10) / 10,
-        minScore: Math.min(...scoredResults.map(r => r.metadata?.auditMetadata?.score!)),
-        maxScore: Math.max(...scoredResults.map(r => r.metadata?.auditMetadata?.score!)),
-        below70Count: scoredResults.filter(r => (r.metadata?.auditMetadata?.score ?? 0) < 70).length,
-        above90Count: scoredResults.filter(r => (r.metadata?.auditMetadata?.score ?? 0) >= 90).length,
-    } : null;
-    const finalTelemetry = getProviderRetryTelemetry();
-
-    await jobRef.update({
-        status: 'completed',
-        completedAt: admin.firestore.FieldValue.serverTimestamp(),
-        progress: 100,
-        completedCount: totalSaved,
-        failedCount: totalSkipped,
-        results: results.slice(0, 100).map((s) => ({ id: s.id, title: s.title, bundle: s.metadata?.bundle, auditScore: s.metadata?.auditMetadata?.score, autoFixed: s.metadata?.auditMetadata?.autoFixed ?? false })),
-        errors: skipped.slice(0, 50),
-        ...(auditSummary ? { auditSummary } : {}),
-        rateLimitRetries: finalTelemetry.rateLimitRetries,
-    });
+    const result = await enqueueGenerationJob(
+        parseGenerationRequestBody(request.data),
+        userEmail || userId || "generateScenariosManual"
+    );
 
     return {
         success: true,
-        jobId: jobRef.id,
-        saved: totalSaved,
-        skipped: totalSkipped,
-        scenarios: results,
-        skippedDetails: skipped
+        queued: true,
+        ...result,
     };
 });
 

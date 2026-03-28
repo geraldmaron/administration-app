@@ -23,7 +23,13 @@ import { saveScenario, getActiveBundleCount } from './storage';
 import { validateConfig } from './lib/config-validator';
 import { callModelProvider } from './lib/model-providers';
 import { isValidBundleId, type BundleId } from './data/schemas/bundleIds';
+import { normalizeRegion } from './data/schemas/regions';
 import { type NewsItem } from './types';
+import {
+    generateEmbedding,
+    findSimilarByEmbedding,
+    isSemanticDedupEnabled,
+} from './lib/semantic-dedup';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -41,7 +47,7 @@ const MIN_RELEVANCE_SCORE = 7;
 /** How many hours back to look when filtering already-processed headlines. */
 const PROCESSED_LOOKBACK_HOURS = 48;
 
-/** RSS feeds to pull from. Mix of global, geopolitical, and economic perspectives. */
+/** RSS feeds to pull from. Mix of global, regional, and geopolitical perspectives. */
 const FEED_SOURCES: { url: string; source: string }[] = [
     { url: 'http://feeds.bbci.co.uk/news/world/rss.xml', source: 'BBC World' },
     { url: 'https://www.aljazeera.com/xml/rss/all.xml', source: 'Al Jazeera' },
@@ -49,6 +55,10 @@ const FEED_SOURCES: { url: string; source: string }[] = [
     { url: 'https://rss.dw.com/rdf/rss-en-world', source: 'Deutsche Welle' },
     { url: 'https://feeds.feedburner.com/reuters/worldNews', source: 'Reuters World' },
     { url: 'https://www.ft.com/rss/home/world', source: 'FT World' },
+    { url: 'https://asia.nikkei.com/rss', source: 'Nikkei Asia' },
+    { url: 'https://www.scmp.com/rss/91/feed', source: 'South China Morning Post' },
+    { url: 'https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf', source: 'AllAfrica' },
+    { url: 'https://www.themoscowtimes.com/rss/news', source: 'Moscow Times' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -84,6 +94,36 @@ interface IngestionLog {
     headlinesCeilingSkipped?: number;
     errors: string[];
     savedScenarioIds: string[];
+}
+
+export function buildGenerationScopeForHeadline(classified: ClassifiedHeadline): {
+    scopeTier?: 'universal' | 'regional';
+    region?: string;
+    regions?: string[];
+    applicable_countries?: string[];
+    sourceKind: 'news';
+} {
+    if (classified.scope === 'regional' && classified.region) {
+        const canonicalRegion = normalizeRegion(classified.region);
+        return {
+            scopeTier: 'regional',
+            region: classified.region,
+            ...(canonicalRegion ? { regions: [canonicalRegion] } : {}),
+            sourceKind: 'news',
+        };
+    }
+
+    if (classified.scope === 'country' && classified.applicable_countries?.length) {
+        return {
+            applicable_countries: classified.applicable_countries,
+            sourceKind: 'news',
+        };
+    }
+
+    return {
+        scopeTier: 'universal',
+        sourceKind: 'news',
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -367,6 +407,23 @@ async function isDuplicateOfExistingScenario(
         }
     }
 
+    if (isSemanticDedupEnabled()) {
+        try {
+            const embedding = await generateEmbedding(headline);
+            if (embedding.length > 0) {
+                const similar = await findSimilarByEmbedding(embedding, bundle);
+                if (similar) {
+                    logger.info(
+                        `[NewsIngest] Semantic duplicate detected: "${headline}" ≈ ${similar.id} (similarity: ${similar.similarity.toFixed(3)})`
+                    );
+                    return true;
+                }
+            }
+        } catch (err: any) {
+            logger.warn(`[NewsIngest] Semantic dedup check failed (non-fatal): ${err.message}`);
+        }
+    }
+
     return false;
 }
 
@@ -541,23 +598,22 @@ export const dailyNewsToScenarios = onSchedule(
 
             // Step 5 — Generate and save scenarios
             for (const classified of deduped) {
-                const { newsItem, bundle, scope, region, applicable_countries } = classified;
+                const { newsItem, bundle, scope } = classified;
                 logger.info(
                     `[NewsIngest] Generating from: "${newsItem.title}" → bundle=${bundle}, scope=${scope}`
                 );
 
                 try {
-                    const scenarios = await generateScenarios({
+                    const generationScope = buildGenerationScopeForHeadline(classified);
+                    const genResult = await generateScenarios({
                         mode: 'news',
                         bundle,
                         count: 1,
                         newsContext: [newsItem],
                         distributionConfig: { mode: 'fixed', loopLength: 1 },
-                        ...(scope === 'regional' && region ? { region } : {}),
-                        ...(scope === 'country' && applicable_countries?.length
-                            ? { applicable_countries }
-                            : {}),
+                        ...generationScope,
                     });
+                    const scenarios = genResult.scenarios;
 
                     log.scenariosGenerated += scenarios.length;
 

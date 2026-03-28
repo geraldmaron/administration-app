@@ -7,7 +7,10 @@
     "admin-app": "node admin-app/bin/scenario-loops.js",
     "dev": "npm --prefix web run dev",
     "build": "npm --prefix web run build",
-    "start": "npm --prefix web run start"
+    "start": "npm --prefix web run start",
+    "functions:deploy": "firebase deploy --only functions",
+    "rules:deploy": "firebase deploy --only firestore:rules,storage",
+    "deploy:all": "firebase deploy"
   },
   "bin": {
     "admin-app": "admin-app/bin/scenario-loops.js"

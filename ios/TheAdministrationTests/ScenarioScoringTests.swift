@@ -72,7 +72,8 @@ final class ScenarioScoringTests: XCTestCase {
         id: String = "sc_test",
         baseWeight: Double = 1.0,
         bundle: String? = nil,
-        regionalBoost: [String: Double]? = nil
+        regionalBoost: [String: Double]? = nil,
+        regionTags: [String]? = nil
     ) -> Scenario {
         let metadata = ScenarioMetadata(
             applicableCountries: nil,
@@ -84,7 +85,8 @@ final class ScenarioScoringTests: XCTestCase {
             excludedGovernmentCategories: nil,
             regionalBoost: regionalBoost,
             isNeighborEvent: nil,
-            involvedCountries: nil
+            involvedCountries: nil,
+            regionTags: regionTags
         )
 
         return Scenario(
@@ -220,6 +222,25 @@ final class ScenarioScoringTests: XCTestCase {
 
         let score = ScenarioNavigator.shared.scoreScenario(scenario, for: bareCountry, gameState: state)
         XCTAssertGreaterThanOrEqual(score, 0.0, "Score should be non-negative even without profiles")
+    }
+
+    func testRegionTagsGateMismatchedCountry() {
+        let country = makeCountry(region: "North America", bundleOverrides: ["economy": 2.0])
+        let scenario = makeScenario(baseWeight: 1.0, bundle: "economy", regionTags: ["Middle East"])
+        let state = makeDummyState()
+
+        let score = ScenarioNavigator.shared.scoreScenario(scenario, for: country, gameState: state)
+        XCTAssertEqual(score, 0.0, accuracy: 0.0001, "Scenarios tagged for a different region should be ineligible")
+    }
+
+    func testRegionTagsAcceptCanonicalOrDisplayForms() {
+        let country = makeCountry(region: "North America", bundleOverrides: ["economy": 2.0])
+        let displayTagged = makeScenario(baseWeight: 1.0, bundle: "economy", regionTags: ["North America"])
+        let canonicalTagged = makeScenario(baseWeight: 1.0, bundle: "economy", regionTags: ["north_america"])
+        let state = makeDummyState()
+
+        XCTAssertGreaterThan(ScenarioNavigator.shared.scoreScenario(displayTagged, for: country, gameState: state), 0.0)
+        XCTAssertGreaterThan(ScenarioNavigator.shared.scoreScenario(canonicalTagged, for: country, gameState: state), 0.0)
     }
 }
 
@@ -477,6 +498,49 @@ final class TemplateEngineTests: XCTestCase {
                 gameState: makeGameState(countryId: playerCountry.id)
             )
         )
+    }
+
+    func testResolveScenarioPrefersMostHostileAdversary() {
+        let playerCountry = makeCountry(
+            id: "player",
+            name: "Test Republic",
+            tokens: [
+                "adversary": "",
+                "the_adversary": ""
+            ],
+            geopoliticalProfile: GeopoliticalProfile(
+                neighbors: [],
+                allies: [],
+                adversaries: [
+                    CountryRelationship(countryId: "china", type: "rival", strength: -55.0, treaty: nil, sharedBorder: false),
+                    CountryRelationship(countryId: "russia", type: "adversary", strength: -75.0, treaty: nil, sharedBorder: false)
+                ],
+                tags: [],
+                governmentCategory: .liberalDemocracy,
+                regimeStability: 60.0
+            )
+        )
+        let china = makeCountry(id: "china", name: "China")
+        let russia = makeCountry(id: "russia", name: "Russia")
+        let scenario = Scenario(
+            id: "sc_adversary_priority",
+            title: "Briefing on {the_adversary}",
+            description: "{the_adversary} has escalated the crisis.",
+            options: [Option(id: "option_1", text: "Confront {the_adversary}.")]
+        )
+
+        TemplateEngine.shared.setCountries([playerCountry, china, russia])
+        defer { TemplateEngine.shared.setCountries([]) }
+
+        let resolved = TemplateEngine.shared.resolveScenario(
+            scenario,
+            country: playerCountry,
+            gameState: makeGameState(countryId: playerCountry.id)
+        )
+
+        XCTAssertEqual(resolved.title, "Briefing on Russia")
+        XCTAssertEqual(resolved.description, "Russia has escalated the crisis.")
+        XCTAssertEqual(resolved.options.first?.text, "Confront Russia.")
     }
 }
 

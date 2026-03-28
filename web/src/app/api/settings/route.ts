@@ -35,7 +35,8 @@ export async function PATCH(request: NextRequest) {
       'dedup_similarity_threshold',
       'max_llm_repair_attempts',
       'category_domain_metrics',
-      'lmstudio_base_url',
+      'analytics_retention_days',
+      'ollama_base_url',
     ]);
 
     const update: Record<string, unknown> = {};

@@ -15,4 +15,9 @@ describe('normalizeTokenAliases', () => {
         const text = '{the_legislature_speaker} warned that {legislature_speaker} could delay the vote.';
         expect(normalizeTokenAliases(text)).toBe('the speaker of {the_legislature} warned that speaker of {the_legislature} could delay the vote.');
     });
+
+    test('rewrites metric placeholders in narrative text to plain language labels', () => {
+        const text = '{metric_infrastructure} spending fell while {metric_foreign_relations} deteriorated and {metric_sovereignty} became a campaign issue.';
+        expect(normalizeTokenAliases(text)).toBe('infrastructure spending fell while foreign relations deteriorated and sovereignty became a campaign issue.');
+    });
 });

@@ -31,6 +31,7 @@ export interface ContentQualityResult {
     readability: ContentQualityDimension;
     optionConsistency: ContentQualityDimension;
     advisorQuality: ContentQualityDimension;
+    specificity: ContentQualityDimension;
     overallScore: number;
     regenerateFields: ('advisorFeedback' | 'outcomeContext' | 'outcomeSummary' | 'description' | 'full')[];
     rawResponse?: string;
@@ -43,6 +44,7 @@ interface QualityLLMResponse {
     readability: { score: number; issues: string[] };
     option_consistency: { score: number; issues: string[] };
     advisor_quality: { score: number; issues: string[] };
+    specificity: { score: number; issues: string[] };
 }
 
 const QUALITY_SCHEMA = {
@@ -96,8 +98,16 @@ const QUALITY_SCHEMA = {
             },
             required: ['score', 'issues'],
         },
+        specificity: {
+            type: 'object',
+            properties: {
+                score: { type: 'integer', minimum: 1, maximum: 5, description: '1=vague platitudes throughout, 3=some concrete details, 5=every reference names specific mechanisms, groups, and stakes' },
+                issues: { type: 'array', items: { type: 'string' }, description: 'Vague references that should name specific mechanisms, sectors, groups, or events' },
+            },
+            required: ['score', 'issues'],
+        },
     },
-    required: ['grammar', 'tone', 'coherence', 'readability', 'option_consistency', 'advisor_quality'],
+    required: ['grammar', 'tone', 'coherence', 'readability', 'option_consistency', 'advisor_quality', 'specificity'],
 };
 
 // ---------------------------------------------------------------------------
@@ -127,12 +137,13 @@ Evaluate the following scenario on five dimensions. All content uses placeholder
 **Scoring scale:** 1=poor, 2=below standard, 3=acceptable, 4=good, 5=excellent
 
 **Standards for this game:**
-- Writing style: polished presidential-briefing tone, formal US English, no informal language
+- Writing style: clear Reuters/AP-style reporting, formal US English, no informal language, and no think-tank jargon in player-facing text
 - Grammar: properly punctuated, no double spaces, no sentence fragments, no run-ons over ~40 words
 - Coherence: cause → consequence chain should be traceable, outcomes should logically follow from the chosen option
-- Readability: plain language for lay players, avoid policy jargon, keep sentences concise and direct
+- Readability: plain language for lay players, avoid policy jargon and newsroom-unfriendly words like "bloc" or "gambit", keep sentences concise and direct
 - Option consistency: all three options should address the same central scenario (different approaches, not unrelated topics)
 - Advisor feedback: must be role-specific and actionable — generic phrases like "Our department supports this" score 1-2
+- Specificity: every reference must name the concrete mechanism, sector, population, or institution. "The economy faces pressure" → score 1. "A 15% tariff on {major_industry} exports threatens 40,000 jobs in the supply chain" → score 5. Tokens like {major_industry} are acceptable but the surrounding language must be sector-specific
 
 **Scenario:**
 Title: ${scenario.title}
@@ -173,6 +184,7 @@ export async function evaluateContentQuality(
             readability: { score: 3, issues: [] },
             optionConsistency: { score: 3, issues: [] },
             advisorQuality: { score: 3, issues: [] },
+            specificity: { score: 3, issues: [] },
             overallScore: 3,
             regenerateFields: [],
         };
@@ -188,17 +200,19 @@ export async function evaluateContentQuality(
     const readability: ContentQualityDimension = { score: clamp(r.readability?.score), issues: r.readability?.issues ?? [] };
     const optionConsistency: ContentQualityDimension = { score: clamp(r.option_consistency?.score), issues: r.option_consistency?.issues ?? [] };
     const advisorQuality: ContentQualityDimension = { score: clamp(r.advisor_quality?.score), issues: r.advisor_quality?.issues ?? [] };
+    const specificity: ContentQualityDimension = { score: clamp(r.specificity?.score), issues: r.specificity?.issues ?? [] };
 
-    const overallScore = (grammar.score + tone.score + coherence.score + readability.score + optionConsistency.score + advisorQuality.score) / 6;
+    const allDimensions = [grammar, tone, coherence, readability, optionConsistency, advisorQuality, specificity];
+    const overallScore = allDimensions.reduce((sum, d) => sum + d.score, 0) / allDimensions.length;
 
     // Hard fail: any dimension below 3
-    const hardFail = [grammar, tone, coherence, readability, optionConsistency, advisorQuality].some(d => d.score < 3);
+    const hardFail = allDimensions.some(d => d.score < 3);
     // Soft warn: average below 3.5
     const softWarn = overallScore < 3.5;
 
     // Determine which fields to regenerate based on what scored poorly
     const regenerateFields: ContentQualityResult['regenerateFields'] = [];
-    if (grammar.score < 3 || coherence.score < 3 || readability.score < 3 || optionConsistency.score < 3) {
+    if (grammar.score < 3 || coherence.score < 3 || readability.score < 3 || optionConsistency.score < 3 || specificity.score < 3) {
         regenerateFields.push('full');
     } else {
         if (advisorQuality.score < 3) regenerateFields.push('advisorFeedback');
@@ -215,6 +229,7 @@ export async function evaluateContentQuality(
         readability,
         optionConsistency,
         advisorQuality,
+        specificity,
         overallScore,
         regenerateFields,
     };

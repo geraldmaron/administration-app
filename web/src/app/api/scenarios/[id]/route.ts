@@ -16,6 +16,7 @@ function toDetail(id: string, data: FirebaseFirestore.DocumentData): ScenarioDet
     description: data.description ?? '',
     is_active: data.is_active ?? false,
     createdAt: data.created_at?.toDate?.()?.toISOString() ?? new Date(0).toISOString(),
+    updatedAt: data.updated_at?.toDate?.()?.toISOString(),
     phase: data.phase,
     actIndex: data.actIndex,
     options: (data.options ?? []).map((opt: FirebaseFirestore.DocumentData) => ({
@@ -40,7 +41,11 @@ function toDetail(id: string, data: FirebaseFirestore.DocumentData): ScenarioDet
         }
       : undefined,
     conditions: data.conditions,
+    relationship_conditions: data.relationship_conditions,
+    chain_id: data.chain_id,
+    token_map: data.token_map,
     legislature_requirement: data.legislature_requirement,
+    generationProvenance: data.metadata?.generationProvenance,
   };
 }
 
@@ -49,11 +54,15 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const doc = await db.collection('scenarios').doc(params.id).get();
+    const [doc, trainingDoc] = await Promise.all([
+      db.collection('scenarios').doc(params.id).get(),
+      db.collection('training_scenarios').doc(params.id).get(),
+    ]);
     if (!doc.exists) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    return NextResponse.json(toDetail(doc.id, doc.data()!));
+    const detail = toDetail(doc.id, doc.data()!);
+    return NextResponse.json({ ...detail, isGolden: trainingDoc.exists && trainingDoc.data()?.isGolden === true });
   } catch (err) {
     console.error('GET /api/scenarios/[id] error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

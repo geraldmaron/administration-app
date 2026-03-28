@@ -17,6 +17,7 @@ struct DeskView: View {
     @State private var contentAppeared = false
 
     @State private var selectedCrisis: ActiveCrisis? = nil
+    @State private var scrollProxy: ScrollViewProxy? = nil
 
     enum ViewMode { case focus, grid }
     private enum OutcomePhase { case hidden, loading, revealed }
@@ -35,22 +36,26 @@ struct DeskView: View {
                     crisiBanner
                 }
 
-                 ScrollView {
-                     VStack(spacing: AppSpacing.xxl) { // 32 -> using spacing system
-                         headerSection
+                 ScrollViewReader { proxy in
+                     ScrollView {
+                         VStack(spacing: AppSpacing.xxl) {
+                             headerSection
+                                 .id("deskTop")
 
-                         if viewMode == .focus {
-                             focusView
-                         } else {
-                             gridView
+                             if viewMode == .focus {
+                                 focusView
+                             } else {
+                                 gridView
+                             }
+
+                             metricSelector
+
+                             scenarioCard
                          }
-
-                         metricSelector
-
-                         scenarioCard
+                         .padding(.horizontal, AppSpacing.sectionPadding)
+                         .padding(.bottom, AppSpacing.tabBarClearance)
                      }
-                     .padding(.horizontal, AppSpacing.sectionPadding) // Using spacing system
-                     .padding(.bottom, AppSpacing.tabBarClearance)
+                     .onAppear { scrollProxy = proxy }
                  }
             }
 
@@ -583,6 +588,9 @@ struct DeskView: View {
         withAnimation(AppMotion.standard) { gameStore.showOutcome = false }
         outcomePhase = .hidden
         HapticEngine.shared.light()
+        withAnimation(AppMotion.standard) {
+            scrollProxy?.scrollTo("deskTop", anchor: .top)
+        }
     }
 
     @ViewBuilder

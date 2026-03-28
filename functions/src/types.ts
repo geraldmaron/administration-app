@@ -76,6 +76,7 @@ export interface ScenarioMetadata {
     difficulty?: 1 | 2 | 3 | 4 | 5;
     tags?: string[];
     actorPattern?: 'domestic' | 'ally' | 'adversary' | 'border_rival' | 'legislature' | 'cabinet' | 'judiciary' | 'mixed';
+    theme?: string;
     scopeTier?: ScenarioScopeTier;
     scopeKey?: string;
     clusterId?: string;
@@ -95,6 +96,12 @@ export interface ScenarioMetadata {
         score: number;
         issues: string[];
         autoFixed?: boolean;
+    };
+    generationProvenance?: {
+        jobId: string;
+        executionTarget: string;
+        modelUsed: string;
+        generatedAt: string;
     };
     acceptanceMetadata?: ScenarioAcceptanceMetadata;
     // Geopolitical realism extensions
@@ -159,11 +166,43 @@ export interface OptionEffect {
     };
 }
 
+export type SettingTarget =
+    | 'fiscal.taxIncome'
+    | 'fiscal.taxCorporate'
+    | 'fiscal.spendingMilitary'
+    | 'fiscal.spendingInfrastructure'
+    | 'fiscal.spendingSocial'
+    | 'policy.economicStance'
+    | 'policy.socialSpending'
+    | 'policy.defenseSpending'
+    | 'policy.environmentalPolicy'
+    | 'policy.tradeOpenness'
+    | 'policy.immigration'
+    | 'policy.environmentalProtection'
+    | 'policy.healthcareAccess'
+    | 'policy.educationFunding'
+    | 'policy.socialWelfare';
+
+export const VALID_SETTING_TARGETS: readonly SettingTarget[] = [
+    'fiscal.taxIncome', 'fiscal.taxCorporate',
+    'fiscal.spendingMilitary', 'fiscal.spendingInfrastructure', 'fiscal.spendingSocial',
+    'policy.economicStance', 'policy.socialSpending', 'policy.defenseSpending',
+    'policy.environmentalPolicy', 'policy.tradeOpenness', 'policy.immigration',
+    'policy.environmentalProtection', 'policy.healthcareAccess',
+    'policy.educationFunding', 'policy.socialWelfare',
+] as const;
+
+export interface PolicyImplication {
+    target: SettingTarget;
+    delta: number;
+}
+
 export interface Option {
     id: string;
     text: string;
     label?: string;
     effects: OptionEffect[];
+    policyImplications?: PolicyImplication[];
     advisorFeedback?: AdvisorFeedback[];
     outcomeHeadline?: string;
     outcomeSummary?: string;
@@ -272,6 +311,7 @@ export interface CountryDocument {
         neighbor_event_chance: number;
         term_turn_fraction: number; // default 1.0
         difficulty: 'low' | 'medium' | 'high' | 'expert';
+        blitz_priority?: 'high' | 'medium' | 'low';
     };
     traits: CountryTrait[];
     description: string;

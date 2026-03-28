@@ -19,6 +19,12 @@ function toSummary(id: string, data: FirebaseFirestore.DocumentData): JobSummary
     total: data.total,
     errors: (data.errors ?? []).slice(0, 5),
     auditSummary: data.auditSummary,
+    currentBundle: data.currentBundle,
+    currentPhase: data.currentPhase,
+    currentMessage: data.currentMessage,
+    lastHeartbeatAt: data.lastHeartbeatAt?.toDate?.()?.toISOString(),
+    executionTarget: data.executionTarget,
+    eventCount: data.eventCount,
   };
 }
 

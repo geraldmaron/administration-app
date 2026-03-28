@@ -3,6 +3,13 @@
  * Validates that all required environment variables are present for the new system
  */
 
+import {
+  getResolvedGenerationModels,
+  isOpenAIModel,
+  isOllamaModel,
+  type GenerationModelConfig,
+} from './generation-models';
+
 export interface ConfigValidation {
   valid: boolean;
   errors: string[];
@@ -22,36 +29,7 @@ export interface ConfigValidation {
   };
 }
 
-export interface RequestedModelConfig {
-  architectModel?: string;
-  drafterModel?: string;
-  repairModel?: string;
-  contentQualityModel?: string;
-  narrativeReviewModel?: string;
-  embeddingModel?: string;
-}
-
-function isOpenAIModel(model: string): boolean {
-  return model.startsWith('gpt-') || model.startsWith('o1') || model.startsWith('o3') || model.startsWith('text-embedding');
-}
-
-function isLMStudioModel(model: string): boolean {
-  return model.startsWith('lmstudio:');
-}
-
-function getSharedLMStudioModel(modelConfig?: RequestedModelConfig): string | undefined {
-  return [
-    modelConfig?.architectModel,
-    modelConfig?.drafterModel,
-    modelConfig?.repairModel,
-    modelConfig?.contentQualityModel,
-    modelConfig?.narrativeReviewModel,
-  ].find((model): model is string => Boolean(model && isLMStudioModel(model)));
-}
-
-function getDefaultArchitectModel(): string {
-  return process.env.ARCHITECT_MODEL || process.env.CONCEPT_MODEL || 'gpt-4o-mini';
-}
+export type RequestedModelConfig = GenerationModelConfig;
 
 /**
  * Validate configuration for generation providers
@@ -70,14 +48,14 @@ export function validateConfig(modelConfig?: RequestedModelConfig): ConfigValida
     }
   }
 
-  const sharedLMStudioModel = getSharedLMStudioModel(modelConfig);
-  const architectModel = modelConfig?.architectModel || getDefaultArchitectModel();
-  const blueprintModel = architectModel;
-  const drafterModel = modelConfig?.drafterModel || process.env.DRAFTER_MODEL || 'gpt-4o-mini';
-  const repairModel = modelConfig?.repairModel || sharedLMStudioModel || process.env.REPAIR_MODEL || 'gpt-4o-mini';
-  const contentQualityModel = modelConfig?.contentQualityModel || sharedLMStudioModel || 'gpt-4o-mini';
-  const narrativeReviewModel = modelConfig?.narrativeReviewModel || sharedLMStudioModel || process.env.NARRATIVE_REVIEW_MODEL || 'gpt-4o-mini';
-  const embeddingModel = modelConfig?.embeddingModel || process.env.EMBEDDING_MODEL || 'text-embedding-3-small';
+  const resolvedModels = getResolvedGenerationModels(modelConfig);
+  const architectModel = resolvedModels.architect;
+  const blueprintModel = resolvedModels.blueprint;
+  const drafterModel = resolvedModels.drafter;
+  const repairModel = resolvedModels.repair;
+  const contentQualityModel = resolvedModels.contentQuality;
+  const narrativeReviewModel = resolvedModels.narrativeReview;
+  const embeddingModel = resolvedModels.embedding;
 
   const requiredModels = [
     ['architectModel', architectModel],
@@ -89,8 +67,8 @@ export function validateConfig(modelConfig?: RequestedModelConfig): ConfigValida
   ] as const;
 
   for (const [label, model] of requiredModels) {
-    if (!isOpenAIModel(model) && !isLMStudioModel(model)) {
-      errors.push(`${label} is set to ${model} but only OpenAI (gpt-*, o1, o3, text-embedding*) and LM Studio (lmstudio:*) models are supported`);
+    if (!isOpenAIModel(model) && !isOllamaModel(model)) {
+      errors.push(`${label} is set to ${model} but only OpenAI (gpt-*, o1, o3) and Ollama (ollama:*) models are supported`);
       continue;
     }
     if (isOpenAIModel(model) && !hasOpenAI) {
@@ -100,19 +78,15 @@ export function validateConfig(modelConfig?: RequestedModelConfig): ConfigValida
 
   // Check semantic deduplication
   const semanticDedupEnabled = process.env.ENABLE_SEMANTIC_DEDUP !== 'false';
-  const lmStudioOnlyRun = requiredModels.every(([, model]) => isLMStudioModel(model));
-  if (semanticDedupEnabled && !hasOpenAI && !lmStudioOnlyRun) {
+  if (semanticDedupEnabled && !hasOpenAI) {
     warnings.push('Semantic deduplication is enabled but OPENAI_API_KEY is missing - embedding-based dedup will be unavailable');
-  }
-  if (semanticDedupEnabled && lmStudioOnlyRun) {
-    warnings.push('Semantic deduplication is OpenAI-only and will be skipped for LM Studio-only generation runs');
   }
 
   // Warnings for non-optimal configurations
-  if (architectModel !== 'gpt-4o-mini' && !isLMStudioModel(architectModel)) {
+  if (architectModel !== 'gpt-4o-mini') {
     warnings.push(`ARCHITECT_MODEL is ${architectModel} - recommended: gpt-4o-mini for cost efficiency`);
   }
-  if (drafterModel !== 'gpt-4o-mini' && !isLMStudioModel(drafterModel)) {
+  if (drafterModel !== 'gpt-4o-mini') {
     warnings.push(`DRAFTER_MODEL is ${drafterModel} - recommended: gpt-4o-mini for low-cost operation`);
   }
   return {

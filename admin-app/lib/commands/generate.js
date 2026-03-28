@@ -51,9 +51,9 @@ Options explained:
   confirm-per-batch  Pause after each batch and ask to continue (run becomes sequential).
   preflight      Quick validation before generation; exits on config errors.
   dry-run        Print planned counts and options only; no scenarios written.`)
-    .option('--architect-model <model>', 'Override the architect model (e.g., lmstudio:local-model-name)')
-    .option('--drafter-model <model>', 'Override the drafter model (e.g., lmstudio:local-model-name)')
-    .option('--embedding-model <model>', 'Override the embedding model (e.g., lmstudio:local-model-name)')
+    .option('--architect-model <model>', 'Override the architect model (e.g., ollama:model-name)')
+    .option('--drafter-model <model>', 'Override the drafter model (e.g., ollama:model-name)')
+    .option('--embedding-model <model>', 'Override the embedding model (e.g., ollama:model-name)')
     .action(async (options) => {
       const opts = await promptGenerateOptions(options);
       if (opts.mainMenu) {

@@ -141,7 +141,7 @@ struct GlobalView: View {
     private func legislatureStatsRow(_ legislature: LegislatureState) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Approval")
+                Text("Legislative Support")
                     .font(AppTypography.micro)
                     .foregroundColor(AppColors.foregroundSubtle)
                 Text("\(legislature.approvalOfPlayer)%")

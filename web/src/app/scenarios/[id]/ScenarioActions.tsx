@@ -6,12 +6,16 @@ import { useState } from 'react';
 interface ScenarioActionsProps {
   id: string;
   isActive: boolean;
+  isGolden: boolean;
+  bundle?: string;
 }
 
-export default function ScenarioActions({ id, isActive }: ScenarioActionsProps) {
+export default function ScenarioActions({ id, isActive, isGolden: initialGolden, bundle }: ScenarioActionsProps) {
   const router = useRouter();
   const [active, setActive] = useState(isActive);
+  const [golden, setGolden] = useState(initialGolden);
   const [loading, setLoading] = useState(false);
+  const [goldenLoading, setGoldenLoading] = useState(false);
 
   async function toggleActive() {
     setLoading(true);
@@ -33,8 +37,42 @@ export default function ScenarioActions({ id, isActive }: ScenarioActionsProps) 
     router.push('/scenarios');
   }
 
+  async function toggleGolden() {
+    setGoldenLoading(true);
+    try {
+      if (golden) {
+        await fetch(`/api/scenarios/${id}/golden`, { method: 'DELETE' });
+        setGolden(false);
+      } else {
+        const res = await fetch(`/api/scenarios/${id}/golden`, { method: 'POST' });
+        if (res.ok) setGolden(true);
+      }
+    } finally {
+      setGoldenLoading(false);
+    }
+  }
+
   return (
-    <div className="flex items-center gap-2 shrink-0">
+    <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+      <button
+        onClick={() => router.push(bundle ? `/scenarios?bundle=${bundle}` : '/scenarios')}
+        className="btn btn-ghost"
+      >
+        Back To Library
+      </button>
+      <button
+        onClick={toggleGolden}
+        disabled={goldenLoading}
+        className={`btn ${
+          golden
+            ? 'border-[var(--accent-secondary)]/40 text-[var(--accent-secondary)] hover:bg-[var(--accent-secondary)]/10'
+            : 'border-[var(--border)] text-[var(--foreground-muted)] hover:text-foreground hover:bg-[var(--background-muted)]'
+        }`}
+        title={golden ? 'Remove from golden examples' : 'Promote to golden example for few-shot prompting'}
+      >
+        <span className={`text-[11px] ${golden ? 'text-[var(--accent-secondary)]' : 'text-[var(--foreground-subtle)]'}`}>★</span>
+        {goldenLoading ? 'Updating…' : golden ? 'Golden' : 'Mark Golden'}
+      </button>
       <button
         onClick={toggleActive}
         disabled={loading}
@@ -45,7 +83,7 @@ export default function ScenarioActions({ id, isActive }: ScenarioActionsProps) 
         }`}
       >
         <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-[var(--success)]' : 'bg-[var(--foreground-subtle)]'}`} />
-        {active ? 'Active' : 'Inactive'}
+        {loading ? 'Updating…' : active ? 'Active' : 'Inactive'}
       </button>
       <button
         onClick={handleDelete}

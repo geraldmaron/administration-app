@@ -1,7 +1,7 @@
 # Game Logic: The Administration
 
-> Canonical reference for all game mechanics, systems, and data structures.
-> Source of truth: iOS Swift codebase (`Scoring.swift`, `GameStore.swift`, `Models.swift`, `ScenarioNavigator.swift`, `CrisisEngine.swift`) and Firebase Functions (`scenario-engine.ts`, `audit-rules.ts`).
+> Canonical rebuild spec for the intended game logic, scenario loop, and persistent simulation rules.
+> Grounding references: iOS Swift runtime (`Scoring.swift`, `GameStore.swift`, `Models.swift`, `ScenarioNavigator.swift`, `TemplateEngine.swift`, `CrisisEngine.swift`) and Firebase Functions (`scenario-engine.ts`, `audit-rules.ts`, `logic-parameters.ts`, `types.ts`).
 
 ---
 
@@ -32,20 +32,90 @@
 23. Generation Pipeline
 24. Audit System
 25. Firebase Data Architecture
-
----
+26. Realism Appendix
 
 ---
 
 ## 1. Game Overview
 
-**The Administration** is a strategic governance simulation for iOS. Players assume the role of a nation's head of government for 30–120 turns, making scenario-based policy decisions that ripple through 27 interdependent metrics.
+**The Administration** is a realistic political decision simulator. The player selects a predefined country, inherits that country's institutions and constraints, and governs through a turn-based sequence of scenarios whose premises, actors, and consequences must remain plausible for that country, its region, and its current game state.
 
-### Core Loop
+This section is the canonical design contract for rebuilding the scenario loop from scratch. Detailed runtime mechanics later in this document should support this contract, not override it.
 
-Read Scenario → Choose from 3 Options → Effects Applied → Turn Advances → Next Scenario
+### 1.1 Core Game Concept
 
-### Game Length
+The player fantasy is not abstract city-building or pure narrative roleplay. The player is running a modern state under pressure:
+
+1. They choose a real, predefined country with fixed institutional vocabulary, geopolitical relationships, geography, government structure, economic scale, and cabinet structure.
+2. They manage an interconnected system of public metrics, hidden instability signals, fiscal tradeoffs, diplomatic relationships, and human consequences.
+3. They face scenarios that are generated or selected to be realistic for the chosen country and the current state of the run.
+4. They make a decision without seeing the exact metric deltas in advance.
+5. They absorb the consequences as news coverage, approval movement, and persistent state changes that may create future crises or opportunities.
+
+### 1.2 Simulation Principles
+
+The scenario system must follow these rules at all times:
+
+1. **Country realism first**: A scenario premise must fit the selected country's geography, government type, capabilities, institutional vocabulary, and geopolitical relationships.
+2. **State realism first**: A scenario must fit the live run state. Strong economies should not repeatedly receive premises that assume economic collapse unless a new trigger justifies it. A stable legislature should not be treated as permanently gridlocked without supporting state.
+3. **Region matters**: Some pressures are region-shaped rather than country-unique. Regional scenarios must reflect real bloc, climate, border, migration, energy, trade, or security pressures rather than decorative labeling.
+4. **Tokens personalize prose, not logic**: Token substitution is required for names, institutions, and phrasing, but it does not make an implausible premise valid.
+5. **Consequences persist**: If an option changes population, cabinet composition, diplomatic relationships, or economic conditions, the actual game state must change and remain changed.
+6. **Approval is the central public-facing signal**: Other metrics feed into the simulation, but approval is the headline measure of whether the player's government is surviving politically.
+
+### 1.3 Core Player Loop
+
+The canonical player-visible loop is:
+
+Read Scenario → Choose 1 of 3 Options → Lock Decision → Reveal News Outcome → Apply Persistent Consequences → Advance Turn → Select Next Eligible Scenario
+
+The loop is intentionally decision-centric. The player is not micromanaging raw formulas every step; they are governing through politically legible events and then absorbing the resulting state changes.
+
+### 1.4 Scenario Eligibility Contract
+
+Before weighting, flavoring, or token resolution, a scenario is either eligible or ineligible. A valid rebuild must enforce these hard gates:
+
+1. **Country gate**: If `metadata.applicableCountries` is present, the player country must match.
+2. **Government-structure gate**: The scenario must be institutionally compatible with the country's government category and legislative structure.
+3. **Geography gate**: Island, archipelago, coastal, landlocked, and frontier assumptions must match the country profile. A land-border invasion premise is invalid for a country with no relevant land-border context.
+4. **Relationship gate**: Neighbor, ally, rival, border-rival, trade-partner, and bloc claims must be compatible with the country's actual geopolitical profile. If `relationship_conditions` are present, the runtime checks the live diplomatic score for the resolved counterpart country before the scenario is eligible.
+5. **Metric-state gate**: The scenario premise must fit the current state. Severe economic panic, civil disorder, inflation spirals, legislative collapse, or military humiliation must be supported by current metrics or an active consequence chain.
+6. **Phase gate**: Early, mid, late, and endgame content should appear only when the turn phase and narrative pacing support it.
+7. **Cooldown and uniqueness gate**: Once-per-game, cooldown, and anti-repetition rules are mandatory.
+8. **Consequence precedence**: Follow-up scenarios caused by earlier decisions should preempt generic content when their trigger conditions are met.
+
+Selectors may score eligible scenarios differently. They may not rescue an ineligible scenario with weighting.
+
+### 1.5 Decision And Reveal Contract
+
+The player-facing presentation must work like this:
+
+1. The player sees a scenario title and description written for their chosen country and current state.
+2. The player sees exactly three options.
+3. The player does **not** see exact metric deltas before choosing.
+4. After choosing, the player sees a news-style result package:
+    - a headline designed to read like a realistic political news alert
+    - a paragraph summary explaining the immediate consequence in journalistic voice
+    - optional extended context when the consequence is unusually important
+5. After the narrative reveal, the player sees the gameplay reveal:
+    - approval impact first
+    - then every other materially affected metric
+    - then any human, diplomatic, fiscal, population, military, or cabinet consequence that materially changes the run
+
+This separation is deliberate. The player governs under uncertainty, then receives a political and mechanical readout after the choice is locked.
+
+### 1.6 Persistent Outcome Contract
+
+Scenario outcomes are not text-only. A valid rebuild must support persistent consequences in state:
+
+1. **Metric changes**: Core, inverse, hidden, derived, and fiscal metrics move according to the selected option and subsequent propagation.
+2. **Population changes**: Casualties, displacement, emigration, and growth changes alter the stored population state.
+3. **Cabinet consequences**: If a cabinet member resigns, is fired, dies, is disgraced, or is removed by scandal, the actual occupant of that role leaves the cabinet and the slot must be refilled later.
+4. **Diplomatic consequences**: Country relationship changes persist in the diplomatic state, not just in text.
+5. **Economic consequences**: GDP, trade, inflation pressure, reserves, energy pressure, and budget effects feed into economic state.
+6. **Consequence chains**: Some outcomes schedule follow-up scenarios or future-state triggers rather than paying out immediately.
+
+### 1.7 Game Length And Phase Model
 
 `maxTurns = calculateMaxTurns()` applies ±10% variance around the base value.
 
@@ -54,8 +124,6 @@ Read Scenario → Choose from 3 Options → Effects Applied → Turn Advances �
 | short | 30 | 27–33 |
 | medium | 60 | 54–66 |
 | long | 120 | 108–132 |
-
-### Game Phases
 
 `updateGamePhase()` runs after every decision. `progress = state.turn / state.maxTurns`.
 
@@ -66,17 +134,27 @@ Read Scenario → Choose from 3 Options → Effects Applied → Turn Advances �
 | `.late` | `0.60 ≤ progress < 0.90` | `"late"` |
 | `.endgame` | `progress ≥ 0.90` | `"endgame"`, `"final"` |
 
-### Ending Conditions
+### 1.8 Ending Conditions
 
 - **Natural end**: `state.turn >= state.maxTurns`
 - **Collapse**: `approvalVal < 15 || collapsedCount >= 3`
-  - `coreMetrics = ["metric_approval", "metric_economy", "metric_foreign_relations", "metric_public_order"]`
-  - `collapsedCount` = number of those metrics below 20.0
+   - `coreMetrics = ["metric_approval", "metric_economy", "metric_foreign_relations", "metric_public_order"]`
+   - `collapsedCount` = number of those metrics below 20.0
 - Both routes trigger `EndGameReviewView`.
+
+### 1.9 Canonical Spec Versus Current Runtime
+
+This document is intentionally normative.
+
+1. If the current runtime differs from a rule in Section 1, the rule in this document is the intended rebuild target unless a later section explicitly marks the rule as current-runtime-only.
+2. Existing implementation details are included to ground the spec and reduce ambiguity, not to freeze accidental drift.
+3. Future-state notes must be labeled so the document never presents a planned feature as already enforced.
 
 ---
 
 ## 2. Metric System
+
+Metrics are the simulation state that scenario eligibility, outcome resolution, crisis escalation, and end-game scoring all read from. They are not independent bars. They describe overlapping aspects of national stability, legitimacy, and capacity.
 
 ### 2.1 Core Metrics (18) — range 0–100, baseline ~62, higher is better
 
@@ -137,11 +215,23 @@ Read Scenario → Choose from 3 Options → Effects Applied → Turn Advances �
 
 All metrics stored as `Double` (0.0–100.0). `clampMetricInt()` rounds to `Int` and clamps `[0, 100]` for display. `metric_budget` stored separately from the 0–100 range.
 
+Canonical design note:
+
+1. Approval is the public summary metric, but it should remain a derived consequence of broader state most of the time.
+2. Hidden metrics exist to accumulate risk before it becomes player-visible crisis content.
+3. Scenario eligibility should be able to read both visible and hidden metrics when determining plausibility.
+
 ---
 
 ## 3. Effect Pipeline (`applyDecision`)
 
 `ScoringEngine.applyDecision(state:option:)` runs when the player selects an option.
+
+Canonical design note:
+
+1. Option selection is the bridge between narrative choice and persistent simulation.
+2. Effects should support immediate, delayed, probabilistic, and persistent consequences.
+3. Non-metric outcome fields such as population, diplomatic, economic, and cabinet consequences are first-class state mutations, not decorative attachments.
 
 ### Branch A — Structured Effects (`option.effects` non-empty)
 
@@ -277,21 +367,32 @@ If `state.maxTurns == 0`, sets it via `calculateMaxTurns()`.
 
 ## 5. Approval Calculation (`calculateApproval`)
 
-Called when no direct `metric_approval` effect was applied this turn.
+Approval is the central public-facing measure of political survival. In the rebuild spec, it should usually be derived from the broader state of the country and only occasionally moved directly by option-specific shocks.
 
-```
-avg = mean(all metrics EXCEPT metric_approval AND metric_corruption)
+### Canonical Rule
 
-avg += (compassion - 50) * 0.15 + random[-0.03, +0.03]
-avg += (integrity  - 50) * 0.10 + random[-0.02, +0.02]
+When no direct approval shock is present, approval should be recalculated from a weighted basket of politically legible conditions:
 
-if corruption > 40:
-    avg -= (corruption - 40) * 0.5 + random[-0.025, +0.025]
+1. economic confidence
+2. employment conditions
+3. public order and perceived safety
+4. inflation pressure
+5. corruption pressure
+6. health and social stability
+7. housing and cost-of-living pressure
+8. liberty and democratic legitimacy
+9. major diplomatic humiliation or success when materially salient
 
-metric_approval = clampMetricInt(avg)   // rounded Int, clamped [0, 100]
-```
+Direct approval effects remain valid for scandals, symbolic victories, atrocities, humiliations, or political communication shocks, but these should be exceptions rather than the default way approval moves.
 
-`compassion` and `integrity` are player character stats (set during game setup).
+### Current Implementation Note
+
+The runtime currently uses a formula-driven recalculation path when no direct `metric_approval` effect is present. The exact weighting may continue to evolve, but the canonical requirement is stable:
+
+1. approval must broadly reflect the rest of the country's condition
+2. corruption and inflation should meaningfully depress approval
+3. large visible wins or losses can apply direct approval shocks
+4. approval should not drift independently of the wider simulation for long stretches
 
 ---
 
@@ -312,6 +413,12 @@ Each rule fires when the primary metric change magnitude exceeds ~2.0 (threshold
 
 All secondary effects are 1-turn `ActiveEffect`s appended to the pipeline.
 
+Canonical design note:
+
+1. Secondary propagation exists so the simulation behaves like a connected political system rather than a collection of isolated bars.
+2. A rebuild may change the exact formulas, but cross-metric consequences should remain explicit and legible.
+3. Generation-time effect validation should assume these follow-on relationships exist when assessing realism.
+
 ---
 
 ## 7. Hidden Metrics & Feedback
@@ -325,6 +432,12 @@ The three hidden metrics accumulate via inline statements in `advanceTurn` (Step
 | `corruption > 60` | `liberty -= 1` |
 
 Hidden metrics are revealed to the player when their threshold is crossed (via `CrisisEngine`).
+
+Canonical design note:
+
+1. Hidden metrics let the game store risk before the player sees a full crisis headline.
+2. They should be allowed to influence eligibility and consequence generation before they are directly surfaced to the player.
+3. Advisor feedback and later scenarios should be able to hint at hidden deterioration before formal crisis reveal.
 
 ---
 
@@ -352,9 +465,17 @@ Deduplication: before appending, existing crises with the same ID prefix are rem
 | `crisis_sovereignty` | `foreign_influence < 40` |
 | `crisis_approval_collapse` | `approval >= 30` |
 
+Canonical design note:
+
+1. Crises are the point where accumulated hidden or visible deterioration becomes politically undeniable.
+2. Crisis triggers should feel earned by prior state, not randomly injected.
+3. Crisis resolution should require genuine state recovery rather than cosmetic narrative closure.
+
 ---
 
 ## 9. Scenario System
+
+The scenario schema exists to support the gameplay contract in Section 1. A scenario is not valid merely because it decodes. It must describe a plausible governing problem for the selected country, offer three distinct decisions, and support persistent outcomes that the runtime can enforce.
 
 ### 9.1 Scenario Fields
 
@@ -365,7 +486,8 @@ Deduplication: before appending, existing crises with the same ID prefix are rem
 | `description` | String | Token-resolved body text |
 | `options` | [Option] | Exactly 3 |
 | `phase` | String | `"early"`, `"mid"`, `"late"`, `"endgame"`, `"root"`, `"final"` |
-| `conditions` | [Condition] | Metric/flag gates for eligibility |
+| `conditions` | [ScenarioCondition] | Metric-state gates — `{ metricId, min?, max? }` on 0–100 scale |
+| `relationship_conditions` | [RelationshipCondition]? | Diplomatic-score gates — `{ relationshipId, min?, max? }` on −100..100 scale |
 | `cooldown` | Int? | Min turns between reuses |
 | `oncePerGame` | Bool? | If true, never replays |
 | `weight` | Double? | Selection weight (default 1.0) |
@@ -373,9 +495,22 @@ Deduplication: before appending, existing crises with the same ID prefix are rem
 | `severity` | String | `"low"`, `"medium"`, `"high"`, `"critical"` |
 | `chainId` | String? | Consequence chain membership |
 | `chainsTo` | [String]? | IDs of follow-up scenarios |
+| `token_map` | [String: String]? | Explicit token bindings for exclusive/news scenarios |
 | `tags` | [String] | Geopolitical/thematic tags |
 | `legislatureRequirement` | LegislatureReq? | Min legislature approval to appear |
-| `metadata` | Metadata | Bundle, severity, applicableCountries, isNeighborEvent, etc. |
+| `metadata` | Metadata | Bundle, severity, applicableCountries, actorPattern, isNeighborEvent, etc. |
+
+**`ScenarioCondition`**: `{ metricId: String, min: Double?, max: Double? }` — metric must be within `[min, max]` for the scenario to appear. Scale 0–100.
+
+**`RelationshipCondition`**: `{ relationshipId: String, min: Double?, max: Double? }` — runtime resolves `relationshipId` to a concrete counterpart country via `TemplateEngine.resolveRelationshipToCountryId()`, then gates on the live diplomatic score for that country. Scale −100 (fully hostile) to +100 (fully allied).
+
+Valid `relationshipId` values: `adversary`, `ally`, `trade_partner`, `partner`, `rival`, `border_rival`, `regional_rival`, `neutral`, `nation`.
+
+Schema note:
+
+1. `title` and `description` define the pre-choice framing shown to the player.
+2. `options` must always contain three materially distinct decisions.
+3. `metadata` must carry enough information for country, region, geography, and scope eligibility to be enforced before weighting.
 
 ### 9.2 Option Fields
 
@@ -399,6 +534,12 @@ Deduplication: before appending, existing crises with the same ID prefix are rem
 | `severity` | String? | Option-level severity |
 | `isAuthoritarian` | Bool? | Marks for Dick Mode pool |
 
+Canonical gameplay note:
+
+1. An option must remain partially opaque before choice. Exact metric deltas are hidden from the player.
+2. An option's outcome package must be capable of expressing both narrative reporting and persistent simulation consequences.
+3. Persistent outcomes can include cabinet, population, diplomatic, economic, and follow-up scenario consequences even when the storage shape reaches them through supporting fields rather than a single dedicated property.
+
 ### 9.3 Effect Fields
 
 | Field | Type | Notes |
@@ -411,7 +552,7 @@ Deduplication: before appending, existing crises with the same ID prefix are rem
 | `condition` | EffectCondition? | Gate on metric state |
 | `scaling` | EffectScaling? | Scale value by a metric |
 
-### 9.4 Scope Tier Architecture (Approved Architecture and Migration State)
+### 9.4 Scope Tier Architecture (Approved — Pending Migration)
 
 The scenario library remains tokenized, but scenario planning and inventory management are defined by four scope tiers:
 
@@ -440,7 +581,7 @@ Current implementation note:
 2. The live `ScenarioMetadata` interface does not yet formally include all of these fields.
 3. The required migration set is `scopeTier`, `scopeKey`, `clusterId`, `exclusivityReason`, `sourceKind`, and `region_tags`.
 
-### 9.5 Cluster Taxonomy (Approved Architecture and Migration State)
+### 9.5 Cluster Taxonomy (Approved — Pending Migration)
 
 Cluster scenarios are the primary realism layer between universal and exclusive content. The initial canonical cluster set is:
 
@@ -475,11 +616,19 @@ Rules:
 
 Runs in `GameStore.generateNextScenario()` after each decision.
 
+This section describes the runtime selection order. The important rule is that weighting only happens after hard eligibility gates pass. Country mismatch, geography mismatch, relationship mismatch, and state mismatch are invalidating conditions, not low weights.
+
 ### Tier 1 — Pending Consequence (60% chance)
 
 `ScoringEngine.findApplicableConsequence(state:)`:
 - Checks `state.pendingConsequences` for entries where `triggerTurn == state.turn`.
-- Each has `probability = 0.7`; fires with `Double.random(in: 0...1) < 0.6`.
+- Current runtime note: entries record `probability = 0.7`, while the selector description here reflects a `0.6` fire check.
+
+Canonical rebuild rule:
+
+1. Each pending consequence should carry a single explicit trigger probability.
+2. The runtime should use that stored probability directly rather than maintaining a separate implicit threshold.
+3. Consequence scenarios should outrank generic library content when they trigger.
 
 ### Tier 2 — Neighbor Event
 
@@ -494,9 +643,10 @@ Full filter sequence applied to all loaded scenarios:
 2. Dick Mode gate: scenarios tagged `dick` or `dic` excluded unless `dickMode.active`
 3. Cooldown check against `state.playedScenarioIds`
 4. `oncePerGame` check
-5. Metric condition gates
-6. `metadata.applicableCountries` match
-7. Legislature gate: `legislature.approvalOfPlayer >= scenario.legislatureRequirement.minApproval`
+5. Metric condition gates (`scenario.conditions`)
+6. Relationship condition gates (`scenario.relationship_conditions`): for each condition, resolve `relationshipId` to a country via `TemplateEngine.resolveRelationshipToCountryId()`, then check the live diplomatic score from `state.countryRelationships` against `[min, max]`. If the country cannot be resolved, the scenario is ineligible.
+7. `metadata.applicableCountries` match
+8. Legislature gate: `legislature.approvalOfPlayer >= scenario.legislatureRequirement.minApproval`
 8. After filtering:
    - If Dick Mode active: `Double.random < 0.7` AND scandalous pool non-empty → use scandalous pool only
    - Remove recently seen (last 20 played scenario IDs)
@@ -519,9 +669,9 @@ finalWeight = baseScore * tagPenalty * bundleBoost
 6. Bundle multiplier: `max(0.1, min(rawMult, 3.0))`
 7. Regional boost: `max(0.1, min(rawBoost, 3.0))`
 
-### 10.1 Approved Target Weighting Additions
+### 10.1 Scope-Tier Weighting (Pending Implementation)
 
-The current runtime selector remains valid, but the approved target state adds explicit scope-tier balancing on top of the existing hard gates and geopolitical weighting.
+The current runtime selector is fully functional. This section describes the planned scope-tier balancing addition once the scope migration is complete.
 
 **Selection lanes remain ordered**:
 
@@ -571,7 +721,7 @@ Implementation prerequisites:
 2. The runtime must track recent scope history.
 3. Scope mix should not be enforced aggressively until enough existing inventory is backfilled.
 
-Hard country, government-category, and geopolitical exclusions never relax.
+Hard country, government-category, geography, relationship, and geopolitical exclusions never relax.
 
 ### Tier 4 — AI Scenario Queue
 
@@ -592,6 +742,8 @@ Hard country, government-category, and geopolitical exclusions never relax.
 ---
 
 ## 11. Cabinet System
+
+The cabinet is both a modifier layer and a persistent political asset. It is not just flavor text around options.
 
 ### 11.1 Roles (13)
 
@@ -624,6 +776,16 @@ At `skill = 50`: boost = 0 (neutral). At `skill = 100`: boost ≈ +0.20 (economy
 
 `trustYourGutCapacity = 3 + (filledCabinetSlots / 4)` → range 3–6 uses.
 
+### 11.5 Persistent Cabinet Consequences
+
+The rebuild spec requires scenario consequences to be able to change cabinet composition directly.
+
+Rules:
+
+1. If an outcome says the finance minister resigns, the actual occupant tied to the finance role must be removed from `state.cabinet`.
+2. If an outcome disqualifies or disgraces a minister, that slot remains vacant until refilled or otherwise resolved.
+3. Cabinet turnover can change future advisor feedback, cabinet boosts, and follow-up scenario eligibility.
+
 ---
 
 ## 12. Country System
@@ -631,6 +793,15 @@ At `skill = 50`: boost = 0 (neutral). At `skill = 100`: boost ≈ +0.20 (economy
 ### 12.1 Overview
 
 50 playable countries across 10 regions. Countries stored in `world_state/countries/{countryId}`.
+
+Each country is more than a skin. It defines the realism envelope for scenario generation and runtime selection through:
+
+1. institutional tokens
+2. government category
+3. geopolitical relationships
+4. geography and region
+5. gameplay profile and starting metrics
+6. economic and population context
 
 ### 12.2 Country IDs (50)
 
@@ -648,15 +819,37 @@ At `skill = 50`: boost = 0 (neutral). At `skill = 100`: boost ≈ +0.20 (economy
 
 Each country has 6–8 sub-locales stored at `countries/{countryId}/locales/{localeId}`. Used for regional event flavor.
 
+Canonical design note:
+
+1. Countries should be capable of sharing universal scenarios without losing realism.
+2. Countries should also reject scenarios whose premises break geography, adjacency, institutions, or region.
+3. Country data should therefore be treated as both a narrative context source and a hard eligibility source.
+
 ---
 
 ## 13. Token & Template System
 
-### 13.1 Token Resolution
+### 13.1 Purpose Of The Token System
 
-`TemplateEngine.shared.resolveScenario(scenario:state:)` replaces `{token}` placeholders at runtime. Never hardcode country-specific names in scenario text.
+The token system is the realism adapter that lets one scenario library serve many countries without hardcoding country-specific prose.
 
-### 13.2 Structural Tokens (per country)
+Its job is to localize:
+
+1. institutional names
+2. leadership titles
+3. cabinet offices
+4. legislative and judicial bodies
+5. military and intelligence institutions
+6. geopolitical actors and relationship language
+7. GDP-scaled economic phrasing
+
+Its job is **not** to excuse an invalid scenario premise. A border-war scenario remains invalid for the wrong country even if every institution name resolves cleanly.
+
+### 13.2 Runtime Resolution
+
+`TemplateEngine.shared.resolveScenario(scenario:state:)` replaces `{token}` placeholders at runtime. Generation and audit rules should assume tokenized content by default. Hardcoded country-specific names, institutions, or political actors are invalid unless a scenario is explicitly designed as narrow country content and still remains tokenized.
+
+### 13.3 Structural Tokens (per country)
 
 **Executive**: `{leader_title}`, `{vice_leader}`
 
@@ -672,32 +865,84 @@ Each country has 6–8 sub-locales stored at `countries/{countryId}/locales/{loc
 
 **Economic**: `{central_bank}`, `{currency}`, `{stock_exchange}`, `{sovereign_fund}`, `{state_enterprise}`, `{commodity_name}`
 
-**Relationship Entities**: `{the_player_country}`, `{the_adversary}`, `{the_ally}`, `{the_trade_partner}` — the `{the_*}` forms are used in subject/object position.
+**Relationship Entities**: `{the_player_country}`, `{the_adversary}`, `{the_ally}`, `{the_trade_partner}` plus the wider actor family used by generation and audit. The `{the_*}` forms are used in subject/object position.
 
-### 13.3 Scaled Monetary Tokens
+### 13.4 Context And Scale Tokens
+
+The country context layer also supports scaled or contextual tokens such as:
 
 `{graft_amount}`, `{infrastructure_cost}`, `{aid_amount}`, `{trade_value}`, `{military_budget_amount}`, `{disaster_cost}`, `{sanctions_amount}`
 
-Values scaled to country GDP context.
+These values should be scaled to country GDP and narrative context. They exist to keep outcomes believable across very different economies.
 
-### 13.4 Optional Tokens
+Optional tokens may resolve to nil or empty values when the institution does not exist for a given country, including `{sovereign_fund}`, `{marine_branch}`, `{space_branch}`, and `{paramilitary_branch}`.
 
-May resolve to nil/empty: `{sovereign_fund}`, `{marine_branch}`, `{space_branch}`, `{paramilitary_branch}`
+### 13.5 Realism Gates Around Tokens
 
-### 13.5 Token Policy Under Scope Tiers
+The rebuild contract requires token-aware realism validation:
 
-The approved architecture does **not** replace tokenization.
+1. **Adjacency claims must be true**: If narrative text says a country shares a border, uses a neighboring actor, or describes a cross-border confrontation, the referenced relationship must actually support that claim.
+2. **Geography claims must be true**: Island, archipelago, coastal, landlocked, arctic, and frontier assumptions must match the selected country.
+3. **Government claims must be true**: The prose must fit the country's regime and institutional structure. Tokenized text should not describe parliamentary approval mechanics for a country where that premise is false unless the country profile supports it.
+4. **Regional pressure must be causal**: `region_tags` and related overlays must represent actual region-shaped pressures rather than ornamental flavor.
+5. **Scaled amounts must remain plausible**: GDP-scaled monetary tokens should be used in ways that make sense for the country's economic scale and the narrative event being described.
+
+### 13.6 Token Policy Under Scope Tiers
+
+Scope architecture does **not** replace tokenization.
 
 Rules:
 
 1. All stored scenarios remain tokenized, including `exclusive` scenarios.
 2. `exclusive` means narrow eligibility, not hardcoded prose.
 3. Country names, party names, minister names, titles, and institutions continue to resolve at runtime.
-4. Scope tiers control scenario targeting and generation prompts, not token resolution behavior.
+4. Scope tiers control scenario targeting and prompt overlays, not token resolution behavior.
+5. A scenario may be highly country-specific in premise while still requiring tokenized output fields.
+
+### 13.7 Relationship Token Resolution
+
+Relationship tokens (`{adversary}`, `{ally}`, `{border_rival}`, etc.) resolve dynamically from the country's `GeopoliticalProfile` at runtime. `TemplateEngine.resolveRelationshipToCountryId(_:country:gameState:)` is the canonical single-source resolver — it returns the concrete `countryId` that a relationship role maps to, and is used for both:
+
+1. **Text resolution**: filling `{adversary}` / `{the_adversary}` with the actual country name.
+2. **Eligibility gating**: checking `relationship_conditions` in `GameStore.canSelectScenario()` before the scenario enters the weighted pool.
+
+The resolver mirrors this precedence order per role:
+
+| Role | Source |
+|------|--------|
+| `adversary` | Strongest-magnitude entry in `geo.adversaries` |
+| `ally` | Strongest `type == "formal_ally"` in `geo.allies` |
+| `trade_partner` / `partner` | Strongest `type == "strategic_partner"` in `geo.allies` |
+| `rival` | Strongest-magnitude `type == "rival"` from adversaries, fallback to neighbors |
+| `border_rival` | Strongest-magnitude `type == "rival"` from `geo.neighbors` |
+| `regional_rival` | Strongest-magnitude `type == "rival"` from `geo.adversaries` |
+| `neutral` | Strongest `type == "neutral"` from allies, fallback to neighbors |
+| `nation` | First entry in `geo.neighbors` |
+
+### 13.8 Multi-Act Chain Token Consistency
+
+When a scenario belongs to a consequence chain (`chainId` is set), the same real-world country must fill each relationship role across all acts of the chain. Inconsistency breaks narrative coherence.
+
+**Mechanism:**
+
+1. When the first act of a chain is presented, `GameStore` calls `TemplateEngine.resolveChainTokenBindings(for:country:gameState:)` to record which `countryId` filled each role.
+2. These bindings are stored in `GameState.chainTokenBindings: [String: [String: String]]` as `chainId → (role → countryId)`.
+3. When `TemplateEngine.buildContext` runs for any act in the same chain, it pre-seeds all relationship token slots from the stored bindings before dynamic resolution, ensuring subsequent acts use the same countries.
+4. Bindings are only written on the first encounter (when `chainTokenBindings[chainId]` does not yet exist), so they remain stable.
+
+### 13.9 Current Implementation Notes
+
+The current system already contains strong token infrastructure in runtime and backend validation, but a rebuild should tighten the realism layer around it:
+
+1. The template engine can localize institutions and actors correctly.
+2. Audit rules already reject many hardcoded or semantically invalid token patterns.
+3. Additional geography and adjacency validation should remain explicit rather than being left to prompt quality alone.
 
 ---
 
 ## 14. Military System
+
+Military state should only influence scenarios when the country profile and current state support it. A country can have military pressure without every run collapsing into war content.
 
 ### 14.1 `MilitaryBranchData`
 
@@ -726,9 +971,17 @@ activeConflicts: [ActiveConflict]
 lastUpdatedTurn: Int
 ```
 
+Canonical design note:
+
+1. Military state can justify readiness, deterrence, border, alliance, procurement, and conflict scenarios.
+2. Military scenarios still remain subject to geography and relationship realism.
+3. Naval and maritime premises require coastal or otherwise valid maritime context.
+
 ---
 
 ## 15. Legislature System
+
+The legislature exists as both a stateful institution and a scenario gate. It should matter when a scenario premise depends on parliamentary passage, coalition stability, elections, or gridlock.
 
 ### 15.1 `LegislatureState`
 
@@ -777,9 +1030,16 @@ When no country data is available:
 
 `baseFraction` = `termLengthFraction` from lower house or single chamber definition.
 
+Canonical design note:
+
+1. Legislature requirements on scenarios should only be used where the premise truly depends on legislative support.
+2. Government-structure realism still applies. A legislature gate should not be used as a generic difficulty switch for countries where the premise is institutionally wrong.
+
 ---
 
 ## 16. Diplomatic System
+
+Diplomatic state is part of the persistent simulation, not just scenario flavor. Relationship changes should affect future eligibility, neighbor events, alliances, and consequence chains.
 
 ### 16.1 Relationship Scale
 
@@ -798,9 +1058,17 @@ tradeRelationships: [TradeRelationship]
 
 When a relationship delta occurs: `allyPenalty = totalRelationshipDelta * 0.4` applied to countries in `alliances.military` array.
 
+Canonical design note:
+
+1. Diplomatic relationships should influence which actors can appear credibly in scenarios.
+2. Diplomatic shocks should be able to propagate into trade, approval, sovereignty, and security consequences.
+3. A relationship token should never imply a degree of hostility, alliance, or adjacency that the underlying relationship graph does not support.
+
 ---
 
 ## 17. Fiscal & Policy Systems
+
+Fiscal and population state are persistent simulation layers that let scenarios create lasting pressure beyond one-turn metric changes.
 
 ### 17.1 Economic State (`CountryEconomicState`)
 
@@ -816,6 +1084,11 @@ baseGdpBillions: Double
 
 Per turn: `gdpIndex = max(10, gdpIndex * (1 + gdpGrowthRate / 100))`
 
+Canonical design note:
+
+1. Economic-impact fields should be able to justify later scenario eligibility, especially for recession, inflation, trade, energy, and austerity content.
+2. Budget pressure should remain politically meaningful even when approval does not move immediately.
+
 ### 17.2 Population State (`CountryPopulationState`)
 
 ```
@@ -829,6 +1102,12 @@ medianAge: Double           // default 35.0
 
 Per turn: `populationMillions = max(0.001, populationMillions * (1 + growthRatePerTurn))`
 
+Canonical design note:
+
+1. Population-impact fields on options are required to mutate this state when present.
+2. Casualties and displacement should remain visible to downstream systems, not vanish after a one-turn approval hit.
+3. Population state can justify future scenarios involving labor pressure, migration, unrest, reconstruction, or legitimacy shocks.
+
 ### 17.3 Fiscal Settings
 
 `FiscalSettings.defaults` applied on game start.
@@ -836,6 +1115,8 @@ Per turn: `populationMillions = max(0.001, populationMillions * (1 + growthRateP
 ---
 
 ## 18. Trust Your Gut
+
+`Trust Your Gut` is a controlled exception path that lets the player improvise policy rather than choosing from the authored three-option set. It should remain scarce, risky, and bounded by the same consequence rules as authored content.
 
 Allows players to enter free-text instructions instead of selecting a pre-written option.
 
@@ -863,9 +1144,17 @@ Adds news item, increments atrocity counter.
 3. Route text to AI Service for scenario/option generation.
 4. Increment `trustYourGutUsed`.
 
+Canonical design note:
+
+1. This mode should not bypass realism, safety, or consequence validation.
+2. Free-text decisions should still resolve into the same persistent simulation layers as authored scenarios.
+3. The cost of improvisation should remain visible so it does not trivialize authored decision tradeoffs.
+
 ---
 
 ## 19. Dick Mode
+
+`Dick Mode` is an optional modifier that intentionally widens access to authoritarian, scandal-driven, or morally corrosive decision content. It changes pool access, not the underlying realism rules.
 
 An optional authoritarian/scandal gameplay modifier. Unlocks scenarios tagged `dick` or `dic`.
 
@@ -900,9 +1189,16 @@ if Double.random(in: 0...1) < authoritarianBias (0.7) && !scandalousPool.isEmpty
 }
 ```
 
+Canonical design note:
+
+1. Even in this mode, country realism, geography realism, and consequence persistence still apply.
+2. The mode should change what kinds of options are surfaced, not allow institutionally impossible content.
+
 ---
 
 ## 20. Game Setup Flow
+
+Setup establishes the realism envelope for the run. It should not create a generic country shell and then rely on token substitution alone.
 
 ### 4-Step Setup
 
@@ -927,9 +1223,16 @@ if Double.random(in: 0...1) < authoritarianBias (0.7) && !scandalousPool.isEmpty
 
 `state.turn = 1` on setup. `maxTurns` set via `calculateMaxTurns()`.
 
+Canonical design note:
+
+1. Setup must load or derive enough country context for scenario selection to enforce geography, institutions, region, and relationships from the first turn.
+2. Starting metrics should reflect the selected country's gameplay profile rather than collapsing every run into the same opening state.
+
 ---
 
 ## 21. Game State Schema (`GameState`)
+
+`GameState` is the persistence contract for the simulation. If a scenario consequence is meant to matter later, it should land in state here or in data directly referenced by it.
 
 Key fields (non-exhaustive):
 
@@ -990,9 +1293,17 @@ integrity: Double
 management: Double
 ```
 
+Canonical design note:
+
+1. Cabinet, population, legislature, economy, diplomacy, and pending consequences are all part of the persistent scenario loop.
+2. A rebuild should prefer storing durable consequence state explicitly rather than encoding it only in freeform narrative history.
+3. Hidden metrics and consequence queues exist so the scenario loop can react to the past instead of presenting isolated one-off events.
+
 ---
 
 ## 22. End-Game & Scoring
+
+End-game review should answer the political question of the run: did the player govern effectively enough to retain legitimacy and improve the country?
 
 `ScoringEngine.generateEndGameReview(state:)` computes the final review.
 
@@ -1015,11 +1326,29 @@ Length adjustments: `long: +3/+1.5`, `short: -3/-1.0` to approval/avgChange thre
 | **D** | `approval >= 40` AND `avgChange >= -5` |
 | **F** | `approval < 40` AND `avgChange < -5` |
 
+Canonical design note:
+
+1. End-game scoring should reward both political survival and substantive state improvement.
+2. A high approval score built on collapsing state should not receive the best ending.
+3. A technically improved country with catastrophic legitimacy failure should still be treated as failure or collapse.
+
 ---
 
 ## 23. Generation Pipeline
 
-### Models
+This section defines the canonical rebuild contract for creating scenario content that is valid for runtime selection. A generated scenario is only acceptable if it supports the gameplay and realism rules defined in Sections 1, 9, 10, and 13.
+
+### 23.1 Purpose
+
+The generation pipeline exists to produce scenarios that are:
+
+1. politically legible to the player
+2. realistic for the selected country and region
+3. aligned with the current game state and scenario phase
+4. mechanically valid for the effect pipeline
+5. reusable through tokenization without flattening away real geopolitical differences
+
+### 23.2 Models
 
 | Role | Production Default | Local Default | Notes |
 |------|--------------------|---------------|-------|
@@ -1032,25 +1361,76 @@ Length adjustments: `long: +3/+1.5`, `short: -3/-1.0` to approval/avgChange thre
 
 LM Studio is the required local and emulator-only path across the full generation pipeline. OpenAI remains the canonical production path for authoritative saved content.
 
-Current implementation gaps:
+### 23.3 Canonical Pipeline Stages
 
-1. `GenerationJobData` is still primarily bundle-oriented.
-2. `training_scenarios` retrieval is still bundle plus score driven.
-3. `scenario_embeddings` dedup is currently bundle-scoped and OpenAI-based.
-4. Local LM Studio generation therefore requires either a local embedding model or an explicit local-only fallback dedup strategy.
+1. **Inventory planning**: Identify deficits by `bundle x scopeTier x region-or-cluster x severity x difficulty` so generation is driven by content gaps, not raw volume.
+2. **Concept seeding**: Produce scenario premises that already respect country realism, region realism, and state realism.
+3. **Blueprint planning**: Expand the premise into a structure that defines the policy dilemma, the main actors, the likely tradeoffs, and the intended consequence lane.
+4. **Act drafting**: Produce the full scenario JSON with title, description, 3 options, effects, advisor feedback, and outcome package.
+5. **Audit and repair**: Reject or repair outputs that violate schema, realism, token, or narrative rules.
+6. **Scope integrity review**: Confirm that the saved scenario actually belongs to its declared `scopeTier`, `scopeKey`, region, cluster, or exclusivity contract.
+7. **Semantic dedup**: Compare the candidate against relevant saved scenarios so the library grows in breadth rather than near-duplicates.
+8. **Storage**: Write passing scenarios and acceptance metadata to Firestore.
+9. **Bundle export and runtime availability**: Make valid scenarios available to the runtime bundle system without weakening country or state eligibility rules.
 
-### Pipeline Stages
+### 23.4 Architect Concept Schema
 
-1. **Inventory Planning**: Identify deficits by `bundle x scopeTier x region-or-cluster x severity x difficulty`.
-2. **Concept Seeding** (Architect): Generate concepts for the requested bundle and scope tier.
-3. **Blueprint Planning**: Expand concept into structural skeleton when using premium multi-act flow.
-4. **Act Drafting** (Drafter): Produce full scenario JSON — title, description, 3 options, effects, advisor feedback, outcomes.
-5. **Audit & Repair**: Score against audit rules, run deterministic fixes, then run bounded LLM repair for fixable failures.
-6. **Scope Integrity Review**: Verify the scenario genuinely matches its declared scope tier.
-7. **Semantic Dedup**: Run scope-aware dedup against nearby scope tiers in the same bundle.
-8. **Storage**: Write passing scenarios and acceptance metadata to Firestore `scenarios/` collection.
+The architect produces structured concepts that flow directly into the drafter. Key fields:
 
-### Generation Job Contract (Approved Target State)
+| Field | Purpose |
+|-------|---------|
+| `concept` | Premise description |
+| `theme` | Political/economic theme |
+| `severity` | `low`…`critical` |
+| `difficulty` | 1–5 |
+| `primaryMetrics` | Metrics most affected |
+| `actorPattern` | Relationship role driving the scenario (`adversary`, `border_rival`, `ally`, etc.) |
+| `optionShape` | General shape of the three options |
+| `optionDomains` | Array of 3 `{ label, primaryMetric }` — each option MUST have a different primary metric to prevent overlap |
+| `triggerConditions` | Optional `[{ metricId, min?, max? }]` — architect hint for metric-state prereqs |
+
+`optionDomains` is injected into the drafter prompt as hard per-option metric constraints, preventing all three options from targeting the same metric domain. Each entry must use a different `primaryMetric`.
+
+`triggerConditions` signals to the drafter which metric crisis threshold makes the scenario premise plausible. The drafter translates these into the output `conditions` array.
+
+### 23.5 Canonical Scenario Requirements At Generation Time
+
+Every generated scenario must already satisfy the following before storage:
+
+1. It presents a plausible problem for at least one valid country context.
+2. It can be made country-specific through tokens without losing realism.
+3. Its three options represent distinct governing approaches rather than rephrasings of the same action. Each option's primary metric must differ from the others (`optionDomains` enforces this at the architect stage).
+4. Its effects and narrative outcomes agree with each other.
+5. Its premise can be screened by runtime eligibility rules without ambiguity.
+6. Its consequence payload is capable of mutating persistent state where required.
+7. Its language fits the field-level voice contract: second-person for decision framing, journalistic third-person for outcome reporting.
+8. If the premise describes a metric crisis (recession, unrest, crime wave), the output `conditions` array must include the canonical metric gate.
+9. If a named relational actor (adversary, rival, ally, trade partner) is central, the output `relationship_conditions` array must include the canonical diplomatic score gate.
+
+**Canonical `conditions` mapping:**
+
+| Premise | Condition |
+|---------|-----------|
+| Economic recession/collapse | `metric_economy` max 38 |
+| Unemployment crisis | `metric_employment` max 42 |
+| Inflation crisis | `metric_inflation` min 58 |
+| Crime wave | `metric_crime` min 60 |
+| Civil unrest / riots | `metric_public_order` max 40 |
+| Corruption scandal | `metric_corruption` min 55 |
+| Economic boom | `metric_economy` min 62 |
+
+**Canonical `relationship_conditions` mapping:**
+
+| Scenario type | Condition |
+|---------------|-----------|
+| Hostile attack / conflict | `adversary` max −25 |
+| Border incursion / border_rival pressure | `border_rival` max −30 |
+| Regional rivalry escalation | `regional_rival` max −20 |
+| Trade partner deal / cooperation | `trade_partner` min 20 |
+| Formal ally request / alliance test | `ally` min 30 |
+| Rival provocation (sub-conflict) | `rival` max −15 |
+
+### 23.6 Generation Job Contract (Scope Migration — Pending)
 
 New jobs should carry explicit scope metadata:
 
@@ -1075,7 +1455,7 @@ Rules:
 4. Generation planning should fill inventory deficits, not raw bundle counts.
 5. Local `modelConfig` should keep all supported phases on `lmstudio:*` models and fail fast instead of silently routing local work to OpenAI.
 
-### Generation Config (`world_state/generation_config`)
+### 23.7 Generation Config (`world_state/generation_config`)
 
 ```
 concept_concurrency: 10
@@ -1090,11 +1470,11 @@ content_quality_gate_enabled: true
 narrative_review_enabled: true
 ```
 
-### Deduplication
+### 23.8 Deduplication
 
 Cosine similarity on `text-embedding-3-small` vectors remains the canonical dedup mechanism.
 
-Approved target behavior:
+Target behavior:
 
 1. `universal` scenarios compare against universal, regional, and adjacent cluster content in the same bundle.
 2. `regional` scenarios compare against regional and universal content in the same bundle.
@@ -1102,7 +1482,7 @@ Approved target behavior:
 4. `exclusive` scenarios compare against same-country content and nearby broad-scope analogs.
 5. Local generation should keep dedup local as well, using an LM Studio embedding model or a documented local-only fallback.
 
-### Execution Modes
+### 23.9 Execution Modes
 
 | Mode | Entry Point |
 |------|-------------|
@@ -1111,7 +1491,7 @@ Approved target behavior:
 | CLI | `functions/src/tools/generate-bundle.ts` |
 | Daily news batch | `news-to-scenarios.ts` |
 
-### Scope Prompt Modes (Approved Target State)
+### 23.10 Scope Prompt Modes (Pending Implementation)
 
 Prompt overlays should branch by `scopeTier`:
 
@@ -1120,9 +1500,22 @@ Prompt overlays should branch by `scopeTier`:
 3. `cluster`: inject shared political-economic structure for the target cluster.
 4. `exclusive`: require `exclusivityReason` and reject content that can be generalized.
 
+### 23.11 Current Implementation Notes
+
+Current implementation gaps that should remain visible during the rebuild:
+
+1. `GenerationJobData` is still primarily bundle-oriented.
+2. `training_scenarios` retrieval is still bundle plus score driven.
+3. `scenario_embeddings` dedup is currently bundle-scoped and OpenAI-based.
+4. Local LM Studio generation therefore requires either a local embedding model or an explicit local-only fallback dedup strategy.
+
 ---
 
 ## 24. Audit System
+
+This section defines the canonical acceptance gate between generated content and the playable library. Audit is not cosmetic. If a scenario fails realism, token, or consequence coherence checks, it should not be saved.
+
+### 24.1 Scoring Model
 
 `scoreScenario(issues)` in `audit-rules.ts`:
 
@@ -1134,20 +1527,54 @@ return max(0, score)
 
 Pass threshold: read from `world_state/generation_config.audit_pass_threshold`.
 
-### Issue Severity
+### 24.2 Issue Severity
 
 | Severity | Point Deduction |
 |----------|----------------|
 | Error | −12 |
 | Warning | −4 |
 
-### Rule Categories
+### 24.3 Canonical Rule Categories
 
-**Errors (block scenario)**: missing required fields, invalid metric IDs, NaN/out-of-range effect values, wrong option count, missing outcomes, invalid token usage.
+**Errors (block scenario)**: missing required fields, invalid metric IDs, NaN/out-of-range effect values, wrong option count, missing outcomes, invalid token usage, invalid `conditions` metric IDs, invalid `relationship_conditions` role IDs or out-of-range score thresholds.
 
-**Warnings (reduce score)**: extreme effect magnitudes, hardcoded currency/country names instead of tokens, similar outcomes across options, missing advisor feedback, weak narrative.
+**Warnings (reduce score)**: extreme effect magnitudes, hardcoded currency/country names instead of tokens, similar outcomes across options, missing advisor feedback, weak narrative, passive voice overuse, option depth failures (see §24.9).
 
-### Scope Integrity Rules (Approved Target State)
+### 24.9 Depth Rules
+
+These rules enforce option quality and narrative alignment. All are deterministic (no LLM calls).
+
+| Rule | Severity | Deduction | Condition |
+|------|----------|-----------|-----------|
+| `option-metric-overlap` | warn | −4 | All 3 options affect exactly the same set of metric IDs |
+| `severity-effect-mismatch` | warn | −4 | Severity is `critical` or `extreme` but no effect has `|value| ≥ 1.5` |
+| `advisor-stance-uniformity` | warn | −4 | More than 8/13 advisors have identical stance across all 3 options |
+
+### 24.10 Conditions and Relationship Condition Rules
+
+| Rule | Severity | Condition |
+|------|----------|-----------|
+| `conditions-invalid-metric` | error | `conditions[]` references an unknown metricId |
+| `conditions-unreachable-range` | warn | `conditions[]` has `min >= max` |
+| `conditions-too-restrictive` | warn | `conditions[]` threshold is extreme (max < 15 or min > 85) |
+| `relationship-condition-invalid-role` | error | `relationship_conditions[]` has unknown `relationshipId` |
+| `relationship-condition-out-of-range` | error | `relationship_conditions[]` min/max outside −100..100 |
+| `relationship-condition-unreachable-range` | warn | `relationship_conditions[]` has `min >= max` |
+| `actor-pattern-no-relationship-condition` | warn | Scenario has a relational `actorPattern` but no `relationship_conditions` |
+
+### 24.4 Realism Rules Required For Rebuild
+
+The rebuild spec requires audit coverage for at least these realism families:
+
+1. **Country realism**: no premise that contradicts the chosen country's institutions, government category, capabilities, or geopolitical profile.
+2. **Geography realism**: no island, landlocked, border, maritime, or frontier contradiction.
+3. **Relationship realism**: no ally, neighbor, rival, or border-rival claim that conflicts with the country relationship graph.
+4. **Region realism**: no region-tagged content that lacks region-shaped causality.
+5. **Metric-state realism**: no premise that assumes crisis conditions which the triggering state does not support.
+6. **Consequence coherence**: no narrative outcome that materially disagrees with the effect payload or persistent-state mutation.
+7. **Player-information contract**: no generated content that leaks hidden metric deltas into pre-choice prose.
+
+### 24.5 Scope Integrity Rules (Pending Implementation)
 
 An additional audit family should validate scenario scope:
 
@@ -1158,12 +1585,12 @@ An additional audit family should validate scenario scope:
 | `cluster` | Reject incoherent clusters or disguised one-country scenarios |
 | `exclusive` | Require `exclusivityReason` and narrow justified country restriction |
 
-### Auto-Fix Passes
+### 24.6 Auto-Fix Passes
 
 - **Deterministic fixes**: clamp values, fix duration, fill missing defaults.
 - **AI-assisted fixes**: `llm_repair_enabled = true` → re-prompt Drafter to generate missing text fields (up to 2 attempts).
 
-### Notable Rule: Voice Separation
+### 24.7 Notable Rule: Voice Separation
 
 Scenario voice is split by field:
 
@@ -1176,9 +1603,20 @@ Examples:
 - `"the administration"` → appropriate pronoun
 - `"the president"` → `"you"` or `{leader_title}`
 
+### 24.8 Current Implementation Notes
+
+The current backend already enforces many structural and token rules, but the rebuild should treat the following as mandatory follow-through:
+
+1. Audit must remain capable of rejecting a scenario even if the prose sounds good.
+2. Scope validation must stay separate from pure schema validation.
+3. Narrative review must not override mechanical correctness.
+4. Repair loops must be bounded and must not silently mutate scenarios into a different premise than the original concept.
+
 ---
 
 ## 25. Firebase Data Architecture
+
+Firebase is the persistence and distribution layer for the scenario system. It should store enough metadata to let the generator, auditor, and runtime all make the same realism and eligibility decisions.
 
 ### Firestore Collections
 
@@ -1240,6 +1678,12 @@ Clean up:
 1. prompt collection naming drift in rules versus code
 2. legacy dual-source country catalog support once migration is complete
 
+Canonical design note:
+
+1. Storage architecture should preserve metadata needed for runtime eligibility, not strip it away during export.
+2. Country catalog data should remain authoritative for geography, institutions, tags, and relationships.
+3. Scenario storage should support rebuild-time realism enforcement and runtime-time eligibility using the same metadata vocabulary.
+
 ### Bundle IDs (14)
 
 Canonical IDs stored in `scenario.category` (no `bundle_` prefix):
@@ -1261,10 +1705,59 @@ Source of truth: `functions/src/data/schemas/bundleIds.ts`.
 |--------|---------|
 | `generate-scenarios.ts` | Queue generation job; watch progress |
 | `audit-existing-scenarios.ts` | Audit all scenarios in Firestore against audit rules |
-| `sync-prompts-to-firestore.ts` | Push local prompt markdown files to `prompt_templates/` |
 | `check-generation-job.ts` | Poll status of a specific job |
-| `seed-golden-examples.ts` | Write curated example scenarios as training references |
+| `health-check.ts` | Diagnose stuck/zombie generation jobs |
+| `report-scenario-deficits.ts` | Report scenario inventory gaps by bundle and scope |
 | `periodic-quality-review.ts` | Sample and score recent scenarios |
 | `pre-flight.ts` | Admin SDK connectivity and config check |
-| `_check-state.ts` | Inspect current Firestore state |
-| `audit-geopolitical-tags.ts` | Validate geopolitical tag consistency across countries |
+
+---
+
+## 26. Realism Appendix
+
+This appendix centralizes the realism rules that the generation loop, audit layer, and runtime selector must all share.
+
+### 26.1 Country Realism
+
+1. A scenario premise must fit the chosen country's government category, institutions, capabilities, economic scale, and geopolitical role.
+2. Tokenized prose is not enough to make a country fit. The underlying premise must still be true.
+3. Country-specific content should remain tokenized even when eligibility is narrow.
+
+### 26.2 Geography Realism
+
+1. Island and archipelago countries should not receive land-border or frontier-war premises unless a specific real-world exception is supported by country data.
+2. Landlocked countries should not receive naval, offshore, or maritime-control premises unless the scenario is explicitly about an external deployment or allied operation that the country's profile supports.
+3. Coastal and frontier states may receive maritime or border scenarios only when relationship data and current state support them.
+
+### 26.3 Relationship Realism
+
+1. Neighbor, border-rival, ally, rival, adversary, and trade-partner actors must match the stored relationship graph.
+2. Border language requires adjacency support.
+3. Alliance or bloc obligations should only appear when the country's profile actually supports those obligations.
+4. Scenarios involving a named relational actor as the primary driver should carry `relationship_conditions` gating on the live diplomatic score for that actor, ensuring the scenario only appears when the relationship state supports the premise. The runtime enforces this via `TemplateEngine.resolveRelationshipToCountryId()` and `GameStore.canSelectScenario()`.
+
+### 26.4 Region Realism
+
+1. Regional scenarios must be driven by causal regional pressures such as migration corridors, energy dependence, climate exposure, bloc politics, sanctions, frontier instability, or trade patterns.
+2. `region_tags` should never be decorative labels.
+3. Region-shaped scenarios may still be filtered out for a country if geography, institutions, or current state make the specific premise implausible.
+
+### 26.5 State Realism
+
+1. Crisis premises should follow from the current state or an active consequence chain.
+2. Strong-state runs should not receive repeated collapse premises without intervening deterioration.
+3. Hidden metrics may justify scenarios before the player sees the full crisis explicitly.
+
+### 26.6 Decision Realism
+
+1. Each scenario must offer three meaningfully different governing responses.
+2. Option text should not expose the exact metric math before choice.
+3. Outcome text and gameplay consequences must agree with each other.
+
+### 26.7 Persistent Consequence Realism
+
+1. Population impacts must change population state.
+2. Cabinet resignations or removals must change cabinet state.
+3. Diplomatic outcomes must change diplomatic state.
+4. Economic outcomes must change economic or fiscal state.
+5. Follow-up political fallout may be delayed, but it must be representable as a queued consequence or future eligibility change.

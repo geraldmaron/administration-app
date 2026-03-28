@@ -3,13 +3,15 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import BundleBadge from '@/components/BundleBadge';
-import SeverityBadge from '@/components/SeverityBadge';
 import AuditScore from '@/components/AuditScore';
-import CommandPanel from '@/components/CommandPanel';
+import BundleBadge from '@/components/BundleBadge';
 import PageHeader from '@/components/PageHeader';
+import SeverityBadge from '@/components/SeverityBadge';
+import SortHeader, { useSort } from '@/components/SortHeader';
 import { ALL_BUNDLES, formatRelativeTime } from '@/lib/constants';
 import type { ScenarioSummary } from '@/lib/types';
+
+type ScenarioSortField = 'title' | 'bundle' | 'severity' | 'auditScore' | 'countryCount' | 'isActive' | 'updatedAt';
 
 interface ScenariosResponse {
   scenarios: ScenarioSummary[];
@@ -29,29 +31,24 @@ function ScenariosInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localSearch, setLocalSearch] = useState('');
+  const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [pageSize, setPageSize] = useState(25);
   const [cursors, setCursors] = useState<string[]>([]);
   const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deletingBulk, setDeletingBulk] = useState(false);
+  const [bulkUpdating, setBulkUpdating] = useState<'activate' | 'deactivate' | null>(null);
 
   const bundleOptions = useMemo(() => {
     const sortedBundles = [...ALL_BUNDLES].sort((a, b) => a.label.localeCompare(b.label));
     return [{ id: 'all', label: 'All bundles' }, ...sortedBundles];
   }, []);
 
-  const bundleLabel =
-    bundle === 'all'
-      ? 'all bundles'
-      : ALL_BUNDLES.find((b) => b.id === bundle)?.label ?? bundle;
-
   const setParam = useCallback(
     (key: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
+      if (value) params.set(key, value);
+      else params.delete(key);
       if (key !== 'page') params.delete('page');
       router.push(`/scenarios?${params.toString()}`);
     },
@@ -64,10 +61,8 @@ function ScenariosInner() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-
-    const params = new URLSearchParams({ bundle, active });
+    const params = new URLSearchParams({ bundle, active, pageSize: String(pageSize) });
     if (cursor) params.set('startAfter', cursor);
-
     fetch(`/api/scenarios?${params.toString()}`)
       .then((r) => r.json())
       .then((d: ScenariosResponse) => {
@@ -84,20 +79,12 @@ function ScenariosInner() {
         }
       })
       .catch(() => {
-        if (!cancelled) {
-          setError('Failed to load scenarios');
-          setLoading(false);
-        }
+        if (!cancelled) { setError('Failed to load scenarios'); setLoading(false); }
       });
+    return () => { cancelled = true; };
+  }, [bundle, active, page, cursor, pageSize]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [bundle, active, page, cursor]);
-
-  useEffect(() => {
-    setSelectedIds(new Set());
-  }, [bundle, active, page]);
+  useEffect(() => { setSelectedIds(new Set()); }, [bundle, active, page]);
 
   async function toggleActive(id: string, current: boolean) {
     setToggling((prev) => new Set(prev).add(id));
@@ -107,50 +94,34 @@ function ScenariosInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !current }),
       });
-      setData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          scenarios: prev.scenarios.map((s) =>
-            s.id === id ? { ...s, isActive: !current } : s
-          ),
-        };
-      });
+      setData((prev) => prev ? {
+        ...prev,
+        scenarios: prev.scenarios.map((s) => s.id === id ? { ...s, isActive: !current } : s),
+      } : prev);
     } finally {
-      setToggling((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+      setToggling((prev) => { const next = new Set(prev); next.delete(id); return next; });
     }
   }
 
-  async function deleteScenario(id: string) {
-    if (!confirm('Delete this scenario? This cannot be undone.')) return;
-    await fetch(`/api/scenarios/${id}`, { method: 'DELETE' });
-    setData((prev) => {
-      if (!prev) return prev;
-      return { ...prev, scenarios: prev.scenarios.filter((s) => s.id !== id) };
-    });
+  async function setSelectedActiveState(nextIsActive: boolean) {
+    if (selectedIds.size === 0) return;
+    setBulkUpdating(nextIsActive ? 'activate' : 'deactivate');
+    try {
+      const res = await fetch('/api/scenarios', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds), is_active: nextIsActive }),
+      });
+      if (!res.ok) throw new Error('Bulk update failed');
+      setData((prev) => prev ? {
+        ...prev,
+        scenarios: prev.scenarios.map((s) => selectedIds.has(s.id) ? { ...s, isActive: nextIsActive } : s),
+      } : prev);
+    } finally {
+      setBulkUpdating(null);
+    }
   }
 
-  const filteredScenarios = data?.scenarios.filter((s) =>
-    localSearch ? s.title.toLowerCase().includes(localSearch.toLowerCase()) : true
-  ) ?? [];
-
-  function toggleSelect(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
-  function selectAll() {
-    setSelectedIds(new Set(filteredScenarios.map((s) => s.id)));
-  }
-  function clearSelection() {
-    setSelectedIds(new Set());
-  }
   async function deleteSelected() {
     if (selectedIds.size === 0) return;
     const count = selectedIds.size;
@@ -164,10 +135,7 @@ function ScenariosInner() {
       });
       if (res.ok) {
         const deleted = new Set(selectedIds);
-        setData((prev) => {
-          if (!prev) return prev;
-          return { ...prev, scenarios: prev.scenarios.filter((s) => !deleted.has(s.id)) };
-        });
+        setData((prev) => prev ? { ...prev, scenarios: prev.scenarios.filter((s) => !deleted.has(s.id)) } : prev);
         setSelectedIds(new Set());
       }
     } finally {
@@ -175,229 +143,224 @@ function ScenariosInner() {
     }
   }
 
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  }
+  function selectAll() { setSelectedIds(new Set(filteredScenarios.map((s) => s.id))); }
+  function clearSelection() { setSelectedIds(new Set()); }
+
+  const { sortField, sortDir, handleSort, compare } = useSort<ScenarioSortField>('title');
+
+  const SEVERITY_ORDER: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
+
+  const filteredScenarios = useMemo(() => {
+    const base = data?.scenarios.filter((s) => {
+      if (localSearch && !s.title.toLowerCase().includes(localSearch.toLowerCase())) return false;
+      if (severityFilter !== 'all' && s.severity !== severityFilter) return false;
+      return true;
+    }) ?? [];
+    return [...base].sort((a, b) => {
+      if (sortField === 'severity') {
+        return compare(SEVERITY_ORDER[a.severity ?? ''] ?? -1, SEVERITY_ORDER[b.severity ?? ''] ?? -1);
+      }
+      if (sortField === 'isActive') {
+        return compare(a.isActive ? 1 : 0, b.isActive ? 1 : 0);
+      }
+      return compare(a[sortField], b[sortField]);
+    });
+  }, [data, localSearch, severityFilter, sortField, sortDir]);
+
+  const activeVisibleCount = filteredScenarios.filter((s) => s.isActive).length;
+  const selectedVisibleCount = filteredScenarios.filter((s) => selectedIds.has(s.id)).length;
+
+  const filterBar = (
+    <div className="flex flex-wrap items-center gap-2">
+      <select
+        value={bundle}
+        onChange={(e) => { setCursors([]); setParam('bundle', e.target.value); }}
+        className="input-shell"
+        style={{ width: 'auto', minWidth: 130 }}
+      >
+        {bundleOptions.map((opt) => (
+          <option key={opt.id} value={opt.id}>{opt.label}</option>
+        ))}
+      </select>
+      <select
+        value={severityFilter}
+        onChange={(e) => setSeverityFilter(e.target.value)}
+        className="input-shell"
+        style={{ width: 'auto', minWidth: 100 }}
+      >
+        <option value="all">All severity</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+        <option value="critical">Critical</option>
+      </select>
+      <input
+        type="text"
+        placeholder="Search titles…"
+        value={localSearch}
+        onChange={(e) => setLocalSearch(e.target.value)}
+        className="input-shell flex-1"
+        style={{ minWidth: 140, maxWidth: 240 }}
+      />
+      {(['all', 'true', 'false'] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => { setCursors([]); setParam('active', v); }}
+          className={`filter-pill${active === v ? ' active' : ''}`}
+        >
+          {v === 'all' ? 'All' : v === 'true' ? 'Active' : 'Inactive'}
+        </button>
+      ))}
+      <span className="ml-auto text-[10px] font-mono text-[var(--foreground-subtle)]">
+        {filteredScenarios.length} record{filteredScenarios.length !== 1 ? 's' : ''}
+        {selectedVisibleCount > 0 ? ` · ${selectedVisibleCount} selected` : ''}
+        {activeVisibleCount > 0 ? ` · ${activeVisibleCount} active` : ''}
+      </span>
+    </div>
+  );
+
   return (
-    <div className="mx-auto max-w-[1500px]">
+    <div className="mx-auto max-w-[1300px]">
       <PageHeader
-        section="Browse"
-        title="Scenarios"
-        subtitle="Review stored scenarios, filter by bundle or activation state, and manage records from a single command library."
+        section="Library"
+        title="Scenario Management"
+        actions={<Link href="/generate" className="btn btn-tactical">+ Generate</Link>}
+        filterBar={filterBar}
       />
 
-      <CommandPanel className="mb-4 p-4 md:p-5">
-        <div className="mb-4">
-          <div className="section-kicker mb-2">Filters</div>
-          <h2 className="panel-title">Library Controls</h2>
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="mb-2 flex items-center gap-3 rounded-[var(--radius-tight)] border border-[var(--border-strong)] bg-[rgba(255,255,255,0.04)] px-3 py-2">
+          <span className="text-[11px] font-mono text-[var(--foreground-muted)]">{selectedIds.size} selected</span>
+          <button onClick={() => setSelectedActiveState(true)} disabled={bulkUpdating !== null} className="btn btn-ghost disabled:opacity-50">
+            {bulkUpdating === 'activate' ? 'Activating…' : 'Activate'}
+          </button>
+          <button onClick={() => setSelectedActiveState(false)} disabled={bulkUpdating !== null} className="btn btn-ghost disabled:opacity-50">
+            {bulkUpdating === 'deactivate' ? 'Deactivating…' : 'Deactivate'}
+          </button>
+          <button onClick={deleteSelected} disabled={deletingBulk} className="btn btn-destructive disabled:opacity-50">
+            {deletingBulk ? 'Deleting…' : `Delete ${selectedIds.size}`}
+          </button>
+          <button onClick={clearSelection} className="btn btn-ghost ml-auto">Clear</button>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-        {/* Bundle select */}
-        <div className="flex items-center gap-2">
-          <label className="section-kicker">
-            Bundle
-          </label>
-          <select
-            value={bundle}
-            onChange={(e) => {
-              setCursors([]);
-              setParam('bundle', e.target.value);
-            }}
-            className="input-shell min-w-[180px] py-3"
-          >
-            {bundleOptions.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      )}
 
-        {/* Active filter */}
-        <div className="flex items-center gap-1">
-          {(['all', 'true', 'false'] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => { setCursors([]); setParam('active', v); }}
-              className={`min-h-[40px] rounded-[10px] border px-3 py-2 text-[10px] font-mono uppercase tracking-[0.16em] transition-colors ${
-                active === v
-                  ? 'border-[var(--accent-primary)] bg-[rgba(25,105,220,0.12)] text-foreground'
-                  : 'border-[var(--border)] bg-[rgba(255,255,255,0.02)] text-foreground-subtle hover:text-foreground hover:bg-background-muted'
-              }`}
-            >
-              {v === 'all' ? 'All' : v === 'true' ? 'Active' : 'Inactive'}
-            </button>
-          ))}
-        </div>
-
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search titles..."
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          className="input-shell min-w-[220px]"
-        />
-
-        {data && (
-          <span className="ml-auto text-[10px] font-mono uppercase tracking-[0.18em] text-foreground-subtle">
-            {data.total} total
-          </span>
-        )}
-        </div>
-      </CommandPanel>
-
-      {/* Content */}
+      {/* Loading skeleton */}
       {loading && (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="tech-border bg-background-elevated p-4 animate-pulse">
-              <div className="h-4 bg-background-muted rounded w-1/3 mb-2" />
-              <div className="h-3 bg-background-muted rounded w-2/3" />
-            </div>
+        <div className="command-panel overflow-hidden p-4 space-y-px">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-9 animate-pulse rounded bg-[var(--background-muted)]" />
           ))}
         </div>
       )}
 
       {!loading && error && (
-        <div className="tech-border bg-background-elevated p-4 text-[var(--error)] text-sm">{error}</div>
+        <div className="command-panel p-4 text-[var(--error)] text-sm">{error}</div>
       )}
 
       {!loading && !error && data && filteredScenarios.length === 0 && (
-        <div className="tech-border bg-background-elevated p-8 text-center">
-          <div className="text-foreground-subtle text-sm">
-            No scenarios found{bundle !== 'all' ? ' for ' : ''}
-            {bundle !== 'all' ? (
-              <span className="text-foreground font-mono">{bundleLabel}</span>
-            ) : null}
-          </div>
-        </div>
-      )}
-
-      {selectedIds.size > 0 && (
-        <div className="mb-3 flex items-center gap-3 rounded-[var(--radius)] border border-[var(--border)] bg-[rgba(255,255,255,0.03)] px-4 py-3">
-          <span className="text-xs font-mono text-foreground-subtle">{selectedIds.size} selected</span>
-          <button
-            onClick={deleteSelected}
-            disabled={deletingBulk}
-            className="btn btn-destructive disabled:opacity-50"
-          >
-            {deletingBulk ? 'Deleting…' : `Delete ${selectedIds.size}`}
-          </button>
-          <button
-            onClick={clearSelection}
-            className="btn btn-ghost"
-          >
-            Clear
-          </button>
+        <div className="command-panel p-8 text-center text-sm text-[var(--foreground-subtle)]">
+          No scenarios found{bundle !== 'all' ? ` for ${ALL_BUNDLES.find((b) => b.id === bundle)?.label ?? bundle}` : ''}.
         </div>
       )}
 
       {!loading && !error && filteredScenarios.length > 0 && (
-        <div className="tech-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="command-panel overflow-hidden">
+          <table className="table-dense" style={{ tableLayout: 'fixed', width: '100%' }}>
+            <colgroup>
+              <col style={{ width: 36 }} />
+              <col />
+              <col style={{ width: 120 }} />
+              <col style={{ width: 80 }} />
+              <col style={{ width: 64 }} />
+              <col style={{ width: 56 }} />
+              <col style={{ width: 56 }} />
+              <col style={{ width: 80 }} />
+            </colgroup>
             <thead>
-              <tr className="border-b border-[var(--border-strong)] bg-[rgba(255,255,255,0.04)]">
-                <th className="px-4 py-2 w-8">
+              <tr>
+                <th>
                   <input
                     type="checkbox"
                     checked={selectedIds.size === filteredScenarios.length && filteredScenarios.length > 0}
                     onChange={() => selectedIds.size === filteredScenarios.length ? clearSelection() : selectAll()}
                     className="accent-[var(--accent-primary)]"
-                    aria-label="Select all scenarios"
                   />
                 </th>
-                <th className="text-left px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-foreground-subtle">
-                  Title
-                </th>
-                <th className="text-left px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-foreground-subtle hidden md:table-cell">
-                  Bundle
-                </th>
-                <th className="text-left px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-foreground-subtle hidden lg:table-cell">
-                  Severity
-                </th>
-                <th className="text-left px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-foreground-subtle hidden lg:table-cell">
-                  Audit
-                </th>
-                <th className="text-left px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-foreground-subtle">
-                  Active
-                </th>
-                <th className="text-left px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-foreground-subtle hidden xl:table-cell">
-                  Created
-                </th>
-                <th className="text-right px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-foreground-subtle">
-                  Actions
-                </th>
+                <th><SortHeader field="title" label="Title" current={sortField} dir={sortDir} onSort={handleSort} /></th>
+                <th><SortHeader field="bundle" label="Bundle" current={sortField} dir={sortDir} onSort={handleSort} /></th>
+                <th><SortHeader field="severity" label="Severity" current={sortField} dir={sortDir} onSort={handleSort} /></th>
+                <th><SortHeader field="auditScore" label="Audit" current={sortField} dir={sortDir} onSort={handleSort} align="right" /></th>
+                <th><SortHeader field="countryCount" label="Cntrs" current={sortField} dir={sortDir} onSort={handleSort} align="right" /></th>
+                <th><SortHeader field="isActive" label="State" current={sortField} dir={sortDir} onSort={handleSort} /></th>
+                <th><SortHeader field="updatedAt" label="Updated" current={sortField} dir={sortDir} onSort={handleSort} /></th>
               </tr>
             </thead>
             <tbody>
-              {filteredScenarios.map((scenario, i) => (
+              {filteredScenarios.map((scenario) => (
                 <tr
                   key={scenario.id}
+                  className="group cursor-pointer hover:bg-[rgba(255,255,255,0.035)]"
                   onClick={(e) => {
-                    // Don't navigate if clicking on interactive elements
-                    if ((e.target as HTMLElement).closest('input, button, a')) return;
+                    if ((e.target as HTMLElement).closest('input,button,a')) return;
                     router.push(`/scenarios/${scenario.id}`);
                   }}
-                  className={`border-b border-[var(--border)] hover:bg-background-muted transition-colors cursor-pointer ${
-                    i % 2 === 0 ? 'bg-background' : 'bg-[rgba(255,255,255,0.02)]'
-                  }`}
                 >
-                  <td className="px-4 py-3">
+                  <td onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={selectedIds.has(scenario.id)}
                       onChange={() => toggleSelect(scenario.id)}
                       className="accent-[var(--accent-primary)]"
-                      aria-label={`Select ${scenario.title}`}
                     />
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-foreground font-medium">{scenario.title}</div>
+
+                  <td>
+                    <span className="text-[13px] font-medium text-foreground truncate block">{scenario.title}</span>
                   </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    {scenario.bundle && <BundleBadge bundle={scenario.bundle} />}
+
+                  <td>
+                    <span className="truncate block">
+                      {scenario.bundle ? <BundleBadge bundle={scenario.bundle} /> : <span className="text-[var(--foreground-subtle)]">—</span>}
+                    </span>
                   </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
+
+                  <td>
                     <SeverityBadge severity={scenario.severity} />
                   </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
+
+                  <td className="text-right">
                     <AuditScore score={scenario.auditScore} />
                   </td>
-                  <td className="px-4 py-3">
+
+                  <td className="text-right">
+                    <span className="font-mono text-[11px] text-[var(--foreground-muted)]">
+                      {scenario.countryCount ?? '—'}
+                    </span>
+                  </td>
+
+                  <td onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => toggleActive(scenario.id, scenario.isActive)}
                       disabled={toggling.has(scenario.id)}
-                      className="flex items-center gap-1.5 group"
+                      className="flex items-center gap-1.5 disabled:opacity-50"
                       title={scenario.isActive ? 'Click to deactivate' : 'Click to activate'}
                     >
-                      <span
-                        className={`w-2 h-2 rounded-full transition-colors ${
-                          scenario.isActive ? 'bg-[var(--success)]' : 'bg-[var(--foreground-subtle)]'
-                        }`}
-                      />
-                      <span className="text-[10px] font-mono text-foreground-subtle group-hover:text-foreground transition-colors">
-                        {scenario.isActive ? 'Active' : 'Off'}
+                      <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${scenario.isActive ? 'bg-[var(--success)]' : 'bg-[var(--foreground-subtle)]'}`} />
+                      <span className="text-[10px] font-mono text-[var(--foreground-subtle)] group-hover:text-[var(--foreground-muted)] transition-colors">
+                        {scenario.isActive ? 'On' : 'Off'}
                       </span>
                     </button>
                   </td>
-                  <td className="px-4 py-3 hidden xl:table-cell">
-                    <span className="text-xs text-foreground-subtle font-mono">
-                      {formatRelativeTime(scenario.createdAt)}
+
+                  <td>
+                    <span className="text-[10px] font-mono text-[var(--foreground-subtle)]">
+                      {scenario.updatedAt ? formatRelativeTime(scenario.updatedAt) : '—'}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link
-                        href={`/scenarios/${scenario.id}`}
-                        className="btn btn-ghost"
-                      >
-                        View
-                      </Link>
-                      <button
-                        onClick={() => deleteScenario(scenario.id)}
-                        className="btn btn-destructive"
-                      >
-                        Delete
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))}
@@ -407,25 +370,28 @@ function ScenariosInner() {
       )}
 
       {/* Pagination */}
-      {data && (data.hasMore || page > 1) && (
-        <div className="mt-4 flex items-center gap-2">
+      {data && (
+        <div className="mt-3 flex items-center gap-3">
           {page > 1 && (
-            <button
-              onClick={() => setParam('page', String(page - 1))}
-              className="btn btn-ghost"
-            >
-              ← Prev
-            </button>
+            <button onClick={() => setParam('page', String(page - 1))} className="btn btn-ghost">← Prev</button>
           )}
-          <span className="text-xs font-mono text-foreground-subtle">Page {page}</span>
+          <span className="text-[11px] font-mono text-[var(--foreground-subtle)]">Page {page}</span>
           {data.hasMore && (
-            <button
-              onClick={() => setParam('page', String(page + 1))}
-              className="btn btn-ghost"
-            >
-              Next →
-            </button>
+            <button onClick={() => setParam('page', String(page + 1))} className="btn btn-ghost">Next →</button>
           )}
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-[10px] font-mono text-[var(--foreground-subtle)]">Per page</span>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setCursors([]); setParam('page', '1'); }}
+              className="input-shell text-xs"
+              style={{ width: 'auto', minWidth: 56 }}
+            >
+              {[10, 25, 50, 100].map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
     </div>
@@ -434,7 +400,7 @@ function ScenariosInner() {
 
 export default function ScenariosPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-foreground-subtle text-sm font-mono">Loading…</div>}>
+    <Suspense fallback={<div className="p-4 text-[var(--foreground-subtle)] text-sm font-mono">Loading…</div>}>
       <ScenariosInner />
     </Suspense>
   );

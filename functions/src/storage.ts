@@ -123,6 +123,42 @@ function invalidateBundleCache(bundle: string): void {
 }
 
 /**
+ * Returns the titles of the most recently generated active scenarios for a bundle.
+ * Reuses the existing 5-minute in-memory cache — no extra Firestore reads.
+ */
+export async function getRecentScenarioTitles(bundle: string, limit = 30): Promise<string[]> {
+    const scenarios = await getCachedScenariosForBundle(bundle);
+    return scenarios
+        .slice(0, limit)
+        .map((s) => s.title)
+        .filter(Boolean);
+}
+
+/**
+ * Returns a frequency map of themes used by active scenarios in a bundle.
+ * Used to identify underrepresented themes for the architect prompt.
+ */
+export async function getThemeDistribution(bundle: string): Promise<Map<string, number>> {
+    const snapshot = await db
+        .collection('scenarios')
+        .where('metadata.bundle', '==', bundle)
+        .where('is_active', '==', true)
+        .orderBy('created_at', 'desc')
+        .limit(100)
+        .select('metadata.theme')
+        .get();
+
+    const counts = new Map<string, number>();
+    for (const doc of snapshot.docs) {
+        const theme: string | undefined = doc.data()?.metadata?.theme;
+        if (theme) {
+            counts.set(theme, (counts.get(theme) ?? 0) + 1);
+        }
+    }
+    return counts;
+}
+
+/**
  * Clear entire cache (useful for testing or manual refresh)
  */
 export function clearScenarioCache(): void {

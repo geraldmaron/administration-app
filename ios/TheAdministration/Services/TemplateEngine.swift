@@ -41,6 +41,7 @@ class TemplateEngine {
             title: resolveTokens(in: scenario.title, with: context),
             description: resolveTokens(in: scenario.description, with: context),
             conditions: scenario.conditions,
+            relationshipConditions: scenario.relationshipConditions,
             phase: scenario.phase,
             severity: scenario.severity,
             chainId: scenario.chainId,
@@ -196,13 +197,31 @@ class TemplateEngine {
                 return value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             }
 
+            func strongestHostileRelationship(_ relationships: [CountryRelationship]) -> CountryRelationship? {
+                relationships.max { lhs, rhs in
+                    abs(lhs.strength) < abs(rhs.strength)
+                }
+            }
+
             func resolveRelationship(_ rel: CountryRelationship) -> (bare: String, definite: String)? {
                 guard let relCountry = self.countries.first(where: { $0.id == rel.countryId }) else { return nil }
                 return (relCountry.name, relCountry.nameWithDefiniteArticle)
             }
 
+            // Pre-seed relationship tokens from chain bindings for multi-act consistency.
+            // Slots filled here will be skipped by the dynamic resolution below (isMissing guard).
+            if let chainId = scenario.chainId,
+               let bindings = gameState.chainTokenBindings?[chainId] {
+                for (role, countryId) in bindings {
+                    if let boundCountry = self.countries.first(where: { $0.id == countryId }) {
+                        if context[role] == nil { context[role] = boundCountry.name }
+                        if context["the_\(role)"] == nil { context["the_\(role)"] = boundCountry.nameWithDefiniteArticle }
+                    }
+                }
+            }
+
             // adversary / the_adversary
-            if let top = geo.adversaries.sorted(by: { $0.strength > $1.strength }).first,
+            if let top = strongestHostileRelationship(geo.adversaries),
                let names = resolveRelationship(top) {
                 if isMissing("adversary") { context["adversary"] = names.bare }
                 if isMissing("the_adversary") { context["the_adversary"] = names.definite }
@@ -227,10 +246,8 @@ class TemplateEngine {
             }
 
             // rival / the_rival — adversaries typed "rival", fallback to neighbor typed "rival"
-            let rivalFromAdversaries = geo.adversaries.filter({ $0.type == "rival" })
-                .sorted(by: { $0.strength > $1.strength }).first
-            let rivalFromNeighbors = geo.neighbors.filter({ $0.type == "rival" })
-                .sorted(by: { $0.strength > $1.strength }).first
+            let rivalFromAdversaries = strongestHostileRelationship(geo.adversaries.filter({ $0.type == "rival" }))
+            let rivalFromNeighbors = strongestHostileRelationship(geo.neighbors.filter({ $0.type == "rival" }))
             if let top = rivalFromAdversaries ?? rivalFromNeighbors,
                let names = resolveRelationship(top) {
                 if isMissing("rival") { context["rival"] = names.bare }
@@ -238,16 +255,14 @@ class TemplateEngine {
             }
 
             // border_rival / the_border_rival — neighbors typed "rival"
-            if let top = geo.neighbors.filter({ $0.type == "rival" })
-                .sorted(by: { $0.strength > $1.strength }).first,
+            if let top = strongestHostileRelationship(geo.neighbors.filter({ $0.type == "rival" })),
                let names = resolveRelationship(top) {
                 if isMissing("border_rival") { context["border_rival"] = names.bare }
                 if isMissing("the_border_rival") { context["the_border_rival"] = names.definite }
             }
 
             // regional_rival / the_regional_rival — adversaries typed "rival"
-            if let top = geo.adversaries.filter({ $0.type == "rival" })
-                .sorted(by: { $0.strength > $1.strength }).first,
+            if let top = strongestHostileRelationship(geo.adversaries.filter({ $0.type == "rival" })),
                let names = resolveRelationship(top) {
                 if isMissing("regional_rival") { context["regional_rival"] = names.bare }
                 if isMissing("the_regional_rival") { context["the_regional_rival"] = names.definite }
@@ -661,6 +676,7 @@ class TemplateEngine {
     private func capitalizeFirstNarrativeLetter(in text: String) -> String {
         var result = text
         var inToken = false
+        var seenToken = false
         var previousBoundary = true
 
         for index in result.indices {
@@ -671,10 +687,11 @@ class TemplateEngine {
             }
             if character == "}" {
                 inToken = false
-                previousBoundary = true
+                seenToken = true
                 continue
             }
             if inToken { continue }
+            if seenToken { return result }
             if character.isWhitespace {
                 previousBoundary = true
                 continue
@@ -706,14 +723,16 @@ class TemplateEngine {
             }
             if character == "}" {
                 inToken = false
-                if capitalizeNext { tokenClosedWhilePending = true }
+                if capitalizeNext {
+                    tokenClosedWhilePending = true
+                }
                 continue
             }
             if inToken { continue }
 
             if capitalizeNext {
                 if character.isLetter {
-                    if character.isLowercase {
+                    if !tokenClosedWhilePending, character.isLowercase {
                         let uppercased = Array(String(character).uppercased())
                         if let first = uppercased.first {
                             characters[index] = first
@@ -961,6 +980,60 @@ class TemplateEngine {
         gameState: GameState
     ) -> Bool {
         missingRequiredTokens(for: scenario, country: country, gameState: gameState).isEmpty
+    }
+
+    /// Resolves a relationship token role to the countryId it would bind to for the given country and game state.
+    /// Mirrors the token resolution logic in buildContext. Used for relationship condition gating.
+    func resolveRelationshipToCountryId(
+        _ relationshipId: String,
+        country: Country,
+        gameState: GameState
+    ) -> String? {
+        guard let geo = country.geopoliticalProfile else { return nil }
+
+        func strongest(_ rels: [CountryRelationship]) -> CountryRelationship? {
+            rels.max { abs($0.strength) < abs($1.strength) }
+        }
+
+        switch relationshipId {
+        case "adversary":
+            return strongest(geo.adversaries)?.countryId
+        case "ally":
+            return geo.allies.filter { $0.type == "formal_ally" }
+                .sorted { $0.strength > $1.strength }.first?.countryId
+        case "trade_partner", "partner":
+            return geo.allies.filter { $0.type == "strategic_partner" }
+                .sorted { $0.strength > $1.strength }.first?.countryId
+        case "rival":
+            let fromAdversaries = strongest(geo.adversaries.filter { $0.type == "rival" })
+            let fromNeighbors = strongest(geo.neighbors.filter { $0.type == "rival" })
+            return (fromAdversaries ?? fromNeighbors)?.countryId
+        case "border_rival":
+            return strongest(geo.neighbors.filter { $0.type == "rival" })?.countryId
+        case "regional_rival":
+            return strongest(geo.adversaries.filter { $0.type == "rival" })?.countryId
+        case "neutral":
+            let fromAllies = geo.allies.filter { $0.type == "neutral" }.sorted { $0.strength > $1.strength }.first
+            let fromNeighbors = geo.neighbors.filter { $0.type == "neutral" }.sorted { $0.strength > $1.strength }.first
+            return (fromAllies ?? fromNeighbors)?.countryId
+        case "nation":
+            return geo.neighbors.first?.countryId
+        default:
+            return nil
+        }
+    }
+
+    /// Resolves all relationship token roles to their countryIds for a given scenario.
+    /// Used to record chain token bindings when the first act of a chain is presented.
+    func resolveChainTokenBindings(for scenario: Scenario, country: Country, gameState: GameState) -> [String: String] {
+        let roles = ["adversary", "ally", "trade_partner", "rival", "border_rival", "regional_rival", "neutral", "nation"]
+        var bindings: [String: String] = [:]
+        for role in roles {
+            if let countryId = resolveRelationshipToCountryId(role, country: country, gameState: gameState) {
+                bindings[role] = countryId
+            }
+        }
+        return bindings
     }
 
     private func referencedTokens(in scenario: Scenario) -> [String] {

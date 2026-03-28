@@ -9,7 +9,8 @@
  * translates real-world references into appropriate game values.
  */
 
-import { Effect } from './audit-rules';
+import type { Issue, Effect } from './audit-rules';
+import type { PolicyImplication } from '../types';
 
 // Narrative pattern to metric mapping
 interface GroundedMapping {
@@ -295,6 +296,19 @@ export interface GroundingIssue {
   message: string;
 }
 
+export function groundingIssueToAuditIssue(issue: GroundingIssue, target: string): Issue {
+  const severity: Issue['severity'] = issue.type === 'magnitude' ? 'warn' : 'error';
+  const rule = issue.type === 'magnitude' ? 'grounded-effects-mismatch' : 'grounded-effects-critical';
+
+  return {
+    severity,
+    rule,
+    target,
+    message: issue.message,
+    autoFixable: false,
+  };
+}
+
 export function validateGroundedEffects(
   narrativeText: string,
   effects: Effect[]
@@ -339,6 +353,53 @@ export function validateGroundedEffects(
           reference: ref,
           actualEffect: actual,
           message: `Magnitude mismatch for ${expected.metricId}: expected ~${expected.value.toFixed(1)}, got ${actual.value.toFixed(1)}`
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
+interface PolicyNarrativeSignal {
+  pattern: RegExp;
+  expectedTarget: string;
+  expectedSign: 1 | -1;
+}
+
+const POLICY_NARRATIVE_SIGNALS: PolicyNarrativeSignal[] = [
+  { pattern: /\b(?:raise|increase|hike)\b.*\b(?:income\s+)?tax/i, expectedTarget: 'fiscal.taxIncome', expectedSign: 1 },
+  { pattern: /\b(?:cut|lower|reduce)\b.*\b(?:income\s+)?tax/i, expectedTarget: 'fiscal.taxIncome', expectedSign: -1 },
+  { pattern: /\b(?:raise|increase|hike)\b.*\bcorporate\s+tax/i, expectedTarget: 'fiscal.taxCorporate', expectedSign: 1 },
+  { pattern: /\b(?:cut|lower|reduce)\b.*\bcorporate\s+tax/i, expectedTarget: 'fiscal.taxCorporate', expectedSign: -1 },
+  { pattern: /\b(?:boost|increase|expand)\b.*\bmilitary\s+(?:spending|budget)/i, expectedTarget: 'fiscal.spendingMilitary', expectedSign: 1 },
+  { pattern: /\b(?:cut|slash|reduce)\b.*\bmilitary\s+(?:spending|budget)/i, expectedTarget: 'fiscal.spendingMilitary', expectedSign: -1 },
+  { pattern: /\b(?:boost|increase|expand)\b.*\binfrastructure\s+(?:spending|budget|investment)/i, expectedTarget: 'fiscal.spendingInfrastructure', expectedSign: 1 },
+  { pattern: /\b(?:boost|increase|expand)\b.*\bsocial\s+(?:spending|programs|welfare)/i, expectedTarget: 'fiscal.spendingSocial', expectedSign: 1 },
+  { pattern: /\b(?:cut|slash|reduce)\b.*\bsocial\s+(?:spending|programs|welfare)/i, expectedTarget: 'fiscal.spendingSocial', expectedSign: -1 },
+  { pattern: /\b(?:tighten|strengthen|enforce)\b.*\benvironmental/i, expectedTarget: 'policy.environmentalPolicy', expectedSign: 1 },
+  { pattern: /\b(?:relax|loosen|rollback|weaken)\b.*\benvironmental/i, expectedTarget: 'policy.environmentalPolicy', expectedSign: -1 },
+  { pattern: /\bopen\s+(?:the\s+)?borders?\b/i, expectedTarget: 'policy.immigration', expectedSign: 1 },
+  { pattern: /\b(?:restrict|close|tighten)\b.*\b(?:border|immigration)/i, expectedTarget: 'policy.immigration', expectedSign: -1 },
+];
+
+export function validatePolicyImplications(
+  narrativeText: string,
+  implications: PolicyImplication[] | undefined
+): GroundingIssue[] {
+  const issues: GroundingIssue[] = [];
+  if (!implications || implications.length === 0) return issues;
+
+  for (const signal of POLICY_NARRATIVE_SIGNALS) {
+    if (!signal.pattern.test(narrativeText)) continue;
+
+    const matching = implications.find(i => i.target === signal.expectedTarget);
+    if (matching) {
+      if (Math.sign(matching.delta) !== signal.expectedSign && matching.delta !== 0) {
+        issues.push({
+          type: 'sign',
+          reference: { mapping: 'policy', value: 0, originalText: narrativeText.substring(0, 80), expectedEffects: [] },
+          message: `Policy implication sign mismatch for ${signal.expectedTarget}: narrative implies ${signal.expectedSign > 0 ? 'increase' : 'decrease'} but delta is ${matching.delta}`
         });
       }
     }

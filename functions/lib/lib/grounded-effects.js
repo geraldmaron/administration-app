@@ -11,6 +11,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.extractNarrativeReferences = extractNarrativeReferences;
+exports.groundingIssueToAuditIssue = groundingIssueToAuditIssue;
 exports.validateGroundedEffects = validateGroundedEffects;
 exports.suggestEffectCorrections = suggestEffectCorrections;
 exports.getEffectCalibrationPrompt = getEffectCalibrationPrompt;
@@ -243,6 +244,17 @@ function extractNarrativeReferences(text) {
         }
     }
     return references;
+}
+function groundingIssueToAuditIssue(issue, target) {
+    const severity = issue.type === 'magnitude' ? 'warn' : 'error';
+    const rule = issue.type === 'magnitude' ? 'grounded-effects-mismatch' : 'grounded-effects-critical';
+    return {
+        severity,
+        rule,
+        target,
+        message: issue.message,
+        autoFixable: false,
+    };
 }
 function validateGroundedEffects(narrativeText, effects) {
     const issues = [];

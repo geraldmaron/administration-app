@@ -4,13 +4,10 @@
     "scripts": {
         "generate": "tsx generate-scenarios.ts",
         "deficits": "tsx report-scenario-deficits.ts",
-        "backfill-scope": "tsx backfill-scenario-scope.ts",
-        "populate-country-profiles": "tsx populate-country-profiles.ts",
         "pre-flight": "tsx pre-flight.ts",
         "audit": "tsx audit-existing-scenarios.ts",
         "token-audit": "tsx token-usage-audit.ts",
-        "check-gen": "tsx check-generation-job.ts",
-        "seed-metrics": "tsx seed-metrics.ts"
+        "check-gen": "tsx check-generation-job.ts"
     },
     "engines": {
         "node": "22"

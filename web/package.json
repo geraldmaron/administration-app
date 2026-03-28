@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node scripts/next-port-launcher.mjs dev",
     "build": "next build",
-    "start": "node scripts/next-port-launcher.mjs start"
+    "start": "node scripts/next-port-launcher.mjs start",
+    "test": "vitest run"
   },
   "dependencies": {
     "next": "^14.2.0",
@@ -20,6 +21,8 @@
     "tailwindcss": "^3.4.0",
     "autoprefixer": "^10.4.0",
     "postcss": "^8.4.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
   }
 }

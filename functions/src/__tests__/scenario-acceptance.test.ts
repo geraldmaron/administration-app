@@ -23,6 +23,7 @@ function makeContentQualityResult(overrides: Partial<ContentQualityResult> = {})
         readability: { score: 4 as const, issues: [] },
         optionConsistency: { score: 4 as const, issues: [] },
         advisorQuality: { score: 4 as const, issues: [] },
+        specificity: { score: 4 as const, issues: [] },
         overallScore: 4,
         regenerateFields: [],
         ...overrides,

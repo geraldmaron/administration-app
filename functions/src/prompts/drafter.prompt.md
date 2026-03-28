@@ -21,16 +21,18 @@ The player is always **you** — never "the government", "the president", or "th
 ## HARD REQUIREMENTS (will cause rejection if violated)
 
 - **Outcome fields must be third-person.** Never use "you" or "your" in `outcomeHeadline`, `outcomeSummary`, or `outcomeContext`. Second-person language is required for `description`, `options[].text`, and `advisorFeedback[].feedback`.
+- **Use mainstream news wording.** Write like a clear Reuters or AP reporter, not a think-tank memo. Avoid jargon-heavy nouns such as **"bloc"** and **"gambit"** in player-facing text unless they are part of an official proper name or a direct quote from the source article.
 - **Minimum length requirements:**
-  - `description` must be **45+ words**.
-  - `options[].text` must be **35+ words**.
-  - `outcomeSummary` must be **200+ characters AND at least 2 sentences**. A single sentence of 210 characters passes the character check but fails sentence validation. Write at minimum: one lede sentence stating the action and its immediate consequence, then a second sentence expanding the impact or naming a secondary effect.
-  - `outcomeContext` must be **300+ characters AND at least 3 sentences (50–80 words)**. The "MAX 100 words" cap in the structural section is an upper bound — not permission to write briefly. 282 characters is a direct scoring penalty. Aim for 4 sentences: name an institution, describe the mechanism, include a reaction (opposition, market, or public), and close with a broader implication.
+  - `description` must be **60+ words**.
+  - `options[].text` must be **50+ words**.
+  - `outcomeSummary` must be **250+ characters AND at least 2 sentences**. A single sentence of 260 characters passes the character check but fails sentence validation. Write at minimum: one lede sentence stating the action and its immediate consequence, then a second sentence expanding the impact or naming a secondary effect.
+  - `outcomeContext` must be **400+ characters AND at least 4 sentences (70–100 words)**. The "MAX 100 words" cap in the structural section is an upper bound — not permission to write briefly. 380 characters is a direct scoring penalty. Aim for 4–6 sentences: name an institution, describe the mechanism, include a reaction (opposition, market, or public), and close with a broader implication.
 - **Prohibited phrasing in second-person fields** (`description`, `options[].text`, `advisorFeedback[].feedback`): never use the phrases **"the government"** or **"the administration"** (including with any capitalization).
 - **Token usage:** never use **"the {token}"**; prefer the `{the_token}` form where appropriate (e.g., `{the_leader_title}`, `{the_finance_role}`, `{the_player_country}`).
 - **Literal substring ban:** the final JSON must never contain the exact substring **`the {`** anywhere. Replace it with the correct article-form token or rewrite the sentence.
 - **Token-followed word capitalization (outcome fields only):** In `outcomeSummary` and `outcomeContext`, avoid opening the field with a `{token}` placeholder — restructure so the first word is a capitalized narrative word (e.g., `"Emergency measures were ordered..."`, `"A new trade framework took effect..."`). If a token must appear first, the word immediately after the closing `}` **must be capitalized**: `{the_player_country} Has signed the accord.` ✅  NOT  `{the_player_country} has signed the accord.` ❌. Grammar validation checks that no sentence-start token is followed by a lowercase word.
 - **Unknown token fallback:** if the exact placeholder you want is not on the approved list, do not invent it. Rewrite with plain language such as `opposition lawmakers`, `senior legislators`, `cabinet aides`, `market traders`, or `military officers`.
+- **Active voice required:** Do not let the majority of sentences in any single field use passive constructions (`was directed`, `were announced`, `has been implemented`, `is being reviewed`). Rewrite as active: `{leader_title} announced`, `{the_legislature} passed`, `you directed`. If more than half the sentences in any field are passive voice, the scenario is automatically rejected.
 - Any violation of these requirements will cause the scenario to be rejected/failed audit.
 
 ---
@@ -66,6 +68,7 @@ Use `the_*` forms for all country relationship tokens in narrative text. For rol
 - Use only approved tokens provided in context.
 - Never invent new placeholders (for example `{budget_crisis}`, `{federal_police}`, `{national_bank}` are invalid unless explicitly listed).
 - If you are unsure a token exists, rewrite the sentence without introducing a new token.
+- Metric IDs such as `metric_economy` or `metric_public_order` belong only inside structured `effects` or `conditions`. Never place metric placeholders inside narrative prose, outcome copy, headlines, or advisor feedback.
 
 **INVALID TOKENS (will cause immediate rejection):**
 - `{budget}` — NOT a valid token. Use `{fiscal_condition}` for fiscal state, `{trade_value}` for trade figures, `{military_budget_amount}` for defense spending.
@@ -85,6 +88,8 @@ Use `the_*` forms for all country relationship tokens in narrative text. For rol
 2. Search your JSON for any placeholder not in the approved whitelist — remove or rewrite it.
 3. In `outcomeSummary` and `outcomeContext`, every sentence must begin with either a capitalized narrative word or an approved token followed by a capitalized word.
 4. In `advisorFeedback`, prefer active voice: `X approved Y`, `X warned Y`, `X blocked Y`; avoid `Y was approved`, `concerns were raised`, `it was decided`.
+5. For each field (`description`, `options[].text`, `outcomeSummary`, `outcomeContext`, `advisorFeedback[].feedback`), count the sentences that use a form of `was/were/is/are/been/being + past participle`. If more than half are passive in any field, rewrite them to active voice before outputting. Example rewrites: `"was passed"` → `"{the_legislature} passed"`, `"was announced"` → `"{leader_title} announced"`, `"was rejected"` → `"{the_player_country} rejected"`.
+6. Search your JSON for newsroom-unfriendly jargon such as `bloc` or `gambit`. Rewrite with plain words like `alliance`, `regional group`, `move`, `bid`, or the relevant institution token before responding.
 
 **HARDCODED GOVERNMENT STRUCTURE TERMS — ALWAYS BANNED:**
 These terms assume a specific government system and will read as wrong for presidential, authoritarian, or monarchic countries.
@@ -208,6 +213,15 @@ Invalid role redirects (never use these):
     - `environment` bundle → at least one of: `metric_environment`, `metric_health`, `metric_energy`
     - `social` bundle → at least one of: `metric_equality`, `metric_education`, `metric_health`, `metric_housing`, `metric_immigration`, `metric_crime`
     - `dick_mode` bundle → at least one of: `metric_liberty`, `metric_democracy`, `metric_public_order`, `metric_corruption`, `metric_sovereignty`, `metric_foreign_relations`
+- `policyImplications` (optional per option): Array of fiscal/policy setting shifts implied by an option. Include ONLY when the option explicitly describes a fiscal or policy change (raising taxes, increasing military spending, shifting environmental regulation, opening trade, etc.). Do NOT include for options whose effects are purely metric-based without clear policy implications.
+  - Format: `{ "target": "<setting_path>", "delta": <number> }`
+  - Valid targets: `fiscal.taxIncome`, `fiscal.taxCorporate`, `fiscal.spendingMilitary`, `fiscal.spendingInfrastructure`, `fiscal.spendingSocial`, `policy.economicStance`, `policy.socialSpending`, `policy.defenseSpending`, `policy.environmentalPolicy`, `policy.tradeOpenness`, `policy.immigration`, `policy.environmentalProtection`, `policy.healthcareAccess`, `policy.educationFunding`, `policy.socialWelfare`
+  - Delta guidelines: minor policy adjustments ±2 to ±5, significant policy shifts ±5 to ±10, dramatic policy reversals ±10 to ±15. Never exceed ±15.
+  - Examples:
+    - "Raise income taxes to fund infrastructure" → `[{"target":"fiscal.taxIncome","delta":5},{"target":"fiscal.spendingInfrastructure","delta":8}]`
+    - "Cut military spending to balance the budget" → `[{"target":"fiscal.spendingMilitary","delta":-8}]`
+    - "Relax environmental regulations for industry" → `[{"target":"policy.environmentalPolicy","delta":-6}]`
+    - "Open borders to skilled immigration" → `[{"target":"policy.immigration","delta":8}]`
 - `conditions` (optional, scenario-level): Array of `{ metricId, min?, max? }` objects that gate when this scenario can appear. Output conditions **only** when the scenario's premise would be implausible without that metric state — not for neutral governance scenarios or diplomatic/military events that can occur regardless of metrics. Maximum 2 conditions per scenario.
 
   **CANONICAL CONDITION RULES — apply exactly when the scenario describes:**
@@ -222,9 +236,9 @@ Invalid role redirects (never use these):
 
   If the scenario does not match any canonical rule above, output `"conditions": []` or omit the field.
 
-- `outcomeHeadline`: 3–15 words, **MAX 15 words** — **newspaper headline style**, no "you"/"your". Renders as a prominent headline on iOS.
-- `outcomeSummary`: **2–3 sentences, 40–80 words** — **news article lede**: third person, past tense, journalistic. Lead with the concrete action taken and its immediate consequence. The first sentence must be **≤25 words**. ❌ "You've imposed emergency fuel controls..." → ✅ "{leader_title} ordered emergency fuel controls, raising import costs for domestic suppliers."
-- `outcomeContext`: **50–100 words (minimum 300 characters)**, 3–5 sentences — **news article body**: third person, journalistic. The ≤100-word cap is a ceiling, not permission to write briefly. Name at least one specific institution, party, ministry, or market segment (e.g., `{the_legislature}`, `{the_opposition_party}`, `{the_finance_role}`, bond markets). Describe the downstream mechanism, include at least one reaction (opposition, ally, public, market), and close with a broader implication. No "you" or "your".
+- `outcomeHeadline`: 3–15 words, **MAX 15 words** — **newspaper headline style**, no "you"/"your". Renders as a prominent headline on iOS. Write like a Reuters or AP wire headline that makes the reader stop scrolling. ❌ "Economic Policy Changes Announced" → ✅ "Emergency Rate Hike Stuns Markets as Inflation Spirals"
+- `outcomeSummary`: **2–3 sentences, 40–80 words** — **news article lede**: third person, past tense, journalistic. This is the opening paragraph a reporter would write — it must hook the reader. Lead with the most dramatic concrete action and its immediate consequence. The first sentence must be **≤25 words** and must name the actor and the action. ❌ "{leader_title} Approved austerity measures that reduced the budget deficit." → ✅ "{leader_title} slashed public spending by {graft_amount}, triggering wildcat strikes across three industrial regions within 48 hours."
+- `outcomeContext`: **70–100 words (minimum 400 characters)**, 4–6 sentences — **news article body**: third person, journalistic. This reads like the body of a real newspaper article — vivid, specific, consequential. Name specific institutions (`{the_legislature}`, `{the_opposition_party}`, `{the_finance_role}`), market movements (bond yields, currency pressure, credit downgrades), and human impact (factory closures, protest turnout, hospital wait times). Include at least one direct reaction quote-style attribution ("Opposition leaders called the measure reckless"). Close with a forward-looking consequence that changes the political calculus. No "you" or "your".
 
 **FORBIDDEN PATTERNS — outcome fields (fail the quality audit):**
 - "stakeholders" → use a named group (opposition legislators, export sector, public health advocates, smallholder farmers)
@@ -278,8 +292,10 @@ Feedback must reference the **concrete policy action, affected institution, and 
 - Name the real mechanism: don't say "the economy suffers" — say which sector, which population, which institution.
 - **Do not telegraph outcomes in descriptions or option text.** Present facts, actors, instruments, and the decision. The player must think — do not hand them the ledger of gains and losses before they choose.
 - Options should feel meaningfully different in *approach and instrument*, not in *explicitly stated consequence*. The weight comes from the decision itself, not from a parenthetical "(but risks…)".
-- Scenarios should feel like a classified briefing on a real situation: here is what happened, here is who is involved, here is what each response entails. The outcome is unknown. The player decides.
-- Scenarios should feel grounded in a concrete situation, not like generic policy exercises. Name the trigger event, the pressure group, the minister, the market.
+- Scenarios should feel like a classified briefing on a real crisis: here is what happened, here is who is involved, here is what each response entails. The stakes must feel visceral — jobs lost, protests erupting, markets crashing, alliances fracturing. The outcome is unknown. The player decides.
+- Scenarios should feel grounded in a concrete situation, not like generic policy exercises. Name the trigger event, the pressure group, the minister, the market. ❌ "Economic challenges require a policy response." → ✅ "A wave of factory closures has left 40,000 workers without income, and {the_opposition_party}'s call for emergency hearings has forced {the_legislature} into a special session."
+- When using `{major_industry}` or `{the_major_industry}`, the surrounding narrative must be sector-specific. If the country context includes industry-type tags (oil, tourism, agriculture, manufacturing, mining, tech), write scenario details — supply chains, regulatory bodies, workforce segments, export markets — that only make sense for that sector. Never write "Your {major_industry} is struggling" — write "A critical supplier to your {major_industry} has declared force majeure, threatening to idle assembly lines within 72 hours."
+- Apply the same specificity to `{regional_bloc}`, `{opposition_party}`, and `{ruling_party}` — the surrounding context must define them by their actions, demands, and leverage, not generic labels.
 
 ### Layman-Friendly Language (Strict)
 - Write for non-expert players. Use plain words over policy jargon.
@@ -294,6 +310,7 @@ Feedback must reference the **concrete policy action, affected institution, and 
 - If `regions` or `applicable countries` are provided in prompt context, keep scenario details plausible for those targets.
 - Respect provided geography/economic-scale signals (for example island exposure, drought risk, small-economy proportionality).
 - Do not inject region-specific assumptions that contradict the provided context.
+- **Universal scope prohibition:** If the scenario's scopeTier is `universal`, the narrative must not reference foreign countries, neighbors, allies, adversaries, or bilateral relationships in any form — neither as tokens nor as generic phrases ("a neighboring country", "a rival nation", "opposing forces"). Universal scenarios must be entirely domestic: internal governance, institutional tension, domestic economic decisions, civil unrest, or public health crises. If the concept implies a foreign actor, reframe it as a domestic actor (protest movement, opposition faction, industry lobby).
 
 ### Bundle-Specific Standard (`dick_mode`)
 - If the bundle is `dick_mode`, options may be authoritarian or morally dark, but must remain realistic statecraft decisions with credible trade-offs and blowback.

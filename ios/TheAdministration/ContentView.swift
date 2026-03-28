@@ -10,7 +10,6 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showWelcome = true
     @State private var showOnboarding = false
-    @State private var showGameMenu = false
 
 var body: some View {
     ZStack {
@@ -26,7 +25,9 @@ var body: some View {
                         }
                     }
             } else {
-                MainTabView(gameStore: gameStore, selectedTab: $selectedTab)
+                MainTabView(gameStore: gameStore, selectedTab: $selectedTab) {
+                    showWelcome = true
+                }
             }
         }
         .animation(AppMotion.standard, value: showWelcome)
@@ -47,17 +48,6 @@ var body: some View {
                 .zIndex(20)
         }
 
-        if showGameMenu {
-            GameMenuSheet(gameStore: gameStore) {
-                showWelcome = true
-            }
-            .transition(
-                AnyTransition
-                    .move(edge: .bottom)
-                    .combined(with: AnyTransition.opacity)
-            )
-            .zIndex(30)
-        }
     }
     // Apply screen background modifier for consistency
     .screenBackground()
@@ -69,6 +59,7 @@ var body: some View {
 struct MainTabView: View {
     @ObservedObject var gameStore: GameStore
     @Binding var selectedTab: Int
+    let onQuitToMain: () -> Void
     @State private var tabBarVisible = true
     @State private var showMenu = false
 
@@ -129,8 +120,7 @@ struct MainTabView: View {
         .ignoresSafeArea(edges: .bottom)
         .sheet(isPresented: $showMenu) {
             GameMenuSheet(gameStore: gameStore) {
-                // Quit to main menu from within the sheet
-                // handled in ContentView via binding when needed
+                onQuitToMain()
             }
         }
     }

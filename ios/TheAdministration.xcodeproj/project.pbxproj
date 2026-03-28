@@ -53,6 +53,9 @@
 		B7865E1E1923A7DEB1866503 /* CabinetPoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F6D6F0E87B29AE1DA29AF54 /* CabinetPoints.swift */; };
 		BAD335F3245C559617DCC1CF /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 490C9F00AC7DE73E01B51D7A /* AppLogger.swift */; };
 		BDA80394AB5EF40D6756470C /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91C50B2D8C2458D3AED313D0 /* AIService.swift */; };
+		A1B2C3D4E5F6A7B800000001 /* ActionResolutionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B800000002 /* ActionResolutionService.swift */; };
+		A1B2C3D4E5F6A7B800000003 /* ActionResolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B800000004 /* ActionResolutionTests.swift */; };
+		B1C2D3E4F5A6B7C800000001 /* PolicyImplicationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A6B7C800000002 /* PolicyImplicationTests.swift */; };
 		CC40BB7A003D882827157850 /* EndGameReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E54397352D333B3E9FD4DC /* EndGameReviewView.swift */; };
 		D3111B43BEE328EC2147D6F0 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C1621F927387587678730E /* AppTheme.swift */; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* LegislatureSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* LegislatureSheet.swift */; };
@@ -119,6 +122,9 @@
 		8FB511B02FAE17AEE91B8B6E /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
 		901D0BB56666B037C60BF5CF /* ScenarioScoringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenarioScoringTests.swift; sourceTree = "<group>"; };
 		91C50B2D8C2458D3AED313D0 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B800000002 /* ActionResolutionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionResolutionService.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B800000004 /* ActionResolutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionResolutionTests.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5A6B7C800000002 /* PolicyImplicationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyImplicationTests.swift; sourceTree = "<group>"; };
 		9209AA17F94B071D45A2F553 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		9705FA992E1655A061D36FC1 /* DossierView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DossierView.swift; sourceTree = "<group>"; };
 		9D857F91E2160C81A973F636 /* AdvisorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisorSheet.swift; sourceTree = "<group>"; };
@@ -235,6 +241,7 @@
 		8C0C0B4B022BFF3878F6415F /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F6A7B800000002 /* ActionResolutionService.swift */,
 				91C50B2D8C2458D3AED313D0 /* AIService.swift */,
 				490C9F00AC7DE73E01B51D7A /* AppLogger.swift */,
 				4044975D949FAA8B7D3BA9B7 /* AuthService.swift */,
@@ -296,6 +303,8 @@
 		DB73E22CFD09DC20ABF4BAE4 /* TheAdministrationTests */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F6A7B800000004 /* ActionResolutionTests.swift */,
+				B1C2D3E4F5A6B7C800000002 /* PolicyImplicationTests.swift */,
 				901D0BB56666B037C60BF5CF /* ScenarioScoringTests.swift */,
 				1214A4FB5D3945D59C54A2E9 /* ScoringParityTests.swift */,
 			);
@@ -404,6 +413,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B2C3D4E5F6A7B800000003 /* ActionResolutionTests.swift in Sources */,
+				B1C2D3E4F5A6B7C800000001 /* PolicyImplicationTests.swift in Sources */,
 				D673BDB72E370DFB23C8609B /* ScenarioScoringTests.swift in Sources */,
 				7D273133542EFB7D7F265065 /* ScoringParityTests.swift in Sources */,
 			);
@@ -413,6 +424,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B2C3D4E5F6A7B800000001 /* ActionResolutionService.swift in Sources */,
 				BDA80394AB5EF40D6756470C /* AIService.swift in Sources */,
 				060831D156A2BC9DD353700C /* AdvisorSheet.swift in Sources */,
 				BAD335F3245C559617DCC1CF /* AppLogger.swift in Sources */,

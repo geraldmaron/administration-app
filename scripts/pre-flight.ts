@@ -52,7 +52,7 @@ async function checkFirestoreConnectivity(): Promise<CheckResult> {
 async function checkGenerationConfig(): Promise<CheckResult[]> {
   const snap = await db.collection('world_state').doc('generation_config').get();
   if (!snap.exists) {
-    return [{ label: 'generation_config exists', pass: false, detail: 'Document not found — run sync-prompts-to-firestore.ts' }];
+    return [{ label: 'generation_config exists', pass: false, detail: 'Document not found — ensure generation_config is provisioned in Firestore' }];
   }
   const cfg = snap.data() ?? {};
   const results: CheckResult[] = [
@@ -167,7 +167,7 @@ async function checkPromptSync(): Promise<CheckResult[]> {
       results.push({
         label: `${name}: active Firestore template exists`,
         pass: false,
-        detail: 'No active template in Firestore — run sync-prompts-to-firestore.ts',
+        detail: 'No active template in Firestore — ensure prompt templates are provisioned',
       });
       continue;
     }
@@ -181,7 +181,7 @@ async function checkPromptSync(): Promise<CheckResult[]> {
       pass: inSync,
       detail: inSync
         ? `hash ${localHash}`
-        : `local ${localHash} ≠ firestore ${firestoreHash} — run sync-prompts-to-firestore.ts`,
+        : `local ${localHash} ≠ firestore ${firestoreHash} — prompt templates are out of sync`,
     });
   }
 
@@ -197,7 +197,7 @@ async function checkGoldenExamples(): Promise<CheckResult[]> {
       pass: count > 0,
       detail: count > 0
         ? `${count} doc(s) sampled (full count not fetched)`
-        : 'Empty — generation will be cold-start (no few-shot). Run seed-golden-examples.ts.',
+        : 'Empty — generation will be cold-start (no few-shot). Provision golden examples in training_scenarios.',
     },
   ];
 }

@@ -5,14 +5,6 @@ import CommandPanel from '@/components/CommandPanel';
 import OperationsNav from '@/components/OperationsNav';
 import ScreenHeader from '@/components/ScreenHeader';
 
-interface LMStudioStatus {
-  connected: boolean;
-  models: string[];
-  baseUrl: string;
-  error?: string;
-  remoteStatus: { url: string; connected: boolean; error?: string } | null;
-}
-
 interface GenerationConfig {
   content_quality_gate_enabled?: boolean;
   narrative_review_enabled?: boolean;
@@ -23,31 +15,13 @@ interface GenerationConfig {
   concept_concurrency?: number;
   dedup_similarity_threshold?: number;
   max_llm_repair_attempts?: number;
-  lmstudio_base_url?: string;
 }
 
 export default function SettingsPage() {
-  const [lmStatus, setLmStatus] = useState<LMStudioStatus | null>(null);
-  const [lmLoading, setLmLoading] = useState(false);
   const [config, setConfig] = useState<GenerationConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [tunnelUrl, setTunnelUrl] = useState('');
-  const [tunnelSaving, setTunnelSaving] = useState(false);
-
-  const fetchLMStudio = useCallback(async () => {
-    setLmLoading(true);
-    try {
-      const res = await fetch('/api/settings/lmstudio');
-      const data = await res.json();
-      setLmStatus(data);
-    } catch {
-      setLmStatus({ connected: false, models: [], baseUrl: '', error: 'Fetch failed', remoteStatus: null });
-    } finally {
-      setLmLoading(false);
-    }
-  }, []);
 
   const fetchConfig = useCallback(async () => {
     setConfigLoading(true);
@@ -56,7 +30,6 @@ export default function SettingsPage() {
       if (res.ok) {
         const data = await res.json();
         setConfig(data);
-        setTunnelUrl(data.lmstudio_base_url || '');
       }
     } catch {
       // ignore
@@ -66,9 +39,8 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    fetchLMStudio();
     fetchConfig();
-  }, [fetchLMStudio, fetchConfig]);
+  }, [fetchConfig]);
 
   async function handleToggle(field: keyof GenerationConfig, value: boolean) {
     setSaving(true);
@@ -116,169 +88,15 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleSaveTunnelUrl() {
-    setTunnelSaving(true);
-    setSaveMessage(null);
-    try {
-      const res = await fetch('/api/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lmstudio_base_url: tunnelUrl || null }),
-      });
-      if (res.ok) {
-        setConfig(prev => prev ? { ...prev, lmstudio_base_url: tunnelUrl || undefined } : prev);
-        setSaveMessage('Tunnel URL saved');
-        fetchLMStudio();
-      } else {
-        setSaveMessage('Failed to save');
-      }
-    } catch {
-      setSaveMessage('Network error');
-    } finally {
-      setTunnelSaving(false);
-      setTimeout(() => setSaveMessage(null), 3000);
-    }
-  }
-
   return (
     <div className="mx-auto max-w-[1400px]">
       <ScreenHeader
         section="Content Operations"
         title="Settings"
-        subtitle="Review local model connectivity and tune generation pipeline controls without leaving the command surface."
+        subtitle="Tune generation pipeline controls without leaving the command surface."
         eyebrow="Configuration"
         nav={<OperationsNav />}
       />
-
-      {/* LM Studio Connection */}
-      <CommandPanel className="mb-6 p-5 md:p-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="section-kicker">
-            Local Models — LM Studio
-          </div>
-          <button
-            type="button"
-            onClick={fetchLMStudio}
-            disabled={lmLoading}
-            className="btn btn-tactical disabled:opacity-50"
-          >
-            {lmLoading ? 'Testing…' : 'Test Connection'}
-          </button>
-        </div>
-
-        {!lmStatus && (
-          <div className="text-xs font-mono text-foreground-subtle animate-pulse">
-            Checking connection…
-          </div>
-        )}
-
-        {lmStatus && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  lmStatus.connected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'
-                }`}
-              />
-              <span
-                className={`text-xs font-mono ${
-                  lmStatus.connected ? 'text-[var(--success)]' : 'text-[var(--error)]'
-                }`}
-              >
-                {lmStatus.connected ? 'Connected' : 'Disconnected'}
-              </span>
-              <span className="text-[10px] font-mono text-foreground-subtle ml-auto">
-                {lmStatus.baseUrl}
-              </span>
-            </div>
-
-            {lmStatus.error && (
-              <div className="text-[10px] font-mono text-[var(--error)]">
-                {lmStatus.error}
-              </div>
-            )}
-
-            {lmStatus.connected && lmStatus.models.length > 0 && (
-              <div>
-                <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle mb-1">
-                  Available Models ({lmStatus.models.length})
-                </div>
-                <div className="space-y-1">
-                  {lmStatus.models.map((model) => (
-                    <div key={model} className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-foreground">{model}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {lmStatus.connected && lmStatus.models.length === 0 && (
-              <div className="text-[10px] font-mono text-foreground-subtle">
-                No models loaded. Load a model in LM Studio to use it for generation.
-              </div>
-            )}
-
-            <div className="text-[10px] font-mono text-foreground-subtle border-t border-[var(--border)] pt-2 mt-2">
-              To use LM Studio models, set <span className="text-foreground">LMSTUDIO_BASE_URL</span> and{' '}
-              <span className="text-foreground">LMSTUDIO_MODEL</span> environment variables, or prefix model names
-              with <span className="text-foreground">lmstudio:</span> (e.g. lmstudio:llama-3.1-8b-instruct).
-            </div>
-
-            <div className="text-[10px] font-mono text-foreground-subtle border-t border-[var(--border)] pt-2 mt-2">
-              LM Studio is intended for local debugging and prompt iteration only. It is not the shipping iPhone on-device runtime, and embedding-based semantic dedup is skipped for LM Studio generation jobs.
-            </div>
-
-            {/* Remote tunnel URL */}
-            <div className="border-t border-[var(--border)] pt-3 mt-2 space-y-2">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle">
-                Remote Tunnel URL
-              </div>
-              <div className="text-[10px] font-mono text-foreground-subtle">
-                Set a public URL that tunnels to your local LM Studio (port 1234). Deployed Cloud Functions will use this URL.
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={tunnelUrl}
-                  onChange={e => setTunnelUrl(e.target.value)}
-                  placeholder="https://your-tunnel.ngrok.io/v1"
-                  className="flex-1 bg-background-muted border border-[var(--border)] text-xs font-mono text-foreground px-2 py-1.5 rounded focus:outline-none focus:border-[var(--accent)]"
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveTunnelUrl}
-                  disabled={tunnelSaving}
-                  className="btn btn-tactical disabled:opacity-50"
-                >
-                  {tunnelSaving ? 'Saving…' : 'Save'}
-                </button>
-              </div>
-              {lmStatus.remoteStatus && (
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      lmStatus.remoteStatus.connected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'
-                    }`}
-                  />
-                  <span
-                    className={`text-[10px] font-mono ${
-                      lmStatus.remoteStatus.connected ? 'text-[var(--success)]' : 'text-[var(--error)]'
-                    }`}
-                  >
-                    {lmStatus.remoteStatus.connected ? 'Tunnel reachable' : 'Tunnel unreachable'}
-                  </span>
-                  {lmStatus.remoteStatus.error && (
-                    <span className="text-[10px] font-mono text-foreground-subtle">
-                      — {lmStatus.remoteStatus.error}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </CommandPanel>
 
       {/* Generation Pipeline Config */}
       <CommandPanel className="mb-6 p-5 md:p-6">

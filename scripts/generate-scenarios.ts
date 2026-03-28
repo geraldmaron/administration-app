@@ -1,54 +1,53 @@
-/**
- * Queues a scenario generation job in Firestore.
- * The onScenarioJobCreated trigger runs in Firebase and generates scenarios
- * (requires OPENAI_API_KEY and MOONSHOT_API_KEY in Firebase secrets).
- *
- * Usage: npx tsx scripts/generate-scenarios.ts [count] [bundle1] [bundle2]... [--regions=region1,region2]
- * Default count: 5. Uses first N bundles from world_state/bundles (standard_bundle_ids).
- * --regions: optional comma-separated canonical region IDs (e.g. caribbean, europe, africa)
- * --scope-tier: universal | regional | cluster | exclusive
- * --cluster-id: required for cluster jobs
- * --countries: comma-separated country IDs for exclusive jobs
- * --country: single-country shorthand for exclusive jobs
- * --exclusivity-reason: required for exclusive jobs
- * --source-kind: evergreen | news | neighbor | consequence
- */
-
-// @ts-nocheck
-import { createRequire } from 'module';
-import { fileURLToPath } from 'url';
+import * as admin from 'firebase-admin';
+import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import {
+  createGenerationJob,
+  getJobStatus,
+  type CreateJobOptions,
+  type GenerationJobData,
+} from '../functions/src/background-jobs';
+import { ALL_BUNDLE_IDS, isValidBundleId, type BundleId } from '../functions/src/data/schemas/bundleIds';
+import { REGION_IDS } from '../functions/src/data/schemas/regions';
+import {
+  normalizeCountryIds,
+  normalizeGenerationScope,
+  normalizeRegionIds,
+  type ScenarioExclusivityReason,
+  type ScenarioScopeTier,
+  type ScenarioSourceKind,
+} from '../shared/generation-contract';
 
-const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const serviceAccount = require(path.join(__dirname, '..', 'serviceAccountKey.json'));
-const admin = require('firebase-admin');
+const VALID_REGIONS = new Set<string>(REGION_IDS);
+const VALID_SCOPE_TIERS = new Set<ScenarioScopeTier>(['universal', 'regional', 'cluster', 'exclusive']);
+const VALID_SOURCE_KINDS = new Set<ScenarioSourceKind>(['evergreen', 'news', 'neighbor', 'consequence']);
+const VALID_EXCLUSIVITY_REASONS = new Set<ScenarioExclusivityReason>([
+  'constitution',
+  'historical',
+  'bilateral_dispute',
+  'unique_institution',
+  'unique_military_doctrine',
+]);
 
-if (!admin.apps.length) {
+function initializeAdmin(): admin.firestore.Firestore {
+  if (admin.apps.length) {
+    return admin.firestore();
+  }
+
+  const serviceAccountPath = path.join(__dirname, '..', 'serviceAccountKey.json');
+  if (!fs.existsSync(serviceAccountPath)) {
+    throw new Error('serviceAccountKey.json not found. This script requires local Firebase admin credentials.');
+  }
+
+  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     projectId: 'the-administration-3a072',
   });
-}
 
-const db = admin.firestore();
-
-const VALID_BUNDLE_IDS = new Set([
-  'economy', 'politics', 'military', 'tech', 'environment', 'social', 'health',
-  'diplomacy', 'justice', 'corruption', 'culture', 'infrastructure', 'resources', 'dick_mode'
-]);
-const VALID_REGIONS = new Set([
-  'africa', 'asia', 'caribbean', 'east_asia', 'europe', 'eurasia',
-  'middle_east', 'north_america', 'oceania', 'south_america', 'south_asia', 'southeast_asia'
-]);
-const VALID_SCOPE_TIERS = new Set(['universal', 'regional', 'cluster', 'exclusive']);
-const VALID_SOURCE_KINDS = new Set(['evergreen', 'news', 'neighbor', 'consequence']);
-const VALID_EXCLUSIVITY_REASONS = new Set([
-  'constitution', 'historical', 'bilateral_dispute', 'unique_institution', 'unique_military_doctrine'
-]);
-
-function isValidBundleId(id: string): boolean {
-  return VALID_BUNDLE_IDS.has(id);
+  return admin.firestore();
 }
 
 function getArgValue(args: string[], flag: string): string | undefined {
@@ -61,59 +60,64 @@ function getArgValue(args: string[], flag: string): string | undefined {
 
 function parseCsv(value?: string): string[] | undefined {
   if (!value) return undefined;
-  const items = value.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean);
+  const items = value.split(',').map((item) => item.trim()).filter(Boolean);
   return items.length > 0 ? items : undefined;
 }
 
-function inferScopeKey(scopeTier: string | undefined, options: {
-  regions?: string[];
-  clusterId?: string;
-  countries?: string[];
-}): string | undefined {
-  switch (scopeTier) {
-    case 'regional':
-      return options.regions?.[0] ? `region:${options.regions[0]}` : undefined;
-    case 'cluster':
-      return options.clusterId ? `cluster:${options.clusterId}` : undefined;
-    case 'exclusive':
-      return options.countries?.length === 1 ? `country:${options.countries[0]}` : undefined;
-    case 'universal':
-      return 'universal';
-    default:
-      return undefined;
+async function resolveDefaultBundles(db: admin.firestore.Firestore): Promise<BundleId[]> {
+  const bundlesSnap = await db.doc('world_state/bundles').get();
+  if (!bundlesSnap.exists) {
+    throw new Error('world_state/bundles not found. Run seed-app-config first.');
   }
+
+  const data = bundlesSnap.data();
+  const standard = data?.standard_bundle_ids;
+  const all = data?.all_bundle_ids;
+  const rawIds = Array.isArray(standard) && standard.length > 0 ? standard : (Array.isArray(all) ? all : []);
+  const bundleIds = rawIds.filter((id: string): id is BundleId => isValidBundleId(id));
+
+  if (bundleIds.length === 0) {
+    throw new Error(`No valid bundle IDs in world_state/bundles. Valid bundles: ${ALL_BUNDLE_IDS.join(', ')}`);
+  }
+
+  return bundleIds;
 }
 
 async function main() {
+  const db = initializeAdmin();
   const argv = process.argv.slice(2);
   const dryRun = argv.includes('--dry-run');
-  const filteredArgv = argv.filter((a) => a !== '--dry-run');
+  const filteredArgv = argv.filter((arg) => arg !== '--dry-run');
   const count = Math.max(1, Math.min(50, parseInt(filteredArgv[0] || '5', 10) || 5));
-  const explicitBundles = filteredArgv.filter((a) => typeof a === 'string' && isValidBundleId(a));
+  const explicitBundles = filteredArgv.filter((arg): arg is BundleId => typeof arg === 'string' && isValidBundleId(arg));
 
   const regionStr = getArgValue(filteredArgv, '--regions');
-  const requestedRegions = parseCsv(regionStr)?.filter((region) => VALID_REGIONS.has(region));
-  if (regionStr && (!requestedRegions || requestedRegions.length === 0)) {
+  const requestedRegions = normalizeRegionIds(parseCsv(regionStr)).filter((region) => VALID_REGIONS.has(region));
+  if (regionStr && requestedRegions.length === 0) {
     console.warn(`Invalid or unrecognized regions: "${regionStr}". Valid: ${[...VALID_REGIONS].join(', ')}`);
   }
 
   const scopeTierArg = getArgValue(filteredArgv, '--scope-tier')?.trim().toLowerCase();
-  const scopeTier = scopeTierArg && VALID_SCOPE_TIERS.has(scopeTierArg) ? scopeTierArg : undefined;
+  const scopeTier = scopeTierArg && VALID_SCOPE_TIERS.has(scopeTierArg as ScenarioScopeTier)
+    ? (scopeTierArg as ScenarioScopeTier)
+    : undefined;
   if (scopeTierArg && !scopeTier) {
     console.error(`Invalid --scope-tier: "${scopeTierArg}". Valid: ${[...VALID_SCOPE_TIERS].join(', ')}`);
     process.exit(1);
   }
 
   const sourceKindArg = getArgValue(filteredArgv, '--source-kind')?.trim().toLowerCase();
-  const sourceKind = sourceKindArg && VALID_SOURCE_KINDS.has(sourceKindArg) ? sourceKindArg : undefined;
+  const sourceKind = sourceKindArg && VALID_SOURCE_KINDS.has(sourceKindArg as ScenarioSourceKind)
+    ? (sourceKindArg as ScenarioSourceKind)
+    : undefined;
   if (sourceKindArg && !sourceKind) {
     console.error(`Invalid --source-kind: "${sourceKindArg}". Valid: ${[...VALID_SOURCE_KINDS].join(', ')}`);
     process.exit(1);
   }
 
   const exclusivityReasonArg = getArgValue(filteredArgv, '--exclusivity-reason')?.trim();
-  const exclusivityReason = exclusivityReasonArg && VALID_EXCLUSIVITY_REASONS.has(exclusivityReasonArg)
-    ? exclusivityReasonArg
+  const exclusivityReason = exclusivityReasonArg && VALID_EXCLUSIVITY_REASONS.has(exclusivityReasonArg as ScenarioExclusivityReason)
+    ? (exclusivityReasonArg as ScenarioExclusivityReason)
     : undefined;
   if (exclusivityReasonArg && !exclusivityReason) {
     console.error(`Invalid --exclusivity-reason: "${exclusivityReasonArg}". Valid: ${[...VALID_EXCLUSIVITY_REASONS].join(', ')}`);
@@ -123,120 +127,85 @@ async function main() {
   const clusterId = getArgValue(filteredArgv, '--cluster-id')?.trim();
   const explicitScopeKey = getArgValue(filteredArgv, '--scope-key')?.trim();
   const description = getArgValue(filteredArgv, '--description')?.trim();
-  const countries = [
+  const countries = normalizeCountryIds([
     ...(parseCsv(getArgValue(filteredArgv, '--countries')) ?? []),
     ...(parseCsv(getArgValue(filteredArgv, '--country')) ?? []),
-  ].filter(Boolean);
-  const scopeKey = explicitScopeKey ?? inferScopeKey(scopeTier, { regions: requestedRegions, clusterId, countries });
+  ]);
 
-  if (scopeTier === 'regional' && (!requestedRegions || requestedRegions.length === 0)) {
-    console.error('Regional jobs require --regions.');
-    process.exit(1);
-  }
-  if (scopeTier === 'cluster' && !clusterId) {
-    console.error('Cluster jobs require --cluster-id.');
-    process.exit(1);
-  }
-  if (scopeTier === 'exclusive') {
-    if (countries.length === 0) {
-      console.error('Exclusive jobs require --country or --countries.');
-      process.exit(1);
-    }
-    if (!exclusivityReason) {
-      console.error('Exclusive jobs require --exclusivity-reason.');
-      process.exit(1);
-    }
-  }
-  if (scopeTier && !scopeKey) {
-    console.error(`Unable to infer scopeKey for scope tier ${scopeTier}. Provide --scope-key explicitly.`);
+  const normalizedScope = normalizeGenerationScope({
+    mode: 'manual',
+    regions: requestedRegions,
+    scopeTier,
+    scopeKey: explicitScopeKey,
+    clusterId,
+    exclusivityReason,
+    applicable_countries: countries,
+    sourceKind,
+  });
+
+  if (!normalizedScope.ok || !normalizedScope.value) {
+    console.error(normalizedScope.error ?? 'Invalid scope configuration.');
     process.exit(1);
   }
 
-  let bundleIds;
-  if (explicitBundles.length > 0) {
-    bundleIds = explicitBundles;
-  } else {
-    const bundlesSnap = await db.doc('world_state/bundles').get();
-    if (!bundlesSnap.exists) {
-      console.error('world_state/bundles not found. Run seed-app-config first.');
-      process.exit(1);
-    }
-    const data = bundlesSnap.data();
-    const standard = data?.standard_bundle_ids;
-    const all = data?.all_bundle_ids;
-    const rawIds = Array.isArray(standard) && standard.length > 0 ? standard : (Array.isArray(all) ? all : []);
-    bundleIds = rawIds.filter((id: string) => isValidBundleId(id)).slice(0, count);
-  }
-
-  if (bundleIds.length === 0) {
-    console.error('No valid bundle IDs in world_state/bundles.');
-    process.exit(1);
-  }
-
-  // count = total desired scenarios; distribute evenly across selected bundles
-  // e.g. count=5 with 5 bundles → 1 concept per bundle → ~5 scenarios
-  // e.g. count=10 with 5 bundles → 2 concepts per bundle → ~10 scenarios
+  const scope = normalizedScope.value;
+  const bundleIds = explicitBundles.length > 0 ? explicitBundles : (await resolveDefaultBundles(db)).slice(0, count);
   const conceptsPerBundle = Math.max(1, Math.ceil(count / bundleIds.length));
 
-  const jobRef = db.collection('generation_jobs').doc();
-  const jobData: any = {
+  const jobOptions: CreateJobOptions = {
     bundles: bundleIds,
     count: conceptsPerBundle,
     mode: 'manual',
     distributionConfig: { mode: 'auto' },
     requestedBy: 'generate-scenarios.ts',
-    requestedAt: admin.firestore.Timestamp.now(),
     priority: 'normal',
-    status: 'pending',
+    ...(description ? { description } : {}),
+    ...(scope.regions.length > 0 ? { regions: scope.regions, region: scope.regions[0] } : {}),
+    scopeTier: scope.scopeTier,
+    scopeKey: scope.scopeKey,
+    ...(scope.clusterId ? { clusterId: scope.clusterId } : {}),
+    ...(scope.exclusivityReason ? { exclusivityReason: scope.exclusivityReason } : {}),
+    ...(scope.applicable_countries?.length ? { applicable_countries: scope.applicable_countries } : {}),
+    sourceKind: scope.sourceKind,
   };
 
-  if (requestedRegions?.length) {
-    jobData.regions = requestedRegions;
-    jobData.region = requestedRegions[0];
-  }
-  if (scopeTier) jobData.scopeTier = scopeTier;
-  if (scopeKey) jobData.scopeKey = scopeKey;
-  if (clusterId) jobData.clusterId = clusterId;
-  if (countries.length > 0) jobData.applicable_countries = countries;
-  if (exclusivityReason) jobData.exclusivityReason = exclusivityReason;
-  if (sourceKind) jobData.sourceKind = sourceKind;
-  if (description) jobData.description = description;
-
-  const regionNote = requestedRegions?.length ? ` | regions: [${requestedRegions.join(', ')}]` : '';
-  const scopeNote = scopeTier
-    ? ` | scope: ${scopeTier}${scopeKey ? ` (${scopeKey})` : ''}${clusterId ? ` | cluster=${clusterId}` : ''}${countries.length ? ` | countries=[${countries.join(', ')}]` : ''}${sourceKind ? ` | source=${sourceKind}` : ''}`
-    : '';
+  const regionNote = scope.regions.length ? ` | regions: [${scope.regions.join(', ')}]` : '';
+  const scopeNote = ` | scope: ${scope.scopeTier} (${scope.scopeKey})${scope.clusterId ? ` | cluster=${scope.clusterId}` : ''}${scope.applicable_countries?.length ? ` | countries=[${scope.applicable_countries.join(', ')}]` : ''}${scope.sourceKind ? ` | source=${scope.sourceKind}` : ''}`;
   const preview = `${bundleIds.length} bundles (${bundleIds.join(', ')}), ${conceptsPerBundle} concept(s) each (~${bundleIds.length * conceptsPerBundle} scenarios total)${regionNote}${scopeNote}`;
 
   if (dryRun) {
     console.log('[DRY RUN] Job payload (no write to Firestore):');
-    console.log(JSON.stringify(jobData, null, 2));
+    console.log(JSON.stringify(jobOptions, null, 2));
     console.log(`\n[DRY RUN] Would queue: ${preview}`);
     return;
   }
 
-  await jobRef.set(jobData);
+  const { jobId } = await createGenerationJob(db, jobOptions);
+  console.log(`Queued job ${jobId}: ${preview}`);
+  console.log('Waiting for Firebase trigger...\n');
 
-  console.log(`Queued job ${jobRef.id}: ${preview}`);
-  console.log(`Waiting for Firebase trigger...\n`);
-
-  await watchJob(jobRef.id);
+  await watchJob(db, jobId);
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function fmt(ts: number): string {
-  return new Date(ts).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return new Date(ts).toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 }
 
-function extractJobScenarioIds(data: any): string[] {
+function extractJobScenarioIds(data: GenerationJobData & { scenarioIds?: string[]; results?: Array<{ id?: string }> }): string[] {
   return data.createdScenarioIds || data.savedScenarioIds || data.scenarioIds ||
-    (Array.isArray(data.results) ? data.results.map((r: any) => r?.id).filter(Boolean) : []);
+    (Array.isArray(data.results) ? data.results.map((result) => result?.id).filter((id): id is string => Boolean(id)) : []);
 }
 
-async function watchJob(jobId: string) {
+async function watchJob(db: admin.firestore.Firestore, jobId: string) {
   const timeoutMs = 10 * 60 * 1000;
   const start = Date.now();
   let lastStatus = '';
@@ -245,19 +214,18 @@ async function watchJob(jobId: string) {
   let triggerWarned = false;
 
   while (true) {
-    const snap = await db.collection('generation_jobs').doc(jobId).get();
-    if (!snap.exists) {
+    const data = await getJobStatus(db, jobId);
+    if (!data) {
       console.error(`generation_jobs/${jobId} not found`);
       process.exit(1);
     }
 
-    const data = snap.data() || {};
-    const status: string = String(data.status || 'unknown');
-    const ids = extractJobScenarioIds(data);
-    const completed: number = data.completedCount ?? ids.length ?? 0;
-    const failed: number = data.failedCount ?? 0;
-    const total: number = data.totalCount ?? data.total ?? data.count ?? 0;
-    const pct: number = total > 0 ? Math.round((100 * (completed + failed)) / total) : 0;
+    const status = String(data.status || 'unknown');
+    const ids = extractJobScenarioIds(data as GenerationJobData & { scenarioIds?: string[]; results?: Array<{ id?: string }> });
+    const completed = data.completedCount ?? ids.length ?? 0;
+    const failed = data.failedCount ?? 0;
+    const total = data.totalCount ?? data.total ?? data.count ?? 0;
+    const pct = total > 0 ? Math.round((100 * (completed + failed)) / total) : 0;
     const elapsedSec = ((Date.now() - start) / 1000).toFixed(0);
     const time = fmt(Date.now());
 
@@ -266,7 +234,7 @@ async function watchJob(jobId: string) {
         process.stdout.write(`  ${time}  ▶ Job started — generating ${total || '?'} scenario(s) across ${(data.bundles || []).join(', ')}\n`);
       } else if (status === 'completed') {
         process.stdout.write(`  ${time}  ✓ Job complete — ${completed} generated, ${failed} failed (${elapsedSec}s total)\n`);
-      } else if (['failed', 'error'].includes(status)) {
+      } else if (status === 'failed' || status === 'error') {
         process.stdout.write(`  ${time}  ✗ Job ${status}: ${data.error || 'unknown error'}\n`);
       } else if (status === 'pending' && !triggerWarned) {
         process.stdout.write(`  ${time}  … Pending — waiting for Cloud Function trigger\n`);
@@ -283,14 +251,16 @@ async function watchJob(jobId: string) {
       lastFailed = failed;
     }
 
-    if (['completed', 'failed', 'error', 'cancelled'].includes(status)) break;
+    if (['completed', 'failed', 'error', 'cancelled'].includes(status)) {
+      break;
+    }
 
     if (Date.now() - start > timeoutMs) {
       console.error(`\nTimed out waiting for job ${jobId} after ${timeoutMs / 1000}s`);
       process.exit(1);
     }
 
-    await sleep(5_000);
+    await sleep(5000);
   }
 }
 
@@ -299,7 +269,7 @@ function renderBar(done: number, total: number, width = 10): string {
   return '▓'.repeat(filled) + '▒'.repeat(width - filled);
 }
 
-main().catch((err) => {
-  console.error('Failed:', err);
+main().catch((error) => {
+  console.error('Failed:', error);
   process.exit(1);
 });

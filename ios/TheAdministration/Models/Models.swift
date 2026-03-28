@@ -259,6 +259,7 @@ struct Option: Identifiable, Codable {
     let outcomeContext: String?
     let isAuthoritarian: Bool?
     let moralWeight: Double?
+    let policyImplications: [PolicyImplication]?
     let consequenceScenarioIds: [String]?
     let consequenceDelay: Int?
 
@@ -279,7 +280,8 @@ struct Option: Identifiable, Codable {
         oncePerGame: Bool? = nil, outcome: String? = nil,
         outcomeHeadline: String? = nil, outcomeSummary: String? = nil,
         outcomeContext: String? = nil, isAuthoritarian: Bool? = nil,
-        moralWeight: Double? = nil, consequenceScenarioIds: [String]? = nil,
+        moralWeight: Double? = nil, policyImplications: [PolicyImplication]? = nil,
+        consequenceScenarioIds: [String]? = nil,
         consequenceDelay: Int? = nil
     ) {
         self.id = id; self.text = text; self.label = label
@@ -294,7 +296,8 @@ struct Option: Identifiable, Codable {
         self.oncePerGame = oncePerGame; self.outcome = outcome
         self.outcomeHeadline = outcomeHeadline; self.outcomeSummary = outcomeSummary
         self.outcomeContext = outcomeContext; self.isAuthoritarian = isAuthoritarian
-        self.moralWeight = moralWeight; self.consequenceScenarioIds = consequenceScenarioIds
+        self.moralWeight = moralWeight; self.policyImplications = policyImplications
+        self.consequenceScenarioIds = consequenceScenarioIds
         self.consequenceDelay = consequenceDelay
     }
 
@@ -323,6 +326,7 @@ struct Option: Identifiable, Codable {
         case outcomeContext
         case isAuthoritarian = "is_authoritarian"
         case moralWeight = "moral_weight"
+        case policyImplications
         case consequenceScenarioIds
         case consequenceDelay
     }
@@ -350,6 +354,7 @@ extension Option {
         try c.encodeIfPresent(outcomeContext, forKey: .outcomeContext)
         try c.encodeIfPresent(isAuthoritarian, forKey: .isAuthoritarian)
         try c.encodeIfPresent(moralWeight, forKey: .moralWeight)
+        try c.encodeIfPresent(policyImplications, forKey: .policyImplications)
         try c.encodeIfPresent(consequenceScenarioIds, forKey: .consequenceScenarioIds)
         try c.encodeIfPresent(consequenceDelay, forKey: .consequenceDelay)
         try c.encodeIfPresent(populationImpact, forKey: .populationImpact)
@@ -392,6 +397,7 @@ extension Option {
         isAuthoritarian = try container.decodeIfPresent(Bool.self, forKey: .isAuthoritarian)
         moralWeight = try container.decodeIfPresent(Double.self, forKey: .moralWeight)
         consequenceScenarioIds = try container.decodeIfPresent([String].self, forKey: .consequenceScenarioIds)
+        policyImplications = try container.decodeIfPresent([PolicyImplication].self, forKey: .policyImplications)
         consequenceDelay = try container.decodeIfPresent(Int.self, forKey: .consequenceDelay)
         populationImpact = try container.decodeIfPresent([PopulationImpact].self, forKey: .populationImpact)
         economicImpact = try container.decodeIfPresent([EconomicImpact].self, forKey: .economicImpact)
@@ -419,6 +425,12 @@ extension Option {
 
 struct ScenarioCondition: Codable {
     let metricId: String
+    let min: Double?
+    let max: Double?
+}
+
+struct RelationshipCondition: Codable {
+    let relationshipId: String
     let min: Double?
     let max: Double?
 }
@@ -455,16 +467,21 @@ struct OutcomePresentation: Codable {
 }
 
 struct ScenarioMetadata: Codable {
-    var applicableCountries: [String]?
-    var requiresTags: [String]?
-    var excludesTags: [String]?
-    var requiredGeopoliticalTags: [String]?
-    var excludedGeopoliticalTags: [String]?
-    var requiredGovernmentCategories: [String]?
-    var excludedGovernmentCategories: [String]?
-    var regionalBoost: [String: Double]?
-    var isNeighborEvent: Bool?
-    var involvedCountries: [String]?
+    var applicableCountries: [String]? = nil
+    var requiresTags: [String]? = nil
+    var excludesTags: [String]? = nil
+    var requiredGeopoliticalTags: [String]? = nil
+    var excludedGeopoliticalTags: [String]? = nil
+    var requiredGovernmentCategories: [String]? = nil
+    var excludedGovernmentCategories: [String]? = nil
+    var regionalBoost: [String: Double]? = nil
+    var isNeighborEvent: Bool? = nil
+    var involvedCountries: [String]? = nil
+    var regionTags: [String]? = nil
+    var theme: String? = nil
+    var scopeTier: String? = nil
+    var scopeKey: String? = nil
+    var sourceKind: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case applicableCountries = "applicable_countries"
@@ -477,6 +494,11 @@ struct ScenarioMetadata: Codable {
         case regionalBoost
         case isNeighborEvent
         case involvedCountries
+        case regionTags = "region_tags"
+        case theme
+        case scopeTier
+        case scopeKey
+        case sourceKind
     }
 }
 
@@ -520,6 +542,7 @@ struct Scenario: Identifiable, Codable {
     let title: String
     let description: String
     let conditions: [ScenarioCondition]?
+    let relationshipConditions: [RelationshipCondition]?
     let phase: String?
     let severity: SeverityLevel?
     let chainId: String?
@@ -546,7 +569,7 @@ struct Scenario: Identifiable, Codable {
 
     init(
         id: String, title: String, description: String,
-        conditions: [ScenarioCondition]? = nil, phase: String? = nil,
+        conditions: [ScenarioCondition]? = nil, relationshipConditions: [RelationshipCondition]? = nil, phase: String? = nil,
         severity: SeverityLevel? = nil, chainId: String? = nil,
         options: [Option], chainsTo: [String]? = nil,
         actor: String? = nil, location: ScenarioLocation? = nil,
@@ -562,7 +585,7 @@ struct Scenario: Identifiable, Codable {
         dynamicProfile: ScenarioDynamicProfile? = nil
     ) {
         self.id = id; self.title = title; self.description = description
-        self.conditions = conditions; self.phase = phase; self.severity = severity
+        self.conditions = conditions; self.relationshipConditions = relationshipConditions; self.phase = phase; self.severity = severity
         self.chainId = chainId; self.options = options; self.chainsTo = chainsTo
         self.actor = actor; self.location = location; self.tags = tags
         self.cooldown = cooldown; self.classification = classification
@@ -577,6 +600,7 @@ struct Scenario: Identifiable, Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, conditions, phase, severity
+        case relationshipConditions = "relationship_conditions"
         case chainId = "chain_id"
         case options
         case chainsTo = "chains_to"
@@ -1146,6 +1170,10 @@ struct GameState: Codable {
     var countryParties: [PoliticalParty] = []
     var activeLocale: SubLocale? = nil
     var countryMilitaryState: CountryMilitaryState? = nil
+
+    // Maps chainId → (tokenRole → resolvedCountryId) for multi-act scenario consistency.
+    // Ensures the same country fills each relationship role across all acts of a chain.
+    var chainTokenBindings: [String: [String: String]]? = nil
 }
 
 // Extended game configuration aligned with web schema
@@ -1376,6 +1404,7 @@ struct TurnRecord: Identifiable, Codable {
     let decisionLabel: String
     let decisionId: String
     let metricDeltas: [MetricDelta]
+    let policyShifts: [PolicyImplication]?
     let cabinetFeedback: [CabinetContribution]
     let timestamp: String?
 }
@@ -1472,6 +1501,11 @@ struct Alliances: Codable, Hashable {
     let economic: [String]?
     let military: [String]?
     let trade: [String]?
+}
+
+struct PolicyImplication: Codable {
+    let target: String
+    let delta: Double
 }
 
 // MARK: - Settings

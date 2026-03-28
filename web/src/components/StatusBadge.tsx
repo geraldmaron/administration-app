@@ -22,8 +22,8 @@ export default function StatusBadge({ status, pulse = false }: StatusBadgeProps)
   };
 
   return (
-    <span className={`inline-flex min-h-[28px] items-center gap-2 rounded-[10px] border border-[var(--border)] bg-[rgba(255,255,255,0.025)] px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.18em] ${config.text}`}>
-      <span className={`h-2 w-2 rounded-full ${config.dot} ${pulse ? 'animate-pulse' : ''}`} />
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-mono tracking-[0.06em] ${config.text}`}>
+      <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${config.dot} ${pulse ? 'animate-pulse' : ''}`} />
       {config.label}
     </span>
   );

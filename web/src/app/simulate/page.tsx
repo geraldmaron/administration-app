@@ -4,12 +4,20 @@ import { useCallback, useEffect, useState } from 'react';
 import CommandPanel from '@/components/CommandPanel';
 import BundleBadge from '@/components/BundleBadge';
 import DataStat from '@/components/DataStat';
+import MetricEffect from '@/components/MetricEffect';
 import OperationsNav from '@/components/OperationsNav';
 import ScreenHeader from '@/components/ScreenHeader';
-import { METRIC_DISPLAY } from '@/lib/constants';
-import type { CountrySummary } from '@/lib/types';
+import { METRIC_DISPLAY, STANCE_CLASSES } from '@/lib/constants';
+import { formatEffectCount, hasEffects, hasMeaningfulOutcome, summarizeAdvisorStances } from '@/lib/simulate';
+import type {
+  CountrySummary,
+  SimulationFilteredScenario,
+  SimulationResult,
+  SimulationScenario,
+  SimulationTokenUsage,
+  SimulationValidationCheck,
+} from '@/lib/types';
 
-// Key metrics to show sliders for (the most simulation-relevant ones)
 const SIM_METRICS = [
   'metric_economy',
   'metric_employment',
@@ -22,96 +30,264 @@ const SIM_METRICS = [
   'metric_foreign_relations',
 ];
 
-// Inverse metrics (high = bad)
 const INVERSE_METRICS = new Set(['metric_inflation', 'metric_crime', 'metric_corruption', 'metric_bureaucracy', 'metric_unrest', 'metric_foreign_influence', 'metric_economic_bubble']);
-
-interface SimScenario {
-  id: string;
-  title: string;
-  description: string;
-  options: { id: string; text: string; label?: string; outcomeHeadline?: string }[];
-  metadata?: { bundle?: string; severity?: string; difficulty?: number; applicable_countries?: string[] | string };
-  conditions?: { metricId: string; min?: number; max?: number }[];
-}
-
-interface FilteredScenario {
-  scenario: { id: string; title: string; metadata?: { bundle?: string } };
-  reason: string;
-}
-
-interface SimResult {
-  country: { id: string; name: string; region: string; governmentCategory?: string; tags: string[] };
-  metrics: Record<string, number>;
-  totalScenarios: number;
-  eligibleCount: number;
-  filteredCount: number;
-  eligible: SimScenario[];
-  filtered?: FilteredScenario[];
-}
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
-function ScenarioCard({ scenario }: { scenario: SimScenario }) {
+function uniqueTokenUsages(usages: SimulationTokenUsage[]): SimulationTokenUsage[] {
+  const seen = new Set<string>();
+  return usages.filter((usage) => {
+    const key = `${usage.token}:${usage.value}:${usage.source}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function ValidationRow({ check }: { check: SimulationValidationCheck }) {
+  return (
+    <div className="flex items-start gap-2 text-xs">
+      <span className={check.passed ? 'text-[var(--success)]' : 'text-[var(--error)]'}>
+        {check.passed ? 'PASS' : 'FAIL'}
+      </span>
+      <span className="text-[var(--foreground-muted)]">{check.detail}</span>
+    </div>
+  );
+}
+
+function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
+  const [expanded, setExpanded] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const failedChecks = scenario.diagnostics.validationChecks.filter((c) => !c.passed);
+  const fallbackTokens = scenario.diagnostics.fallbackTokens;
+  const uniqueUsages = uniqueTokenUsages(scenario.diagnostics.tokenUsages).slice(0, 16);
+
+  return (
+    <div className="border-b border-[var(--border)] last:border-b-0">
+      {/* Collapsed row */}
+      <div
+        className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-[rgba(255,255,255,0.025)] transition-colors"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        {scenario.metadata?.bundle ? <BundleBadge bundle={scenario.metadata.bundle} /> : null}
+        <span className="flex-1 text-[13px] text-foreground truncate">{scenario.title}</span>
+        {scenario.conditions?.length ? (
+          <span className="flex-shrink-0 text-[10px] font-mono text-[var(--accent-secondary)]">
+            {scenario.conditions.length}c
+          </span>
+        ) : null}
+        {scenario.relationship_conditions?.length ? (
+          <span className="flex-shrink-0 text-[10px] font-mono text-[var(--accent-secondary)]">
+            {scenario.relationship_conditions.length}rc
+          </span>
+        ) : null}
+        <span className={`flex-shrink-0 text-[10px] font-mono ${failedChecks.length === 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
+          {failedChecks.length === 0 ? 'PASS' : `${failedChecks.length} FAIL`}
+        </span>
+        {fallbackTokens.length > 0 ? (
+          <span className="flex-shrink-0 text-[10px] font-mono text-[var(--warning)]">{fallbackTokens.length} fallback</span>
+        ) : null}
+        <svg
+          className={`flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"
+        >
+          <polyline points="2,4 6,8 10,4" />
+        </svg>
+      </div>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className="border-t border-[var(--border)] bg-[rgba(255,255,255,0.01)] px-4 py-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {scenario.metadata?.difficulty != null ? (
+              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">Diff {scenario.metadata.difficulty}</span>
+            ) : null}
+            {scenario.metadata?.severity ? (
+              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">{scenario.metadata.severity}</span>
+            ) : null}
+            <span className={`rounded border px-2 py-0.5 text-[10px] font-mono ${failedChecks.length === 0 ? 'border-[var(--success)]/30 text-[var(--success)]' : 'border-[var(--error)]/30 text-[var(--error)]'}`}>
+              {failedChecks.length === 0 ? 'Country checks pass' : `${failedChecks.length} failing`}
+            </span>
+            {fallbackTokens.length > 0 && (
+              <span className="rounded border border-[var(--warning)]/30 px-2 py-0.5 text-[10px] font-mono text-[var(--warning)]">
+                {fallbackTokens.length} fallback token{fallbackTokens.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">{scenario.description}</p>
+
+          {scenario.conditions?.length ? (
+            <div className="flex flex-wrap gap-2">
+              {scenario.diagnostics.conditionChecks.map((c, i) => (
+                <span key={i} className="rounded border border-[var(--border)] px-2 py-0.5 text-[10px] font-mono text-[var(--foreground-subtle)]">
+                  <span className={c.passed ? 'text-[var(--success)]' : 'text-[var(--error)]'}>{c.passed ? 'PASS' : 'FAIL'}</span>
+                  {' · '}{METRIC_DISPLAY[c.metricId] ?? c.metricId}{' = '}{Math.round(c.actual)}
+                  {c.min != null ? ` ≥ ${c.min}` : ''}{c.max != null ? ` ≤ ${c.max}` : ''}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {scenario.relationship_conditions?.length ? (
+            <div className="flex flex-wrap gap-2">
+              {scenario.diagnostics.relationshipConditionChecks.map((c, i) => (
+                <span key={i} className="rounded border border-[var(--border)] px-2 py-0.5 text-[10px] font-mono text-[var(--foreground-subtle)]">
+                  <span className={c.passed ? 'text-[var(--success)]' : 'text-[var(--error)]'}>{c.passed ? 'PASS' : 'FAIL'}</span>
+                  {' · '}{c.relationshipId}
+                  {c.resolvedCountryId ? ` (${c.resolvedCountryId})` : ' (unresolved)'}
+                  {c.actual != null ? ` = ${c.actual}` : ''}
+                  {c.min != null ? ` ≥ ${c.min}` : ''}{c.max != null ? ` ≤ ${c.max}` : ''}
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowDiagnostics((v) => !v); }}
+              className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-muted)] hover:text-foreground"
+            >
+              {showDiagnostics ? 'Hide diagnostics' : 'Show diagnostics'}
+            </button>
+          </div>
+
+          {/* Options */}
+          <div className="space-y-4 border-t border-[var(--border)] pt-3">
+            {scenario.options.map((opt, i) => (
+              <div key={opt.id ?? i}>
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-[6px] border border-[var(--border)] bg-[rgba(25,105,220,0.14)] text-[9px] font-mono font-bold text-[var(--accent-primary)]">
+                    {OPTION_LABELS[i]}
+                  </span>
+                  {opt.label ? <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--foreground-subtle)]">{opt.label}</span> : null}
+                </div>
+                <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">{opt.text}</p>
+
+                {opt.advisorFeedback?.length ? (
+                  <div className="mt-3 rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-3">
+                    <div className="mb-2 flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">
+                      {Object.entries(summarizeAdvisorStances(opt.advisorFeedback)).map(([stance, count]) => (
+                        <span key={stance} className={STANCE_CLASSES[stance] ?? 'text-[var(--foreground-muted)]'}>
+                          {count} {stance}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="space-y-2">
+                      {opt.advisorFeedback.map((feedback) => (
+                        <div key={`${opt.id}-${feedback.roleId}-${feedback.stance}`} className="text-xs text-[var(--foreground-muted)]">
+                          <span className={`${STANCE_CLASSES[feedback.stance] ?? 'text-[var(--foreground-muted)]'} font-mono uppercase tracking-[0.12em]`}>
+                            {feedback.stance}
+                          </span>
+                          {' · '}{feedback.roleId}{' · '}{feedback.feedback}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {hasEffects(opt) ? (
+                  <div className="mt-3 space-y-2">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">{formatEffectCount(opt.effects)}</div>
+                    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                      {opt.effects.map((effect, effectIndex) => (
+                        <MetricEffect key={`${opt.id}-${effect.targetMetricId}-${effectIndex}`} effect={effect} />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {hasMeaningfulOutcome(opt) ? (
+                  <div className="mt-3 space-y-2 rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-3">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">Resolved outcome</div>
+                    {opt.outcomeHeadline ? <p className="text-xs font-semibold text-foreground">{opt.outcomeHeadline}</p> : null}
+                    {opt.outcomeSummary ? <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">{opt.outcomeSummary}</p> : null}
+                    {opt.outcomeContext ? <p className="text-xs leading-relaxed text-[var(--foreground-subtle)]">{opt.outcomeContext}</p> : null}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+
+          {showDiagnostics && (
+            <div className="space-y-4 border-t border-[var(--border)] pt-3">
+              <div>
+                <div className="mb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">Country validation</div>
+                <div className="space-y-2">
+                  {scenario.diagnostics.validationChecks.map((check) => (
+                    <ValidationRow key={`${scenario.id}-${check.kind}`} check={check} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="mb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">Token resolution</div>
+                {uniqueUsages.length === 0 ? (
+                  <div className="text-xs text-[var(--foreground-muted)]">No scenario tokens were resolved.</div>
+                ) : (
+                  <div className="grid gap-2 lg:grid-cols-2">
+                    {uniqueUsages.map((usage) => (
+                      <div key={`${scenario.id}-${usage.token}-${usage.value}-${usage.source}`} className="rounded border border-[var(--border)] px-3 py-2 text-xs text-[var(--foreground-muted)]">
+                        <div className="font-mono text-[var(--foreground-subtle)]">{usage.raw}</div>
+                        <div>{usage.value || '(empty)'}</div>
+                        <div className={usage.source === 'context' ? 'text-[var(--success)]' : 'text-[var(--warning)]'}>{usage.source}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilteredScenarioCard({ item }: { item: SimulationFilteredScenario }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <CommandPanel className="p-5">
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        {scenario.metadata?.bundle ? <BundleBadge bundle={scenario.metadata.bundle} /> : null}
-        {scenario.metadata?.difficulty != null ? (
-          <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">Diff {scenario.metadata.difficulty}</span>
-        ) : null}
-        {scenario.metadata?.severity ? (
-          <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">{scenario.metadata.severity}</span>
-        ) : null}
-        {scenario.conditions?.length ? (
-          <span className="rounded border border-[var(--accent-secondary)]/40 px-1.5 py-0.5 text-[10px] font-mono text-[var(--accent-secondary)]">
-            {scenario.conditions.length} condition{scenario.conditions.length > 1 ? 's' : ''}
-          </span>
-        ) : null}
-      </div>
-      <h3 className="mb-2 text-base font-semibold text-foreground">{scenario.title}</h3>
-      <p className="mb-3 text-sm leading-relaxed text-[var(--foreground-muted)]">{scenario.description}</p>
-
-      {scenario.conditions?.length ? (
-        <div className="mb-3 flex flex-wrap gap-2">
-          {scenario.conditions.map((c, i) => (
-            <span key={i} className="rounded border border-[var(--border)] px-2 py-0.5 text-[10px] font-mono text-[var(--foreground-subtle)]">
-              {METRIC_DISPLAY[c.metricId] ?? c.metricId}
-              {c.min != null ? ` ≥ ${c.min}` : ''}
-              {c.max != null ? ` ≤ ${c.max}` : ''}
-            </span>
-          ))}
-        </div>
-      ) : null}
-
-      <button
-        type="button"
+    <div className="border-b border-[var(--border)] last:border-b-0">
+      <div
+        className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-[rgba(255,255,255,0.025)] transition-colors"
         onClick={() => setExpanded((v) => !v)}
-        className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-muted)] hover:text-foreground"
       >
-        {expanded ? 'Hide options' : 'Show options'}
-      </button>
+        {item.scenario.metadata?.bundle ? <BundleBadge bundle={item.scenario.metadata.bundle} /> : null}
+        <span className="flex-1 text-[13px] text-[var(--foreground-muted)] truncate">{item.scenario.title}</span>
+        <span className="flex-shrink-0 rounded border border-[var(--error)]/30 px-2 py-0.5 text-[10px] font-mono text-[var(--error)]">
+          {item.reason}
+        </span>
+        <svg
+          className={`flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"
+        >
+          <polyline points="2,4 6,8 10,4" />
+        </svg>
+      </div>
 
-      {expanded ? (
-        <div className="mt-4 space-y-4 border-t border-[var(--border)] pt-4">
-          {scenario.options.map((opt, i) => (
-            <div key={opt.id ?? i}>
-              <div className="mb-1 flex items-center gap-2">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-[6px] border border-[var(--border)] bg-[rgba(25,105,220,0.14)] text-[9px] font-mono font-bold text-[var(--accent-primary)]">
-                  {OPTION_LABELS[i]}
-                </span>
-                {opt.label ? <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--foreground-subtle)]">{opt.label}</span> : null}
-              </div>
-              <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">{opt.text}</p>
-              {opt.outcomeHeadline ? (
-                <p className="mt-1 text-xs font-semibold text-foreground">{opt.outcomeHeadline}</p>
-              ) : null}
+      {expanded && (
+        <div className="border-t border-[var(--border)] bg-[rgba(255,255,255,0.01)] px-4 py-3 space-y-3">
+          <div className="space-y-2">
+            {item.diagnostics.validationChecks.map((check) => (
+              <ValidationRow key={`${item.scenario.id}-${check.kind}`} check={check} />
+            ))}
+          </div>
+          {item.diagnostics.conditionChecks.length ? (
+            <div className="space-y-2">
+              {item.diagnostics.conditionChecks.map((check) => (
+                <div key={`${item.scenario.id}-${check.metricId}`} className="text-xs text-[var(--foreground-muted)]">
+                  <span className={check.passed ? 'text-[var(--success)]' : 'text-[var(--error)]'}>{check.passed ? 'PASS' : 'FAIL'}</span>
+                  {' · '}{check.detail}
+                </div>
+              ))}
             </div>
-          ))}
+          ) : null}
+          {item.diagnostics.fallbackTokens.length ? (
+            <div className="text-xs text-[var(--warning)]">Fallback tokens: {item.diagnostics.fallbackTokens.join(', ')}</div>
+          ) : null}
         </div>
-      ) : null}
-    </CommandPanel>
+      )}
+    </div>
   );
 }
 
@@ -119,10 +295,9 @@ export default function SimulatePage() {
   const [countries, setCountries] = useState<CountrySummary[]>([]);
   const [selectedCountry, setSelectedCountry] = useState('');
   const [metricOverrides, setMetricOverrides] = useState<Record<string, number>>({});
-  const [result, setResult] = useState<SimResult | null>(null);
+  const [result, setResult] = useState<SimulationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showFiltered, setShowFiltered] = useState(false);
   const [activeTab, setActiveTab] = useState<'eligible' | 'filtered'>('eligible');
 
   useEffect(() => {
@@ -132,7 +307,6 @@ export default function SimulatePage() {
       .catch(() => undefined);
   }, []);
 
-  // When country changes, reset overrides and load defaults
   useEffect(() => {
     setMetricOverrides({});
     setResult(null);
@@ -142,18 +316,13 @@ export default function SimulatePage() {
     if (!selectedCountry) return;
     setLoading(true);
     setError(null);
-
     const params = new URLSearchParams({ countryId: selectedCountry, showFiltered: 'true' });
-    for (const [k, v] of Object.entries(metricOverrides)) {
-      params.set(k, String(v));
-    }
-
+    for (const [k, v] of Object.entries(metricOverrides)) params.set(k, String(v));
     fetch(`/api/simulate?${params}`)
       .then((r) => r.json())
-      .then((data: SimResult & { error?: string }) => {
+      .then((data: SimulationResult & { error?: string }) => {
         if (data.error) { setError(data.error); return; }
         setResult(data);
-        // Initialize sliders from returned metrics if not already set
         setMetricOverrides((prev) => {
           const next = { ...prev };
           for (const key of SIM_METRICS) {
@@ -166,7 +335,6 @@ export default function SimulatePage() {
       .finally(() => setLoading(false));
   }, [selectedCountry, metricOverrides]);
 
-  // Auto-run when country changes (after clearing state)
   useEffect(() => {
     if (selectedCountry) run();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -190,19 +358,16 @@ export default function SimulatePage() {
       <ScreenHeader
         section="Content Operations"
         title="Country Simulation"
-        subtitle="Select a country and tune its metrics to see which scenarios would surface in-game and how they resolve with that country's tokens."
+        subtitle="Select a country and tune its state metrics to see which scenarios surface."
         eyebrow="Simulate"
         nav={<OperationsNav />}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
         {/* Left: Controls */}
-        <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <CommandPanel className="p-5">
-            <div className="mb-4">
-              <div className="section-kicker mb-2">Target</div>
-              <h2 className="text-xl font-semibold text-foreground">Country</h2>
-            </div>
+        <div className="space-y-4 xl:sticky xl:top-4 xl:self-start">
+          <CommandPanel className="p-4">
+            <div className="section-kicker mb-2">Target</div>
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
@@ -210,22 +375,18 @@ export default function SimulatePage() {
             >
               <option value="">Select a country…</option>
               {countries.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} · {c.region}
-                </option>
+                <option key={c.id} value={c.id}>{c.name} · {c.region}</option>
               ))}
             </select>
           </CommandPanel>
 
           {result ? (
-            <CommandPanel className="p-5">
-              <div className="mb-4">
-                <div className="section-kicker mb-2">Profile</div>
-                <h2 className="text-xl font-semibold text-foreground">{result.country.name}</h2>
-                <p className="text-xs text-[var(--foreground-muted)]">{result.country.region} · {result.country.governmentCategory ?? '—'}</p>
-              </div>
+            <CommandPanel className="p-4">
+              <div className="section-kicker mb-1.5">Profile</div>
+              <div className="text-sm font-medium text-foreground">{result.country.name}</div>
+              <div className="text-[11px] text-[var(--foreground-subtle)]">{result.country.region} · {result.country.governmentCategory ?? '—'}</div>
               {result.country.tags.length > 0 ? (
-                <div className="flex flex-wrap gap-1">
+                <div className="mt-2 flex flex-wrap gap-1">
                   {result.country.tags.map((tag) => (
                     <span key={tag} className="rounded border border-[var(--border)] px-1.5 py-0.5 text-[9px] font-mono text-[var(--foreground-subtle)]">{tag}</span>
                   ))}
@@ -234,25 +395,20 @@ export default function SimulatePage() {
             </CommandPanel>
           ) : null}
 
-          <CommandPanel className="p-5">
-            <div className="mb-4">
-              <div className="section-kicker mb-2">Metrics</div>
-              <h2 className="text-xl font-semibold text-foreground">State Tuning</h2>
-            </div>
-            <div className="space-y-4">
+          <CommandPanel className="p-4">
+            <div className="section-kicker mb-3">State Tuning</div>
+            <div className="space-y-3">
               {SIM_METRICS.map((key) => {
                 const val = metricOverrides[key] ?? result?.metrics[key] ?? 50;
                 return (
                   <div key={key}>
                     <div className="mb-1 flex items-center justify-between">
-                      <label className="text-xs text-[var(--foreground-muted)]">{METRIC_DISPLAY[key] ?? key}</label>
+                      <label className="text-[11px] text-[var(--foreground-muted)]">{METRIC_DISPLAY[key] ?? key}</label>
                       <span className={`text-[11px] font-mono ${metricColor(key, val)}`}>{Math.round(val)}</span>
                     </div>
                     <input
                       type="range"
-                      min={0}
-                      max={100}
-                      step={1}
+                      min={0} max={100} step={1}
                       value={val}
                       onChange={(e) => setMetric(key, Number(e.target.value))}
                       className="w-full accent-[var(--accent-primary)]"
@@ -265,7 +421,7 @@ export default function SimulatePage() {
               type="button"
               onClick={run}
               disabled={!selectedCountry || loading}
-              className="btn btn-command mt-5 w-full disabled:opacity-50"
+              className="btn btn-command mt-4 w-full disabled:opacity-50"
             >
               {loading ? 'Simulating…' : 'Run Simulation'}
             </button>
@@ -273,26 +429,28 @@ export default function SimulatePage() {
         </div>
 
         {/* Right: Results */}
-        <div className="min-w-0 space-y-6">
+        <div className="min-w-0 space-y-4">
           {error ? (
             <CommandPanel tone="danger" className="p-4 text-sm text-[var(--error)]">{error}</CommandPanel>
           ) : null}
 
           {result ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <DataStat label="Total Scenarios" value={result.totalScenarios} />
-                <DataStat label="Eligible" value={result.eligibleCount} accent="blue" detail="Pass all filters for this country" />
-                <DataStat label="Filtered Out" value={result.filteredCount} accent={result.filteredCount > 0 ? 'warning' : undefined} detail="Blocked by conditions or gates" />
+              {/* Compact stat row */}
+              <div className="flex items-center gap-3">
+                <DataStat size="compact" label="Total" value={result.totalScenarios} />
+                <DataStat size="compact" label="Eligible" value={result.eligibleCount} accent="blue" />
+                <DataStat size="compact" label="Filtered" value={result.filteredCount} accent={result.filteredCount > 0 ? 'warning' : undefined} />
               </div>
 
+              {/* Tab bar */}
               <div className="flex gap-3 border-b border-[var(--border)] pb-px">
                 {(['eligible', 'filtered'] as const).map((tab) => (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => setActiveTab(tab)}
-                    className={`pb-3 text-sm font-mono uppercase tracking-[0.14em] transition-colors ${
+                    className={`pb-2.5 text-[11px] font-mono uppercase tracking-[0.14em] transition-colors ${
                       activeTab === tab
                         ? 'border-b-2 border-[var(--accent-primary)] text-foreground'
                         : 'text-[var(--foreground-muted)] hover:text-foreground'
@@ -303,13 +461,14 @@ export default function SimulatePage() {
                 ))}
               </div>
 
+              {/* Results list */}
               {activeTab === 'eligible' ? (
                 result.eligible.length === 0 ? (
                   <CommandPanel className="p-8 text-center">
                     <div className="text-sm text-[var(--foreground-muted)]">No eligible scenarios for these parameters.</div>
                   </CommandPanel>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="command-panel overflow-hidden">
                     {result.eligible.map((s) => (
                       <ScenarioCard key={s.id} scenario={s} />
                     ))}
@@ -323,21 +482,9 @@ export default function SimulatePage() {
                     <div className="text-sm text-[var(--foreground-muted)]">All scenarios pass for this country.</div>
                   </CommandPanel>
                 ) : (
-                  <div className="space-y-2">
-                    {result.filtered.map((item, i) => (
-                      <CommandPanel key={item.scenario.id ?? i} className="px-4 py-3">
-                        <div className="flex flex-wrap items-start gap-3">
-                          <div className="min-w-0 flex-1">
-                            {item.scenario.metadata?.bundle ? (
-                              <span className="mr-2 inline-block"><BundleBadge bundle={item.scenario.metadata.bundle} /></span>
-                            ) : null}
-                            <span className="text-sm text-[var(--foreground-muted)]">{item.scenario.title}</span>
-                          </div>
-                          <span className="shrink-0 rounded border border-[var(--error)]/30 px-2 py-0.5 text-[10px] font-mono text-[var(--error)]">
-                            {item.reason}
-                          </span>
-                        </div>
-                      </CommandPanel>
+                  <div className="command-panel overflow-hidden">
+                    {result.filtered.map((item) => (
+                      <FilteredScenarioCard key={item.scenario.id} item={item} />
                     ))}
                   </div>
                 )

@@ -1,0 +1,151 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const token_registry_1 = require("../lib/token-registry");
+const audit_rules_1 = require("../lib/audit-rules");
+function makeAuditConfig() {
+    return {
+        validMetricIds: new Set(['economy']),
+        validRoleIds: new Set(token_registry_1.CANONICAL_ROLE_IDS),
+        inverseMetrics: new Set(),
+        metricMagnitudeCaps: { economy: 4 },
+        defaultCap: 4,
+        metricToRoles: { economy: ['role_executive'] },
+        categoryDomainMetrics: { bundle_economy: ['economy'] },
+        metricMappings: {},
+        bannedPhrases: [],
+        validTokens: new Set(token_registry_1.ALL_TOKENS),
+        logicParameters: {
+            duration: { min: 1, max: 20 },
+            probability: { required: 1 },
+        },
+        govTypesByCountryId: {
+            us: 'Presidential',
+            jp: 'Parliamentary',
+            gb: 'Parliamentary',
+            ca: 'Parliamentary',
+        },
+        countriesById: {
+            us: {
+                geopolitical: {
+                    allies: [{ countryId: 'gb', type: 'strategic_partner', strength: 0.9 }],
+                    adversaries: [],
+                    neighbors: [{ countryId: 'ca', type: 'neutral', strength: 0.7 }],
+                },
+            },
+            jp: {
+                geopolitical: {
+                    allies: [],
+                    adversaries: [],
+                    neighbors: [],
+                },
+            },
+            gb: {
+                geopolitical: {
+                    allies: [{ countryId: 'us', type: 'formal_ally', strength: 0.9 }],
+                    adversaries: [{ countryId: 'ru', type: 'rival', strength: 0.7 }],
+                    neighbors: [{ countryId: 'fr', type: 'rival', strength: 0.8 }],
+                },
+            },
+            ca: {
+                geopolitical: {
+                    allies: [{ countryId: 'gb', type: 'formal_ally', strength: 0.8 }],
+                    adversaries: [],
+                    neighbors: [{ countryId: 'us', type: 'neutral', strength: 0.8 }],
+                },
+            },
+        },
+    };
+}
+function makeScenario(overrides = {}) {
+    return {
+        id: 'relationship_scope_scenario',
+        title: 'Trade partner disputes port access',
+        description: 'A dispute with {the_trade_partner} is forcing your administration to review customs policy, shipping inspections, and retaliation risks before a larger commercial breach affects domestic employers and consumer confidence.',
+        options: [
+            {
+                id: 'option_a',
+                text: 'You offer a temporary customs waiver and direct inspectors to prioritize cargo flowing from {the_trade_partner}. The concession calms shipping markets, but unions warn that domestic producers will demand compensation within days.',
+                effects: [{ targetMetricId: 'economy', value: 1, duration: 3, probability: 1 }],
+                outcomeHeadline: 'Ports reopen after emergency waiver',
+                outcomeSummary: 'Cargo movement resumes after your government grants a temporary waiver, easing pressure on retailers and freight operators while opposition lawmakers question whether the concession signals weakness. Business groups praise the immediate relief, but manufacturers warn that the move may invite more demands in the next round of talks.',
+                outcomeContext: 'Shipping terminals clear their backlog over several days, helping importers restock shelves and stabilize prices. The calmer atmosphere buys negotiators time, yet domestic industries intensify lobbying for their own protection package before the temporary arrangement expires and the dispute returns.',
+                advisorFeedback: [
+                    {
+                        roleId: 'role_executive',
+                        stance: 'support',
+                        feedback: 'The temporary waiver reduces immediate pressure on your administration and preserves room for a broader settlement before public anxiety spreads through the business community.',
+                    },
+                ],
+            },
+            {
+                id: 'option_b',
+                text: 'You impose mirror inspections on goods from {the_trade_partner} and ask ports to tighten compliance immediately. The retaliation satisfies domestic producers, yet retailers prepare for delays and sharper price increases if the standoff drags on.',
+                effects: [{ targetMetricId: 'economy', value: -1, duration: 3, probability: 1 }],
+                outcomeHeadline: 'Retaliatory checks slow the docks',
+                outcomeSummary: 'Inspectors begin enforcing retaliatory checks across major terminals, reassuring producers that your administration will answer commercial pressure with visible countermeasures. Retailers and logistics firms, however, warn that the added scrutiny may worsen shortages and raise prices before any diplomatic gains materialize.',
+                outcomeContext: 'Port operators lengthen delivery schedules and freight costs rise as inspections intensify. The harder line demonstrates resolve, but the operational strain quickly reaches wholesalers, consumer groups, and regional officials who fear the dispute could expand into a broader economic confrontation.',
+                advisorFeedback: [
+                    {
+                        roleId: 'role_executive',
+                        stance: 'oppose',
+                        feedback: 'The mirror inspections prove resolve, but they also raise the odds that a manageable trade dispute hardens into a costlier political fight for your government.',
+                    },
+                ],
+            },
+            {
+                id: 'option_c',
+                text: 'You suspend new fees, invite mediators, and propose a monitored review of the dispute with {the_trade_partner}. The slower approach lowers immediate tension, though critics argue that it postpones a clearer decision about national leverage.',
+                effects: [{ targetMetricId: 'economy', value: 0.5, duration: 2, probability: 1 }],
+                outcomeHeadline: 'Mediators enter the trade standoff',
+                outcomeSummary: 'Independent mediators begin a structured review after your administration pauses new fees and signals willingness to negotiate. Markets stabilize modestly, but critics say the compromise could blur accountability if the other side uses the process to stall for time instead of fixing the dispute.',
+                outcomeContext: 'The mediated review cools the immediate confrontation and reduces the likelihood of abrupt shortages. Even so, political opponents frame the pause as hesitation, forcing your cabinet to defend the slower path while officials work to convert the calmer tone into a durable settlement.',
+                advisorFeedback: [
+                    {
+                        roleId: 'role_executive',
+                        stance: 'neutral',
+                        feedback: 'Mediation buys time and lowers immediate risk, but your team will need a clear deadline or the process may look like drift instead of strategy.',
+                    },
+                ],
+            },
+        ],
+        metadata: {
+            bundle: 'bundle_economy',
+            severity: 'medium',
+            urgency: 'medium',
+            difficulty: 3,
+            scopeTier: 'universal',
+            scopeKey: 'universal',
+            sourceKind: 'evergreen',
+            actorPattern: 'mixed',
+        },
+        phase: 'root',
+    };
+}
+describe('auditScenario relationship scope validation', () => {
+    beforeEach(() => {
+        (0, audit_rules_1.setAuditConfigForTests)(makeAuditConfig());
+    });
+    afterEach(() => {
+        (0, audit_rules_1.setAuditConfigForTests)(null);
+    });
+    test('rejects universal scenarios that rely on relationship tokens', () => {
+        const issues = (0, audit_rules_1.auditScenario)(makeScenario(), 'bundle_economy');
+        expect(issues.some((issue) => issue.rule === 'universal-relationship-token')).toBe(true);
+    });
+    test('rejects targeted scenarios whose countries cannot resolve required relationship tokens', () => {
+        const scenario = makeScenario();
+        scenario.metadata = Object.assign(Object.assign({}, scenario.metadata), { scopeTier: 'exclusive', scopeKey: 'country:us+jp', applicable_countries: ['us', 'jp'] });
+        const issues = (0, audit_rules_1.auditScenario)(scenario, 'bundle_economy');
+        const mismatch = issues.find((issue) => issue.rule === 'country-relationship-token-mismatch');
+        expect(mismatch).toBeDefined();
+        expect(mismatch === null || mismatch === void 0 ? void 0 : mismatch.message).toContain('jp');
+    });
+    test('allows targeted scenarios when every listed country can resolve the relationship token', () => {
+        const scenario = makeScenario();
+        scenario.metadata = Object.assign(Object.assign({}, scenario.metadata), { scopeTier: 'exclusive', scopeKey: 'country:us', applicable_countries: ['us'] });
+        const issues = (0, audit_rules_1.auditScenario)(scenario, 'bundle_economy');
+        expect(issues.some((issue) => issue.rule === 'country-relationship-token-mismatch')).toBe(false);
+        expect(issues.some((issue) => issue.rule === 'universal-relationship-token')).toBe(false);
+    });
+});
+//# sourceMappingURL=audit-rules-relationship-scope.test.js.map

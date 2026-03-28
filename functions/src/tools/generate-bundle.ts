@@ -125,7 +125,7 @@ async function main() {
         return;
     }
 
-    const results = await scenarioEngine.generateScenarios({
+    const genResult = await scenarioEngine.generateScenarios({
         mode: 'manual',
         bundle,
         count,
@@ -137,9 +137,10 @@ async function main() {
             console.log(`\n  ⚠ Attempt ${attempt}/${maxAttempts} failed (score ${score}): ${topIssues.slice(0, 2).join(', ')}`);
         },
     });
+    const results = genResult.scenarios;
 
     process.stdout.write('\n');
-    console.log(`\n[generate-bundle] ✓ Generated: ${results.length} scenarios\n`);
+    console.log(`\n[generate-bundle] ✓ Generated: ${results.length} scenarios (${genResult.tokenSummary.callCount} LLM calls, $${genResult.tokenSummary.costUsd})\n`);
 
     // Save all generated scenarios to Firestore before exporting
     console.log(`[generate-bundle] Saving ${results.length} scenarios to Firestore…`);

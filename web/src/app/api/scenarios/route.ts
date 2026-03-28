@@ -9,6 +9,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 function toSummary(id: string, data: FirebaseFirestore.DocumentData): ScenarioSummary {
   const auditScore = data.metadata?.auditMetadata?.score ?? null;
   const createdAt = data.created_at?.toDate?.()?.toISOString() ?? new Date(0).toISOString();
+  const updatedAt = data.updated_at?.toDate?.()?.toISOString() ?? null;
   const tags: string[] = data.metadata?.tags ?? [];
   const applicableCountries = data.metadata?.applicable_countries;
   const region = Array.isArray(applicableCountries)
@@ -16,6 +17,7 @@ function toSummary(id: string, data: FirebaseFirestore.DocumentData): ScenarioSu
     : typeof applicableCountries === 'string'
     ? applicableCountries
     : null;
+  const countryCount = Array.isArray(applicableCountries) ? applicableCountries.length : applicableCountries ? 1 : null;
 
   return {
     id,
@@ -24,10 +26,16 @@ function toSummary(id: string, data: FirebaseFirestore.DocumentData): ScenarioSu
     severity: data.metadata?.severity ?? null,
     isActive: data.is_active ?? false,
     createdAt,
+    updatedAt,
     auditScore: typeof auditScore === 'number' ? auditScore : null,
     region,
     tags,
     difficulty: data.metadata?.difficulty ?? null,
+    source: data.metadata?.source ?? null,
+    sourceKind: data.metadata?.sourceKind ?? null,
+    scopeTier: data.metadata?.scopeTier ?? null,
+    scopeKey: data.metadata?.scopeKey ?? null,
+    countryCount,
   };
 }
 
@@ -136,6 +144,44 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ deleted: ids.length });
   } catch (err) {
     console.error('DELETE /api/scenarios error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
+  try {
+    const body = await request.json() as { ids?: unknown; is_active?: unknown };
+    const ids = body.ids;
+    const isActive = body.is_active;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'ids must be a non-empty array' }, { status: 400 });
+    }
+
+    if (typeof isActive !== 'boolean') {
+      return NextResponse.json({ error: 'is_active must be a boolean' }, { status: 400 });
+    }
+
+    if (ids.length > 100) {
+      return NextResponse.json({ error: 'Cannot update more than 100 scenarios at once' }, { status: 400 });
+    }
+
+    const batch = db.batch();
+    (ids as string[]).forEach((id) => {
+      batch.update(db.collection('scenarios').doc(id), {
+        is_active: isActive,
+        updated_at: FieldValue.serverTimestamp(),
+      });
+    });
+
+    await batch.commit();
+
+    return NextResponse.json({ updated: ids.length, is_active: isActive });
+  } catch (err) {
+    console.error('PATCH /api/scenarios error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

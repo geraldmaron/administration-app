@@ -30,7 +30,14 @@ class ScoringEngine {
         "corruption": "metric_corruption",
         "energy": "metric_energy",
         "housing": "metric_housing",
-        "crime": "metric_crime"
+        "crime": "metric_crime",
+        "democracy": "metric_democracy",
+        "sovereignty": "metric_sovereignty",
+        "immigration": "metric_immigration",
+        "budget": "metric_budget",
+        "unrest": "metric_unrest",
+        "economic_bubble": "metric_economic_bubble",
+        "foreign_influence": "metric_foreign_influence"
     ]
 
     private struct MetricSwingRange {
@@ -61,7 +68,14 @@ class ScoringEngine {
         "metric_energy": MetricSwingRange(minor: (0.3, 1.2), moderate: (1.3, 2.6), major: (2.7, 4.1)),
         "metric_housing": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
         "metric_crime": MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.4), major: (2.5, 3.9)),
-        "metric_bureaucracy": MetricSwingRange(minor: (0.2, 0.8), moderate: (0.9, 1.9), major: (2.0, 3.1))
+        "metric_bureaucracy": MetricSwingRange(minor: (0.2, 0.8), moderate: (0.9, 1.9), major: (2.0, 3.1)),
+        "metric_democracy": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
+        "metric_sovereignty": MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.5), major: (2.6, 4.0)),
+        "metric_immigration": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
+        "metric_budget": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
+        "metric_unrest": MetricSwingRange(minor: (0.4, 1.2), moderate: (1.3, 2.6), major: (2.7, 4.2)),
+        "metric_economic_bubble": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
+        "metric_foreign_influence": MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.5), major: (2.6, 4.0))
     ]
 
     private static func clampMetricInt(_ value: Double) -> Double {
@@ -70,7 +84,7 @@ class ScoringEngine {
     }
     
     static func isInverseMetric(_ metricId: String) -> Bool {
-        let inverseMetrics = ["metric_corruption", "metric_inflation", "metric_pollution", "metric_inequality", "metric_crime"]
+        let inverseMetrics = ["metric_corruption", "metric_inflation", "metric_crime", "metric_bureaucracy"]
         return inverseMetrics.contains(metricId)
     }
 
@@ -411,6 +425,9 @@ class ScoringEngine {
             }
         }
 
+        let policyImplications = option.policyImplications ?? inferPolicyImplications(option: option)
+        applyPolicyImplications(state: &newState, implications: policyImplications)
+
         // Calculate metric deltas for history
         var metricDeltas: [String: Double] = [:]
         for (metricId, value) in newState.metrics {
@@ -427,6 +444,27 @@ class ScoringEngine {
         }
 
         return advanceTurn(state: newState, lastScenario: state.currentScenario, lastOption: option)
+    }
+
+    static func policyShiftLabel(for target: String) -> String {
+        let labels: [String: String] = [
+            "fiscal.taxIncome": "Income Tax",
+            "fiscal.taxCorporate": "Corporate Tax",
+            "fiscal.spendingMilitary": "Military Budget",
+            "fiscal.spendingInfrastructure": "Infrastructure Budget",
+            "fiscal.spendingSocial": "Social Budget",
+            "policy.economicStance": "Economic Stance",
+            "policy.socialSpending": "Social Spending",
+            "policy.defenseSpending": "Defense Spending",
+            "policy.environmentalPolicy": "Environmental Policy",
+            "policy.tradeOpenness": "Trade Openness",
+            "policy.immigration": "Immigration",
+            "policy.environmentalProtection": "Environmental Protection",
+            "policy.healthcareAccess": "Healthcare Access",
+            "policy.educationFunding": "Education Funding",
+            "policy.socialWelfare": "Social Welfare",
+        ]
+        return labels[target] ?? target.split(separator: ".").last.map(String.init) ?? target
     }
 
     static func generateBriefingForDecision(option: Option, metricDeltas: [String: Double]) -> Briefing {
@@ -471,15 +509,27 @@ class ScoringEngine {
                 return MetricDelta(id: metricId, delta: delta, name: name, cabinetOffset: nil, playerOffset: nil, netChange: nil)
             }
 
-        return Briefing(title: title, description: description, metrics: Array(metricDeltaItems), boosts: [], humanCost: option.humanCost)
+        let implications = option.policyImplications ?? inferPolicyImplications(option: option)
+        let shifts = implications.map { impl in
+            PolicyShift(target: impl.target, label: policyShiftLabel(for: impl.target), delta: impl.delta)
+        }
+
+        return Briefing(title: title, description: description, metrics: Array(metricDeltaItems), boosts: [], humanCost: option.humanCost, policyShifts: shifts)
     }
     
+    struct PolicyShift {
+        let target: String
+        let label: String
+        let delta: Double
+    }
+
     struct Briefing {
         let title: String
         let description: String
         let metrics: [MetricDelta]
         let boosts: [Boost]
         let humanCost: HumanCost?
+        let policyShifts: [PolicyShift]
     }
     
     struct MetricDelta {
@@ -533,7 +583,137 @@ class ScoringEngine {
             }
         }
     }
-    
+
+    // MARK: - Policy Implications
+
+    static func applyPolicyImplications(state: inout GameState, implications: [PolicyImplication]) {
+        guard !implications.isEmpty else { return }
+
+        var fiscal = state.fiscalSettings ?? .defaults
+        var policy = state.policySettings ?? PolicySettings(
+            militaryPosture: nil, tradePolicy: nil, environmentalCommitment: nil,
+            socialPolicy: nil, immigration: nil, tradeOpenness: nil,
+            environmentalProtection: nil, healthcareAccess: nil,
+            educationFunding: nil, socialWelfare: nil,
+            economicStance: nil, socialSpending: nil,
+            defenseSpending: nil, environmentalPolicy: nil
+        )
+
+        for implication in implications {
+            let parts = implication.target.split(separator: ".")
+            guard parts.count == 2 else { continue }
+            let category = String(parts[0])
+            let field = String(parts[1])
+
+            if category == "fiscal" {
+                switch field {
+                case "taxIncome":
+                    fiscal.taxIncome = clampValue(fiscal.taxIncome + implication.delta, 0, 100)
+                case "taxCorporate":
+                    fiscal.taxCorporate = clampValue(fiscal.taxCorporate + implication.delta, 0, 100)
+                case "spendingMilitary":
+                    fiscal.spendingMilitary = clampValue(fiscal.spendingMilitary + implication.delta, 0, 100)
+                case "spendingInfrastructure":
+                    fiscal.spendingInfrastructure = clampValue(fiscal.spendingInfrastructure + implication.delta, 0, 100)
+                case "spendingSocial":
+                    fiscal.spendingSocial = clampValue(fiscal.spendingSocial + implication.delta, 0, 100)
+                default: break
+                }
+            } else if category == "policy" {
+                switch field {
+                case "economicStance":
+                    policy.economicStance = clampValue((policy.economicStance ?? 50) + implication.delta, 0, 100)
+                case "socialSpending":
+                    policy.socialSpending = clampValue((policy.socialSpending ?? 50) + implication.delta, 0, 100)
+                case "defenseSpending":
+                    policy.defenseSpending = clampValue((policy.defenseSpending ?? 50) + implication.delta, 0, 100)
+                case "environmentalPolicy":
+                    policy.environmentalPolicy = clampValue((policy.environmentalPolicy ?? 50) + implication.delta, 0, 100)
+                case "tradeOpenness":
+                    policy.tradeOpenness = clampValue((policy.tradeOpenness ?? 50) + implication.delta, 0, 100)
+                case "immigration":
+                    policy.immigration = clampValue((policy.immigration ?? 50) + implication.delta, 0, 100)
+                case "environmentalProtection":
+                    policy.environmentalProtection = clampValue((policy.environmentalProtection ?? 50) + implication.delta, 0, 100)
+                case "healthcareAccess":
+                    policy.healthcareAccess = clampValue((policy.healthcareAccess ?? 50) + implication.delta, 0, 100)
+                case "educationFunding":
+                    policy.educationFunding = clampValue((policy.educationFunding ?? 50) + implication.delta, 0, 100)
+                case "socialWelfare":
+                    policy.socialWelfare = clampValue((policy.socialWelfare ?? 50) + implication.delta, 0, 100)
+                default: break
+                }
+            }
+        }
+
+        state.fiscalSettings = fiscal
+        state.policySettings = policy
+    }
+
+    static func inferPolicyImplications(option: Option) -> [PolicyImplication] {
+        var implications: [PolicyImplication] = []
+        let magnitudeThreshold = 1.5
+        let inferredCap = 8.0
+
+        var effectsByMetric: [String: Double] = [:]
+        for effect in option.effects {
+            effectsByMetric[effect.targetMetricId] = effect.value
+        }
+
+        if let military = effectsByMetric["metric_military"], abs(military) > 2.0 {
+            let magnitude = abs(military)
+            if military > 0 {
+                implications.append(PolicyImplication(target: "fiscal.spendingMilitary", delta: min(magnitude * 1.2, inferredCap)))
+                implications.append(PolicyImplication(target: "policy.defenseSpending", delta: min(magnitude * 1.5, inferredCap)))
+            } else {
+                implications.append(PolicyImplication(target: "fiscal.spendingMilitary", delta: max(-magnitude * 1.0, -inferredCap)))
+                implications.append(PolicyImplication(target: "policy.defenseSpending", delta: max(-magnitude * 1.0, -inferredCap)))
+            }
+        }
+
+        if let environment = effectsByMetric["metric_environment"], abs(environment) > magnitudeThreshold {
+            let magnitude = abs(environment)
+            let delta = environment > 0 ? min(magnitude * 1.5, inferredCap) : max(-magnitude * 1.0, -inferredCap)
+            implications.append(PolicyImplication(target: "policy.environmentalPolicy", delta: delta))
+        }
+
+        if let health = effectsByMetric["metric_health"], abs(health) > 2.0 {
+            let magnitude = abs(health)
+            let delta = health > 0 ? min(magnitude * 1.0, inferredCap) : max(-magnitude * 1.0, -inferredCap)
+            implications.append(PolicyImplication(target: "policy.healthcareAccess", delta: delta))
+        }
+
+        if let education = effectsByMetric["metric_education"], abs(education) > 2.0 {
+            let magnitude = abs(education)
+            let delta = education > 0 ? min(magnitude * 1.0, inferredCap) : max(-magnitude * 1.0, -inferredCap)
+            implications.append(PolicyImplication(target: "policy.educationFunding", delta: delta))
+        }
+
+        if let equality = effectsByMetric["metric_equality"], equality > magnitudeThreshold,
+           let economy = effectsByMetric["metric_economy"], economy < 0 {
+            implications.append(PolicyImplication(target: "policy.socialSpending", delta: min(3.0, inferredCap)))
+            implications.append(PolicyImplication(target: "fiscal.spendingSocial", delta: min(abs(equality), inferredCap)))
+        }
+
+        if let trade = effectsByMetric["metric_trade"], abs(trade) > 2.0 {
+            let magnitude = abs(trade)
+            let delta = trade > 0 ? min(magnitude * 1.2, inferredCap) : max(-magnitude * 1.0, -inferredCap)
+            implications.append(PolicyImplication(target: "policy.tradeOpenness", delta: delta))
+        }
+
+        if let infra = effectsByMetric["metric_infrastructure"], abs(infra) > 2.0 {
+            let magnitude = abs(infra)
+            let delta = infra > 0 ? min(magnitude * 1.2, inferredCap) : max(-magnitude * 1.0, -inferredCap)
+            implications.append(PolicyImplication(target: "fiscal.spendingInfrastructure", delta: delta))
+        }
+
+        return implications
+    }
+
+    private static func clampValue(_ value: Double, _ minVal: Double, _ maxVal: Double) -> Double {
+        min(max(value, minVal), maxVal)
+    }
+
     static func cleanupExpiredConsequences(state: inout GameState) {
         guard let pending = state.pendingConsequences else { return }
         state.pendingConsequences = pending.filter { $0.triggerTurn >= state.turn }
@@ -831,9 +1011,11 @@ class ScoringEngine {
     static func calculateApproval(_ state: inout GameState) {
         let coreMetrics = state.metrics.filter { $0.key != "metric_approval" && $0.key != "metric_corruption" }
         if coreMetrics.isEmpty { return }
-        
-        let sum = coreMetrics.values.reduce(0, +)
-        var avg = sum / Double(coreMetrics.count)
+
+        let adjustedSum = coreMetrics.reduce(0.0) { acc, entry in
+            acc + (isInverseMetric(entry.key) ? (100 - entry.value) : entry.value)
+        }
+        var avg = adjustedSum / Double(coreMetrics.count)
         
         if let playerStats = state.player?.stats {
             let compassionBase = (playerStats.compassion - 50) * 0.15

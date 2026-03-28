@@ -9,7 +9,7 @@ import BundleBadge from '@/components/BundleBadge';
 import AuditScore from '@/components/AuditScore';
 import StatusBadge from '@/components/StatusBadge';
 import { ALL_BUNDLES } from '@/lib/constants';
-import type { JobDetail, JobResult, JobError } from '@/lib/types';
+import type { JobDetail, JobResult, JobError, JobEvent } from '@/lib/types';
 
 type SortField = 'title' | 'bundle' | 'auditScore' | 'autoFixed';
 type SortDir = 'asc' | 'desc';
@@ -71,9 +71,75 @@ interface LogEntry {
   color: string;
   text: string;
   time: string | undefined;
+  preview?: string;
+}
+
+function mapEventToLogEntry(event: JobEvent): LogEntry {
+  const color = event.level === 'error'
+    ? 'text-[var(--error)]'
+    : event.level === 'warning'
+      ? 'text-[#f59e0b]'
+      : event.level === 'success'
+        ? 'text-[var(--success)]'
+        : event.code?.startsWith('llm_')
+          ? 'text-[var(--accent-primary)]'
+          : 'text-foreground-muted';
+
+  const icon = event.level === 'error' ? '✗'
+    : event.level === 'warning'        ? '⚠'
+    : event.level === 'success'        ? '✓'
+    : event.code === 'llm_request'     ? '→'
+    : event.code === 'llm_response'    ? '←'
+    : event.code?.startsWith('phase_') ? '▸'
+    : event.code === 'concept_expand'  ? '◆'
+    : '•';
+
+  // Build enriched text from data fields
+  const d = event.data as Record<string, unknown> | undefined;
+  let detail = '';
+
+  if (event.code === 'llm_request' && d) {
+    const model = String(d.model ?? '');
+    const chars = d.promptLength ? `${d.promptLength} chars` : '';
+    const attempt = d.attempt && Number(d.attempt) > 1 ? ` attempt ${d.attempt}` : '';
+    detail = [model, chars, attempt].filter(Boolean).join(' · ');
+  } else if (event.code === 'llm_response' && d) {
+    const model = String(d.model ?? '');
+    const ms = d.elapsed ? `${d.elapsed}ms` : '';
+    const tok = (d.inputTokens || d.outputTokens) ? `${d.inputTokens}↑ ${d.outputTokens}↓ tokens` : '';
+    detail = [model, ms, tok].filter(Boolean).join(' · ');
+  } else if (event.code === 'audit_fail' && d) {
+    const issues = Array.isArray(d.issues) ? (d.issues as any[]).slice(0, 3).map(i => i.rule).join(', ') : '';
+    detail = issues ? `Issues: ${issues}` : '';
+  } else if ((event.code === 'repair_improved' || event.code === 'repair_no_improvement') && d) {
+    detail = d.before !== undefined ? `${d.before} → ${d.after}` : '';
+  } else if (event.code === 'quality_gate' && d) {
+    detail = d.overall !== undefined ? `overall=${Number(d.overall).toFixed(2)} pass=${d.pass}` : '';
+  } else if (event.code === 'narrative_review' && d) {
+    detail = d.overall !== undefined ? `overall=${Number(d.overall).toFixed(2)} pass=${d.pass}` : '';
+  }
+
+  const baseText = event.message ?? '';
+  const text = detail ? `${baseText}  —  ${detail}` : baseText;
+
+  // Preview line (prompt or response snippet)
+  let preview: string | undefined;
+  if (event.code === 'llm_request' && d?.promptPreview) {
+    preview = String(d.promptPreview);
+  } else if (event.code === 'llm_response' && d?.responsePreview) {
+    preview = String(d.responsePreview);
+  } else if (event.code === 'audit_fail' && d?.issues && Array.isArray(d.issues)) {
+    preview = (d.issues as any[]).map((i: any) => `[${i.severity}] ${i.message}`).join(' | ');
+  }
+
+  return { icon, color, text, time: event.timestamp, preview };
 }
 
 function buildLog(job: JobDetail): LogEntry[] {
+  if (job.events && job.events.length > 0) {
+    return job.events.map(mapEventToLogEntry);
+  }
+
   const entries: LogEntry[] = [];
 
   entries.push({
@@ -302,6 +368,7 @@ export default function JobDetailPage() {
   const [stopping, setStopping] = useState(false);
   const [sortField, setSortField] = useState<SortField>('bundle');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [resultSearch, setResultSearch] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
@@ -325,8 +392,17 @@ export default function JobDetailPage() {
     for (const r of job?.results ?? []) {
       map[r.bundle] = (map[r.bundle] ?? 0) + 1;
     }
+    if (Object.values(map).every(v => v === 0) && job?.savedScenarioIds?.length) {
+      const bundleSet = new Set(job.bundles ?? []);
+      for (const sid of job.savedScenarioIds) {
+        const match = sid.match(/^gen_([a-z_]+)_/);
+        if (match && bundleSet.has(match[1])) {
+          map[match[1]] = (map[match[1]] ?? 0) + 1;
+        }
+      }
+    }
     return map;
-  }, [job?.results, job?.bundles]);
+  }, [job?.results, job?.bundles, job?.savedScenarioIds]);
 
   const fetchJob = useCallback(() => {
     fetch(`/api/jobs/${id}`)
@@ -348,7 +424,7 @@ export default function JobDetailPage() {
 
   useEffect(() => {
     fetchJob();
-    intervalRef.current = setInterval(fetchJob, 3000);
+    intervalRef.current = setInterval(fetchJob, 1500);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
@@ -424,14 +500,20 @@ export default function JobDetailPage() {
     job.status === 'completed' ? 100 : job.status === 'failed' ? 100 : 0
   );
 
-  const sortedResults: JobResult[] = [...(job.results ?? [])].sort((a, b) => {
-    let cmp = 0;
-    if (sortField === 'title') cmp = a.title.localeCompare(b.title);
-    else if (sortField === 'bundle') cmp = a.bundle.localeCompare(b.bundle);
-    else if (sortField === 'auditScore') cmp = (a.auditScore ?? -1) - (b.auditScore ?? -1);
-    else if (sortField === 'autoFixed') cmp = (a.autoFixed ? 1 : 0) - (b.autoFixed ? 1 : 0);
-    return sortDir === 'asc' ? cmp : -cmp;
-  });
+  const sortedResults: JobResult[] = [...(job.results ?? [])]
+    .filter((r) => {
+      if (!resultSearch.trim()) return true;
+      const q = resultSearch.toLowerCase();
+      return r.title.toLowerCase().includes(q) || r.bundle.toLowerCase().includes(q) || r.id.toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      let cmp = 0;
+      if (sortField === 'title') cmp = a.title.localeCompare(b.title);
+      else if (sortField === 'bundle') cmp = a.bundle.localeCompare(b.bundle);
+      else if (sortField === 'auditScore') cmp = (a.auditScore ?? -1) - (b.auditScore ?? -1);
+      else if (sortField === 'autoFixed') cmp = (a.autoFixed ? 1 : 0) - (b.autoFixed ? 1 : 0);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
   const remediatedCount = (job.results ?? []).filter((r) => r.autoFixed).length;
   const savedCount = job.completedCount ?? job.results?.length ?? 0;
   const failedCount = job.failedCount ?? 0;
@@ -451,7 +533,7 @@ export default function JobDetailPage() {
       <CommandPanel className="mb-6 p-5 md:p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <div className="section-kicker mb-2">Run Dossier</div>
+            <div className="section-kicker mb-2">Run Details</div>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-semibold text-foreground data-value">
                 {job.id.slice(0, 12)}…
@@ -485,12 +567,27 @@ export default function JobDetailPage() {
         </div>
       </CommandPanel>
 
-      <div className="mb-6 grid gap-4 md:grid-cols-4">
+      <div className="mb-6 grid gap-4 md:grid-cols-5">
         <DataStat label="Saved" value={savedCount} accent="success" />
         <DataStat label="Failed" value={failedCount} accent={failedCount > 0 ? 'warning' : undefined} />
         <DataStat label="Expected" value={total} accent="blue" />
         <DataStat label="Remediated" value={remediatedCount} accent={remediatedCount > 0 ? 'gold' : undefined} />
+        {(() => {
+          const scored = (job.results ?? []).filter(r => r.auditScore !== undefined);
+          if (scored.length === 0) return <DataStat label="Avg Score" value="—" />;
+          const avg = Math.round(scored.reduce((s, r) => s + (r.auditScore ?? 0), 0) / scored.length);
+          return <DataStat label="Avg Score" value={avg} accent={avg >= 90 ? 'success' : avg >= 75 ? undefined : 'warning'} />;
+        })()}
       </div>
+
+      {job.tokenSummary && job.tokenSummary.callCount > 0 && (
+        <div className="mb-6 grid gap-4 md:grid-cols-4">
+          <DataStat label="Input Tokens" value={job.tokenSummary.inputTokens.toLocaleString()} />
+          <DataStat label="Output Tokens" value={job.tokenSummary.outputTokens.toLocaleString()} />
+          <DataStat label="LLM Calls" value={job.tokenSummary.callCount} />
+          <DataStat label="Est. Cost" value={`$${job.tokenSummary.costUsd.toFixed(4)}`} />
+        </div>
+      )}
 
       {/* Progress bar (running/pending) */}
       {(job.status === 'running' || job.status === 'pending') && (
@@ -510,6 +607,15 @@ export default function JobDetailPage() {
               {elapsedMs !== null && job.startedAt && (
                 <span>{formatElapsed(elapsedMs)}</span>
               )}
+              {(() => {
+                const done = savedCount + failedCount;
+                if (elapsedMs && done > 0 && done < total) {
+                  const ratePerMs = done / elapsedMs;
+                  const remainingMs = Math.round((total - done) / ratePerMs);
+                  return <span className="text-[var(--foreground-muted)]">~{formatElapsed(remainingMs)} remaining</span>;
+                }
+                return null;
+              })()}
               <span>{Math.round(liveProgress)}%</span>
             </div>
           </div>
@@ -518,43 +624,58 @@ export default function JobDetailPage() {
             <span style={{ width: `${liveProgress}%` }} />
           </div>
 
-          {job.bundles.length > 1 && (
+          {job.bundles.length > 0 && (
             <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(job.bundles.length, 4)}, minmax(0, 1fr))` }}>
               {job.bundles.map((bundleId) => {
                 const saved = perBundleCount[bundleId] ?? 0;
                 const bundleLabel = ALL_BUNDLES.find((b) => b.id === bundleId)?.label ?? bundleId;
                 const complete = saved >= job.count;
+                const isActive = job.currentBundle === bundleId;
+                const bundleProgress = job.count > 0 ? Math.round((saved / job.count) * 100) : 0;
                 return (
-                  <div key={bundleId} className="control-surface p-3">
-                    <div className="text-[9px] font-mono uppercase tracking-wide text-foreground-subtle truncate mb-0.5">
-                      {bundleLabel}
+                  <div key={bundleId} className={`control-surface p-3 transition-colors ${isActive ? 'ring-1 ring-[var(--accent-primary)]' : ''}`}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      {isActive && <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-primary)] animate-pulse" />}
+                      <div className={`text-[9px] font-mono uppercase tracking-wide truncate ${isActive ? 'text-[var(--accent-primary)]' : 'text-foreground-subtle'}`}>
+                        {bundleLabel}
+                      </div>
                     </div>
-                    <div className={`text-xs font-mono ${complete ? 'text-[var(--success)]' : 'text-foreground-muted'}`}>
+                    <div className={`text-xs font-mono ${complete ? 'text-[var(--success)]' : isActive ? 'text-foreground' : 'text-foreground-muted'}`}>
                       {saved}<span className="text-foreground-subtle">/{job.count}</span>
+                      {complete && <span className="ml-1 text-[var(--success)]">✓</span>}
                     </div>
+                    {job.count > 1 && (
+                      <div className="mt-1.5 h-1 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-500 ${complete ? 'bg-[var(--success)]' : isActive ? 'bg-[var(--accent-primary)]' : 'bg-[var(--foreground-subtle)]'}`} style={{ width: `${bundleProgress}%` }} />
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
           )}
 
-          {(job.errors ?? []).length > 0 && (
+          {(job.events ?? []).length > 0 && (
             <div>
               <div className="text-[9px] font-mono uppercase tracking-widest text-foreground-subtle mb-1">Recent Activity</div>
-              <div className="space-y-0.5 max-h-[96px] overflow-y-auto">
-                {[...(job.errors ?? [])].slice(-8).map((e, i) => {
-                  const isDedup = /duplicate_id|similar_content|similar/i.test(e.error);
-                  const isCooldown = /cooldown/i.test(e.error);
-                  const isAuditAttempt = /^attempt \d+\/\d+ failed:/i.test(e.error);
-                  const color = isDedup || isCooldown
-                    ? 'text-foreground-subtle'
-                    : isAuditAttempt
-                    ? 'text-[#f59e0b]'
-                    : 'text-[var(--error)]';
+              <div className="space-y-0.5 max-h-[120px] overflow-y-auto">
+                {(job.events ?? []).slice(-10).map((e, i) => {
+                  const color = e.level === 'error' ? 'text-[var(--error)]'
+                    : e.level === 'warning' ? 'text-[#f59e0b]'
+                    : e.level === 'success' ? 'text-[var(--success)]'
+                    : e.code?.startsWith('llm_') ? 'text-[var(--accent-primary)]'
+                    : 'text-foreground-subtle';
+                  const icon = e.code === 'llm_request' ? '→' : e.code === 'llm_response' ? '←' : e.level === 'success' ? '✓' : e.level === 'error' ? '✗' : e.level === 'warning' ? '⚠' : '·';
+                  const d = e.data as Record<string, unknown> | undefined;
+                  const extra = e.code === 'llm_response' && d ? ` ${d.elapsed}ms ${d.inputTokens}↑${d.outputTokens}↓` : e.code === 'audit_pass' && d ? ` score=${d.score}` : '';
                   return (
                     <div key={i} className={`text-[10px] font-mono ${color} flex gap-1.5`}>
-                      {e.bundle && <span className="text-foreground-subtle shrink-0">[{e.bundle}]</span>}
-                      <span className="truncate">{e.error}</span>
+                      <span className="shrink-0 w-3">{icon}</span>
+                      {e.scenarioId ? (
+                        <Link href={`/scenarios/${e.scenarioId}`} className="truncate hover:underline">{e.message}{extra}</Link>
+                      ) : (
+                        <span className="truncate">{e.message}{extra}</span>
+                      )}
                     </div>
                   );
                 })}
@@ -577,6 +698,12 @@ export default function JobDetailPage() {
               { label: 'Mode', value: job.mode },
               { label: 'Distribution', value: job.distributionConfig?.mode ?? '—' },
               { label: 'Requested by', value: job.requestedBy ?? '—' },
+              { label: 'Execution', value: job.executionTarget ?? '—' },
+              ...(job.modelConfig?.drafterModel ? [{ label: 'Drafter model', value: job.modelConfig.drafterModel.replace('ollama:', '') }] : []),
+              ...(job.modelConfig?.repairModel && job.modelConfig.repairModel !== job.modelConfig.drafterModel ? [{ label: 'Repair model', value: job.modelConfig.repairModel.replace('ollama:', '') }] : []),
+              { label: 'Current bundle', value: job.currentBundle ?? '—' },
+              { label: 'Current phase', value: job.currentPhase ?? '—' },
+              { label: 'Heartbeat', value: formatTimestamp(job.lastHeartbeatAt) },
               { label: 'Submitted', value: formatTimestamp(job.requestedAt) },
               { label: 'Started', value: formatTimestamp(job.startedAt) },
               { label: 'Completed', value: formatTimestamp(job.completedAt) },
@@ -609,17 +736,23 @@ export default function JobDetailPage() {
 
           {/* Activity log */}
           <CommandPanel className="overflow-hidden p-0">
-            <div className="px-4 py-2.5 text-[10px] font-mono uppercase tracking-widest text-foreground-subtle border-b border-[var(--border-strong)]">
-              Activity Log
+            <div className="px-4 py-2.5 flex items-center justify-between border-b border-[var(--border-strong)]">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-foreground-subtle">Activity Log</span>
+              <span className="text-[10px] font-mono text-foreground-subtle">{logEntries.length} events</span>
             </div>
-            <div className="px-4 py-3 space-y-3">
+            <div className="px-0 py-0 max-h-[600px] overflow-y-auto divide-y divide-[var(--border)]/40">
               {logEntries.map((entry, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                  <span className={`text-xs font-mono w-3 shrink-0 mt-0.5 ${entry.color}`}>{entry.icon}</span>
+                <div key={i} className="px-3 py-1.5 flex items-start gap-2">
+                  <span className={`text-[11px] font-mono w-3 shrink-0 mt-[1px] ${entry.color}`}>{entry.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-mono leading-snug ${entry.color}`}>{entry.text}</p>
+                    <p className={`text-[11px] font-mono leading-snug break-words ${entry.color}`}>{entry.text}</p>
+                    {entry.preview && (
+                      <p className="text-[10px] font-mono text-foreground-subtle mt-0.5 break-words opacity-70 leading-snug line-clamp-2">
+                        {entry.preview}
+                      </p>
+                    )}
                     {entry.time && (
-                      <p className="text-[10px] font-mono text-foreground-subtle mt-0.5">
+                      <p className="text-[9px] font-mono text-foreground-subtle mt-0.5 opacity-50">
                         {formatTimestamp(entry.time)}
                       </p>
                     )}
@@ -628,6 +761,57 @@ export default function JobDetailPage() {
               ))}
             </div>
           </CommandPanel>
+
+          {/* Generation attempts — shows when available (Ollama / failed jobs) */}
+          {job.attemptSummary && job.attemptSummary.length > 0 && (
+            <CommandPanel className="overflow-hidden p-0">
+              <div className="px-4 py-2.5 text-[10px] font-mono uppercase tracking-widest text-foreground-subtle border-b border-[var(--border-strong)]">
+                Generation Attempts ({job.attemptSummary.length})
+              </div>
+              <div className="divide-y divide-[var(--border-strong)]">
+                {job.attemptSummary.map((attempt, i) => (
+                  <div key={i} className="px-4 py-2.5 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-mono ${attempt.success ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
+                          {attempt.success ? '✓' : '✗'}
+                        </span>
+                        <span className="text-xs font-mono text-foreground">{attempt.bundle}</span>
+                        <span className="text-[10px] font-mono text-foreground-subtle">{attempt.phase}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {attempt.retryCount > 0 && (
+                          <span className="text-[10px] font-mono text-[var(--warning)]">{attempt.retryCount} retries</span>
+                        )}
+                        {typeof attempt.auditScore === 'number' && (
+                          <span className={`text-[10px] font-mono ${attempt.auditScore >= 70 ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`}>
+                            score {attempt.auditScore}
+                          </span>
+                        )}
+                        {attempt.tokenUsage && (
+                          <span className="text-[10px] font-mono text-foreground-subtle">
+                            {attempt.tokenUsage.input}↑ {attempt.tokenUsage.output}↓
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-[10px] font-mono text-foreground-subtle truncate">
+                      {attempt.modelUsed}
+                    </div>
+                    {attempt.failureReasons && attempt.failureReasons.length > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {attempt.failureReasons.map((reason, ri) => (
+                          <div key={ri} className="text-[10px] font-mono text-[var(--error)] leading-snug">
+                            · {reason}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CommandPanel>
+          )}
         </div>
 
         {/* Right: Results + Errors */}
@@ -661,10 +845,18 @@ export default function JobDetailPage() {
           {/* Results */}
           {sortedResults.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between gap-3 mb-2">
                 <div className="text-[10px] font-mono uppercase tracking-widest text-foreground-subtle">
                   Results — {sortedResults.length} saved
                 </div>
+                <input
+                  type="text"
+                  value={resultSearch}
+                  onChange={(e) => setResultSearch(e.target.value)}
+                  placeholder="Filter results…"
+                  className="input-shell max-w-[200px] text-xs"
+                  style={{ width: 'auto' }}
+                />
               </div>
               <div className="tech-border overflow-hidden">
                 <table className="w-full text-xs">
@@ -732,6 +924,24 @@ export default function JobDetailPage() {
           )}
 
           {/* Errors — categorized */}
+          {job.failureAnalysis && (
+            <CommandPanel className="p-0 overflow-hidden">
+              <div className="px-4 py-2.5 text-[10px] font-mono uppercase tracking-widest text-[var(--warning)] border-b border-[var(--border)]">
+                Failure Analysis
+              </div>
+              <div className="px-4 py-3 space-y-3">
+                <div className="text-sm text-foreground leading-6">{job.failureAnalysis.summary}</div>
+                <div className="space-y-2">
+                  {job.failureAnalysis.evidence.map((entry, index) => (
+                    <div key={index} className="rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-xs font-mono text-foreground-muted break-words">
+                      {entry}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CommandPanel>
+          )}
+
           {job.errors && job.errors.length > 0 && (
             <div>
               {(() => {
@@ -836,11 +1046,29 @@ export default function JobDetailPage() {
             </CommandPanel>
           )}
 
-          {sortedResults.length === 0 && !job.errors?.length && !job.error && (
+          {sortedResults.length === 0 && (job.savedScenarioIds?.length ?? 0) > 0 && (
+            <CommandPanel className="p-5">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-foreground-subtle mb-3">
+                Live Results — {job.savedScenarioIds!.length} saved
+              </div>
+              <div className="space-y-1.5">
+                {job.savedScenarioIds!.map((sid) => (
+                  <Link key={sid} href={`/scenarios/${sid}`} className="flex items-center gap-2 text-xs font-mono text-foreground hover:text-[var(--accent-primary)] transition-colors">
+                    <span className="text-[var(--success)]">✓</span>
+                    <span>{sid}</span>
+                  </Link>
+                ))}
+              </div>
+            </CommandPanel>
+          )}
+
+          {sortedResults.length === 0 && !(job.savedScenarioIds?.length) && !job.errors?.length && !job.error && (
             <CommandPanel className="p-6 text-center text-sm text-foreground-subtle">
-              {job.status === 'pending' || job.status === 'running'
-                ? 'Results will appear as scenarios are generated…'
-                : 'No results recorded for this job.'}
+              {job.status === 'pending'
+                ? 'Waiting to start…'
+                : job.status === 'running'
+                  ? `Generating scenarios — ${savedCount} of ${total} complete`
+                  : 'No results recorded for this job.'}
             </CommandPanel>
           )}
         </div>

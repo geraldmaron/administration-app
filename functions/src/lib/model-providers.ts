@@ -1,10 +1,11 @@
 /**
  * Model Providers Module
  *
- * OpenAI and LM Studio model routing for generation phases.
+ * OpenAI and Ollama model routing for generation phases.
  */
 
 import * as json5 from 'json5';
+import { isOpenAIModel, isOllamaModel, stripOllamaPrefix } from './generation-models';
 
 // Environment configuration - using getters for lazy evaluation
 // This ensures secrets injected by Firebase are available at call time
@@ -20,6 +21,14 @@ function getOpenAIBaseUrl(): string {
   return process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 }
 
+function getOllamaBaseUrl(): string {
+  return process.env.OLLAMA_BASE_URL || process.env.OLLAMA_REMOTE_BASE_URL || '';
+}
+
+function getOllamaModel(): string {
+  return process.env.OLLAMA_MODEL || '';
+}
+
 function describeError(err: unknown): string {
   if (!(err instanceof Error)) return String(err);
   let msg = err.message;
@@ -28,14 +37,6 @@ function describeError(err: unknown): string {
     msg += ` — cause: ${cause instanceof Error ? cause.message : String(cause)}`;
   }
   return msg;
-}
-
-function getLMStudioBaseUrl(): string {
-  return process.env.LMSTUDIO_BASE_URL || 'http://localhost:1234/v1';
-}
-
-function getLMStudioModel(): string {
-  return process.env.LMSTUDIO_MODEL || '';
 }
 
 // Model configuration per phase - also lazy to support runtime config
@@ -47,10 +48,10 @@ export function getPhaseModels() {
     embedding: process.env.EMBEDDING_MODEL || 'text-embedding-3-small',
     repair: process.env.REPAIR_MODEL || 'gpt-4o-mini',
     narrativeReview: process.env.NARRATIVE_REVIEW_MODEL || 'gpt-4o-mini',
+    actionResolution: process.env.ACTION_RESOLUTION_MODEL || 'gpt-4o-mini',
   };
 }
 
-// Legacy export for backward compatibility
 export const PHASE_MODELS = {
   get concept() { return process.env.CONCEPT_MODEL || 'gpt-4o-mini'; },
   get blueprint() { return process.env.BLUEPRINT_MODEL || 'gpt-4o-mini'; },
@@ -59,25 +60,13 @@ export const PHASE_MODELS = {
 };
 
 // Provider detection from model name
-export type Provider = 'openai' | 'lmstudio';
+export type Provider = 'openai' | 'ollama';
 
 function getProvider(modelName: string): Provider {
-  if (modelName.startsWith('lmstudio:')) {
-    return 'lmstudio';
-  }
-  if (
-    modelName.startsWith('gpt-') ||
-    modelName.startsWith('o1') ||
-    modelName.startsWith('o3') ||
-    modelName.startsWith('text-embedding')
-  ) {
-    return 'openai';
-  }
-  // If LM Studio is configured, route unknown models there
-  if (getLMStudioBaseUrl() && getLMStudioModel()) {
-    return 'lmstudio';
-  }
-  throw new Error(`Unsupported model for OpenAI-only mode: ${modelName}`);
+  if (isOllamaModel(modelName)) return 'ollama';
+  if (isOpenAIModel(modelName)) return 'openai';
+  if (getOllamaBaseUrl() && getOllamaModel()) return 'ollama';
+  throw new Error(`Unsupported model: ${modelName}. Only OpenAI (gpt-*, o1, o3) and Ollama (ollama:*) models are supported.`);
 }
 
 // Model configuration
@@ -86,6 +75,8 @@ export interface ModelConfig {
   temperature?: number;
   topP?: number;
   timeoutMs?: number; // Override default model timeout
+  maxRetries?: number;
+  noThink?: boolean; // Suppress thinking tokens for qwen3/deepseek-r1 models
 }
 
 // Default configs per phase
@@ -97,6 +88,7 @@ export const PHASE_CONFIGS: Record<string, ModelConfig> = {
   // alive within the Cloud Function's 540s budget.
   drafter: { maxTokens: 12288, temperature: 0.7, timeoutMs: 300000 },
   repair: { maxTokens: 4096, temperature: 0.3 },
+  actionResolution: { maxTokens: 1024, temperature: 0.6, timeoutMs: 15000, maxRetries: 1 },
 };
 
 // Timeout configuration per model (used unless config.timeoutMs is set)
@@ -138,6 +130,29 @@ export function resetProviderRetryTelemetry(): void {
 
 export function getProviderRetryTelemetry(): RetryTelemetry {
   return { ...retryTelemetry };
+}
+
+// ---------------------------------------------------------------------------
+// Job-level event handler (wired by the local runner for real-time Firestore logging)
+// ---------------------------------------------------------------------------
+export interface ModelEvent {
+  level: 'info' | 'warning' | 'error' | 'success';
+  code: string;
+  message: string;
+  data?: Record<string, unknown>;
+}
+
+type ModelEventHandler = (event: ModelEvent) => void;
+let _modelEventHandler: ModelEventHandler | null = null;
+
+export function setModelEventHandler(fn: ModelEventHandler | null): void {
+  _modelEventHandler = fn;
+}
+
+function emitModelEvent(event: ModelEvent): void {
+  if (_modelEventHandler) {
+    try { _modelEventHandler(event); } catch { /* never throw from event emission */ }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -230,7 +245,7 @@ async function callOpenAI<T>(
 ): Promise<CallResult<T>> {
   const modelToUse = modelOverride || 'gpt-4o-mini';
   const timeout = config.timeoutMs ?? getModelTimeout(modelToUse);
-  const maxRetries = parseInt(process.env.OPENAI_MAX_RETRIES || (process.env.K_SERVICE ? '1' : '3'), 10);
+  const maxRetries = config.maxRetries ?? parseInt(process.env.OPENAI_MAX_RETRIES || (process.env.K_SERVICE ? '1' : '3'), 10);
   const baseDelay = 2000;
 
   const apiKey = getOpenAIApiKey();
@@ -270,6 +285,12 @@ async function callOpenAI<T>(
       }
 
       console.log(`[OpenAI API] Request to ${modelToUse} at ${baseUrl} (attempt ${attempt + 1}/${maxRetries + 1})`);
+      emitModelEvent({
+        level: 'info',
+        code: 'llm_request',
+        message: `→ ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1}) — ${prompt.length} chars`,
+        data: { model: modelToUse, promptLength: prompt.length, attempt: attempt + 1 },
+      });
 
       await openAISemaphore.acquire();
       const estimatedTokens = (config.maxTokens ?? 4096) + 4096;
@@ -326,6 +347,12 @@ async function callOpenAI<T>(
       };
 
       console.log(`[OpenAI API] Response in ${elapsed}ms, tokens: ${usage.inputTokens}+${usage.outputTokens}`);
+      emitModelEvent({
+        level: 'info',
+        code: 'llm_response',
+        message: `← ${modelToUse} ${elapsed}ms — ${usage.inputTokens}↑ ${usage.outputTokens}↓ tokens`,
+        data: { model: modelToUse, elapsed, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens },
+      });
 
       if (!responseText) {
         return { data: null, usage, error: 'Empty response' };
@@ -364,81 +391,95 @@ async function callOpenAI<T>(
   return { data: null, usage: null, error: 'Max retries exceeded' };
 }
 
-async function callLMStudio<T>(
+// ---------------------------------------------------------------------------
+// Ollama provider
+// ---------------------------------------------------------------------------
+
+async function callOllama<T>(
   config: ModelConfig,
   prompt: string,
   schema: object,
   modelOverride?: string
 ): Promise<CallResult<T>> {
-  const rawModel = modelOverride || getLMStudioModel();
-  const modelToUse = rawModel.startsWith('lmstudio:') ? rawModel.slice('lmstudio:'.length) : rawModel;
-  const baseUrl = getLMStudioBaseUrl();
+  const rawModel = modelOverride || getOllamaModel();
+  const modelToUse = stripOllamaPrefix(rawModel);
+  const baseUrl = getOllamaBaseUrl();
   const timeout = 180000;
-  const maxRetries = 1;
+  const maxRetries = parseInt(process.env.OLLAMA_MAX_RETRIES || '3', 10);
   const baseDelay = 2000;
 
   if (!baseUrl) {
-    return { data: null, usage: null, error: 'No LM Studio base URL configured' };
+    return { data: null, usage: null, error: 'No Ollama base URL configured' };
   }
-
   if (!modelToUse) {
-    return { data: null, usage: null, error: 'No LM Studio model configured' };
+    return { data: null, usage: null, error: 'No Ollama model configured' };
   }
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const startTime = Date.now();
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      const signal = AbortSignal.timeout(timeout);
+      const OLLAMA_MAX_OUTPUT_TOKENS = 16384;
 
-      const requestBody: Record<string, any> = {
+      const isThinkingModel = /qwen3|deepseek-r1/i.test(modelToUse);
+      const suppressThinking = isThinkingModel && config.noThink !== false;
+      const systemContent = suppressThinking
+        ? 'You are a precise JSON generator for a geopolitical simulation game. Generate realistic, nuanced, DETAILED political scenarios. Write LONG, vivid, specific text — never brief or generic. Every description must be 60-100 words. Every option text must be 50-80 words. Every outcomeSummary must be 250+ characters. Every outcomeContext must be 400+ characters with 4-6 sentences. Short output will be REJECTED. Always respond with valid JSON only. Never include explanatory text. Do not use chain-of-thought reasoning.'
+        : 'You are a precise JSON generator for a geopolitical simulation game. Generate realistic, nuanced, DETAILED political scenarios. Write LONG, vivid, specific text — never brief or generic. Every description must be 60-100 words. Every option text must be 50-80 words. Every outcomeSummary must be 250+ characters. Every outcomeContext must be 400+ characters with 4-6 sentences. Short output will be REJECTED. Always respond with valid JSON. Never include explanatory text.';
+      const userContent = suppressThinking ? `${prompt} /no_think` : prompt;
+
+      const requestBody: Record<string, unknown> = {
         model: modelToUse,
         messages: [
-          {
-            role: 'system',
-            content: 'You are a precise JSON generator for a geopolitical simulation game. Generate realistic, nuanced political scenarios. Always respond with valid JSON matching the requested schema. Never include explanatory text.'
-          },
-          {
-            role: 'user',
-            content: `${prompt}\n\nRespond with ONLY valid JSON matching this schema:\n${JSON.stringify(schema, null, 2)}`
-          }
+          { role: 'system', content: systemContent },
+          { role: 'user', content: userContent },
         ],
-        max_tokens: config.maxTokens,
-        response_format: { type: 'json_object' }
+        max_tokens: Math.min(config.maxTokens ?? OLLAMA_MAX_OUTPUT_TOKENS, OLLAMA_MAX_OUTPUT_TOKENS),
+        response_format: {
+          type: 'json_schema',
+          json_schema: { name: 'response', schema, strict: false },
+        },
+        options: { num_ctx: 131072 },
       };
-
       if (config.temperature !== undefined) {
         requestBody.temperature = config.temperature;
       }
 
-      console.log(`[LM Studio] Request to ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1})`);
+      console.log(`[Ollama] Request to ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1})`);
+      emitModelEvent({
+        level: 'info',
+        code: 'llm_request',
+        message: `→ ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1}) — ${prompt.length} chars`,
+        data: { model: modelToUse, promptLength: prompt.length, attempt: attempt + 1 },
+      });
 
-      let response: Response;
-      try {
-        response = await fetch(`${baseUrl}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer lm-studio'
-          },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal
-        });
-      } finally {
-        clearTimeout(timeoutId);
-      }
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ollama',
+        },
+        body: JSON.stringify(requestBody),
+        signal,
+      });
       const elapsed = Date.now() - startTime;
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[LM Studio] Error ${response.status} after ${elapsed}ms: ${errorText.substring(0, 500)}`);
+        console.error(`[Ollama] Error ${response.status} after ${elapsed}ms: ${errorText.substring(0, 500)}`);
+        emitModelEvent({
+          level: 'error',
+          code: 'llm_error',
+          message: `← ${modelToUse} HTTP ${response.status} after ${elapsed}ms`,
+          data: { model: modelToUse, status: response.status, elapsed, detail: errorText.substring(0, 200) },
+        });
         if (attempt < maxRetries) {
           const backoff = baseDelay * Math.pow(2, attempt);
           await new Promise(resolve => setTimeout(resolve, backoff));
           continue;
         }
-        return { data: null, usage: null, error: `HTTP ${response.status}` };
+        return { data: null, usage: null, error: `HTTP ${response.status}: ${errorText.substring(0, 200)}` };
       }
 
       const data = await response.json();
@@ -446,37 +487,50 @@ async function callLMStudio<T>(
       const usage: TokenUsage = {
         inputTokens: data.usage?.prompt_tokens || 0,
         outputTokens: data.usage?.completion_tokens || 0,
-        provider: 'lmstudio',
-        model: modelToUse
+        provider: 'ollama',
+        model: modelToUse,
       };
+      const finishReason = data.choices?.[0]?.finish_reason;
 
-      console.log(`[LM Studio] Response in ${elapsed}ms, tokens: ${usage.inputTokens}+${usage.outputTokens}`);
+      console.log(`[Ollama] Response in ${elapsed}ms, tokens: ${usage.inputTokens}+${usage.outputTokens}, finish=${finishReason}`);
+      emitModelEvent({
+        level: 'info',
+        code: 'llm_response',
+        message: `← ${modelToUse} ${elapsed}ms — ${usage.inputTokens}↑ ${usage.outputTokens}↓ tokens`,
+        data: { model: modelToUse, elapsed, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, finishReason },
+      });
+
+      if (finishReason === 'length') {
+        console.error(`[Ollama] Output truncated (finish_reason=length) — ${usage.outputTokens} tokens used`);
+        return { data: null, usage, error: 'Output truncated (finish_reason=length) — increase maxTokens or reduce prompt' };
+      }
 
       if (!responseText) {
-        return { data: null, usage, error: 'Empty response' };
+        return { data: null, usage, error: `Empty response (finish_reason=${finishReason})` };
       }
 
       try {
-        let cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        let cleaned = responseText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        cleaned = cleaned.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
         if (jsonMatch) cleaned = jsonMatch[0];
-        return { data: JSON.parse(cleaned), usage };
-      } catch {
         try {
-          return { data: json5.parse(responseText), usage };
-        } catch (e) {
-          console.error('[LM Studio] Failed to parse JSON:', e);
-          return { data: null, usage, error: 'JSON parse error' };
+          return { data: JSON.parse(cleaned), usage };
+        } catch {
+          return { data: json5.parse(cleaned), usage };
         }
+      } catch (e) {
+        console.error('[Ollama] Failed to parse JSON:', e);
+        return { data: null, usage, error: 'JSON parse error' };
       }
     } catch (error) {
       const elapsed = Date.now() - startTime;
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.error(`[LM Studio] Timeout after ${elapsed}ms`);
+      if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
+        console.error(`[Ollama] Timeout after ${elapsed}ms`);
         if (attempt < maxRetries) continue;
         return { data: null, usage: null, error: 'Timeout' };
       }
-      console.error(`[LM Studio] Error after ${elapsed}ms: ${describeError(error)}`);
+      console.error(`[Ollama] Error after ${elapsed}ms: ${describeError(error)}`);
       if (attempt < maxRetries) {
         const backoff = baseDelay * Math.pow(2, attempt);
         await new Promise(resolve => setTimeout(resolve, backoff));
@@ -491,7 +545,7 @@ async function callLMStudio<T>(
 
 /**
  * Unified model call router
- * Routes to appropriate provider based on model name
+ * Routes to the appropriate provider based on model name
  */
 export async function callModelProvider<T>(
   config: ModelConfig,
@@ -501,13 +555,9 @@ export async function callModelProvider<T>(
 ): Promise<CallResult<T>> {
   const modelToUse = modelOverride || PHASE_MODELS.drafter;
   const provider = getProvider(modelToUse);
-  if (provider === 'openai') {
-    return callOpenAI<T>(config, prompt, schema, modelToUse);
-  }
-  if (provider === 'lmstudio') {
-    return callLMStudio<T>(config, prompt, schema, modelToUse);
-  }
-  throw new Error(`Unsupported model: ${modelToUse}. Only OpenAI (gpt-*, o1, o3, text-embedding*) and LM Studio (lmstudio:*) models are supported.`);
+  if (provider === 'openai') return callOpenAI<T>(config, prompt, schema, modelToUse);
+  if (provider === 'ollama') return callOllama<T>(config, prompt, schema, modelToUse);
+  throw new Error(`Unsupported provider for model: ${modelToUse}`);
 }
 
 /**
@@ -564,17 +614,17 @@ export async function generateEmbedding(text: string): Promise<{ embedding: numb
  */
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) return 0;
-  
+
   let dotProduct = 0;
   let normA = 0;
   let normB = 0;
-  
+
   for (let i = 0; i < a.length; i++) {
     dotProduct += a[i] * b[i];
     normA += a[i] * a[i];
     normB += b[i] * b[i];
   }
-  
+
   const magnitude = Math.sqrt(normA) * Math.sqrt(normB);
   return magnitude === 0 ? 0 : dotProduct / magnitude;
 }
@@ -589,7 +639,6 @@ const COST_PER_MILLION: Record<string, { input: number; output: number }> = {
   'o1-mini': { input: 1.10, output: 4.40 },
   'o3-mini': { input: 1.10, output: 4.40 },
   'text-embedding-3-small': { input: 0.02, output: 0 },
-  'lmstudio': { input: 0, output: 0 },
 };
 
 export function calculateCost(usage: TokenUsage): number {
@@ -602,12 +651,12 @@ export function calculateCost(usage: TokenUsage): number {
  */
 export function aggregateCosts(usages: (TokenUsage | null)[]): {
   openai: { inputTokens: number; outputTokens: number; costUsd: number };
-  lmstudio: { inputTokens: number; outputTokens: number; costUsd: number };
+  ollama: { inputTokens: number; outputTokens: number; costUsd: number };
   totalUsd: number;
 } {
   const result = {
     openai: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
-    lmstudio: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
+    ollama: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
     totalUsd: 0
   };
 
@@ -619,40 +668,13 @@ export function aggregateCosts(usages: (TokenUsage | null)[]): {
       result.openai.inputTokens += usage.inputTokens;
       result.openai.outputTokens += usage.outputTokens;
       result.openai.costUsd += cost;
-    } else if (usage.provider === 'lmstudio') {
-      result.lmstudio.inputTokens += usage.inputTokens;
-      result.lmstudio.outputTokens += usage.outputTokens;
-      result.lmstudio.costUsd += cost;
+    } else if (usage.provider === 'ollama') {
+      result.ollama.inputTokens += usage.inputTokens;
+      result.ollama.outputTokens += usage.outputTokens;
+      result.ollama.costUsd += cost;
     }
     result.totalUsd += cost;
   }
 
   return result;
-}
-
-export async function testLMStudioConnection(): Promise<{ connected: boolean; models: string[]; error?: string }> {
-  const baseUrl = getLMStudioBaseUrl();
-  if (!baseUrl) {
-    return { connected: false, models: [], error: 'No LM Studio base URL configured' };
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(`${baseUrl}/models`, {
-      headers: { 'Authorization': 'Bearer lm-studio' },
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      return { connected: false, models: [], error: `HTTP ${response.status}` };
-    }
-
-    const data = await response.json();
-    const models = (data.data || []).map((m: any) => m.id).filter(Boolean);
-    return { connected: true, models };
-  } catch (error) {
-    return { connected: false, models: [], error: error instanceof Error ? error.message : String(error) };
-  }
 }

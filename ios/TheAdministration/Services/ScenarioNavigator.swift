@@ -333,13 +333,17 @@ extension ScenarioNavigator {
             }
         }
 
-        // Base weight
+        // Base weight — zero or negative means disabled
         var score = scenario.weight ?? 1.0
         if score <= 0 {
-            score = 1.0
+            return 0
         }
 
         let geoProfile = country?.geopoliticalProfile
+
+        if !matchesRegionalScope(scenario, for: country) {
+            return 0
+        }
 
         // Government category gating
         if let requiredCats = scenario.metadata?.requiredGovernmentCategories,
@@ -405,5 +409,25 @@ extension ScenarioNavigator {
         }
 
         return max(score, 0)
+    }
+
+    func matchesRegionalScope(_ scenario: Scenario, for country: Country?) -> Bool {
+        guard let regionTags = scenario.metadata?.regionTags, !regionTags.isEmpty else {
+            return true
+        }
+        guard let countryRegion = normalizedRegionId(country?.region) else {
+            return false
+        }
+        return regionTags.contains { normalizedRegionId($0) == countryRegion }
+    }
+
+    private func normalizedRegionId(_ rawRegion: String?) -> String? {
+        guard let rawRegion else { return nil }
+        let trimmed = rawRegion.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return trimmed
+            .lowercased()
+            .replacingOccurrences(of: "-", with: "_")
+            .replacingOccurrences(of: " ", with: "_")
     }
 }

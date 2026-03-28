@@ -315,11 +315,11 @@ async function regenerateScenario(original: BundleScenario): Promise<BundleScena
           : undefined,
       distributionConfig: { mode: 'fixed', loopLength: 1 },
     } as any);
-    if (!result || result.length === 0) {
+    if (!result || result.scenarios.length === 0) {
       console.warn(`[AuditFix] Regeneration produced no scenarios for ${original.id}`);
       return null;
     }
-    const replacement = result[0];
+    const replacement = result.scenarios[0];
     replacement.id = original.id;
     const originalApplicableCountries =
       Array.isArray(original.metadata?.applicable_countries) &&

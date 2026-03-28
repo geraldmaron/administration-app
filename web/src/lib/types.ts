@@ -1,3 +1,17 @@
+import type {
+  GenerationDistributionConfig,
+  GenerationModelConfig,
+  ScenarioExclusivityReason,
+  ScenarioScopeTier,
+  ScenarioSourceKind,
+} from '../../../shared/generation-contract';
+
+export type {
+  ScenarioExclusivityReason,
+  ScenarioScopeTier,
+  ScenarioSourceKind,
+} from '../../../shared/generation-contract';
+
 export interface ScenarioSummary {
   id: string;
   title: string;
@@ -5,10 +19,16 @@ export interface ScenarioSummary {
   severity: string | null;
   isActive: boolean;
   createdAt: string;
+  updatedAt: string | null;
   auditScore: number | null;
   region: string | null;
   tags: string[];
   difficulty: number | null;
+  source: string | null;
+  sourceKind: string | null;
+  scopeTier: string | null;
+  scopeKey: string | null;
+  countryCount: number | null;
 }
 
 export interface OptionEffect {
@@ -43,6 +63,12 @@ export interface ScenarioCondition {
   max?: number;
 }
 
+export interface RelationshipCondition {
+  relationshipId: string;
+  min?: number;
+  max?: number;
+}
+
 export interface LegislatureRequirement {
   min_approval: number;
   chamber?: 'upper' | 'lower' | 'both';
@@ -62,7 +88,18 @@ export interface ScenarioMetadata {
   difficulty?: number;
   tags?: string[];
   applicable_countries?: string[] | string;
+  requiredGeopoliticalTags?: string[];
+  excludedGeopoliticalTags?: string[];
+  requiredGovernmentCategories?: string[];
+  excludedGovernmentCategories?: string[];
   source?: string;
+  sourceKind?: string;
+  theme?: string;
+  scopeTier?: string;
+  scopeKey?: string;
+  clusterId?: string;
+  exclusivityReason?: string;
+  region_tags?: string[];
   isNeighborEvent?: boolean;
   involvedCountries?: string[];
   auditMetadata?: AuditMetadata;
@@ -74,13 +111,24 @@ export interface ScenarioDetail {
   title: string;
   description: string;
   is_active: boolean;
+  isGolden?: boolean;
   createdAt: string;
+  updatedAt?: string;
   phase?: string;
   actIndex?: number;
+  chain_id?: string;
+  token_map?: Record<string, string>;
   options: Option[];
   metadata?: ScenarioMetadata;
   conditions?: ScenarioCondition[];
+  relationship_conditions?: RelationshipCondition[];
   legislature_requirement?: LegislatureRequirement;
+  generationProvenance?: {
+    jobId: string;
+    executionTarget: string;
+    modelUsed: string;
+    generatedAt: string;
+  };
 }
 
 export interface AuditSummary {
@@ -105,6 +153,18 @@ export interface JobError {
   error: string;
 }
 
+export interface JobEvent {
+  id: string;
+  timestamp?: string;
+  level: 'info' | 'warning' | 'error' | 'success';
+  code: string;
+  message: string;
+  bundle?: string;
+  phase?: string;
+  scenarioId?: string;
+  data?: Record<string, unknown>;
+}
+
 export interface JobLiveActivityBundle {
   attempts: number;
   concept: number;
@@ -120,10 +180,7 @@ export interface JobLiveActivity {
   byBundle: Record<string, JobLiveActivityBundle>;
 }
 
-export interface DistributionConfig {
-  mode: 'fixed' | 'auto';
-  loopLength?: 1 | 2 | 3;
-}
+export interface DistributionConfig extends GenerationDistributionConfig {}
 
 export interface PendingScenario {
   id: string;
@@ -150,6 +207,31 @@ export interface JobSummary {
   total?: number;
   errors?: JobError[];
   auditSummary?: AuditSummary;
+  currentBundle?: string;
+  currentPhase?: string;
+  currentMessage?: string;
+  lastHeartbeatAt?: string;
+  executionTarget?: string;
+  eventCount?: number;
+}
+
+export interface JobModelConfig extends GenerationModelConfig {}
+
+export interface JobAttemptSummary {
+  bundle: string;
+  phase: string;
+  modelUsed: string;
+  success: boolean;
+  auditScore?: number;
+  failureReasons?: string[];
+  retryCount: number;
+  tokenUsage?: { input: number; output: number };
+}
+
+export interface JobFailureAnalysis {
+  source: 'runner-log';
+  summary: string;
+  evidence: string[];
 }
 
 export interface JobDetail extends JobSummary {
@@ -170,6 +252,17 @@ export interface JobDetail extends JobSummary {
   liveActivity?: JobLiveActivity;
   dryRun?: boolean;
   pendingScenarioCount?: number;
+  currentBundle?: string;
+  currentPhase?: string;
+  currentMessage?: string;
+  lastHeartbeatAt?: string;
+  executionTarget?: string;
+  modelConfig?: JobModelConfig;
+  tokenSummary?: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number };
+  eventCount?: number;
+  events?: JobEvent[];
+  attemptSummary?: JobAttemptSummary[];
+  failureAnalysis?: JobFailureAnalysis;
 }
 
 export interface CountrySummary {
@@ -178,21 +271,156 @@ export interface CountrySummary {
   region: string;
 }
 
+export interface SimulationTokenUsage {
+  token: string;
+  raw: string;
+  value: string;
+  source: 'context' | 'fallback' | 'optional-empty';
+}
+
+export interface SimulationConditionCheck {
+  metricId: string;
+  actual: number;
+  min?: number;
+  max?: number;
+  passed: boolean;
+  detail: string;
+}
+
+export interface SimulationRelationshipConditionCheck {
+  relationshipId: string;
+  resolvedCountryId: string | null;
+  actual: number | null;
+  min?: number;
+  max?: number;
+  passed: boolean;
+  detail: string;
+}
+
+export interface SimulationValidationCheck {
+  kind: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface SimulationDiagnostics {
+  tokenUsages: SimulationTokenUsage[];
+  fallbackTokens: string[];
+  unresolvedTokens: string[];
+  conditionChecks: SimulationConditionCheck[];
+  relationshipConditionChecks: SimulationRelationshipConditionCheck[];
+  validationChecks: SimulationValidationCheck[];
+}
+
+export interface SimulationCountry {
+  id: string;
+  name: string;
+  region: string;
+  governmentCategory?: string;
+  tags: string[];
+}
+
+export interface SimulationScenario extends ScenarioDetail {
+  diagnostics: SimulationDiagnostics;
+}
+
+export interface SimulationFilteredScenario {
+  scenario: Pick<ScenarioDetail, 'id' | 'title' | 'metadata'>;
+  reason: string;
+  diagnostics: Pick<SimulationDiagnostics, 'conditionChecks' | 'relationshipConditionChecks' | 'validationChecks' | 'fallbackTokens' | 'unresolvedTokens'>;
+}
+
+export interface SimulationResult {
+  country: SimulationCountry;
+  metrics: Record<string, number>;
+  totalScenarios: number;
+  eligibleCount: number;
+  filteredCount: number;
+  eligible: SimulationScenario[];
+  filtered?: SimulationFilteredScenario[];
+}
+
+export interface AnalyticsDailyPoint {
+  date: string;
+  totalAttempts: number;
+  successRate: number;
+  avgScore: number;
+}
+
+export interface AnalyticsBundleRow {
+  bundle: string;
+  attempts: number;
+  successes: number;
+  avgScore: number;
+}
+
+export interface AnalyticsRuleRow {
+  rule: string;
+  count: number;
+}
+
+export interface AnalyticsFailureRow {
+  id: string;
+  bundle: string;
+  category: string;
+  score: number;
+  topIssue: string;
+  timestamp: string;
+}
+
+export interface AnalyticsSummary {
+  days: number;
+  totalAttempts: number;
+  totalSuccesses: number;
+  successRate: number;
+  avgAuditScore: number;
+  topFailureCategory: string | null;
+}
+
+export interface AnalyticsResponse {
+  summary: AnalyticsSummary;
+  dailyTrend: AnalyticsDailyPoint[];
+  byBundle: AnalyticsBundleRow[];
+  topRules: AnalyticsRuleRow[];
+  recentFailures: AnalyticsFailureRow[];
+}
+
+export interface NewsArticle {
+  title: string;
+  link: string;
+  snippet?: string;
+  source: string;
+  pubDate: string;
+}
+
+export interface ArticleClassification {
+  articleIndex: number;
+  bundle: string;
+  scope: 'global' | 'regional' | 'country';
+  region?: string;
+  applicable_countries?: string[];
+  relevance_score: number;
+  rationale: string;
+}
+
 export interface GenerationJobRequest {
   bundles: string[];
   count: number;
+  lowLatencyMode?: boolean;
   regions?: string[];
   region?: string;
+  scopeTier?: ScenarioScopeTier;
+  scopeKey?: string;
+  clusterId?: string;
+  exclusivityReason?: ScenarioExclusivityReason;
+  applicable_countries?: string[];
+  sourceKind?: ScenarioSourceKind;
   description?: string;
   priority?: 'low' | 'normal' | 'high';
   distributionConfig?: DistributionConfig;
   dryRun?: boolean;
-  modelConfig?: {
-    architectModel?: string;
-    drafterModel?: string;
-    repairModel?: string;
-    contentQualityModel?: string;
-    narrativeReviewModel?: string;
-    embeddingModel?: string;
-  };
+  mode?: 'manual' | 'news' | 'blitz';
+  newsContext?: NewsArticle[];
+  modelConfig?: GenerationModelConfig;
+  executionTarget?: 'cloud_function' | 'n8n';
 }

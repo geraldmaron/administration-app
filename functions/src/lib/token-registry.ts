@@ -399,6 +399,24 @@ export function normalizeTokenAliases(text: string): string {
   for (const [pattern, replacement] of exactPlaceholderReplacements) {
     result = result.replace(pattern, replacement);
   }
+
+  const metricPlaceholderLabels: Readonly<Record<string, string>> = {
+    approval: 'public approval',
+    public_order: 'public order',
+    foreign_relations: 'foreign relations',
+    foreign_influence: 'foreign influence',
+    economic_bubble: 'economic bubble',
+  };
+
+  result = result.replace(/\{(?:the_)?metric_([a-z_]+)\}/gi, (_match, metricName: string) => {
+    const normalizedMetric = metricName.toLowerCase();
+    if (metricPlaceholderLabels[normalizedMetric]) {
+      return metricPlaceholderLabels[normalizedMetric];
+    }
+
+    return normalizedMetric.replace(/_/g, ' ');
+  });
+
   return result;
 }
 

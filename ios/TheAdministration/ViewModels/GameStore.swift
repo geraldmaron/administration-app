@@ -216,12 +216,12 @@ class GameStore: ObservableObject {
         if let gameplay = randomCountry.gameplayProfile,
            let starting = gameplay.startingMetrics,
            !starting.isEmpty {
-            // Use calibrated starting metrics from gameplay profile when available
             initialMetrics = starting
+            initialMetrics.removeValue(forKey: "metric_approval")
             metricOffsets = [:]
         } else {
-            // Legacy baseline for early countries without gameplay profiles
             for metricId in metricIds {
+                if metricId == "metric_approval" { continue }
                 let variance = (Double.random(in: 0...1) * 16) - 8
                 let val = 50.12 + variance
                 let minRating = 48.0
@@ -234,7 +234,11 @@ class GameStore: ObservableObject {
                 }
             }
         }
-        
+
+        var tempState = GameState(schemaVersion: "5.0", isSetup: false, countryId: randomCountry.id, turn: 0, maxTurns: 0, phase: .early, status: .active, metrics: initialMetrics, metricHistory: [:], cabinet: [], activeEffects: [], currentScenario: nil, player: nil)
+        ScoringEngine.calculateApproval(&tempState)
+        initialMetrics["metric_approval"] = tempState.metrics["metric_approval"] ?? ScoringEngine.INITIAL_METRIC_VALUE
+
         let roles = [
             (id: "role_executive", cat: "Executive"),
             (id: "role_diplomacy", cat: "Diplomacy"),
@@ -419,13 +423,10 @@ class GameStore: ObservableObject {
         let metricIds = ["metric_approval", "metric_economy", "metric_foreign_relations", "metric_public_order", "metric_corruption"]
         
         for metricId in metricIds {
-            // Increased baseline from 50 to 62 for healthier starting position
-            // This changes approval from ~40% (crisis) to ~55% (strong but vulnerable)
+            if metricId == "metric_approval" { continue }
             let variance = (Double.random(in: 0...1) * 16) - 8
             let baselineValue: Double = metricId == "metric_corruption" ? 25.0 : 62.0
             let val = baselineValue + variance
-            
-            // Ensure player starts with minimum rating
             let minRating: Double = metricId == "metric_corruption" ? 20.0 : 58.0
             if val < minRating {
                 metricOffsets[metricId] = minRating - val
@@ -435,12 +436,16 @@ class GameStore: ObservableObject {
                 initialMetrics[metricId] = (val * 100).rounded() / 100
             }
         }
-        
+
+        var tempState = GameState(schemaVersion: "5.0", isSetup: false, countryId: state.countryId, turn: 0, maxTurns: 0, phase: .early, status: .active, metrics: initialMetrics, metricHistory: [:], cabinet: [], activeEffects: [], currentScenario: nil, player: state.player)
+        ScoringEngine.calculateApproval(&tempState)
+        initialMetrics["metric_approval"] = tempState.metrics["metric_approval"] ?? ScoringEngine.INITIAL_METRIC_VALUE
+
         var history: [String: [Double]] = [:]
         for metricId in metricIds {
             history[metricId] = [initialMetrics[metricId] ?? 50]
         }
-        
+
         let personnelSpent = state.cabinet.reduce(0) { $0 + ($1.cost ?? 0) }
         let totalBudget = CabinetPointsService.calculatePersonnelBudget(numRoles: state.cabinet.count)
         let initialMaxTurns = Self.testMode ? 10 : ScoringEngine.calculateMaxTurns(state)
@@ -586,10 +591,11 @@ class GameStore: ObservableObject {
             decisionLabel: option.label ?? option.text,
             decisionId: option.id,
             metricDeltas: [],
+            policyShifts: nil,
             cabinetFeedback: cabinetFeedback,
             timestamp: ISO8601DateFormatter().string(from: Date())
         )
-        
+
         let metricsBefore = state.metrics
         state = ScoringEngine.applyDecision(state: state, option: option)
 
@@ -623,6 +629,11 @@ class GameStore: ObservableObject {
         // Check for legislature elections
         if var legislature = state.legislatureState, state.turn >= legislature.nextElectionTurn {
             legislature = conductLegislatureElection(legislature: legislature, state: state)
+            state.legislatureState = legislature
+        }
+
+        if var legislature = state.legislatureState {
+            legislature = updateLegislatureApproval(legislature: legislature, approval: state.metrics["metric_approval"] ?? 50)
             state.legislatureState = legislature
         }
 
@@ -781,6 +792,7 @@ class GameStore: ObservableObject {
                 let neighborPool = allScenarios.filter { scenario in
                     guard scenario.options.count >= 3 else { return false }
                     if scenario.metadata?.isNeighborEvent != true { return false }
+                    if !ScenarioNavigator.shared.matchesRegionalScope(scenario, for: country) { return false }
                     // If scenario restricts applicable countries, respect it
                     if let ac = scenario.metadata?.applicableCountries, !ac.isEmpty {
                         let matches = ac.contains { $0.lowercased() == cid.lowercased() }
@@ -827,12 +839,25 @@ class GameStore: ObservableObject {
                     if let maxV = condition.max, metricVal > maxV { return false }
                 }
             }
+            // Relationship conditions: gate on diplomatic score with the resolved country
+            if let relConditions = scenario.relationshipConditions, !relConditions.isEmpty {
+                guard let currentCountry else { return false }
+                for cond in relConditions {
+                    guard let countryId = TemplateEngine.shared.resolveRelationshipToCountryId(
+                        cond.relationshipId, country: currentCountry, gameState: state
+                    ) else { return false }
+                    let score = state.countries.first(where: { $0.id == countryId })?.diplomacy.relationship ?? 0.0
+                    if let minV = cond.min, score < minV { return false }
+                    if let maxV = cond.max, score > maxV { return false }
+                }
+            }
             // Applicable countries filter
             if let ac = scenario.metadata?.applicableCountries, !ac.isEmpty {
                 guard let countryId = state.countryId else { return false }
                 let matches = ac.contains(where: { $0.lowercased() == countryId.lowercased() })
                 if !matches { return false }
             }
+            if !ScenarioNavigator.shared.matchesRegionalScope(scenario, for: currentCountry) { return false }
             // Legislature approval gate
             if let req = scenario.legislatureRequirement {
                 let legislatureApproval = state.legislatureState?.approvalOfPlayer ?? 100
@@ -911,6 +936,16 @@ class GameStore: ObservableObject {
         if let scenario = nextScenario, let countryId = state.countryId {
             let countries = await FirebaseDataService.shared.getCountries()
             if let country = countries.first(where: { $0.id == countryId }) {
+                // Record chain token bindings on first act so all subsequent acts resolve the same countries
+                if let chainId = scenario.chainId, state.chainTokenBindings?[chainId] == nil {
+                    let bindings = TemplateEngine.shared.resolveChainTokenBindings(
+                        for: scenario, country: country, gameState: state
+                    )
+                    if !bindings.isEmpty {
+                        if state.chainTokenBindings == nil { state.chainTokenBindings = [:] }
+                        state.chainTokenBindings?[chainId] = bindings
+                    }
+                }
                 nextScenario = TemplateEngine.shared.resolveScenario(
                     scenario,
                     country: country,
@@ -1112,10 +1147,27 @@ class GameStore: ObservableObject {
 
         updated.lastElectionTurn = state.turn
         updated.nextElectionTurn = state.turn + max(5, Int(Double(state.maxTurns) * 0.5))
-        updated.approvalOfPlayer = updated.composition
-            .map { $0.approvalOfPlayer }
-            .reduce(0, +) / max(1, updated.composition.count)
+        let totalSeats = updated.composition.reduce(0.0) { $0 + $1.seatShare }
+        updated.approvalOfPlayer = totalSeats > 0
+            ? Int(updated.composition.reduce(0.0) { $0 + Double($1.approvalOfPlayer) * $1.seatShare } / totalSeats)
+            : 50
 
+        return updated
+    }
+
+    private func updateLegislatureApproval(legislature: LegislatureState, approval: Double) -> LegislatureState {
+        var updated = legislature
+        for i in updated.composition.indices {
+            if updated.composition[i].isRulingCoalition {
+                updated.composition[i].approvalOfPlayer = max(20, min(90, Int(approval * 0.9)))
+            } else {
+                updated.composition[i].approvalOfPlayer = max(20, min(70, Int((100 - approval) * 0.7)))
+            }
+        }
+        let totalSeats = updated.composition.reduce(0.0) { $0 + $1.seatShare }
+        updated.approvalOfPlayer = totalSeats > 0
+            ? Int(updated.composition.reduce(0.0) { $0 + Double($1.approvalOfPlayer) * $1.seatShare } / totalSeats)
+            : 50
         return updated
     }
 
@@ -1430,71 +1482,128 @@ class GameStore: ObservableObject {
         saveGame()
     }
 
+    private func buildActionResolutionRequest(
+        category: String,
+        actionType: String?,
+        targetCountryId: String?,
+        severity: String? = nil,
+        freeFormCommand: String? = nil
+    ) -> ActionResolutionRequest {
+        let playerCountry = state.countries.first(where: { $0.id == state.countryId })
+        let targetCountry = targetCountryId.flatMap { tid in state.countries.first(where: { $0.id == tid }) }
+        return ActionResolutionRequest(
+            actionCategory: category,
+            actionType: actionType,
+            targetCountryId: targetCountryId,
+            severity: severity,
+            freeFormCommand: freeFormCommand,
+            countryId: state.countryId ?? "unknown",
+            countryName: playerCountry?.name ?? "Unknown",
+            leaderTitle: playerCountry?.leaderTitle,
+            targetCountryName: targetCountry?.name,
+            turn: state.turn,
+            maxTurns: state.maxTurns,
+            phase: state.phase.rawValue,
+            metrics: state.metrics,
+            relationship: targetCountry?.diplomacy.relationship,
+            relationshipType: targetCountry?.diplomacy.alignment,
+            recentActions: state.recentActions,
+            governmentCategory: playerCountry?.geopoliticalProfile?.governmentCategory.rawValue,
+            playerApproach: state.player?.approach,
+            targetMilitaryStrength: targetCountry?.military.strength,
+            targetCyberCapability: targetCountry?.military.cyberCapability,
+            targetNuclearCapable: targetCountry?.military.nuclearCapable
+        )
+    }
+
+    private func metricNameFromId(_ metricId: String) -> String {
+        metricId
+            .replacingOccurrences(of: "metric_", with: "")
+            .replacingOccurrences(of: "_", with: " ")
+            .split(separator: " ")
+            .map { $0.prefix(1).uppercased() + $0.dropFirst() }
+            .joined(separator: " ")
+    }
+
     func executeDiplomaticAction(type: String, targetCountryId: String) async -> (success: Bool, message: String) {
         guard let idx = state.countries.firstIndex(where: { $0.id == targetCountryId }) else {
             return (false, "Country not found")
         }
-        let metricsBefore = state.metrics
+
         let rel = state.countries[idx].diplomacy.relationship
+        if type == "request_alliance" && rel < 30 {
+            let countryName = state.countries[idx].name
+            return (false, "Alliance request rejected by \(countryName). Relations are too strained.")
+        }
+
+        let metricsBefore = state.metrics
         let relBefore = rel
-        switch type {
-        case "trade_agreement":
-            state.countries[idx].diplomacy.relationship = min(100, rel + 10)
-            modifyMetricBy("metric_economy", delta: 2.0)
-            modifyMetricBy("metric_foreign_relations", delta: 3.0)
-        case "impose_sanctions":
-            state.countries[idx].diplomacy.relationship = max(-100, rel - 20)
-            modifyMetricBy("metric_economy", delta: -2.0)
-            modifyMetricBy("metric_foreign_relations", delta: -5.0)
-        case "request_alliance":
-            if rel >= 30 {
+        let countryName = state.countries[idx].name
+
+        var headline: String
+        var outcomeDescription: String
+        var relDelta: Double = 0
+
+        let aiRequest = buildActionResolutionRequest(category: "diplomatic", actionType: type, targetCountryId: targetCountryId)
+        let aiResult = await ActionResolutionService.shared.resolve(aiRequest)
+
+        if let res = aiResult, res.success, let payload = res.result {
+            headline = payload.headline
+            outcomeDescription = payload.summary
+
+            for md in payload.metricDeltas {
+                modifyMetricBy(md.metricId, delta: md.delta)
+            }
+            relDelta = payload.relationshipDelta
+            state.countries[idx].diplomacy.relationship = max(-100, min(100, rel + relDelta))
+        } else {
+            switch type {
+            case "trade_agreement":
+                state.countries[idx].diplomacy.relationship = min(100, rel + 10)
+                modifyMetricBy("metric_economy", delta: 2.0)
+                modifyMetricBy("metric_foreign_relations", delta: 3.0)
+            case "impose_sanctions":
+                state.countries[idx].diplomacy.relationship = max(-100, rel - 20)
+                modifyMetricBy("metric_economy", delta: -2.0)
+                modifyMetricBy("metric_foreign_relations", delta: -5.0)
+            case "request_alliance":
                 state.countries[idx].diplomacy.relationship = min(100, rel + 15)
                 modifyMetricBy("metric_foreign_relations", delta: 5.0)
-            } else {
-                let countryName = state.countries[idx].name
-                return (false, "Alliance request rejected by \(countryName). Relations are too strained.")
+            case "expel_ambassador":
+                state.countries[idx].diplomacy.relationship = max(-100, rel - 30)
+                modifyMetricBy("metric_foreign_relations", delta: -8.0)
+            default:
+                return (false, "Unknown diplomatic action")
             }
-        case "expel_ambassador":
-            state.countries[idx].diplomacy.relationship = max(-100, rel - 30)
-            modifyMetricBy("metric_foreign_relations", delta: -8.0)
-        default:
-            return (false, "Unknown diplomatic action")
+            relDelta = state.countries[idx].diplomacy.relationship - relBefore
+
+            switch type {
+            case "trade_agreement":
+                headline = "Trade Agreement Proposed with \(countryName)"
+                outcomeDescription = "The administration has extended a formal trade proposal to \(countryName). Economic analysts expect modest growth in bilateral trade and improved diplomatic ties."
+            case "impose_sanctions":
+                headline = "Sanctions Imposed on \(countryName)"
+                outcomeDescription = "The administration has enacted economic sanctions against \(countryName). Trade volumes are expected to contract as international observers monitor the situation closely."
+            case "expel_ambassador":
+                headline = "Ambassador Expelled: \(countryName)"
+                outcomeDescription = "The administration has declared the \(countryName) ambassador persona non grata. Diplomatic relations have been severely downgraded and will require extensive repair."
+            case "request_alliance":
+                headline = "Alliance Proposed with \(countryName)"
+                outcomeDescription = "The administration has extended a formal alliance proposal to \(countryName). Strengthened ties could improve regional stability and foreign relations standing."
+            default:
+                headline = "Diplomatic Action Taken"
+                outcomeDescription = "The administration has executed a diplomatic action against \(countryName)."
+            }
         }
-        let countryName = state.countries[idx].name
-        let headline: String
-        let outcomeDescription: String
-        switch type {
-        case "trade_agreement":
-            headline = "Trade Agreement Proposed with \(countryName)"
-            outcomeDescription = "The administration has extended a formal trade proposal to \(countryName). Economic analysts expect modest growth in bilateral trade and improved diplomatic ties."
-        case "impose_sanctions":
-            headline = "Sanctions Imposed on \(countryName)"
-            outcomeDescription = "The administration has enacted economic sanctions against \(countryName). Trade volumes are expected to contract as international observers monitor the situation closely."
-        case "expel_ambassador":
-            headline = "Ambassador Expelled: \(countryName)"
-            outcomeDescription = "The administration has declared the \(countryName) ambassador persona non grata. Diplomatic relations have been severely downgraded and will require extensive repair."
-        case "request_alliance":
-            headline = "Alliance Proposed with \(countryName)"
-            outcomeDescription = "The administration has extended a formal alliance proposal to \(countryName). Strengthened ties could improve regional stability and foreign relations standing."
-        default:
-            headline = "Diplomatic Action Taken"
-            outcomeDescription = "The administration has executed a diplomatic action against \(countryName)."
-        }
+
         let changedMetrics = Dictionary(uniqueKeysWithValues: state.metrics.compactMap { (k, v) in
             let before = metricsBefore[k] ?? 50.0
             let d = v - before
             return abs(d) > 0.01 ? (k, d) : nil
         })
         var scoringDeltas = changedMetrics.map { (metricId, delta) in
-            let name = metricId
-                .replacingOccurrences(of: "metric_", with: "")
-                .replacingOccurrences(of: "_", with: " ")
-                .split(separator: " ")
-                .map { $0.prefix(1).uppercased() + $0.dropFirst() }
-                .joined(separator: " ")
-            return ScoringEngine.MetricDelta(id: metricId, delta: delta, name: name, cabinetOffset: nil, playerOffset: nil, netChange: nil)
+            ScoringEngine.MetricDelta(id: metricId, delta: delta, name: metricNameFromId(metricId), cabinetOffset: nil, playerOffset: nil, netChange: nil)
         }
-        let relDelta = state.countries[idx].diplomacy.relationship - relBefore
         if abs(relDelta) > 0.01 {
             scoringDeltas.append(ScoringEngine.MetricDelta(
                 id: "relationship_\(targetCountryId)",
@@ -1505,7 +1614,7 @@ class GameStore: ObservableObject {
                 netChange: nil
             ))
         }
-        let briefing = ScoringEngine.Briefing(title: headline, description: outcomeDescription, metrics: scoringDeltas, boosts: [], humanCost: nil)
+        let briefing = ScoringEngine.Briefing(title: headline, description: outcomeDescription, metrics: scoringDeltas, boosts: [], humanCost: nil, policyShifts: [])
         let article = NewsArticle(
             id: "news_\(state.turn)_diplomatic_\(type)",
             title: headline,
@@ -1520,13 +1629,7 @@ class GameStore: ObservableObject {
             isAlert: nil
         )
         var modelDeltas = changedMetrics.map { (metricId, delta) in
-            let name = metricId
-                .replacingOccurrences(of: "metric_", with: "")
-                .replacingOccurrences(of: "_", with: " ")
-                .split(separator: " ")
-                .map { $0.prefix(1).uppercased() + $0.dropFirst() }
-                .joined(separator: " ")
-            return MetricDelta(metricId: metricId, metricName: name, delta: delta, cabinetOffset: nil, playerOffset: nil, netChange: nil)
+            MetricDelta(metricId: metricId, metricName: metricNameFromId(metricId), delta: delta, cabinetOffset: nil, playerOffset: nil, netChange: nil)
         }
         if abs(relDelta) > 0.01 {
             modelDeltas.append(MetricDelta(
@@ -1550,6 +1653,7 @@ class GameStore: ObservableObject {
             decisionLabel: type,
             decisionId: "diplomatic_\(type)_\(state.turn)",
             metricDeltas: modelDeltas,
+            policyShifts: nil,
             cabinetFeedback: [],
             timestamp: ISO8601DateFormatter().string(from: Date())
         )
@@ -1575,81 +1679,96 @@ class GameStore: ObservableObject {
         let sm: Double = severity == "high" ? 2.0 : severity == "low" ? 0.5 : 1.0
         let strengthBefore = state.countries[idx].military.strength
         let cyberBefore = state.countries[idx].military.cyberCapability
-        switch type {
-        case "covert_ops":
-            state.countries[idx].military.cyberCapability = max(0, state.countries[idx].military.cyberCapability - 5 * sm)
-            modifyMetricBy("metric_foreign_relations", delta: -3.0 * sm)
-        case "special_ops":
-            state.countries[idx].military.strength = max(0, state.countries[idx].military.strength - 5 * sm)
-            modifyMetricBy("metric_public_order", delta: -2.0 * sm)
-            modifyMetricBy("metric_foreign_relations", delta: -5.0 * sm)
-        case "military_strike":
-            state.countries[idx].military.strength = max(0, state.countries[idx].military.strength - 15 * sm)
-            modifyMetricBy("metric_foreign_relations", delta: -15.0 * sm)
-            modifyMetricBy("metric_approval", delta: -5.0 * sm)
-        case "nuclear_strike":
-            state.countries[idx].military.strength = 0
-            modifyMetricBy("metric_foreign_relations", delta: -50.0)
-            modifyMetricBy("metric_approval", delta: -30.0)
-        case "cyberattack":
-            state.countries[idx].military.cyberCapability = max(0, state.countries[idx].military.cyberCapability - 20 * sm)
-            modifyMetricBy("metric_foreign_relations", delta: -8.0 * sm)
-        case "naval_blockade":
-            modifyMetricBy("metric_economy", delta: 2.0 * sm)
-            modifyMetricBy("metric_foreign_relations", delta: -10.0 * sm)
-        default:
-            return (false, "Unknown military action")
-        }
         let countryName = state.countries[idx].name
-        let headline: String
-        let outcomeDescription: String
-        switch type {
-        case "cyberattack":
-            headline = "Cyberattack Executed Against \(countryName)"
-            outcomeDescription = "A classified cyber operation targeting \(countryName)'s digital infrastructure has been authorized. Intelligence services report the operation was carried out at \(severity) intensity."
-        case "covert_ops":
-            headline = "Covert Operation Against \(countryName)"
-            outcomeDescription = "Special intelligence assets have executed a covert operation against \(countryName) at \(severity) intensity. Details remain classified."
-        case "special_ops":
-            headline = "Special Forces Deployed Against \(countryName)"
-            outcomeDescription = "The administration has authorized a special forces operation against \(countryName). The \(severity)-intensity mission targeted military capabilities."
-        case "naval_blockade":
-            headline = "Naval Blockade Imposed on \(countryName)"
-            outcomeDescription = "The administration has authorized a \(severity)-intensity naval blockade restricting maritime access to \(countryName). Economic pressure is expected to mount."
-        case "military_strike":
-            headline = "Military Strike Authorized Against \(countryName)"
-            outcomeDescription = "Conventional military forces have struck \(countryName) in a \(severity)-intensity engagement. International reactions are expected."
-        case "nuclear_strike":
-            headline = "Nuclear Strike Executed Against \(countryName)"
-            outcomeDescription = "The administration has authorized a strategic nuclear deployment against \(countryName). The consequences are irreversible and global condemnation is expected."
-        default:
-            headline = "Military Action Executed"
-            outcomeDescription = "The administration has carried out a \(severity)-intensity military action against \(countryName)."
+
+        var headline: String
+        var outcomeDescription: String
+
+        let aiRequest = buildActionResolutionRequest(category: "military", actionType: type, targetCountryId: targetCountryId, severity: severity)
+        let aiResult = await ActionResolutionService.shared.resolve(aiRequest)
+
+        if let res = aiResult, res.success, let payload = res.result {
+            headline = payload.headline
+            outcomeDescription = payload.summary
+
+            for md in payload.metricDeltas {
+                modifyMetricBy(md.metricId, delta: md.delta)
+            }
+            if let milDelta = payload.targetMilitaryStrengthDelta, abs(milDelta) > 0.01 {
+                state.countries[idx].military.strength = max(0, state.countries[idx].military.strength + milDelta)
+            }
+            if let cyDelta = payload.targetCyberCapabilityDelta, abs(cyDelta) > 0.01 {
+                state.countries[idx].military.cyberCapability = max(0, state.countries[idx].military.cyberCapability + cyDelta)
+            }
+        } else {
+            switch type {
+            case "covert_ops":
+                state.countries[idx].military.cyberCapability = max(0, state.countries[idx].military.cyberCapability - 5 * sm)
+                modifyMetricBy("metric_foreign_relations", delta: -3.0 * sm)
+            case "special_ops":
+                state.countries[idx].military.strength = max(0, state.countries[idx].military.strength - 5 * sm)
+                modifyMetricBy("metric_public_order", delta: -2.0 * sm)
+                modifyMetricBy("metric_foreign_relations", delta: -5.0 * sm)
+            case "military_strike":
+                state.countries[idx].military.strength = max(0, state.countries[idx].military.strength - 15 * sm)
+                modifyMetricBy("metric_foreign_relations", delta: -15.0 * sm)
+                modifyMetricBy("metric_approval", delta: -5.0 * sm)
+            case "nuclear_strike":
+                state.countries[idx].military.strength = 0
+                modifyMetricBy("metric_foreign_relations", delta: -50.0)
+                modifyMetricBy("metric_approval", delta: -30.0)
+            case "cyberattack":
+                state.countries[idx].military.cyberCapability = max(0, state.countries[idx].military.cyberCapability - 20 * sm)
+                modifyMetricBy("metric_foreign_relations", delta: -8.0 * sm)
+            case "naval_blockade":
+                modifyMetricBy("metric_economy", delta: 2.0 * sm)
+                modifyMetricBy("metric_foreign_relations", delta: -10.0 * sm)
+            default:
+                return (false, "Unknown military action")
+            }
+
+            switch type {
+            case "cyberattack":
+                headline = "Cyberattack Executed Against \(countryName)"
+                outcomeDescription = "A classified cyber operation targeting \(countryName)'s digital infrastructure has been authorized. Intelligence services report the operation was carried out at \(severity) intensity."
+            case "covert_ops":
+                headline = "Covert Operation Against \(countryName)"
+                outcomeDescription = "Special intelligence assets have executed a covert operation against \(countryName) at \(severity) intensity. Details remain classified."
+            case "special_ops":
+                headline = "Special Forces Deployed Against \(countryName)"
+                outcomeDescription = "The administration has authorized a special forces operation against \(countryName). The \(severity)-intensity mission targeted military capabilities."
+            case "naval_blockade":
+                headline = "Naval Blockade Imposed on \(countryName)"
+                outcomeDescription = "The administration has authorized a \(severity)-intensity naval blockade restricting maritime access to \(countryName). Economic pressure is expected to mount."
+            case "military_strike":
+                headline = "Military Strike Authorized Against \(countryName)"
+                outcomeDescription = "Conventional military forces have struck \(countryName) in a \(severity)-intensity engagement. International reactions are expected."
+            case "nuclear_strike":
+                headline = "Nuclear Strike Executed Against \(countryName)"
+                outcomeDescription = "The administration has authorized a strategic nuclear deployment against \(countryName). The consequences are irreversible and global condemnation is expected."
+            default:
+                headline = "Military Action Executed"
+                outcomeDescription = "The administration has carried out a \(severity)-intensity military action against \(countryName)."
+            }
         }
+
         let changedMetrics = Dictionary(uniqueKeysWithValues: state.metrics.compactMap { (k, v) in
             let before = metricsBefore[k] ?? 50.0
             let d = v - before
             return abs(d) > 0.01 ? (k, d) : nil
         })
-        var scoringDeltas = changedMetrics.map { (metricId, delta) in
-            let name = metricId
-                .replacingOccurrences(of: "metric_", with: "")
-                .replacingOccurrences(of: "_", with: " ")
-                .split(separator: " ")
-                .map { $0.prefix(1).uppercased() + $0.dropFirst() }
-                .joined(separator: " ")
-            return ScoringEngine.MetricDelta(id: metricId, delta: delta, name: name, cabinetOffset: nil, playerOffset: nil, netChange: nil)
-        }
         let strengthDelta = state.countries[idx].military.strength - strengthBefore
         let cyberDelta = state.countries[idx].military.cyberCapability - cyberBefore
+
+        var scoringDeltas = changedMetrics.map { (metricId, delta) in
+            ScoringEngine.MetricDelta(id: metricId, delta: delta, name: metricNameFromId(metricId), cabinetOffset: nil, playerOffset: nil, netChange: nil)
+        }
         if abs(strengthDelta) > 0.01 {
             scoringDeltas.append(ScoringEngine.MetricDelta(
                 id: "military_strength_\(targetCountryId)",
                 delta: strengthDelta,
                 name: "\(countryName) Military",
-                cabinetOffset: nil,
-                playerOffset: nil,
-                netChange: nil
+                cabinetOffset: nil, playerOffset: nil, netChange: nil
             ))
         }
         if abs(cyberDelta) > 0.01 {
@@ -1657,12 +1776,10 @@ class GameStore: ObservableObject {
                 id: "cyber_capability_\(targetCountryId)",
                 delta: cyberDelta,
                 name: "\(countryName) Cyber",
-                cabinetOffset: nil,
-                playerOffset: nil,
-                netChange: nil
+                cabinetOffset: nil, playerOffset: nil, netChange: nil
             ))
         }
-        let briefing = ScoringEngine.Briefing(title: headline, description: outcomeDescription, metrics: scoringDeltas, boosts: [], humanCost: nil)
+        let briefing = ScoringEngine.Briefing(title: headline, description: outcomeDescription, metrics: scoringDeltas, boosts: [], humanCost: nil, policyShifts: [])
         let article = NewsArticle(
             id: "news_\(state.turn)_military_\(type)",
             title: headline,
@@ -1677,22 +1794,14 @@ class GameStore: ObservableObject {
             isAlert: nil
         )
         var modelDeltas = changedMetrics.map { (metricId, delta) in
-            let name = metricId
-                .replacingOccurrences(of: "metric_", with: "")
-                .replacingOccurrences(of: "_", with: " ")
-                .split(separator: " ")
-                .map { $0.prefix(1).uppercased() + $0.dropFirst() }
-                .joined(separator: " ")
-            return MetricDelta(metricId: metricId, metricName: name, delta: delta, cabinetOffset: nil, playerOffset: nil, netChange: nil)
+            MetricDelta(metricId: metricId, metricName: metricNameFromId(metricId), delta: delta, cabinetOffset: nil, playerOffset: nil, netChange: nil)
         }
         if abs(strengthDelta) > 0.01 {
             modelDeltas.append(MetricDelta(
                 metricId: "military_strength_\(targetCountryId)",
                 metricName: "\(countryName) Military",
                 delta: strengthDelta,
-                cabinetOffset: nil,
-                playerOffset: nil,
-                netChange: nil
+                cabinetOffset: nil, playerOffset: nil, netChange: nil
             ))
         }
         if abs(cyberDelta) > 0.01 {
@@ -1700,9 +1809,7 @@ class GameStore: ObservableObject {
                 metricId: "cyber_capability_\(targetCountryId)",
                 metricName: "\(countryName) Cyber",
                 delta: cyberDelta,
-                cabinetOffset: nil,
-                playerOffset: nil,
-                netChange: nil
+                cabinetOffset: nil, playerOffset: nil, netChange: nil
             ))
         }
         let record = TurnRecord(
@@ -1717,6 +1824,7 @@ class GameStore: ObservableObject {
             decisionLabel: type,
             decisionId: "military_\(type)_\(state.turn)",
             metricDeltas: modelDeltas,
+            policyShifts: nil,
             cabinetFeedback: [],
             timestamp: ISO8601DateFormatter().string(from: Date())
         )
@@ -1927,50 +2035,71 @@ class GameStore: ObservableObject {
     }
 
     func trustYourGut(command: String) async {
-        let isAtrocity = isAtrocityCommand(command)
-        if isAtrocity {
-            let penaltyArticle = NewsArticle(
-                id: "tyg_atrocity_\(state.turn)",
-                title: "International Community Condemns Executive Order",
-                headline: "International Community Condemns Executive Order",
-                summary: "World leaders react with shock to the latest directive from the administration.",
-                content: "International watchdogs and allied nations have issued urgent condemnations after the administration's latest executive directive was leaked to global media.",
-                turn: state.turn,
-                impact: nil,
-                tags: ["diplomacy", "crisis"],
-                category: "crisis",
-                relatedScenarioId: nil,
-                isAlert: nil
-            )
-            modifyMetricBy("metric_approval", delta: -15.0)
-            modifyMetricBy("metric_foreign_relations", delta: -20.0)
-            modifyMetricBy("metric_public_order", delta: -10.0)
-            addNewsArticle(penaltyArticle)
-            state.trustYourGutUsed += 1
-            saveGame()
-            return
-        }
-        
-        guard getRemainingTrustYourGutUses() > 0 else { return }
-        
+        guard getRemainingTrustYourGutUses() > 0 || isAtrocityCommand(command) else { return }
+
         isLoading = true
         state.trustYourGutUsed += 1
 
-        // Apply modest balanced effects for executive directives
-        let baseline: [String: Double] = [
-            "metric_approval": -3.0,
-            "metric_foreign_relations": -2.0,
-            "metric_economy": -1.0,
-            "metric_public_order": 0.0
-        ]
-        for (metricId, value) in baseline {
-            modifyMetricBy(metricId, delta: value)
+        var headline: String
+        var summary: String
+        var content: String?
+        var category: String
+        var tags: [String]
+
+        let aiRequest = buildActionResolutionRequest(
+            category: "trust_your_gut",
+            actionType: "freeform",
+            targetCountryId: nil,
+            freeFormCommand: command
+        )
+        let aiResult = await ActionResolutionService.shared.resolve(aiRequest)
+
+        if let res = aiResult, res.success, let payload = res.result {
+            let detectedAtrocity = payload.isAtrocity == true
+
+            for md in payload.metricDeltas {
+                modifyMetricBy(md.metricId, delta: md.delta)
+            }
+
+            headline = payload.headline
+            summary = payload.summary
+            content = payload.context
+            category = payload.newsCategory
+            tags = payload.newsTags
+
+            if detectedAtrocity {
+                category = "crisis"
+                tags = ["diplomacy", "crisis"]
+            }
+        } else {
+            let localAtrocity = isAtrocityCommand(command)
+            if localAtrocity {
+                modifyMetricBy("metric_approval", delta: -15.0)
+                modifyMetricBy("metric_foreign_relations", delta: -20.0)
+                modifyMetricBy("metric_public_order", delta: -10.0)
+                headline = "International Community Condemns Executive Order"
+                summary = "World leaders react with shock to the latest directive from the administration."
+                content = "International watchdogs and allied nations have issued urgent condemnations after the administration's latest executive directive was leaked to global media."
+                category = "crisis"
+                tags = ["diplomacy", "crisis"]
+            } else {
+                let baseline: [String: Double] = [
+                    "metric_approval": -3.0,
+                    "metric_foreign_relations": -2.0,
+                    "metric_economy": -1.0,
+                    "metric_public_order": 0.0
+                ]
+                for (metricId, value) in baseline {
+                    modifyMetricBy(metricId, delta: value)
+                }
+                headline = "Administration Issues Executive Directive"
+                summary = "Acting on direct orders, government departments began implementing the executive command: \"\(command)\"."
+                content = "Following the executive directive, state departments are coordinating implementation. The policy's long-term implications remain under assessment by institutional advisors."
+                category = "executive"
+                tags = ["executive"]
+            }
         }
 
-        let headline = "Administration Issues Executive Directive"
-        let summary = "Acting on direct orders, government departments began implementing the executive command: \"\(command)\"."
-        let content: String? = "Following the executive directive, state departments are coordinating implementation. The policy's long-term implications remain under assessment by institutional advisors."
-        
         let article = NewsArticle(
             id: "tyg_\(state.turn)_\(Int(Date().timeIntervalSince1970))",
             title: headline,
@@ -1979,10 +2108,10 @@ class GameStore: ObservableObject {
             content: content,
             turn: state.turn,
             impact: nil,
-            tags: ["executive"],
-            category: "executive",
+            tags: tags,
+            category: category,
             relatedScenarioId: nil,
-                isAlert: nil
+            isAlert: nil
         )
         addNewsArticle(article)
         isLoading = false

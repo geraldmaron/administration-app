@@ -1,4 +1,4 @@
-import { BUNDLE_BADGE_CLASSES } from '@/lib/constants';
+import { BUNDLE_ACCENT_COLORS, BUNDLE_BADGE_CLASSES } from '@/lib/constants';
 
 interface BundleBadgeProps {
   bundle: string;
@@ -6,11 +6,12 @@ interface BundleBadgeProps {
 
 export default function BundleBadge({ bundle }: BundleBadgeProps) {
   const classes = BUNDLE_BADGE_CLASSES[bundle] ?? { bg: 'bg-slate-400/15', text: 'text-slate-400' };
+  const dotColor = BUNDLE_ACCENT_COLORS[bundle] ?? '#94a3b8';
+  const label = bundle.replace(/_/g, ' ');
   return (
-    <span
-      className={`inline-flex min-h-[24px] items-center border border-[var(--border)] px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.18em] rounded-[10px] ${classes.bg} ${classes.text}`}
-    >
-      {bundle.replace('_', ' ')}
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-mono tracking-[0.08em] ${classes.text}`}>
+      <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: dotColor }} />
+      {label.charAt(0).toUpperCase() + label.slice(1)}
     </span>
   );
 }

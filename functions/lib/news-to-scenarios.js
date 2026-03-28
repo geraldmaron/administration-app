@@ -52,6 +52,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dailyNewsToScenarios = void 0;
+exports.buildGenerationScopeForHeadline = buildGenerationScopeForHeadline;
 const admin = __importStar(require("firebase-admin"));
 const logger = __importStar(require("firebase-functions/logger"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -61,6 +62,7 @@ const storage_1 = require("./storage");
 const config_validator_1 = require("./lib/config-validator");
 const model_providers_1 = require("./lib/model-providers");
 const bundleIds_1 = require("./data/schemas/bundleIds");
+const regions_1 = require("./data/schemas/regions");
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -81,6 +83,23 @@ const FEED_SOURCES = [
     { url: 'https://feeds.feedburner.com/reuters/worldNews', source: 'Reuters World' },
     { url: 'https://www.ft.com/rss/home/world', source: 'FT World' },
 ];
+function buildGenerationScopeForHeadline(classified) {
+    var _a;
+    if (classified.scope === 'regional' && classified.region) {
+        const canonicalRegion = (0, regions_1.normalizeRegion)(classified.region);
+        return Object.assign(Object.assign({ scopeTier: 'regional', region: classified.region }, (canonicalRegion ? { regions: [canonicalRegion] } : {})), { sourceKind: 'news' });
+    }
+    if (classified.scope === 'country' && ((_a = classified.applicable_countries) === null || _a === void 0 ? void 0 : _a.length)) {
+        return {
+            applicable_countries: classified.applicable_countries,
+            sourceKind: 'news',
+        };
+    }
+    return {
+        scopeTier: 'universal',
+        sourceKind: 'news',
+    };
+}
 // ---------------------------------------------------------------------------
 // News Fetching
 // ---------------------------------------------------------------------------
@@ -469,12 +488,11 @@ exports.dailyNewsToScenarios = (0, scheduler_1.onSchedule)({
         logger.info(`[NewsIngest] ${deduped.length} candidates after deduplication`);
         // Step 5 — Generate and save scenarios
         for (const classified of deduped) {
-            const { newsItem, bundle, scope, region, applicable_countries } = classified;
+            const { newsItem, bundle, scope } = classified;
             logger.info(`[NewsIngest] Generating from: "${newsItem.title}" → bundle=${bundle}, scope=${scope}`);
             try {
-                const scenarios = await (0, scenario_engine_1.generateScenarios)(Object.assign(Object.assign({ mode: 'news', bundle, count: 1, newsContext: [newsItem], distributionConfig: { mode: 'fixed', loopLength: 1 } }, (scope === 'regional' && region ? { region } : {})), (scope === 'country' && (applicable_countries === null || applicable_countries === void 0 ? void 0 : applicable_countries.length)
-                    ? { applicable_countries }
-                    : {})));
+                const generationScope = buildGenerationScopeForHeadline(classified);
+                const scenarios = await (0, scenario_engine_1.generateScenarios)(Object.assign({ mode: 'news', bundle, count: 1, newsContext: [newsItem], distributionConfig: { mode: 'fixed', loopLength: 1 } }, generationScope));
                 log.scenariosGenerated += scenarios.length;
                 for (const scenario of scenarios) {
                     // Attach source news metadata

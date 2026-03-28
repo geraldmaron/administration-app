@@ -17,6 +17,7 @@ import {
     auditScenario,
     scoreScenario,
 } from '../functions/src/lib/audit-rules';
+import { classifyIssueRemediation } from '../functions/src/lib/issue-classification';
 import { evaluateBatchQuality } from '../functions/src/lib/content-quality';
 
 // ---------------------------------------------------------------------------
@@ -122,6 +123,7 @@ interface QualityReview {
         warnRate: number;
         failingScenarios: { id: string; score: number; topIssue: string }[];
         ruleFrequency: Record<string, number>;
+        remediationBuckets: Record<string, number>;
     };
     contentQuality?: {
         avgOverallScore: number;
@@ -189,9 +191,13 @@ async function main() {
 
     // Rule frequency analysis
     const ruleFrequency: Record<string, number> = {};
+    const remediationBuckets: Record<string, number> = {};
     for (const s of scenarios) {
         const bundle = s.metadata?.bundle ?? 'unknown';
-        for (const issue of auditScenario(s, bundle)) {
+        const issues = auditScenario(s, bundle);
+        const remediation = classifyIssueRemediation(issues);
+        remediationBuckets[remediation.bucket] = (remediationBuckets[remediation.bucket] ?? 0) + 1;
+        for (const issue of issues) {
             ruleFrequency[issue.rule] = (ruleFrequency[issue.rule] ?? 0) + 1;
         }
     }
@@ -277,6 +283,7 @@ async function main() {
             warnRate: avgWarns,
             failingScenarios,
             ruleFrequency,
+            remediationBuckets,
         },
         ...(contentQuality ? { contentQuality } : {}),
         ...(drift ? { drift } : {}),
@@ -288,12 +295,7 @@ async function main() {
         console.log(`\n✅ Review written to admin_quality_reviews/${reviewId}`);
     }
 
-    // 7. Save local report
-    const reportPath = path.join(__dirname, '..', 'docs', 'quality-review-latest.json');
-    fs.writeFileSync(reportPath, JSON.stringify(review, null, 2));
-    console.log(`Report saved to: ${reportPath}`);
-
-    // 8. Exit non-zero if quality is critically degraded
+    // 7. Exit non-zero if quality is critically degraded
     if (passRate < 0.6) {
         console.error(`\n❌ CRITICAL: Structural pass rate ${(passRate * 100).toFixed(1)}% is below 60% threshold`);
         process.exit(1);
