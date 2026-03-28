@@ -16,14 +16,18 @@ ios/*.xcworkspace/xcshareddata/
 .build/
 *.xcodeproj/project.xcworkspace/xcshareddata/
 
-# Node modules (web)
-web/node_modules/
-web/functions/node_modules/
+# Node modules
+node_modules/
+
+# Next.js
 web/.next/
 web/.pnpm-store/
 web/out/
 web/build/
 web/dist/
+
+# Firebase Functions build output
+functions/lib/
 
 # Logs
 *.log
