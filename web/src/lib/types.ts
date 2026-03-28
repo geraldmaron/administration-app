@@ -4,13 +4,13 @@ import type {
   ScenarioExclusivityReason,
   ScenarioScopeTier,
   ScenarioSourceKind,
-} from '../../../shared/generation-contract';
+} from '@shared/generation-contract';
 
 export type {
   ScenarioExclusivityReason,
   ScenarioScopeTier,
   ScenarioSourceKind,
-} from '../../../shared/generation-contract';
+} from '@shared/generation-contract';
 
 export interface ScenarioSummary {
   id: string;

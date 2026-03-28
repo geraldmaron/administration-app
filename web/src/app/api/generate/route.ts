@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { GenerationJobRequest } from '@/lib/types';
 import { BUNDLE_IDS } from '@/lib/constants';
-import { normalizeGenerationScope } from '../../../../../shared/generation-contract';
-import { buildGenerationJobRecord, estimateExpectedScenarios } from '../../../../../shared/generation-job';
+import { normalizeGenerationScope } from '@shared/generation-contract';
+import { buildGenerationJobRecord, estimateExpectedScenarios } from '@shared/generation-job';
 import { submitJob } from '@/lib/job-submission';
 
 async function appendJobEvent(

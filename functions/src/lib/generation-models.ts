@@ -1,4 +1,4 @@
-import type { GenerationModelConfig } from '../../../shared/generation-contract';
+import type { GenerationModelConfig } from '../shared/generation-contract';
 export type { GenerationModelConfig };
 
 export type GenerationPhase = 'architect' | 'drafter' | 'repair' | 'contentQuality' | 'narrativeReview';

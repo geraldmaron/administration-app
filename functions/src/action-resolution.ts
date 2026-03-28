@@ -8,13 +8,13 @@ import type {
     MetricDelta,
     PlayerActionCategory,
     SeverityLevel,
-} from '../../shared/action-resolution-contract';
+} from './shared/action-resolution-contract';
 import {
     DIPLOMATIC_DELTA_BOUNDS,
     MILITARY_DELTA_BOUNDS,
     TYG_DELTA_BOUNDS,
     ATROCITY_DELTA_BOUNDS,
-} from '../../shared/action-resolution-contract';
+} from './shared/action-resolution-contract';
 import { getAuth } from 'firebase-admin/auth';
 import * as fs from 'fs';
 import * as path from 'path';

@@ -8,7 +8,7 @@ import {
 import type {
     ActionResolutionRequest,
     ActionResolutionResponse,
-} from '../../../shared/action-resolution-contract';
+} from '../shared/action-resolution-contract';
 
 function makeDiplomaticRequest(overrides: Partial<ActionResolutionRequest> = {}): ActionResolutionRequest {
     return {

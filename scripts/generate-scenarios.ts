@@ -17,7 +17,7 @@ import {
   type ScenarioExclusivityReason,
   type ScenarioScopeTier,
   type ScenarioSourceKind,
-} from '../shared/generation-contract';
+} from '../functions/src/shared/generation-contract';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VALID_REGIONS = new Set<string>(REGION_IDS);

@@ -22,8 +22,8 @@ import type { ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind }
 import { validateConfig, logConfigStatus } from './lib/config-validator';
 import { normalizeGenerationScopeInput } from './lib/generation-scope';
 import { getProviderRetryTelemetry, resetProviderRetryTelemetry } from './lib/model-providers';
-import { buildGenerationJobRecord, estimateExpectedScenarios } from '../../shared/generation-job';
-import type { GenerationModelConfig } from '../../shared/generation-contract';
+import { buildGenerationJobRecord, estimateExpectedScenarios } from './shared/generation-job';
+import type { GenerationModelConfig } from './shared/generation-contract';
 
 // ---------------------------------------------------------------------------
 // Constants
