@@ -1,15 +1,27 @@
 import SwiftUI
 
-/// GameMenuSheet
-/// Runtime-generated game menu presenting context and actions including quit and restart.
 struct GameMenuSheet: View {
     @ObservedObject var gameStore: GameStore
     let onQuitToMain: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @State private var showSaveNameAlert = false
+    @State private var saveNameInput = ""
+    @State private var showLoadSheet = false
+    @State private var showHowToPlay = false
+    @State private var showTerms = false
+    @State private var showPrivacy = false
 
     private var canControlGame: Bool {
         gameStore.state.status == .active
+    }
+
+    private var defaultSaveName: String {
+        let turn = gameStore.state.turn
+        if let name = gameStore.state.player?.name {
+            return "\(name) — Turn \(turn)"
+        }
+        return "Turn \(turn)"
     }
 
     private var statusLine: String {
@@ -35,6 +47,8 @@ struct GameMenuSheet: View {
         case .active: return "Active"
         case .paused: return "Paused"
         case .ended: return "Ended"
+        case .impeached: return "Removed From Office"
+        case .resigned: return "Resigned"
         }
     }
 
@@ -47,19 +61,42 @@ struct GameMenuSheet: View {
                         .foregroundColor(AppColors.foregroundMuted)
                 }
 
+                Section("INFORMATION") {
+                    Button {
+                        HapticEngine.shared.light()
+                        showHowToPlay = true
+                    } label: {
+                        Text("How to Play")
+                    }
+
+                    Button {
+                        HapticEngine.shared.light()
+                        showPrivacy = true
+                    } label: {
+                        Text("Privacy & Data")
+                    }
+
+                    Button {
+                        HapticEngine.shared.light()
+                        showTerms = true
+                    } label: {
+                        Text("Terms of Service")
+                    }
+                }
+
                 Section("ACTIONS") {
                     if gameStore.state.isSetup {
                         Button {
                             HapticEngine.shared.selection()
-                            gameStore.saveGame()
-                            dismiss()
+                            saveNameInput = defaultSaveName
+                            showSaveNameAlert = true
                         } label: {
                             Text("Save Game")
                         }
 
                         Button {
                             HapticEngine.shared.selection()
-                            dismiss()
+                            showLoadSheet = true
                         } label: {
                             Text("Load Save")
                         }
@@ -105,6 +142,27 @@ struct GameMenuSheet: View {
                 }
             }
         }
+        .alert("Name Your Save", isPresented: $showSaveNameAlert) {
+            TextField("Save name", text: $saveNameInput)
+            Button("Save") {
+                gameStore.saveGame(named: saveNameInput.isEmpty ? nil : saveNameInput)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) { saveNameInput = "" }
+        } message: {
+            Text("Enter a name for this save file.")
+        }
+        .sheet(isPresented: $showLoadSheet) {
+            LoadGameSheet(gameStore: gameStore, onLoad: { dismiss() })
+        }
+        .sheet(isPresented: $showHowToPlay) {
+            HowToPlaySheet()
+        }
+        .sheet(isPresented: $showTerms) {
+            TermsOfServiceSheet()
+        }
+        .sheet(isPresented: $showPrivacy) {
+            PrivacySheet()
+        }
     }
 }
-

@@ -1,8 +1,5 @@
 import Foundation
 
-/// Scenario Navigator for iOS
-/// Swift port of web/src/lib/core/ScenarioNavigator.ts
-/// Manages scenario loading, filtering, and token resolution.
 class ScenarioNavigator {
     static let shared = ScenarioNavigator()
 
@@ -405,6 +402,24 @@ extension ScenarioNavigator {
             if let rawBoost = scenario.metadata?.regionalBoost?[regionId] {
                 let regionBoost = max(0.1, min(rawBoost, 3.0))
                 score *= regionBoost
+            }
+        }
+
+        // StateTrigger weight boosts — multiply score when current metric conditions match
+        if let triggers = scenario.dynamicProfile?.stateTriggers {
+            for trigger in triggers {
+                let metricValue = gameState.metrics[trigger.metricId] ?? 50.0
+                let conditionMet: Bool
+                switch trigger.condition.lowercased() {
+                case "above", "gt": conditionMet = metricValue > trigger.threshold
+                case "below", "lt": conditionMet = metricValue < trigger.threshold
+                case "gte", ">=":   conditionMet = metricValue >= trigger.threshold
+                case "lte", "<=":   conditionMet = metricValue <= trigger.threshold
+                default:            conditionMet = false
+                }
+                if conditionMet {
+                    score *= max(0.1, min(trigger.weightBoost, 5.0))
+                }
             }
         }
 

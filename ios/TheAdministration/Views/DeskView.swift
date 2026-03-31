@@ -1,8 +1,3 @@
-/// DeskView
-/// Main executive desk — the player's primary HQ for reviewing metrics,
-/// reading scenarios, and making decisions. Includes animated circular
-/// metric display, scenario card with severity indicators and impact
-/// preview badges, decision flow choreography, and outcome overlay.
 import SwiftUI
 
 struct DeskView: View {
@@ -18,16 +13,22 @@ struct DeskView: View {
 
     @State private var selectedCrisis: ActiveCrisis? = nil
     @State private var scrollProxy: ScrollViewProxy? = nil
+    @State private var selectedInfoContext: MetricInfoContext? = nil
 
     enum ViewMode { case focus, grid }
     private enum OutcomePhase { case hidden, loading, revealed }
     @State private var outcomePhase: OutcomePhase = .hidden
     @State private var scanProgress: CGFloat = 0
+    @State private var loadingStartTime: Date = .now
 
     var body: some View {
         ZStack {
             AppColors.background.ignoresSafeArea()
-            RadarBackgroundView()
+            GlobeBackgroundView(
+                target: GlobeBackgroundView.capitalCoordinates[gameStore.state.countryId ?? ""],
+                showPulse: true
+            )
+            .opacity(0.35)
 
             VStack(spacing: 0) {
                 NewsTickerView(gameStore: gameStore)
@@ -63,6 +64,7 @@ struct DeskView: View {
                 outcomeOverlay
                     .transition(.opacity)
                     .zIndex(5)
+                    .onAppear { startOutcomeLoading() }
             }
         }
         .onAppear {
@@ -70,14 +72,19 @@ struct DeskView: View {
         }
         .onChange(of: gameStore.showOutcome) { _, newValue in
             if newValue {
-                outcomePhase = .loading
-                scanProgress = 0
-                withAnimation(.easeInOut(duration: 1.0)) { scanProgress = 1 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                    withAnimation(AppMotion.standard) { outcomePhase = .revealed }
-                }
+                loadingStartTime = .now
             } else {
                 outcomePhase = .hidden
+                scanProgress = 0
+            }
+        }
+        .onChange(of: gameStore.outcomeBriefingReady) { _, newValue in
+            guard newValue, gameStore.showOutcome else { return }
+            let elapsed = Date.now.timeIntervalSince(loadingStartTime)
+            let remaining = max(0, 1.2 - elapsed)
+            DispatchQueue.main.asyncAfter(deadline: .now() + remaining) {
+                guard gameStore.showOutcome else { return }
+                withAnimation(AppMotion.standard) { outcomePhase = .revealed }
             }
         }
         .sheet(isPresented: $showTrustYourGut) {
@@ -97,6 +104,10 @@ struct DeskView: View {
         }
         .sheet(item: $selectedCrisis) { activeCrisis in
             CrisisDetailSheet(activeCrisis: activeCrisis)
+        }
+        .sheet(item: $selectedInfoContext) { ctx in
+            MetricInfoSheet(context: ctx)
+                .presentationDetents([.medium, .large])
         }
     }
 
@@ -172,20 +183,37 @@ struct DeskView: View {
                             .fill(AppColors.backgroundElevated)
                     )
                 }
-                Button(action: {
-                    HapticEngine.shared.light()
-                    withAnimation(AppMotion.quickSnap) {
-                        viewMode = viewMode == .focus ? .grid : .focus
+                HStack(spacing: 6) {
+                    Button(action: {
+                        HapticEngine.shared.light()
+                        gameStore.setScoreDisplayFormat(
+                            gameStore.scoreDisplayFormat == .percentage ? .letter : .percentage
+                        )
+                    }) {
+                        Text(gameStore.scoreDisplayFormat == .percentage ? "%" : "A")
+                            .font(.system(size: 13, weight: .black, design: .monospaced))
+                            .foregroundColor(AppColors.foregroundMuted)
+                            .frame(width: 32, height: 32)
+                            .background(AppColors.backgroundMuted)
+                            .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
                     }
-                }) {
-                    Image(systemName: viewMode == .focus ? "square.grid.2x2" : "chart.pie")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(AppColors.foregroundMuted)
-                        .padding(8)
-                        .background(AppColors.backgroundMuted)
-                        .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+                    .accessibilityLabel(gameStore.scoreDisplayFormat == .percentage ? "Switch to letter grade display" : "Switch to percentage display")
+
+                    Button(action: {
+                        HapticEngine.shared.light()
+                        withAnimation(AppMotion.quickSnap) {
+                            viewMode = viewMode == .focus ? .grid : .focus
+                        }
+                    }) {
+                        Image(systemName: viewMode == .focus ? "square.grid.2x2" : "chart.pie")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(AppColors.foregroundMuted)
+                            .padding(8)
+                            .background(AppColors.backgroundMuted)
+                            .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+                    }
+                    .accessibilityLabel(viewMode == .focus ? "Switch to grid view" : "Switch to focus view")
                 }
-                .accessibilityLabel(viewMode == .focus ? "Switch to grid view" : "Switch to focus view")
             }
         }
     }
@@ -193,19 +221,42 @@ struct DeskView: View {
     // MARK: - Focus View
 
     private var focusView: some View {
-        VStack(spacing: 24) {
-            AnimatedCircularGraphView(
-                value: gameStore.state.metrics[activeMetric] ?? 50,
-                label: metricLabels[activeMetric] ?? "Metric",
-                subLabel: "Current Standing"
-            )
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 24) {
+                AnimatedCircularGraphView(
+                    value: gameStore.state.metrics[activeMetric] ?? 50,
+                    label: metricLabels[activeMetric] ?? "Metric",
+                    subLabel: "Current Standing",
+                    isInverse: ScoringEngine.isInverseMetric(activeMetric),
+                    format: gameStore.scoreDisplayFormat,
+                    metricId: activeMetric
+                )
+                .frame(maxWidth: .infinity)
+            }
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
+
+            Button(action: {
+                HapticEngine.shared.light()
+                selectedInfoContext = MetricInfoContext(
+                    metricId: activeMetric,
+                    value: gameStore.state.metrics[activeMetric] ?? 50,
+                    history: gameStore.state.metricHistory[activeMetric] ?? []
+                )
+            }) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(AppColors.foregroundSubtle.opacity(0.6))
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(8)
+            .accessibilityLabel("Metric info")
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+                .fill(Color.white.opacity(0.08))
         )
         .opacity(contentAppeared ? 1 : 0)
     }
@@ -219,46 +270,60 @@ struct DeskView: View {
         ) {
             ForEach(Array(metricLabels.keys.sorted().enumerated()), id: \.element) { index, metricId in
                 let value = gameStore.state.metrics[metricId] ?? 50
-                let isCritical = value < 25
-                let color = AppColors.metricColor(for: CGFloat(value))
+                let inverse = ScoringEngine.isInverseMetric(metricId)
+                let isCritical = inverse ? value > 75 : value < 25
+                let color = AppColors.metricColor(for: CGFloat(value), metricId: metricId, isInverse: inverse)
 
-                VStack(spacing: 6) {
-                    ZStack {
-                        Circle()
-                            .trim(from: 0, to: 0.75)
-                            .stroke(AppColors.border, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                            .rotationEffect(.degrees(135))
-                        Circle()
-                            .trim(from: 0, to: CGFloat(max(0, min(0.75, (value / 100) * 0.75))))
-                            .stroke(
-                                AngularGradient(
-                                    gradient: Gradient(colors: [AppColors.accentPrimary, AppColors.accentTertiary]),
-                                    center: .center,
-                                    startAngle: .degrees(135),
-                                    endAngle: .degrees(135 + 270)
-                                ),
-                                style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                            )
-                            .rotationEffect(.degrees(135))
+                Button(action: {
+                    HapticEngine.shared.light()
+                    selectedInfoContext = MetricInfoContext(
+                        metricId: metricId,
+                        value: value,
+                        history: gameStore.state.metricHistory[metricId] ?? []
+                    )
+                }) {
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .trim(from: 0, to: 0.75)
+                                .stroke(AppColors.border, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                                .rotationEffect(.degrees(135))
+                            Circle()
+                                .trim(from: 0, to: CGFloat(max(0, min(0.75, (value / 100) * 0.75))))
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [color.opacity(0.5), color],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    ),
+                                    style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                                )
+                                .rotationEffect(.degrees(135))
+                        }
+                        .frame(width: 32, height: 32)
+
+                        let displayVal = MetricFormatting.metricDisplayValue(value: value, format: gameStore.scoreDisplayFormat, metricId: metricId)
+                        Text(gameStore.scoreDisplayFormat == .percentage ? "\(displayVal)%" : displayVal)
+                            .font(AppTypography.data)
+                            .foregroundColor(AppColors.foreground)
+                            .monospacedDigit()
+
+                        Text(metricLabels[metricId] ?? metricId)
+                            .font(AppTypography.micro)
+                            .foregroundColor(AppColors.foregroundSubtle)
+                            .textCase(.uppercase)
+                            .lineLimit(1)
                     }
-                    .frame(width: 32, height: 32)
-
-                    Text("\(Int(value))%")
-                        .font(AppTypography.data)
-                        .foregroundColor(AppColors.foreground)
-                        .monospacedDigit()
-
-                    Text(metricLabels[metricId] ?? metricId)
-                        .font(AppTypography.micro)
-                        .foregroundColor(AppColors.foregroundSubtle)
-                        .textCase(.uppercase)
-                        .lineLimit(1)
+                    .padding(12)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(isCritical ? color.opacity(0.10) : Color.white.opacity(0.08))
+                    )
+                    .contentShape(Rectangle())
                 }
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(isCritical ? color.opacity(0.10) : Color.white.opacity(0.04))
-                )
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(metricLabels[metricId] ?? metricId): \(Int(value)) percent. Tap for details.")
             }
         }
     }
@@ -274,6 +339,10 @@ struct DeskView: View {
                         value: gameStore.state.metrics[metricId] ?? 50,
                         icon: iconForMetric(metricId),
                         isActive: activeMetric == metricId,
+                        isInverse: ScoringEngine.isInverseMetric(metricId),
+                        metricId: metricId,
+                        format: gameStore.scoreDisplayFormat,
+                        onInfo: { selectedInfoContext = MetricInfoContext(metricId: metricId, value: gameStore.state.metrics[metricId] ?? 50, history: gameStore.state.metricHistory[metricId] ?? []) },
                         onTap: {
                             withAnimation(AppMotion.quickSnap) { activeMetric = metricId }
                         }
@@ -289,13 +358,10 @@ struct DeskView: View {
 
     private var scenarioCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header row
             HStack(spacing: 8) {
                 if let scenario = gameStore.currentScenario {
-                    // Severity badge
                     severityBadge(for: scenario)
 
-                    // Category badge
                     if let category = scenario.category {
                         Text(category)
                             .font(AppTypography.micro)
@@ -339,11 +405,6 @@ struct DeskView: View {
             }
 
             if let scenario = gameStore.currentScenario {
-                // Severity color bar
-                Rectangle()
-                    .fill(severityColor(for: scenario))
-                    .frame(height: 2)
-
                 Text(scenario.title)
                     .font(AppTypography.headline)
                     .foregroundColor(AppColors.foreground)
@@ -384,7 +445,7 @@ struct DeskView: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.white.opacity(0.16))
         )
     }
 
@@ -396,11 +457,9 @@ struct DeskView: View {
                 .ignoresSafeArea()
                 .onTapGesture { closeOutcome() }
 
-            if let briefing = gameStore.lastBriefing {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        // Masthead
-                        HStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("THE ADMINISTRATION DISPATCH")
                                     .font(.system(size: 8, weight: .black, design: .monospaced))
@@ -450,6 +509,7 @@ struct DeskView: View {
                             }
                             .padding(40)
                         } else if outcomePhase == .revealed {
+                            if let briefing = gameStore.lastBriefing {
                             VStack(alignment: .leading, spacing: 14) {
                                 Text(briefing.title)
                                     .font(.system(size: 20, weight: .black))
@@ -463,7 +523,7 @@ struct DeskView: View {
                                         .tracking(1)
                                     Text("·")
                                         .foregroundColor(AppColors.foregroundSubtle)
-                                    Text(Date().formatted(date: .abbreviated, time: .omitted).uppercased())
+                                    Text(gameStore.state.formattedDate(forTurn: gameStore.state.turn))
                                         .font(.system(size: 8, weight: .medium, design: .monospaced))
                                         .foregroundColor(AppColors.foregroundSubtle)
                                         .tracking(1)
@@ -490,52 +550,84 @@ struct DeskView: View {
 
                                 Rectangle().fill(AppColors.border).frame(height: 1)
 
-                                if !briefing.metrics.isEmpty {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        HStack(spacing: 6) {
-                                            Rectangle()
-                                                .fill(AppColors.accentSecondary)
-                                                .frame(width: 3, height: 12)
-                                            Text("GOVERNANCE IMPACT")
-                                                .font(.system(size: 8, weight: .black, design: .monospaced))
-                                                .foregroundColor(AppColors.accentSecondary)
-                                                .tracking(2)
-                                        }
+                                let residualsByMetric: [String: Double] = {
+                                    var sums: [String: Double] = [:]
+                                    for ae in gameStore.state.activeEffects where ae.baseEffect.delay != nil {
+                                        let key = ae.baseEffect.targetMetricId
+                                        sums[key] = (sums[key] ?? 0) + ae.baseEffect.value
+                                    }
+                                    return sums
+                                }()
+                                let directMetricIds = Set(briefing.metrics.map(\.id))
+                                let sortedMetrics = briefing.metrics.sorted { a, b in
+                                    if a.id == "metric_approval" { return true }
+                                    if b.id == "metric_approval" { return false }
+                                    return abs(a.delta) > abs(b.delta)
+                                }
+                                let carryForwardItems = sortedMetrics.compactMap { m -> (ScoringEngine.MetricDelta, Double)? in
+                                    guard let r = residualsByMetric[m.id] else { return nil }
+                                    return (m, r)
+                                }
+                                let pendingOnlyIds = residualsByMetric.keys.filter { !directMetricIds.contains($0) }.sorted()
 
-                                        VStack(spacing: 4) {
-                                            ForEach(Array(briefing.metrics.enumerated()), id: \.element.id) { _, metric in
-                                                let deltaColor: Color = metric.delta >= 0 ? AppColors.success : AppColors.error
-                                                HStack(spacing: 8) {
-                                                    Rectangle()
-                                                        .fill(deltaColor)
-                                                        .frame(width: 2)
-                                                        .frame(height: 28)
-                                                    Text(metric.name)
-                                                        .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                                        .foregroundColor(AppColors.foregroundMuted)
-                                                    Spacer()
-                                                    HStack(spacing: 3) {
-                                                        Image(systemName: metric.delta >= 0 ? "arrow.up.right" : "arrow.down.right")
-                                                            .font(.system(size: 8, weight: .bold))
-                                                        Text(metric.delta >= 0
-                                                             ? "+\(String(format: "%.1f", metric.delta))%"
-                                                             : "\(String(format: "%.1f", metric.delta))%")
-                                                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                                            .monospacedDigit()
-                                                    }
-                                                    .foregroundColor(deltaColor)
-                                                }
-                                                .padding(.vertical, 6)
-                                                .padding(.horizontal, 10)
-                                                .background(
-                                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                                        .fill(deltaColor.opacity(0.06))
-                                                )
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                                        .stroke(deltaColor.opacity(0.18), lineWidth: 1)
-                                                )
-                                            }
+                                // Zone 1 — THIS TURN
+                                if !sortedMetrics.isEmpty {
+                                    dispatchSection(
+                                        title: "THIS TURN",
+                                        subtitle: "Applied immediately"
+                                    ) {
+                                        ForEach(Array(sortedMetrics.enumerated()), id: \.element.id) { _, metric in
+                                            let deltaColor: Color = metric.delta >= 0 ? AppColors.success : AppColors.error
+                                            dispatchRow(
+                                                name: metric.name,
+                                                deltaString: MetricFormatting.metricDeltaString(metric.delta),
+                                                color: deltaColor,
+                                                icon: metric.delta >= 0 ? "arrow.up.right" : "arrow.down.right"
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Zone 2 — CARRY-FORWARD (metrics that also have residuals)
+                                if !carryForwardItems.isEmpty {
+                                    dispatchSection(
+                                        title: "CARRY-FORWARD",
+                                        subtitle: "Momentum arriving in coming turns"
+                                    ) {
+                                        ForEach(carryForwardItems, id: \.0.id) { metric, residual in
+                                            dispatchRow(
+                                                name: metric.name,
+                                                deltaString: MetricFormatting.metricDeltaString(residual),
+                                                color: AppColors.warning,
+                                                icon: "clock.arrow.circlepath"
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Zone 3 — PENDING (residuals on metrics not directly changed)
+                                if !pendingOnlyIds.isEmpty {
+                                    dispatchSection(
+                                        title: "PENDING",
+                                        subtitle: "Delayed effects on unrelated metrics"
+                                    ) {
+                                        ForEach(pendingOnlyIds, id: \.self) { mId in
+                                            let val = residualsByMetric[mId] ?? 0
+                                            let mName = MetricCatalogue.info[mId].map { _ in
+                                                mId.replacingOccurrences(of: "metric_", with: "")
+                                                    .replacingOccurrences(of: "_", with: " ")
+                                                    .split(separator: " ")
+                                                    .map { $0.prefix(1).uppercased() + $0.dropFirst() }
+                                                    .joined(separator: " ")
+                                            } ?? mId.replacingOccurrences(of: "metric_", with: "")
+                                                .replacingOccurrences(of: "_", with: " ")
+                                                .capitalized
+                                            dispatchRow(
+                                                name: mName,
+                                                deltaString: MetricFormatting.metricDeltaString(val),
+                                                color: AppColors.warning,
+                                                icon: "clock.arrow.circlepath"
+                                            )
                                         }
                                     }
                                 }
@@ -550,16 +642,68 @@ struct DeskView: View {
                             }
                             .padding(20)
                             .transition(.opacity)
+                            } // if let briefing
                         }
                     }
                 }
                 .background(AppColors.backgroundElevated)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .padding(.horizontal, 16)
-                .padding(.vertical, 40)
+                .padding(.top, 40)
+                .padding(.bottom, AppSpacing.tabBarClearance + 20)
                 .transition(.scale(scale: 0.96).combined(with: .opacity))
+        }
+    }
+
+    // MARK: - Dispatch Helpers
+
+    @ViewBuilder
+    private func dispatchSection<Content: View>(
+        title: String,
+        subtitle: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Rectangle()
+                    .fill(title == "THIS TURN" ? AppColors.accentSecondary : AppColors.warning)
+                    .frame(width: 3, height: 12)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: 8, weight: .black, design: .monospaced))
+                        .foregroundColor(title == "THIS TURN" ? AppColors.accentSecondary : AppColors.warning)
+                        .tracking(2)
+                    Text(subtitle)
+                        .font(.system(size: 8, weight: .regular, design: .monospaced))
+                        .foregroundColor(AppColors.foregroundSubtle)
+                }
+            }
+            VStack(spacing: 4) {
+                content()
             }
         }
+    }
+
+    private func dispatchRow(name: String, deltaString: String, color: Color, icon: String) -> some View {
+        HStack(spacing: 8) {
+            Rectangle().fill(color).frame(width: 2, height: 28)
+            Text(name)
+                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .foregroundColor(AppColors.foregroundMuted)
+            Spacer()
+            HStack(spacing: 3) {
+                Image(systemName: icon)
+                    .font(.system(size: 8, weight: .bold))
+                Text(deltaString)
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .monospacedDigit()
+            }
+            .foregroundColor(color)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(RoundedRectangle(cornerRadius: 4, style: .continuous).fill(color.opacity(0.06)))
+        .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).stroke(color.opacity(0.18), lineWidth: 1))
     }
 
     // MARK: - Helpers
@@ -584,8 +728,16 @@ struct DeskView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { isSimulating = false }
     }
 
+    private func startOutcomeLoading() {
+        loadingStartTime = .now
+        outcomePhase = .loading
+        scanProgress = 0
+        withAnimation(.easeInOut(duration: 1.0)) { scanProgress = 1 }
+    }
+
     private func closeOutcome() {
         withAnimation(AppMotion.standard) { gameStore.showOutcome = false }
+        gameStore.outcomeBriefingReady = false
         outcomePhase = .hidden
         HapticEngine.shared.light()
         withAnimation(AppMotion.standard) {
@@ -612,12 +764,8 @@ struct DeskView: View {
         case .extreme, .critical: return (AppColors.error, "CRITICAL")
         case .high:               return (AppColors.warning, "URGENT")
         case .low:                return (AppColors.success, "ROUTINE")
-        default:                  return (AppColors.info, "DIRECTIVE")
+        default:                  return (AppColors.foregroundSubtle, "DIRECTIVE")
         }
-    }
-
-    private func severityColor(for scenario: Scenario) -> Color {
-        severityStyle(scenario.severity).0
     }
 
     private func iconForMetric(_ metricId: String) -> String {
@@ -795,7 +943,7 @@ private struct CabinetFeedbackView: View {
                 .padding(12)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.04))
+                        .fill(Color.white.opacity(0.08))
                 )
             }
         }
@@ -808,8 +956,13 @@ struct AnimatedCircularGraphView: View {
     let value: Double
     let label: String
     let subLabel: String
+    var isInverse: Bool = false
+    var format: ScoreDisplayFormat = .percentage
+    var metricId: String = ""
 
     @State private var animatedValue: Double = 0
+
+    private var gaugeColor: Color { AppColors.metricColor(for: CGFloat(animatedValue), metricId: metricId, isInverse: isInverse) }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -821,30 +974,44 @@ struct AnimatedCircularGraphView: View {
                 Circle()
                     .trim(from: 0, to: CGFloat(max(0, min(0.75, (animatedValue / 100) * 0.75))))
                     .stroke(
-                        AngularGradient(
-                            gradient: Gradient(colors: [AppColors.accentPrimary, AppColors.accentTertiary, AppColors.accentSecondary]),
-                            center: .center,
-                            startAngle: .degrees(135),
-                            endAngle: .degrees(135 + 270)
+                        LinearGradient(
+                            colors: [gaugeColor.opacity(0.4), gaugeColor],
+                            startPoint: .leading,
+                            endPoint: .trailing
                         ),
                         style: StrokeStyle(lineWidth: 10, lineCap: .round)
                     )
                     .rotationEffect(.degrees(135))
                     .animation(AppMotion.dramatic, value: animatedValue)
                 VStack(spacing: 4) {
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(Int(animatedValue))")
-                            .font(.system(size: 64, weight: .bold, design: .monospaced))
-                            .foregroundColor(AppColors.foreground)
-                            .monospacedDigit()
+                    if format == .letter {
+                        Text(MetricFormatting.metricDisplayValue(value: animatedValue, format: .letter, metricId: metricId))
+                            .font(.system(size: 56, weight: .bold, design: .monospaced))
+                            .foregroundColor(gaugeColor)
                             .contentTransition(.numericText())
-                        Text("%")
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundColor(AppColors.foregroundMuted)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                    } else {
+                        VStack(spacing: 0) {
+                            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                                Text(String(format: "%.1f", animatedValue))
+                                    .font(.system(size: 44, weight: .bold, design: .monospaced))
+                                    .foregroundColor(gaugeColor)
+                                    .monospacedDigit()
+                                    .contentTransition(.numericText())
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.6)
+                                Text("%")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundColor(AppColors.foregroundMuted)
+                            }
+                        }
                     }
                     Text(label)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(AppColors.foreground)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
             }
             .frame(width: 160, height: 160)

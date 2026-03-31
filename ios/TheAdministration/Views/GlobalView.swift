@@ -1,7 +1,3 @@
-/// GlobalView
-/// World relations screen. Displays all nations as cards with relationship
-/// color bars, ally/adversary badges, animated segmented sort control,
-/// and a detailed dossier sheet on tap.
 import SwiftUI
 
 struct GlobalView: View {
@@ -87,13 +83,12 @@ struct GlobalView: View {
             ScreenHeader(
                 protocolLabel: "STATE_DEPT_DATABASE_V8",
                 title: "Global Relations",
-                subtitle: "\(gameStore.availableCountries.count) nations tracked"
+                subtitle: "\(gameStore.liveCountries.count) nations tracked"
             )
 
             playerBanner
 
             HStack(spacing: 8) {
-                // Search
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 14, weight: .medium))
@@ -109,7 +104,6 @@ struct GlobalView: View {
                         .fill(AppColors.backgroundElevated)
                 )
 
-                // Animated segmented sort
                 AnimatedSegmentedControl(options: SortKey.allCases.map(\.rawValue), selected: sortKey.rawValue) { value in
                     if let key = SortKey(rawValue: value) {
                         HapticEngine.shared.light()
@@ -123,7 +117,7 @@ struct GlobalView: View {
     }
 
     private var filteredCountries: [Country] {
-        var countries = gameStore.availableCountries
+        var countries = gameStore.liveCountries
         if let id = gameStore.state.countryId { countries = countries.filter { $0.id != id } }
         if !searchText.isEmpty {
             countries = countries.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
@@ -131,7 +125,8 @@ struct GlobalView: View {
         countries.sort { a, b in
             switch sortKey {
             case .relationship: return a.diplomacy.relationship > b.diplomacy.relationship
-            case .gdp:          return a.attributes.gdp > b.attributes.gdp
+            case .gdp:
+                return (a.resolvedGdpBillions ?? 0) > (b.resolvedGdpBillions ?? 0)
             case .military:     return a.military.strength > b.military.strength
             }
         }
@@ -146,7 +141,7 @@ struct GlobalView: View {
                     .foregroundColor(AppColors.foregroundSubtle)
                 Text("\(legislature.approvalOfPlayer)%")
                     .font(AppTypography.caption)
-                    .foregroundColor(approvalColor(legislature.approvalOfPlayer))
+                    .foregroundColor(AppColors.metricColor(for: CGFloat(legislature.approvalOfPlayer)))
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
@@ -242,11 +237,7 @@ struct GlobalView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private func approvalColor(_ value: Int) -> Color {
-        if value >= 60 { return AppColors.success }
-        if value >= 40 { return AppColors.warning }
-        return AppColors.error
-    }
+
 
 }
 
@@ -292,8 +283,8 @@ struct CountryCard: View {
 
     private var relationshipColor: Color {
         switch country.diplomacy.relationship {
-        case 70...:  return AppColors.success
-        case 40..<70: return AppColors.info
+        case 70...:   return AppColors.success
+        case 40..<70: return AppColors.foregroundMuted
         case 20..<40: return AppColors.warning
         default:      return AppColors.error
         }
@@ -312,7 +303,6 @@ struct CountryCard: View {
             action()
         }) {
             VStack(alignment: .leading, spacing: 0) {
-                // Relationship color bar at top
                 Rectangle()
                     .fill(relationshipColor)
                     .frame(height: 3)
@@ -350,7 +340,6 @@ struct CountryCard: View {
                         }
                     }
 
-                    // Relationship bar
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             Text("REL")
@@ -375,7 +364,7 @@ struct CountryCard: View {
 
                     // GDP + Military + ellipsis hint
                     HStack(spacing: 8) {
-                        statMini(label: "GDP", value: formatGDP(Double(country.attributes.gdp)))
+                        statMini(label: "GDP", value: resolvedGDP(country))
                         statMini(label: "MIL", value: "\(Int(country.military.strength))")
                     }
 
@@ -421,11 +410,13 @@ struct CountryCard: View {
         )
     }
 
-    private func formatGDP(_ gdp: Double) -> String {
-        if gdp >= 1_000_000_000_000 { return String(format: "$%.1fT", gdp / 1_000_000_000_000) }
-        if gdp >= 1_000_000_000     { return String(format: "$%.1fB", gdp / 1_000_000_000) }
-        if gdp >= 1_000_000         { return String(format: "$%.0fM", gdp / 1_000_000) }
-        return String(format: "$%.0fK", gdp / 1_000)
+    private func resolvedGDP(_ country: Country) -> String {
+        guard let billions = country.resolvedGdpBillions else { return "N/A" }
+        let raw = billions * 1_000_000_000
+        if raw >= 1_000_000_000_000 { return String(format: "$%.1fT", raw / 1_000_000_000_000) }
+        if raw >= 1_000_000_000     { return String(format: "$%.1fB", raw / 1_000_000_000) }
+        if raw >= 1_000_000         { return String(format: "$%.0fM", raw / 1_000_000) }
+        return String(format: "$%.0fK", raw / 1_000)
     }
 }
 
@@ -438,9 +429,17 @@ struct CountryDetailView: View {
     @State private var actionError: String? = nil
     @State private var selectedSeverity: String = "medium"
 
+    private var globeTarget: GlobeTarget? {
+        GlobeBackgroundView.capitalCoordinates[country.id]
+    }
+
     var body: some View {
         ZStack {
             AppColors.background.ignoresSafeArea()
+
+            GlobeBackgroundView(target: globeTarget, showPulse: true)
+                .ignoresSafeArea()
+                .opacity(0.3)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
@@ -584,7 +583,7 @@ struct CountryDetailView: View {
     private var economicSection: some View {
         sectionBlock(title: "Economic Profile") {
             VStack(spacing: 10) {
-                statRow(label: "GDP", value: formatMoney(Double(country.attributes.gdp)))
+                statRow(label: "GDP", value: country.resolvedGdpBillions.map { formatMoney($0 * 1_000_000_000) } ?? "N/A")
                 statRow(label: "Population", value: formatPop(Double(country.attributes.population)))
                 if let difficulty = country.difficulty {
                     statRow(label: "Governance", value: difficulty.capitalized)
@@ -794,30 +793,20 @@ struct CountryDetailView: View {
 
     private func runDiplomaticAction(_ type: String) {
         guard let gs = gameStore else { return }
-        Task {
-            let result = await gs.executeDiplomaticAction(type: type, targetCountryId: country.id)
-            await MainActor.run {
-                if result.success {
-                    dismiss()
-                } else {
-                    actionError = result.message
-                }
-            }
+        if type == "request_alliance",
+           let idx = gs.state.countries.firstIndex(where: { $0.id == country.id }),
+           gs.state.countries[idx].diplomacy.relationship < 30 {
+            actionError = "Alliance request rejected. Relations are too strained."
+            return
         }
+        dismiss()
+        Task { await gs.executeDiplomaticAction(type: type, targetCountryId: country.id) }
     }
 
     private func runMilitaryAction(_ type: String) {
         guard let gs = gameStore else { return }
-        Task {
-            let result = await gs.executeMilitaryAction(type: type, targetCountryId: country.id, severity: selectedSeverity)
-            await MainActor.run {
-                if result.success {
-                    dismiss()
-                } else {
-                    actionError = result.message
-                }
-            }
-        }
+        dismiss()
+        Task { await gs.executeMilitaryAction(type: type, targetCountryId: country.id, severity: selectedSeverity) }
     }
 
     // MARK: - Helpers
@@ -854,7 +843,7 @@ struct CountryDetailView: View {
     private func relationshipColor(_ rel: Double) -> Color {
         switch rel {
         case 70...:   return AppColors.success
-        case 40..<70: return AppColors.info
+        case 40..<70: return AppColors.foregroundMuted
         case 20..<40: return AppColors.warning
         default:      return AppColors.error
         }

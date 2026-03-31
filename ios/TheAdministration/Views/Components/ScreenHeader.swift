@@ -1,6 +1,3 @@
-/// ScreenHeader
-/// Unified header component used across all main screens.
-/// Clean left-aligned title with optional subtitle and trailing action content.
 import SwiftUI
 
 struct ScreenHeader<TrailingContent: View>: View {

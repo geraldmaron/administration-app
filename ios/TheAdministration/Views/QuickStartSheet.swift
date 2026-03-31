@@ -14,6 +14,7 @@ struct QuickStartSheet: View {
     @State private var party: String = ""
     @State private var approach: String = ""
     @State private var selectedSkills: Set<String> = []
+    @State private var selectedGameLength: String = "medium"
     @State private var localParties: [PoliticalParty] = []
     @State private var isLoadingLocalParties: Bool = false
 
@@ -66,7 +67,7 @@ struct QuickStartSheet: View {
 
                     Spacer()
 
-                    Text(step == 1 ? "1 OF 3" : step == 2 ? "2 OF 3" : "3 OF 3")
+                    Text(step == 1 ? "1 OF 4" : step == 2 ? "2 OF 4" : step == 3 ? "3 OF 4" : "4 OF 4")
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                         .foregroundColor(AppColors.foregroundMuted)
                         .tracking(2)
@@ -85,6 +86,12 @@ struct QuickStartSheet: View {
                             removal: .move(edge: .trailing).combined(with: .opacity)
                         ))
                 } else if step == 2 {
+                    gameLengthStep
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
+                } else if step == 3 {
                     identityStep
                         .transition(.asymmetric(
                             insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -113,6 +120,91 @@ struct QuickStartSheet: View {
             } else if party.isEmpty || !loaded.contains(where: { $0.name == party }) {
                 party = loaded.first?.name ?? ""
             }
+        }
+    }
+
+    // MARK: - Step 2 — Game Length
+
+    private var gameLengthStep: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("CAMPAIGN DURATION")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(AppColors.foregroundMuted)
+                    .tracking(2)
+                Text("How long is your term?")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundColor(AppColors.foreground)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+
+            ScrollView {
+                VStack(spacing: 10) {
+                    ForEach([
+                        ("short",  "SHT-030", "Short Campaign",  "~30 Turns",  "Crisis Pace",    "Compressed decisions with amplified consequences. Limited recovery window — every turn carries outsized weight."),
+                        ("medium", "MED-060", "Standard Term",   "~60 Turns",  "Standard Pace",  "Cascading effects develop meaningfully. Coalitions shift, feedback loops emerge. The recommended starting point."),
+                        ("long",   "LNG-120", "Full Mandate",    "~120 Turns", "Full Pace",      "Every system has time to evolve or collapse. Long-term consequences, diplomatic drift, and domestic entropy fully unfold."),
+                    ], id: \.0) { id, code, label, turns, pace, desc in
+                        let isSelected = selectedGameLength == id
+                        Button(action: { selectedGameLength = id }) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    Text(code)
+                                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                                        .foregroundColor(isSelected ? AppColors.accentPrimary : AppColors.foregroundMuted)
+                                        .tracking(3)
+                                    Spacer()
+                                    if isSelected {
+                                        Circle()
+                                            .fill(AppColors.accentPrimary)
+                                            .frame(width: 7, height: 7)
+                                    }
+                                }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(label.uppercased())
+                                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                        .foregroundColor(isSelected ? AppColors.accentPrimary : AppColors.foreground)
+                                        .tracking(2)
+                                    Text(turns)
+                                        .font(.system(size: 22, weight: .black, design: .monospaced))
+                                        .foregroundColor(isSelected ? AppColors.accentPrimary : AppColors.foreground)
+                                    Text(pace)
+                                        .font(.system(size: 10, weight: .regular, design: .monospaced))
+                                        .foregroundColor(isSelected ? AppColors.accentPrimary.opacity(0.7) : AppColors.foregroundMuted)
+                                }
+                                Text(desc)
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(isSelected ? AppColors.foreground.opacity(0.8) : AppColors.foregroundMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(isSelected ? AppColors.accentPrimary.opacity(0.08) : AppColors.backgroundElevated)
+                            .overlay(Rectangle().stroke(isSelected ? AppColors.accentPrimary : AppColors.border, lineWidth: isSelected ? 1 : 0.5))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 24)
+            }
+
+            Spacer()
+
+            Button(action: {
+                HapticEngine.shared.medium()
+                withAnimation(AppMotion.standard) { step = 3 }
+            }) {
+                Text("CONTINUE")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.background)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(AppColors.foreground)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 40)
         }
     }
 
@@ -199,6 +291,7 @@ struct QuickStartSheet: View {
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
                                 .background(selectedCountry?.id == country.id ? AppColors.backgroundElevated : Color.clear)
+                                .contentShape(Rectangle())
                                 .overlay(
                                     Rectangle()
                                         .frame(height: 1)
@@ -366,7 +459,7 @@ struct QuickStartSheet: View {
                 Button(action: {
                     guard !name.isEmpty else { return }
                     HapticEngine.shared.medium()
-                    withAnimation(AppMotion.standard) { step = 3 }
+                    withAnimation(AppMotion.standard) { step = 4 }
                 }) {
                     Text("CONTINUE")
                         .font(.system(size: 14, weight: .semibold))
@@ -467,7 +560,7 @@ struct QuickStartSheet: View {
                                     HStack(alignment: .top, spacing: 8) {
                                         Image(systemName: "arrow.up.circle.fill")
                                             .font(.system(size: 11))
-                                            .foregroundColor(AppColors.accentTertiary)
+                                            .foregroundColor(AppColors.success)
                                         Text(s)
                                             .font(AppTypography.label)
                                             .foregroundColor(AppColors.foregroundMuted)
@@ -486,7 +579,7 @@ struct QuickStartSheet: View {
                                     HStack(alignment: .top, spacing: 8) {
                                         Image(systemName: "arrow.down.circle.fill")
                                             .font(.system(size: 11))
-                                            .foregroundColor(AppColors.accentSecondary)
+                                            .foregroundColor(AppColors.error)
                                         Text(w)
                                             .font(AppTypography.label)
                                             .foregroundColor(AppColors.foregroundMuted)
@@ -518,7 +611,7 @@ struct QuickStartSheet: View {
                     let skillObjects = PlayerSkillCatalogue.all.filter { selectedSkills.contains($0.id) }
                     let strengths = PlayerSkillCatalogue.generateStrengths(from: skillObjects, approach: approach)
                     let weaknesses = PlayerSkillCatalogue.generateWeaknesses(from: skillObjects, approach: approach)
-                    gameStore.quickStart(name: name, party: party, approach: approach, skills: skillObjects, strengths: strengths, weaknesses: weaknesses)
+                    gameStore.quickStart(name: name, party: party, approach: approach, skills: skillObjects, strengths: strengths, weaknesses: weaknesses, gameLength: selectedGameLength)
                     dismiss()
                     withAnimation(AppMotion.standard) { showWelcome = false }
                 }) {

@@ -495,7 +495,7 @@ export default function JobDetailPage() {
 
   const statusStyle = STATUS_STYLES[job.status] ?? STATUS_STYLES.pending;
   const logEntries = buildLog(job);
-  const total = job.total ?? job.count * job.bundles.length;
+  const total = job.total ?? job.totalCount ?? job.count * job.bundles.length;
   const progress = job.progress ?? (
     job.status === 'completed' ? 100 : job.status === 'failed' ? 100 : 0
   );
@@ -517,7 +517,12 @@ export default function JobDetailPage() {
   const remediatedCount = (job.results ?? []).filter((r) => r.autoFixed).length;
   const savedCount = job.completedCount ?? job.results?.length ?? 0;
   const failedCount = job.failedCount ?? 0;
+  const generatedDraftCount = Math.max(
+    savedCount,
+    job.liveActivity?.totalGeneratedDrafts ?? 0,
+  );
   const liveProgress = total > 0 ? Math.min(100, Math.round(((savedCount + failedCount) / total) * 100)) : progress;
+  const generationProgress = total > 0 ? Math.min(100, Math.round(((generatedDraftCount + failedCount) / total) * 100)) : progress;
 
   return (
     <div className="mx-auto max-w-[1300px]">
@@ -568,6 +573,7 @@ export default function JobDetailPage() {
       </CommandPanel>
 
       <div className="mb-6 grid gap-4 md:grid-cols-5">
+        <DataStat label="Generated" value={generatedDraftCount} accent="blue" />
         <DataStat label="Saved" value={savedCount} accent="success" />
         <DataStat label="Failed" value={failedCount} accent={failedCount > 0 ? 'warning' : undefined} />
         <DataStat label="Expected" value={total} accent="blue" />
@@ -594,8 +600,9 @@ export default function JobDetailPage() {
         <CommandPanel className="mb-6 p-5 md:p-6">
           <div className="flex items-center justify-between">
             <div className="text-[10px] font-mono text-foreground-subtle">
-              <span className="text-foreground font-medium">{savedCount}</span>
-              <span> / {total} scenarios</span>
+              <span className="text-foreground font-medium">{generatedDraftCount}</span>
+              <span> generated / {total} expected</span>
+              <span className="ml-2 text-[var(--success)]">· {savedCount} saved</span>
               {failedCount > 0 && (
                 <span className="text-[var(--error)] ml-2">· {failedCount} failed</span>
               )}
@@ -608,7 +615,7 @@ export default function JobDetailPage() {
                 <span>{formatElapsed(elapsedMs)}</span>
               )}
               {(() => {
-                const done = savedCount + failedCount;
+                const done = generatedDraftCount + failedCount;
                 if (elapsedMs && done > 0 && done < total) {
                   const ratePerMs = done / elapsedMs;
                   const remainingMs = Math.round((total - done) / ratePerMs);
@@ -616,22 +623,24 @@ export default function JobDetailPage() {
                 }
                 return null;
               })()}
-              <span>{Math.round(liveProgress)}%</span>
+              <span>{Math.round(generationProgress)}%</span>
             </div>
           </div>
 
           <div className="app-progress">
-            <span style={{ width: `${liveProgress}%` }} />
+            <span style={{ width: `${generationProgress}%` }} />
           </div>
 
           {job.bundles.length > 0 && (
             <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(job.bundles.length, 4)}, minmax(0, 1fr))` }}>
               {job.bundles.map((bundleId) => {
                 const saved = perBundleCount[bundleId] ?? 0;
+                const liveBundle = job.liveActivity?.byBundle?.[bundleId];
+                const generated = Math.max(saved, liveBundle?.generatedDrafts ?? 0);
                 const bundleLabel = ALL_BUNDLES.find((b) => b.id === bundleId)?.label ?? bundleId;
                 const complete = saved >= job.count;
                 const isActive = job.currentBundle === bundleId;
-                const bundleProgress = job.count > 0 ? Math.round((saved / job.count) * 100) : 0;
+                const bundleProgress = job.count > 0 ? Math.round((generated / job.count) * 100) : 0;
                 return (
                   <div key={bundleId} className={`control-surface p-3 transition-colors ${isActive ? 'ring-1 ring-[var(--accent-primary)]' : ''}`}>
                     <div className="flex items-center gap-1.5 mb-1">
@@ -641,8 +650,11 @@ export default function JobDetailPage() {
                       </div>
                     </div>
                     <div className={`text-xs font-mono ${complete ? 'text-[var(--success)]' : isActive ? 'text-foreground' : 'text-foreground-muted'}`}>
-                      {saved}<span className="text-foreground-subtle">/{job.count}</span>
+                      {generated}<span className="text-foreground-subtle">/{job.count}</span>
                       {complete && <span className="ml-1 text-[var(--success)]">✓</span>}
+                    </div>
+                    <div className="mt-1 text-[9px] font-mono text-foreground-subtle">
+                      {saved} saved{generated > saved ? ` · ${generated - saved} drafted` : ''}
                     </div>
                     {job.count > 1 && (
                       <div className="mt-1.5 h-1 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
@@ -1067,7 +1079,7 @@ export default function JobDetailPage() {
               {job.status === 'pending'
                 ? 'Waiting to start…'
                 : job.status === 'running'
-                  ? `Generating scenarios — ${savedCount} of ${total} complete`
+                  ? `Generating scenarios — ${generatedDraftCount} drafted, ${savedCount} saved, ${failedCount} failed out of ${total}`
                   : 'No results recorded for this job.'}
             </CommandPanel>
           )}

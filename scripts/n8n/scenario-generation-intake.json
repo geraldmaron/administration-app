@@ -1,0 +1,328 @@
+{
+  "name": "scenario-loop-runner",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": false,
+        "httpMethod": "POST",
+        "path": "scenario-generate",
+        "authentication": "none",
+        "responseMode": "responseNode",
+        "webhookNotice": "",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Incoming Job Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        300
+      ],
+      "webhookId": "scenario-generation-intake"
+    },
+    {
+      "parameters": {
+        "curlImport": "",
+        "method": "POST",
+        "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/submitGenerationJob",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-request-origin",
+              "value": "={{ $json.body.requestedBy || 'n8n:scenario-loop-runner' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { bundles: $json.body.bundles, count: $json.body.count, mode: $json.body.mode, lowLatencyMode: $json.body.lowLatencyMode, distributionConfig: $json.body.distributionConfig, region: $json.body.region, regions: $json.body.regions, scopeTier: $json.body.scopeTier, scopeKey: $json.body.scopeKey, clusterId: $json.body.clusterId, exclusivityReason: $json.body.exclusivityReason, applicable_countries: $json.body.applicable_countries, sourceKind: $json.body.sourceKind, description: $json.body.description, priority: $json.body.priority, modelConfig: $json.body.modelConfig, dryRun: $json.body.dryRun, newsContext: $json.body.newsContext, executionTarget: 'n8n' } }}",
+        "options": {},
+        "infoMessage": ""
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UBv01nlXlbZjNRBJ",
+          "name": "admin-secret"
+        }
+      },
+      "id": "queue-node",
+      "name": "Queue Generation Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "curlImport": "",
+        "method": "POST",
+        "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/updateJobProgress",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const request = $('Incoming Job Request').item.json.body || {}; const bundles = Array.isArray(request.bundles) ? request.bundles : []; const count = typeof request.count === 'number' ? request.count : 1; return { jobId: $json.jobId, status: 'running', currentPhase: 'starting', currentMessage: 'n8n orchestrator: starting bundle fan-out', totalCount: bundles.length * count }; })() }}",
+        "options": {},
+        "infoMessage": ""
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UBv01nlXlbZjNRBJ",
+          "name": "admin-secret"
+        }
+      },
+      "id": "mark-running",
+      "name": "Mark Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "generalNotice": "",
+        "respondWith": "json",
+        "webhookNotice": "",
+        "responseBody": "={{ { ok: true, jobId: $('Queue Generation Job').item.json.jobId, status: 'running' } }}",
+        "options": {}
+      },
+      "id": "respond-node",
+      "name": "Respond With Job",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const request = $('Incoming Job Request').item.json.body || {};\nconst queued = $('Queue Generation Job').item.json || {};\nconst bundles = Array.isArray(request.bundles) ? request.bundles : [];\nconst count = typeof request.count === 'number' ? request.count : 1;\n\nconst scope = {\n  scopeTier: request.scopeTier || 'universal',\n  scopeKey: request.scopeKey || 'universal',\n  sourceKind: request.sourceKind || 'evergreen',\n  regions: request.regions || [],\n  region: request.region,\n  applicable_countries: request.applicable_countries || [],\n  exclusivityReason: request.exclusivityReason,\n  clusterId: request.clusterId,\n};\n\nreturn bundles.map(bundle => ({\n  json: {\n    jobId: queued.jobId,\n    bundle,\n    count,\n    mode: request.mode || 'manual',\n    lowLatencyMode: request.lowLatencyMode || false,\n    modelConfig: request.modelConfig || {},\n    dryRun: request.dryRun || false,\n    newsContext: request.newsContext || [],\n    ...scope,\n  }\n}));",
+        "notice": ""
+      },
+      "id": "prepare-bundles",
+      "name": "Prepare Bundle Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "curlImport": "",
+        "method": "POST",
+        "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/processGenerationBundle",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 540000
+        },
+        "infoMessage": ""
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UBv01nlXlbZjNRBJ",
+          "name": "admin-secret"
+        }
+      },
+      "id": "process-bundle",
+      "name": "Process Bundle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const results = $input.all();\nconst jobId = $('Queue Generation Job').item.json.jobId || '';\n\nlet totalCompleted = 0;\nlet totalFailed = 0;\nconst allErrors = [];\n\nfor (const item of results) {\n  const r = item.json;\n  totalCompleted += typeof r.completedCount === 'number' ? r.completedCount : 0;\n  totalFailed += typeof r.failedCount === 'number' ? r.failedCount : 0;\n  if (Array.isArray(r.errors)) {\n    allErrors.push(...r.errors);\n  }\n}\n\nconst status = totalFailed > 0 && totalCompleted === 0 ? 'failed' : 'completed';\n\nreturn [{ json: { jobId, status, totalCompleted, totalFailed, errors: allErrors } }];",
+        "notice": ""
+      },
+      "id": "aggregate-results",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1580,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "curlImport": "",
+        "method": "POST",
+        "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/updateJobProgress",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { jobId: $json.jobId, status: $json.status, currentPhase: 'complete', currentMessage: 'n8n orchestrator: ' + $json.totalCompleted + ' saved, ' + $json.totalFailed + ' failed', completedCount: $json.totalCompleted, failedCount: $json.totalFailed } }}",
+        "options": {},
+        "infoMessage": ""
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UBv01nlXlbZjNRBJ",
+          "name": "admin-secret"
+        }
+      },
+      "id": "finalize-job",
+      "name": "Finalize Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1820,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Incoming Job Request": {
+      "main": [
+        [
+          {
+            "node": "Queue Generation Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Queue Generation Job": {
+      "main": [
+        [
+          {
+            "node": "Mark Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Running": {
+      "main": [
+        [
+          {
+            "node": "Respond With Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond With Job": {
+      "main": [
+        [
+          {
+            "node": "Prepare Bundle Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Bundle Items": {
+      "main": [
+        [
+          {
+            "node": "Process Bundle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Bundle": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          {
+            "node": "Finalize Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

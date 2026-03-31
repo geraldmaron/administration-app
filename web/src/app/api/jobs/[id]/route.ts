@@ -40,11 +40,13 @@ async function getLiveActivity(data: FirebaseFirestore.DocumentData) {
     blueprint: number;
     details: number;
     successes: number;
+    generatedDrafts: number;
     scoreTotal: number;
     scoreCount: number;
   }> = {};
 
   let totalAttempts = 0;
+  let totalGeneratedDrafts = 0;
   let lastMetricAt: string | undefined;
 
   for (const doc of metricsSnap.docs) {
@@ -59,6 +61,7 @@ async function getLiveActivity(data: FirebaseFirestore.DocumentData) {
         blueprint: 0,
         details: 0,
         successes: 0,
+        generatedDrafts: 0,
         scoreTotal: 0,
         scoreCount: 0,
       };
@@ -75,6 +78,10 @@ async function getLiveActivity(data: FirebaseFirestore.DocumentData) {
 
     if (metric.success === true) {
       row.successes += 1;
+      if (phase === 'details') {
+        row.generatedDrafts += 1;
+        totalGeneratedDrafts += 1;
+      }
     }
 
     if (typeof metric.auditScore === 'number') {
@@ -96,6 +103,7 @@ async function getLiveActivity(data: FirebaseFirestore.DocumentData) {
     blueprint: number;
     details: number;
     successes: number;
+    generatedDrafts: number;
     avgAuditScore?: number;
   }> = {};
 
@@ -106,12 +114,14 @@ async function getLiveActivity(data: FirebaseFirestore.DocumentData) {
       blueprint: row.blueprint,
       details: row.details,
       successes: row.successes,
+      generatedDrafts: row.generatedDrafts,
       ...(row.scoreCount > 0 ? { avgAuditScore: Math.round((row.scoreTotal / row.scoreCount) * 10) / 10 } : {}),
     };
   }
 
   return {
     totalAttempts,
+    totalGeneratedDrafts,
     lastMetricAt,
     byBundle: normalizedByBundle,
   };
@@ -129,6 +139,7 @@ function toDetail(id: string, data: FirebaseFirestore.DocumentData): JobDetail {
     failedCount: data.failedCount,
     description: data.description,
     total: data.total,
+    totalCount: data.totalCount,
     mode: data.mode ?? 'manual',
     distributionConfig: data.distributionConfig ?? { mode: 'auto' },
     regions: data.regions,
@@ -163,13 +174,23 @@ async function getAttemptSummary(
   if (!startedAt || !completedAt || bundles.length === 0) return [];
 
   const bundleSet = new Set(bundles);
-  const snap = await db
-    .collection('generation_attempts')
+  const metricsSnap = await db
+    .collection('generation_metrics')
     .where('timestamp', '>=', startedAt)
     .where('timestamp', '<=', completedAt)
     .orderBy('timestamp', 'asc')
     .limit(200)
     .get();
+
+  const snap = metricsSnap.empty
+    ? await db
+        .collection('generation_attempts')
+        .where('timestamp', '>=', startedAt)
+        .where('timestamp', '<=', completedAt)
+        .orderBy('timestamp', 'asc')
+        .limit(200)
+        .get()
+    : metricsSnap;
 
   return snap.docs
     .map((doc) => {

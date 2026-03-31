@@ -1,9 +1,5 @@
 import Foundation
 
-/// CandidateGenerator
-/// Generates random candidates and ministers for the administration.
-/// Uses Firebase-loaded AppConfig for all data pools (names, traits, parties,
-/// universities, backgrounds, approaches). Mirrors web candidateUtils.ts.
 class CandidateGenerator {
 
     private final class RNG {

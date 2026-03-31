@@ -86,7 +86,7 @@ Use `the_*` forms for all country relationship tokens in narrative text. For rol
 **FINAL SELF-CHECK BEFORE OUTPUT:**
 1. Search your JSON for the literal substring `the {` — if it appears anywhere, fix it before responding.
 2. Search your JSON for any placeholder not in the approved whitelist — remove or rewrite it.
-3. In `outcomeSummary` and `outcomeContext`, every sentence must begin with either a capitalized narrative word or an approved token followed by a capitalized word.
+3. In `outcomeSummary` and `outcomeContext`, every sentence must begin with either a capitalized narrative word or an approved token. **Do not capitalize the word after a token** — tokens like `{the_legislature}` resolve to multi-word phrases, so the word following the token is mid-sentence and must be lowercase. ✅ `{the_legislature} passed the bill.` ❌ `{the_legislature} Passed the bill.`
 4. In `advisorFeedback`, prefer active voice: `X approved Y`, `X warned Y`, `X blocked Y`; avoid `Y was approved`, `concerns were raised`, `it was decided`.
 5. For each field (`description`, `options[].text`, `outcomeSummary`, `outcomeContext`, `advisorFeedback[].feedback`), count the sentences that use a form of `was/were/is/are/been/being + past participle`. If more than half are passive in any field, rewrite them to active voice before outputting. Example rewrites: `"was passed"` → `"{the_legislature} passed"`, `"was announced"` → `"{leader_title} announced"`, `"was rejected"` → `"{the_player_country} rejected"`.
 6. Search your JSON for newsroom-unfriendly jargon such as `bloc` or `gambit`. Rewrite with plain words like `alliance`, `regional group`, `move`, `bid`, or the relevant institution token before responding.

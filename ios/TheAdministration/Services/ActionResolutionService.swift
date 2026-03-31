@@ -24,6 +24,12 @@ struct ActionResolutionRequest: Encodable {
     let targetMilitaryStrength: Double?
     let targetCyberCapability: Double?
     let targetNuclearCapable: Bool?
+    let targetGovernmentCategory: String?
+    let targetGeopoliticalTags: [String]?
+    let targetRegion: String?
+    let targetGdpTier: String?
+    let targetVulnerabilities: [String]?
+    let comparativePower: String?
 }
 
 struct ActionResolutionMetricDelta: Decodable {

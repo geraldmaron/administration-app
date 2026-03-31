@@ -1,6 +1,3 @@
-/// TooltipView
-/// Floating contextual help card. Used for metric definitions, policy explanations,
-/// cabinet stat help, and finance term definitions. Dismisses on tap outside.
 import SwiftUI
 
 // MARK: - TooltipView

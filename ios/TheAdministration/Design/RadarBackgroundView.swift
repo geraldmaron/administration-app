@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// Decorative radar overlay drawn directly on the background.
-/// Provides a subtle tactical/surveillance texture without interfering with content.
-/// Uses TimelineView + Canvas for smooth, GPU-friendly animation.
 struct RadarBackgroundView: View {
     private let sweepDuration: Double = 7.0
 
@@ -25,7 +22,6 @@ private struct RadarCanvas: View {
 
     var body: some View {
         Canvas { context, size in
-            // Anchor point — upper-center, aligns with metric display
             let cx = size.width * 0.5
             let cy = size.height * 0.38
             let maxR = min(size.width, size.height) * 0.74
@@ -72,7 +68,6 @@ private struct RadarCanvas: View {
             // -- Sweep trail wedge (60° arc behind the beam) --
             let trailSpan: Double = 60
             let beamAngle = Angle.degrees(sweepDegrees - 90)
-            // Layered trail: outer transparent, inner slightly brighter
             for layer in 0...3 {
                 let fraction = Double(layer) / 3.0
                 let layerStart = Angle.degrees(
@@ -99,7 +94,6 @@ private struct RadarCanvas: View {
             ))
             context.stroke(beam, with: .color(accent.opacity(0.22)), lineWidth: 1.0)
 
-            // Beam glow (slightly wider, dimmer)
             context.stroke(beam, with: .color(accent.opacity(0.06)), lineWidth: 3.5)
 
             // -- Center pip --
@@ -108,7 +102,6 @@ private struct RadarCanvas: View {
             dot.addEllipse(in: CGRect(x: cx - pip, y: cy - pip, width: pip * 2, height: pip * 2))
             context.fill(dot, with: .color(accent.opacity(0.18)))
 
-            // Center crosshair micro-tick
             var cpX = Path()
             cpX.move(to: CGPoint(x: cx - 6, y: cy))
             cpX.addLine(to: CGPoint(x: cx + 6, y: cy))

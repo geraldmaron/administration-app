@@ -39,6 +39,12 @@ export interface ActionResolutionRequest {
   targetMilitaryStrength?: number;
   targetCyberCapability?: number;
   targetNuclearCapable?: boolean;
+  targetGovernmentCategory?: string;
+  targetGeopoliticalTags?: string[];
+  targetRegion?: string;
+  targetGdpTier?: 'micro' | 'small' | 'medium' | 'large' | 'major';
+  targetVulnerabilities?: string[];
+  comparativePower?: 'striking_up' | 'peer_conflict' | 'striking_down';
 }
 
 export interface MetricDelta {

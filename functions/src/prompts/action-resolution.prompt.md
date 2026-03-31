@@ -32,7 +32,25 @@ Given the player's action, target country, severity level, and current game stat
 - **Game phase**: Early-game aggression is riskier (larger foreign relations penalties). Late-game actions reflect established patterns (smaller surprises).
 - **Recent actions**: Repeated aggressive actions against the same region cause diminishing military returns and increasing diplomatic costs. Conciliatory actions following aggression improve perception more than baseline.
 - **Target power**: Striking a nuclear-capable nation triggers broader global consequences. Blockading a major economy has larger economic ripple effects.
-- **Government category**: Authoritarian governments face less domestic approval cost for aggressive actions. Democracies face larger approval swings.
+- **Player government category**: Authoritarian governments face less domestic approval cost for aggressive actions. Democracies face larger approval swings.
+
+**Target profile context — use every field provided:**
+- **Target government**: An authoritarian or totalitarian target means no democratic backlash domestically within that country; sanctions have different leverage. A democracy may respond with elections, protests, or coalition shifts. A theocracy may frame the response in religious terms.
+- **Target economic scale**: `micro`/`small` economies are acutely vulnerable to sanctions and blockades — even modest pressure produces outsized effects. `large`/`major` economies absorb pressure better but retaliate harder. Scale the economic impact of trade/sanction actions accordingly.
+- **Target tags**: Tags are geopolitical facts that shape realistic consequences.
+  - `oil_exporter` / `energy_export`: sanctions trigger global energy price spikes; blockades affect supply chains beyond the target.
+  - `nuclear_state`: any aggressive action risks escalation; even cyber or covert ops carry existential escalation risk.
+  - `nato_member` / `treaty_ally`: striking a treaty ally triggers alliance obligations; other members will respond.
+  - `conflict_zone` / `post_conflict`: military actions in active conflict zones risk civilian casualties and humanitarian crises, affecting `metric_approval` and international standing.
+  - `financial_hub` / `banking`: sanctions on financial hubs cascade globally; foreign relations effects are broader.
+  - `regional_power`: degrading a regional power creates a vacuum that rivals fill; foreign relations effects ripple to neighbors.
+- **Target vulnerabilities**: Vulnerabilities identify where pressure lands hardest. `food_insecurity` means blockades cause civilian suffering. `debt_dependent` means sanctions cause rapid economic collapse. `political_instability` means covert ops and strikes can trigger regime change.
+- **Power dynamic**:
+  - `striking_down` (player significantly stronger): the action is decisive but risks looking like a bully; smaller approval cost militarily, but diplomatic community may react negatively.
+  - `peer_conflict` (roughly equal): the outcome is contested; expect proportional retaliation; effects are symmetric.
+  - `striking_up` (player weaker): the action is bold and risky; costs are amplified; domestic approval may rally briefly but international consequences are severe.
+
+**Headline and narrative specificity:** Use the target profile to write specific, grounded outcomes — not generic ones. A sanction on a `major economy` with `financial_hub` tags should reference market volatility, not just "trade will decrease." A covert op against a `conflict_zone` `authoritarian` state should reference regime response and civilian displacement, not just "capabilities were degraded."
 
 ---
 

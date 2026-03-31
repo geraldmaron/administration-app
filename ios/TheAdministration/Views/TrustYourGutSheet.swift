@@ -1,7 +1,3 @@
-/// TrustYourGutSheet
-/// Sheet that lets the player issue a "Trust Your Gut" command — an AI-assisted
-/// decision that overrides the current scenario options. Mirrors the web
-/// TrustYourGutModal and related flow.
 import SwiftUI
 
 struct TrustYourGutSheet: View {

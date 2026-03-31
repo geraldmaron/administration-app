@@ -62,6 +62,14 @@ export interface BlitzPreview {
   };
 }
 
+function formatBlitzJobDescription(
+  scopeTier: ScenarioScopeTier,
+  scopeKey: string,
+  bundles: string[],
+): string {
+  return `Blitz: ${scopeTier} ${scopeKey} [${bundles.join(', ')}]`;
+}
+
 export function allocateByRatio(total: number): TierAllocation {
   if (total <= 0) return { universal: 0, regional: 0, cluster: 0, exclusive: 0 };
 
@@ -236,13 +244,14 @@ export function groupDeficitsIntoJobs(
 
   return slotOrder.map((key) => {
     const slot = slots.get(key)!;
+    const bundles = Array.from(slot.bundles);
     const countPerBundle = Math.max(1, Math.min(
-      Math.ceil(slot.totalDeficit / slot.bundles.size),
-      Math.floor(MAX_SCENARIOS_PER_JOB / slot.bundles.size),
+      Math.ceil(slot.totalDeficit / bundles.length),
+      Math.floor(MAX_SCENARIOS_PER_JOB / bundles.length),
     ));
 
     const request: GenerationJobRequest = {
-      bundles: Array.from(slot.bundles),
+      bundles,
       count: countPerBundle,
       mode: 'blitz',
       scopeTier: slot.scopeTier,
@@ -250,7 +259,7 @@ export function groupDeficitsIntoJobs(
       sourceKind: 'evergreen',
       priority: 'normal',
       distributionConfig: { mode: 'auto' },
-      description: `Blitz: ${slot.scopeTier} ${slot.scopeKey} [${Array.from(slot.bundles).join(', ')}]`,
+      description: formatBlitzJobDescription(slot.scopeTier, slot.scopeKey, bundles),
     };
 
     if (slot.scopeTier === 'regional' && slot.region) {
@@ -267,18 +276,61 @@ export function groupDeficitsIntoJobs(
   });
 }
 
+export function fitJobsToScenarioBudget(
+  jobs: GenerationJobRequest[],
+  totalScenarios: number,
+): GenerationJobRequest[] {
+  if (jobs.length === 0 || totalScenarios <= 0) return [];
+
+  let remaining = totalScenarios;
+  const fitted: GenerationJobRequest[] = [];
+
+  for (const job of jobs) {
+    if (remaining <= 0) break;
+
+    const bundleCount = job.bundles.length;
+    if (bundleCount === 0) continue;
+
+    const fullPasses = Math.min(job.count, Math.floor(remaining / bundleCount));
+    if (fullPasses > 0) {
+      fitted.push({
+        ...job,
+        count: fullPasses,
+        description: formatBlitzJobDescription(job.scopeTier ?? 'universal', job.scopeKey ?? 'universal', job.bundles),
+      });
+      remaining -= fullPasses * bundleCount;
+      continue;
+    }
+
+    const partialBundles = job.bundles.slice(0, remaining);
+    if (partialBundles.length > 0) {
+      fitted.push({
+        ...job,
+        bundles: partialBundles,
+        count: 1,
+        description: formatBlitzJobDescription(job.scopeTier ?? 'universal', job.scopeKey ?? 'universal', partialBundles),
+      });
+      remaining -= partialBundles.length;
+    }
+  }
+
+  return fitted;
+}
+
 export function buildBlitzPlan(
   bundles: string[],
   regions: string[],
   countries: CountryEntry[],
   inventory: InventoryCell[],
-  totalPerBundle: number,
+  analysisTargetPerBundle: number,
+  totalScenarios: number,
   availableSlots: number,
   maxJobsPerBlitz: number,
 ): BlitzPreview {
-  const allocation = allocateByRatio(totalPerBundle);
-  const deficits = calculateDeficits(bundles, regions, countries, inventory, totalPerBundle);
-  const plannedJobs = groupDeficitsIntoJobs(deficits, availableSlots, maxJobsPerBlitz);
+  const allocation = allocateByRatio(totalScenarios);
+  const deficits = calculateDeficits(bundles, regions, countries, inventory, analysisTargetPerBundle);
+  const candidateJobs = groupDeficitsIntoJobs(deficits, availableSlots, maxJobsPerBlitz);
+  const plannedJobs = fitJobsToScenarioBudget(candidateJobs, totalScenarios);
 
   const totalDeficit = deficits.reduce((sum, d) => sum + d.deficit, 0);
   const scenariosToGenerate = plannedJobs.reduce(
@@ -291,7 +343,7 @@ export function buildBlitzPlan(
     deficits,
     plannedJobs,
     summary: {
-      totalRequested: totalPerBundle * bundles.length,
+      totalRequested: totalScenarios,
       totalDeficit,
       jobsToCreate: plannedJobs.length,
       scenariosToGenerate,

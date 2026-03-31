@@ -1,6 +1,3 @@
-/// ViewModifiers
-/// Reusable SwiftUI ViewModifiers for The Administration design system.
-/// Replaces hundreds of inline style applications across all view files.
 import SwiftUI
 import UIKit
 

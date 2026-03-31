@@ -1,6 +1,3 @@
-/// AppSpacing
-/// Provides a responsive spacing scale and common layout constants
-/// for The Administration design system.
 import SwiftUI
 
 struct AppSpacing {

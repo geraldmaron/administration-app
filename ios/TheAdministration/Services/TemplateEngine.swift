@@ -504,7 +504,10 @@ class TemplateEngine {
     /// Supports both {token} and {{token}} formats
     /// Validates token casing and logs warnings for incorrect casing
     func resolveTokens(in text: String, with context: [String: String]) -> String {
-        var result = text
+        // Lowercase the first word after each token closing brace so that verbs/adjectives
+        // stored as capitalized in templates (per drafter convention) don't produce
+        // spurious mid-sentence capitals after multi-word token substitution.
+        var result = lowercaseAfterTokenBoundaries(in: text)
 
         // Pattern matches both {token} and {{token}}
         let pattern = TemplateEngine.placeholderPattern
@@ -764,6 +767,23 @@ class TemplateEngine {
         }
 
         return String(characters)
+    }
+
+    private func lowercaseAfterTokenBoundaries(in text: String) -> String {
+        var chars = Array(text)
+        var i = 0
+        while i < chars.count {
+            guard chars[i] == "}" else { i += 1; continue }
+            var j = i + 1
+            while j < chars.count && chars[j] == "}" { j += 1 }
+            while j < chars.count && chars[j].isWhitespace { j += 1 }
+            if j < chars.count && chars[j].isUppercase {
+                let lowered = String(chars[j]).lowercased()
+                if let first = lowered.first { chars[j] = first }
+            }
+            i = j + 1
+        }
+        return String(chars)
     }
 
     private func normalizeHardcodedInstitutionPhrases(

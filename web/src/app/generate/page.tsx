@@ -219,7 +219,7 @@ export default function GeneratePage() {
   const [blitzPlannedJobs, setBlitzPlannedJobs] = useState<GenerationJobRequest[]>([]);
   const [blitzSummary, setBlitzSummary] = useState<{ totalRequested: number; totalDeficit: number; jobsToCreate: number; scenariosToGenerate: number; availableSlots: number } | null>(null);
   const [blitzJobIds, setBlitzJobIds] = useState<string[]>([]);
-  const [blitzTargetPerBundle, setBlitzTargetPerBundle] = useState(24);
+  const [blitzTotalScenarios, setBlitzTotalScenarios] = useState(24);
 
   useEffect(() => {
     fetch('/api/countries').then((r) => r.json())
@@ -246,12 +246,11 @@ export default function GeneratePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-  async function fetchBlitzPreview(targetOverride?: number) {
-    const target = targetOverride ?? blitzTargetPerBundle;
+  async function fetchBlitzPreview(totalOverride?: number) {
+    const totalScenarios = totalOverride ?? blitzTotalScenarios;
     setBlitzLoading(true);
     try {
-      const res = await fetch(`/api/blitz?targetPerBundle=${target}`);
+      const res = await fetch(`/api/blitz?totalScenarios=${totalScenarios}`);
       const data = await res.json();
       if (!res.ok) { setSubmitError(data.error ?? 'Failed to load blitz preview'); return; }
       setBlitzDeficits(data.deficits ?? []);
@@ -280,7 +279,7 @@ export default function GeneratePage() {
       const res = await fetch('/api/blitz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetPerBundle: blitzTargetPerBundle, executionTarget }),
+        body: JSON.stringify({ totalScenarios: blitzTotalScenarios, executionTarget }),
       });
       const data = await res.json();
       if (!res.ok) { setSubmitError(data.error ?? 'Failed to execute blitz'); return; }
@@ -662,7 +661,7 @@ export default function GeneratePage() {
             ? 'Choose bundles and settings — the AI creates scenarios from scratch.'
             : generationMode === 'news'
             ? 'Pull live headlines, select articles, and let the AI generate scenarios grounded in real events.'
-            : 'Analyse inventory gaps and generate a balanced batch across all bundles, regions, and countries.'}
+            : 'Set a total scenario count, then let blitz analyse inventory gaps and distribute that budget across the weakest coverage.'}
         </p>
       </div>
 
@@ -671,28 +670,28 @@ export default function GeneratePage() {
         <div className="space-y-6">
           <CommandPanel className="p-5 md:p-6">
             <div className="mb-5">
-              <div className="section-kicker mb-2">Target</div>
-              <h2 className="text-xl font-semibold text-foreground">Scenarios per Bundle</h2>
+              <div className="section-kicker mb-2">Request</div>
+              <h2 className="text-xl font-semibold text-foreground">Total Scenarios to Create</h2>
             </div>
             <p className="mb-4 text-xs text-[var(--foreground-muted)]">
-              Set the target scenario count per bundle. The total is distributed across scope tiers using the canonical ratio: 40% universal, 25% regional, 25% cluster, 10% exclusive.
+              Enter the total number of scenarios you want this blitz run to create. The planner analyses current inventory gaps, then distributes that total across bundles and scope tiers using the canonical ratio: 40% universal, 25% regional, 25% cluster, 10% exclusive.
             </p>
             <div className="flex items-center gap-4">
               <input
                 type="number"
                 min={1}
                 max={200}
-                value={blitzTargetPerBundle}
-                onChange={(e) => setBlitzTargetPerBundle(Math.max(1, Math.min(200, Number(e.target.value) || 1)))}
+                value={blitzTotalScenarios}
+                onChange={(e) => setBlitzTotalScenarios(Math.max(1, Math.min(200, Number(e.target.value) || 1)))}
                 className="input-shell w-24 text-center"
               />
               <button
                 type="button"
-                onClick={() => fetchBlitzPreview(blitzTargetPerBundle)}
+                onClick={() => fetchBlitzPreview(blitzTotalScenarios)}
                 disabled={blitzLoading}
                 className="btn btn-tactical"
               >
-                {blitzLoading ? 'Analysing…' : 'Analyse Inventory'}
+                {blitzLoading ? 'Analysing…' : 'Analyse Distribution'}
               </button>
             </div>
           </CommandPanel>
@@ -703,10 +702,10 @@ export default function GeneratePage() {
 
               {blitzSummary && (
                 <div className="grid grid-cols-4 gap-3">
-                  <DataStat size="compact" label="Total Target" value={blitzSummary.totalRequested} accent="blue" />
-                  <DataStat size="compact" label="Total Deficit" value={blitzSummary.totalDeficit} accent={blitzSummary.totalDeficit > 0 ? 'warning' : 'success'} />
+                  <DataStat size="compact" label="Requested" value={blitzSummary.totalRequested} accent="blue" />
+                  <DataStat size="compact" label="Inventory Gap" value={blitzSummary.totalDeficit} accent={blitzSummary.totalDeficit > 0 ? 'warning' : 'success'} />
                   <DataStat size="compact" label="Jobs Planned" value={blitzSummary.jobsToCreate} accent="blue" />
-                  <DataStat size="compact" label="To Generate" value={blitzSummary.scenariosToGenerate} accent="gold" />
+                  <DataStat size="compact" label="Planned Output" value={blitzSummary.scenariosToGenerate} accent="gold" />
                 </div>
               )}
 
@@ -714,7 +713,7 @@ export default function GeneratePage() {
                 <CommandPanel className="p-5 md:p-6">
                   <div className="mb-4">
                     <div className="section-kicker mb-2">Planned Jobs</div>
-                    <h2 className="text-xl font-semibold text-foreground">Generation Queue</h2>
+                    <h2 className="text-xl font-semibold text-foreground">Generated Distribution</h2>
                   </div>
                   <div className="space-y-2">
                     {blitzPlannedJobs.map((job, i) => (
@@ -735,7 +734,7 @@ export default function GeneratePage() {
 
               {blitzPlannedJobs.length === 0 && blitzDeficits.length === 0 && (
                 <CommandPanel className="p-5 md:p-6">
-                  <div className="text-sm text-[var(--success)]">Inventory meets the target ratio — no generation needed.</div>
+                  <div className="text-sm text-[var(--success)]">Inventory gaps are already covered well enough that blitz has nothing useful to schedule.</div>
                 </CommandPanel>
               )}
 
@@ -746,7 +745,7 @@ export default function GeneratePage() {
                   disabled={submitting || blitzPlannedJobs.length === 0}
                   className="btn btn-command"
                 >
-                  {submitting ? 'Submitting…' : `Execute Blitz (${blitzSummary?.jobsToCreate ?? 0} jobs)`}
+                  {submitting ? 'Submitting…' : `Execute Blitz (${blitzSummary?.scenariosToGenerate ?? 0} scenarios)`}
                 </button>
               </div>
 

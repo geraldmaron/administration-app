@@ -125,6 +125,18 @@ export function buildPrompt(req: ActionResolutionRequest): string {
             recentStr,
         ].join('\n');
     } else {
+        const targetProfile = [
+            req.targetGovernmentCategory ? `Target government: ${req.targetGovernmentCategory}` : '',
+            req.targetRegion ? `Target region: ${req.targetRegion}` : '',
+            req.targetGdpTier ? `Target economic scale: ${req.targetGdpTier} economy` : '',
+            req.targetGeopoliticalTags?.length ? `Target tags: ${req.targetGeopoliticalTags.slice(0, 8).join(', ')}` : '',
+            req.targetVulnerabilities?.length ? `Target vulnerabilities: ${req.targetVulnerabilities.join(', ')}` : '',
+            req.targetMilitaryStrength !== undefined ? `Target military strength: ${req.targetMilitaryStrength}` : '',
+            req.targetCyberCapability !== undefined ? `Target cyber capability: ${req.targetCyberCapability}` : '',
+            req.targetNuclearCapable ? 'Target is nuclear-capable.' : '',
+            req.comparativePower ? `Power dynamic: ${req.comparativePower}` : '',
+        ].filter(Boolean).join('\n');
+
         contextBlock = [
             `ACTION: ${req.actionType} (${req.actionCategory})`,
             req.severity ? `SEVERITY: ${req.severity}` : '',
@@ -136,9 +148,8 @@ export function buildPrompt(req: ActionResolutionRequest): string {
             `Turn: ${req.turn}/${req.maxTurns}, Phase: ${req.phase}`,
             `Key metrics: ${topMetrics}`,
             recentStr,
-            req.targetMilitaryStrength !== undefined ? `Target military strength: ${req.targetMilitaryStrength}` : '',
-            req.targetCyberCapability !== undefined ? `Target cyber capability: ${req.targetCyberCapability}` : '',
-            req.targetNuclearCapable ? 'Target is nuclear-capable.' : '',
+            '',
+            targetProfile,
         ].filter(Boolean).join('\n');
     }
 

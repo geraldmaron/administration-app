@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// Centralized color design tokens for The Administration
-/// Implements design system from design.md with OKLCH color space
 struct AppColors {
     // MARK: - Base Colors
     
@@ -33,83 +31,98 @@ struct AppColors {
     /// Strong border color
     static let borderStrong = Color(white: 1.0).opacity(0.18)
     
-    // MARK: - Accent Colors (theme-adaptive, driven by ThemeManager)
+    // MARK: - Accent Colors (fixed grayscale)
 
-    /// Primary accent — resolves from active AppTheme
-    static var accentPrimary: Color { ThemeManager.shared.current.accentPrimary }
-
-    /// Secondary accent — resolves from active AppTheme
-    static var accentSecondary: Color { ThemeManager.shared.current.accentSecondary }
-
-    /// Tertiary accent — resolves from active AppTheme
-    static var accentTertiary: Color { ThemeManager.shared.current.accentTertiary }
-
-    /// Muted accent (15% opacity of primary) — resolves from active AppTheme
-    static var accentMuted: Color { ThemeManager.shared.current.accentMuted }
+    static let accentPrimary = Color(white: 0.90)
+    static let accentSecondary = Color(white: 0.60)
+    static let accentTertiary = Color(white: 0.75)
+    static let accentMuted = Color(white: 0.90).opacity(0.15)
     
     // MARK: - Semantic Status Colors
-    
-    /// Success/Positive color - Modern Teal (OKLCH 0.72 0.19 150)
-    static let success = Color(red: 0.059, green: 0.871, blue: 0.604)  // #0fdf9c
-    
-    /// Warning/Caution color - Vibrant Orange (OKLCH 0.80 0.20 65)
-    static let warning = Color(red: 1.0, green: 0.584, blue: 0.098)  // #ffa500
-    
-    /// Error/Critical color - Bright Red (OKLCH 0.65 0.28 15)
-    static let error = Color(red: 0.996, green: 0.278, blue: 0.235)  // #ff4747
-    
-    /// Info color - Sky Blue (OKLCH 0.70 0.20 230)
-    static let info = Color(red: 0.098, green: 0.612, blue: 1.0)  // #199cff
-    
+
+    static let success = Color(red: 0.35, green: 0.78, blue: 0.48)
+    static let warning = Color(red: 0.85, green: 0.72, blue: 0.40)
+    static let error = Color(red: 0.85, green: 0.45, blue: 0.40)
+    static let info = Color(red: 0.45, green: 0.65, blue: 0.82)
+
     // MARK: - Metric Status Colors
-    
-    /// Metric critical threshold color - used for values < 20 or > 80 (inverse)
+
     static let metricCritical = error
-
-    /// Metric low range - used for values 20-40
     static let metricLow = warning
+    static let metricHealthy = success
+    static let metricHigh = Color(red: 0.42, green: 0.90, blue: 0.55)
 
-    /// Metric healthy range - used for values 40-70
-    static var metricHealthy: Color { accentPrimary }
-
-    /// Metric high range - used for values 70+ (Cyan/Teal)
-    static var metricHigh: Color { accentTertiary }
-    
     // MARK: - Helper Methods
-    
-    /// Returns color based on metric value (0-100)
-    /// - Parameters:
-    ///   - value: Metric value (0-100)
-    /// - Returns: Color appropriate for value
+
     static func metricColor(for value: CGFloat) -> Color {
         switch value {
-        case 0...20:
-            return metricCritical
-        case 20..<40:
-            return metricLow
-        case 40..<70:
-            return metricHealthy
-        default:  // 70+
-            return metricHigh
+        case 0...20:   return metricCritical
+        case 20..<40:  return metricLow
+        case 40..<70:  return metricHealthy
+        default:       return metricHigh
         }
     }
-    
-    /// Returns color for letter grade
-    /// - Parameters:
-    ///   - grade: Letter grade (A+, A, A-, B+, etc.)
-    /// - Returns: Color for grade
+
+    static func metricColor(for value: CGFloat, isInverse: Bool) -> Color {
+        metricColor(for: isInverse ? (100 - value) : value)
+    }
+
+    static let metricThresholds: [String: (critical: CGFloat, low: CGFloat, high: CGFloat)] = [
+        "metric_approval":          (25, 40, 62),
+        "metric_economy":           (25, 42, 63),
+        "metric_foreign_relations": (25, 42, 65),
+        "metric_public_order":      (25, 42, 65),
+        "metric_liberty":           (25, 45, 68),
+        "metric_military":          (22, 42, 65),
+        "metric_innovation":        (25, 45, 68),
+        "metric_health":            (25, 45, 68),
+        "metric_equality":          (25, 45, 68),
+        "metric_corruption":        (25, 45, 68),
+        "metric_inflation":         (25, 45, 72),
+        "metric_unrest":            (25, 42, 65),
+        "metric_bureaucracy":       (25, 45, 68),
+        "metric_economic_bubble":   (25, 45, 68),
+        "metric_foreign_influence": (25, 45, 68),
+        "metric_crime":             (25, 42, 65),
+        "metric_employment":        (25, 42, 63),
+        "metric_budget":            (20, 40, 65),
+        "metric_trade":             (22, 42, 65),
+        "metric_energy":            (22, 40, 65),
+        "metric_housing":           (25, 40, 62),
+        "metric_infrastructure":    (22, 40, 65),
+        "metric_education":         (22, 42, 68),
+        "metric_democracy":         (25, 42, 65),
+        "metric_sovereignty":       (25, 42, 68),
+        "metric_immigration":       (22, 40, 65),
+        "metric_environment":       (22, 42, 68),
+    ]
+
+    static func metricColor(for value: CGFloat, metricId: String, isInverse: Bool = false) -> Color {
+        let effective = isInverse ? (100 - value) : value
+        let t = metricThresholds[metricId] ?? (critical: 20, low: 40, high: 70)
+        switch effective {
+        case ..<t.critical: return metricCritical
+        case t.critical..<t.low: return metricLow
+        case t.low..<t.high: return metricHealthy
+        default: return metricHigh
+        }
+    }
+
+    static func gridlockColor(for value: Int) -> Color {
+        switch value {
+        case 60...: return error
+        case 40..<60: return warning
+        default: return success
+        }
+    }
+
     static func gradeColor(for grade: String) -> Color {
         switch grade {
-        case "A+", "A", "A-":
-            return success
-        case "B+", "B", "B-":
-            return metricHealthy
-        case "C+", "C", "C-":
-            return warning
-        case "D+", "D", "D-", "F":
-            return error
-        default:
-            return foregroundMuted
+        case "A+", "A", "A-":       return metricHigh
+        case "B+", "B", "B-":       return metricHealthy
+        case "C+", "C", "C-":       return warning
+        case "D+", "D", "D-", "F":  return error
+        default:                    return foregroundMuted
         }
     }
 
@@ -192,10 +205,9 @@ extension Color {
     static let appForegroundSubtle = AppColors.foregroundSubtle
     static let appBorder = AppColors.border
     static let appBorderStrong = AppColors.borderStrong
-    // Theme-adaptive: must be `var` to re-evaluate each access
-    static var appAccentPrimary: Color { AppColors.accentPrimary }
-    static var appAccentSecondary: Color { AppColors.accentSecondary }
-    static var appAccentTertiary: Color { AppColors.accentTertiary }
+    static let appAccentPrimary = AppColors.accentPrimary
+    static let appAccentSecondary = AppColors.accentSecondary
+    static let appAccentTertiary = AppColors.accentTertiary
     static let appSuccess = AppColors.success
     static let appWarning = AppColors.warning
     static let appError = AppColors.error

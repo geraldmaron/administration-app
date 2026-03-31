@@ -1,7 +1,3 @@
-/// LegislatureSheet
-/// Full legislative briefing sheet: aggregate approval, seat composition with
-/// proportional share bar, per-bloc approval bars and ruling coalition badge,
-/// notable member profiles with ideology indicators, and election timeline.
 import SwiftUI
 
 struct LegislatureSheet: View {
@@ -52,7 +48,7 @@ struct LegislatureSheet: View {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("\(legislature.approvalOfPlayer)")
                         .font(AppTypography.dataLarge)
-                        .foregroundColor(approvalColor(legislature.approvalOfPlayer))
+                        .foregroundColor(AppColors.metricColor(for: CGFloat(legislature.approvalOfPlayer)))
                         .monospacedDigit()
                     Text("/ 100")
                         .font(AppTypography.caption)
@@ -67,12 +63,12 @@ struct LegislatureSheet: View {
                         .frame(width: 72, height: 72)
                     Circle()
                         .trim(from: 0, to: CGFloat(legislature.gridlockLevel) / 100)
-                        .stroke(gridlockColor(legislature.gridlockLevel), style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .stroke(AppColors.gridlockColor(for: legislature.gridlockLevel), style: StrokeStyle(lineWidth: 6, lineCap: .round))
                         .frame(width: 72, height: 72)
                         .rotationEffect(.degrees(-90))
                     Text("\(legislature.gridlockLevel)%")
                         .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                        .foregroundColor(gridlockColor(legislature.gridlockLevel))
+                        .foregroundColor(AppColors.gridlockColor(for: legislature.gridlockLevel))
                 }
                 Text("GRIDLOCK")
                     .font(.system(size: 9, weight: .black))
@@ -169,13 +165,13 @@ struct LegislatureSheet: View {
                     Spacer()
                     Text("\(bloc.approvalOfPlayer)%")
                         .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                        .foregroundColor(approvalColor(bloc.approvalOfPlayer))
+                        .foregroundColor(AppColors.metricColor(for: CGFloat(bloc.approvalOfPlayer)))
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Rectangle().fill(AppColors.border)
                         Rectangle()
-                            .fill(approvalColor(bloc.approvalOfPlayer))
+                            .fill(AppColors.metricColor(for: CGFloat(bloc.approvalOfPlayer)))
                             .frame(width: geo.size.width * (CGFloat(bloc.approvalOfPlayer) / 100))
                     }
                     .clipShape(Capsule())
@@ -273,13 +269,13 @@ struct LegislatureSheet: View {
                         Spacer()
                         Text("\(legislature.gridlockLevel)%")
                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                            .foregroundColor(gridlockColor(legislature.gridlockLevel))
+                            .foregroundColor(AppColors.gridlockColor(for: legislature.gridlockLevel))
                     }
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Rectangle().fill(AppColors.border)
                             Rectangle()
-                                .fill(gridlockColor(legislature.gridlockLevel))
+                                .fill(AppColors.gridlockColor(for: legislature.gridlockLevel))
                                 .frame(width: geo.size.width * (CGFloat(legislature.gridlockLevel) / 100))
                         }
                         .clipShape(Capsule())
@@ -343,18 +339,6 @@ struct LegislatureSheet: View {
     }
 
     // MARK: - Helpers
-
-    private func approvalColor(_ value: Int) -> Color {
-        if value >= 60 { return AppColors.success }
-        if value >= 40 { return AppColors.warning }
-        return AppColors.error
-    }
-
-    private func gridlockColor(_ value: Int) -> Color {
-        if value >= 60 { return AppColors.error }
-        if value >= 40 { return AppColors.warning }
-        return AppColors.success
-    }
 
     private func blocColor(_ bloc: LegislativeBloc, globalIndex: Int) -> Color {
         if bloc.isRulingCoalition { return AppColors.accentPrimary }

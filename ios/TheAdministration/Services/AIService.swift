@@ -1,6 +1,3 @@
-/// AIService
-/// Coordinates scenario delivery for the iOS client.
-/// All scenarios are loaded from Firebase — no local generation.
 import Foundation
 
 private let MIN_SCENARIO_OPTIONS = 3

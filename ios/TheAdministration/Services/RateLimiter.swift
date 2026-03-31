@@ -1,6 +1,3 @@
-/// RateLimiter
-/// Simple in-memory rate limiter for AI API requests
-/// Tracks requests per identifier with configurable limits
 import Foundation
 
 class RateLimitEntry {

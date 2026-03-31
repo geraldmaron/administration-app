@@ -56,7 +56,6 @@ struct SetupProgressBar: View {
             HStack(spacing: 0) {
                 ForEach(1...totalSteps, id: \.self) { step in
                     HStack(spacing: 0) {
-                        // Step dot
                         ZStack {
                             Circle()
                                 .fill(step <= currentStep ? AppColors.accentPrimary : AppColors.border)
@@ -105,7 +104,17 @@ struct CountrySelectionView: View {
     @Binding var selectedCountry: Country?
     @Binding var step: Int
 
+    private var globeTarget: GlobeTarget? {
+        guard let id = selectedCountry?.id else { return nil }
+        return GlobeBackgroundView.capitalCoordinates[id]
+    }
+
     var body: some View {
+        ZStack {
+            GlobeBackgroundView(target: globeTarget, showPulse: globeTarget != nil)
+                .ignoresSafeArea()
+                .opacity(0.35)
+
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("STEP 1 OF 3")
@@ -150,7 +159,7 @@ struct CountrySelectionView: View {
                                             Text(country.name)
                                                 .font(.system(size: 16, weight: .medium, design: .default))
                                                 .foregroundColor(AppColors.foreground)
-                                            Text("GDP \(formatGDP(country.attributes.gdp))")
+                                            Text("GDP \(country.resolvedGdpBillions.map { formatGDP(Int($0 * 1_000_000_000)) } ?? "N/A")")
                                                 .font(.system(size: 11, weight: .regular, design: .monospaced))
                                                 .foregroundColor(AppColors.foregroundMuted)
                                             if selectedCountry?.id == country.id, let legislature = country.legislatureProfile {
@@ -211,6 +220,7 @@ struct CountrySelectionView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 40)
         }
+        } // ZStack
     }
 
     private func formatGDP(_ gdp: Int) -> String {
@@ -377,7 +387,6 @@ struct CabinetFormationView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             VStack(alignment: .leading, spacing: 8) {
                 Text("STEP 4 OF 4")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
@@ -406,7 +415,6 @@ struct CabinetFormationView: View {
                 }
                 Spacer()
             } else {
-                // Budget header
                 HStack {
                     Text("TOTAL CABINET COST")
                         .font(.system(size: 9, weight: .medium, design: .monospaced))
@@ -549,7 +557,6 @@ struct PlayerIdentityView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Name
                     VStack(alignment: .leading, spacing: 8) {
                         Text("HEAD OF GOVERNMENT")
                             .font(AppTypography.micro)
@@ -567,7 +574,6 @@ struct PlayerIdentityView: View {
                             .animation(AppMotion.quickSnap, value: playerName.isEmpty)
                     }
 
-                    // Party
                     VStack(alignment: .leading, spacing: 8) {
                         Text("POLITICAL PARTY")
                             .font(AppTypography.micro)
@@ -618,7 +624,6 @@ struct PlayerIdentityView: View {
                         }
                     }
 
-                    // Approach
                     VStack(alignment: .leading, spacing: 8) {
                         Text("GOVERNING STYLE")
                             .font(AppTypography.micro)
@@ -680,22 +685,11 @@ struct RoleCandidateRow: View {
     @Binding var selection: Candidate?
 
     private func categoryColor(_ category: String) -> Color {
-        switch category {
-        case "Executive":    return AppColors.accentPrimary
-        case "Diplomacy":    return Color.blue
-        case "Defense":      return AppColors.accentSecondary
-        case "Economy":      return Color.green
-        case "Justice":      return Color.purple
-        case "Health":       return Color.teal
-        case "Commerce":     return Color.orange
-        case "Labor":        return Color.yellow
-        default:             return AppColors.foregroundMuted
-        }
+        AppColors.foregroundMuted
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Role header
             HStack(spacing: 8) {
                 Rectangle()
                     .fill(categoryColor(role.category))
@@ -711,7 +705,6 @@ struct RoleCandidateRow: View {
                     .tracking(1)
             }
 
-            // Candidate horizontal scroll
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(candidates) { candidate in
@@ -774,7 +767,6 @@ struct CandidateSelectionCard: View {
 
                 Spacer(minLength: 4)
 
-                // Two key stat bars
                 VStack(alignment: .leading, spacing: 3) {
                     statBar(label: topStat.0, value: topStat.1)
                     statBar(label: secondStat.0, value: secondStat.1)

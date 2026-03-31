@@ -1,16 +1,25 @@
-/// FinanceView
-/// Fiscal authority screen. Contains three tabs — taxation, spending,
-/// and market forecast. Animated tab indicator, gradient slider tracks,
-/// sparkline-style forecast cards, and clearly labeled slider endpoints.
 import SwiftUI
 
 struct FinanceView: View {
     @ObservedObject var gameStore: GameStore
     @State private var activeTab = 0
     @Namespace private var tabIndicator
+    @State private var draftFiscal: FiscalSettings = .defaults
+    @State private var activeReview: ImpactReview?
 
     private var fiscal: FiscalSettings {
         gameStore.state.fiscalSettings ?? .defaults
+    }
+
+    private var hasTaxChanges: Bool {
+        abs(draftFiscal.taxIncome - fiscal.taxIncome) > 0.001 ||
+        abs(draftFiscal.taxCorporate - fiscal.taxCorporate) > 0.001
+    }
+
+    private var hasSpendingChanges: Bool {
+        abs(draftFiscal.spendingMilitary - fiscal.spendingMilitary) > 0.001 ||
+        abs(draftFiscal.spendingSocial - fiscal.spendingSocial) > 0.001 ||
+        abs(draftFiscal.spendingInfrastructure - fiscal.spendingInfrastructure) > 0.001
     }
 
     private let tabs = ["Taxation", "Spending", "Forecast"]
@@ -20,14 +29,13 @@ struct FinanceView: View {
             AppColors.background.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: AppSpacing.xl) {
                     ScreenHeader(
                         protocolLabel: "ECONOMIC_COMMAND_LINK_V8",
-                        title: "Finance"
+                        title: "Finance",
+                        subtitle: "Fiscal policy and economic outlook"
                     )
-                    .padding(.horizontal, 16)
 
-                    // Animated tab indicator
                     animatedTabBar
 
                     Group {
@@ -39,12 +47,20 @@ struct FinanceView: View {
                             forecastView
                         }
                     }
-                    .padding(.horizontal, 16)
                     .transition(.opacity)
                     .animation(AppMotion.quickSnap, value: activeTab)
                 }
+                .padding(.horizontal, AppSpacing.md)
                 .padding(.bottom, AppSpacing.tabBarClearance)
             }
+        }
+        .onAppear { draftFiscal = fiscal }
+        .onChange(of: gameStore.state.fiscalSettings) { _, _ in
+            if !hasTaxChanges && !hasSpendingChanges { draftFiscal = fiscal }
+        }
+        .sheet(item: $activeReview) { review in
+            PolicyChangesSheet(review: review)
+                .presentationDetents([.medium])
         }
     }
 
@@ -77,113 +93,148 @@ struct FinanceView: View {
             RoundedRectangle(cornerRadius: 9, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
-        .padding(.horizontal, 16)
     }
 
     // MARK: - Taxation
 
     private var taxationView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: AppSpacing.sm) {
             FiscalSliderCard(
-                label: "Personal Income Tax",
+                label: "PERSONAL INCOME TAX",
                 subtitle: "Impacts consumer spending and social stability",
                 icon: "person.3",
-                value: fiscal.taxIncome,
+                value: draftFiscal.taxIncome,
                 range: 0...60,
                 unit: "%",
                 helpTitle: "Income Tax",
                 helpText: "Higher rates fund public services but reduce disposable income and consumer spending.",
-                onChange: { var f = fiscal; f.taxIncome = $0; gameStore.updateFiscalSettings(f) }
+                onChange: { draftFiscal.taxIncome = $0 }
             )
 
             FiscalSliderCard(
-                label: "Corporate Tax Rate",
+                label: "CORPORATE TAX RATE",
                 subtitle: "Impacts business investment and economic growth",
                 icon: "building.2",
-                value: fiscal.taxCorporate,
+                value: draftFiscal.taxCorporate,
                 range: 0...60,
                 unit: "%",
                 helpTitle: "Corporate Tax",
                 helpText: "Lower rates attract investment but reduce government revenue available for social programs.",
-                onChange: { var f = fiscal; f.taxCorporate = $0; gameStore.updateFiscalSettings(f) }
+                onChange: { draftFiscal.taxCorporate = $0 }
             )
+
+            Group {
+                if hasTaxChanges {
+                    Button("Review Tax Changes") {
+                        let old = fiscal
+                        let new = draftFiscal
+                        activeReview = ImpactReview(
+                            title: "Tax Impact",
+                            impacts: gameStore.computeFiscalMetricImpacts(from: old, to: new),
+                            onConfirm: {
+                                gameStore.applyFiscalMetricImpacts(from: old, to: new)
+                                gameStore.updateFiscalSettings(new)
+                            }
+                        )
+                    }
+                    .buttonStyle(CommandButtonStyle())
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+            }
+            .animation(.spring(response: 0.45, dampingFraction: 0.8), value: hasTaxChanges)
         }
     }
 
     // MARK: - Spending
 
     private var spendingView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: AppSpacing.sm) {
             HStack {
-                Text("Categories must sum to 100%")
+                Text("Allocate revenue across categories")
                     .font(AppTypography.micro)
                     .foregroundColor(AppColors.foregroundSubtle)
                     .tracking(1)
                 Spacer()
-                InfoButton(title: "Budget Allocation", helpText: "When you adjust one category, the others are proportionally redistributed to maintain 100%.")
+                InfoButton(title: "Budget Allocation", helpText: "Allocate less than 100% to run a surplus (strengthens budget health). Allocate more to deficit-spend (funds programs but strains fiscal stability).")
             }
 
             BudgetSliderCard(
-                label: "Military & National Security",
+                label: "MILITARY & NATIONAL SECURITY",
                 icon: "shield",
-                value: fiscal.spendingMilitary,
+                value: draftFiscal.spendingMilitary,
                 color: AppColors.accentPrimary,
                 helpTitle: "Military Spending",
                 helpText: "Directly affects military strength metric. Higher spending deters adversaries but strains other services.",
-                onChange: { newValue in
-                    var updated = fiscal
-                    let delta = newValue - updated.spendingMilitary
-                    updated.spendingMilitary = newValue
-                    updated = redistributeBudget(updated, changed: .military, delta: delta)
-                    gameStore.updateFiscalSettings(updated)
-                }
+                onChange: { draftFiscal.spendingMilitary = $0 }
             )
 
             BudgetSliderCard(
-                label: "Public Welfare & Services",
+                label: "PUBLIC WELFARE & SERVICES",
                 icon: "heart",
-                value: fiscal.spendingSocial,
+                value: draftFiscal.spendingSocial,
                 color: AppColors.accentSecondary,
                 helpTitle: "Welfare Spending",
                 helpText: "Raises equality, health, and approval. Essential for long-term political survival.",
-                onChange: { newValue in
-                    var updated = fiscal
-                    let delta = newValue - updated.spendingSocial
-                    updated.spendingSocial = newValue
-                    updated = redistributeBudget(updated, changed: .social, delta: delta)
-                    gameStore.updateFiscalSettings(updated)
-                }
+                onChange: { draftFiscal.spendingSocial = $0 }
             )
 
             BudgetSliderCard(
-                label: "Infrastructure & Technology",
+                label: "INFRASTRUCTURE & TECHNOLOGY",
                 icon: "building.columns",
-                value: fiscal.spendingInfrastructure,
+                value: draftFiscal.spendingInfrastructure,
                 color: AppColors.accentTertiary,
                 helpTitle: "Infrastructure Spending",
                 helpText: "Boosts economy and innovation metrics over time. Lower immediate impact but compounds.",
-                onChange: { newValue in
-                    var updated = fiscal
-                    let delta = newValue - updated.spendingInfrastructure
-                    updated.spendingInfrastructure = newValue
-                    updated = redistributeBudget(updated, changed: .infrastructure, delta: delta)
-                    gameStore.updateFiscalSettings(updated)
-                }
+                onChange: { draftFiscal.spendingInfrastructure = $0 }
             )
 
-            let total = fiscal.spendingMilitary + fiscal.spendingSocial + fiscal.spendingInfrastructure
+            let total = draftFiscal.spendingMilitary + draftFiscal.spendingSocial + draftFiscal.spendingInfrastructure
+            let balance = 100 - total
             HStack {
                 Text("TOTAL ALLOCATION")
                     .font(AppTypography.micro)
                     .foregroundColor(AppColors.foregroundMuted)
                     .tracking(2)
                 Spacer()
-                Text("\(Int(total.rounded()))%")
-                    .font(AppTypography.data)
-                    .foregroundColor(abs(total - 100) < 1 ? AppColors.success : AppColors.error)
-                    .monospacedDigit()
+                HStack(spacing: 8) {
+                    Text("\(Int(total.rounded()))%")
+                        .font(AppTypography.data)
+                        .foregroundColor(AppColors.foreground)
+                        .monospacedDigit()
+                    if abs(balance) >= 1 {
+                        Text(balance > 0 ? "SURPLUS" : "DEFICIT")
+                            .font(AppTypography.micro)
+                            .foregroundColor(balance > 0 ? AppColors.success : AppColors.error)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                (balance > 0 ? AppColors.success : AppColors.error).opacity(0.12),
+                                in: RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            )
+                    }
+                }
             }
             .padding(.horizontal, 4)
+
+            Group {
+                if hasSpendingChanges {
+                    Button("Review Budget Changes") {
+                        let old = fiscal
+                        let new = draftFiscal
+                        activeReview = ImpactReview(
+                            title: "Budget Impact",
+                            impacts: gameStore.computeFiscalMetricImpacts(from: old, to: new),
+                            onConfirm: {
+                                gameStore.applyFiscalMetricImpacts(from: old, to: new)
+                                gameStore.updateFiscalSettings(new)
+                            }
+                        )
+                    }
+                    .buttonStyle(CommandButtonStyle())
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+            }
+            .animation(.spring(response: 0.45, dampingFraction: 0.8), value: hasSpendingChanges)
         }
     }
 
@@ -194,7 +245,7 @@ struct FinanceView: View {
         let metricHistory = gameStore.state.metricHistory
         let econ = gameStore.state.countryEconomicState
         let pop = gameStore.state.countryPopulationState
-        return VStack(spacing: 16) {
+        return VStack(spacing: AppSpacing.sm) {
             ForecastCard(
                 title: "Economic Strength",
                 icon: "chart.line.uptrend.xyaxis",
@@ -248,25 +299,6 @@ struct FinanceView: View {
 
     // MARK: - Helpers
 
-    private enum BudgetCategory { case military, social, infrastructure }
-
-    private func redistributeBudget(_ s: FiscalSettings, changed: BudgetCategory, delta: Double) -> FiscalSettings {
-        var result = s
-        let remaining = -delta / 2.0
-        switch changed {
-        case .military:
-            result.spendingSocial       = max(0, s.spendingSocial + remaining)
-            result.spendingInfrastructure = max(0, s.spendingInfrastructure + remaining)
-        case .social:
-            result.spendingMilitary     = max(0, s.spendingMilitary + remaining)
-            result.spendingInfrastructure = max(0, s.spendingInfrastructure + remaining)
-        case .infrastructure:
-            result.spendingMilitary     = max(0, s.spendingMilitary + remaining)
-            result.spendingSocial       = max(0, s.spendingSocial + remaining)
-        }
-        return result
-    }
-
     private func formatMetric(_ value: Double?) -> String {
         guard let v = value else { return "—" }
         return String(format: "%.1f", v)
@@ -305,21 +337,18 @@ struct FiscalSliderCard: View {
     private var sliderColor: Color { AppColors.accentPrimary }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(sliderColor.opacity(0.1))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: icon)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(sliderColor)
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(label)
-                        .font(AppTypography.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppColors.foreground)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Image(systemName: icon)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(sliderColor)
+                        Text(label)
+                            .font(AppTypography.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppColors.foreground)
+                    }
                     Text(subtitle)
                         .font(AppTypography.micro)
                         .foregroundColor(AppColors.foregroundSubtle)
@@ -334,30 +363,30 @@ struct FiscalSliderCard: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Slider(
-                    value: Binding(get: { value }, set: { onChange($0) }),
-                    in: range, step: 1
-                )
-                .tint(sliderColor)
-                .onChange(of: value) { _, _ in HapticEngine.shared.selection() }
+            Slider(
+                value: Binding(get: { value }, set: { onChange($0) }),
+                in: range, step: 1
+            )
+            .tint(sliderColor)
+            .onChange(of: value) { _, _ in HapticEngine.shared.selection() }
 
-                HStack {
-                    Text("\(Int(range.lowerBound))\(unit)")
-                        .font(AppTypography.micro)
-                        .foregroundColor(AppColors.foregroundSubtle)
-                    Spacer()
-                    Text("\(Int(range.upperBound))\(unit)")
-                        .font(AppTypography.micro)
-                        .foregroundColor(AppColors.foregroundSubtle)
-                }
+            HStack {
+                Text("\(Int(range.lowerBound))\(unit)")
+                    .font(AppTypography.micro)
+                    .foregroundColor(AppColors.foregroundSubtle)
+                Spacer()
+                Text("\(Int(range.upperBound))\(unit)")
+                    .font(AppTypography.micro)
+                    .foregroundColor(AppColors.foregroundSubtle)
             }
         }
-        .padding(20)
+        .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label). Current value: \(Int(value.rounded()))\(unit).")
     }
 }
 
@@ -373,17 +402,17 @@ struct BudgetSliderCard: View {
     let onChange: (Double) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(color)
-                    .frame(width: 20)
-                Text(label)
-                    .font(AppTypography.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.foreground)
-                    .tracking(0.5)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: icon)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(color)
+                    Text(label)
+                        .font(AppTypography.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(AppColors.foreground)
+                }
                 Spacer()
                 HStack(spacing: 4) {
                     Text("\(Int(value.rounded()))%")
@@ -394,26 +423,23 @@ struct BudgetSliderCard: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Slider(
-                    value: Binding(get: { value }, set: { onChange($0) }),
-                    in: 0...100, step: 1
-                )
-                .tint(color)
-                .onChange(of: value) { _, _ in HapticEngine.shared.selection() }
+            Slider(
+                value: Binding(get: { value }, set: { onChange($0) }),
+                in: 0...100, step: 1
+            )
+            .tint(color)
+            .onChange(of: value) { _, _ in HapticEngine.shared.selection() }
 
-                HStack {
-                    Text("0%")
-                        .font(AppTypography.micro)
-                        .foregroundColor(AppColors.foregroundSubtle)
-                    Spacer()
-                    Text("100%")
-                        .font(AppTypography.micro)
-                        .foregroundColor(AppColors.foregroundSubtle)
-                }
+            HStack {
+                Text("0%")
+                    .font(AppTypography.micro)
+                    .foregroundColor(AppColors.foregroundSubtle)
+                Spacer()
+                Text("100%")
+                    .font(AppTypography.micro)
+                    .foregroundColor(AppColors.foregroundSubtle)
             }
 
-            // Sparkline bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Rectangle().fill(AppColors.border)
@@ -425,11 +451,13 @@ struct BudgetSliderCard: View {
             }
             .frame(height: 3)
         }
-        .padding(20)
+        .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label). Current allocation: \(Int(value.rounded()))%.")
     }
 }
 
@@ -460,39 +488,41 @@ struct ForecastCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                HStack(spacing: 8) {
+        HStack(spacing: AppSpacing.md) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
                     Image(systemName: icon)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(trendColor)
                     Text(title)
                         .font(AppTypography.caption)
                         .fontWeight(.medium)
                         .foregroundColor(AppColors.foregroundMuted)
                 }
-                Spacer()
+
+                Text(value)
+                    .font(AppTypography.data)
+                    .foregroundColor(AppColors.foreground)
+                    .monospacedDigit()
+
                 Text(trend)
                     .font(AppTypography.micro)
                     .foregroundColor(trendColor)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
                     .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
                             .fill(trendColor.opacity(0.12))
                     )
             }
 
-            Text(value)
-                .font(AppTypography.dataLarge)
-                .foregroundColor(trendColor)
-                .monospacedDigit()
+            Spacer()
 
             ZStack {
                 SparklineArea(values: chartPoints)
                     .fill(
                         LinearGradient(
-                            colors: [trendColor.opacity(0.20), trendColor.opacity(0.0)],
+                            colors: [trendColor.opacity(0.15), trendColor.opacity(0.0)],
                             startPoint: .top, endPoint: .bottom
                         )
                     )
@@ -500,22 +530,11 @@ struct ForecastCard: View {
                     .trim(from: 0, to: chartProgress)
                     .stroke(trendColor, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
             }
-            .frame(height: 48)
+            .frame(width: 100, height: 36)
             .animation(AppMotion.dramatic, value: chartProgress)
-
-            HStack {
-                Text("T-\(min(chartPoints.count - 1, 11))")
-                    .font(AppTypography.micro)
-                    .foregroundColor(AppColors.foregroundSubtle.opacity(0.5))
-                Spacer()
-                Text("NOW")
-                    .font(.system(size: 9, weight: .black, design: .monospaced))
-                    .foregroundColor(AppColors.foregroundSubtle.opacity(0.5))
-                    .tracking(1)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
+        .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(AppColors.backgroundElevated)
@@ -574,26 +593,5 @@ private struct SparklineArea: Shape {
         path.addLine(to: CGPoint(x: rect.width, y: rect.height))
         path.closeSubpath()
         return path
-    }
-}
-
-// MARK: - FinanceTabButton (kept for compatibility)
-
-struct FinanceTabButton: View {
-    let title: String
-    let isActive: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(AppTypography.micro)
-                .foregroundColor(isActive ? AppColors.background : AppColors.foregroundSubtle)
-                .tracking(2)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(isActive ? AppColors.accentPrimary : Color.clear)
-        }
-        .buttonStyle(.plain)
     }
 }

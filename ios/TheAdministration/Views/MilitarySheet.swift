@@ -1,6 +1,3 @@
-/// MilitarySheet
-/// Full military briefing sheet: overall readiness, branch-by-branch status,
-/// nuclear and cyber profiles, and any active conflicts.
 import SwiftUI
 
 struct MilitarySheet: View {

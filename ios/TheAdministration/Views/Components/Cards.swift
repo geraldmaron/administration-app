@@ -1,6 +1,3 @@
-/// Cards
-/// Reusable card components for The Administration design system.
-/// Clean, minimal surfaces — whitespace over decoration.
 import SwiftUI
 
 // MARK: - CommandCard
@@ -40,7 +37,7 @@ struct CommandCard<Content: View>: View {
         .padding(AppSpacing.cardPadding)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.white.opacity(0.10))
         )
     }
 }
@@ -52,55 +49,75 @@ struct MetricCard: View {
     let value: Double
     let icon: String
     let isActive: Bool
+    var isInverse: Bool = false
+    var metricId: String = ""
+    var format: ScoreDisplayFormat = .percentage
+    var onInfo: (() -> Void)? = nil
     let onTap: () -> Void
 
-    private var color: Color { AppColors.metricColor(for: CGFloat(value)) }
+    private var color: Color { AppColors.metricColor(for: CGFloat(value), metricId: metricId, isInverse: isInverse) }
 
     var body: some View {
-        Button(action: {
-            HapticEngine.shared.light()
-            onTap()
-        }) {
-            VStack(spacing: 6) {
-                Text("\(Int(value))")
-                    .font(AppTypography.data)
-                    .foregroundColor(color)
+        ZStack(alignment: .bottomTrailing) {
+            Button(action: {
+                HapticEngine.shared.light()
+                onTap()
+            }) {
+                VStack(spacing: 6) {
+                    Text(MetricFormatting.metricDisplayValue(value: value, format: format, metricId: metricId))
+                        .font(AppTypography.data)
+                        .foregroundColor(color)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
 
-                Text(label)
-                    .font(AppTypography.micro)
-                    .foregroundColor(isActive ? color : AppColors.foregroundSubtle)
-                    .textCase(.uppercase)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.65)
+                    Text(label)
+                        .font(AppTypography.micro)
+                        .foregroundColor(isActive ? color : AppColors.foregroundSubtle)
+                        .textCase(.uppercase)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
 
-                ZStack {
-                    Circle()
-                        .trim(from: 0, to: 0.75)
-                        .stroke(AppColors.border, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
-                        .rotationEffect(.degrees(135))
-                    Circle()
-                        .trim(from: 0, to: CGFloat(max(0, min(0.75, (value / 100) * 0.75))))
-                        .stroke(
-                            LinearGradient(
-                                colors: [color.opacity(0.5), color],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            style: StrokeStyle(lineWidth: 3.5, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(135))
+                    ZStack {
+                        Circle()
+                            .trim(from: 0, to: 0.75)
+                            .stroke(AppColors.border, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                            .rotationEffect(.degrees(135))
+                        Circle()
+                            .trim(from: 0, to: CGFloat(max(0, min(0.75, (value / 100) * 0.75))))
+                            .stroke(
+                                LinearGradient(
+                                    colors: [color.opacity(0.5), color],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ),
+                                style: StrokeStyle(lineWidth: 3.5, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(135))
+                    }
+                    .frame(width: 28, height: 28)
+                    .animation(AppMotion.standard, value: value)
                 }
-                .frame(width: 28, height: 28)
-                .animation(AppMotion.standard, value: value)
+                .padding(AppSpacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(isActive ? color.opacity(0.12) : Color.white.opacity(0.08))
+                )
             }
-            .padding(AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isActive ? color.opacity(0.08) : Color.white.opacity(0.04))
-            )
+            .buttonStyle(.plain)
+
+            if let onInfo = onInfo {
+                Button(action: { HapticEngine.shared.light(); onInfo() }) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(AppColors.foregroundSubtle.opacity(0.5))
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(4)
+            }
         }
-        .buttonStyle(.plain)
     }
 }
 
@@ -128,7 +145,7 @@ struct InteractiveCard<Content: View>: View {
         .buttonStyle(.plain)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(isHighlighted ? AppColors.accentPrimary.opacity(0.08) : Color.white.opacity(0.05))
+                .fill(isHighlighted ? Color.white.opacity(0.15) : Color.white.opacity(0.10))
         )
     }
 }
@@ -223,31 +240,7 @@ struct ScenarioOptionCard: View {
                             let supports = feedback.filter { ["support", "approve", "positive"].contains($0.stance.lowercased()) }.count
                             let opposes = feedback.filter { ["oppose", "reject", "negative"].contains($0.stance.lowercased()) }.count
                             if supports > 0 || opposes > 0 {
-                                HStack(spacing: 10) {
-                                    if supports > 0 {
-                                        HStack(spacing: 3) {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .font(.system(size: 9))
-                                                .foregroundColor(AppColors.success)
-                                            Text("\(supports)")
-                                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                                                .foregroundColor(AppColors.success)
-                                        }
-                                    }
-                                    if opposes > 0 {
-                                        HStack(spacing: 3) {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .font(.system(size: 9))
-                                                .foregroundColor(AppColors.error)
-                                            Text("\(opposes)")
-                                                .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                                                .foregroundColor(AppColors.error)
-                                        }
-                                    }
-                                    Text("cabinet")
-                                        .font(.system(size: 9))
-                                        .foregroundColor(AppColors.foregroundSubtle)
-                                }
+                                cabinetBadge(supports: supports, opposes: opposes)
                             }
                         }
                     }
@@ -257,8 +250,8 @@ struct ScenarioOptionCard: View {
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(
-                            isSelected ? AppColors.accentPrimary.opacity(0.10) :
-                            isDimmed ? Color.white.opacity(0.02) : Color.white.opacity(0.05)
+                            isSelected ? Color.white.opacity(0.26) :
+                            isDimmed ? Color.white.opacity(0.08) : Color.white.opacity(0.18)
                         )
                 )
             }
@@ -273,6 +266,48 @@ struct ScenarioOptionCard: View {
                 }
                 .accessibilityLabel("View cabinet briefing for this option")
             }
+        }
+    }
+
+    @ViewBuilder
+    private func cabinetBadge(supports: Int, opposes: Int) -> some View {
+        let row = HStack(spacing: 10) {
+            if supports > 0 {
+                HStack(spacing: 3) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 9))
+                        .foregroundColor(AppColors.success)
+                    Text("\(supports)")
+                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                        .foregroundColor(AppColors.success)
+                }
+            }
+            if opposes > 0 {
+                HStack(spacing: 3) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 9))
+                        .foregroundColor(AppColors.error)
+                    Text("\(opposes)")
+                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                        .foregroundColor(AppColors.error)
+                }
+            }
+            Text("cabinet")
+                .font(.system(size: 9))
+                .foregroundColor(AppColors.foregroundSubtle)
+        }
+
+        if let onAdvisor = onAdvisor {
+            Button(action: {
+                HapticEngine.shared.light()
+                onAdvisor()
+            }) {
+                row
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("View cabinet opinions")
+        } else {
+            row
         }
     }
 }

@@ -1,3 +1,6 @@
+ 'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import BundleBadge from '@/components/BundleBadge';
 import PageHeader from '@/components/PageHeader';
@@ -19,29 +22,6 @@ interface StatsData {
   totalInactive: number;
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
-
-async function fetchStats(): Promise<StatsData | null> {
-  try {
-    const res = await fetch(`${BASE_URL}/api/stats`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    return res.json() as Promise<StatsData>;
-  } catch {
-    return null;
-  }
-}
-
-async function fetchRecentJobs(): Promise<JobSummary[]> {
-  try {
-    const res = await fetch(`${BASE_URL}/api/jobs?limit=8`, { cache: 'no-store' });
-    if (!res.ok) return [];
-    const data = (await res.json()) as { jobs: JobSummary[] };
-    return data.jobs;
-  } catch {
-    return [];
-  }
-}
-
 const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
   pending: { dot: 'bg-[var(--info)]', text: 'text-[var(--info)]' },
   running: { dot: 'bg-[var(--accent-primary)]', text: 'text-[var(--accent-primary)]' },
@@ -50,8 +30,42 @@ const STATUS_STYLES: Record<string, { dot: string; text: string }> = {
   cancelled: { dot: 'bg-[var(--foreground-subtle)]', text: 'text-[var(--foreground-subtle)]' },
 };
 
-export default async function DashboardPage() {
-  const [stats, recentJobs] = await Promise.all([fetchStats(), fetchRecentJobs()]);
+export default function DashboardPage() {
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [statsLoaded, setStatsLoaded] = useState(false);
+  const [recentJobs, setRecentJobs] = useState<JobSummary[]>([]);
+  const [jobsLoaded, setJobsLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const [statsResult, jobsResult] = await Promise.all([
+        fetch('/api/stats', { cache: 'no-store' })
+          .then(async (res) => (res.ok ? (res.json() as Promise<StatsData>) : null))
+          .catch(() => null),
+        fetch('/api/jobs?limit=8', { cache: 'no-store' })
+          .then(async (res) => {
+            if (!res.ok) return [] as JobSummary[];
+            const data = (await res.json()) as { jobs: JobSummary[] };
+            return data.jobs;
+          })
+          .catch(() => [] as JobSummary[]),
+      ]);
+
+      if (cancelled) return;
+      setStats(statsResult);
+      setRecentJobs(jobsResult);
+      setStatsLoaded(true);
+      setJobsLoaded(true);
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const subtitle = stats
     ? `${stats.bundles.length} bundles · ${stats.totalActive} active · ${stats.totalInactive} inactive`
@@ -76,7 +90,9 @@ export default async function DashboardPage() {
               Open Library →
             </Link>
           </div>
-          {!stats ? (
+          {!statsLoaded ? (
+            <div className="px-4 py-6 text-sm text-[var(--foreground-muted)]">Loading stats…</div>
+          ) : !stats ? (
             <div className="px-4 py-6 text-sm text-[var(--foreground-muted)]">Failed to load stats.</div>
           ) : (
             <table className="table-dense">
@@ -134,7 +150,9 @@ export default async function DashboardPage() {
               All Jobs →
             </Link>
           </div>
-          {recentJobs.length === 0 ? (
+          {!jobsLoaded ? (
+            <div className="px-4 py-6 text-sm text-[var(--foreground-muted)]">Loading jobs…</div>
+          ) : recentJobs.length === 0 ? (
             <div className="px-4 py-6 text-sm text-[var(--foreground-muted)]">No generation jobs yet.</div>
           ) : (
             <table className="table-dense">

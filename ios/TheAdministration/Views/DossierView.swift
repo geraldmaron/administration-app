@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// Dossier views for people and countries, presenting analysis-style intelligence panels
-/// with strengths, weaknesses, background, and key stats for The Administration iOS client.
 struct PersonDossierView: View {
     let candidate: Candidate
     let roleTitle: String?
@@ -40,14 +38,16 @@ struct PersonDossierView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("PERSON DOSSIER")
+                Text("DOSSIER")
                     .font(.system(size: 10, weight: .black, design: .monospaced))
                     .foregroundColor(AppColors.accentPrimary)
                     .tracking(3)
-                Text(roleTitle ?? "Cabinet Candidate")
-                    .font(.system(size: 20, weight: .black, design: .default))
-                    .foregroundColor(AppColors.foreground)
-                    .tracking(-0.5)
+                if let role = roleTitle {
+                    Text(role)
+                        .font(.system(size: 20, weight: .black, design: .default))
+                        .foregroundColor(AppColors.foreground)
+                        .tracking(-0.5)
+                }
             }
             
             Spacer()
@@ -72,15 +72,31 @@ struct PersonDossierView: View {
             Text(candidate.name)
                 .font(.system(size: 28, weight: .black, design: .default))
                 .foregroundColor(AppColors.foreground)
-            
+
             HStack(spacing: 12) {
                 if let age = candidate.age {
                     pill(label: "AGE", value: "\(age)")
                 }
                 pill(label: "PARTY", value: candidate.party)
-                if !candidate.education.isEmpty {
-                    pill(label: "EDUCATION", value: candidate.education)
+            }
+
+            if !candidate.education.isEmpty {
+                HStack(alignment: .top, spacing: 10) {
+                    Text("EDUCATION")
+                        .font(.system(size: 9, weight: .black, design: .monospaced))
+                        .foregroundColor(AppColors.foregroundSubtle)
+                        .tracking(2)
+                        .padding(.top, 1)
+                    Text(candidate.education)
+                        .font(.system(size: 12, weight: .regular, design: .default))
+                        .foregroundColor(AppColors.foreground)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppColors.backgroundElevated)
+                .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
             }
         }
     }
@@ -155,12 +171,12 @@ struct PersonDossierView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("STRENGTHS")
                         .font(.system(size: 10, weight: .black, design: .monospaced))
-                        .foregroundColor(AppColors.accentSecondary)
+                        .foregroundColor(AppColors.success)
                         .tracking(3)
                     ForEach(strengths, id: \.self) { item in
                         HStack(alignment: .top, spacing: 6) {
                             Circle()
-                                .fill(AppColors.accentSecondary)
+                                .fill(AppColors.success)
                                 .frame(width: 4, height: 4)
                                 .padding(.top, 5)
                             Text(item)
@@ -176,12 +192,12 @@ struct PersonDossierView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("WEAKNESSES")
                         .font(.system(size: 10, weight: .black, design: .monospaced))
-                        .foregroundColor(AppColors.accentTertiary)
+                        .foregroundColor(AppColors.error)
                         .tracking(3)
                     ForEach(weaknesses, id: \.self) { item in
                         HStack(alignment: .top, spacing: 6) {
                             Circle()
-                                .fill(AppColors.accentTertiary)
+                                .fill(AppColors.error)
                                 .frame(width: 4, height: 4)
                                 .padding(.top, 5)
                             Text(item)
@@ -229,41 +245,85 @@ struct PersonDossierView: View {
     }
     
     private var backgroundSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let (careerItems, narrativeItems) = buildBackgroundItems()
+        return VStack(alignment: .leading, spacing: 12) {
             Text("BACKGROUND SUMMARY")
                 .font(.system(size: 10, weight: .black, design: .monospaced))
                 .foregroundColor(AppColors.foregroundMuted)
                 .tracking(3)
-            
-            let paragraphs = buildBackgroundParagraphs()
-            ForEach(paragraphs.indices, id: \.self) { idx in
-                Text(paragraphs[idx])
+
+            if careerItems.isEmpty && narrativeItems.isEmpty {
+                Text("Initial intelligence incomplete. Awaiting synchronization from world database.")
                     .font(.system(size: 13, weight: .regular, design: .default))
-                    .foregroundColor(AppColors.foregroundMuted)
+                    .foregroundColor(AppColors.foregroundSubtle)
                     .fixedSize(horizontal: false, vertical: true)
+            } else {
+                if !careerItems.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(careerItems, id: \.self) { item in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("–")
+                                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                    .foregroundColor(AppColors.foregroundSubtle)
+                                Text(item)
+                                    .font(.system(size: 12, weight: .regular, design: .default))
+                                    .foregroundColor(AppColors.foreground)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppColors.backgroundElevated)
+                    .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+                }
+
+                if !narrativeItems.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(narrativeItems, id: \.self) { item in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("·")
+                                    .font(.system(size: 14, weight: .black))
+                                    .foregroundColor(AppColors.accentPrimary)
+                                    .padding(.top, 0.5)
+                                Text(item)
+                                    .font(.system(size: 13, weight: .regular, design: .default))
+                                    .foregroundColor(AppColors.foregroundMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
-    
-    private func buildBackgroundParagraphs() -> [String] {
-        var parts: [String] = []
+
+    private func buildBackgroundItems() -> (career: [String], narrative: [String]) {
+        func deduplicated(_ items: [String]) -> [String] {
+            var seen = Set<String>()
+            return items.filter { seen.insert($0.lowercased().trimmingCharacters(in: .whitespaces)).inserted }
+        }
+
+        var career: [String] = []
+        if let c = candidate.careerHistory, !c.isEmpty {
+            career = deduplicated(c)
+        }
+
+        var narrative: [String] = []
         if !candidate.background.isEmpty {
-            parts.append(candidate.background)
+            narrative.append(candidate.background)
         }
-        if let career = candidate.careerHistory, !career.isEmpty {
-            parts.append(career.joined(separator: " "))
+        if let bullets = candidate.analysisBullets, !bullets.isEmpty {
+            narrative.append(contentsOf: bullets)
         }
-        if let analysis = candidate.analysisBullets, !analysis.isEmpty {
-            parts.append(analysis.joined(separator: " "))
-        }
-        return parts.isEmpty ? ["Initial intelligence incomplete. Awaiting synchronization from world database."] : parts
+        narrative = deduplicated(narrative)
+
+        return (career, narrative)
     }
     
     private func scoreColor(_ value: Double) -> Color {
-        if value >= 75 { return AppColors.success }
-        if value >= 50 { return AppColors.info }
-        if value >= 30 { return AppColors.warning }
-        return AppColors.error
+        AppColors.metricColor(for: CGFloat(value))
     }
 }
 

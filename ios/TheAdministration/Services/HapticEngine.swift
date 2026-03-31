@@ -1,6 +1,3 @@
-/// HapticEngine
-/// Centralized haptic feedback manager for The Administration.
-/// Provides semantic haptic events for all key user interactions.
 import UIKit
 
 final class HapticEngine {

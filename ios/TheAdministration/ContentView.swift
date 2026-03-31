@@ -49,7 +49,6 @@ var body: some View {
         }
 
     }
-    // Apply screen background modifier for consistency
     .screenBackground()
 }
 }
@@ -75,7 +74,6 @@ struct MainTabView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Content area
             Group {
                 switch selectedTab {
                 case 0: DeskView(gameStore: gameStore)
@@ -90,7 +88,6 @@ struct MainTabView: View {
             }
             .ignoresSafeArea(edges: .bottom)
 
-            // Custom tab bar
             CustomTabBar(tabs: tabs, selectedTab: $selectedTab)
                 .overlay(
                     HStack {

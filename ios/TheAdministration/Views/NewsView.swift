@@ -34,8 +34,11 @@ struct NewsTickerView: View {
         return (playerHeadlines + globalSlice).uniqued()
     }
 
-    private var urgencyColor: Color {
-        gameStore.state.newsHistory.first?.isAlert == true ? AppColors.error : AppColors.accentPrimary
+    private var tickerLabel: (text: String, color: Color) {
+        let first = gameStore.state.newsHistory.first
+        if first?.isAlert == true { return ("BREAKING", AppColors.error) }
+        if first?.isBackgroundEvent == true { return ("BACKGROUND", AppColors.warning) }
+        return ("LIVE", AppColors.accentPrimary)
     }
 
     var body: some View {
@@ -43,9 +46,9 @@ struct NewsTickerView: View {
             HStack(spacing: 0) {
                 HStack(spacing: 5) {
                     Circle()
-                        .fill(urgencyColor)
+                        .fill(tickerLabel.color)
                         .frame(width: 6, height: 6)
-                    Text(gameStore.state.newsHistory.first?.isAlert == true ? "BREAKING" : "LIVE")
+                    Text(tickerLabel.text)
                         .font(.system(size: 8, weight: .black, design: .monospaced))
                         .foregroundColor(AppColors.background)
                         .tracking(1.5)
@@ -53,10 +56,10 @@ struct NewsTickerView: View {
                 .padding(.horizontal, 9)
                 .padding(.vertical, 0)
                 .frame(height: 26)
-                .background(urgencyColor)
+                .background(tickerLabel.color)
 
                 Rectangle()
-                    .fill(urgencyColor.opacity(0.4))
+                    .fill(tickerLabel.color.opacity(0.4))
                     .frame(width: 1, height: 26)
 
                 GeometryReader { geo in
@@ -68,11 +71,15 @@ struct NewsTickerView: View {
                         .offset(x: tickerOffset)
                         .onAppear {
                             containerWidth = geo.size.width
-                            startTicker(text: full, width: geo.size.width)
+                            DispatchQueue.main.async {
+                                startTicker(text: full, width: geo.size.width)
+                            }
                         }
                         .onChange(of: allHeadlines) { _, _ in
                             let updated = allHeadlines.joined(separator: "   ·    ")
-                            startTicker(text: updated, width: containerWidth)
+                            DispatchQueue.main.async {
+                                startTicker(text: updated, width: containerWidth)
+                            }
                         }
                 }
                 .clipped()
@@ -93,8 +100,9 @@ struct NewsTickerView: View {
     private func startTicker(text: String, width: CGFloat) {
         let charWidth: CGFloat = 6.2
         let textWidth = CGFloat(text.count) * charWidth
+        let totalTravel = width + textWidth
         tickerOffset = width
-        withAnimation(Animation.linear(duration: Double(textWidth / 45)).repeatForever(autoreverses: false)) {
+        withAnimation(Animation.linear(duration: Double(totalTravel / 28.0)).repeatForever(autoreverses: false)) {
             tickerOffset = -textWidth
         }
     }
@@ -154,7 +162,7 @@ struct NewsHistoryView: View {
                     ScrollView {
                         VStack(spacing: 8) {
                             ForEach(gameStore.state.newsHistory) { article in
-                                NewsArticleRow(article: article)
+                                NewsArticleRow(article: article, state: gameStore.state)
                                     .onTapGesture { selectedArticle = article }
                             }
                         }
@@ -164,32 +172,48 @@ struct NewsHistoryView: View {
             }
         }
         .sheet(item: $selectedArticle) { article in
-            NewsArticleDetailView(article: article)
+            NewsArticleDetailView(article: article, state: gameStore.state)
         }
     }
 }
 
 struct NewsArticleRow: View {
     let article: NewsArticle
+    let state: GameState
 
     private var urgencyColor: Color {
         article.isAlert == true ? AppColors.error : AppColors.foregroundSubtle
     }
 
+    private var backgroundEventLabel: String? {
+        guard article.isBackgroundEvent == true else { return nil }
+        if article.id.hasPrefix("world_") { return "WORLD EVENT" }
+        if article.id.hasPrefix("cabinet_") { return "CABINET" }
+        return "BACKGROUND"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Urgency indicator strip
             Rectangle()
                 .fill(urgencyColor)
                 .frame(height: 2)
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("TURN \(article.turn)")
+                    Text(state.formattedDate(forTurn: article.turn))
                         .font(AppTypography.micro)
                         .foregroundColor(AppColors.accentPrimary)
                         .tracking(2)
                     Spacer()
+                    if let bgLabel = backgroundEventLabel {
+                        Text(bgLabel)
+                            .font(AppTypography.micro)
+                            .foregroundColor(AppColors.warning)
+                            .tracking(1)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(AppColors.warning.opacity(0.12))
+                    }
                     if let category = article.category {
                         Text(category.uppercased())
                             .font(AppTypography.micro)
@@ -219,6 +243,7 @@ struct NewsArticleRow: View {
 
 struct NewsArticleDetailView: View {
     let article: NewsArticle
+    let state: GameState
     @Environment(\.dismiss) private var dismiss
 
     private var urgencyColor: Color {
@@ -231,7 +256,6 @@ struct NewsArticleDetailView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    // Masthead
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
@@ -239,7 +263,7 @@ struct NewsArticleDetailView: View {
                                     .font(AppTypography.micro)
                                     .foregroundColor(AppColors.foreground)
                                     .tracking(4)
-                                Text("OFFICIAL INTELLIGENCE DISPATCH — TURN \(article.turn)")
+                                Text("OFFICIAL INTELLIGENCE DISPATCH — \(state.formattedDate(forTurn: article.turn))")
                                     .font(AppTypography.micro)
                                     .foregroundColor(AppColors.foregroundSubtle)
                                     .tracking(1)
@@ -260,7 +284,6 @@ struct NewsArticleDetailView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 12)
 
-                    // Urgency + category strip
                     HStack(spacing: 0) {
                         Rectangle().fill(urgencyColor).frame(width: 4)
                         HStack {
@@ -270,8 +293,16 @@ struct NewsArticleDetailView: View {
                                     .foregroundColor(urgencyColor)
                                     .tracking(2)
                             }
+                            if article.isBackgroundEvent == true {
+                                let bgLabel: String = article.id.hasPrefix("world_") ? "WORLD EVENT" : article.id.hasPrefix("cabinet_") ? "CABINET" : "BACKGROUND"
+                                Text(bgLabel)
+                                    .font(AppTypography.micro)
+                                    .foregroundColor(AppColors.warning)
+                                    .tracking(2)
+                            }
                             if let category = article.category {
-                                Text(article.isAlert == true ? "·  \(category.uppercased())" : category.uppercased())
+                                let prefix = (article.isAlert == true || article.isBackgroundEvent == true) ? "·  " : ""
+                                Text("\(prefix)\(category.uppercased())")
                                     .font(AppTypography.micro)
                                     .foregroundColor(AppColors.foregroundSubtle)
                                     .tracking(1)

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SystemView: View {
     @ObservedObject var gameStore: GameStore
-    @ObservedObject private var themeManager = ThemeManager.shared
+
     @State private var godMode = false
     @State private var activeSection: String? = nil
     @State private var slotListVersion = UUID()  // forces refresh when slots change
@@ -19,17 +19,6 @@ struct SystemView: View {
                         headerSection
 
                         statsGrid
-
-                        SectionCard(
-                            title: "Appearance",
-                            subtitle: "Visual theme selection",
-                            icon: "paintpalette",
-                            isExpanded: activeSection == "appearance"
-                        ) {
-                            activeSection = activeSection == "appearance" ? nil : "appearance"
-                        } content: {
-                            ThemeSelectorView(themeManager: themeManager)
-                        }
 
                         SectionCard(
                             title: "God Mode Settings",
@@ -403,15 +392,7 @@ struct MetricEditorRow: View {
     }
     
     private func getScoreColor(_ value: Double) -> Color {
-        if value >= 75 {
-            return .green
-        } else if value >= 50 {
-            return .yellow
-        } else if value >= 25 {
-            return .orange
-        } else {
-            return .red
-        }
+        AppColors.metricColor(for: CGFloat(value))
     }
 }
 
@@ -520,7 +501,7 @@ struct GodModeSettingsView: View {
                         .foregroundColor(AppColors.foregroundSubtle)
                 }
             }
-            .toggleStyle(SwitchToggleStyle(tint: .green))
+            .toggleStyle(SwitchToggleStyle(tint: AppColors.accentPrimary))
             
             Toggle(isOn: Binding(
                 get: { gameStore.state.infinitePulseEnabled ?? false },
@@ -536,7 +517,7 @@ struct GodModeSettingsView: View {
                         .foregroundColor(AppColors.foregroundSubtle)
                 }
             }
-            .toggleStyle(SwitchToggleStyle(tint: .green))
+            .toggleStyle(SwitchToggleStyle(tint: AppColors.accentPrimary))
             
             VStack(alignment: .leading, spacing: 12) {
                 Text("METRIC LOCK")
@@ -570,54 +551,6 @@ struct GodModeSettingsView: View {
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-// MARK: - ThemeSelectorView
-
-struct ThemeSelectorView: View {
-    @ObservedObject var themeManager: ThemeManager
-
-    var body: some View {
-        VStack(spacing: 10) {
-            ForEach(AppTheme.all) { theme in
-                let isSelected = themeManager.current == theme
-                Button(action: { themeManager.setTheme(theme) }) {
-                    HStack(spacing: 12) {
-                        // Color swatch
-                        Circle()
-                            .fill(theme.accentPrimary)
-                            .frame(width: 24, height: 24)
-                            .overlay(
-                                Circle().stroke(AppColors.border, lineWidth: 1)
-                            )
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(theme.displayName)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(isSelected ? theme.accentPrimary : AppColors.foreground)
-                            Text(theme.subtitle)
-                                .font(AppTypography.micro)
-                                .foregroundColor(AppColors.foregroundMuted)
-                        }
-
-                        Spacer()
-
-                        if isSelected {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(theme.accentPrimary)
-                        }
-                    }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(isSelected ? theme.accentPrimary.opacity(0.08) : AppColors.backgroundElevated)
-                    )
-                }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -690,7 +623,6 @@ struct SaveSlotsView: View {
                     }
                 }
                 Spacer()
-                // Action buttons
                 HStack(spacing: 8) {
                     if meta != nil, !isActive {
                         Button("Load") {
@@ -737,7 +669,6 @@ struct SaveSlotsView: View {
                 }
             }
 
-            // Save current game to this slot shortcut
             if gameStore.state.isSetup {
                 Button("Save current game here") {
                     gameStore.saveToSlot(slot)

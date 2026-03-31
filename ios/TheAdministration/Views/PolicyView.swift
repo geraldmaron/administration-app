@@ -1,13 +1,18 @@
-/// PolicyView
-/// Strategic policy management view. Lets the player adjust fiscal, social,
-/// environmental and defence stances; shows political capital cost and tracks
-/// strategic plan progress. Mirrors web PolicyView and StrategicPlanView.
 import SwiftUI
 
 struct PolicyView: View {
     @ObservedObject var gameStore: GameStore
     @State private var showStrategicPlanSheet = false
     @State private var showMilitarySheet = false
+    @State private var activeReview: ImpactReview?
+    @State private var draftPolicy: PolicySettings = PolicySettings(
+        militaryPosture: nil, tradePolicy: nil, environmentalCommitment: nil,
+        socialPolicy: nil, immigration: nil, tradeOpenness: nil,
+        environmentalProtection: nil, healthcareAccess: nil,
+        educationFunding: nil, socialWelfare: nil,
+        economicStance: 50, socialSpending: 50,
+        defenseSpending: 50, environmentalPolicy: 50
+    )
 
     private var policy: PolicySettings {
         gameStore.state.policySettings ?? PolicySettings(
@@ -18,6 +23,13 @@ struct PolicyView: View {
             economicStance: 50, socialSpending: 50,
             defenseSpending: 50, environmentalPolicy: 50
         )
+    }
+
+    private var hasChanges: Bool {
+        (draftPolicy.economicStance ?? 50) != (policy.economicStance ?? 50) ||
+        (draftPolicy.socialSpending ?? 50) != (policy.socialSpending ?? 50) ||
+        (draftPolicy.defenseSpending ?? 50) != (policy.defenseSpending ?? 50) ||
+        (draftPolicy.environmentalPolicy ?? 50) != (policy.environmentalPolicy ?? 50)
     }
 
     var body: some View {
@@ -34,6 +46,14 @@ struct PolicyView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, AppSpacing.tabBarClearance)
             }
+        }
+        .onAppear { draftPolicy = policy }
+        .onChange(of: gameStore.state.policySettings) { _, _ in
+            if !hasChanges { draftPolicy = policy }
+        }
+        .sheet(item: $activeReview) { review in
+            PolicyChangesSheet(review: review)
+                .presentationDetents([.medium])
         }
         .sheet(isPresented: $showStrategicPlanSheet) {
             StrategicPlanSheet(gameStore: gameStore)
@@ -95,8 +115,8 @@ struct PolicyView: View {
                 label: "ECONOMIC STANCE",
                 subtitle: "Free Market ← → State-Led",
                 value: Binding(
-                    get: { policy.economicStance ?? 50 },
-                    set: { gameStore.setInitialPolicyPreferences(economy: $0) }
+                    get: { draftPolicy.economicStance ?? 50 },
+                    set: { draftPolicy.economicStance = $0 }
                 ),
                 leftLabel: "Free Market",
                 rightLabel: "State-Led"
@@ -105,8 +125,8 @@ struct PolicyView: View {
                 label: "SOCIAL SPENDING",
                 subtitle: "Minimal ← → Universal",
                 value: Binding(
-                    get: { policy.socialSpending ?? 50 },
-                    set: { gameStore.setInitialPolicyPreferences(social: $0) }
+                    get: { draftPolicy.socialSpending ?? 50 },
+                    set: { draftPolicy.socialSpending = $0 }
                 ),
                 leftLabel: "Minimal",
                 rightLabel: "Universal"
@@ -115,8 +135,8 @@ struct PolicyView: View {
                 label: "DEFENCE POSTURE",
                 subtitle: "Pacifist ← → Militarist",
                 value: Binding(
-                    get: { policy.defenseSpending ?? 50 },
-                    set: { gameStore.setInitialPolicyPreferences(defense: $0) }
+                    get: { draftPolicy.defenseSpending ?? 50 },
+                    set: { draftPolicy.defenseSpending = $0 }
                 ),
                 leftLabel: "Pacifist",
                 rightLabel: "Militarist"
@@ -125,12 +145,32 @@ struct PolicyView: View {
                 label: "ENVIRONMENTAL POLICY",
                 subtitle: "Growth-First ← → Green New Deal",
                 value: Binding(
-                    get: { policy.environmentalPolicy ?? 50 },
-                    set: { gameStore.setInitialPolicyPreferences(environment: $0) }
+                    get: { draftPolicy.environmentalPolicy ?? 50 },
+                    set: { draftPolicy.environmentalPolicy = $0 }
                 ),
                 leftLabel: "Growth-First",
                 rightLabel: "Green New Deal"
             )
+
+            Group {
+                if hasChanges {
+                    Button("Review Policy Changes") {
+                        let old = policy
+                        let new = draftPolicy
+                        activeReview = ImpactReview(
+                            title: "Policy Impact",
+                            impacts: gameStore.computePolicyMetricImpacts(from: old, to: new),
+                            onConfirm: {
+                                gameStore.applyPolicyMetricImpacts(from: old, to: new)
+                                gameStore.updatePolicySettings(new)
+                            }
+                        )
+                    }
+                    .buttonStyle(CommandButtonStyle())
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+            }
+            .animation(.spring(response: 0.45, dampingFraction: 0.8), value: hasChanges)
         }
     }
 

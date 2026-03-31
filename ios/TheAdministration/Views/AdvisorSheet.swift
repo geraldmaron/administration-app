@@ -1,7 +1,3 @@
-/// AdvisorSheet
-/// Full-screen sheet showing advisor briefing for a scenario option.
-/// Presents each cabinet member's position and reasoning before the
-/// player commits to a decision. Mirrors the web AdvisorModal.
 import SwiftUI
 
 struct AdvisorSheet: View {
@@ -18,7 +14,6 @@ struct AdvisorSheet: View {
             guard let member = gameStore.state.cabinet.first(where: {
                 $0.roleId == fb.roleId && !$0.isVacant
             }) else { return nil }
-            // Deduplicate by the unique cabinet member id (member.id)
             guard !seen.contains(member.id) else { return nil }
             seen.insert(member.id)
             return (member: member, feedback: fb)

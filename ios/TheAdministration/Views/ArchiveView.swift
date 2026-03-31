@@ -1,6 +1,3 @@
-/// ArchiveView
-/// Displays the turn-by-turn decision archive showing all past scenarios
-/// and outcomes, matching the web ArchiveView. Supports search and stat detail.
 import SwiftUI
 
 struct ArchiveView: View {
@@ -187,7 +184,7 @@ struct ArchiveCard: View {
                     let color: Color = delta.delta > 0 ? AppColors.success : (delta.delta < 0 ? AppColors.error : AppColors.foregroundSubtle)
                     HStack(spacing: 2) {
                         Text(String(delta.name.prefix(3)))
-                        Text(delta.delta > 0 ? "+\(Int(delta.delta))" : "\(Int(delta.delta))")
+                        Text(MetricFormatting.metricDeltaString(delta.delta))
                     }
                     .font(AppTypography.micro)
                     .foregroundColor(color)
@@ -243,7 +240,7 @@ struct TurnDetailSheet: View {
                                             .font(.system(size: 13))
                                             .foregroundColor(AppColors.foreground)
                                         Spacer()
-                                        Text("\(delta.delta > 0 ? "+" : "")\(Int(delta.delta))")
+                                        Text(MetricFormatting.metricDeltaString(delta.delta))
                                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
                                             .foregroundColor(delta.delta > 0 ? AppColors.success : (delta.delta < 0 ? AppColors.error : AppColors.foregroundSubtle))
                                     }

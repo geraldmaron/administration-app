@@ -1,6 +1,3 @@
-/// StrategicPlanSheet
-/// Sheet for selecting and activating a Strategic Plan.
-/// Mirrors the web app's StrategicPlan and related controls.
 import SwiftUI
 
 private struct BuiltInPlan: Identifiable {

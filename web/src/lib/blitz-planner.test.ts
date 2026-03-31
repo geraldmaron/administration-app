@@ -3,6 +3,7 @@ import {
   allocateByRatio,
   calculateDeficits,
   groupDeficitsIntoJobs,
+  fitJobsToScenarioBudget,
   buildBlitzPlan,
   SCOPE_TIER_RATIOS,
   type CountryEntry,
@@ -210,16 +211,18 @@ describe('groupDeficitsIntoJobs', () => {
 
 describe('buildBlitzPlan', () => {
   it('returns a complete plan with allocation and summary', () => {
-    const plan = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, [], TARGET_PER_BUNDLE, 10, 8);
+    const requestedTotal = 24;
+    const plan = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, [], TARGET_PER_BUNDLE, requestedTotal, 10, 8);
 
     expect(plan.allocation).toBeDefined();
-    expect(plan.allocation.universal + plan.allocation.regional + plan.allocation.cluster + plan.allocation.exclusive).toBe(TARGET_PER_BUNDLE);
+    expect(plan.allocation.universal + plan.allocation.regional + plan.allocation.cluster + plan.allocation.exclusive).toBe(requestedTotal);
     expect(plan.deficits.length).toBeGreaterThan(0);
     expect(plan.plannedJobs.length).toBeGreaterThan(0);
-    expect(plan.summary.totalRequested).toBe(TARGET_PER_BUNDLE * BUNDLES.length);
+    expect(plan.summary.totalRequested).toBe(requestedTotal);
     expect(plan.summary.totalDeficit).toBeGreaterThan(0);
     expect(plan.summary.jobsToCreate).toBe(plan.plannedJobs.length);
     expect(plan.summary.availableSlots).toBe(10);
+    expect(plan.summary.scenariosToGenerate).toBeLessThanOrEqual(requestedTotal);
   });
 
   it('returns empty jobs when inventory is full', () => {
@@ -235,17 +238,49 @@ describe('buildBlitzPlan', () => {
       }
     }
 
-    const plan = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, inventory, TARGET_PER_BUNDLE, 10, 8);
+    const plan = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, inventory, TARGET_PER_BUNDLE, 24, 10, 8);
     expect(plan.deficits).toHaveLength(0);
     expect(plan.plannedJobs).toHaveLength(0);
     expect(plan.summary.totalDeficit).toBe(0);
   });
 
   it('respects different target counts', () => {
-    const small = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, [], 10, 10, 8);
-    const large = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, [], 100, 10, 8);
+    const small = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, [], TARGET_PER_BUNDLE, 10, 10, 8);
+    const large = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, [], TARGET_PER_BUNDLE, 100, 10, 8);
 
-    expect(large.summary.totalDeficit).toBeGreaterThan(small.summary.totalDeficit);
+    expect(large.summary.totalDeficit).toBe(small.summary.totalDeficit);
     expect(large.allocation.universal).toBeGreaterThan(small.allocation.universal);
+    expect(large.summary.scenariosToGenerate).toBeGreaterThanOrEqual(small.summary.scenariosToGenerate);
+  });
+});
+
+describe('fitJobsToScenarioBudget', () => {
+  it('caps planned output to the requested total', () => {
+    const deficits = calculateDeficits(BUNDLES, REGIONS, COUNTRIES, [], TARGET_PER_BUNDLE);
+    const jobs = groupDeficitsIntoJobs(deficits, 10, 8);
+    const fitted = fitJobsToScenarioBudget(jobs, 11);
+
+    const total = fitted.reduce((sum, job) => sum + (job.bundles.length * job.count), 0);
+    expect(total).toBe(11);
+  });
+
+  it('keeps higher-priority bundles when a partial final job is required', () => {
+    const jobs = [
+      {
+        bundles: ['economy', 'politics', 'military'],
+        count: 2,
+        mode: 'blitz' as const,
+        scopeTier: 'universal' as const,
+        scopeKey: 'universal',
+        sourceKind: 'evergreen' as const,
+        priority: 'normal' as const,
+        distributionConfig: { mode: 'auto' as const },
+      },
+    ];
+
+    const fitted = fitJobsToScenarioBudget(jobs, 2);
+    expect(fitted).toHaveLength(1);
+    expect(fitted[0].bundles).toEqual(['economy', 'politics']);
+    expect(fitted[0].count).toBe(1);
   });
 });

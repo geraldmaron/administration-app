@@ -1,7 +1,3 @@
-/// EndGameReviewView
-/// End-of-term assessment screen. Presents the administration's performance
-/// with a dramatic animated grade reveal, sequential metric delta cards,
-/// achievement and failure badges, and a scrollable key decisions timeline.
 import SwiftUI
 
 struct EndGameReviewView: View {

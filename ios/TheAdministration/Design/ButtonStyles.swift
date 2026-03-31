@@ -1,6 +1,3 @@
-/// ButtonStyles
-/// Button variants for The Administration design system.
-/// Clean and solid — no gradients, glows, or aggressive tracking.
 import SwiftUI
 
 // MARK: - CommandButtonStyle (primary CTA)
@@ -47,11 +44,11 @@ struct SecondaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.white.opacity(0.10))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(Color.white.opacity(configuration.isPressed ? 0.12 : 0), lineWidth: 1)
+                    .strokeBorder(Color.white.opacity(configuration.isPressed ? 0.18 : 0), lineWidth: 1)
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .animation(AppMotion.quickSnap, value: configuration.isPressed)
@@ -72,7 +69,7 @@ struct TacticalButtonStyle: ButtonStyle {
             .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.white.opacity(0.12))
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .animation(AppMotion.quickSnap, value: configuration.isPressed)
@@ -128,7 +125,7 @@ struct OutlineButtonStyle: ButtonStyle {
             .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.white.opacity(0.12))
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .animation(AppMotion.quickSnap, value: configuration.isPressed)

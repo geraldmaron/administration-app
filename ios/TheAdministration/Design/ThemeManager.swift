@@ -1,6 +1,3 @@
-/// ThemeManager
-/// Singleton that persists the active theme to UserDefaults and publishes
-/// theme changes so the app reactively updates accent colors.
 import SwiftUI
 import Combine
 
@@ -17,8 +14,8 @@ class ThemeManager: ObservableObject {
     }
 
     private init() {
-        let savedId = UserDefaults.standard.string(forKey: Self.userDefaultsKey) ?? "aurora_command"
-        self.current = AppTheme.all.first(where: { $0.id == savedId }) ?? .auroraCommand
+        let savedId = UserDefaults.standard.string(forKey: Self.userDefaultsKey) ?? "monochrome"
+        self.current = AppTheme.all.first(where: { $0.id == savedId }) ?? .monochrome
     }
 
     func setTheme(_ theme: AppTheme) {

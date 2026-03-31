@@ -1,6 +1,3 @@
-/// OnboardingOverlay
-/// Spotlight-based first-time user tutorial. Highlights key UI areas with
-/// explanations. Shows once after setup, completion stored in UserDefaults.
 import SwiftUI
 
 struct OnboardingOverlay: View {

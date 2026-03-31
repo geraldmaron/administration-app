@@ -7,7 +7,7 @@
 import admin from 'firebase-admin';
 import * as fs from 'fs';
 import * as path from 'path';
-import { initializeAuditConfig, auditScenario, scoreScenario } from '../functions/src/lib/audit-rules';
+import { initializeAuditConfig, auditScenario, scoreScenario, type BundleScenario } from '../functions/src/lib/audit-rules';
 import { classifyIssueRemediation } from '../functions/src/lib/issue-classification';
 
 const serviceAccountPath = path.join(__dirname, '..', 'serviceAccountKey.json');
@@ -88,7 +88,7 @@ async function main() {
     const bundle = scenario?.metadata?.bundle || 'unknown';
     const isNews = scenario?.metadata?.source === 'news';
 
-    const issues = auditScenario(scenario, bundle, isNews);
+    const issues = auditScenario(scenario as BundleScenario, bundle, isNews);
     const score = scoreScenario(issues);
     const remediation = classifyIssueRemediation(issues);
     const hardErrors = issues.filter((i: any) => i.severity === 'error').length;

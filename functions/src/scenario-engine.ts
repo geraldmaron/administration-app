@@ -1426,9 +1426,11 @@ async function auditAndRepair(
   // LLM Repair — attempt a surgical patch when only LLM-fixable issues remain.
   // Skip if the scenario already meets the pass threshold — repair has shown it
   // can degrade passing scenarios, and there's nothing to gain by running it.
+  // This still runs when editorial review is otherwise skipped so low-scoring
+  // drafts do not bypass the repair path and get accepted below threshold.
   const { llm_repair_enabled, audit_pass_threshold: repairThreshold } = await getGenerationConfig();
   const preRepairCurrentScore = scoreScenario(issues);
-  if (!skipEditorialReview && llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold) {
+  if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold) {
     const fixableIssues = issues.filter(i => LLM_FIXABLE_RULES.has(i.rule));
     if (fixableIssues.length > 0) {
       const repaired = await llmRepairScenario(scenario, fixableIssues, bundle, isNews, preRepairCurrentScore, modelConfig);

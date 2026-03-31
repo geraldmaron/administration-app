@@ -1,6 +1,3 @@
-/// AppMotion
-/// Defines consistent animation timing constants for The Administration.
-/// Standard iOS easing — no dramatic or staggered animations.
 import SwiftUI
 
 enum AppMotion {

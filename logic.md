@@ -156,7 +156,7 @@ This document is intentionally normative.
 
 Metrics are the simulation state that scenario eligibility, outcome resolution, crisis escalation, and end-game scoring all read from. They are not independent bars. They describe overlapping aspects of national stability, legitimacy, and capacity.
 
-### 2.1 Core Metrics (18) — range 0–100, baseline ~62, higher is better
+### 2.1 Core Metrics (19) — range 0–100, baseline ~62 in `finalizeSetup()` / ~50 in `quickStart()`, higher is better
 
 | ID | Display Name |
 |----|-------------|
@@ -178,18 +178,21 @@ Metrics are the simulation state that scenario eligibility, outcome resolution, 
 | `metric_democracy` | Democracy |
 | `metric_sovereignty` | Sovereignty |
 | `metric_immigration` | Immigration |
+| `metric_budget` | Budget |
 
-### 2.2 Inverse Metrics — lower is better
+### 2.2 Inverse Metrics — lower raw value = better outcome
 
-| ID | Baseline |
-|----|---------|
-| `metric_corruption` | 25 ± 8 (min 20) — set in `finalizeSetup()` |
-| `metric_inflation` | ~30 |
-| `metric_pollution` | varies |
-| `metric_inequality` | varies |
-| `metric_crime` | ~40 |
+| ID | Display Name | Baseline |
+|----|-------------|---------|
+| `metric_corruption` | Corruption | 28 ± 5 (min 20) |
+| `metric_inflation` | Inflation | 28 ± 5 (min 20) |
+| `metric_crime` | Crime | 28 ± 5 (min 20) |
+| `metric_bureaucracy` | Bureaucracy | 28 ± 5 (min 20) |
+| `metric_unrest` | Unrest | 15 ± 3 |
+| `metric_economic_bubble` | Economic Bubble | 15 ± 3 |
+| `metric_foreign_influence` | Foreign Influence | 15 ± 3 |
 
-`isInverseMetric()` in `Scoring.swift` matches: `["metric_corruption", "metric_inflation", "metric_pollution", "metric_inequality", "metric_crime"]`.
+`isInverseMetric()` in `Scoring.swift` matches this 7-item list. The last 3 (`unrest`, `economic_bubble`, `foreign_influence`) are also hidden metrics (§2.5). In `MetricCatalogue`, each inverse metric's `isInverse: true` flag enables correct grading orientation in `MetricFormatting`.
 
 ### 2.3 Derived Metric — approval
 
@@ -199,17 +202,17 @@ Metrics are the simulation state that scenario eligibility, outcome resolution, 
 
 ### 2.4 Fiscal Metric
 
-| ID | Range | Notes |
-|----|-------|-------|
-| `metric_budget` | −100 to +100 | Not included in approval calculation average |
+`metric_budget` is a standard 0–100 metric (higher = healthier) initialized at 50 alongside all other metrics.
 
 ### 2.5 Hidden Metrics (3) — revealed at threshold
 
-| ID | Reveal Threshold | Accumulation |
-|----|-----------------|-------------|
-| `metric_unrest` | ≥ 70 | +2/turn if employment < 40; +1/turn if inflation > 70 |
-| `metric_economic_bubble` | ≥ 80 | Set via effects |
-| `metric_foreign_influence` | ≥ 75 | Set via effects |
+The three hidden inverse metrics accumulate organically via drift rules (§7) and are only shown once they breach their reveal threshold.
+
+| ID | Reveal Threshold | Note |
+|----|-----------------|------|
+| `metric_unrest` | ≥ 70 | Grows from disorder, inflation, and equality drift |
+| `metric_economic_bubble` | ≥ 80 | Grows from economic overheating and inflation |
+| `metric_foreign_influence` | ≥ 75 | Grows from foreign policy drift and scenario effects |
 
 ### 2.6 Metric Value Representation
 
@@ -367,32 +370,68 @@ If `state.maxTurns == 0`, sets it via `calculateMaxTurns()`.
 
 ## 5. Approval Calculation (`calculateApproval`)
 
-Approval is the central public-facing measure of political survival. In the rebuild spec, it should usually be derived from the broader state of the country and only occasionally moved directly by option-specific shocks.
+Approval is the central public-facing measure of political survival. It is recalculated every turn unless a direct `metric_approval` effect exists (scandal, military event, crisis shock). The formula is grounded in political science research: Hibbs "Bread and Peace" model, Fiorina retrospective voting, Mueller rally effects.
 
-### Canonical Rule
+### Two-Tier Formula
 
-When no direct approval shock is present, approval should be recalculated from a weighted basket of politically legible conditions:
+**Tier 1 — Core Drivers** (weights sum to 1.0, form the baseline score):
 
-1. economic confidence
-2. employment conditions
-3. public order and perceived safety
-4. inflation pressure
-5. corruption pressure
-6. health and social stability
-7. housing and cost-of-living pressure
-8. liberty and democratic legitimacy
-9. major diplomatic humiliation or success when materially salient
+| Metric | Weight | Rationale |
+|--------|--------|-----------|
+| `metric_economy` | 0.30 | Dominant predictor; reduced since employment now modelled separately |
+| `metric_inflation` | 0.20 | Cost-of-living felt daily |
+| `metric_employment` | 0.14 | Top-3 voter concern per Okun's misery index |
+| `metric_health` | 0.14 | Consistently top-3 voter concern |
+| `metric_public_order` | 0.12 | Visible disorder matters, below economic pain |
+| `metric_crime` | 0.10 | Safety concern; overlaps with public order |
 
-Direct approval effects remain valid for scandals, symbolic victories, atrocities, humiliations, or political communication shocks, but these should be exceptions rather than the default way approval moves.
+`metric_inflation` and `metric_crime` are inverse metrics — their effective value is `(100 - value)`.
 
-### Current Implementation Note
+**Tier 2 — Secondary Pressures** (deviation from 50, total capped at ±20):
 
-The runtime currently uses a formula-driven recalculation path when no direct `metric_approval` effect is present. The exact weighting may continue to evolve, but the canonical requirement is stable:
+| Metric | Factor | Rationale |
+|--------|--------|-----------|
+| `metric_unrest` | 0.12 | Inverse; very visible signal of government failure |
+| `metric_foreign_relations` | 0.12 | Diplomatic failure signals incompetence |
+| `metric_equality` | 0.09 | Wealth distribution concern post-2008 |
+| `metric_housing` | 0.08 | Affordability is a core daily concern for most voters |
+| `metric_liberty` | 0.07 | Polarized; net impact dampened |
+| `metric_foreign_influence` | 0.06 | Inverse; growing election-interference salience |
+| `metric_economic_bubble` | 0.06 | Inverse; systemic financial risk |
+| `metric_environment` | 0.06 | Growing climate salience with younger voter cohorts |
+| `metric_military` | 0.05 | Peacetime baseline signal |
+| `metric_bureaucracy` | 0.04 | Inverse; chronic low-grade frustration |
+| `metric_innovation` | 0.04 | Longest lag; voters feel R&D years later |
+| `metric_infrastructure` | 0.04 | Visible quality-of-life signal (roads, transit, utilities) |
 
-1. approval must broadly reflect the rest of the country's condition
-2. corruption and inflation should meaningfully depress approval
-3. large visible wins or losses can apply direct approval shocks
-4. approval should not drift independently of the wider simulation for long stretches
+**Nonlinear Penalties (applied separately, not capped):**
+
+- **Corruption** `> 40`: `(corruption - 40) * 0.45` per point above 40. Reflects catastrophic nonlinear collapses (Watergate, scandals).
+- **Foreign Relations** `< 35`: `(35 - value) * 0.30` per point below 35. Diplomatic isolation adds extra drag beyond the secondary factor.
+
+**Diplomatic Shock** (`hiddenMetrics["diplomaticShock"]`):
+Hostile diplomatic and military actions accumulate a persistent approval penalty in `hiddenMetrics["diplomaticShock"]`. This value is added directly to the baseline (`max(-20, min(20, shock))`) so the political cost of attacking allies or provoking conflicts persists through future `calculateApproval()` calls. Decays 45% per turn.
+
+**Player Traits:** Compassion and integrity stats apply small baseline offsets (±2–5 pts each).
+
+**Political Saturation:** After all other contributions are summed, if `base > 80`, apply `base = 80 + (base - 80) * 0.55`. Asymptotically caps sustained approval around 88–90. Historical reference: Bush post-9/11 (90%) is the modern US peak. Without this, consistently positive metric states compound toward 100 in long games. Direct shock effects (wartime rally, etc.) can still push approval above 80 briefly since they bypass `calculateApproval()`. This step runs last, immediately before the final `clampMetricInt` call.
+
+### Metric Effect Swing Ranges
+
+Four tiers by raw effect magnitude, calibrated to historical per-turn (≈monthly) presidential approval data:
+
+| Tier | Raw Magnitude | Approval Range | Reference Events |
+|------|--------------|----------------|-----------------|
+| minor | 0–2 | 0.5–1.5 pts | Minor speeches, routine decisions |
+| moderate | 2–5 | 2.0–5.0 pts | Notable policies, minor scandals |
+| major | 5–10 | 5.0–9.0 pts | Significant events, major policy failures |
+| critical | 10+ | 8.0–16.0 pts | Crisis events, wartime rallies, impeachment |
+
+Prior system capped approval at 4.0 points regardless of event magnitude — insufficient for realistic political shocks.
+
+### Direct Approval Effects
+
+When a scenario effect directly targets `metric_approval`, `calculateApproval()` is skipped and the raw delta is applied. This path is for: scandals, military defeats, terrorist attacks, wartime rallies, dramatic policy reversals. These should be the exception.
 
 ---
 
@@ -405,11 +444,12 @@ Each rule fires when the primary metric change magnitude exceeds ~2.0 (threshold
 | Trigger | Secondary Effects |
 |---------|-----------------|
 | `military` change > 2 | `economy -= abs(mil) * 0.25±jitter` ; `foreign_relations -= abs(mil) * 0.30±jitter` |
-| `foreign_relations` change > 2 (negative) | `economy += rel * 0.20±jitter` ; `approval += rel * 0.12±jitter` |
-| `foreign_relations` change > 2 (positive) | `economy += rel * 0.15±jitter` ; `approval += rel * 0.08±jitter` |
-| `economy` change > 2 | `approval += econ * 0.15±jitter` ; `public_order += econ * (0.08 positive / 0.12 negative)` |
-| `public_order` change > 2 | `approval += control * (0.12 positive / 0.20 negative)` |
-| `health` change > 2 | `approval += health * 0.10±jitter` ; if negative: `economy += health * 0.15±jitter` |
+| `foreign_relations` change > 2 (negative) | `economy += rel * 0.20±jitter` |
+| `foreign_relations` change > 2 (positive) | `economy += rel * 0.15±jitter` |
+| `economy` change > 2 | `public_order += econ * (0.08 positive / 0.12 negative)` |
+| `health` change < -2 | `economy += health * 0.15±jitter` |
+
+**Note:** Approval cascade rules (`foreign_relations → approval`, `economy → approval`, `public_order → approval`, `health → approval`) were removed. They were dead code — `calculateApproval()` runs after `advanceTurn` and completely recalculates approval from metrics, overwriting any approval cascades written to `metricDeltas`. Approval now flows entirely through `calculateApproval()` or direct scenario shocks.
 
 All secondary effects are 1-turn `ActiveEffect`s appended to the pipeline.
 
@@ -421,23 +461,85 @@ Canonical design note:
 
 ---
 
-## 7. Hidden Metrics & Feedback
+## 7. Organic Metric Drift & Continuous Linkage
 
-The three hidden metrics accumulate via inline statements in `advanceTurn` (Step 7 above). **No other feedback loops execute in the iOS engine.**
+`advanceTurn` applies cross-metric coupling rules after the active effects loop. These are small background pressures (typically 0.2–1.5 pts/turn) grounded in real macroeconomic and political relationships. All metric values are read before any drift is written to prevent cascading reads within a single turn. Scenarios and player decisions remain the dominant force — drift is the connective tissue.
 
-| Condition | Effect |
-|-----------|--------|
-| `employment < 40` | `unrest += 2` (capped at 100) |
-| `inflation > 70` | `unrest += 1` (capped at 100) |
-| `corruption > 60` | `liberty -= 1` |
+### Coupling Rules
 
-Hidden metrics are revealed to the player when their threshold is crossed (via `CrisisEngine`).
+| Source Condition | Target Metric | Formula | Rationale |
+|-----------------|---------------|---------|-----------|
+| `public_order < 40` | `unrest += 1.5` | flat/turn | Disorder is the most direct unrest driver |
+| `inflation > 70` | `unrest += 0.75` | flat/turn | Cost-of-living pressure fuels social anger |
+| `economy < 35` | `unrest += 0.5` | flat/turn | Economic despair and unemployment |
+| `housing < 40` | `unrest += (40 - val) * 0.015` | per turn | Housing crisis causes acute social tension (max ~0.6) |
+| `equality < 40` | `unrest += (40 - val) * 0.010` | per turn | Inequality breeds resentment (max ~0.4) |
+| None of the above | `unrest -= 0.75` | per turn | Natural social cooling when conditions stable |
+| `corruption > 60` | `liberty -= 1.0` | flat/turn | Institutional capture erodes civil liberties |
+| `liberty < 35` | `democracy -= (35 - val) * 0.015` | per turn | Democratic backsliding under authoritarian pressure |
+| `democracy < 35` | `corruption += (35 - val) * 0.015` | per turn | Weak institutions enable rent-seeking (authoritarian loop) |
+| `foreign_relations < 35` | `economy -= (35 - val) * 0.02` | per turn | Trade/investment loss from diplomatic isolation |
+| `corruption > 55` | `economy -= (corruption - 55) * 0.025` | per turn | Rent-seeking and institutional inefficiency |
+| `public_order < 35` | `economy -= (35 - val) * 0.02` | per turn | Disorder disrupts business activity |
+| `inflation > 75` | `economy -= (inflation - 75) * 0.02` | per turn | Hyperinflation destroys economic activity |
+| `innovation > 65` | `economy += (innovation - 65) * 0.003` | per turn | Long-lag R&D payoff; very slow |
+| `economy > 65` | `inflation += (economy - 65) * 0.025` | per turn | Demand-pull inflationary pressure (raised from 0.007 to surface in medium games) |
+| `economy < 35` | `inflation -= (35 - economy) * 0.008` | per turn | Demand collapse → deflation |
+| `energy < 35` | `inflation += (35 - energy) * 0.015` | per turn | Energy supply shocks are a primary inflation driver |
+| `economy > 70` | `economic_bubble += (economy - 70) * 0.04` | per turn | Rapid growth drives asset price inflation |
+| `inflation > 55` | `economic_bubble += (inflation - 55) * 0.025` | per turn | Easy money / loose conditions fuel speculation |
+| `economy < 55 && inflation < 55` | `economic_bubble -= 0.4` | flat/turn | Gradual deflation when neither driver is active |
+| `unrest > 50` | `public_order -= (unrest - 50) * 0.025` | per turn | Active civil unrest destabilizes public order |
+| `crime > 65` | `public_order -= (crime - 65) * 0.025` | per turn | High crime degrades day-to-day order |
+| `economy < 45` | `housing -= (45 - economy) * 0.012` | per turn | Economic stress erodes housing affordability (seeds neglect cascade) |
+| `equality < 45` | `crime += (45 - equality) * 0.015` | per turn | Structural inequality → property crime (threshold lowered from 35) |
+| `housing < 40` | `crime += (40 - housing) * 0.012` | per turn | Homelessness and despair correlate with crime (threshold lowered from 30) |
+| `housing < 40` | `equality -= (40 - housing) * 0.015` | per turn | Housing cost collapse widens wealth gap (threshold lowered from 30) |
+| `corruption > 60` | `foreign_relations -= (corruption - 60) * 0.02` | per turn | Corrupt states face diplomatic isolation |
+| `unrest > 65` | `foreign_relations -= (unrest - 65) * 0.02` | per turn | Instability signals weakness to foreign partners |
+| `foreign_influence > 60` | `sovereignty -= (influence - 60) * 0.02` | per turn | External interference erodes sovereign capacity |
+| `economy > 65` | `health += (economy - 65) * 0.005` | per turn | Wealth enables healthcare investment (slow lag) |
+| `economy < 35` | `health -= (35 - economy) * 0.010` | per turn | Economic collapse starves healthcare funding |
+| `economy > 60` | `employment += (economy - 60) * 0.012` | per turn | Growth creates jobs (Okun's law) |
+| `economy < 40` | `employment -= (40 - economy) * 0.018` | per turn | Recession destroys employment faster than growth creates it |
+| `innovation > 70` | `employment -= (innovation - 70) * 0.005` | per turn | Automation displacement in short run |
+| `economy > 60` | `budget += (economy - 60) * 0.010` | per turn | Tax revenue grows with economic activity |
+| `economy < 40` | `budget -= (40 - economy) * 0.015` | per turn | Revenue collapse in recession |
+| `military > 70` | `budget -= (military - 70) * 0.008` | per turn | Defence overspend drains fiscal space |
+| `foreign_relations < 35` | `trade -= (35 - foreign_relations) * 0.015` | per turn | Diplomatic isolation destroys trade partnerships |
+| `foreign_relations > 65` | `trade += (foreign_relations - 65) * 0.008` | per turn | Strong relations open new markets |
+| `economy < 35` | `trade -= (35 - economy) * 0.010` | per turn | Economic weakness reduces trade competitiveness |
+| `budget < 40` | `infrastructure -= (40 - budget) * 0.010` | per turn | Fiscal stress leads to maintenance deferral |
+| `economy < 35` | `infrastructure -= (35 - economy) * 0.008` | per turn | Depressed economy reduces infrastructure investment |
+| `infrastructure < 35` | `infrastructure -= 0.3` | flat/turn | Neglected infrastructure enters accelerating decay cycle |
+| `budget < 35` | `education -= (35 - budget) * 0.008` | per turn | Fiscal pressure cuts education spending |
+| `economy > 65` | `education += (economy - 65) * 0.003` | per turn | Prosperous economies invest in education |
+| `economy > 65` | `immigration += (economy - 65) * 0.006` | per turn | Strong economies attract skilled workers |
+| `liberty > 65` | `immigration += (liberty - 65) * 0.004` | per turn | Open societies attract immigrants |
+| `unrest > 55` | `immigration -= (unrest - 55) * 0.008` | per turn | Social tensions generate anti-immigration pressure |
+| `economy > 70` | `environment -= (economy - 70) * 0.008` | per turn | Overheated economies degrade environment through industrial pressure |
+| `energy < 40` | `environment -= (40 - energy) * 0.006` | per turn | Energy insecurity drives dirtier fuel combustion |
+| `innovation > 70` | `environment += (innovation - 70) * 0.004` | per turn | Green tech gains from high-innovation economies |
+
+> **Neglect cascade path**: Economic stress (economy < 45) → housing decline → equality erosion → crime rise → unrest growth → public order collapse → unrest crisis. The chain fires within ~25–35 turns when economy stays below 45, making it visible in medium games.
+
+> **Economic bubble path**: Sustained overheating (economy > 70) + loose money (inflation > 55) → bubble accumulates at ~0.5–1.0/turn → market crash crisis at threshold 80. A boom economy that is never cooled will trigger a crisis in a long game (~80–100 turns from baseline).
+
+> **Authoritarian loop**: Corruption > 60 → liberty decay → liberty < 35 → democracy backsliding → democracy < 35 → corruption growth. Compounds over time; hard to reverse once established.
+
+### Diplomatic Shock Decay
+
+`hiddenMetrics["diplomaticShock"]` decays 45% per turn (×0.55 multiplier). Cleared when `|shock| < 0.2`.
+
+### Previous Hidden Accumulator — Removed
+
+The prior system accumulated `hidden["unrest"]` when `metric_employment < 40`. `metric_employment` is inactive (always ~50), so the unrest crisis threshold was never reached organically. Replaced by the drift table above, which operates directly on the visible `metric_unrest` game metric.
 
 Canonical design note:
 
-1. Hidden metrics let the game store risk before the player sees a full crisis headline.
-2. They should be allowed to influence eligibility and consequence generation before they are directly surfaced to the player.
-3. Advisor feedback and later scenarios should be able to hint at hidden deterioration before formal crisis reveal.
+1. All coupling rules operate as persistent background pressures; they compound meaningfully over many turns of sustained misgovernance but cannot overwhelm the system in a few turns.
+2. The magnitudes reflect real-world lag times — economic effects on health, for example, are deliberately very slow.
+3. `hiddenMetrics` is retained for `diplomaticShock` and any future hidden state.
 
 ---
 
@@ -447,29 +549,31 @@ Canonical design note:
 
 ### Thresholds & Triggers
 
-| Crisis ID | Condition | Severity |
-|-----------|-----------|---------|
-| `crisis_civil_unrest` | `unrest >= 70` | `.high` (`.critical` if `unrest >= 90`) |
-| `crisis_market_crash` | `economic_bubble >= 80` | `.high` (`.critical` if `bubble >= 95`) |
-| `crisis_sovereignty` | `foreign_influence >= 75` | `.high` |
-| `crisis_approval_collapse` | `approval < 20` | `.critical` |
+All crisis checks now read from `state.metrics` (visible game metrics), not from `state.hiddenMetrics`. The prior system checked `hidden["unrest"]` etc., but those accumulators never reached their thresholds because the condition that drove them (`metric_employment < 40`) referenced an inactive metric that always defaulted to 50.
 
-Deduplication: before appending, existing crises with the same ID prefix are removed.
+| Crisis ID | Condition | Source | Severity |
+|-----------|-----------|--------|---------|
+| `crisis_civil_unrest` | `metric_unrest >= 70` | `state.metrics` | `.high` (`.critical` if `>= 90`) |
+| `crisis_market_crash` | `metric_economic_bubble >= 80` | `state.metrics` | `.high` (`.critical` if `>= 95`) |
+| `crisis_sovereignty` | `metric_foreign_influence >= 75` | `state.metrics` | `.high` |
+| `crisis_approval_collapse` | `metric_approval < 20` | `state.metrics` | `.critical` |
+
+Deduplication: crisis ID includes `state.turn` so it is unique per turn. Existing prefixed crises are not removed before appending.
 
 ### Resolution Conditions
 
 | Crisis ID | Resolves When |
 |-----------|--------------|
-| `crisis_civil_unrest` | `unrest < 50` |
-| `crisis_market_crash` | `economic_bubble < 40` |
-| `crisis_sovereignty` | `foreign_influence < 40` |
-| `crisis_approval_collapse` | `approval >= 30` |
+| `crisis_civil_unrest` | `metric_unrest < 50` |
+| `crisis_market_crash` | `metric_economic_bubble < 40` |
+| `crisis_sovereignty` | `metric_foreign_influence < 40` |
+| `crisis_approval_collapse` | `metric_approval >= 30` |
 
 Canonical design note:
 
-1. Crises are the point where accumulated hidden or visible deterioration becomes politically undeniable.
-2. Crisis triggers should feel earned by prior state, not randomly injected.
-3. Crisis resolution should require genuine state recovery rather than cosmetic narrative closure.
+1. Crises are the point where accumulated visible deterioration becomes politically undeniable.
+2. `metric_unrest` grows organically via drift rules (§7) when public order is low or inflation is high, so unrest crises can now be reached through sustained misgovernance.
+3. Crisis resolution requires genuine state recovery, not cosmetic narrative closure.
 
 ---
 
@@ -668,6 +772,7 @@ finalWeight = baseScore * tagPenalty * bundleBoost
 5. Excluded geopolitical tags: any match → 0
 6. Bundle multiplier: `max(0.1, min(rawMult, 3.0))`
 7. Regional boost: `max(0.1, min(rawBoost, 3.0))`
+8. **StateTrigger boosts**: for each `scenario.dynamicProfile.stateTriggers` entry where `condition` ("above"/"below"/"gte"/"lte") is met against `gameState.metrics[trigger.metricId]`, multiply `score *= clamp(trigger.weightBoost, 0.1, 5.0)`. This makes crisis-relevant scenarios more likely to surface when the game state warrants them.
 
 ### 10.1 Scope-Tier Weighting (Pending Implementation)
 
@@ -805,7 +910,11 @@ Each country is more than a skin. It defines the realism envelope for scenario g
 
 ### 12.2 Country IDs (50)
 
-`usa, canada, mexico, uk, france, germany, italy, spain, netherlands, belgium, sweden, norway, switzerland, poland, russia, ukraine, saudi_arabia, iran, israel, turkey, egypt, uae, qatar, iraq, nigeria, south_africa, ethiopia, morocco, algeria, india, pakistan, bangladesh, china, japan, south_korea, north_korea, indonesia, vietnam, thailand, philippines, malaysia, singapore, brazil, argentina, colombia, chile, peru, venezuela, australia`
+Stored as ISO 3166-1 alpha-2 codes in the `countries/` Firestore collection.
+
+`us, cn, ru, gb, fr, de, jp, in, br, ca, au, kr, it, es, mx, id, tr, sa, ar, no, se, nl, ch, pl, ua, il, ir, eg, za, ng, pk, ve, th, vn, sg, my, ph, kp, cl, co, gr, bd, hu, pt, nz, ke, gh, jm, cu, qa`
+
+Required inclusions: `jm` (Jamaica), `gh` (Ghana).
 
 ### 12.3 Government Categories
 
@@ -813,7 +922,17 @@ Each country is more than a skin. It defines the realism envelope for scenario g
 
 ### 12.4 Starting Metrics
 
-`gameplayProfile.startingMetrics` used when available (preferred over generated baseline). If absent, `finalizeSetup()` generates baselines (see §20).
+All 28 metrics are initialized at game start. Firestore stores `gameplay.starting_metrics` and `gameplay.metric_equilibria` (snake_case). `finalizeSetup()` and `quickStart()` in `GameStore.swift` expand these into full `MetricValue` objects with history.
+
+Baseline categories used during game initialization (when country data absent):
+- **Standard metrics** (19 non-inverse): baseline ≈ 62 ± 8 in `finalizeSetup()`; ≈ 50 ± 8 in `quickStart()`
+- **Inverse metrics** (corruption, inflation, crime, bureaucracy): baseline ≈ 25 ± 5 (min 20)
+- **Hidden metrics** (unrest, economic_bubble, foreign_influence): baseline ≈ 15 ± 3
+
+Country-specific `starting_metrics` in Firestore override these defaults. Values are calibrated per-country based on real-world conditions (see `update-country-starting-metrics.ts`). Key calibration examples:
+- Nordic countries (no, se, ch, nl): economy 74–84, corruption 10–14, democracy 84–90
+- Crisis economies (ve, ar, pk): economy 18–35, inflation 75–90, corruption 60–82
+- Authoritarian states (kp, cu, ir): democracy 5–15, liberty 5–15, public_order elevated by enforcement
 
 ### 12.5 Sub-Locales
 
@@ -1058,11 +1177,33 @@ tradeRelationships: [TradeRelationship]
 
 When a relationship delta occurs: `allyPenalty = totalRelationshipDelta * 0.4` applied to countries in `alliances.military` array.
 
+### 16.4 Geopolitical Ripple (`applyGeopoliticalRipple`)
+
+Called after every `executeDiplomaticAction` and `executeMilitaryAction`. Uses the target country's `geopoliticalProfile.allies` and `geopoliticalProfile.adversaries` to propagate the direct relationship delta to third parties.
+
+**Approval Impact** (context-aware, applied immediately via `modifyMetricBy` AND persisted as `hiddenMetrics["diplomaticShock"]`):
+
+| Context | Diplomatic Action | Military Action |
+|---------|------------------|-----------------|
+| Negative vs player ally | −5.0 pts | −10.0 pts |
+| Negative vs adversary | +2.0 pts | +3.5 pts |
+| Negative vs neutral | −2.0 pts | −4.0 pts |
+| Positive any | +0.75–1.5 pts | — |
+
+**Ripple Factors** (applied to bilateral relationships of target's allies/adversaries):
+
+- Ally ripple: `directRelDelta * allyFactor * strengthFactor`; `allyFactor` = 0.25 (military) / 0.15 (diplomatic); only propagated when `|ripple| >= 1.0`
+- Adversary ripple (negative actions only): `abs(directRelDelta) * advFactor * strengthFactor`; `advFactor` = 0.12 (military) / 0.08 (diplomatic); not surfaced in briefing
+
+**Compound Action Multiplier**: `min(2.2, 1.0 + (actionCount - 1) * 0.35)` applied to the relationship delta for repeated actions in the same turn. Resets on `makeDecision`.
+
+**Diplomatic Shock Persistence**: The approval delta from each action accumulates into `state.hiddenMetrics["diplomaticShock"]` (capped ±30). `calculateApproval()` adds this shock to the computed baseline, so repeated hostile actions cause persistent approval damage that decays 45% per turn rather than being wiped on the next scenario decision.
+
 Canonical design note:
 
 1. Diplomatic relationships should influence which actors can appear credibly in scenarios.
-2. Diplomatic shocks should be able to propagate into trade, approval, sovereignty, and security consequences.
-3. A relationship token should never imply a degree of hostility, alliance, or adjacency that the underlying relationship graph does not support.
+2. Diplomatic shocks should propagate into trade, approval, sovereignty, and security consequences.
+3. A relationship token should never imply hostility, alliance, or adjacency that the underlying graph does not support.
 
 ---
 
@@ -1319,12 +1460,15 @@ Length adjustments: `long: +3/+1.5`, `short: -3/-1.0` to approval/avgChange thre
 
 | Grade | Condition |
 |-------|-----------|
-| **COLLAPSE** | `approval < 30` (overrides all below) |
+| **COLLAPSE** | `approval < 30` (checked first; overrides all below) |
 | **A** | `approval >= 75` AND `avgChange >= 5` |
 | **B** | `approval >= 65` AND `avgChange >= 2` |
 | **C** | `approval >= 50` AND `avgChange >= -2` |
 | **D** | `approval >= 40` AND `avgChange >= -5` |
-| **F** | `approval < 40` AND `avgChange < -5` |
+| **D** (trajectory rescue) | `approval >= 30` AND `avgChange >= 3` — leader in genuine turnaround |
+| **F** | all remaining cases |
+
+COLLAPSE is evaluated first so a `< 30` approval score can never accidentally land in D/F via else-if ordering.
 
 Canonical design note:
 

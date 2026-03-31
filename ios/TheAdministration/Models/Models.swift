@@ -1,8 +1,5 @@
 import Foundation
 
-/// Core shared models for The Administration iOS client, including metrics,
-/// scenarios, player profiles, geography, and game state used by services and views.
-
 struct Metric: Identifiable, Codable {
     let id: String
     let name: String
@@ -86,6 +83,8 @@ enum GameStatus: String, Codable {
     case active
     case paused
     case ended
+    case impeached
+    case resigned
 }
 
 struct ScenarioLocation: Codable {
@@ -219,11 +218,41 @@ struct EffectScaling: Codable {
     let cap: Double?
 }
 
+struct ImpactReview: Identifiable {
+    let id = UUID()
+    let title: String
+    let impacts: [MetricImpact]
+    let onConfirm: () -> Void
+}
+
 struct MetricImpact: Codable {
     let metricId: String
     let delta: Double
     let name: String
     let projected: Bool?
+
+    static func label(for metricId: String) -> String {
+        switch metricId {
+        case "metric_economy":           return "Economy"
+        case "metric_employment":        return "Employment"
+        case "metric_budget":            return "Budget"
+        case "metric_health":            return "Health"
+        case "metric_equality":          return "Equality"
+        case "metric_approval":          return "Approval"
+        case "metric_military":          return "Military"
+        case "metric_environment":       return "Environment"
+        case "metric_infrastructure":    return "Infrastructure"
+        case "metric_education":         return "Education"
+        case "metric_public_order":      return "Public Order"
+        case "metric_foreign_relations": return "Foreign Relations"
+        case "metric_innovation":        return "Innovation"
+        default:
+            return metricId
+                .replacingOccurrences(of: "metric_", with: "")
+                .replacingOccurrences(of: "_", with: " ")
+                .capitalized
+        }
+    }
 }
 
 struct AdvisorFeedback: Codable {
@@ -1008,6 +1037,29 @@ struct Country: Identifiable, Codable, Hashable {
 }
 
 extension Country {
+    /// Resolved GDP in billions, checking all available sources in priority order:
+    /// 1. `gdpBillions` — numeric field from economy sub-document
+    /// 2. `attributes.gdp` — raw integer (stored in full units, e.g. 21_000_000_000_000)
+    /// 3. `gdp` — formatted string (e.g. "$285.7B", "$2.3T", "$45M")
+    var resolvedGdpBillions: Double? {
+        if let b = gdpBillions, b > 0 { return b }
+        if attributes.gdp > 0 { return Double(attributes.gdp) / 1_000_000_000 }
+        if let s = gdp, !s.isEmpty { return Country.parseGdpString(s) }
+        return nil
+    }
+
+    private static func parseGdpString(_ raw: String) -> Double? {
+        let s = raw.trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: "$", with: "")
+            .replacingOccurrences(of: ",", with: "")
+            .uppercased()
+        if s.hasSuffix("T"), let v = Double(s.dropLast()) { return v * 1_000 }
+        if s.hasSuffix("B"), let v = Double(s.dropLast()) { return v }
+        if s.hasSuffix("M"), let v = Double(s.dropLast()) { return v / 1_000 }
+        if let v = Double(s) { return v / 1_000_000_000 }
+        return nil
+    }
+
     var flagEmoji: String {
         guard let code = code, code.count == 2 else { return "🌐" }
         let base: UInt32 = 0x1F1E6 - 65
@@ -1131,9 +1183,12 @@ struct GameState: Codable {
     var policySettings: PolicySettings?
     
     // NEW: Tracking
+    var impeachmentSurvived: Bool = false
     var trustYourGutUsed: Int = 0
     var playedScenarioIds: [String] = []
     var recentActions: [String]?
+    var turnDiplomaticActionCount: Int = 0
+    var turnMilitaryActionCount: Int = 0
     var infinitePulseEnabled: Bool?
     var lockedMetricIds: [String]?
     var godMode: Bool?
@@ -1145,6 +1200,8 @@ struct GameState: Codable {
     // NEW: Consequences and Special Modes
     var outcomeHistory: [OutcomeRecord]?
     var pendingConsequences: [PendingConsequence]?
+    var pendingRetaliations: [PendingRetaliation]?
+    var worldConflicts: [WorldConflict]?
     var dickMode: DickModeConfig?
     var aiScenarioQueue: AIScenarioQueue?
 
@@ -1174,6 +1231,34 @@ struct GameState: Codable {
     // Maps chainId → (tokenRole → resolvedCountryId) for multi-act scenario consistency.
     // Ensures the same country fills each relationship role across all acts of a chain.
     var chainTokenBindings: [String: [String: String]]? = nil
+}
+
+extension GameState {
+    /// Converts a game turn number to an in-game calendar date.
+    /// Turn 1 = startDate (today), turn maxTurns = startDate + termLength.
+    /// Adds deterministic per-turn jitter so consecutive articles don't land on the same day.
+    func date(forTurn turn: Int) -> Date {
+        let base: Date = {
+            let fmt = ISO8601DateFormatter()
+            fmt.formatOptions = [.withFullDate]
+            return startDate.flatMap { fmt.date(from: $0) } ?? Date()
+        }()
+        let termDays: Int
+        switch gameLength ?? "medium" {
+        case "short": termDays = 365
+        case "long":  termDays = 1460
+        default:      termDays = 730
+        }
+        let safeTurns = max(1, maxTurns)
+        let linearDays = Int((Double(min(turn, safeTurns)) / Double(safeTurns)) * Double(termDays))
+        let jitter = Int((sin(Double(turn) * 17.3 + 4.7) + 1.0) * 3.5)
+        return Calendar.current.date(byAdding: .day, value: linearDays + jitter, to: base) ?? base
+    }
+
+    /// Formatted in-game date string for display in news bylines.
+    func formattedDate(forTurn turn: Int) -> String {
+        date(forTurn: turn).formatted(date: .abbreviated, time: .omitted).uppercased()
+    }
 }
 
 // Extended game configuration aligned with web schema
@@ -1389,6 +1474,7 @@ struct NewsArticle: Identifiable, Codable {
     let category: String?
     let relatedScenarioId: String?
     let isAlert: Bool?
+    let isBackgroundEvent: Bool?
 }
 
 struct TurnRecord: Identifiable, Codable {
@@ -1457,6 +1543,25 @@ struct ScenarioDirectorState: Codable {
     }
 }
 
+struct PendingRetaliation: Codable {
+    let id: String
+    let triggerTurn: Int
+    let countryId: String
+    let countryName: String
+    let metricDeltas: [String: Double]
+    let relationshipDelta: Double
+    let headline: String
+    let summary: String
+}
+
+struct WorldConflict: Codable, Identifiable {
+    var id: String
+    let actorCountryId: String
+    let targetCountryId: String
+    let type: String
+    let startTurn: Int
+}
+
 struct PendingConsequence: Codable {
     let scenarioId: String
     let triggerTurn: Int
@@ -1509,7 +1614,7 @@ struct PolicyImplication: Codable {
 }
 
 // MARK: - Settings
-struct FiscalSettings: Codable {
+struct FiscalSettings: Codable, Equatable {
     var budgetAllocation: [String: Double]?
     var taxRate: Double?
     var spending: [String: Double]?
@@ -1522,11 +1627,11 @@ struct FiscalSettings: Codable {
     static let defaults = FiscalSettings(
         budgetAllocation: nil, taxRate: nil, spending: nil,
         taxIncome: 25, taxCorporate: 15,
-        spendingMilitary: 20, spendingInfrastructure: 20, spendingSocial: 30
+        spendingMilitary: 25, spendingInfrastructure: 30, spendingSocial: 45
     )
 }
 
-struct PolicySettings: Codable {
+struct PolicySettings: Codable, Equatable {
     var militaryPosture: String?
     var tradePolicy: String?
     var environmentalCommitment: String?

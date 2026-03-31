@@ -1,5 +1,3 @@
-/// PlayerSkillCatalogue
-/// Predefined player skills available during character creation.
 import Foundation
 
 enum PlayerSkillCatalogue {

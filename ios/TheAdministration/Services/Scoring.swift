@@ -1,11 +1,8 @@
 import Foundation
 
-/// ScoringEngine
-/// Applies scenario option effects, advances turns, and calculates metric and
-/// approval changes for The Administration iOS client.
 class ScoringEngine {
     static let INITIAL_METRIC_VALUE: Double = 50.0
-    static let MAX_METRIC_CHANGE_BASE: Double = 4.5  // FIXED: Web uses 4.5, not 6.8
+    static let MAX_METRIC_CHANGE_BASE: Double = 6.0
 
     private static let METRIC_IDS: [String: String] = [
         "approval": "metric_approval",
@@ -44,47 +41,71 @@ class ScoringEngine {
         let minor: (Double, Double)
         let moderate: (Double, Double)
         let major: (Double, Double)
+        // critical: raw magnitude >= 10 — crisis-level events (military humiliation, wartime rally,
+        // major scandal revelation, economic collapse). Grounded in presidential approval research:
+        // 9/11 rally +35 pts/month, Gulf War +20, OBL raid +7, Carter Iran hostage -4/month avg.
+        let critical: (Double, Double)
+
+        init(minor: (Double, Double), moderate: (Double, Double), major: (Double, Double), critical: (Double, Double)? = nil) {
+            self.minor    = minor
+            self.moderate = moderate
+            self.major    = major
+            self.critical = critical ?? (major.0 * 1.6, major.1 * 1.6)
+        }
     }
 
-    private static let DEFAULT_RANGE = MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.6), major: (2.7, 4.2))
+    private static let DEFAULT_RANGE = MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.6), major: (2.7, 4.5), critical: (4.5, 7.5))
 
     private static let METRIC_SWING_RANGES: [String: MetricSwingRange] = [
-        "metric_approval": MetricSwingRange(minor: (0.4, 1.1), moderate: (1.2, 2.4), major: (2.5, 4.0)),
-        "metric_economy": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
-        "metric_public_order": MetricSwingRange(minor: (0.4, 1.2), moderate: (1.3, 2.6), major: (2.7, 4.2)),
-        "metric_health": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.4), major: (2.5, 4.0)),
-        "metric_education": MetricSwingRange(minor: (0.2, 0.9), moderate: (1.0, 2.1), major: (2.2, 3.5)),
-        "metric_infrastructure": MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.5), major: (2.6, 4.0)),
-        "metric_environment": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
-        "metric_foreign_relations": MetricSwingRange(minor: (0.4, 1.4), moderate: (1.5, 2.8), major: (2.9, 4.4)),
-        "metric_military": MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.5), major: (2.6, 4.0)),
-        "metric_liberty": MetricSwingRange(minor: (0.4, 1.2), moderate: (1.3, 2.6), major: (2.7, 4.0)),
-        "metric_equality": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
-        "metric_corruption": MetricSwingRange(minor: (0.2, 0.9), moderate: (1.0, 2.1), major: (2.2, 3.4)),
-        "metric_employment": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
-        "metric_inflation": MetricSwingRange(minor: (0.2, 0.8), moderate: (0.9, 1.8), major: (1.9, 3.0)),
-        "metric_innovation": MetricSwingRange(minor: (0.4, 1.2), moderate: (1.3, 2.5), major: (2.6, 3.9)),
-        "metric_trade": MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.4), major: (2.5, 3.9)),
-        "metric_energy": MetricSwingRange(minor: (0.3, 1.2), moderate: (1.3, 2.6), major: (2.7, 4.1)),
-        "metric_housing": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
-        "metric_crime": MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.4), major: (2.5, 3.9)),
-        "metric_bureaucracy": MetricSwingRange(minor: (0.2, 0.8), moderate: (0.9, 1.9), major: (2.0, 3.1)),
-        "metric_democracy": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
-        "metric_sovereignty": MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.5), major: (2.6, 4.0)),
-        "metric_immigration": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
-        "metric_budget": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
-        "metric_unrest": MetricSwingRange(minor: (0.4, 1.2), moderate: (1.3, 2.6), major: (2.7, 4.2)),
-        "metric_economic_bubble": MetricSwingRange(minor: (0.3, 1.0), moderate: (1.1, 2.3), major: (2.4, 3.8)),
-        "metric_foreign_influence": MetricSwingRange(minor: (0.3, 1.1), moderate: (1.2, 2.5), major: (2.6, 4.0))
+        // Approval: calibrated to historical presidential approval data.
+        // Real per-month swings: routine decisions ±0.5–2, notable events ±2–5,
+        // significant events ±5–10 (major scandal, military news, economic shock),
+        // crisis events ±8–18 (wartime rally, military defeat, impeachment proceedings).
+        "metric_approval":         MetricSwingRange(minor: (0.5, 1.5),  moderate: (2.0, 5.0),  major: (5.0, 9.0),   critical: (8.0, 16.0)),
+        // Economy: GDP growth changes felt gradually; crisis can cause 5–10 pt monthly swings
+        "metric_economy":          MetricSwingRange(minor: (0.3, 1.0),  moderate: (1.1, 2.5),  major: (2.5, 5.0),   critical: (5.0, 9.0)),
+        // Public order: civil unrest events (protests, riots) can spike dramatically
+        "metric_public_order":     MetricSwingRange(minor: (0.4, 1.2),  moderate: (1.3, 3.0),  major: (3.0, 6.0),   critical: (6.0, 11.0)),
+        "metric_health":           MetricSwingRange(minor: (0.3, 1.0),  moderate: (1.1, 2.4),  major: (2.5, 4.5),   critical: (4.5, 8.0)),
+        "metric_education":        MetricSwingRange(minor: (0.2, 0.9),  moderate: (1.0, 2.1),  major: (2.2, 3.5),   critical: (3.5, 6.0)),
+        "metric_infrastructure":   MetricSwingRange(minor: (0.3, 1.1),  moderate: (1.2, 2.5),  major: (2.6, 4.0),   critical: (4.0, 7.0)),
+        "metric_environment":      MetricSwingRange(minor: (0.3, 1.0),  moderate: (1.1, 2.3),  major: (2.4, 3.8),   critical: (3.8, 6.5)),
+        // Foreign relations: incidents between nations can cause large bilateral swings
+        "metric_foreign_relations":MetricSwingRange(minor: (0.4, 1.5),  moderate: (1.5, 4.0),  major: (4.0, 8.0),   critical: (8.0, 18.0)),
+        "metric_military":         MetricSwingRange(minor: (0.3, 1.1),  moderate: (1.2, 2.5),  major: (2.6, 4.5),   critical: (4.5, 8.0)),
+        "metric_liberty":          MetricSwingRange(minor: (0.4, 1.2),  moderate: (1.3, 2.6),  major: (2.7, 4.5),   critical: (4.5, 8.0)),
+        "metric_equality":         MetricSwingRange(minor: (0.3, 1.0),  moderate: (1.1, 2.3),  major: (2.4, 3.8),   critical: (3.8, 6.5)),
+        // Corruption: scandals can cause rapid nonlinear drops; recovers very slowly
+        "metric_corruption":       MetricSwingRange(minor: (0.2, 0.9),  moderate: (1.0, 2.2),  major: (2.2, 4.0),   critical: (4.0, 8.0)),
+        "metric_employment":       MetricSwingRange(minor: (0.3, 1.0),  moderate: (1.1, 2.3),  major: (2.4, 3.8),   critical: (3.8, 6.5)),
+        // Inflation: responds quickly to shocks (energy price spike, supply chain collapse)
+        "metric_inflation":        MetricSwingRange(minor: (0.2, 0.8),  moderate: (0.9, 2.0),  major: (2.0, 4.0),   critical: (4.0, 7.0)),
+        "metric_innovation":       MetricSwingRange(minor: (0.4, 1.2),  moderate: (1.3, 2.5),  major: (2.6, 3.9),   critical: (3.9, 6.5)),
+        "metric_trade":            MetricSwingRange(minor: (0.3, 1.1),  moderate: (1.2, 2.5),  major: (2.5, 4.5),   critical: (4.5, 8.0)),
+        "metric_energy":           MetricSwingRange(minor: (0.3, 1.2),  moderate: (1.3, 2.6),  major: (2.7, 4.5),   critical: (4.5, 8.0)),
+        "metric_housing":          MetricSwingRange(minor: (0.3, 1.0),  moderate: (1.1, 2.3),  major: (2.4, 3.8),   critical: (3.8, 6.5)),
+        "metric_crime":            MetricSwingRange(minor: (0.3, 1.1),  moderate: (1.2, 2.4),  major: (2.5, 4.0),   critical: (4.0, 7.0)),
+        "metric_bureaucracy":      MetricSwingRange(minor: (0.2, 0.8),  moderate: (0.9, 1.9),  major: (2.0, 3.1),   critical: (3.1, 5.0)),
+        "metric_democracy":        MetricSwingRange(minor: (0.3, 1.0),  moderate: (1.1, 2.3),  major: (2.4, 4.0),   critical: (4.0, 7.5)),
+        "metric_sovereignty":      MetricSwingRange(minor: (0.3, 1.1),  moderate: (1.2, 2.5),  major: (2.6, 4.5),   critical: (4.5, 8.0)),
+        "metric_immigration":      MetricSwingRange(minor: (0.3, 1.0),  moderate: (1.1, 2.3),  major: (2.4, 3.8),   critical: (3.8, 6.5)),
+        "metric_budget":           MetricSwingRange(minor: (0.3, 1.0),  moderate: (1.1, 2.3),  major: (2.4, 3.8),   critical: (3.8, 6.5)),
+        "metric_unrest":           MetricSwingRange(minor: (0.4, 1.2),  moderate: (1.3, 3.0),  major: (3.0, 6.0),   critical: (6.0, 12.0)),
+        "metric_economic_bubble":  MetricSwingRange(minor: (0.3, 1.0),  moderate: (1.1, 2.3),  major: (2.4, 4.5),   critical: (4.5, 9.0)),
+        "metric_foreign_influence":MetricSwingRange(minor: (0.3, 1.1),  moderate: (1.2, 2.5),  major: (2.6, 4.5),   critical: (4.5, 8.0))
     ]
 
     private static func clampMetricInt(_ value: Double) -> Double {
         let n = value.isFinite ? value : INITIAL_METRIC_VALUE
-        return max(0, min(100, Double(Int(n.rounded()))))
+        return (max(0, min(100, n)) * 10).rounded() / 10
     }
     
     static func isInverseMetric(_ metricId: String) -> Bool {
-        let inverseMetrics = ["metric_corruption", "metric_inflation", "metric_crime", "metric_bureaucracy"]
+        let inverseMetrics: Set<String> = [
+            "metric_corruption", "metric_inflation", "metric_crime",
+            "metric_bureaucracy", "metric_unrest", "metric_economic_bubble",
+            "metric_foreign_influence"
+        ]
         return inverseMetrics.contains(metricId)
     }
 
@@ -124,9 +145,10 @@ class ScoringEngine {
     }
 
     private static func selectBucket(_ magnitude: Double) -> String {
-        if magnitude < 2 { return "minor" }
-        if magnitude < 5 { return "moderate" }
-        return "major"
+        if magnitude < 2  { return "minor" }
+        if magnitude < 5  { return "moderate" }
+        if magnitude < 10 { return "major" }
+        return "critical"
     }
 
     private static func normalizeEffectValue(targetMetricId: String?, rawValue: Double?) -> Double {
@@ -137,9 +159,10 @@ class ScoringEngine {
         let range = METRIC_SWING_RANGES[targetMetricId ?? ""] ?? DEFAULT_RANGE
         let chosen: (Double, Double)
         switch bucket {
-        case "minor": chosen = range.minor
+        case "minor":    chosen = range.minor
         case "moderate": chosen = range.moderate
-        default: chosen = range.major
+        case "major":    chosen = range.major
+        default:         chosen = range.critical
         }
         let jitter = chosen.0 + Double.random(in: 0...1) * (chosen.1 - chosen.0)
         return (sign * jitter * 100).rounded() / 100
@@ -193,27 +216,20 @@ class ScoringEngine {
             let relationsChange = primaryEffects[relationsKey] ?? 0
             if abs(relationsChange) > 2 {
                 let economyKey = findMetricKey(["economy"]) ?? "metric_economy"
-                let approvalKey = findMetricKey(["approval"]) ?? "metric_approval"
                 let economyJitter = (Double.random(in: 0...1) * 0.11) - 0.055
-                let approvalJitter = (Double.random(in: 0...1) * 0.09) - 0.045
                 if relationsChange < 0 {
                     secondary[economyKey] = (secondary[economyKey] ?? 0) + relationsChange * (0.2 + economyJitter * 0.1)
-                    secondary[approvalKey] = (secondary[approvalKey] ?? 0) + relationsChange * (0.12 + approvalJitter * 0.1)
                 } else {
                     secondary[economyKey] = (secondary[economyKey] ?? 0) + relationsChange * (0.15 + economyJitter * 0.1)
-                    secondary[approvalKey] = (secondary[approvalKey] ?? 0) + relationsChange * (0.08 + approvalJitter * 0.1)
                 }
             }
         }
-        
+
         if let economyKey = findMetricKey(["economy"]) {
             let economyChange = primaryEffects[economyKey] ?? 0
             if abs(economyChange) > 2 {
-                let approvalKey = findMetricKey(["approval"]) ?? "metric_approval"
                 let controlKey = findMetricKey(["order", "control", "public"]) ?? "metric_public_order"
-                let approvalJitter = (Double.random(in: 0...1) * 0.12) - 0.06
                 let controlJitter = (Double.random(in: 0...1) * 0.1) - 0.05
-                secondary[approvalKey] = (secondary[approvalKey] ?? 0) + economyChange * (0.15 + approvalJitter * 0.1)
                 if economyChange > 0 {
                     secondary[controlKey] = (secondary[controlKey] ?? 0) + economyChange * (0.08 + controlJitter * 0.1)
                 } else {
@@ -221,28 +237,13 @@ class ScoringEngine {
                 }
             }
         }
-        
-        if let controlKey = findMetricKey(["control", "order", "public"]) {
-            let controlChange = primaryEffects[controlKey] ?? 0
-            if abs(controlChange) > 2 {
-                let approvalKey = findMetricKey(["approval"]) ?? "metric_approval"
-                let approvalJitter = (Double.random(in: 0...1) * 0.14) - 0.07
-                let multiplier = controlChange > 0 ? (0.12 + approvalJitter * 0.1) : (0.2 + approvalJitter * 0.1)
-                secondary[approvalKey] = (secondary[approvalKey] ?? 0) + controlChange * multiplier
-            }
-        }
-        
+
         if let healthKey = findMetricKey(["health"]) {
             let healthChange = primaryEffects[healthKey] ?? 0
-            if abs(healthChange) > 2 {
-                let approvalKey = findMetricKey(["approval"]) ?? "metric_approval"
+            if healthChange < -2 {
                 let economyKey = findMetricKey(["economy"]) ?? "metric_economy"
-                let approvalJitter = (Double.random(in: 0...1) * 0.08) - 0.04
                 let economyJitter = (Double.random(in: 0...1) * 0.11) - 0.055
-                secondary[approvalKey] = (secondary[approvalKey] ?? 0) + healthChange * (0.1 + approvalJitter * 0.1)
-                if healthChange < 0 {
-                    secondary[economyKey] = (secondary[economyKey] ?? 0) + healthChange * (0.15 + economyJitter * 0.1)
-                }
+                secondary[economyKey] = (secondary[economyKey] ?? 0) + healthChange * (0.15 + economyJitter * 0.1)
             }
         }
         
@@ -277,6 +278,26 @@ class ScoringEngine {
                         remainingDuration: effect.duration
                     )
                     newState.activeEffects.append(activeEffect)
+
+                    let rawMagnitude = abs(effect.value)
+                    if rawMagnitude >= 1.5 {
+                        newState.activeEffects.append(ActiveEffect(
+                            baseEffect: Effect(targetMetricId: effect.targetMetricId, value: normalizedValue * 0.55, duration: 1, probability: 1.0, delay: 1),
+                            remainingDuration: 1
+                        ))
+                    }
+                    if rawMagnitude >= 3.0 {
+                        newState.activeEffects.append(ActiveEffect(
+                            baseEffect: Effect(targetMetricId: effect.targetMetricId, value: normalizedValue * 0.28, duration: 1, probability: 1.0, delay: 2),
+                            remainingDuration: 1
+                        ))
+                    }
+                    if rawMagnitude >= 5.0 {
+                        newState.activeEffects.append(ActiveEffect(
+                            baseEffect: Effect(targetMetricId: effect.targetMetricId, value: normalizedValue * 0.12, duration: 1, probability: 1.0, delay: 3),
+                            remainingDuration: 1
+                        ))
+                    }
                 }
             }
         } else if let effectsMap = option.effectsMap {
@@ -290,6 +311,19 @@ class ScoringEngine {
                     remainingDuration: 1
                 )
                 newState.activeEffects.append(activeEffect)
+                let rawMag = abs(value)
+                if rawMag >= 1.5 {
+                    newState.activeEffects.append(ActiveEffect(
+                        baseEffect: Effect(targetMetricId: targetId, value: normalizedValue * 0.55, duration: 1, probability: 1.0, delay: 1),
+                        remainingDuration: 1
+                    ))
+                }
+                if rawMag >= 3.0 {
+                    newState.activeEffects.append(ActiveEffect(
+                        baseEffect: Effect(targetMetricId: targetId, value: normalizedValue * 0.28, duration: 1, probability: 1.0, delay: 2),
+                        remainingDuration: 1
+                    ))
+                }
             }
 
             let secondary = deriveSecondaryImpacts(primaryEffects)
@@ -496,7 +530,7 @@ class ScoringEngine {
         }
         
         let metricDeltaItems: [MetricDelta] = metricDeltas
-            .filter { abs($0.value) > 0.5 }
+            .filter { abs($0.value) >= 0.1 }
             .sorted { abs($0.value) > abs($1.value) }
             .prefix(6)
             .map { metricId, delta in
@@ -973,20 +1007,249 @@ class ScoringEngine {
         }
         newState.metricHistory["metric_approval"]?.append(newState.metrics["metric_approval"] ?? INITIAL_METRIC_VALUE)
 
-        // Accumulate hidden metrics from canonical secondary impact rules
-        var hidden = newState.hiddenMetrics ?? [:]
-        let employment = newState.metrics["metric_employment"] ?? 50.0
-        let inflation  = newState.metrics["metric_inflation"]  ?? 30.0
-        let corruption = newState.metrics["metric_corruption"] ?? 25.0
-        if employment < 40 {
-            hidden["unrest"] = min(100, (hidden["unrest"] ?? 0) + 2)
-        }
-        if inflation > 70 {
-            hidden["unrest"] = min(100, (hidden["unrest"] ?? 0) + 1)
-        }
+        // ── Organic Metric Drift ───────────────────────────────────────────────────
+        // Continuous cross-metric coupling applied every turn after active effects.
+        // All metric values are snapshotted before any drift is written to prevent
+        // cascading reads within a single turn. Magnitudes are calibrated to be
+        // background pressure — scenarios and player decisions remain the primary driver.
+        let economy          = newState.metrics["metric_economy"]           ?? INITIAL_METRIC_VALUE
+        let inflation        = newState.metrics["metric_inflation"]         ?? INITIAL_METRIC_VALUE
+        let publicOrder      = newState.metrics["metric_public_order"]      ?? INITIAL_METRIC_VALUE
+        let corruption       = newState.metrics["metric_corruption"]        ?? INITIAL_METRIC_VALUE
+        let foreignRelations = newState.metrics["metric_foreign_relations"] ?? INITIAL_METRIC_VALUE
+        let crime            = newState.metrics["metric_crime"]             ?? INITIAL_METRIC_VALUE
+        let unrest           = newState.metrics["metric_unrest"]            ?? INITIAL_METRIC_VALUE
+        let equality         = newState.metrics["metric_equality"]          ?? INITIAL_METRIC_VALUE
+        let foreignInfluence = newState.metrics["metric_foreign_influence"] ?? INITIAL_METRIC_VALUE
+        let housing          = newState.metrics["metric_housing"]           ?? INITIAL_METRIC_VALUE
+        let liberty          = newState.metrics["metric_liberty"]           ?? INITIAL_METRIC_VALUE
+        let democracy        = newState.metrics["metric_democracy"]         ?? INITIAL_METRIC_VALUE
+        let innovation       = newState.metrics["metric_innovation"]        ?? INITIAL_METRIC_VALUE
+        let energyVal        = newState.metrics["metric_energy"]            ?? INITIAL_METRIC_VALUE
+        let budget           = newState.metrics["metric_budget"]            ?? INITIAL_METRIC_VALUE
+        let military         = newState.metrics["metric_military"]          ?? INITIAL_METRIC_VALUE
+        let employment       = newState.metrics["metric_employment"]        ?? INITIAL_METRIC_VALUE
+        let trade            = newState.metrics["metric_trade"]             ?? INITIAL_METRIC_VALUE
+        let infra            = newState.metrics["metric_infrastructure"]    ?? INITIAL_METRIC_VALUE
+
+        // ── UNREST ──────────────────────────────────────────────────────────────
+        // Thresholds at 40 (not 30/35) so cascade becomes visible in medium games.
+        // Each driver adds a scaled increment; decay fires only when no drivers are active.
+        var unrestDrift = 0.0
+        if publicOrder < 40  { unrestDrift += 1.5 }
+        if inflation > 70    { unrestDrift += 0.75 }
+        if economy < 35      { unrestDrift += 0.5 }
+        if housing < 40      { unrestDrift += (40 - housing) * 0.015 }   // max ~0.6 at housing=0
+        if equality < 40     { unrestDrift += (40 - equality) * 0.010 }  // max ~0.4 at equality=0
+        if unrestDrift == 0  { unrestDrift = -0.75 }
+        newState.metrics["metric_unrest"] = clampMetricInt(unrest + unrestDrift)
+
+        // ── LIBERTY ─────────────────────────────────────────────────────────────
+        // Corruption captures institutions. Liberty below 35 erodes democracy (authoritarian loop).
         if corruption > 60 {
             let current = newState.metrics["metric_liberty"] ?? INITIAL_METRIC_VALUE
-            newState.metrics["metric_liberty"] = clampMetricInt(current - 1)
+            newState.metrics["metric_liberty"] = clampMetricInt(current - 1.0)
+        }
+
+        // ── DEMOCRACY ───────────────────────────────────────────────────────────
+        // Restricted liberty → democratic backsliding. Low democracy → corruption grows.
+        if liberty < 35 {
+            let democracyDrag = (35 - liberty) * 0.015
+            let current = newState.metrics["metric_democracy"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_democracy"] = clampMetricInt(current - democracyDrag)
+        }
+        if democracy < 35 {
+            let corruptionGrowth = (35 - democracy) * 0.015
+            let current = newState.metrics["metric_corruption"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_corruption"] = clampMetricInt(current + corruptionGrowth)
+        }
+
+        // ── ECONOMY ─────────────────────────────────────────────────────────────
+        // Drags from: diplomatic isolation, corruption, disorder, hyperinflation.
+        // Slow boost from: innovation compounding (R&D lag), strong trade partnerships.
+        var ecoDrift = 0.0
+        if foreignRelations < 35 { ecoDrift -= (35 - foreignRelations) * 0.02 }
+        if corruption > 55       { ecoDrift -= (corruption - 55) * 0.025 }
+        if publicOrder < 35      { ecoDrift -= (35 - publicOrder) * 0.02 }
+        if inflation > 75        { ecoDrift -= (inflation - 75) * 0.02 }
+        if innovation > 65       { ecoDrift += (innovation - 65) * 0.003 }  // long-lag R&D payoff
+        if ecoDrift != 0 {
+            let current = newState.metrics["metric_economy"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_economy"] = clampMetricInt(current + ecoDrift)
+        }
+
+        // ── INFLATION ───────────────────────────────────────────────────────────
+        // Demand-pull from overheating economy (0.025 — raised from 0.007 so populist
+        // economics show inflation consequences within ~30-40 turns in medium games).
+        // Energy crisis is a primary supply-shock inflation driver.
+        var inflationDrift = 0.0
+        if economy > 65 { inflationDrift += (economy - 65) * 0.025 }  // demand-pull
+        if economy < 35 { inflationDrift -= (35 - economy) * 0.008 }  // demand collapse → deflation
+        if energyVal < 35 { inflationDrift += (35 - energyVal) * 0.015 }  // supply-shock
+        if inflationDrift != 0 {
+            let current = newState.metrics["metric_inflation"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_inflation"] = clampMetricInt(current + inflationDrift)
+        }
+
+        // ── ECONOMIC BUBBLE ─────────────────────────────────────────────────────
+        // Overheating economy and easy-money inflation both build systemic risk.
+        // Cools slowly when economy is at moderate levels (no overheating, no crisis).
+        var bubbleDrift = 0.0
+        if economy > 70   { bubbleDrift += (economy - 70) * 0.04 }   // rapid growth → asset inflation
+        if inflation > 55 { bubbleDrift += (inflation - 55) * 0.025 }  // loose money fuels speculation
+        if economy < 55 && inflation < 55 { bubbleDrift -= 0.4 }       // gradual deflation when cool
+        if bubbleDrift != 0 {
+            let current = newState.metrics["metric_economic_bubble"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_economic_bubble"] = clampMetricInt(current + bubbleDrift)
+        }
+
+        // ── PUBLIC ORDER ────────────────────────────────────────────────────────
+        var orderDrift = 0.0
+        if unrest > 50 { orderDrift -= (unrest - 50) * 0.025 }
+        if crime > 65  { orderDrift -= (crime - 65) * 0.025 }
+        if orderDrift != 0 {
+            let current = newState.metrics["metric_public_order"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_public_order"] = clampMetricInt(current + orderDrift)
+        }
+
+        // ── HOUSING ─────────────────────────────────────────────────────────────
+        // Economic stress erodes housing affordability and maintenance investment.
+        // This seeds the housing → equality → crime → unrest cascade in neglect scenarios.
+        if economy < 45 {
+            let housingDrag = (45 - economy) * 0.012
+            let current = newState.metrics["metric_housing"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_housing"] = clampMetricInt(current - housingDrag)
+        }
+
+        // ── CRIME ───────────────────────────────────────────────────────────────
+        // Thresholds lowered to 45/40 so inequality/housing pressures manifest in medium games.
+        var crimeDrift = 0.0
+        if equality < 45 { crimeDrift += (45 - equality) * 0.015 }
+        if housing < 40  { crimeDrift += (40 - housing) * 0.012 }
+        if crimeDrift != 0 {
+            let current = newState.metrics["metric_crime"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_crime"] = clampMetricInt(current + crimeDrift)
+        }
+
+        // ── EQUALITY ────────────────────────────────────────────────────────────
+        // Housing affordability collapse widens wealth gap. Threshold lowered to 40.
+        if housing < 40 {
+            let equalityDrag = (40 - housing) * 0.015
+            let current = newState.metrics["metric_equality"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_equality"] = clampMetricInt(current - equalityDrag)
+        }
+
+        // ── FOREIGN RELATIONS ───────────────────────────────────────────────────
+        var frDrift = 0.0
+        if corruption > 60 { frDrift -= (corruption - 60) * 0.02 }
+        if unrest > 65     { frDrift -= (unrest - 65) * 0.02 }
+        if frDrift != 0 {
+            let current = newState.metrics["metric_foreign_relations"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_foreign_relations"] = clampMetricInt(current + frDrift)
+        }
+
+        // ── SOVEREIGNTY ─────────────────────────────────────────────────────────
+        if foreignInfluence > 60 {
+            let sovDrag = (foreignInfluence - 60) * 0.02
+            let current = newState.metrics["metric_sovereignty"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_sovereignty"] = clampMetricInt(current - sovDrag)
+        }
+
+        // ── HEALTH ──────────────────────────────────────────────────────────────
+        // Strong economy slowly improves health investment (long lag). Economic collapse
+        // starves healthcare funding — the reverse effect fires below threshold 35.
+        let currentHealth = newState.metrics["metric_health"] ?? INITIAL_METRIC_VALUE
+        if economy > 65 {
+            newState.metrics["metric_health"] = clampMetricInt(currentHealth + (economy - 65) * 0.005)
+        } else if economy < 35 {
+            newState.metrics["metric_health"] = clampMetricInt(currentHealth - (35 - economy) * 0.010)
+        }
+
+        // ── EMPLOYMENT ────────────────────────────────────────────────────────
+        // Tracks GDP with a lag (Okun's Law). Innovation displaces jobs short-term.
+        var employmentDrift = 0.0
+        if economy > 60 { employmentDrift += (economy - 60) * 0.012 }
+        if economy < 40 { employmentDrift -= (40 - economy) * 0.018 }
+        if innovation > 70 { employmentDrift -= (innovation - 70) * 0.005 }
+        if employmentDrift != 0 {
+            let current = newState.metrics["metric_employment"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_employment"] = clampMetricInt(current + employmentDrift)
+        }
+
+        // ── BUDGET ────────────────────────────────────────────────────────────
+        // Revenue depends on economic health; high military spending drains fiscal space.
+        var budgetDrift = 0.0
+        if economy > 60 { budgetDrift += (economy - 60) * 0.010 }
+        if economy < 40 { budgetDrift -= (40 - economy) * 0.015 }
+        if military > 70 { budgetDrift -= (military - 70) * 0.008 }
+        if budgetDrift != 0 {
+            let current = newState.metrics["metric_budget"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_budget"] = clampMetricInt(current + budgetDrift)
+        }
+
+        // ── TRADE ─────────────────────────────────────────────────────────────
+        // Diplomatic isolation hurts trade; strong diplomacy opens markets.
+        var tradeDrift = 0.0
+        if foreignRelations < 35 { tradeDrift -= (35 - foreignRelations) * 0.015 }
+        if foreignRelations > 65 { tradeDrift += (foreignRelations - 65) * 0.008 }
+        if economy < 35 { tradeDrift -= (35 - economy) * 0.010 }
+        if tradeDrift != 0 {
+            let current = newState.metrics["metric_trade"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_trade"] = clampMetricInt(current + tradeDrift)
+        }
+
+        // ── INFRASTRUCTURE ────────────────────────────────────────────────────
+        // Degrades without budget funding. Already-poor infra accelerates decay
+        // (deferred maintenance costs grow nonlinearly).
+        var infraDrift = 0.0
+        if budget < 40 { infraDrift -= (40 - budget) * 0.010 }
+        if economy < 35 { infraDrift -= (35 - economy) * 0.008 }
+        if infra < 35 { infraDrift -= 0.3 }
+        if infraDrift != 0 {
+            let current = newState.metrics["metric_infrastructure"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_infrastructure"] = clampMetricInt(current + infraDrift)
+        }
+
+        // ── EDUCATION ─────────────────────────────────────────────────────────
+        // Requires sustained funding — degrades slowly without it.
+        var educationDrift = 0.0
+        if budget < 35 { educationDrift -= (35 - budget) * 0.008 }
+        if economy > 65 { educationDrift += (economy - 65) * 0.003 }
+        if educationDrift != 0 {
+            let current = newState.metrics["metric_education"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_education"] = clampMetricInt(current + educationDrift)
+        }
+
+        // ── IMMIGRATION ───────────────────────────────────────────────────────
+        // Economic magnet and open society attract; unrest creates backlash.
+        var immigrationDrift = 0.0
+        if economy > 65 { immigrationDrift += (economy - 65) * 0.006 }
+        if economy < 35 { immigrationDrift -= (35 - economy) * 0.008 }
+        if liberty > 65 { immigrationDrift += (liberty - 65) * 0.004 }
+        if unrest > 55 { immigrationDrift -= (unrest - 55) * 0.008 }
+        if immigrationDrift != 0 {
+            let current = newState.metrics["metric_immigration"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_immigration"] = clampMetricInt(current + immigrationDrift)
+        }
+
+        // ── ENVIRONMENT ───────────────────────────────────────────────────────
+        // Growth without green policy degrades environment (Environmental Kuznets Curve).
+        // Energy policy and innovation directly affect environmental outcomes.
+        var envDrift = 0.0
+        if economy > 70 { envDrift -= (economy - 70) * 0.008 }
+        if energyVal < 40 { envDrift -= (40 - energyVal) * 0.006 }
+        if innovation > 70 { envDrift += (innovation - 70) * 0.004 }
+        if envDrift != 0 {
+            let current = newState.metrics["metric_environment"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_environment"] = clampMetricInt(current + envDrift)
+        }
+
+        // ── DIPLOMATIC SHOCK DECAY ──────────────────────────────────────────────
+        // 45% per-turn decay. Cleared when |shock| < 0.2.
+        var hidden = newState.hiddenMetrics ?? [:]
+        if let shock = hidden["diplomaticShock"], abs(shock) > 0.1 {
+            let decayed = shock * 0.55
+            hidden["diplomaticShock"] = abs(decayed) > 0.2 ? decayed : nil
         }
         newState.hiddenMetrics = hidden
 
@@ -1009,30 +1272,114 @@ class ScoringEngine {
     }
     
     static func calculateApproval(_ state: inout GameState) {
-        let coreMetrics = state.metrics.filter { $0.key != "metric_approval" && $0.key != "metric_corruption" }
-        if coreMetrics.isEmpty { return }
+        // Two-tier approval model grounded in political science research
+        // (Hibbs "Bread and Peace", Fiorina retrospective voting, Mueller rally effects).
+        //
+        // Tier 1 — Core public-facing drivers. Weights sum to 1.0.
+        // Economy remains dominant (Hibbs "Bread and Peace") but reduced from 0.38
+        // to 0.30 now that employment is tracked independently rather than proxied.
+        // Employment added at 0.14 — top-3 voter concern per Okun's misery index.
+        let coreWeights: [(key: String, weight: Double)] = [
+            ("metric_economy",      0.30),
+            ("metric_inflation",    0.20),  // inverse
+            ("metric_employment",   0.14),
+            ("metric_health",       0.14),
+            ("metric_public_order", 0.12),
+            ("metric_crime",        0.10),  // inverse
+        ]
 
-        let adjustedSum = coreMetrics.reduce(0.0) { acc, entry in
-            acc + (isInverseMetric(entry.key) ? (100 - entry.value) : entry.value)
+        var coreSum = 0.0
+        var coreTotal = 0.0
+        for entry in coreWeights {
+            let value = state.metrics[entry.key] ?? 50.0
+            let adjusted = isInverseMetric(entry.key) ? (100 - value) : value
+            coreSum += adjusted * entry.weight
+            coreTotal += entry.weight
         }
-        var avg = adjustedSum / Double(coreMetrics.count)
-        
+        // Compress tier 1 deviation from neutral by 0.5.
+        // A weighted average of all core metrics at ~65 (well-governed country) otherwise
+        // compounds to ~78% approval before tier 2 — historically unprecedented as a starting
+        // position. Compression maps "strong country" → ~58–65%, "exceptional country" → ~70–75%,
+        // matching sustained real-world approval ranges for leaders who inherit good conditions.
+        let rawBase = coreTotal > 0 ? coreSum / coreTotal : 50.0
+        var base = 50.0 + (rawBase - 50.0) * 0.5
+
+        // Tier 2 — Secondary pressures. Each metric's deviation from neutral (50)
+        // pushes approval up or down. Total contribution capped at ±20, then compressed by 0.5.
+        // Housing, environment, and infrastructure added as growing voter concerns.
+        let secondaryFactors: [(key: String, factor: Double)] = [
+            ("metric_unrest",            0.12),  // inverse — civil disorder signal
+            ("metric_foreign_relations", 0.12),  // diplomatic standing
+            ("metric_equality",          0.09),  // wealth distribution
+            ("metric_housing",           0.08),  // affordability is a core daily concern
+            ("metric_liberty",           0.07),  // ideologically polarized, dampened net impact
+            ("metric_foreign_influence", 0.06),  // inverse — election interference, cyber
+            ("metric_economic_bubble",   0.06),  // inverse — systemic financial risk
+            ("metric_environment",       0.06),  // growing climate salience
+            ("metric_military",          0.05),  // peacetime baseline
+            ("metric_bureaucracy",       0.04),  // inverse — chronic frustration
+            ("metric_innovation",        0.04),  // longest lag; R&D felt years later
+            ("metric_infrastructure",    0.04),  // visible quality of life impact
+        ]
+
+        var secondaryPressure = 0.0
+        for entry in secondaryFactors {
+            let value = state.metrics[entry.key] ?? 50.0
+            let adjusted = isInverseMetric(entry.key) ? (100 - value) : value
+            secondaryPressure += (adjusted - 50.0) * entry.factor
+        }
+        base += max(-20.0, min(20.0, secondaryPressure)) * 0.5
+
+        // Player trait modifiers
         if let playerStats = state.player?.stats {
             let compassionBase = (playerStats.compassion - 50) * 0.15
             let integrityBase = (playerStats.integrity - 50) * 0.1
             let compassionJitter = (Double.random(in: 0...1) * 0.06) - 0.03
             let integrityJitter = (Double.random(in: 0...1) * 0.04) - 0.02
-            avg += (compassionBase + compassionJitter + integrityBase + integrityJitter)
+            base += (compassionBase + compassionJitter + integrityBase + integrityJitter)
         }
-        
+
+        // Corruption penalty — nonlinear threshold effect, applied separately.
+        // Below 40: within tolerance, no penalty. Above 40: each point costs 0.45 approval.
+        // Reflects research showing minor ethics issues are tolerated but major scandals
+        // (Watergate, Lewinsky) cause catastrophic nonlinear approval collapses.
         let corruption = state.metrics["metric_corruption"] ?? 0
         if corruption > 40 {
-            let corruptionPenalty = (corruption - 40) * 0.5
+            let corruptionPenalty = (corruption - 40) * 0.45
             let penaltyJitter = (Double.random(in: 0...1) * 0.05) - 0.025
-            avg -= (corruptionPenalty + penaltyJitter)
+            base -= (corruptionPenalty + penaltyJitter) * 0.5
         }
-        
-        state.metrics["metric_approval"] = clampMetricInt(avg)
+
+        // Foreign relations nonlinear threshold — below 35 is diplomatic collapse territory.
+        // Each point below 35 adds an extra 0.30 penalty beyond the secondary factor contribution.
+        // At 29: (35-29)*0.30 = 1.8 extra points → combined with secondary factor gives ~5-7 total
+        // approval drag, which better reflects real political cost of diplomatic isolation.
+        let foreignRelations = state.metrics["metric_foreign_relations"] ?? 50
+        if foreignRelations < 35 {
+            let foreignPenalty = (35 - foreignRelations) * 0.30
+            let fJitter = (Double.random(in: 0...1) * 0.04) - 0.02
+            base -= (foreignPenalty + fJitter) * 0.5
+        }
+
+        // Diplomatic/military shock — persistent approval pressure from hostile diplomatic or
+        // military actions (e.g. attacking an ally), accumulated in hiddenMetrics["diplomaticShock"]
+        // and decaying 45% per turn. Prevents calculateApproval() from fully erasing the political
+        // cost of aggressive foreign policy between scenario turns.
+        if let shock = state.hiddenMetrics?["diplomaticShock"], abs(shock) > 0.1 {
+            base += max(-20.0, min(20.0, shock)) * 0.5
+        }
+
+        // Political saturation — sustained approval above ~80 is historically exceptional.
+        // High approval attracts opposition coalitions, press scrutiny, and rising expectations.
+        // Compression above 80 asymptotically caps the ceiling around 88–90 for any governance
+        // profile, matching historical peaks (Bush post-9/11 ~90%, sustained ~85% is extraordinary).
+        // Without this, consistently positive metric states compound toward 100 over long games.
+        if base > 80 {
+            let excess = base - 80
+            base = 80 + excess * 0.55
+        }
+
+        state.metrics["metric_approval"] = clampMetricInt(base)
     }
 
     // MARK: - End Game Review
@@ -1128,7 +1475,10 @@ class ScoringEngine {
             changeThresholdBase = -1.0
         }
 
-        if Double(finalApproval) >= Double(75 + approvalThresholdBase) && averageChange >= (5 + changeThresholdBase) {
+        if finalApproval < 30 {
+            performanceGrade = "COLLAPSE"
+            overallAssessment = "Complete systemic failure. The administration lost all public confidence and control, leading to immediate termination of the term."
+        } else if Double(finalApproval) >= Double(75 + approvalThresholdBase) && averageChange >= (5 + changeThresholdBase) {
             performanceGrade = "A"
             overallAssessment = "Exceptional leadership characterized by sustained improvements across multiple domains. The administration demonstrated remarkable consistency and strategic vision."
         } else if Double(finalApproval) >= Double(65 + approvalThresholdBase) && averageChange >= (2 + changeThresholdBase) {
@@ -1140,12 +1490,29 @@ class ScoringEngine {
         } else if Double(finalApproval) >= Double(40 + approvalThresholdBase) && averageChange >= (-5 + changeThresholdBase) {
             performanceGrade = "D"
             overallAssessment = "Challenging term marked by declining metrics and eroding public trust. The administration faced significant headwinds and struggled to maintain control."
-        } else if finalApproval < 30 {
-            performanceGrade = "COLLAPSE"
-            overallAssessment = "Complete systemic failure. The administration lost all public confidence and control, leading to immediate termination of the term."
+        } else if finalApproval >= 30 && averageChange >= 3 {
+            performanceGrade = "D"
+            overallAssessment = "The administration ended with low public confidence but showed meaningful improvement across key policy areas, suggesting a late-term recovery trajectory not yet reflected in public opinion."
         } else {
             performanceGrade = "F"
             overallAssessment = "Catastrophic performance with widespread deterioration across critical systems. The administration failed to address fundamental challenges."
+        }
+
+        // Status-aware grade cap: removal or resignation cannot produce a passing grade.
+        switch state.status {
+        case .impeached:
+            if performanceGrade == "A" || performanceGrade == "B" || performanceGrade == "C" { performanceGrade = "F" }
+            overallAssessment = "The administration was removed from office by the legislature. Systemic failures across core governance domains eroded the mandate to govern before the term concluded."
+        case .resigned:
+            let termFraction = state.maxTurns > 0 ? Double(state.turn) / Double(state.maxTurns) : 0
+            if termFraction < 0.5 {
+                if performanceGrade == "A" || performanceGrade == "B" || performanceGrade == "C" { performanceGrade = "D" }
+                overallAssessment = "The administration chose to resign before the midpoint of its term, citing irreconcilable political pressures. An early voluntary exit preserves institutional order, though the policy record remains incomplete."
+            } else {
+                overallAssessment = "The administration tendered resignation in the final half of its term. The policy record stands on its own merits against the full scope of decisions made."
+            }
+        default:
+            break
         }
 
         var achievements: [EndGameAchievement] = []
@@ -1236,8 +1603,19 @@ class ScoringEngine {
 
         keyDecisions.sort { $0.turn < $1.turn }
 
-        let title = performanceGrade == "COLLAPSE" ? "TERM COLLAPSE BRIEFING" : "END OF TERM REVIEW"
-        let description = "Summary briefing generated at the conclusion of the administration's term, combining metric performance, cabinet actions, and key strategic decisions."
+        let title: String
+        let description: String
+        switch state.status {
+        case .impeached:
+            title = "REMOVAL FROM OFFICE"
+            description = "Briefing generated following the legislature's vote to remove the administration from office. Metric performance, cabinet record, and key decisions are archived for the historical record."
+        case .resigned:
+            title = "RESIGNATION OF OFFICE"
+            description = "Briefing generated following the administration's formal resignation. Metric performance, cabinet record, and key decisions are archived for the historical record."
+        default:
+            title = performanceGrade == "COLLAPSE" ? "TERM COLLAPSE BRIEFING" : "END OF TERM REVIEW"
+            description = "Summary briefing generated at the conclusion of the administration's term, combining metric performance, cabinet actions, and key strategic decisions."
+        }
 
         return EndGameReview(
             title: title,

@@ -8,14 +8,15 @@
 
 ## 1. Design Philosophy
 
-The Administration uses a **presidential command authority** aesthetic: deep blue, gold, and white on pure black. The visual language conveys institutional weight, precision, and authority — not consumer-app approachability.
+The Administration uses a **monochrome command authority** aesthetic: white and gray on pure black. The visual language conveys institutional weight, precision, and authority — not consumer-app approachability.
 
 **Defaults:**
-- Default identity: **Statesman** (blue `#1969DC` + gold `#D4AA2C`)
+- Palette: monochrome grayscale — no colored accent themes
 - Background: pure black (`#000000`) with minimal elevation steps
 - Text: white hierarchy (100% / 70% / 50% opacity)
-- Cards: near-invisible white fill (`white.opacity(0.04–0.05)`), no shadows
+- Cards: white fill (`white.opacity(0.08–0.10)`), no shadows, white outlines for contrast
 - No gradients on interactive controls (buttons are solid fills only)
+- Semantic status colors are desaturated, muted tones that complement the monochrome palette
 - All metric and status color via semantic tokens — never hardcoded
 
 **Principles:**
@@ -44,49 +45,32 @@ The Administration uses a **presidential command authority** aesthetic: deep blu
 
 ### 2.2 Semantic Status Colors
 
-| Token | Value | Hex | Use |
-|---|---|---|---|
-| `success` | `Color(red: 0.059, green: 0.871, blue: 0.604)` | `#0FDF9C` | Positive outcomes, healthy metrics |
-| `warning` | `Color(red: 1.0, green: 0.584, blue: 0.098)` | `#FF9519` | Caution, low-range metrics |
-| `error` | `Color(red: 0.996, green: 0.278, blue: 0.235)` | `#FE473C` | Critical, failures |
-| `info` | `Color(red: 0.098, green: 0.612, blue: 1.0)` | `#199CFF` | Informational |
+Muted, sophisticated tones that provide clear data differentiation while complementing the monochrome base. These are the only chromatic colors in the system — used for gauges, metric values, severity badges, and status indicators.
 
-### 2.3 Accent Colors (theme-adaptive)
+| Token | Value | Use |
+|---|---|---|
+| `success` | `Color(0.40, 0.78, 0.68)` — seafoam | Positive outcomes, healthy metrics (40–70) |
+| `warning` | `Color(0.85, 0.72, 0.40)` — honey | Caution, low-range metrics (20–40) |
+| `error` | `Color(0.85, 0.45, 0.40)` — coral | Critical, failures, metrics < 20 |
+| `info` | `Color(0.45, 0.65, 0.82)` — steel | Informational, high-range metrics (70+) |
 
-Accent colors resolve at runtime through `ThemeManager.shared.current`:
+### 2.3 Accent Colors (fixed grayscale)
 
-```swift
-static var accentPrimary: Color { ThemeManager.shared.current.accentPrimary }
-static var accentSecondary: Color { ThemeManager.shared.current.accentSecondary }
-static var accentTertiary: Color { ThemeManager.shared.current.accentTertiary }
-static var accentMuted: Color { ThemeManager.shared.current.accentMuted }
-```
-
-`accentMuted` is always `accentPrimary.opacity(0.15)`.
-
-### 2.4 The 5 Themes (`AppTheme`)
-
-| Theme | ID | Primary | Secondary | Tertiary |
-|---|---|---|---|---|
-| **Statesman** *(default)* | `aurora_command` | `#1969DC` deep blue | `#D4AA2C` gold | `#4C8EEB` lighter blue |
-| **Gold & Blue** | `gold_standard` | `#D4AA2C` gold | `#3B82F6` blue | `#F0CF60` pale gold |
-| **Royal Blue** | `cerulean_command` | `#1969DC` deep blue | `#D4AA2C` gold | `#96BAF9` pale steel blue |
-| **Crimson** | `crimson_authority` | `#DC3232` red | `#D4AA2C` gold | `#FA807A` pale red |
-| **Monochrome** | `operative_green` | `white×0.90` | `white×0.60` | `white×0.75` |
-
-Theme definitions in `AppTheme.swift`. All shipped themes use the same dark base — only the accent palette changes.
-
-### 2.5 ThemeManager
+Accent colors are fixed grayscale values — no runtime theme switching.
 
 ```swift
-// Read the active theme
-let primary = AppColors.accentPrimary  // resolves through ThemeManager.shared.current
-
-// Switch themes
-ThemeManager.shared.setTheme(.goldStandard)
+static let accentPrimary = Color(white: 0.90)
+static let accentSecondary = Color(white: 0.60)
+static let accentTertiary = Color(white: 0.75)
+static let accentMuted = Color(white: 0.90).opacity(0.15)
 ```
 
-`ThemeManager` is an `ObservableObject` singleton. It persists the selection to `UserDefaults` under key `"app_theme_id"`, defaulting to `"aurora_command"`.
+| Token | Value | Use |
+|---|---|---|
+| `accentPrimary` | `white×0.90` | Primary interactive elements, active states, CTA buttons |
+| `accentSecondary` | `white×0.60` | Secondary accents, supporting elements |
+| `accentTertiary` | `white×0.75` | Tertiary accents, gradient stops |
+| `accentMuted` | `white×0.90 @ 15%` | Subtle backgrounds, disabled states |
 
 ### 2.6 Metric Color Helper
 
@@ -95,8 +79,8 @@ static func metricColor(for value: CGFloat) -> Color {
     switch value {
     case 0...20:   return metricCritical  // error
     case 20..<40:  return metricLow       // warning
-    case 40..<70:  return metricHealthy   // success
-    default:       return metricHigh      // accentTertiary
+    case 40..<70:  return metricHealthy   // success (muted sage)
+    default:       return metricHigh      // info (muted steel)
     }
 }
 ```
@@ -282,7 +266,7 @@ No gradients on buttons. All styles apply `.scaleEffect(0.97)` on press via `App
 
 ### `CommandButtonStyle` — primary CTA
 
-Full-width, solid `accentPrimary` fill, black text with 1pt letter-spacing. `isEnabled: Bool = true` parameter — disabled state uses `foregroundSubtle.opacity(0.3)` fill. Medium haptic.
+Full-width, solid white (`0.90`) fill, black text with 1pt letter-spacing. `isEnabled: Bool = true` parameter — disabled state uses `foregroundSubtle.opacity(0.3)` fill. Medium haptic.
 
 ```swift
 Button("Confirm Order") { }
@@ -296,19 +280,19 @@ Button("Submit") { }
 
 ### `SecondaryButtonStyle` — flat secondary
 
-`white.opacity(0.06)` fill, white foreground. Border visible only on press (`white.opacity(0.12)`). Light haptic.
+`white.opacity(0.10)` fill, white foreground. Border visible only on press (`white.opacity(0.18)`). Light haptic.
 
 - Corner radius: 10 | Padding: vertical 12, horizontal 16 | Label: 14pt medium tracking 0.5
 
 ### `TacticalButtonStyle` — contextual secondary
 
-`white.opacity(0.08)` fill, white foreground, no border overlay. Light haptic.
+`white.opacity(0.12)` fill, white foreground, no border overlay. Light haptic.
 
 - Corner radius: 12 | Padding: vertical 12, horizontal 16 | Label: 14pt medium
 
 ### `AccentButtonStyle` — inline accent
 
-Solid `accentPrimary` fill, black foreground. No `isEnabled` toggle — use `CommandButtonStyle` when full-width or disabled state needed. Medium haptic.
+Solid white (`0.90`) fill, black foreground. No `isEnabled` toggle — use `CommandButtonStyle` when full-width or disabled state needed. Medium haptic.
 
 - Corner radius: 12 | Padding: vertical 12, horizontal 16 | Label: 14pt semibold
 
@@ -320,7 +304,7 @@ No background, `foregroundMuted` text, opacity 0.5 on press. No haptic.
 
 ### `OutlineButtonStyle` — flat secondary (alias)
 
-`white.opacity(0.08)` fill, white foreground. Visually identical to `TacticalButtonStyle`. Light haptic.
+`white.opacity(0.12)` fill, white foreground. Visually identical to `TacticalButtonStyle`. Light haptic.
 
 - Corner radius: 12 | Padding: vertical 12, horizontal 16 | Label: 14pt medium
 
@@ -416,7 +400,7 @@ CommandCard(title: "INTELLIGENCE BRIEF", subtitle: "Classified summary") {
 
 - Title: `label` font (12pt), uppercase, `foregroundSubtle`
 - Subtitle: `bodySmall` (14pt), `foregroundMuted`
-- Background: `white.opacity(0.05)`, cornerRadius 12
+- Background: `white.opacity(0.10)`, cornerRadius 12
 - Padding: `AppSpacing.cardPadding` (20pt)
 
 ### `MetricCard`
@@ -436,8 +420,8 @@ MetricCard(
 
 - Value: `data` font (24pt mono), `metricColor(for:)` when active else `foreground`
 - Label: `micro` (11pt), uppercase, single line `minimumScaleFactor(0.65)`
-- Mini arc: 28×28, lineWidth 3.5, track `AppColors.border`, fill AngularGradient `[accentPrimary, accentTertiary, accentSecondary]`, 270° arc from 135°
-- Background: `color.opacity(0.08)` active, `white.opacity(0.04)` inactive
+- Mini arc: 28×28, lineWidth 3.5, track `AppColors.border`, fill `LinearGradient [color.opacity(0.5), color]`, 270° arc from 135°
+- Background: `color.opacity(0.12)` active, `white.opacity(0.08)` inactive
 - Corner radius: **8** (exception — smaller than standard 12)
 - Light haptic on tap
 
@@ -529,7 +513,7 @@ Replaces the system `TabView` chrome. Rendered at the bottom of `MainTabView`.
 | 6 | System | `gear` | `gearshape.fill` |
 
 **Visual spec:**
-- Active icon: 17pt semibold, `accentPrimary`
+- Active icon: 17pt semibold, `accentPrimary` (white 0.90)
 - Inactive icon: 17pt regular, `foregroundSubtle`
 - Label: 10pt regular, matches icon color
 - Top separator: 1pt `AppColors.border`
@@ -543,7 +527,7 @@ A floating `circle.grid.2x1` game menu button is overlaid at the trailing edge o
 
 ## 11. Gauge Patterns
 
-All gauges share the same arc construction: **270° arc** (trim 0.75 of circle), starting at 135°, filled with an `AngularGradient` across the theme accent colors.
+All gauges share the same arc construction: **270° arc** (trim 0.75 of circle), starting at 135°, filled with a `LinearGradient` from the metric-specific color (via `metricColor(for:)`).
 
 ### `AnimatedCircularGraphView` — focus mode gauge
 
@@ -560,9 +544,9 @@ AnimatedCircularGraphView(
 
 - Container: 160×160 ZStack, 24pt outer padding
 - Track: `backgroundMuted`, lineWidth 10, lineCap `.round`
-- Fill: `AngularGradient(colors: [accentPrimary, accentTertiary, accentSecondary], center: .center, startAngle: 135°, endAngle: 405°)`, lineWidth 10
+- Fill: `LinearGradient(colors: [gaugeColor.opacity(0.4), gaugeColor])`, lineWidth 10, where `gaugeColor = metricColor(for:)`
 - Arc: `trim(from: 0, to: animatedValue/100 * 0.75)`, rotationEffect 135°
-- Center value: 64pt bold monospaced, color from `metricColor(for:)`, `.contentTransition(.numericText())`
+- Center value: 64pt bold monospaced, `gaugeColor`, `.contentTransition(.numericText())`
 - Center label: 15pt semibold, `foreground`
 - Center sublabel: `caption` (13pt), `foregroundSubtle`
 - Appear animation: `AppMotion.dramatic`; value change: `AppMotion.standard`
@@ -573,7 +557,7 @@ AnimatedCircularGraphView(
 
 - Arc frame: 32×32
 - Track: `AppColors.border`, lineWidth 4
-- Fill: same AngularGradient, lineWidth 4
+- Fill: `LinearGradient(colors: [color.opacity(0.5), color])`, lineWidth 4, where `color = metricColor(for:)`
 - Value: `data` font (24pt mono), `metricColor(for:)`, `.monospacedDigit()`
 - Label: `micro` (11pt), uppercase, `foregroundSubtle`
 - Cell background: `error.opacity(0.06)` when value < 25, else `white.opacity(0.04)`
@@ -582,7 +566,7 @@ AnimatedCircularGraphView(
 ### `MetricCard` mini arc
 
 - Arc frame: 28×28 | Track lineWidth: 3.5 | Fill lineWidth: 3.5
-- Same AngularGradient and arc geometry
+- Same LinearGradient and arc geometry as grid gauges
 - See Section 9 for full `MetricCard` spec
 
 ---
@@ -694,7 +678,7 @@ Text(review.performanceGrade)
 ## 13. Aesthetic Detail Rules
 
 - **Corner radius**: 12pt for cards and panels. Buttons: 10pt (`CommandButtonStyle`, `SecondaryButtonStyle`) or 12pt (all others). Grid cells and mini tiles: 8–10pt.
-- **Card fill**: `Color.white.opacity(0.04)` or `white.opacity(0.05)` for primary card surfaces. `AppColors.backgroundElevated` (`#0F0F0F`) for elevated content.
+- **Card fill**: `Color.white.opacity(0.08)` or `white.opacity(0.10)` for primary card surfaces. `AppColors.backgroundElevated` (`#0F0F0F`) for elevated content.
 - **No decorative shadows**: Cards have no drop shadows. Glow helpers exist but are used sparingly on key interactive surfaces only.
 - **No gradients on buttons**: All button fills are solid.
 - **Stroke pattern**: `Rectangle().stroke(color, lineWidth: 1)` or `.strokeBorder(color, lineWidth: 1)` on `RoundedRectangle`. Never SwiftUI's `.border()` modifier.
@@ -708,11 +692,6 @@ Text(review.performanceGrade)
 
 ## 14. Web Admin Note
 
-The web admin interface currently uses a violet accent palette (`oklch(0.60 0.25 285)`) that is **not** aligned with the iOS Statesman design system. This is a known deviation — the web interface will be updated to align with the iOS palette in a future revision.
+The web admin interface currently uses a violet accent palette that is **not** aligned with the iOS monochrome design system. This is a known deviation — the web interface will be updated to align with the iOS grayscale palette in a future revision.
 
 Do not use the web interface as a color or pattern reference. The canonical system is this document, based on the iOS source files.
-
-CSS custom properties used in the current web admin (reference only — not canonical):
-- `--color-accent`: currently violet, will change to Statesman blue
-- `--color-background`: `oklch(0.06 0 0)`
-- `--color-foreground`: `oklch(0.95 0 0)`

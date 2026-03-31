@@ -1,7 +1,3 @@
-/// PersistenceService
-/// Manages 3 independent named save slots for The Administration.
-/// Each slot stores a full GameState JSON file. Lightweight metadata
-/// (country, turn, date) is cached in UserDefaults for fast slot listing.
 import Foundation
 
 // MARK: - SaveSlotMetadata
@@ -65,7 +61,7 @@ class PersistenceService {
 
     // MARK: - Save
 
-    func save(state: GameState, to slot: Int? = nil) {
+    func save(state: GameState, to slot: Int? = nil, customName: String? = nil) {
         let targetSlot = slot ?? activeSlot
         guard let data = try? JSONEncoder().encode(state) else { return }
         do {
@@ -73,7 +69,7 @@ class PersistenceService {
         } catch {
             print("⚠️  Failed to save game to slot \(targetSlot): \(error)")
         }
-        updateMetadata(for: targetSlot, from: state)
+        updateMetadata(for: targetSlot, from: state, overrideName: customName)
     }
 
     // MARK: - Load
@@ -170,11 +166,15 @@ class PersistenceService {
 
     // MARK: - Metadata update
 
-    private func updateMetadata(for slot: Int, from state: GameState) {
-        var customName: String?
-        if let existing = UserDefaults.standard.data(forKey: metaKey(for: slot)),
-           let existingMeta = try? JSONDecoder().decode(SaveSlotMetadata.self, from: existing) {
-            customName = existingMeta.customName
+    private func updateMetadata(for slot: Int, from state: GameState, overrideName: String? = nil) {
+        let resolvedName: String?
+        if let overrideName, !overrideName.isEmpty {
+            resolvedName = overrideName
+        } else if let existing = UserDefaults.standard.data(forKey: metaKey(for: slot)),
+                  let existingMeta = try? JSONDecoder().decode(SaveSlotMetadata.self, from: existing) {
+            resolvedName = existingMeta.customName
+        } else {
+            resolvedName = nil
         }
         let meta = SaveSlotMetadata(
             id: slot,
@@ -183,7 +183,7 @@ class PersistenceService {
             turn: state.turn,
             dateSaved: Date(),
             playerName: state.player?.name,
-            customName: customName
+            customName: resolvedName
         )
         if let data = try? JSONEncoder().encode(meta) {
             UserDefaults.standard.set(data, forKey: metaKey(for: slot))

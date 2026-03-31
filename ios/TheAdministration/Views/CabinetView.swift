@@ -1,7 +1,3 @@
-/// CabinetView
-/// Cabinet management screen. Shows all 13 ministry roles with person
-/// silhouette portraits, competency stat bars, pulsing vacant positions,
-/// animated political capital bar, and dramatic fire confirmation.
 import SwiftUI
 
 struct CabinetView: View {
@@ -21,6 +17,20 @@ struct CabinetView: View {
                     headerSection
 
                     VStack(spacing: 12) {
+                        if let player = gameStore.state.player {
+                            Button {
+                                HapticEngine.shared.light()
+                                dossierRoleTitle = gameStore.playerCountry?.leaderTitle ?? "President"
+                                dossierCandidate = candidateFromPlayer(player)
+                            } label: {
+                                PlayerLeaderCard(
+                                    player: player,
+                                    country: gameStore.playerCountry
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         ForEach(Array(CabinetRoles.DEFAULT_ROLES.enumerated()), id: \.element.id) { index, role in
                             let member = gameStore.state.cabinet.first { $0.roleId == role.id }
                             CabinetCard(
@@ -81,6 +91,32 @@ struct CabinetView: View {
         }
     }
 
+    private func candidateFromPlayer(_ player: PlayerProfile) -> Candidate {
+        let stats = player.stats ?? PlayerStats(diplomacy: 50, economics: 50, military: 50, management: 50, compassion: 50, integrity: 50)
+        return Candidate(
+            id: "player",
+            name: player.name,
+            party: player.party,
+            background: player.background ?? "Head of State",
+            education: "—",
+            experience: "—",
+            institution: nil,
+            age: nil,
+            yearsOfExperience: nil,
+            stats: stats,
+            traits: player.traits ?? [],
+            analysisBullets: nil,
+            strengths: player.strengths,
+            weaknesses: player.weaknesses,
+            degreeType: nil,
+            degreeField: nil,
+            skills: player.skills?.map { $0.name },
+            careerHistory: nil,
+            potentialScore: nil,
+            cost: nil
+        )
+    }
+
     private func minimalCandidate(from member: CabinetMember) -> Candidate {
         Candidate(
             id: member.id,
@@ -121,7 +157,6 @@ struct CabinetView: View {
                 subtitle: "\(gameStore.state.cabinet.filter { !$0.isVacant }.count) of \(CabinetRoles.DEFAULT_ROLES.count) positions filled"
             )
 
-            // Political capital bar
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("Political Capital")
@@ -167,7 +202,6 @@ struct CabinetCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Row 1: avatar + info + OVR score
             HStack(alignment: .center, spacing: 12) {
                 PersonSilhouette(name: member?.candidate?.name, isFilled: isFilled, size: 48)
 
@@ -205,12 +239,10 @@ struct CabinetCard: View {
                 }
             }
 
-            // Row 2: stat bars (filled only)
             if isFilled, let stats = member?.candidate?.stats {
                 MiniStatBars(stats: stats)
             }
 
-            // Row 3: action buttons
             if isFilled {
                 HStack(spacing: 8) {
                     Button(action: onDossier) {
@@ -238,7 +270,7 @@ struct CabinetCard: View {
                         .foregroundColor(AppColors.foreground.opacity(0.75))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 7)
-                        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Replace \(role.title)")
@@ -454,7 +486,6 @@ struct CandidateRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Row 1: avatar + info + suitability
             HStack(alignment: .top, spacing: 12) {
                 PersonSilhouette(name: candidate.name, isFilled: true, size: 44)
 
@@ -497,7 +528,6 @@ struct CandidateRow: View {
                 .fill(AppColors.border)
                 .frame(height: 1)
 
-            // Row 2: stat pills
             HStack(spacing: 6) {
                 StatPill(label: "DIP", value: Int(candidate.stats.diplomacy))
                 StatPill(label: "ECO", value: Int(candidate.stats.economics))
@@ -506,7 +536,6 @@ struct CandidateRow: View {
                 StatPill(label: "INT", value: Int(candidate.stats.integrity))
             }
 
-            // Row 3: strongest stat callout + appoint button
             HStack {
                 HStack(spacing: 8) {
                     Rectangle()
@@ -579,5 +608,69 @@ struct StatPill: View {
         .padding(.vertical, 6)
         .background(AppColors.backgroundElevated)
         .overlay(Rectangle().stroke(AppColors.border, lineWidth: 1))
+    }
+}
+
+// MARK: - Player Leader Card
+
+struct PlayerLeaderCard: View {
+    let player: PlayerProfile
+    let country: Country?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.accentPrimary.opacity(0.15))
+                        .frame(width: 48, height: 48)
+                    if let emoji = country?.flagEmoji {
+                        Text(emoji)
+                            .font(.system(size: 22))
+                    } else {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(AppColors.accentPrimary)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("HEAD OF STATE")
+                        .font(AppTypography.micro)
+                        .foregroundColor(AppColors.accentPrimary)
+                        .tracking(2)
+                    Text(country?.leaderTitle ?? "President")
+                        .font(AppTypography.caption)
+                        .foregroundColor(AppColors.foregroundMuted)
+                    Text(player.name)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(AppColors.foreground)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(spacing: 2) {
+                    Text(player.party)
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundColor(AppColors.foregroundMuted)
+                    Text(player.approach)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(AppColors.foregroundSubtle)
+                }
+            }
+
+            if let stats = player.stats {
+                MiniStatBars(stats: stats)
+            }
+        }
+        .padding(AppSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AppColors.accentPrimary.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(AppColors.accentPrimary.opacity(0.2), lineWidth: 1)
+        )
     }
 }

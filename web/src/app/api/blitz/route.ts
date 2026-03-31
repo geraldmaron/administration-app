@@ -16,7 +16,8 @@ export const dynamic = 'force-dynamic';
 const BUNDLE_IDS = ALL_BUNDLES.map((b) => b.id);
 const REGION_IDS = ALL_REGIONS.map((r) => r.id);
 
-const DEFAULT_TARGET_PER_BUNDLE = 24;
+const DEFAULT_ANALYSIS_TARGET_PER_BUNDLE = 24;
+const DEFAULT_TOTAL_SCENARIOS = 24;
 const DEFAULT_MAX_JOBS_PER_BLITZ = 8;
 
 async function fetchCountries(): Promise<CountryEntry[]> {
@@ -88,9 +89,14 @@ async function fetchAvailableSlots(): Promise<{ available: number; pending: numb
   return { available: Math.max(0, max - pending), pending, max };
 }
 
-function parseTargetPerBundle(value: unknown): number {
+function parseAnalysisTargetPerBundle(value: unknown): number {
   const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? Math.min(Math.round(n), 200) : DEFAULT_TARGET_PER_BUNDLE;
+  return Number.isFinite(n) && n > 0 ? Math.min(Math.round(n), 200) : DEFAULT_ANALYSIS_TARGET_PER_BUNDLE;
+}
+
+function parseTotalScenarios(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.min(Math.round(n), 200) : DEFAULT_TOTAL_SCENARIOS;
 }
 
 function parseMaxJobs(value: unknown): number {
@@ -104,7 +110,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const targetPerBundle = parseTargetPerBundle(searchParams.get('targetPerBundle'));
+    const totalScenarios = parseTotalScenarios(searchParams.get('totalScenarios'));
+    const analysisTargetPerBundle = parseAnalysisTargetPerBundle(searchParams.get('analysisTargetPerBundle'));
     const maxJobs = parseMaxJobs(searchParams.get('maxJobs'));
 
     const [countries, slots] = await Promise.all([
@@ -119,7 +126,8 @@ export async function GET(request: NextRequest) {
       REGION_IDS,
       countries,
       inventory,
-      targetPerBundle,
+      analysisTargetPerBundle,
+      totalScenarios,
       slots.available,
       maxJobs,
     );
@@ -127,7 +135,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ...plan,
       ratios: SCOPE_TIER_RATIOS,
-      targetPerBundle,
+      totalScenarios,
+      analysisTargetPerBundle,
       maxJobs,
       slots,
     });
@@ -143,7 +152,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const targetPerBundle = parseTargetPerBundle(body?.targetPerBundle);
+    const totalScenarios = parseTotalScenarios(body?.totalScenarios);
+    const analysisTargetPerBundle = parseAnalysisTargetPerBundle(body?.analysisTargetPerBundle);
     const maxJobs = parseMaxJobs(body?.maxJobs);
     const executionTarget = body?.executionTarget as string | undefined;
 
@@ -166,7 +176,8 @@ export async function POST(request: NextRequest) {
       REGION_IDS,
       countries,
       inventory,
-      targetPerBundle,
+      analysisTargetPerBundle,
+      totalScenarios,
       slots.available,
       maxJobs,
     );

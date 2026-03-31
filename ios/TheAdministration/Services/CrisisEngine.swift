@@ -24,11 +24,10 @@ enum CrisisEngine {
     static func evaluateCrises(state: GameState) -> [ActiveCrisis] {
         var triggered: [ActiveCrisis] = []
 
-        let hidden = state.hiddenMetrics ?? [:]
         let metrics = state.metrics
         let existingIds = Set(state.activeCrises.map { $0.id })
 
-        let unrest = hidden["unrest"] ?? 0
+        let unrest = metrics["metric_unrest"] ?? 0
         if unrest >= unrestCrisisThreshold {
             let crisisId = "crisis_civil_unrest_\(state.turn)"
             if !existingIds.contains(crisisId) {
@@ -43,7 +42,7 @@ enum CrisisEngine {
             }
         }
 
-        let bubble = hidden["economic_bubble"] ?? 0
+        let bubble = metrics["metric_economic_bubble"] ?? 0
         if bubble >= economicBubbleThreshold {
             let crisisId = "crisis_market_crash_\(state.turn)"
             if !existingIds.contains(crisisId) {
@@ -58,7 +57,7 @@ enum CrisisEngine {
             }
         }
 
-        let foreignInfluence = hidden["foreign_influence"] ?? 0
+        let foreignInfluence = metrics["metric_foreign_influence"] ?? 0
         if foreignInfluence >= foreignInfluenceThreshold {
             let crisisId = "crisis_sovereignty_\(state.turn)"
             if !existingIds.contains(crisisId) {
@@ -94,17 +93,16 @@ enum CrisisEngine {
     /// Filters out resolved crises from `state.activeCrises`.
     /// A crisis is considered resolved when its resolution condition is no longer met.
     static func resolveExpiredCrises(state: inout GameState) {
-        let hidden = state.hiddenMetrics ?? [:]
         let metrics = state.metrics
 
         state.activeCrises = state.activeCrises.filter { activeCrisis in
             let id = activeCrisis.crisis.id
             if id.hasPrefix("crisis_civil_unrest") {
-                return (hidden["unrest"] ?? 0) >= 50
+                return (metrics["metric_unrest"] ?? 0) >= 50
             } else if id.hasPrefix("crisis_market_crash") {
-                return (hidden["economic_bubble"] ?? 0) >= 40
+                return (metrics["metric_economic_bubble"] ?? 0) >= 40
             } else if id.hasPrefix("crisis_sovereignty") {
-                return (hidden["foreign_influence"] ?? 0) >= 40
+                return (metrics["metric_foreign_influence"] ?? 0) >= 40
             } else if id.hasPrefix("crisis_approval_collapse") {
                 return (metrics["metric_approval"] ?? 50) < 30
             }

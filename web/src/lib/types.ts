@@ -171,11 +171,13 @@ export interface JobLiveActivityBundle {
   blueprint: number;
   details: number;
   successes: number;
+  generatedDrafts: number;
   avgAuditScore?: number;
 }
 
 export interface JobLiveActivity {
   totalAttempts: number;
+  totalGeneratedDrafts: number;
   lastMetricAt?: string;
   byBundle: Record<string, JobLiveActivityBundle>;
 }
@@ -205,6 +207,7 @@ export interface JobSummary {
   failedCount?: number;
   description?: string;
   total?: number;
+  totalCount?: number;
   errors?: JobError[];
   auditSummary?: AuditSummary;
   currentBundle?: string;

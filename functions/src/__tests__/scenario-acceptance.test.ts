@@ -94,14 +94,14 @@ describe('decideScenarioAcceptance', () => {
         expect(decision.blockingIssues.map((issue) => issue.rule)).toContain('advisor-boilerplate');
     });
 
-    test('accepts warn-only scenarios below threshold', () => {
+    test('rejects warn-only scenarios below threshold', () => {
         const decision = decideScenarioAcceptance(makeInput({
             auditScore: 76,
             auditPassThreshold: 80,
             issues: [makeIssue('hardcoded-the-before-token', 'warn')],
         }));
-        expect(decision.accepted).toBe(true);
-        expect(decision.rejectionIssues).toHaveLength(0);
+        expect(decision.accepted).toBe(false);
+        expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('audit-score-below-threshold');
     });
 
     test('rejects when audit score is below configured threshold and errors remain', () => {

@@ -88,8 +88,6 @@ export function decideScenarioAcceptance(input: ScenarioAcceptanceInput): Scenar
     const unresolvedErrorIssues = input.issues.filter(
         (issue) => issue.severity === 'error' && !BLOCKING_AUDIT_RULE_IDS.has(issue.rule)
     );
-    const warningsOnly = input.issues.length > 0 && input.issues.every((issue) => issue.severity !== 'error');
-
     if (unresolvedErrorIssues.length > 0) {
         rejectionIssues.push(
             makeDecisionIssue(
@@ -100,7 +98,7 @@ export function decideScenarioAcceptance(input: ScenarioAcceptanceInput): Scenar
         );
     }
 
-    if (input.auditScore < input.auditPassThreshold && !warningsOnly) {
+    if (input.auditScore < input.auditPassThreshold) {
         rejectionIssues.push(
             makeDecisionIssue(
                 'audit-score-below-threshold',
