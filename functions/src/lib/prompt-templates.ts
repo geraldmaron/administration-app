@@ -60,36 +60,36 @@ export interface ScopePromptOverlay {
 
 const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
   economy: {
-    architect: 'Center the blueprint on fiscal tradeoffs, inflation pressure, jobs, market confidence, and knock-on budget consequences.',
-    drafter: 'Favor concrete economic levers such as taxes, subsidies, debt issuance, price controls, labor support, trade exposure, and central-bank tension. Make option tradeoffs legible for budget, employment, inflation, and approval. When an option raises or lowers taxes, changes spending allocations, or shifts trade policy, include policyImplications targeting the relevant fiscal/policy settings (e.g. fiscal.taxIncome, fiscal.spendingSocial, policy.tradeOpenness).',
+    architect: 'Center the blueprint on fiscal tradeoffs, inflation pressure, jobs, market confidence, and knock-on budget consequences. Include sovereign debt stress, IMF conditionality negotiations, debt restructuring, and structural adjustment tradeoffs as valid arc types — especially scenarios where austerity measures trigger social unrest or where defaulting on obligations forces hard political choices.',
+    drafter: 'Favor concrete economic levers such as taxes, subsidies, debt issuance, price controls, labor support, trade exposure, and central-bank tension. Also include sovereign default risk, IMF loan conditions, debt restructuring negotiations, and the tradeoffs of structural adjustment programs. Make option tradeoffs legible for budget, employment, inflation, and approval. When an option raises or lowers taxes, changes spending allocations, or shifts trade policy, include policyImplications targeting the relevant fiscal/policy settings (e.g. fiscal.taxIncome, fiscal.spendingSocial, policy.tradeOpenness).',
   },
   politics: {
-    architect: 'Frame the arc around legitimacy, coalition pressure, scandals, constitutional stress, electoral fallout, and elite factional conflict.',
-    drafter: 'Favor political maneuvering, legitimacy management, party discipline, institutional brinkmanship, and public narrative control. Options should create visible tradeoffs between stability, democracy, liberty, and approval.',
+    architect: 'Frame the arc around legitimacy, coalition pressure, scandals, constitutional stress, electoral fallout, and elite factional conflict. Include disinformation campaigns, foreign election interference, and state-sponsored media manipulation as valid arc types — situations where the information environment itself becomes a governance threat requiring a policy response.',
+    drafter: 'Favor political maneuvering, legitimacy management, party discipline, institutional brinkmanship, and public narrative control. Also include disinformation crises, foreign interference in electoral processes, and state media capture. Options should create visible tradeoffs between stability, democracy, liberty, and approval.',
   },
   military: {
     architect: 'Frame the conflict around escalation risk, deterrence credibility, readiness, civilian costs, alliance signaling, and strategic uncertainty.',
     drafter: 'Favor mobilization, procurement, border security, intelligence, force posture, veterans, and wartime tradeoffs. Keep consequences grounded in military readiness, public order, budget, foreign relations, and approval. When an option increases or decreases military spending or shifts defense posture, include policyImplications targeting fiscal.spendingMilitary and/or policy.defenseSpending.',
   },
   tech: {
-    architect: 'Center the arc on cyber risk, AI governance, digital dependence, innovation upside, privacy costs, and infrastructure fragility.',
-    drafter: 'Favor cybersecurity, platform regulation, AI deployment, digital sovereignty, surveillance, semiconductor dependence, and broadband or grid resilience. Make the tradeoffs explicit between innovation, liberty, security, and employment.',
+    architect: 'Center the arc on cyber risk, AI governance, digital dependence, innovation upside, privacy costs, and infrastructure fragility. Include AI-generated propaganda, deepfakes used in political manipulation, platform-enabled information operations, and state actor interference via digital means as valid arc types.',
+    drafter: 'Favor cybersecurity, platform regulation, AI deployment, digital sovereignty, surveillance, semiconductor dependence, and broadband or grid resilience. Also include AI-generated disinformation, deepfake crises, state-sponsored information operations, and platform manipulation by foreign actors. Make the tradeoffs explicit between innovation, liberty, security, and employment.',
   },
   environment: {
     architect: 'Frame the arc around climate shocks, adaptation costs, environmental regulation, resource stress, infrastructure resilience, and public backlash.',
     drafter: 'Favor natural disasters, pollution, emissions controls, land use, resilience spending, relocation, and ecological restoration. Options should force tradeoffs between environment, economy, health, infrastructure, and social stability. When an option tightens or relaxes environmental regulation, include policyImplications targeting policy.environmentalPolicy and/or policy.environmentalProtection.',
   },
   social: {
-    architect: 'Center the arc on inequality, education strain, labor unrest, demographic pressure, service delivery, and social cohesion.',
-    drafter: 'Favor strikes, welfare reforms, education access, housing stress, migration integration, and inequality-driven backlash. Make the consequences visible across equality, employment, housing, liberty, and approval. When an option changes social spending, healthcare access, education funding, or immigration policy, include policyImplications targeting the relevant settings (e.g. fiscal.spendingSocial, policy.healthcareAccess, policy.educationFunding, policy.immigration).',
+    architect: 'Center the arc on inequality, education strain, labor unrest, demographic pressure, service delivery, and social cohesion. Include refugee and migration crises as valid arc types: mass displacement events, asylum seeker integration strain, internal displacement from conflict or climate, and the political pressure of hosting large refugee populations.',
+    drafter: 'Favor strikes, welfare reforms, education access, housing stress, migration integration, and inequality-driven backlash. Also include mass displacement crises, asylum seeker processing backlogs, refugee camp conditions, host community tension, and internal displacement from conflict or disaster. Make the consequences visible across equality, employment, housing, liberty, and approval. When an option changes social spending, healthcare access, education funding, or immigration policy, include policyImplications targeting the relevant settings (e.g. fiscal.spendingSocial, policy.healthcareAccess, policy.educationFunding, policy.immigration).',
   },
   health: {
     architect: 'Frame the arc around public-health capacity, outbreak control, medical scarcity, trust in institutions, and unequal access to care.',
     drafter: 'Favor outbreaks, hospital overload, medicine shortages, vaccine politics, mental health strain, and emergency public-health measures. Keep tradeoffs clear between health, liberty, budget, public order, and approval.',
   },
   diplomacy: {
-    architect: 'Center the blueprint on alliances, sanctions, trade leverage, crisis signaling, regional credibility, and diplomatic blowback.',
-    drafter: 'Favor sanctions, summit diplomacy, hostage crises, treaty leverage, recognition disputes, tariffs, aid, and alliance bargaining. Make every option expose tradeoffs in foreign relations, trade, sovereignty, military posture, and approval.',
+    architect: 'Center the blueprint on alliances, sanctions, trade leverage, crisis signaling, regional credibility, and diplomatic blowback. Include cross-border refugee flows and migration diplomacy as valid arc types: burden-sharing negotiations with neighbors, bilateral agreements over displaced populations, and situations where refugee flows become a coercive diplomatic instrument.',
+    drafter: 'Favor sanctions, summit diplomacy, hostage crises, treaty leverage, recognition disputes, tariffs, aid, and alliance bargaining. Also include refugee burden-sharing negotiations, migration diplomacy with origin and transit countries, and scenarios where a neighbor uses refugee flows as political leverage. Make every option expose tradeoffs in foreign relations, trade, sovereignty, military posture, and approval.',
   },
   justice: {
     architect: 'Frame the arc around judicial legitimacy, policing strain, civil liberties, sentencing choices, and the state’s response to disorder.',
@@ -100,8 +100,8 @@ const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
     drafter: 'Favor bribery scandals, procurement fraud, shell companies, whistleblowers, watchdog bodies, and integrity crackdowns. Make the tradeoffs explicit between corruption, bureaucracy, economy, democracy, and approval.',
   },
   culture: {
-    architect: 'Frame the arc around identity conflict, media narratives, censorship pressure, education symbolism, and social polarization.',
-    drafter: 'Favor cultural heritage disputes, broadcasting rules, censorship fights, language policy, artistic backlash, and symbolic national controversies. Keep the tradeoffs clear between liberty, equality, public order, and approval.',
+    architect: 'Frame the arc around identity conflict, media narratives, censorship pressure, education symbolism, and social polarization. Include religious and sectarian conflict as valid arc types: faith-based governance tensions, sectarian violence between communities, religious law versus secular state disputes, and the political pressure of managing competing religious authorities.',
+    drafter: 'Favor cultural heritage disputes, broadcasting rules, censorship fights, language policy, artistic backlash, and symbolic national controversies. Also include religious/sectarian conflict, faith-based governance tensions, disputes over religious law in secular states, and sectarian violence requiring a government response. Keep the tradeoffs clear between liberty, equality, public order, and approval.',
   },
   infrastructure: {
     architect: 'Center the arc on service reliability, maintenance backlogs, disaster resilience, logistics bottlenecks, and capital-investment tradeoffs.',

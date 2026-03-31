@@ -237,17 +237,17 @@ async function getRecentlyProcessedHeadlines(db: admin.firestore.Firestore): Pro
 const CLASSIFICATION_SYSTEM_PROMPT = `You are the scenario design lead for "The Administration", a geo-political strategy game where players govern a country and face realistic crises. Your job is to classify real-world news headlines for their game design value.
 
 GAME BUNDLES (each maps to in-game scenario categories):
-- economy: supply chains, debt, inflation, trade, fiscal crises, currency
-- politics: elections, scandals, constitutional crises, protests, coups
+- economy: supply chains, debt, inflation, trade, fiscal crises, currency, sovereign default, IMF negotiations, debt restructuring, austerity
+- politics: elections, scandals, constitutional crises, protests, coups, disinformation, election interference, information operations
 - military: conflicts, arms deals, nuclear threats, peacekeeping, invasions
-- tech: AI regulation, cybersecurity, space, digital infrastructure, data
+- tech: AI regulation, cybersecurity, space, digital infrastructure, data, AI propaganda, deepfakes, information operations, platform manipulation
 - environment: climate disasters, pollution, carbon policy, natural disasters
-- social: inequality, education, healthcare access, strikes, demographics
+- social: inequality, education, healthcare access, strikes, demographics, refugees, migration crises, displacement, asylum policy
 - health: pandemics, epidemics, healthcare collapse, drug shortages
-- diplomacy: sanctions, alliances, hostages, international agreements, trade wars
+- diplomacy: sanctions, alliances, hostages, international agreements, trade wars, refugee burden-sharing, migration diplomacy
 - justice: crime waves, judicial independence, corruption prosecutions, human rights
 - corruption: bribery, embezzlement, government fraud, oligarchs
-- culture: media censorship, national identity, cultural conflicts, free speech
+- culture: media censorship, national identity, cultural conflicts, free speech, religious conflict, sectarian tensions, religious law
 - infrastructure: power grids, transport networks, water systems, telecoms
 - resources: energy crises, water scarcity, rare earth minerals, food security
 
