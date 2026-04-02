@@ -10,7 +10,7 @@
 import * as admin from 'firebase-admin';
 import { onRequest } from 'firebase-functions/v2/https';
 import * as logger from 'firebase-functions/logger';
-import { generateScenarios, getGenerationConfig } from './scenario-engine';
+import { generateScenarios, getGenerationConfig, setEngineEventHandler } from './scenario-engine';
 import { saveScenario, getActiveBundleCount } from './storage';
 import { isValidBundleId, type BundleId } from './data/schemas/bundleIds';
 import { normalizeGenerationScopeInput } from './lib/generation-scope';
@@ -180,6 +180,32 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
         generatedAt: new Date().toISOString(),
     };
 
+    const eventsRef = jobRef.collection('events');
+    const pendingEventWrites: Promise<unknown>[] = [];
+    const THROTTLED_CODES = new Set(['llm_request', 'llm_response']);
+    let lastThrottledWriteMs = 0;
+    const THROTTLE_INTERVAL_MS = 3000;
+
+    setEngineEventHandler((event) => {
+        const now = Date.now();
+        if (THROTTLED_CODES.has(event.code) && now - lastThrottledWriteMs < THROTTLE_INTERVAL_MS) return;
+        if (THROTTLED_CODES.has(event.code)) lastThrottledWriteMs = now;
+        const write = eventsRef.add({
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            level: event.level,
+            code: event.code,
+            message: event.message,
+            bundle,
+            ...(event.data ? { data: event.data } : {}),
+        }).then(() => {
+            return jobRef.set({
+                lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
+                eventCount: admin.firestore.FieldValue.increment(1),
+            }, { merge: true });
+        }).catch(() => { /* never throw from event emission */ });
+        pendingEventWrites.push(write);
+    });
+
     const savedByCallback = new Set<string>();
     const erroredByCallback = new Set<string>();
     const onScenarioAccepted = async (scenario: any) => {
@@ -290,6 +316,9 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             failedCount: admin.firestore.FieldValue.increment(count),
         });
+    } finally {
+        setEngineEventHandler(null);
+        await Promise.allSettled(pendingEventWrites);
     }
 
     return {
