@@ -90,6 +90,45 @@ function makeScenario(): BundleScenario {
     };
 }
 
+describe('auditScenario invalid second-person framing', () => {
+    beforeEach(() => {
+        setAuditConfigForTests(makeAuditConfig());
+    });
+
+    afterEach(() => {
+        setAuditConfigForTests(null);
+    });
+
+    test('fires error on "As you of {the_player_country}" in description', () => {
+        const scenario = makeScenario();
+        scenario.description = 'As you of {the_player_country}, you face a critical infrastructure bottleneck stalling economic growth. Congested transport networks and outdated energy grids are causing delays across major industry sectors, leading to rising production costs. Your cabinet has convened to discuss strategies for alleviating these issues while balancing fiscal responsibility.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'invalid-second-person-framing' && i.message.includes('description'))).toBe(true);
+    });
+
+    test('fires error on "As we of {the_player_country}" in description', () => {
+        const scenario = makeScenario();
+        scenario.description = 'As we of {the_player_country}, we face a severe infrastructure deficit that threatens to widen the unemployment gap. Outdated rail and highway systems have become a drag on industrial output and export competitiveness. Emergency investment is needed before the next fiscal quarter closes.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'invalid-second-person-framing' && i.message.includes('description'))).toBe(true);
+    });
+
+    test('does not fire for well-formed framing with {leader_title}', () => {
+        const scenario = makeScenario();
+        scenario.description = 'As {leader_title} of {the_player_country}, you face a critical infrastructure bottleneck stalling economic growth. Congested transport networks and outdated energy grids are causing delays across major industry sectors, leading to rising production costs. Your cabinet has convened to discuss strategies for alleviating these issues while balancing fiscal responsibility.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'invalid-second-person-framing')).toBe(false);
+    });
+
+    test('does not fire when "you" is used correctly in body text', () => {
+        const scenario = makeScenario();
+        // Standard second-person body — no framing clause
+        scenario.description = 'You face a critical infrastructure bottleneck stalling economic growth across {the_player_country}. Congested transport networks and outdated energy grids are causing delays in major industry sectors, leading to rising production costs and declining competitiveness. Your cabinet has convened to discuss strategies for alleviating these issues while balancing fiscal responsibility.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'invalid-second-person-framing')).toBe(false);
+    });
+});
+
 describe('auditScenario newsroom language validation', () => {
     beforeEach(() => {
         setAuditConfigForTests(makeAuditConfig());

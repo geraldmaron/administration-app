@@ -613,6 +613,8 @@ export function auditScenario(
             add(severity, 'third-person-framing', scenario.id, `${fieldName} uses "the executive" instead of "you"`, severity === 'warn');
         if (lowerText.includes('unknown adversary') || lowerText.includes('unknown country'))
             add('warn', 'placeholder-text', scenario.id, `${fieldName} contains placeholder text "Unknown Adversary/Country" instead of token`);
+        if (/\bas\s+(you|we|i)\s+of\b/i.test(text))
+            add(severity, 'invalid-second-person-framing', scenario.id, `${fieldName} uses malformed framing "As you/we/I of" — use "As {leader_title} of {the_player_country}, you face..." instead`, severity === 'warn');
     };
 
     checkFraming(scenario.description, 'description', 'error');

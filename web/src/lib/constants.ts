@@ -135,3 +135,14 @@ export function formatRelativeTime(isoString: string): string {
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
 }
+
+export function formatShortDate(isoString: string): string {
+  const d = new Date(isoString);
+  const now = new Date();
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  });
+}

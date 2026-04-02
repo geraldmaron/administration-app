@@ -8,10 +8,10 @@ import BundleBadge from '@/components/BundleBadge';
 import PageHeader from '@/components/PageHeader';
 import SeverityBadge from '@/components/SeverityBadge';
 import SortHeader, { useSort } from '@/components/SortHeader';
-import { ALL_BUNDLES, formatRelativeTime } from '@/lib/constants';
+import { ALL_BUNDLES, formatShortDate } from '@/lib/constants';
 import type { ScenarioSummary } from '@/lib/types';
 
-type ScenarioSortField = 'title' | 'bundle' | 'severity' | 'auditScore' | 'countryCount' | 'isActive' | 'updatedAt';
+type ScenarioSortField = 'title' | 'bundle' | 'severity' | 'auditScore' | 'countryCount' | 'isActive' | 'createdAt' | 'updatedAt';
 
 interface ScenariosResponse {
   scenarios: ScenarioSummary[];
@@ -297,9 +297,10 @@ function ScenariosInner() {
               <col style={{ width: 120 }} />
               <col style={{ width: 80 }} />
               <col style={{ width: 64 }} />
+              <col style={{ width: 72 }} />
               <col style={{ width: 56 }} />
-              <col style={{ width: 56 }} />
-              <col style={{ width: 80 }} />
+              <col style={{ width: 72 }} />
+              <col style={{ width: 72 }} />
             </colgroup>
             <thead>
               <tr>
@@ -315,8 +316,9 @@ function ScenariosInner() {
                 <th><SortHeader field="bundle" label="Bundle" current={sortField} dir={sortDir} onSort={handleSort} /></th>
                 <th><SortHeader field="severity" label="Severity" current={sortField} dir={sortDir} onSort={handleSort} /></th>
                 <th><SortHeader field="auditScore" label="Audit" current={sortField} dir={sortDir} onSort={handleSort} align="right" /></th>
-                <th><SortHeader field="countryCount" label="Cntrs" current={sortField} dir={sortDir} onSort={handleSort} align="right" /></th>
+                <th><SortHeader field="countryCount" label="Scope" current={sortField} dir={sortDir} onSort={handleSort} /></th>
                 <th><SortHeader field="isActive" label="State" current={sortField} dir={sortDir} onSort={handleSort} /></th>
+                <th><SortHeader field="createdAt" label="Created" current={sortField} dir={sortDir} onSort={handleSort} /></th>
                 <th><SortHeader field="updatedAt" label="Updated" current={sortField} dir={sortDir} onSort={handleSort} /></th>
               </tr>
             </thead>
@@ -357,9 +359,13 @@ function ScenariosInner() {
                     <AuditScore score={scenario.auditScore} />
                   </td>
 
-                  <td className="text-right">
+                  <td>
                     <span className="font-mono text-[11px] text-[var(--foreground-muted)]">
-                      {scenario.countryCount ?? '—'}
+                      {scenario.region
+                        ? scenario.region
+                        : scenario.countryCount != null
+                        ? `${scenario.countryCount}`
+                        : '—'}
                     </span>
                   </td>
 
@@ -378,8 +384,20 @@ function ScenariosInner() {
                   </td>
 
                   <td>
-                    <span className="text-[10px] font-mono text-[var(--foreground-subtle)]">
-                      {scenario.updatedAt ? formatRelativeTime(scenario.updatedAt) : '—'}
+                    <span
+                      className="text-[10px] font-mono text-[var(--foreground-subtle)]"
+                      title={scenario.createdAt ? new Date(scenario.createdAt).toLocaleString() : undefined}
+                    >
+                      {formatShortDate(scenario.createdAt)}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span
+                      className="text-[10px] font-mono text-[var(--foreground-subtle)]"
+                      title={scenario.updatedAt ? new Date(scenario.updatedAt).toLocaleString() : undefined}
+                    >
+                      {scenario.updatedAt ? formatShortDate(scenario.updatedAt) : '—'}
                     </span>
                   </td>
                 </tr>

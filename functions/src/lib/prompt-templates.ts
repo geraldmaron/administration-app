@@ -389,6 +389,7 @@ ${params.tokenContext}
 VOICE RULES:
 - description and option text: use "you" / "your" (second person, addressing the player leader).
 - Never use "the government" or "the administration" — say "you" or "your cabinet".
+- When using an introductory framing clause, use the leader token, not "you": ✅ "As {leader_title} of {the_player_country}, you face..." ❌ "As you of {the_player_country}..."
 
 TOKEN RULES:
 - Use {token} placeholders for countries, leaders, institutions, parties, and currencies.

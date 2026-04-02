@@ -347,6 +347,7 @@ export const TOKEN_ALIAS_MAP: Readonly<Record<string, string>> = {
   'secret_service':      'intelligence_agency',
   'spy_agency':          'intelligence_agency',
   'national_intelligence':'intelligence_agency',
+  'opposition':          'opposition_party',
   'foreign_intelligence':'intelligence_agency',
   'state_bank':          'central_bank',
   'reserve_bank':        'central_bank',
@@ -469,7 +470,46 @@ export function isValidToken(token: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// 9. normalizeTokenAliases — Apply TOKEN_ALIAS_MAP substitutions to text
+// 9. fuzzyCanonicalizeToken — Structurally resolve unknown token names
+// ---------------------------------------------------------------------------
+
+/**
+ * Attempts to resolve an unknown token name to a valid canonical token using
+ * two structural strategies, in order:
+ *
+ * 1. Suffix substitution — strips common job-title suffixes and appends _role.
+ *    e.g. "transport_minister" → "transport_role"
+ *
+ * 2. Unique-prefix match — if the unknown name is the stem of exactly one valid
+ *    token, canonicalize to that token.
+ *    e.g. "agriculture" → "agriculture_role" (only token with prefix "agriculture_")
+ *
+ * Returns null if no unambiguous match is found. Never guesses.
+ */
+export function fuzzyCanonicalizeToken(unknownName: string): string | null {
+  const lower = unknownName.toLowerCase();
+
+  const ROLE_SUFFIXES = [
+    '_minister', '_secretary', '_ministry',
+    '_official', '_department', '_office', '_authority',
+  ] as const;
+
+  for (const suffix of ROLE_SUFFIXES) {
+    if (lower.endsWith(suffix)) {
+      const candidate = lower.slice(0, lower.length - suffix.length) + '_role';
+      if (isValidToken(candidate)) return candidate;
+    }
+  }
+
+  const prefix = lower + '_';
+  const matches = (ALL_TOKENS as readonly string[]).filter(t => t.startsWith(prefix));
+  if (matches.length === 1) return matches[0];
+
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// 9b. normalizeTokenAliases — Apply TOKEN_ALIAS_MAP substitutions to text
 // ---------------------------------------------------------------------------
 
 export function normalizeTokenAliases(text: string): string {
@@ -509,6 +549,16 @@ export function normalizeTokenAliases(text: string): string {
     }
 
     return normalizedMetric.replace(/_/g, ' ');
+  });
+
+  // Final pass: structurally resolve any remaining unknown {token} placeholders.
+  // Runs after all static substitutions so it only touches tokens not already handled.
+  result = result.replace(/\{(the_)?([a-z][a-z_]*)\}/g, (raw, thePrefix: string | undefined, name: string) => {
+    const tokenName = (thePrefix ? 'the_' + name : name).toLowerCase();
+    if (isValidToken(tokenName)) return raw;
+    const resolved = fuzzyCanonicalizeToken(name);
+    if (resolved) return thePrefix ? `{the_${resolved}}` : `{${resolved}}`;
+    return raw;
   });
 
   return result;

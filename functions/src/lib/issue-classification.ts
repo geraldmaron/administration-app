@@ -69,6 +69,17 @@ export function classifyRepairActions(issues: Issue[]): RepairAction[] {
         actions.push({ type, targetFields, issues: groupIssues });
     }
 
+    // If there are error-severity issues with no repair action, skip text-expansion.
+    // Those unresolvable errors constrain the score ceiling, and an expansion LLM call
+    // risks introducing additional issues (and wasting a model call) without ever
+    // being able to clear the blocking error.
+    const hasUnresolvableErrors = issues.some(
+        i => i.severity === 'error' && !RULE_TO_ACTION[i.rule]
+    );
+    if (hasUnresolvableErrors) {
+        return actions.filter(a => a.type !== 'text-expansion');
+    }
+
     return actions;
 }
 
