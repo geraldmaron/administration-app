@@ -4,6 +4,8 @@
  * OpenAI and Ollama model routing for generation phases.
  */
 
+import * as http from 'node:http';
+import * as https from 'node:https';
 import * as json5 from 'json5';
 import { isOpenAIModel, isOllamaModel, stripOllamaPrefix } from './generation-models';
 
@@ -22,6 +24,10 @@ function getOpenAIBaseUrl(): string {
 }
 
 function getOllamaBaseUrl(): string {
+  return process.env.OLLAMA_BASE_URL || process.env.OLLAMA_REMOTE_BASE_URL || '';
+}
+
+async function resolveOllamaBaseUrl(): Promise<string> {
   return process.env.OLLAMA_BASE_URL || process.env.OLLAMA_REMOTE_BASE_URL || '';
 }
 
@@ -86,8 +92,8 @@ export const PHASE_CONFIGS: Record<string, ModelConfig> = {
   // drafter generates ~14K input + 3K output tokens; under Tier 1 rate limits
   // concurrent calls regularly take 60-120s+ when throttled. 300s keeps the call
   // alive within the Cloud Function's 540s budget.
-  drafter: { maxTokens: 12288, temperature: 0.7, timeoutMs: 300000 },
-  repair: { maxTokens: 4096, temperature: 0.3 },
+  drafter: { maxTokens: 12288, temperature: 0.4, timeoutMs: 300000 },
+  repair: { maxTokens: 8192, temperature: 0.3 },
   actionResolution: { maxTokens: 1024, temperature: 0.6, timeoutMs: 15000, maxRetries: 1 },
 };
 
@@ -153,6 +159,38 @@ function emitModelEvent(event: ModelEvent): void {
   if (_modelEventHandler) {
     try { _modelEventHandler(event); } catch { /* never throw from event emission */ }
   }
+}
+
+function startRequestHeartbeat(params: {
+  provider: Provider;
+  model: string;
+  attempt: number;
+  maxAttempts: number;
+  timeoutMs: number;
+  intervalMs?: number;
+}): () => void {
+  const { provider, model, attempt, maxAttempts, timeoutMs, intervalMs = 15000 } = params;
+  const startedAt = Date.now();
+  const timer = setInterval(() => {
+    const elapsedMs = Date.now() - startedAt;
+    const elapsedSeconds = Math.round(elapsedMs / 1000);
+    const timeoutSeconds = Math.round(timeoutMs / 1000);
+    const prefix = provider === 'ollama' ? 'Ollama' : 'OpenAI API';
+    const message = `${model} still running (${elapsedSeconds}s elapsed / ${timeoutSeconds}s timeout, attempt ${attempt}/${maxAttempts})`;
+    console.log(`[${prefix}] … ${message}`);
+    emitModelEvent({
+      level: 'info',
+      code: 'llm_progress',
+      message,
+      data: { provider, model, elapsedMs, timeoutMs, attempt, maxAttempts },
+    });
+  }, intervalMs);
+
+  if (typeof timer.unref === 'function') {
+    timer.unref();
+  }
+
+  return () => clearInterval(timer);
 }
 
 // ---------------------------------------------------------------------------
@@ -258,6 +296,7 @@ async function callOpenAI<T>(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const startTime = Date.now();
+    let stopHeartbeat: (() => void) | null = null;
 
     try {
       const controller = new AbortController();
@@ -291,6 +330,13 @@ async function callOpenAI<T>(
         message: `→ ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1}) — ${prompt.length} chars`,
         data: { model: modelToUse, promptLength: prompt.length, attempt: attempt + 1 },
       });
+      stopHeartbeat = startRequestHeartbeat({
+        provider: 'openai',
+        model: modelToUse,
+        attempt: attempt + 1,
+        maxAttempts: maxRetries + 1,
+        timeoutMs: timeout,
+      });
 
       await openAISemaphore.acquire();
       const estimatedTokens = (config.maxTokens ?? 4096) + 4096;
@@ -311,6 +357,8 @@ async function callOpenAI<T>(
         openAISemaphore.release();
       }
       const elapsed = Date.now() - startTime;
+      stopHeartbeat?.();
+      stopHeartbeat = null;
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -351,7 +399,7 @@ async function callOpenAI<T>(
         level: 'info',
         code: 'llm_response',
         message: `← ${modelToUse} ${elapsed}ms — ${usage.inputTokens}↑ ${usage.outputTokens}↓ tokens`,
-        data: { model: modelToUse, elapsed, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens },
+        data: { provider: 'openai' as const, model: modelToUse, elapsed, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens },
       });
 
       if (!responseText) {
@@ -373,6 +421,8 @@ async function callOpenAI<T>(
       }
     } catch (error) {
       const elapsed = Date.now() - startTime;
+      stopHeartbeat?.();
+      stopHeartbeat = null;
       if (error instanceof Error && error.name === 'AbortError') {
         console.error(`[OpenAI API] Timeout after ${elapsed}ms`);
         if (attempt < maxRetries) continue;
@@ -403,13 +453,13 @@ async function callOllama<T>(
 ): Promise<CallResult<T>> {
   const rawModel = modelOverride || getOllamaModel();
   const modelToUse = stripOllamaPrefix(rawModel);
-  const baseUrl = getOllamaBaseUrl();
-  const timeout = 180000;
+  const baseUrl = await resolveOllamaBaseUrl();
+  const timeout = config.timeoutMs ?? parseInt(process.env.OLLAMA_TIMEOUT || '300000', 10);
   const maxRetries = parseInt(process.env.OLLAMA_MAX_RETRIES || '3', 10);
   const baseDelay = 2000;
 
   if (!baseUrl) {
-    return { data: null, usage: null, error: 'No Ollama base URL configured' };
+    return { data: null, usage: null, error: 'No Ollama base URL configured (set OLLAMA_BASE_URL env var or world_state/generation_config.ollama_base_url in Firestore)' };
   }
   if (!modelToUse) {
     return { data: null, usage: null, error: 'No Ollama model configured' };
@@ -417,13 +467,23 @@ async function callOllama<T>(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const startTime = Date.now();
+    let stopHeartbeat: (() => void) | null = null;
 
     try {
       const signal = AbortSignal.timeout(timeout);
       const OLLAMA_MAX_OUTPUT_TOKENS = 16384;
 
-      const isThinkingModel = /qwen3|deepseek-r1/i.test(modelToUse);
+      // Matches both named reasoning families and custom alias tags (e.g. ai-reasoning, r1-distill)
+      const isThinkingModel = /qwen3|deepseek-r1|deepseek-r2|reasoning|:r1\b/i.test(modelToUse);
       const suppressThinking = isThinkingModel && config.noThink !== false;
+      // Reasoning models consume thinking tokens from the max_tokens budget before writing output.
+      // Without /no_think the default 4096 is exhausted by reasoning alone. Use a larger budget
+      // whenever thinking is active so there is headroom for the actual JSON response.
+      const effectiveMaxTokens = suppressThinking
+        ? Math.min(config.maxTokens ?? OLLAMA_MAX_OUTPUT_TOKENS, OLLAMA_MAX_OUTPUT_TOKENS)
+        : (isThinkingModel
+          ? OLLAMA_MAX_OUTPUT_TOKENS
+          : Math.min(config.maxTokens ?? OLLAMA_MAX_OUTPUT_TOKENS, OLLAMA_MAX_OUTPUT_TOKENS));
       const systemContent = suppressThinking
         ? 'You are a precise JSON generator for a geopolitical simulation game. Generate realistic, nuanced, DETAILED political scenarios. Write LONG, vivid, specific text — never brief or generic. Every description must be 60-100 words. Every option text must be 50-80 words. Every outcomeSummary must be 250+ characters. Every outcomeContext must be 400+ characters with 4-6 sentences. Short output will be REJECTED. Always respond with valid JSON only. Never include explanatory text. Do not use chain-of-thought reasoning.'
         : 'You are a precise JSON generator for a geopolitical simulation game. Generate realistic, nuanced, DETAILED political scenarios. Write LONG, vivid, specific text — never brief or generic. Every description must be 60-100 words. Every option text must be 50-80 words. Every outcomeSummary must be 250+ characters. Every outcomeContext must be 400+ characters with 4-6 sentences. Short output will be REJECTED. Always respond with valid JSON. Never include explanatory text.';
@@ -435,69 +495,176 @@ async function callOllama<T>(
           { role: 'system', content: systemContent },
           { role: 'user', content: userContent },
         ],
-        max_tokens: Math.min(config.maxTokens ?? OLLAMA_MAX_OUTPUT_TOKENS, OLLAMA_MAX_OUTPUT_TOKENS),
+        max_tokens: effectiveMaxTokens,
         response_format: {
           type: 'json_schema',
           json_schema: { name: 'response', schema, strict: false },
         },
-        options: { num_ctx: 131072 },
+        options: { num_ctx: 16384 },
       };
       if (config.temperature !== undefined) {
         requestBody.temperature = config.temperature;
       }
 
-      console.log(`[Ollama] Request to ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1})`);
+      console.log(`[Ollama] Request to ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1}, timeout=${timeout / 1000}s)`);
+      // Show a live tail of the prompt so the task/concept is visible before the wait
+      const promptTail = prompt.length > 800 ? '…' + prompt.slice(-800) : prompt;
+      console.log(`[Ollama] ── prompt tail ──────────────────────────────────────────────`);
+      console.log(promptTail);
+      console.log(`[Ollama] ────────────────────────────────────────────────────────────`);
       emitModelEvent({
         level: 'info',
         code: 'llm_request',
         message: `→ ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1}) — ${prompt.length} chars`,
         data: { model: modelToUse, promptLength: prompt.length, attempt: attempt + 1 },
       });
+      stopHeartbeat = startRequestHeartbeat({
+        provider: 'ollama',
+        model: modelToUse,
+        attempt: attempt + 1,
+        maxAttempts: maxRetries + 1,
+        timeoutMs: timeout,
+      });
 
-      const response = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ollama',
-        },
-        body: JSON.stringify(requestBody),
-        signal,
+      const streamingBody = { ...requestBody, stream: true, stream_options: { include_usage: true } };
+      const bodyStr = JSON.stringify(streamingBody);
+      const { statusCode, responseText: streamedContent, usage: streamUsage, finishReason } = await new Promise<{
+        statusCode: number;
+        responseText: string;
+        usage: { prompt_tokens: number; completion_tokens: number };
+        finishReason: string;
+      }>((resolve, reject) => {
+        const reqUrl = new URL(`${baseUrl}/chat/completions`);
+        const lib = reqUrl.protocol === 'https:' ? https : http;
+        let fullContent = '';
+        let thinkingContent = '';
+        let inThinking = false;
+        let lastUsage = { prompt_tokens: 0, completion_tokens: 0 };
+        let lastFinish = '';
+        let lineBuffer = '';
+        let tokenCount = 0;
+        let lastProgressAt = Date.now();
+        let firstTokenAt = 0;
+        const PROGRESS_INTERVAL = 2000;
+
+        const req = lib.request(
+          {
+            hostname: reqUrl.hostname,
+            port: reqUrl.port || (reqUrl.protocol === 'https:' ? '443' : '80'),
+            path: reqUrl.pathname,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ollama',
+              'Content-Length': Buffer.byteLength(bodyStr),
+            },
+          },
+          (res) => {
+            if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+              let errBuf = '';
+              res.on('data', (chunk: Buffer) => { errBuf += chunk.toString(); });
+              res.on('end', () => resolve({ statusCode: res.statusCode ?? 0, responseText: errBuf, usage: lastUsage, finishReason: '' }));
+              res.on('error', reject);
+              return;
+            }
+            res.on('data', (chunk: Buffer) => {
+              lineBuffer += chunk.toString();
+              const lines = lineBuffer.split('\n');
+              lineBuffer = lines.pop() ?? '';
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed === 'data: [DONE]') continue;
+                if (!trimmed.startsWith('data: ')) continue;
+                try {
+                  const parsed = JSON.parse(trimmed.slice(6));
+                  if (parsed.usage) lastUsage = parsed.usage;
+                  const delta = parsed.choices?.[0]?.delta;
+                  if (parsed.choices?.[0]?.finish_reason) lastFinish = parsed.choices[0].finish_reason;
+                  if (!delta) continue;
+                  const content = delta.content ?? '';
+                  if (!content) continue;
+                  tokenCount++;
+                  if (!firstTokenAt) {
+                    firstTokenAt = Date.now();
+                    if (stopHeartbeat) { stopHeartbeat(); stopHeartbeat = null; }
+                  }
+                  if (content.includes('<think>')) { inThinking = true; }
+                  if (inThinking) {
+                    thinkingContent += content;
+                    if (content.includes('</think>')) { inThinking = false; }
+                  } else {
+                    fullContent += content;
+                  }
+                  const now = Date.now();
+                  if (now - lastProgressAt >= PROGRESS_INTERVAL) {
+                    lastProgressAt = now;
+                    const elapsed = Math.round((now - startTime) / 1000);
+                    const timeoutSec = Math.round(timeout / 1000);
+                    const ttft = firstTokenAt ? `ttft=${Math.round((firstTokenAt - startTime) / 1000)}s` : '';
+                    const phase = inThinking ? 'THINKING' : 'GENERATING';
+                    const thinkNote = thinkingContent.length > 0 ? ` thinking=${thinkingContent.length}ch` : '';
+                    process.stdout.write(`\r[Ollama] ${modelToUse} ${phase}: ${elapsed}s/${timeoutSec}s | ${tokenCount} tok | ${fullContent.length}ch out${thinkNote} ${ttft}    `);
+                  }
+                } catch { /* skip malformed SSE lines */ }
+              }
+            });
+            res.on('end', () => {
+              process.stdout.write('\n');
+              resolve({ statusCode: res.statusCode ?? 200, responseText: fullContent, usage: lastUsage, finishReason: lastFinish });
+            });
+            res.on('error', reject);
+          }
+        );
+        req.on('error', reject);
+        const onAbort = () => {
+          req.destroy();
+          reject(Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }));
+        };
+        if (signal.aborted) { onAbort(); return; }
+        signal.addEventListener('abort', onAbort, { once: true });
+        req.on('close', () => signal.removeEventListener('abort', onAbort));
+        req.end(bodyStr);
       });
       const elapsed = Date.now() - startTime;
+      stopHeartbeat?.();
+      stopHeartbeat = null;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Ollama] Error ${response.status} after ${elapsed}ms: ${errorText.substring(0, 500)}`);
+      if (statusCode < 200 || statusCode >= 300) {
+        console.error(`[Ollama] Error ${statusCode} after ${elapsed}ms: ${streamedContent.substring(0, 500)}`);
         emitModelEvent({
           level: 'error',
           code: 'llm_error',
-          message: `← ${modelToUse} HTTP ${response.status} after ${elapsed}ms`,
-          data: { model: modelToUse, status: response.status, elapsed, detail: errorText.substring(0, 200) },
+          message: `← ${modelToUse} HTTP ${statusCode} after ${elapsed}ms`,
+          data: { model: modelToUse, status: statusCode, elapsed, detail: streamedContent.substring(0, 200) },
         });
         if (attempt < maxRetries) {
           const backoff = baseDelay * Math.pow(2, attempt);
           await new Promise(resolve => setTimeout(resolve, backoff));
           continue;
         }
-        return { data: null, usage: null, error: `HTTP ${response.status}: ${errorText.substring(0, 200)}` };
+        return { data: null, usage: null, error: `HTTP ${statusCode}: ${streamedContent.substring(0, 200)}` };
       }
 
-      const data = await response.json();
-      const responseText = data.choices?.[0]?.message?.content?.trim();
+      const responseText = streamedContent.trim();
       const usage: TokenUsage = {
-        inputTokens: data.usage?.prompt_tokens || 0,
-        outputTokens: data.usage?.completion_tokens || 0,
+        inputTokens: streamUsage.prompt_tokens || 0,
+        outputTokens: streamUsage.completion_tokens || 0,
         provider: 'ollama',
         model: modelToUse,
       };
-      const finishReason = data.choices?.[0]?.finish_reason;
 
       console.log(`[Ollama] Response in ${elapsed}ms, tokens: ${usage.inputTokens}+${usage.outputTokens}, finish=${finishReason}`);
+      if (responseText) {
+        const preview = responseText.length > 1200 ? responseText.slice(0, 1200) + '\n…[truncated for display]' : responseText;
+        console.log(`[Ollama] ── response preview ─────────────────────────────────────────`);
+        console.log(preview);
+        console.log(`[Ollama] ────────────────────────────────────────────────────────────`);
+      }
       emitModelEvent({
         level: 'info',
         code: 'llm_response',
         message: `← ${modelToUse} ${elapsed}ms — ${usage.inputTokens}↑ ${usage.outputTokens}↓ tokens`,
-        data: { model: modelToUse, elapsed, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, finishReason },
+        data: { provider: 'ollama' as const, model: modelToUse, elapsed, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, finishReason },
       });
 
       if (finishReason === 'length') {
@@ -525,6 +692,8 @@ async function callOllama<T>(
       }
     } catch (error) {
       const elapsed = Date.now() - startTime;
+      stopHeartbeat?.();
+      stopHeartbeat = null;
       if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
         console.error(`[Ollama] Timeout after ${elapsed}ms`);
         if (attempt < maxRetries) continue;

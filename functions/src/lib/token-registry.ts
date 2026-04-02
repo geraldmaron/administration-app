@@ -200,6 +200,7 @@ export const TOKEN_CATEGORIES = {
     'the_capital_mayor',
     'the_regional_governor',
     'the_opposition_party',
+    'the_opposition_leader',
     'the_major_industry',
     'the_regional_bloc',
     'the_army_name',
@@ -208,6 +209,16 @@ export const TOKEN_CATEGORIES = {
     'the_cyber_agency',
     'the_nuclear_command',
     'the_coalition_name',
+    'the_armed_forces_name',
+    'the_military_chief_title',
+    'the_special_forces',
+    'the_naval_commander',
+    'the_air_commander',
+    'the_stock_exchange',
+    'the_sovereign_fund',
+    'the_state_enterprise',
+    'the_head_of_state_title',
+    'the_capital_city',
   ] as const,
 
   party: [
@@ -276,6 +287,90 @@ export const TOKEN_ALIAS_MAP: Readonly<Record<string, string>> = {
   'cyber_role':          'defense_role',
   'foreign_role':        'foreign_affairs_role',
   'diplomacy_role':      'foreign_affairs_role',
+  'labor_ministry':      'labor_role',
+  'finance_ministry':    'finance_role',
+  'defense_ministry':    'defense_role',
+  'interior_ministry':   'interior_role',
+  'health_ministry':     'health_role',
+  'education_ministry':  'education_role',
+  'energy_ministry':     'energy_role',
+  'commerce_ministry':   'commerce_role',
+  'justice_ministry':    'justice_role',
+  'environment_ministry':'environment_role',
+  'transport_ministry':  'transport_role',
+  'agriculture_ministry':'agriculture_role',
+  'foreign_ministry':    'foreign_affairs_role',
+  'business_association':'major_industry',
+  'business_alliance':   'major_industry',
+  'trade_association':   'major_industry',
+  'trade_alliance':      'major_industry',
+  'industry_group':      'major_industry',
+  'industry_alliance':   'major_industry',
+  'rural_alliance':      'agriculture_role',
+  'farmers_alliance':    'agriculture_role',
+  'agricultural_sector': 'agriculture_role',
+  'national_bank':       'central_bank',
+  'federal_reserve':     'central_bank',
+  'parliament':          'legislature',
+  'congress':            'legislature',
+  'senate':              'upper_house',
+  'army':                'military_branch',
+  'navy':                'military_branch',
+  'air_force':           'military_branch',
+  'president':           'leader_title',
+  'prime_minister':      'leader_title',
+  'chancellor':          'leader_title',
+  'head_of_state':       'leader_title',
+  'head_of_government':  'leader_title',
+  'chief_executive':     'leader_title',
+  'supreme_leader':      'leader_title',
+  'monarch':             'leader_title',
+  'king':                'leader_title',
+  'queen':               'leader_title',
+  'dictator':            'leader_title',
+  'vice_president':      'vice_leader',
+  'deputy_leader':       'vice_leader',
+  'budget':              'fiscal_condition',
+  'fiscal_budget':       'fiscal_condition',
+  'national_budget':     'fiscal_condition',
+  'government_budget':   'fiscal_condition',
+  'military':            'military_branch',
+  'armed_forces':        'armed_forces_name',
+  'national_guard':      'military_branch',
+  'coast_guard':         'military_branch',
+  'supreme_court':       'judicial_role',
+  'high_court':          'judicial_role',
+  'constitutional_court':'judicial_role',
+  'attorney_general':    'prosecutor_role',
+  'chief_prosecutor':    'prosecutor_role',
+  'national_police':     'police_force',
+  'secret_service':      'intelligence_agency',
+  'spy_agency':          'intelligence_agency',
+  'national_intelligence':'intelligence_agency',
+  'foreign_intelligence':'intelligence_agency',
+  'state_bank':          'central_bank',
+  'reserve_bank':        'central_bank',
+  'treasury':            'finance_role',
+  'exchequer':           'finance_role',
+  'state_television':    'state_media',
+  'state_broadcaster':   'state_media',
+  'national_media':      'state_media',
+  'spokesperson':        'press_secretary',
+  'government_spokesperson': 'press_secretary',
+  'enemy':               'adversary',
+  'foe':                 'adversary',
+  'hostile_nation':      'adversary',
+  'hostile_power':       'adversary',
+  'neighboring_country': 'neighbor',
+  'neighbouring_country':'neighbor',
+  'bordering_country':   'border_rival',
+  'bordering_nation':    'border_rival',
+  'trading_partner':     'trade_partner',
+  'trade_ally':          'trade_partner',
+  'allied_nation':       'ally',
+  'allied_country':      'ally',
+  'regional_power':      'regional_rival',
+  'regional_competitor': 'regional_rival',
 };
 
 // ---------------------------------------------------------------------------
@@ -386,7 +481,6 @@ export function normalizeTokenAliases(text: string): string {
   const exactPlaceholderReplacements: ReadonlyArray<[RegExp, string]> = [
     [/\{the_legislature_speaker\}/gi, 'the speaker of {the_legislature}'],
     [/\{legislature_speaker\}/gi, 'speaker of {the_legislature}'],
-    [/\{the_capital_city\}/gi, '{capital_city}'],
     [/\{the_economy\}/gi, 'the economy'],
     [/\{economy\}/gi, 'the economy'],
     [/\{metric_public_order\}/gi, 'public order'],
@@ -472,6 +566,52 @@ export function buildTokenWhitelistPromptSection(): string {
     .map(({ concept, token }) => `- ${concept} → ${token}`)
     .join('\n');
 
+  return buildFullTokenPromptSection(categorizedList, articleFormsList, relationshipTokens, invalidTokenEntries, canonicalRolesList, roleDefList, invalidRoleRedirects, conceptTable);
+}
+
+export function buildCompactTokenPromptSection(): string {
+  const canonicalRolesList = Array.from(CANONICAL_ROLE_IDS).map(r => `\`${r}\``).join(', ');
+  const conceptTable = CONCEPT_TO_TOKEN_MAP
+    .slice(0, 15)
+    .map(({ concept, token }) => `- ${concept} → ${token}`)
+    .join('\n');
+
+  return `## Token System (MANDATORY)
+
+Use \`{token}\` placeholders for ALL government roles, institutions, countries, and entities. NEVER hardcode names.
+
+### Core Tokens
+- \`{leader_title}\` — president/PM/chancellor
+- \`{the_player_country}\` — the player's country (always use the_ form)
+- \`{finance_role}\`, \`{defense_role}\`, \`{interior_role}\`, \`{foreign_affairs_role}\`, \`{justice_role}\`, \`{health_role}\` — government roles
+- \`{legislature}\`, \`{ruling_party}\`, \`{opposition_party}\` — political institutions
+- \`{the_adversary}\`, \`{the_ally}\`, \`{the_trade_partner}\`, \`{the_neighbor}\`, \`{the_border_rival}\` — foreign relations
+- \`{currency}\`, \`{central_bank}\`, \`{stock_exchange}\`, \`{military_branch}\`, \`{capital_city}\` — infrastructure
+- \`{major_industry}\`, \`{the_regional_bloc}\` — economic/political bodies
+
+### Article Form Rules
+- Country/relationship tokens: ALWAYS use \`{the_*}\` form except in possessives (\`{adversary}'s\`)
+- Role tokens at sentence start: use \`{the_*}\` form (\`{the_finance_role} announced...\`)
+- NEVER write \`"the {token}"\` — use \`{the_token}\` instead
+
+### Hard Fail Rules
+- Literal country names, capitals, or abbreviations = REJECTED
+- Invented tokens not in the approved list = REJECTED
+- Ministry/department names = REJECTED (use role tokens)
+- "ruling coalition", "parliamentary majority" = REJECTED (use {ruling_party}, {legislature})
+
+### Valid Advisor Roles (for advisorFeedback.roleId)
+${canonicalRolesList}
+
+### Key Concept → Token Mappings
+${conceptTable}`;
+}
+
+function buildFullTokenPromptSection(
+  categorizedList: string, articleFormsList: string, relationshipTokens: string[],
+  invalidTokenEntries: string, canonicalRolesList: string, roleDefList: string,
+  invalidRoleRedirects: string, conceptTable: string
+): string {
   return `## Token System
 
 All country-specific content must use \`{token}\` placeholders:
@@ -600,4 +740,63 @@ ${invalidRoleRedirects}
 
 Never hardcode — always use the right token for the concept:
 ${conceptTable}`;
+}
+
+/**
+ * Build a "token cheat sheet" that shows local models what tokens resolve to
+ * for a specific country. The model still outputs {token} placeholders, but
+ * seeing concrete examples helps it use the right tokens.
+ *
+ * @param countryData - The country object from the country catalog (must have a `tokens` field)
+ * @param scopeTier - The scope tier ('universal', 'regional', 'cluster', 'exclusive')
+ * @returns A prompt section with token examples, or an empty string if no data
+ */
+export function preResolveTokenContext(
+  countryData: Record<string, any> | undefined,
+  scopeTier: string
+): string {
+  if (!countryData?.tokens || scopeTier === 'universal') {
+    return buildCompactTokenPromptSection();
+  }
+
+  const tokens = countryData.tokens as Record<string, string>;
+  const PRIORITY_TOKENS = [
+    'leader_title', 'vice_leader', 'legislature', 'ruling_party', 'opposition_party',
+    'finance_role', 'defense_role', 'interior_role', 'foreign_affairs_role', 'justice_role',
+    'health_role', 'education_role', 'commerce_role', 'labor_role', 'energy_role',
+    'currency', 'central_bank', 'military_branch', 'capital_city', 'major_industry',
+  ];
+
+  const cheatSheet = PRIORITY_TOKENS
+    .filter(t => tokens[t])
+    .map(t => `  {${t}} = "${tokens[t]}"`)
+    .join('\n');
+
+  const relationshipTokens: string[] = [];
+  const GEO = countryData.geopolitical;
+  if (GEO) {
+    if (GEO.allies?.length) relationshipTokens.push(`  {the_ally} = a country like "${GEO.allies[0].countryId?.toUpperCase() || 'an allied nation'}"`);
+    if (GEO.adversaries?.length) relationshipTokens.push(`  {the_adversary} = a country like "${GEO.adversaries[0].countryId?.toUpperCase() || 'a rival power'}"`);
+    if (GEO.neighbors?.length) relationshipTokens.push(`  {the_neighbor} = a country like "${GEO.neighbors[0].countryId?.toUpperCase() || 'a neighboring state'}"`);
+  }
+
+  return `## Token System (MANDATORY)
+
+Use {token} placeholders for ALL government roles, institutions, countries, and entities. NEVER hardcode names.
+
+### Token Cheat Sheet (what these tokens resolve to for this country)
+${cheatSheet}
+${relationshipTokens.length ? '\n### Relationship Tokens\n' + relationshipTokens.join('\n') : ''}
+
+### Rules
+- ALWAYS output {token} placeholders in your JSON — NOT the resolved values above.
+- The cheat sheet shows what tokens mean so you pick the RIGHT token for each concept.
+- Use {the_*} form at sentence start or as subject (e.g., {the_finance_role}, {the_adversary}).
+- Use bare form only before 's for possessives (e.g., {adversary}'s demands).
+- NEVER write "the {token}" — use {the_token} instead.
+- NEVER hardcode country names, capitals, party names, or institution names.
+${scopeTier === 'universal' ? '- UNIVERSAL SCOPE: keep entirely domestic. Do NOT use relationship tokens.' : ''}
+
+### Valid Advisor Roles
+role_executive, role_diplomacy, role_defense, role_economy, role_justice, role_health, role_commerce, role_labor, role_interior, role_energy, role_environment, role_transport, role_education`;
 }

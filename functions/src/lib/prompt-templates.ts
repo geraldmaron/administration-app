@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { BundleScenario } from './audit-rules';
 import { buildTokenWhitelistPromptSection } from './token-registry';
+import { buildBannedPhrasePromptGuidance } from './audit-rules';
 import { ALL_BUNDLE_IDS, type BundleId } from '../data/schemas/bundleIds';
 import type { ScenarioScopeTier } from '../types';
 
@@ -88,8 +89,8 @@ const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
     drafter: 'Favor outbreaks, hospital overload, medicine shortages, vaccine politics, mental health strain, and emergency public-health measures. Keep tradeoffs clear between health, liberty, budget, public order, and approval.',
   },
   diplomacy: {
-    architect: 'Center the blueprint on alliances, sanctions, trade leverage, crisis signaling, regional credibility, and diplomatic blowback. Include cross-border refugee flows and migration diplomacy as valid arc types: burden-sharing negotiations with neighbors, bilateral agreements over displaced populations, and situations where refugee flows become a coercive diplomatic instrument.',
-    drafter: 'Favor sanctions, summit diplomacy, hostage crises, treaty leverage, recognition disputes, tariffs, aid, and alliance bargaining. Also include refugee burden-sharing negotiations, migration diplomacy with origin and transit countries, and scenarios where a neighbor uses refugee flows as political leverage. Make every option expose tradeoffs in foreign relations, trade, sovereignty, military posture, and approval.',
+    architect: 'Center the blueprint on alliances, sanctions, trade leverage, crisis signaling, regional credibility, and diplomatic blowback. Include cross-border refugee flows and migration diplomacy as valid arc types: burden-sharing negotiations with neighbors, bilateral agreements over displaced populations, and situations where refugee flows become a coercive diplomatic instrument. UNIVERSAL SCOPE EXCEPTION: when scopeTier is universal, foreign-counterpart interactions are forbidden — center instead on the domestic political economy of foreign policy: trade pact ratification fights in the legislature, sanctions coalition politics within cabinet, foreign aid appropriation battles, treaty withdrawal crises, and asylum system design debates. The scenario must be entirely domestic even though the subject matter is foreign policy.',
+    drafter: 'Favor sanctions, summit diplomacy, hostage crises, treaty leverage, recognition disputes, tariffs, aid, and alliance bargaining. Also include refugee burden-sharing negotiations, migration diplomacy with origin and transit countries, and scenarios where a neighbor uses refugee flows as political leverage. Make every option expose tradeoffs in foreign relations, trade, sovereignty, military posture, and approval. UNIVERSAL SCOPE: if the scenario is universal, use only domestic political actors — legislature ratifying or blocking a treaty, cabinet factions splitting over a sanctions vote, a foreign aid budget debate. Do not introduce foreign counterparts or relationship tokens.',
   },
   justice: {
     architect: 'Frame the arc around judicial legitimacy, policing strain, civil liberties, sentencing choices, and the state’s response to disorder.',
@@ -158,7 +159,7 @@ function getFirestore(): FirebaseFirestore.Firestore {
 // ---------------------------------------------------------------------------
 
 const _templateCache = new Map<string, { data: PromptTemplate; fetchedAt: number }>();
-const TEMPLATE_CACHE_TTL_MS = 0;
+const TEMPLATE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Local file fallback
@@ -296,17 +297,176 @@ export async function getCurrentPromptVersions(): Promise<PromptVersion> {
  */
 export async function getDrafterPromptBase(): Promise<string> {
   const tokenSection = buildTokenWhitelistPromptSection();
+  const bannedPhraseGuidance = buildBannedPhrasePromptGuidance();
+  const applyReplacements = (text: string) =>
+    text.replace('{{TOKEN_SYSTEM}}', tokenSection).replace('{{BANNED_PHRASE_GUIDANCE}}', bannedPhraseGuidance);
   const template = await getPromptTemplate('drafter_details');
-  if (template) return template.sections.constraints.replace('{{TOKEN_SYSTEM}}', tokenSection);
+  if (template) return applyReplacements(template.sections.constraints);
   const local = getLocalFallbackPrompt('drafter_details');
   if (local) {
     console.warn('[PromptTemplates] Using local fallback for drafter_details — seed or activate a Firestore template for production.');
-    return local.replace('{{TOKEN_SYSTEM}}', tokenSection);
+    return applyReplacements(local);
   }
   throw new Error(
     '[PromptTemplates] No active "drafter_details" prompt template found in Firestore and no local fallback available. ' +
     'Run the seed script or activate a version via activatePromptVersion().'
   );
+}
+
+export function getCompactDrafterPromptBase(): string {
+  return `## Role
+You are The Drafter for The Administration.
+
+Write valid JSON only.
+
+## Voice
+- description, options[].text, advisorFeedback[].feedback: second person.
+- outcomeHeadline, outcomeSummary, outcomeContext: third-person news style.
+- Never use "you" or "your" in outcome fields.
+
+## Hard Rules
+- Use only approved {token} placeholders already provided in the surrounding prompt/context.
+- Never invent tokens.
+- Never output the literal substring "the {".
+- Never use hardcoded country names, capitals, party names, or institution names.
+- If scopeTier is universal, keep the scenario entirely domestic. Do not use relationship tokens like {the_trade_partner}, {the_ally}, or {the_adversary}. Use legislature, cabinet, courts, markets, prices, employers, unions, or regulators instead.
+- Title: 4-8 words, concrete headline style, no tokens.
+- Title must contain a verb and named institutional actor. Forbidden endings: Crisis, Debate, Decision, Dilemma, Challenge, Conflict, Response, Options.
+- Description: 2-3 sentences, 60-140 words.
+- Count words before returning. If description is under 60 words, expand it with trigger, actors, and concrete stakes.
+- Exactly 3 options.
+- Each option text: 2-3 sentences, 50-80 words.
+- Count words before returning. If any option text is under 50 words, expand it with mechanism, trade-off, and affected constituency.
+- Each option label: max 3 words, plain text, no tokens.
+- Each option: exactly 3 effects preferred, never more than 4.
+- **INVERSE METRICS — SIGN RULE (VIOLATION = REJECTED)**:
+  corruption, inflation, crime, bureaucracy are INVERSE metrics (lower = better for player).
+  ALL effect values on inverse metrics MUST be NEGATIVE.
+  To worsen corruption (raise it): value = -1.5 (negative). To reduce corruption (lower it): DO NOT target it; target a positive metric instead.
+  Example: { "targetMetricId": "metric_corruption", "value": -1.8 } ← CORRECT (corruption gets worse)
+  WRONG: { "targetMetricId": "metric_corruption", "value": 1.8 } ← REJECTED (positive on inverse)
+- outcomeHeadline: 3-15 words.
+- outcomeSummary: 2-3 sentences, at least 250 characters.
+- outcomeContext: 4-6 sentences, 70-100 words, at least 400 characters.
+- Outcome fields must stay grounded in the listed effects. Do not invent GDP percentages, exchange-rate moves, layoffs, shortages, approval crashes, or foreign retaliation unless those consequences are reflected in effects.
+- Every option must include advisorFeedback for all 13 canonical roles.
+- Use active voice and plain language.
+
+## Canonical advisor roles
+role_executive, role_diplomacy, role_defense, role_economy, role_justice, role_health, role_commerce, role_labor, role_interior, role_energy, role_environment, role_transport, role_education
+
+## Output contract
+Return only the requested scenario JSON object matching the schema. No prose outside JSON.`;
+}
+
+/**
+ * Ollama sub-phase prompt: Skeleton (Phase A)
+ * Focused prompt for generating title, description, and 3 option texts only.
+ * Designed to stay under 3000 input tokens for local models.
+ */
+export function getOllamaSkeletonPrompt(params: {
+  concept: string;
+  bundle: string;
+  scopeTier: string;
+  scopeNote: string;
+  countryNote: string;
+  countryContextBlock: string;
+  bundleGuidance: string;
+  scopeGuidance: string;
+  tokenContext: string;
+}): string {
+  const isUniversal = params.scopeTier === 'universal';
+  return `You are The Drafter for The Administration — a political simulation game.
+Generate a governance scenario as JSON.
+
+CONCEPT: "${params.concept}"
+BUNDLE: ${params.bundle}
+${params.scopeNote}
+${params.countryNote}
+
+${params.tokenContext}
+
+VOICE RULES:
+- description and option text: use "you" / "your" (second person, addressing the player leader).
+- Never use "the government" or "the administration" — say "you" or "your cabinet".
+
+TOKEN RULES:
+- Use {token} placeholders for countries, leaders, institutions, parties, and currencies.
+- Use {the_*} form at sentence start or as subject (e.g., {the_finance_role}, {the_adversary}).
+- Use bare form only before 's for possessives (e.g., {adversary}'s demands).
+- NEVER hardcode country names, capitals, party names, or institution names.
+${isUniversal ? '- UNIVERSAL SCOPE: keep entirely domestic. Do NOT use relationship tokens ({the_adversary}, {the_ally}, etc.).' : ''}
+
+STRUCTURE:
+- title: 4-8 words, headline style, contains a verb and institutional actor, no tokens in title.
+- description: 2-3 sentences, 60-140 words. Include the trigger event, key actors, and concrete stakes.
+- Exactly 3 options, each with:
+  - id: "opt_a", "opt_b", "opt_c"
+  - text: 2-3 sentences, 50-80 words. Describe the action, mechanism, and trade-off.
+  - label: 1-3 words, plain text, no tokens.
+
+${params.bundleGuidance}
+${params.scopeGuidance}
+
+Return ONLY the JSON object matching the schema. No prose outside JSON.`;
+}
+
+/**
+ * Ollama sub-phase prompt: Effects & Outcomes (Phase B)
+ * Focused prompt for generating effects, outcomes, and classifications.
+ * Receives the skeleton from Phase A as context.
+ */
+export function getOllamaEffectsPrompt(params: {
+  skeleton: { title: string; description: string; options: Array<{ id: string; text: string; label: string }> };
+  bundle: string;
+  validMetricIds: string[];
+  inverseMetrics: string[];
+  scopeTier: string;
+}): string {
+  const optionsSummary = params.skeleton.options
+    .map(o => `- ${o.id} (${o.label}): ${o.text}`)
+    .join('\n');
+  const metricList = params.validMetricIds.join(', ');
+  const inverseList = params.inverseMetrics.join(', ');
+
+  return `Generate effects, outcomes, and classifications for each option in this scenario.
+
+SCENARIO: "${params.skeleton.title}"
+${params.skeleton.description}
+
+OPTIONS:
+${optionsSummary}
+
+BUNDLE: ${params.bundle}
+
+For EACH of the 3 options, generate:
+
+EFFECTS (2-4 per option):
+- targetMetricId: MUST be one of: ${metricList}
+- value: number between -4.0 and +4.0 (magnitude of impact)
+- type: "delta"
+- duration: 1-20 (turns the effect lasts)
+- probability: 1.0
+- At least 1 effect MUST target a metric in the ${params.bundle} domain.
+- INVERSE METRICS (${inverseList}): ALL values MUST be NEGATIVE. Positive values = instant rejection.
+
+OUTCOMES (third-person news style — NEVER use "you" or "your"):
+- outcomeHeadline: 3-15 words, newspaper headline
+- outcomeSummary: 2-3 sentences, at least 250 characters, journalistic lede
+- outcomeContext: 4-6 sentences, 70-100 words, at least 400 characters, institutional reactions and implications
+
+CLASSIFICATION:
+- is_authoritarian: boolean
+- moral_weight: -1.0 to 1.0
+- classification.riskLevel: safe | moderate | risky | dangerous
+- classification.ideology: left | center | right
+- classification.approach: diplomatic | economic | military | humanitarian | administrative
+
+policyImplications (0-2 per option):
+- target: one of the fiscal.* or policy.* enum values
+- delta: -15 to 15
+
+Return JSON with { options: [{ id, effects, policyImplications, outcomeHeadline, outcomeSummary, outcomeContext, is_authoritarian, moral_weight, classification }] }`;
 }
 
 /**
@@ -366,16 +526,17 @@ export function buildDrafterPrompt(
   basePrompt: string,
   fewShotExamples?: BundleScenario[],
   reflectionPrompt?: string,
-  options?: { lowLatencyMode?: boolean }
+  options?: { lowLatencyMode?: boolean; omitExamples?: boolean; omitReflection?: boolean }
 ): string {
   let prompt = basePrompt;
 
-  if (options?.lowLatencyMode) {
+  const isLowLatency = Boolean(options?.lowLatencyMode);
+
+  if (isLowLatency) {
     prompt += '\n\n# LOW-LATENCY MODE\nReturn the smallest valid JSON that still satisfies every schema and audit requirement. Do not add extra explanation or decorative prose beyond what the fields require.\n';
-    return prompt;
   }
 
-  if (fewShotExamples && fewShotExamples.length > 0) {
+  if (!(options?.omitExamples || isLowLatency) && fewShotExamples && fewShotExamples.length > 0) {
     prompt += '\n\n# PERFECT EXAMPLES\n\nStudy these examples of PERFECT scenarios that meet all requirements:\n\n';
     fewShotExamples.forEach((example, idx) => {
       prompt += `## Example ${idx + 1}: ${example.title}\n\`\`\`json\n${JSON.stringify(example, null, 2)}\n\`\`\`\n\n`;
@@ -383,7 +544,7 @@ export function buildDrafterPrompt(
     prompt += 'Your output must match this quality level and structure.\n';
   }
 
-  if (reflectionPrompt) {
+  if (!(options?.omitReflection || isLowLatency) && reflectionPrompt) {
     prompt += '\n\n' + reflectionPrompt;
   }
 

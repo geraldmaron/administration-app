@@ -548,6 +548,25 @@ export default function JobDetailPage() {
             {job.description && (
               <p className="mt-2 text-sm text-foreground-muted">{job.description}</p>
             )}
+            {job.mode === 'blitz' && (
+              <div className="mt-3 flex flex-wrap gap-3 text-xs">
+                {job.scopeTier && (
+                  <span className="rounded-full border border-[var(--border)] px-2.5 py-1 font-mono uppercase tracking-[0.12em] text-[var(--foreground-muted)]">
+                    {job.scopeTier}
+                  </span>
+                )}
+                {job.scopeKey && job.scopeKey !== job.scopeTier && job.scopeKey !== 'universal' && (
+                  <span className="rounded-full border border-[var(--border)] px-2.5 py-1 font-mono text-[var(--foreground-muted)]">
+                    {job.scopeKey.replace(/^(region|country|cluster):/, '')}
+                  </span>
+                )}
+                {job.applicable_countries && job.applicable_countries.length > 0 && (
+                  <span className="rounded-full border border-[var(--border)] px-2.5 py-1 font-mono text-[var(--foreground-muted)]">
+                    {job.applicable_countries.length} countr{job.applicable_countries.length === 1 ? 'y' : 'ies'}: {job.applicable_countries.slice(0, 3).join(', ')}{job.applicable_countries.length > 3 ? `…` : ''}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {job.status === 'pending' && (

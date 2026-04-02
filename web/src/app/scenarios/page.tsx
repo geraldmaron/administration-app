@@ -32,6 +32,7 @@ function ScenariosInner() {
   const [error, setError] = useState<string | null>(null);
   const [localSearch, setLocalSearch] = useState('');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [countryCountFilter, setCountryCountFilter] = useState<string>('all');
   const [pageSize, setPageSize] = useState(25);
   const [cursors, setCursors] = useState<string[]>([]);
   const [toggling, setToggling] = useState<Set<string>>(new Set());
@@ -84,7 +85,7 @@ function ScenariosInner() {
     return () => { cancelled = true; };
   }, [bundle, active, page, cursor, pageSize]);
 
-  useEffect(() => { setSelectedIds(new Set()); }, [bundle, active, page]);
+  useEffect(() => { setSelectedIds(new Set()); setCountryCountFilter('all'); }, [bundle, active, page]);
 
   async function toggleActive(id: string, current: boolean) {
     setToggling((prev) => new Set(prev).add(id));
@@ -157,6 +158,13 @@ function ScenariosInner() {
     const base = data?.scenarios.filter((s) => {
       if (localSearch && !s.title.toLowerCase().includes(localSearch.toLowerCase())) return false;
       if (severityFilter !== 'all' && s.severity !== severityFilter) return false;
+      if (countryCountFilter !== 'all') {
+        const cc = s.countryCount ?? 0;
+        if (countryCountFilter === '0' && cc !== 0) return false;
+        if (countryCountFilter === '1-10' && (cc < 1 || cc > 10)) return false;
+        if (countryCountFilter === '11-50' && (cc < 11 || cc > 50)) return false;
+        if (countryCountFilter === '50+' && cc <= 50) return false;
+      }
       return true;
     }) ?? [];
     return [...base].sort((a, b) => {
@@ -196,6 +204,18 @@ function ScenariosInner() {
         <option value="medium">Medium</option>
         <option value="high">High</option>
         <option value="critical">Critical</option>
+      </select>
+      <select
+        value={countryCountFilter}
+        onChange={(e) => setCountryCountFilter(e.target.value)}
+        className="input-shell"
+        style={{ width: 'auto', minWidth: 120 }}
+      >
+        <option value="all">All countries</option>
+        <option value="0">Global (0)</option>
+        <option value="1-10">1–10 countries</option>
+        <option value="11-50">11–50 countries</option>
+        <option value="50+">50+ countries</option>
       </select>
       <input
         type="text"

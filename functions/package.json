@@ -8,7 +8,8 @@
         "shell": "pnpm run build && firebase functions:shell",
         "start": "pnpm run shell",
         "deploy": "firebase deploy --only functions",
-        "logs": "firebase functions:log"
+        "logs": "firebase functions:log",
+        "gen-server": "npx tsx src/tools/local-gen-server.ts"
     },
     "engines": {
         "node": "22"

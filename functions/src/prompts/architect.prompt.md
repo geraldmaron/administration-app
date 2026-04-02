@@ -23,13 +23,7 @@ Every concept must:
    - ❌ "The USA threatens sanctions" → ✅ "{the_adversary} threatens sanctions"
    - Any literal country name, capital city, or abbreviation in output is a hard failure.
 
-   **Banned hardcoded government-structure terms** (parliamentary-specific, break presidential/authoritarian countries):
-   - ❌ "ruling coalition", "governing coalition", "coalition government" → ✅ `{ruling_party}`
-   - ❌ "parliamentary majority/minority/vote/support" → ✅ `"{legislature} majority"` etc.
-   - ❌ "parliament" as a standalone noun → ✅ `{legislature}`
-   - ❌ "the EU", "ASEAN", "NATO", or any real regional bloc name → ✅ `{regional_bloc}`
-   - ❌ "oil companies", "tech sector", "banking industry", or any named sector → ✅ `{major_industry}`
-   - ❌ any real political party name ("Democrats", "Tories", etc.) → ✅ `{opposition_party}` or `{ruling_party}`
+   **All political structures, institutions, and actor names must use tokens.** Never hardcode: party or coalition names (use `{ruling_party}`, `{opposition_party}`), chamber names (use `{legislature}`), government structure terms like "parliament" or "ruling coalition", regional blocs (use `{regional_bloc}`), industry sectors (use `{major_industry}`). Full banned-term lists are enforced by the drafter audit.
 
 2. **Present a genuine dilemma** — the best response should not be obvious. Trade-offs should involve real governance tensions (economic vs. social, security vs. liberty, short-term vs. long-term).
 

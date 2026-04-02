@@ -81,8 +81,9 @@ function parseArgs() {
     const count = parseInt(getArg('--count') ?? '10', 10);
     const dryRun = args.includes('--dry-run');
     const skipExport = args.includes('--skip-export');
+    const useOllama = args.includes('--ollama');
 
-    return { bundle, count, dryRun, skipExport };
+    return { bundle, count, dryRun, skipExport, useOllama };
 }
 
 // ---------------------------------------------------------------------------
@@ -90,13 +91,14 @@ function parseArgs() {
 // ---------------------------------------------------------------------------
 
 async function main() {
-    const { bundle, count, dryRun, skipExport } = parseArgs();
+    const { bundle, count, dryRun, skipExport, useOllama } = parseArgs();
     const { isValidBundleId } = await import('../data/schemas/bundleIds');
 
     if (!bundle) {
         console.error('Usage: npx tsx src/tools/generate-bundle.ts --bundle <bundleId> --count <n>');
         console.error('  --dry-run      Show plan without generating');
         console.error('  --skip-export  Generate and save to Firestore but skip Storage export');
+        console.error('  --ollama       Use Ollama models instead of OpenAI');
         process.exit(1);
     }
 
@@ -105,20 +107,72 @@ async function main() {
         process.exit(1);
     }
 
-    if (!process.env.OPENAI_API_KEY && !process.env.OPENAI_KEY) {
-        console.error('[generate-bundle] OPENAI_API_KEY is not set. Generation will fail.');
+    if (!useOllama && !process.env.OPENAI_API_KEY && !process.env.OPENAI_KEY) {
+        console.error('[generate-bundle] OPENAI_API_KEY is not set. Use --ollama for local models.');
         process.exit(1);
     }
 
     await initializeFirebase();
 
-    const [scenarioEngine, storage, bundleExporter] = await Promise.all([
+    const [scenarioEngine, storage, bundleExporter, genModels] = await Promise.all([
         import('../scenario-engine'),
         import('../storage'),
         import('../bundle-exporter'),
+        import('../lib/generation-models'),
     ]);
 
-    console.log(`\n[generate-bundle] Bundle: ${bundle} · Count: ${count}${dryRun ? ' · DRY RUN' : ''}\n`);
+    scenarioEngine.setEngineEventHandler((event) => {
+        const ts = new Date().toISOString().slice(11, 19);
+        const icon = event.level === 'success' ? '+' : event.level === 'error' ? 'X' : event.level === 'warning' ? '!' : '-';
+        const sep = '─'.repeat(70);
+        console.log(`\n  [${ts}] [${icon}] ${event.message}`);
+        if (event.data?.promptPreview) {
+            console.log(`  ${sep}`);
+            console.log(`  PROMPT (first 500 chars):`);
+            console.log(`  ${String(event.data.promptPreview).replace(/\n/g, '\n  ')}`);
+            console.log(`  ${sep}`);
+        }
+        if (event.data?.responsePreview) {
+            console.log(`  ${sep}`);
+            console.log(`  RESPONSE (first 600 chars):`);
+            console.log(`  ${String(event.data.responsePreview).replace(/\n/g, '\n  ')}`);
+            console.log(`  ${sep}`);
+        }
+        if (event.data?.tokens) {
+            const t = event.data.tokens as any;
+            console.log(`  TOKENS: input=${t.inputTokens ?? t.prompt_tokens ?? '?'} output=${t.outputTokens ?? t.completion_tokens ?? '?'}`);
+        }
+        if (event.data?.issues && Array.isArray(event.data.issues)) {
+            for (const issue of event.data.issues as any[]) {
+                console.log(`  ISSUE: [${issue.severity}] ${issue.rule}: ${issue.message}`);
+            }
+        }
+        if (event.data?.score !== undefined) {
+            console.log(`  SCORE: ${event.data.score}`);
+        }
+    });
+
+    let modelConfig: import('../lib/generation-models').GenerationModelConfig | undefined;
+    if (useOllama) {
+        const admin = await import('firebase-admin');
+        const db = admin.firestore();
+        const configSnap = await db.doc('world_state/generation_config').get();
+        const ollamaUrl = configSnap.data()?.ollama_base_url;
+        if (!ollamaUrl) {
+            console.error('[generate-bundle] No ollama_base_url in world_state/generation_config');
+            process.exit(1);
+        }
+        process.env.OLLAMA_BASE_URL = ollamaUrl;
+        const availableModels = await genModels.fetchOllamaModels(ollamaUrl);
+        if (availableModels.length === 0) {
+            console.error(`[generate-bundle] No Ollama models found at ${ollamaUrl}`);
+            process.exit(1);
+        }
+        modelConfig = genModels.buildOllamaModelConfig(availableModels);
+        console.log(`[generate-bundle] Ollama models: ${JSON.stringify(modelConfig, null, 2)}`);
+    }
+
+    console.log(`\n[generate-bundle] Bundle: ${bundle} · Count: ${count}${dryRun ? ' · DRY RUN' : ''}${useOllama ? ' · OLLAMA' : ''}\n`);
 
     if (dryRun) {
         console.log('[generate-bundle] Dry run — no scenarios will be written.');
@@ -130,6 +184,7 @@ async function main() {
         bundle,
         count,
         concurrency: 3,
+        ...(modelConfig ? { modelConfig } : {}),
         onProgress: ({ current, total, stage }) => {
             process.stdout.write(`\r  [${current}/${total}] ${stage}                    `);
         },

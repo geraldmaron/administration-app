@@ -134,6 +134,14 @@ export async function getRecentScenarioTitles(bundle: string, limit = 30): Promi
         .filter(Boolean);
 }
 
+export async function getRecentScenarioSummaries(bundle: string, limit = 30): Promise<Array<{ title: string; description: string }>> {
+    const scenarios = await getCachedScenariosForBundle(bundle);
+    return scenarios
+        .slice(0, limit)
+        .filter((s) => s.title)
+        .map((s) => ({ title: s.title, description: (s.description || '').substring(0, 80) }));
+}
+
 /**
  * Returns a frequency map of themes used by active scenarios in a bundle.
  * Used to identify underrepresented themes for the architect prompt.
@@ -364,7 +372,7 @@ export async function saveScenario(
                     created: new Date().toISOString(),
                     scenarioId: scenarioToSave.id,
                     severity: scenarioToSave.metadata?.severity || 'medium',
-                    source: scenarioToSave.metadata?.source || 'manual'
+                    sourceKind: scenarioToSave.metadata?.sourceKind || 'manual'
                 }
             });
             console.log(`[Storage] Saved JSON backup to ${storagePath}`);
@@ -381,11 +389,9 @@ export async function saveScenario(
         ...(storagePath ? { storage_path: storagePath } : {}),
         metadata: {
             ...(scenarioToSave.metadata || {}),
-            mode_availability: scenarioToSave.metadata?.mode_availability || []
         },
         created_at: admin.firestore.FieldValue.serverTimestamp(),
         type: 'generated',
-        source: scenarioToSave.metadata?.source || 'manual',
         is_active: true
     };
 
@@ -433,7 +439,7 @@ export async function saveScenario(
     // Invalidate cache for this bundle to ensure fresh data on next similarity check
     invalidateBundleCache(bundle);
 
-    console.log(`Saved scenario ${scenario.id} to Firestore${storagePath ? ` and Storage (${storagePath})` : ''} [source: ${scenario.metadata?.source || 'manual'}].`);
+    console.log(`Saved scenario ${scenario.id} to Firestore${storagePath ? ` and Storage (${storagePath})` : ''} [source: ${scenario.metadata?.sourceKind || 'manual'}].`);
     return { saved: true };
 }
 

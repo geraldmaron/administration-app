@@ -242,6 +242,9 @@ export interface JobDetail extends JobSummary {
   distributionConfig: DistributionConfig;
   regions?: string[];
   region?: string;
+  scopeTier?: string;
+  scopeKey?: string;
+  applicable_countries?: string[];
   requestedBy?: string;
   priority: string;
   startedAt?: string;

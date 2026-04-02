@@ -5,6 +5,7 @@ type GenerationModelConfig = NonNullable<GenerationJobRequest['modelConfig']>;
 const MODEL_KEYS = [
   'architectModel',
   'drafterModel',
+  'advisorModel',
   'repairModel',
   'contentQualityModel',
   'narrativeReviewModel',
@@ -29,14 +30,15 @@ export function hasRequestedOllamaModel(modelConfig?: GenerationModelConfig): bo
   return getRequestedOllamaModels(modelConfig).length > 0;
 }
 
-type GenerationPhase = 'architect' | 'drafter' | 'repair' | 'contentQuality' | 'narrativeReview';
+type GenerationPhase = 'architect' | 'drafter' | 'advisor' | 'repair' | 'contentQuality' | 'narrativeReview';
 
 const OLLAMA_PHASE_PREFERENCE: Record<GenerationPhase, string[]> = {
-  architect: ['ai-reasoning', 'deepseek-r1:32b', 'ai-general', 'qwen3:30b', 'deepseek-r1:14b'],
-  drafter: ['ai-reasoning', 'deepseek-r1:32b', 'ai-general', 'qwen3:30b', 'mistral-small:24b'],
-  repair: ['ai-coding', 'ai-general', 'qwen3-coder:30b', 'qwen3:30b'],
-  contentQuality: ['ai-fast', 'ai-general', 'qwen3:8b', 'gemma3:12b'],
-  narrativeReview: ['ai-fast', 'ai-general', 'qwen3:8b', 'gemma3:12b'],
+  architect: ['gemma3:12b', 'phi4:14b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
+  drafter: ['phi4:14b', 'gemma3:12b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
+  advisor: ['ai-fast', 'qwen3:8b', 'gemma3:12b'],
+  repair: ['ai-fast', 'qwen3:8b', 'gemma3:12b', 'ai-coding'],
+  contentQuality: ['ai-fast', 'qwen3:8b', 'gemma3:12b'],
+  narrativeReview: ['ai-fast', 'qwen3:8b', 'gemma3:12b'],
 };
 
 function resolveOllamaPhaseModel(phase: GenerationPhase, availableModels: string[]): string {
@@ -53,8 +55,32 @@ export function buildOllamaModelConfig(availableModels: string[]): GenerationMod
   return {
     architectModel: resolve('architect'),
     drafterModel: resolve('drafter'),
+    advisorModel: resolve('advisor'),
     repairModel: resolve('repair'),
     contentQualityModel: resolve('contentQuality'),
     narrativeReviewModel: resolve('narrativeReview'),
   };
+}
+
+export function hasMeaningfulModelConfig(config?: GenerationModelConfig | null): boolean {
+  return MODEL_KEYS.some(
+    (key) => typeof config?.[key] === 'string' && (config[key] as string).length > 0,
+  );
+}
+
+export async function fetchOllamaModels(baseUrl: string): Promise<string[]> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(`${baseUrl}/models`, {
+      headers: { Authorization: 'Bearer ollama' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.data || []).map((m: { id?: string }) => m.id).filter(Boolean) as string[];
+  } catch {
+    return [];
+  }
 }

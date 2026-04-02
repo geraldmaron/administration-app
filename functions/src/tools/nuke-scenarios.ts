@@ -92,8 +92,16 @@ async function main() {
   const bundlesCount = await deleteStoragePrefix('scenario-bundles/');
   console.log(`   Done. ${bundlesCount} files deleted.\n`);
 
+  console.log('5. Deleting Firestore `generation_jobs` collection...');
+  const jobsCount = await deleteCollection('generation_jobs');
+  console.log(`   Done. ${jobsCount} documents deleted.\n`);
+
+  console.log('6. Deleting Firestore `generation_metrics` collection...');
+  const metricsCount = await deleteCollection('generation_metrics');
+  console.log(`   Done. ${metricsCount} documents deleted.\n`);
+
   console.log('=== COMPLETE ===');
-  console.log(`Firestore: ${scenariosCount} scenarios, ${embeddingsCount} embeddings | Storage: ${storageCount} scenario files, ${bundlesCount} bundle files`);
+  console.log(`Firestore: ${scenariosCount} scenarios, ${embeddingsCount} embeddings, ${jobsCount} jobs, ${metricsCount} metrics | Storage: ${storageCount} scenario files, ${bundlesCount} bundle files`);
 }
 
 main().catch((err) => {

@@ -128,7 +128,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const request = $('Incoming Job Request').item.json.body || {};\nconst queued = $('Queue Generation Job').item.json || {};\nconst bundles = Array.isArray(request.bundles) ? request.bundles : [];\nconst count = typeof request.count === 'number' ? request.count : 1;\n\nconst scope = {\n  scopeTier: request.scopeTier || 'universal',\n  scopeKey: request.scopeKey || 'universal',\n  sourceKind: request.sourceKind || 'evergreen',\n  regions: request.regions || [],\n  region: request.region,\n  applicable_countries: request.applicable_countries || [],\n  exclusivityReason: request.exclusivityReason,\n  clusterId: request.clusterId,\n};\n\nreturn bundles.map(bundle => ({\n  json: {\n    jobId: queued.jobId,\n    bundle,\n    count,\n    mode: request.mode || 'manual',\n    lowLatencyMode: request.lowLatencyMode || false,\n    modelConfig: request.modelConfig || {},\n    dryRun: request.dryRun || false,\n    newsContext: request.newsContext || [],\n    ...scope,\n  }\n}));",
+        "jsCode": "const request = $('Incoming Job Request').item.json.body || {};\nconst queued = $('Queue Generation Job').item.json || {};\nconst bundles = Array.isArray(request.bundles) ? request.bundles : [];\nconst count = typeof request.count === 'number' ? request.count : 1;\n\nconst mc = request.modelConfig || {};\nconst isOllamaJob = Object.values(mc).some(v => typeof v === 'string' && v.startsWith('ollama:'));\nconst CLOUD_URL = 'https://us-central1-the-administration-3a072.cloudfunctions.net/processGenerationBundle';\nconst LOCAL_URL = 'http://localhost:3099/processGenerationBundle';\nconst targetUrl = isOllamaJob ? LOCAL_URL : CLOUD_URL;\n\nconst scope = {\n  scopeTier: request.scopeTier || 'universal',\n  scopeKey: request.scopeKey || 'universal',\n  sourceKind: request.sourceKind || 'evergreen',\n  regions: request.regions || [],\n  region: request.region,\n  applicable_countries: request.applicable_countries || [],\n  exclusivityReason: request.exclusivityReason,\n  clusterId: request.clusterId,\n};\n\nreturn bundles.map(bundle => ({\n  json: {\n    targetUrl,\n    jobId: queued.jobId,\n    bundle,\n    count,\n    mode: request.mode || 'manual',\n    lowLatencyMode: request.lowLatencyMode || false,\n    modelConfig: mc,\n    dryRun: request.dryRun || false,\n    newsContext: request.newsContext || [],\n    ...scope,\n  }\n}));",
         "notice": ""
       },
       "id": "prepare-bundles",
@@ -144,7 +144,7 @@
       "parameters": {
         "curlImport": "",
         "method": "POST",
-        "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/processGenerationBundle",
+        "url": "={{ $json.targetUrl }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "provideSslCertificates": false,
@@ -162,7 +162,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ $json }}",
+        "jsonBody": "={{ (() => { const d = { ...$json }; delete d.targetUrl; return d; })() }}",
         "options": {
           "timeout": 540000
         },
@@ -181,6 +181,49 @@
       "position": [
         1340,
         300
+      ]
+    },
+    {
+      "parameters": {
+        "curlImport": "",
+        "method": "POST",
+        "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/updateJobProgress",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { jobId: $('Queue Generation Job').item.json.jobId } }}",
+        "options": {
+          "timeout": 10000
+        },
+        "infoMessage": ""
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "UBv01nlXlbZjNRBJ",
+          "name": "admin-secret"
+        }
+      },
+      "id": "heartbeat-bundle",
+      "name": "Heartbeat Bundle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1580,
+        500
       ]
     },
     {
@@ -302,6 +345,11 @@
         [
           {
             "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Heartbeat Bundle",
             "type": "main",
             "index": 0
           }

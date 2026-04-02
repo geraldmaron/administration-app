@@ -182,7 +182,7 @@ async function getRecentlyProcessedHeadlines(db: admin.firestore.Firestore): Pro
     try {
         snapshot = await db
             .collection('scenarios')
-            .where('metadata.source', '==', 'news')
+            .where('metadata.sourceKind', '==', 'news')
             .where('created_at', '>=', admin.firestore.Timestamp.fromDate(cutoff))
             .select('metadata.source_news')
             .get();
@@ -197,7 +197,7 @@ async function getRecentlyProcessedHeadlines(db: admin.firestore.Firestore): Pro
                 .collection('scenarios')
                 .orderBy('created_at', 'desc')
                 .limit(500)
-                .select('created_at', 'source', 'metadata.source', 'metadata.source_news')
+                .select('created_at', 'metadata.sourceKind', 'metadata.source_news')
                 .get();
         } else {
             throw err;
@@ -210,8 +210,8 @@ async function getRecentlyProcessedHeadlines(db: admin.firestore.Firestore): Pro
         const createdAt: Date | undefined = data?.created_at?.toDate?.();
         if (createdAt && createdAt < cutoff) continue;
 
-        const source = String(data?.metadata?.source || data?.source || '').toLowerCase();
-        if (source !== 'news') continue;
+        const sourceKind = String(data?.metadata?.sourceKind || data?.metadata?.source || '').toLowerCase();
+        if (sourceKind !== 'news') continue;
 
         const headline: string | undefined = data?.metadata?.source_news?.headline;
         if (headline) processed.add(headline.toLowerCase());
@@ -372,7 +372,7 @@ async function isDuplicateOfExistingScenario(
     const snapshot = await db
         .collection('scenarios')
         .where('metadata.bundle', '==', bundle)
-        .where('metadata.source', '==', 'news')
+        .where('metadata.sourceKind', '==', 'news')
         .where('is_active', '==', true)
         .orderBy('created_at', 'desc')
         .limit(40)
@@ -520,7 +520,7 @@ export const dailyNewsToScenarios = onSchedule(
                 uniqueBundles.map(async (bundle) => {
                     const snap = await db.collection('scenarios')
                         .where('metadata.bundle', '==', bundle)
-                        .where('metadata.source', '==', 'news')
+                        .where('metadata.sourceKind', '==', 'news')
                         .where('is_active', '==', true)
                         .count()
                         .get();
@@ -620,7 +620,7 @@ export const dailyNewsToScenarios = onSchedule(
                     for (const scenario of scenarios) {
                         // Attach source news metadata
                         if (!scenario.metadata) scenario.metadata = {};
-                        scenario.metadata.source = 'news';
+                        scenario.metadata.sourceKind = 'news';
                         (scenario.metadata as any).source_news = {
                             headline: newsItem.title,
                             url: newsItem.link,

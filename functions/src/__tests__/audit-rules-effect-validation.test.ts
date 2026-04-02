@@ -16,6 +16,7 @@ function makeAuditConfig(): AuditConfig {
         categoryDomainMetrics: { bundle_economy: ['economy'] },
         metricMappings: {},
         bannedPhrases: [],
+        bannedPhraseRegexes: [],
         validTokens: new Set(ALL_TOKENS),
         logicParameters: {
             duration: { min: 1, max: 20 },
@@ -91,6 +92,71 @@ function makeScenario(effectValue: number): BundleScenario {
     };
 }
 
+function makeUniversalRelationshipScenario(): BundleScenario {
+    return {
+        id: 'universal_relationship_fix_scenario',
+        title: 'Trade partner tariffs rattle markets',
+        description: 'A dispute with {the_trade_partner} is disrupting shipping finance and forcing your administration to weigh domestic relief against inflation pressure before layoffs spread.',
+        options: [
+            {
+                id: 'option_a',
+                text: 'You pause retaliatory tariffs and ask the cabinet to stabilize imports from {the_trade_partner} while wholesalers rebuild inventories. The move calms price expectations, but industrial lobbies warn that domestic firms will demand compensation if margins keep tightening.',
+                effects: [{ targetMetricId: 'economy', value: 1.2, duration: 3, probability: 1 }],
+                outcomeHeadline: 'Market relief package slows panic',
+                outcomeSummary: 'Import costs stop rising as your government eases the immediate dispute with {the_trade_partner}, giving retailers room to rebuild supply lines while lawmakers debate whether the concession weakens the administration’s leverage.',
+                outcomeContext: 'Currency traders stop betting against the local market after officials signal that the government will not let the {trade_partner}\'s currency shock spread into consumer prices. The calmer tone buys time for domestic agencies to stabilize contracts and keep employers from freezing new orders.',
+                advisorFeedback: [
+                    {
+                        roleId: 'role_executive',
+                        stance: 'support',
+                        feedback: 'Relief for import-dependent sectors buys time, but your administration needs a domestic stabilization plan before the dispute turns into a broader political liability.',
+                    },
+                ],
+            },
+            {
+                id: 'option_b',
+                text: 'You keep the tariffs in place and demand that ministries absorb higher import costs through internal cuts. The harder line protects your negotiating posture, though factories prepare for tighter inventories and a sharper slowdown in orders.',
+                effects: [{ targetMetricId: 'economy', value: -1.2, duration: 3, probability: 1 }],
+                outcomeHeadline: 'Tariff standoff deepens',
+                outcomeSummary: 'Factories begin slowing orders after the administration refuses to soften its stance, preserving leverage at the cost of tighter inventories and greater pressure on prices.',
+                outcomeContext: 'Officials argue that the harder line protects long-term bargaining power, but domestic producers warn that the standoff is beginning to feed through to costs, hiring plans, and shipping schedules.',
+                advisorFeedback: [
+                    {
+                        roleId: 'role_executive',
+                        stance: 'oppose',
+                        feedback: 'Holding the line preserves leverage, but the administration may pay quickly if import costs spill into layoffs and consumer anger.',
+                    },
+                ],
+            },
+            {
+                id: 'option_c',
+                text: 'You open a mediated review of customs policy and direct regulators to monitor shortages before they hit food and fuel prices. The compromise lowers immediate pressure, even if critics say it postpones a sharper choice about trade strategy.',
+                effects: [{ targetMetricId: 'approval', value: 1.1, duration: 2, probability: 1 }],
+                outcomeHeadline: 'Review slows the immediate panic',
+                outcomeSummary: 'A slower review reduces immediate pressure on prices and gives the administration a clearer view of which domestic sectors need relief first.',
+                outcomeContext: 'Officials use the pause to map supply vulnerabilities and prepare domestic contingency plans while political opponents attack the administration for moving too cautiously.',
+                advisorFeedback: [
+                    {
+                        roleId: 'role_executive',
+                        stance: 'neutral',
+                        feedback: 'A review buys time, but the cabinet still needs a concrete fallback if shortages start accelerating before the study concludes.',
+                    },
+                ],
+            },
+        ],
+        metadata: {
+            bundle: 'bundle_economy',
+            severity: 'medium',
+            urgency: 'medium',
+            difficulty: 3,
+            scopeTier: 'universal',
+            scopeKey: 'universal',
+            sourceKind: 'evergreen',
+        },
+        phase: 'root',
+    };
+}
+
 describe('auditScenario effect cap validation', () => {
     beforeEach(() => {
         setAuditConfigForTests(makeAuditConfig());
@@ -125,5 +191,21 @@ describe('auditScenario effect cap validation', () => {
         const issues = auditScenario(makeScenario(3.8), 'bundle_economy');
 
         expect(issues.some((issue) => issue.rule === 'effect-cap-exceeded')).toBe(false);
+    });
+
+    test('deterministicFix removes universal relationship token dependencies and article-form token artifacts', () => {
+        const scenario = makeUniversalRelationshipScenario();
+        const beforeIssues = auditScenario(scenario, 'bundle_economy');
+
+        expect(beforeIssues.some((issue) => issue.rule === 'universal-relationship-token')).toBe(true);
+        expect(beforeIssues.some((issue) => issue.rule === 'hardcoded-the-before-token')).toBe(true);
+
+        const fixed = deterministicFix(scenario);
+
+        expect(fixed.fixed).toBe(true);
+
+        const afterIssues = auditScenario(scenario, 'bundle_economy');
+        expect(afterIssues.some((issue) => issue.rule === 'universal-relationship-token')).toBe(false);
+        expect(afterIssues.some((issue) => issue.rule === 'hardcoded-the-before-token')).toBe(false);
     });
 });

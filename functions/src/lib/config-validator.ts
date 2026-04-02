@@ -21,6 +21,7 @@ export interface ConfigValidation {
       architect: string;
       blueprint: string;
       drafter: string;
+      advisor: string;
       repair: string;
       contentQuality: string;
       narrativeReview: string;
@@ -52,6 +53,7 @@ export function validateConfig(modelConfig?: RequestedModelConfig): ConfigValida
   const architectModel = resolvedModels.architect;
   const blueprintModel = resolvedModels.blueprint;
   const drafterModel = resolvedModels.drafter;
+  const advisorModel = resolvedModels.advisor;
   const repairModel = resolvedModels.repair;
   const contentQualityModel = resolvedModels.contentQuality;
   const narrativeReviewModel = resolvedModels.narrativeReview;
@@ -61,6 +63,7 @@ export function validateConfig(modelConfig?: RequestedModelConfig): ConfigValida
     ['architectModel', architectModel],
     ['blueprintModel', blueprintModel],
     ['drafterModel', drafterModel],
+    ['advisorModel', advisorModel],
     ['repairModel', repairModel],
     ['contentQualityModel', contentQualityModel],
     ['narrativeReviewModel', narrativeReviewModel],
@@ -100,6 +103,7 @@ export function validateConfig(modelConfig?: RequestedModelConfig): ConfigValida
         architect: architectModel,
         blueprint: blueprintModel,
         drafter: drafterModel,
+        advisor: advisorModel,
         repair: repairModel,
         contentQuality: contentQualityModel,
         narrativeReview: narrativeReviewModel,
@@ -122,6 +126,7 @@ export function logConfigStatus(): void {
   console.log(`    - Architect: ${validation.config.models.architect}`);
   console.log(`    - Blueprint: ${validation.config.models.blueprint}`);
   console.log(`    - Drafter: ${validation.config.models.drafter}`);
+  console.log(`    - Advisor: ${validation.config.models.advisor}`);
   console.log(`    - Repair: ${validation.config.models.repair}`);
   console.log(`    - Content Quality: ${validation.config.models.contentQuality}`);
   console.log(`    - Narrative Review: ${validation.config.models.narrativeReview}`);

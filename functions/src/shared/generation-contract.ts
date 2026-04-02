@@ -20,6 +20,7 @@ export interface GenerationDistributionConfig {
 export interface GenerationModelConfig {
   architectModel?: string;
   drafterModel?: string;
+  advisorModel?: string;
   repairModel?: string;
   contentQualityModel?: string;
   narrativeReviewModel?: string;

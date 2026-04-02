@@ -971,7 +971,8 @@ export const recoverZombieJobs = onSchedule({
             const data = doc.data() as GenerationJobData;
             const startedAtMs = toMillis(data.startedAt);
             const updatedAtMs = toMillis(data.updatedAt);
-            const heartbeat = Math.max(startedAtMs ?? 0, updatedAtMs ?? 0);
+            const lastHeartbeatAtMs = toMillis(data.lastHeartbeatAt);
+            const heartbeat = Math.max(startedAtMs ?? 0, updatedAtMs ?? 0, lastHeartbeatAtMs ?? 0);
             return heartbeat > 0 && heartbeat < cutoff.getTime();
         });
 
@@ -1007,12 +1008,15 @@ export const recoverZombieJobs = onSchedule({
                     });
                 } else {
                     logger.warn(`[ZombieRecovery] Marking job ${doc.id} as failed (stuck since ${data.startedAt?.toDate?.()?.toISOString()})`);
+                    const timeoutHint = data.executionTarget === 'n8n'
+                        ? 'The n8n workflow likely exceeded its execution time limit or lost connectivity. Retry the job.'
+                        : 'The Cloud Function likely exceeded its 540s execution limit. Retry the job.';
                     batch.update(doc.ref, {
                         status: 'failed',
                         progress: normalizedProgress,
                         completedCount,
                         failedCount: normalizedFailedCount,
-                        error: `Job timed out: no completion signal received within ${zombieStalenessMinutes} minutes. The Cloud Function likely exceeded its 540s execution limit. Retry the job.`,
+                        error: `Job timed out: no completion signal received within ${zombieStalenessMinutes} minutes. ${timeoutHint}`,
                         completedAt: admin.firestore.FieldValue.serverTimestamp(),
                         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                     });

@@ -84,13 +84,11 @@ export interface ScenarioMetadata {
     sourceKind?: ScenarioSourceKind;
     region_tags?: RegionId[] | string[];
     applicable_countries?: string[] | string;
-    source?: 'news' | 'manual';
     source_news?: {
         headline: string;
         url: string;
         date: string;
     };
-    mode_availability?: string[];
     auditMetadata?: {
         lastAudited: string;
         score: number;

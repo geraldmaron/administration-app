@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import { type CreateJobOptions, createGenerationJob, getJobStatus } from "./background-jobs";
 import { isValidBundleId, type BundleId } from "./data/schemas/bundleIds";
 import { validateConfig, logConfigStatus } from "./lib/config-validator";
+import { hasMeaningfulModelConfig, fetchOllamaModels, buildOllamaModelConfig } from "./lib/generation-models";
 
 export { onScenarioJobCreated, recoverZombieJobs } from "./background-jobs";
 export { dailyNewsToScenarios } from "./news-to-scenarios";
@@ -166,7 +167,20 @@ function toCreateJobOptions(body: GenerationRequestBody, requestedBy: string): C
 }
 
 async function enqueueGenerationJob(body: GenerationRequestBody, requestedBy: string) {
-    const options = toCreateJobOptions(body, requestedBy);
+    let resolvedModelConfig = body.modelConfig;
+    const isDeployed = !process.env.FUNCTIONS_EMULATOR && Boolean(process.env.K_SERVICE);
+    if (!hasMeaningfulModelConfig(resolvedModelConfig) && !isDeployed) {
+        const configSnap = await db.doc('world_state/generation_config').get();
+        const ollamaBaseUrl: string = configSnap.data()?.ollama_base_url || process.env.OLLAMA_BASE_URL || '';
+        if (ollamaBaseUrl) {
+            const models = await fetchOllamaModels(ollamaBaseUrl);
+            if (models.length > 0) {
+                resolvedModelConfig = buildOllamaModelConfig(models);
+                logger.info('[enqueueGenerationJob] Resolved Ollama default modelConfig', { models: Object.values(resolvedModelConfig) });
+            }
+        }
+    }
+    const options = toCreateJobOptions({ ...body, modelConfig: resolvedModelConfig }, requestedBy);
     return createGenerationJob(db, options);
 }
 

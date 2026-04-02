@@ -27,10 +27,11 @@ The player is always **you** — never "the government", "the president", or "th
   - `options[].text` must be **50+ words**.
   - `outcomeSummary` must be **250+ characters AND at least 2 sentences**. A single sentence of 260 characters passes the character check but fails sentence validation. Write at minimum: one lede sentence stating the action and its immediate consequence, then a second sentence expanding the impact or naming a secondary effect.
   - `outcomeContext` must be **400+ characters AND at least 4 sentences (70–100 words)**. The "MAX 100 words" cap in the structural section is an upper bound — not permission to write briefly. 380 characters is a direct scoring penalty. Aim for 4–6 sentences: name an institution, describe the mechanism, include a reaction (opposition, market, or public), and close with a broader implication.
+- **Formulaic title ban (scoring error):** Titles that end with `Crisis`, `Response`, `Options`, `Debate`, `Decision`, `Dilemma`, `Challenge`, or `Conflict`, or that begin with `Managing`, `Balancing`, `Handling`, or `Navigating`, produce an automatic scoring error. Write a verb-containing newspaper headline: ✅ `"Parliament Blocks Emergency Spending Bill"` ❌ `"Inflation Crisis Response"`.
 - **Prohibited phrasing in second-person fields** (`description`, `options[].text`, `advisorFeedback[].feedback`): never use the phrases **"the government"** or **"the administration"** (including with any capitalization).
 - **Token usage:** never use **"the {token}"**; prefer the `{the_token}` form where appropriate (e.g., `{the_leader_title}`, `{the_finance_role}`, `{the_player_country}`).
 - **Literal substring ban:** the final JSON must never contain the exact substring **`the {`** anywhere. Replace it with the correct article-form token or rewrite the sentence.
-- **Token-followed word capitalization (outcome fields only):** In `outcomeSummary` and `outcomeContext`, avoid opening the field with a `{token}` placeholder — restructure so the first word is a capitalized narrative word (e.g., `"Emergency measures were ordered..."`, `"A new trade framework took effect..."`). If a token must appear first, the word immediately after the closing `}` **must be capitalized**: `{the_player_country} Has signed the accord.` ✅  NOT  `{the_player_country} has signed the accord.` ❌. Grammar validation checks that no sentence-start token is followed by a lowercase word.
+- **Token-followed word capitalization (outcome fields only):** In `outcomeSummary` and `outcomeContext`, **never start the field with a `{token}` placeholder** — doing so triggers two simultaneous scoring penalties (token-grammar-issue AND lowercase-start). The very first word of the field must be a capitalized narrative word (e.g., `"Emergency measures were ordered..."`, `"Markets reacted sharply after..."`). Within the body of these fields, tokens like `{the_player_country}` resolve to multi-word phrases at runtime (e.g., "The United States"), so the word after the closing `}` is mid-sentence and must be **lowercase**: `{the_player_country} signed the accord.` ✅  NOT  `{the_player_country} Signed the accord.` ❌.
 - **Unknown token fallback:** if the exact placeholder you want is not on the approved list, do not invent it. Rewrite with plain language such as `opposition lawmakers`, `senior legislators`, `cabinet aides`, `market traders`, or `military officers`.
 - **Active voice required:** Do not let the majority of sentences in any single field use passive constructions (`was directed`, `were announced`, `has been implemented`, `is being reviewed`). Rewrite as active: `{leader_title} announced`, `{the_legislature} passed`, `you directed`. If more than half the sentences in any field are passive voice, the scenario is automatically rejected.
 - Any violation of these requirements will cause the scenario to be rejected/failed audit.
@@ -86,37 +87,12 @@ Use `the_*` forms for all country relationship tokens in narrative text. For rol
 **FINAL SELF-CHECK BEFORE OUTPUT:**
 1. Search your JSON for the literal substring `the {` — if it appears anywhere, fix it before responding.
 2. Search your JSON for any placeholder not in the approved whitelist — remove or rewrite it.
-3. In `outcomeSummary` and `outcomeContext`, every sentence must begin with either a capitalized narrative word or an approved token. **Do not capitalize the word after a token** — tokens like `{the_legislature}` resolve to multi-word phrases, so the word following the token is mid-sentence and must be lowercase. ✅ `{the_legislature} passed the bill.` ❌ `{the_legislature} Passed the bill.`
+3. In `outcomeSummary` and `outcomeContext`, the **field must open with a capitalized narrative word — never a `{token}`**. Starting the field with a placeholder triggers two simultaneous scoring penalties. Within the body of these fields, sentences may begin with an approved token, but the very first word of the entire field must be a capitalized non-token word. ✅ `"Emergency measures were ordered after the vote."` ❌ `"{leader_title} announced..."` ← penalty. **Do not capitalize the word after a token** — tokens like `{the_legislature}` resolve to multi-word phrases, so the word following the token is mid-sentence and must be lowercase. ✅ `{the_legislature} passed the bill.` ❌ `{the_legislature} Passed the bill.`
 4. In `advisorFeedback`, prefer active voice: `X approved Y`, `X warned Y`, `X blocked Y`; avoid `Y was approved`, `concerns were raised`, `it was decided`.
 5. For each field (`description`, `options[].text`, `outcomeSummary`, `outcomeContext`, `advisorFeedback[].feedback`), count the sentences that use a form of `was/were/is/are/been/being + past participle`. If more than half are passive in any field, rewrite them to active voice before outputting. Example rewrites: `"was passed"` → `"{the_legislature} passed"`, `"was announced"` → `"{leader_title} announced"`, `"was rejected"` → `"{the_player_country} rejected"`.
 6. Search your JSON for newsroom-unfriendly jargon such as `bloc` or `gambit`. Rewrite with plain words like `alliance`, `regional group`, `move`, `bid`, or the relevant institution token before responding.
 
-**HARDCODED GOVERNMENT STRUCTURE TERMS — ALWAYS BANNED:**
-These terms assume a specific government system and will read as wrong for presidential, authoritarian, or monarchic countries.
-- `"ruling coalition"` → use `{ruling_party}`
-- `"governing coalition"` → use `{ruling_party}`
-- `"coalition government"` → use `{ruling_party}`
-- `"parliamentary majority"` → use `"{legislature} majority"`
-- `"parliamentary minority"` → use `"{legislature} minority"`
-- `"parliamentary support"` → use `"{legislature} support"`
-- `"parliament"` (as a standalone institution noun) → use `{legislature}`
-
-**HARDCODED MINISTRY AND INSTITUTION NAMES — ALWAYS BANNED:**
-These are country-specific names that will display incorrectly for most countries. Always use the role token.
-
-- `"Justice Ministry"` / `"Ministry of Justice"` / `"Department of Justice"` / `"Justice Department"` → use `{justice_role}` / `{the_justice_role}`
-- `"Finance Ministry"` / `"Ministry of Finance"` / `"Treasury Department"` / `"Department of the Treasury"` → use `{finance_role}` / `{the_finance_role}`
-- `"Defense Ministry"` / `"Defence Ministry"` / `"Ministry of Defense"` / `"Department of Defense"` → use `{defense_role}` / `{the_defense_role}`
-- `"Interior Ministry"` / `"Ministry of Interior"` / `"Home Office"` / `"Department of Homeland Security"` → use `{interior_role}` / `{the_interior_role}`
-- `"Foreign Ministry"` / `"Ministry of Foreign Affairs"` / `"State Department"` / `"Department of State"` / `"Foreign Office"` → use `{foreign_affairs_role}` / `{the_foreign_affairs_role}`
-- `"Health Ministry"` / `"Ministry of Health"` / `"Department of Health"` → use `{health_role}` / `{the_health_role}`
-- `"Education Ministry"` / `"Ministry of Education"` / `"Department of Education"` → use `{education_role}` / `{the_education_role}`
-- `"Commerce Ministry"` / `"Ministry of Commerce"` / `"Department of Commerce"` → use `{commerce_role}` / `{the_commerce_role}`
-- `"Labour Ministry"` / `"Labor Ministry"` / `"Ministry of Labour"` / `"Department of Labor"` → use `{labor_role}` / `{the_labor_role}`
-- `"Energy Ministry"` / `"Ministry of Energy"` / `"Department of Energy"` → use `{energy_role}` / `{the_energy_role}`
-- `"Environment Ministry"` / `"Ministry of Environment"` / `"Environmental Protection Agency"` → use `{environment_role}` / `{the_environment_role}`
-- `"Transport Ministry"` / `"Ministry of Transport"` / `"Department of Transportation"` → use `{transport_role}` / `{the_transport_role}`
-- `"Agriculture Ministry"` / `"Ministry of Agriculture"` / `"Department of Agriculture"` → use `{agriculture_role}` / `{the_agriculture_role}`
+{{BANNED_PHRASE_GUIDANCE}}
 
 ✅ CORRECT: `"You direct {the_justice_role} to launch a formal inquiry into the contracting scandal."`
 ❌ WRONG: `"You direct the Justice Ministry to launch a formal inquiry."` (breaks for US, France, India, etc.)
@@ -180,13 +156,19 @@ Invalid role redirects (never use these):
 
 ### Scenario Level
 - `title`: 4–8 words — **count every word**. Minimum 4 is a hard requirement; 3-word titles fail validation. No tokens, no punctuation
-- `description`: **2–3 sentences, 45–110 words** — establish the situation with a named trigger or actors, state the concrete facts on the ground, and (in a third sentence) define what must be decided. Do not preview options. **Do not forecast consequences or frame the decision as "balancing X against Y."** Present the situation as a briefing: here is what happened, here is who is involved, here is the decision before you.
-  - **Minimum 45 words is a hard floor.** A description like "A drought threatens food security. Your government faces pressure." fails — it is too thin. Name the mechanism, the pressure group, the minister, the market condition, or the affected population.
-  - The third sentence is encouraged whenever it sharpens the specific decision window, deadline, or institutional stakes — not to preview consequences.
+  - **BANNED TITLE CONSTRUCTIONS** — automatic rejection if matched:
+    - Noun-stack endings: `"[Noun] Crisis"`, `"[Noun] Debate"`, `"[Noun] Decision"`, `"[Noun] Dilemma"`, `"[Noun] Response"`, `"[Noun] Response Options"`, `"[Noun] Challenge"`, `"[Noun] Conflict"`
+    - Gerund openers: `"Managing [Noun]"`, `"Balancing [Noun]"`, `"Handling [Noun]"`, `"Navigating [Noun]"`
+    - ❌ "Economic Crisis Response Options" · "Managing Supply Chain Shortages" · "Military Budget Allocation Debate"
+  - **Good titles** have a verb and name an agent or concrete outcome — write like a newspaper headline:
+    - ✅ "Parliament Blocks Emergency Spending Bill" · "Navy Ordered to Stand Down" · "Auditors Raid Central Bank After Leak" · "Cabinet Splits Over Refugee Resettlement Cap"
+- `description`: **2–3 sentences, 60–140 words** — establish the situation with a named trigger or actors, state the concrete facts on the ground, and (in a third sentence) define what must be decided. Do not preview options. **Do not forecast consequences or frame the decision as "balancing X against Y."** Present the situation as a briefing: here is what happened, here is who is involved, here is the decision before you.
+  - **Minimum 60 words is a hard floor.** A description like "A drought threatens food security. Your government faces pressure." fails — it is too thin. Name the mechanism, the pressure group, the minister, the market condition, or the affected population.
+  - **Maximum 3 sentences is a hard ceiling.** A description with 4 or more sentences is a scoring error. A third sentence is appropriate when it sharpens the specific decision window, deadline, or institutional stakes — do not use it to preview consequences.
   - **BANNED in description**: "balancing X against Y", "risks provoking", "could lead to", "threatens to" — these telegraph outcomes. State facts, not projections.
 
 ### Options (exactly 3)
-- `text`: **2–3 sentences, 35–60 words** — renders on a mobile iOS card. Write what the player decides and the specific mechanism used. **Do not spell out who wins, who loses, or what the consequences will be.** State the action, the instrument, and the scope or procedural reality. Let the player feel the weight without being handed the outcome.
+- `text`: **2–3 sentences, 50–80 words** — renders on a mobile iOS card. Write what the player decides and the specific mechanism used. **Do not spell out who wins, who loses, or what the consequences will be.** State the action, the instrument, and the scope or procedural reality. Let the player feel the weight without being handed the outcome.
   - ❌ Telegraphs result: "You impose export controls. Domestic farmers absorb losses while urban consumers see relief."
   - ❌ Meta-framing: "This approach aims to reduce inflation but risks triggering public unrest."
   - ❌ Meta-framing: "The policy balances fiscal discipline with social stability."
@@ -336,10 +318,10 @@ Feedback must reference the **concrete policy action, affected institution, and 
 
 ### Pre-Output Hard-Fail Check (run before returning JSON)
 - Confirm every `{token}` in output appears in the approved token list/context.
-- Confirm `description` is **45–110 words** — count words; under 45 is a hard rejection.
-- Confirm each `options[].text` is **35–60 words** — under 35 is too thin; over 60, consolidate sentences.
-- Confirm each `outcomeSummary` is **40–80 words, 200+ characters, and contains at least 2 sentences** — a single sentence passes the character check but fails sentence validation.
-- Confirm each `outcomeContext` is **50–100 words and 300+ characters** — the ≤100-word cap is a ceiling, not a license to write 50 words. Fewer than 300 characters is a direct scoring penalty.
+- Confirm `description` is **60–140 words** — count words; under 60 is a hard rejection.
+- Confirm each `options[].text` is **50–80 words** — under 50 is too thin; over 80, consolidate sentences.
+- Confirm each `outcomeSummary` is **40–80 words, 250+ characters, and contains at least 2 sentences** — a single sentence passes the character check but fails sentence validation.
+- Confirm each `outcomeContext` is **70–100 words and 400+ characters** — the ≤100-word cap is a ceiling, not a license to write 70 words. Fewer than 400 characters is a direct scoring penalty.
 - Confirm each option's `advisorFeedback` array contains exactly **13 entries** covering all canonical roles.
 - Confirm no banned phrases or boilerplate substrings remain.
 - Confirm each option includes concrete trade-offs and scenario-specific causal logic.

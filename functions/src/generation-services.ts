@@ -14,6 +14,7 @@ import { generateScenarios, getGenerationConfig } from './scenario-engine';
 import { saveScenario, getActiveBundleCount } from './storage';
 import { isValidBundleId, type BundleId } from './data/schemas/bundleIds';
 import { normalizeGenerationScopeInput } from './lib/generation-scope';
+import { hasMeaningfulModelConfig, isOllamaGeneration } from './lib/generation-models';
 import type {
     ScenarioExclusivityReason,
     ScenarioScopeTier,
@@ -57,11 +58,11 @@ function parseBody<T>(raw: unknown): T {
 // processGenerationBundle
 // ---------------------------------------------------------------------------
 
-interface ProcessBundleBody {
+export interface ProcessBundleBody {
     jobId: string;
     bundle: string;
     count: number;
-    mode?: 'manual' | 'news';
+    mode?: 'manual' | 'news' | 'blitz';
     lowLatencyMode?: boolean;
     scopeTier?: ScenarioScopeTier;
     scopeKey?: string;
@@ -74,6 +75,7 @@ interface ProcessBundleBody {
     modelConfig?: {
         architectModel?: string;
         drafterModel?: string;
+        advisorModel?: string;
         repairModel?: string;
         contentQualityModel?: string;
         narrativeReviewModel?: string;
@@ -81,13 +83,225 @@ interface ProcessBundleBody {
     };
     dryRun?: boolean;
     newsContext?: Array<{ title: string; link: string; snippet?: string; source: string; pubDate: string }>;
+    preSeededConcepts?: Array<{
+        concept: string;
+        theme: string;
+        severity: string;
+        difficulty: 1 | 2 | 3 | 4 | 5;
+        primaryMetrics?: string[];
+        actorPattern?: 'domestic' | 'ally' | 'adversary' | 'border_rival' | 'legislature' | 'cabinet' | 'judiciary' | 'mixed';
+        optionShape?: 'redistribute' | 'regulate' | 'escalate' | 'negotiate' | 'invest' | 'cut' | 'reform' | 'delay';
+        loopEligible?: boolean;
+    }>;
 }
 
-/**
- * Run the full generation pipeline for a single bundle.
- * Called by n8n per bundle during parallel fan-out.
- * Returns a summary so n8n can track progress.
- */
+export interface BundleResult {
+    completedCount: number;
+    failedCount: number;
+    scenarioIds: string[];
+    errors: Array<{ id?: string; bundle: string; error: string }>;
+    skipped: boolean;
+    skipReason?: string;
+    tokenSummary?: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number };
+}
+
+function validateBundleBody(body: ProcessBundleBody): { ok: true } | { ok: false; error: string } {
+    if (!body.jobId || typeof body.jobId !== 'string') return { ok: false, error: 'jobId is required.' };
+    if (!isValidBundleId(body.bundle)) return { ok: false, error: `Invalid bundle: ${body.bundle}` };
+    if (!Number.isInteger(body.count) || body.count < 1 || body.count > 50) return { ok: false, error: 'count must be an integer between 1 and 50.' };
+    return { ok: true };
+}
+
+export async function executeGenerationBundle(body: ProcessBundleBody): Promise<BundleResult> {
+    const { jobId, count, mode, lowLatencyMode, modelConfig, dryRun, newsContext } = body;
+    const bundle = body.bundle as BundleId;
+
+    const scopeResult = normalizeGenerationScopeInput({
+        mode,
+        scopeTier: body.scopeTier,
+        scopeKey: body.scopeKey,
+        region: body.region,
+        regions: body.regions,
+        applicable_countries: body.applicable_countries,
+        sourceKind: body.sourceKind,
+        exclusivityReason: body.exclusivityReason,
+        clusterId: body.clusterId,
+    });
+
+    if (!scopeResult.ok || !scopeResult.value) {
+        throw new Error(scopeResult.error ?? 'Invalid scope.');
+    }
+
+    const scope = scopeResult.value;
+    const db = admin.firestore();
+    const jobRef = db.collection('generation_jobs').doc(jobId);
+
+    const [genConfig, activeCount] = await Promise.all([
+        getGenerationConfig(),
+        getActiveBundleCount(bundle, db),
+    ]);
+
+    const maxActive = genConfig.max_active_scenarios_per_bundle ?? 500;
+    if (activeCount >= maxActive) {
+        logger.info(`[processGenerationBundle] Ceiling reached for ${bundle}: ${activeCount}/${maxActive}`);
+        return {
+            completedCount: 0,
+            failedCount: count,
+            scenarioIds: [],
+            errors: [{ bundle, error: `ceiling:${activeCount}/${maxActive}` }],
+            skipped: true,
+            skipReason: 'ceiling',
+        };
+    }
+
+    await jobRef.update({
+        currentBundle: bundle,
+        currentPhase: 'generate',
+        currentMessage: `Generating ${bundle}`,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    const completedScenarioIds: string[] = [];
+    const errors: Array<{ id?: string; bundle: string; error: string }> = [];
+    let completedCount = 0;
+    let failedCount = 0;
+    let bundleTokenSummary: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number } | undefined;
+
+    const jobSnap = await jobRef.get();
+    const jobModelConfig = jobSnap.data()?.modelConfig;
+    const effectiveModelConfig = hasMeaningfulModelConfig(modelConfig)
+        ? modelConfig
+        : (hasMeaningfulModelConfig(jobModelConfig) ? jobModelConfig : modelConfig);
+    const effectiveModelUsed = effectiveModelConfig?.drafterModel ?? 'gpt-4o-mini';
+    const provenance = {
+        jobId,
+        executionTarget: jobSnap.data()?.executionTarget ?? 'n8n',
+        modelUsed: effectiveModelUsed,
+        generatedAt: new Date().toISOString(),
+    };
+
+    const savedByCallback = new Set<string>();
+    const erroredByCallback = new Set<string>();
+    const onScenarioAccepted = async (scenario: any) => {
+        scenario.metadata = { ...scenario.metadata, generationProvenance: provenance };
+        if (dryRun) {
+            await jobRef.collection('pending_scenarios').doc(scenario.id).set(scenario);
+            completedScenarioIds.push(scenario.id);
+            completedCount++;
+            savedByCallback.add(scenario.id);
+            logger.info(`[processGenerationBundle] Staged for review: ${scenario.id}`);
+        } else {
+            const saved = await saveScenario(scenario);
+            if (saved.saved) {
+                completedScenarioIds.push(scenario.id);
+                completedCount++;
+                savedByCallback.add(scenario.id);
+                logger.info(`[processGenerationBundle] Saved: ${scenario.id} (${scenario.title})`);
+                await jobRef.update({
+                    completedCount: admin.firestore.FieldValue.increment(1),
+                    savedScenarioIds: admin.firestore.FieldValue.arrayUnion(scenario.id),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+            } else {
+                const errorEntry = { id: scenario.id, bundle, error: saved.reason ?? 'Save rejected' };
+                errors.push(errorEntry);
+                failedCount++;
+                erroredByCallback.add(scenario.id);
+                await jobRef.update({
+                    failedCount: admin.firestore.FieldValue.increment(1),
+                    errors: admin.firestore.FieldValue.arrayUnion(errorEntry),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+            }
+        }
+    };
+
+    try {
+        const genResult = await generateScenarios({
+            mode: mode ?? 'manual',
+            bundle,
+            count,
+            ...(scope.regions[0] ? { region: scope.regions[0] } : {}),
+            ...(scope.regions.length > 0 ? { regions: scope.regions } : {}),
+            scopeTier: scope.scopeTier,
+            scopeKey: scope.scopeKey,
+            ...(scope.clusterId ? { clusterId: scope.clusterId } : {}),
+            ...(scope.exclusivityReason ? { exclusivityReason: scope.exclusivityReason } : {}),
+            ...(scope.applicable_countries?.length ? { applicable_countries: scope.applicable_countries } : {}),
+            sourceKind: scope.sourceKind,
+            ...(newsContext?.length ? { newsContext } : {}),
+            ...(effectiveModelConfig ? { modelConfig: effectiveModelConfig } : {}),
+            ...(lowLatencyMode ? { lowLatencyMode: true } : {}),
+            ...(body.preSeededConcepts?.length ? { preSeededConcepts: body.preSeededConcepts } : {}),
+            onAttemptFailed: ({ attempt, maxAttempts, score, topIssues }) => {
+                logger.warn(`[processGenerationBundle] ${bundle} attempt ${attempt}/${maxAttempts}: score ${score} — ${topIssues.slice(0, 3).join('; ')}`);
+            },
+            onScenarioAccepted,
+        });
+
+        bundleTokenSummary = genResult.tokenSummary;
+
+        for (const scenario of genResult.scenarios) {
+            if (savedByCallback.has(scenario.id)) continue;
+            (scenario as any).metadata = { ...scenario.metadata, generationProvenance: provenance };
+            if (dryRun) {
+                await jobRef.collection('pending_scenarios').doc(scenario.id).set(scenario);
+                completedScenarioIds.push(scenario.id);
+                completedCount++;
+                logger.info(`[processGenerationBundle] Staged for review (fallback): ${scenario.id}`);
+            } else {
+                const saved = await saveScenario(scenario);
+                if (saved.saved) {
+                    completedScenarioIds.push(scenario.id);
+                    completedCount++;
+                    logger.info(`[processGenerationBundle] Saved (fallback): ${scenario.id} (${scenario.title})`);
+                } else {
+                    errors.push({ id: scenario.id, bundle, error: saved.reason ?? 'Save rejected' });
+                    failedCount++;
+                }
+            }
+        }
+
+        const fallbackCompletedIds = completedScenarioIds.filter(id => !savedByCallback.has(id));
+        const fallbackErrors = errors.filter(e => e.id !== undefined && !erroredByCallback.has(e.id));
+        await jobRef.update({
+            currentPhase: 'done',
+            currentMessage: `${bundle}: ${completedCount} saved, ${failedCount} failed`,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            ...(fallbackCompletedIds.length > 0 ? {
+                completedCount: admin.firestore.FieldValue.increment(fallbackCompletedIds.length),
+                savedScenarioIds: admin.firestore.FieldValue.arrayUnion(...fallbackCompletedIds),
+            } : {}),
+            ...(fallbackErrors.length > 0 ? {
+                failedCount: admin.firestore.FieldValue.increment(fallbackErrors.length),
+                errors: admin.firestore.FieldValue.arrayUnion(...fallbackErrors),
+            } : {}),
+        });
+
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error(`[processGenerationBundle] Failed bundle ${bundle}:`, error);
+        errors.push({ bundle, error: message });
+        failedCount += count;
+
+        await jobRef.update({
+            currentMessage: `Failed ${bundle}: ${message}`,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            failedCount: admin.firestore.FieldValue.increment(count),
+        });
+    }
+
+    return {
+        completedCount,
+        failedCount,
+        scenarioIds: completedScenarioIds,
+        errors,
+        skipped: false,
+        ...(bundleTokenSummary ? { tokenSummary: bundleTokenSummary } : {}),
+    };
+}
+
 export const processGenerationBundle = onRequest({
     cors: false,
     timeoutSeconds: 540,
@@ -105,161 +319,24 @@ export const processGenerationBundle = onRequest({
     }
 
     const body = parseBody<ProcessBundleBody>(request.body);
-    const { jobId, bundle, count, mode, lowLatencyMode, modelConfig, dryRun, newsContext } = body;
 
-    if (!jobId || typeof jobId !== 'string') {
-        response.status(400).json({ error: 'jobId is required.' });
+    const validation = validateBundleBody(body);
+    if (!validation.ok) {
+        response.status(400).json({ error: validation.error });
         return;
     }
 
-    if (!isValidBundleId(bundle)) {
-        response.status(400).json({ error: `Invalid bundle: ${bundle}` });
-        return;
-    }
-
-    if (!Number.isInteger(count) || count < 1 || count > 50) {
-        response.status(400).json({ error: 'count must be an integer between 1 and 50.' });
-        return;
-    }
-
-    const scopeResult = normalizeGenerationScopeInput({
-        mode,
-        scopeTier: body.scopeTier,
-        scopeKey: body.scopeKey,
-        region: body.region,
-        regions: body.regions,
-        applicable_countries: body.applicable_countries,
-        sourceKind: body.sourceKind,
-        exclusivityReason: body.exclusivityReason,
-        clusterId: body.clusterId,
-    });
-
-    if (!scopeResult.ok || !scopeResult.value) {
-        response.status(400).json({ error: scopeResult.error ?? 'Invalid scope.' });
-        return;
-    }
-
-    const scope = scopeResult.value;
-    const db = admin.firestore();
-    const jobRef = db.collection('generation_jobs').doc(jobId);
-
-    // Ceiling check — skip if this bundle is already at max active scenarios
-    const [genConfig, activeCount] = await Promise.all([
-        getGenerationConfig(),
-        getActiveBundleCount(bundle, db),
-    ]);
-
-    const maxActive = genConfig.max_active_scenarios_per_bundle ?? 500;
-    if (activeCount >= maxActive) {
-        logger.info(`[processGenerationBundle] Ceiling reached for ${bundle}: ${activeCount}/${maxActive}`);
-        response.status(200).json({
-            completedCount: 0,
-            failedCount: count,
-            scenarioIds: [],
-            errors: [{ bundle, error: `ceiling:${activeCount}/${maxActive}` }],
-            skipped: true,
-            skipReason: 'ceiling',
+    const isDeployed = !process.env.FUNCTIONS_EMULATOR && Boolean(process.env.K_SERVICE);
+    if (isDeployed && isOllamaGeneration(body.modelConfig)) {
+        response.status(422).json({
+            error: 'Ollama models require local execution. Route through local-gen-server instead of Cloud Functions.',
+            ollamaDetected: true,
         });
         return;
     }
 
-    // Announce bundle start in Firestore so the admin UI shows live progress
-    await jobRef.update({
-        currentBundle: bundle,
-        currentPhase: 'generate',
-        currentMessage: `Generating ${bundle}`,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    const completedScenarioIds: string[] = [];
-    const errors: Array<{ id?: string; bundle: string; error: string }> = [];
-    let completedCount = 0;
-    let failedCount = 0;
-    let bundleTokenSummary: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number } | undefined;
-
-    try {
-        const genResult = await generateScenarios({
-            mode: mode ?? 'manual',
-            bundle: bundle as BundleId,
-            count,
-            ...(scope.regions[0] ? { region: scope.regions[0] } : {}),
-            ...(scope.regions.length > 0 ? { regions: scope.regions } : {}),
-            scopeTier: scope.scopeTier,
-            scopeKey: scope.scopeKey,
-            ...(scope.clusterId ? { clusterId: scope.clusterId } : {}),
-            ...(scope.exclusivityReason ? { exclusivityReason: scope.exclusivityReason } : {}),
-            ...(scope.applicable_countries?.length ? { applicable_countries: scope.applicable_countries } : {}),
-            sourceKind: scope.sourceKind,
-            ...(newsContext?.length ? { newsContext } : {}),
-            ...(modelConfig ? { modelConfig } : {}),
-            ...(lowLatencyMode ? { lowLatencyMode: true } : {}),
-            onAttemptFailed: ({ attempt, maxAttempts, score, topIssues }) => {
-                logger.warn(`[processGenerationBundle] ${bundle} attempt ${attempt}/${maxAttempts}: score ${score} — ${topIssues.slice(0, 3).join('; ')}`);
-            },
-        });
-
-        const scenarios = genResult.scenarios;
-        bundleTokenSummary = genResult.tokenSummary;
-        const jobSnap = await jobRef.get();
-        const jobModelConfig = jobSnap.data()?.modelConfig;
-        const effectiveModelUsed = modelConfig?.drafterModel ?? jobModelConfig?.drafterModel ?? 'gpt-4o-mini';
-        const provenance = {
-            jobId,
-            executionTarget: jobSnap.data()?.executionTarget ?? 'n8n',
-            modelUsed: effectiveModelUsed,
-            generatedAt: new Date().toISOString(),
-        };
-        for (const scenario of scenarios) {
-            (scenario as any).metadata = { ...scenario.metadata, generationProvenance: provenance };
-            if (dryRun) {
-                await jobRef.collection('pending_scenarios').doc(scenario.id).set(scenario);
-                completedScenarioIds.push(scenario.id);
-                completedCount++;
-                logger.info(`[processGenerationBundle] Staged for review: ${scenario.id}`);
-            } else {
-                const saved = await saveScenario(scenario);
-                if (saved.saved) {
-                    completedScenarioIds.push(scenario.id);
-                    completedCount++;
-                    logger.info(`[processGenerationBundle] Saved: ${scenario.id} (${scenario.title})`);
-                } else {
-                    errors.push({ id: scenario.id, bundle, error: saved.reason ?? 'Save rejected' });
-                    failedCount++;
-                }
-            }
-        }
-
-        // Write summary back to the job record so n8n can aggregate
-        await jobRef.update({
-            currentPhase: 'done',
-            currentMessage: `${bundle}: ${completedCount} saved, ${failedCount} failed`,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            completedCount: admin.firestore.FieldValue.increment(completedCount),
-            failedCount: admin.firestore.FieldValue.increment(failedCount),
-            ...(completedScenarioIds.length > 0 ? { savedScenarioIds: admin.firestore.FieldValue.arrayUnion(...completedScenarioIds) } : {}),
-        });
-
-    } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        logger.error(`[processGenerationBundle] Failed bundle ${bundle}:`, error);
-        errors.push({ bundle, error: message });
-        failedCount += count;
-
-        await jobRef.update({
-            currentMessage: `Failed ${bundle}: ${message}`,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            failedCount: admin.firestore.FieldValue.increment(count),
-        });
-    }
-
-    response.status(200).json({
-        completedCount,
-        failedCount,
-        scenarioIds: completedScenarioIds,
-        errors,
-        skipped: false,
-        ...(bundleTokenSummary ? { tokenSummary: bundleTokenSummary } : {}),
-    });
+    const result = await executeGenerationBundle(body);
+    response.status(200).json(result);
 });
 
 // ---------------------------------------------------------------------------
@@ -307,6 +384,7 @@ export const updateJobProgress = onRequest({
 
     const update: Record<string, unknown> = {
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     if (status !== undefined) update.status = status;

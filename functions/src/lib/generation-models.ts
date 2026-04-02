@@ -1,13 +1,14 @@
 import type { GenerationModelConfig } from '../shared/generation-contract';
 export type { GenerationModelConfig };
 
-export type GenerationPhase = 'architect' | 'drafter' | 'repair' | 'contentQuality' | 'narrativeReview';
+export type GenerationPhase = 'architect' | 'drafter' | 'advisor' | 'repair' | 'contentQuality' | 'narrativeReview';
 
 export type ModelFamily = 'openai' | 'ollama';
 
 const LANGUAGE_MODEL_KEYS = [
   'architectModel',
   'drafterModel',
+  'advisorModel',
   'repairModel',
   'contentQualityModel',
   'narrativeReviewModel',
@@ -79,18 +80,17 @@ export function getModelFamily(modelConfig?: GenerationModelConfig): ModelFamily
 
 /**
  * Optimal Ollama model selection per generation phase.
- * Maps phase requirements to model capability tiers:
- *   - reasoning: complex concept ideation, needs deep thinking
- *   - general: balanced creative writing + structured output
- *   - coding: precise JSON manipulation, schema compliance
- *   - fast: lightweight evaluation/scoring
+ * Prioritises mid-range (12-15B) models for speed+quality balance.
+ * 30B+ models are too slow for decomposed sub-phases (~160-300s TTFT).
+ * 8B models are fast but may lack nuance for creative writing.
  */
 const OLLAMA_PHASE_PREFERENCE: Record<GenerationPhase, string[]> = {
-  architect: ['ai-reasoning', 'deepseek-r1:32b', 'ai-general', 'qwen3:30b', 'deepseek-r1:14b'],
-  drafter: ['ai-reasoning', 'deepseek-r1:32b', 'ai-general', 'qwen3:30b', 'mistral-small:24b'],
-  repair: ['ai-coding', 'ai-general', 'qwen3-coder:30b', 'qwen3:30b'],
-  contentQuality: ['ai-fast', 'ai-general', 'qwen3:8b', 'gemma3:12b'],
-  narrativeReview: ['ai-fast', 'ai-general', 'qwen3:8b', 'gemma3:12b'],
+  architect: ['gemma3:12b', 'phi4:14b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
+  drafter: ['phi4:14b', 'gemma3:12b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
+  advisor: ['ai-fast', 'qwen3:8b', 'gemma3:12b'],
+  repair: ['ai-fast', 'qwen3:8b', 'gemma3:12b', 'ai-coding'],
+  contentQuality: ['ai-fast', 'qwen3:8b', 'gemma3:12b'],
+  narrativeReview: ['ai-fast', 'qwen3:8b', 'gemma3:12b'],
 };
 
 export function resolveOllamaPhaseModel(phase: GenerationPhase, availableModels: string[]): string | undefined {
@@ -110,10 +110,34 @@ export function buildOllamaModelConfig(availableModels: string[]): GenerationMod
   return {
     architectModel: resolve('architect'),
     drafterModel: resolve('drafter'),
+    advisorModel: resolve('advisor'),
     repairModel: resolve('repair'),
     contentQualityModel: resolve('contentQuality'),
     narrativeReviewModel: resolve('narrativeReview'),
   };
+}
+
+export function hasMeaningfulModelConfig(config?: GenerationModelConfig | null): boolean {
+  return LANGUAGE_MODEL_KEYS.some(
+    (key) => typeof config?.[key] === 'string' && (config[key] as string).length > 0
+  );
+}
+
+export async function fetchOllamaModels(baseUrl: string): Promise<string[]> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(`${baseUrl}/models`, {
+      headers: { Authorization: 'Bearer ollama' },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.data || []).map((m: { id?: string }) => m.id).filter(Boolean) as string[];
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -138,6 +162,8 @@ export function resolvePhaseModel(
       return modelConfig?.architectModel || getDefaultArchitectModel();
     case 'drafter':
       return modelConfig?.drafterModel || getDefaultDrafterModel();
+    case 'advisor':
+      return modelConfig?.advisorModel || (isOllama ? ollamaFallback() : 'gpt-4o-mini');
     case 'repair':
       return modelConfig?.repairModel || (isOllama ? ollamaFallback() : getDefaultRepairModel());
     case 'contentQuality':
@@ -151,6 +177,7 @@ export function getResolvedGenerationModels(modelConfig?: GenerationModelConfig)
   architect: string;
   blueprint: string;
   drafter: string;
+  advisor: string;
   repair: string;
   contentQuality: string;
   narrativeReview: string;
@@ -162,6 +189,7 @@ export function getResolvedGenerationModels(modelConfig?: GenerationModelConfig)
     architect,
     blueprint: architect,
     drafter: resolvePhaseModel(modelConfig, 'drafter'),
+    advisor: resolvePhaseModel(modelConfig, 'advisor'),
     repair: resolvePhaseModel(modelConfig, 'repair'),
     contentQuality: resolvePhaseModel(modelConfig, 'contentQuality'),
     narrativeReview: resolvePhaseModel(modelConfig, 'narrativeReview'),

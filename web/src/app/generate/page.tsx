@@ -11,7 +11,7 @@ import StatusBadge from '@/components/StatusBadge';
 import { buildManualGenerationRequests, buildNewsGenerationRequests, countExpectedScenarios } from '@/lib/generation-request';
 import { ALL_BUNDLES, ALL_REGIONS, BUNDLE_ACCENT_COLORS } from '@/lib/constants';
 import { buildOllamaModelConfig } from '@/lib/generation-models';
-import BlitzInventoryGrid from '@/components/BlitzInventoryGrid';
+import { SCOPE_TIER_RATIOS } from '@/lib/blitz-planner';
 import type { DeficitCell, TierAllocation } from '@/lib/blitz-planner';
 import type { ArticleClassification, CountrySummary, JobDetail, NewsArticle, ScenarioExclusivityReason, GenerationJobRequest } from '@/lib/types';
 
@@ -60,6 +60,18 @@ function formatRuntime(ms: number): string {
   const s = Math.floor(ms / 1000);
   const m = Math.floor(s / 60);
   return m === 0 ? `${s}s` : `${m}m ${s % 60}s`;
+}
+
+function formatScopeLabel(scopeKey?: string): string {
+  if (!scopeKey || scopeKey === 'universal') return 'Universal';
+  if (scopeKey.startsWith('region:')) {
+    return scopeKey.slice(7).replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  if (scopeKey.startsWith('country:')) return scopeKey.slice(8).toUpperCase();
+  if (scopeKey.startsWith('cluster:')) {
+    return scopeKey.slice(8).replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  return scopeKey;
 }
 
 function formatPubDate(pubDate: string): string {
@@ -219,7 +231,10 @@ export default function GeneratePage() {
   const [blitzPlannedJobs, setBlitzPlannedJobs] = useState<GenerationJobRequest[]>([]);
   const [blitzSummary, setBlitzSummary] = useState<{ totalRequested: number; totalDeficit: number; jobsToCreate: number; scenariosToGenerate: number; availableSlots: number } | null>(null);
   const [blitzJobIds, setBlitzJobIds] = useState<string[]>([]);
-  const [blitzTotalScenarios, setBlitzTotalScenarios] = useState(24);
+  const [blitzGuidance, setBlitzGuidance] = useState('');
+  const [blitzCountRaw, setBlitzCountRaw] = useState('24');
+  const blitzTotalScenarios = Math.min(200, Math.max(0, parseInt(blitzCountRaw, 10) || 0));
+  const blitzCountValid = blitzTotalScenarios >= 1;
 
   useEffect(() => {
     fetch('/api/countries').then((r) => r.json())
@@ -279,7 +294,7 @@ export default function GeneratePage() {
       const res = await fetch('/api/blitz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ totalScenarios: blitzTotalScenarios, executionTarget }),
+        body: JSON.stringify({ totalScenarios: blitzTotalScenarios, executionTarget, ...(blitzGuidance.trim() ? { description: blitzGuidance.trim() } : {}), ...(ollamaModelConfig ? { modelConfig: ollamaModelConfig } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) { setSubmitError(data.error ?? 'Failed to execute blitz'); return; }
@@ -574,6 +589,7 @@ export default function GeneratePage() {
               {([
                 ['Architect', ollamaModelConfig.architectModel],
                 ['Drafter', ollamaModelConfig.drafterModel],
+                ['Advisor', ollamaModelConfig.advisorModel],
                 ['Repair', ollamaModelConfig.repairModel],
                 ['Quality', ollamaModelConfig.contentQualityModel],
                 ['Review', ollamaModelConfig.narrativeReviewModel],
@@ -668,96 +684,191 @@ export default function GeneratePage() {
       {generationMode === 'blitz' ? (
         /* ─── BLITZ MODE ─── */
         <div className="space-y-6">
-          <CommandPanel className="p-5 md:p-6">
-            <div className="mb-5">
-              <div className="section-kicker mb-2">Request</div>
-              <h2 className="text-xl font-semibold text-foreground">Total Scenarios to Create</h2>
-            </div>
-            <p className="mb-4 text-xs text-[var(--foreground-muted)]">
-              Enter the total number of scenarios you want this blitz run to create. The planner analyses current inventory gaps, then distributes that total across bundles and scope tiers using the canonical ratio: 40% universal, 25% regional, 25% cluster, 10% exclusive.
-            </p>
-            <div className="flex items-center gap-4">
-              <input
-                type="number"
-                min={1}
-                max={200}
-                value={blitzTotalScenarios}
-                onChange={(e) => setBlitzTotalScenarios(Math.max(1, Math.min(200, Number(e.target.value) || 1)))}
-                className="input-shell w-24 text-center"
-              />
-              <button
-                type="button"
-                onClick={() => fetchBlitzPreview(blitzTotalScenarios)}
-                disabled={blitzLoading}
-                className="btn btn-tactical"
-              >
-                {blitzLoading ? 'Analysing…' : 'Analyse Distribution'}
-              </button>
-            </div>
-          </CommandPanel>
 
-          {blitzAllocation && (
-            <>
-              <BlitzInventoryGrid deficits={blitzDeficits} allocation={blitzAllocation} />
-
-              {blitzSummary && (
-                <div className="grid grid-cols-4 gap-3">
-                  <DataStat size="compact" label="Requested" value={blitzSummary.totalRequested} accent="blue" />
-                  <DataStat size="compact" label="Inventory Gap" value={blitzSummary.totalDeficit} accent={blitzSummary.totalDeficit > 0 ? 'warning' : 'success'} />
-                  <DataStat size="compact" label="Jobs Planned" value={blitzSummary.jobsToCreate} accent="blue" />
-                  <DataStat size="compact" label="Planned Output" value={blitzSummary.scenariosToGenerate} accent="gold" />
-                </div>
-              )}
-
-              {blitzPlannedJobs.length > 0 && (
-                <CommandPanel className="p-5 md:p-6">
-                  <div className="mb-4">
-                    <div className="section-kicker mb-2">Planned Jobs</div>
-                    <h2 className="text-xl font-semibold text-foreground">Generated Distribution</h2>
+          {/* Settings row */}
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <CommandPanel className="p-5 md:p-6">
+              <div className="mb-5">
+                <div className="section-kicker mb-2">Configuration</div>
+                <h2 className="text-xl font-semibold text-foreground">Blitz Settings</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <div className="section-kicker mb-1.5">Scenario budget</div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="number" min={1} max={200} value={blitzCountRaw} placeholder="24"
+                      onChange={(e) => setBlitzCountRaw(e.target.value)}
+                      className="input-shell w-24 text-center"
+                    />
+                    {blitzCountValid ? (
+                      <span className="text-xs text-[var(--foreground-muted)]">
+                        ~{Math.round(blitzTotalScenarios * 0.4)} global · {Math.round(blitzTotalScenarios * 0.25)} regional · {Math.round(blitzTotalScenarios * 0.25)} cluster · {Math.round(blitzTotalScenarios * 0.1)} country
+                      </span>
+                    ) : (
+                      <span className="text-xs text-[var(--error)]">1–200</span>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    {blitzPlannedJobs.map((job, i) => (
-                      <div key={i} className="flex items-center justify-between rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-2.5 text-sm">
-                        <div className="flex items-center gap-3">
-                          <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-[var(--foreground-subtle)]">{job.scopeTier}</span>
-                          <span className="text-[var(--foreground-muted)]">{job.scopeKey}</span>
+                </div>
+                <div>
+                  <div className="section-kicker mb-1.5">
+                    Guidance <span className="normal-case font-normal tracking-normal text-[var(--foreground-subtle)]">optional</span>
+                  </div>
+                  <textarea
+                    value={blitzGuidance} onChange={(e) => setBlitzGuidance(e.target.value)}
+                    placeholder="e.g. Focus on economic instability. Avoid military conflict. Emphasise diplomatic options."
+                    rows={3} className="input-shell resize-y"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <button type="button"
+                    onClick={() => fetchBlitzPreview(blitzTotalScenarios)}
+                    disabled={blitzLoading || !blitzCountValid}
+                    className="btn btn-tactical">
+                    {blitzLoading ? 'Analysing…' : blitzAllocation ? 'Refresh Plan' : 'Analyse Gaps'}
+                  </button>
+                  {blitzAllocation && !blitzLoading && (
+                    <span className="text-xs text-[var(--foreground-muted)]">
+                      {blitzDeficits.length} gap{blitzDeficits.length !== 1 ? 's' : ''} found
+                    </span>
+                  )}
+                </div>
+              </div>
+            </CommandPanel>
+            {aiModelsPanel}
+          </div>
+
+          {/* Coverage breakdown */}
+          {blitzAllocation && (
+            <CommandPanel className="p-5 md:p-6">
+              <div className="mb-4">
+                <div className="section-kicker mb-2">Inventory</div>
+                <h2 className="text-xl font-semibold text-foreground">Coverage by Scope</h2>
+              </div>
+              <div className="space-y-2.5">
+                {([
+                  { tier: 'universal' as const, label: 'Global', desc: 'Applies to all countries' },
+                  { tier: 'regional' as const, label: 'Regional', desc: 'Scoped to world regions' },
+                  { tier: 'cluster' as const, label: 'Cluster', desc: 'Scoped to country clusters' },
+                  { tier: 'exclusive' as const, label: 'Country', desc: 'Country-exclusive scenarios' },
+                ]).map(({ tier, label, desc }) => {
+                  const tierDeficits = blitzDeficits.filter((d) => d.scopeTier === tier);
+                  const totalGap = tierDeficits.reduce((s, d) => s + d.deficit, 0);
+                  const allocated = blitzAllocation[tier];
+                  const ratio = Math.round(SCOPE_TIER_RATIOS[tier] * 100);
+                  const fillPct = totalGap > 0 ? Math.min(100, Math.round((allocated / totalGap) * 100)) : 100;
+                  const isCovered = totalGap === 0;
+                  const jobCount = blitzPlannedJobs.filter((j) => j.scopeTier === tier).length;
+                  return (
+                    <div key={tier} className="rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3">
+                      <div className="flex items-center justify-between gap-4 mb-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-sm font-semibold text-foreground">{label}</span>
+                          <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">{ratio}%</span>
+                          <span className="hidden sm:inline text-xs text-[var(--foreground-muted)]">{desc}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {job.bundles.map((b) => <BundleBadge key={b} bundle={b} />)}
-                          <span className="text-xs text-[var(--foreground-subtle)]">&times;{job.count}</span>
+                        <div className="flex items-center gap-3 shrink-0 text-xs">
+                          {isCovered ? (
+                            <span className="text-[var(--success)]">Covered</span>
+                          ) : (
+                            <span className="text-[var(--warning)]">{totalGap} needed</span>
+                          )}
+                          <span className="text-[var(--foreground-muted)]">{allocated} allocated</span>
+                          {jobCount > 0 && (
+                            <span className="text-[var(--foreground-subtle)]">{jobCount} job{jobCount !== 1 ? 's' : ''}</span>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </CommandPanel>
-              )}
-
-              {blitzPlannedJobs.length === 0 && blitzDeficits.length === 0 && (
-                <CommandPanel className="p-5 md:p-6">
-                  <div className="text-sm text-[var(--success)]">Inventory gaps are already covered well enough that blitz has nothing useful to schedule.</div>
-                </CommandPanel>
-              )}
-
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={handleBlitzExecute}
-                  disabled={submitting || blitzPlannedJobs.length === 0}
-                  className="btn btn-command"
-                >
-                  {submitting ? 'Submitting…' : `Execute Blitz (${blitzSummary?.scenariosToGenerate ?? 0} scenarios)`}
-                </button>
+                      <div className="h-1 rounded-full bg-[var(--background-muted)] overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-300" style={{
+                          width: `${fillPct}%`,
+                          background: isCovered ? 'var(--success)' : fillPct >= 50 ? 'var(--warning)' : 'var(--error)',
+                        }} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+            </CommandPanel>
+          )}
 
-              {submitError && <div className="text-xs text-[var(--error)]">{submitError}</div>}
-
-              {blitzJobIds.length > 0 && (
-                <div className="space-y-4">
-                  <div className="section-kicker">Active Blitz Jobs</div>
-                  {blitzJobIds.map((id) => <JobMonitor key={id} jobId={id} />)}
+          {/* Execution plan */}
+          {blitzAllocation && blitzPlannedJobs.length > 0 && (
+            <CommandPanel className="p-5 md:p-6">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <div className="section-kicker mb-2">Execution Plan</div>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {blitzPlannedJobs.length} Job{blitzPlannedJobs.length !== 1 ? 's' : ''} &mdash; {blitzSummary?.scenariosToGenerate ?? 0} Scenarios
+                  </h2>
                 </div>
-              )}
-            </>
+              </div>
+              <div className="space-y-5">
+                {(['universal', 'regional', 'cluster', 'exclusive'] as const)
+                  .map((tier) => {
+                    const jobs = blitzPlannedJobs.filter((j) => j.scopeTier === tier);
+                    if (jobs.length === 0) return null;
+                    const tierScenarios = jobs.reduce((s, j) => s + j.bundles.length * j.count, 0);
+                    const pct = Math.round(SCOPE_TIER_RATIOS[tier] * 100);
+                    const tierLabels: Record<string, string> = { universal: 'Global', regional: 'Regional', cluster: 'Cluster', exclusive: 'Country' };
+                    return (
+                      <div key={tier}>
+                        <div className="mb-2 flex items-center gap-2 border-b border-[var(--border)] pb-1.5">
+                          <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-foreground">{tierLabels[tier]}</span>
+                          <span className="text-[10px] text-[var(--foreground-subtle)]">{pct}% ratio</span>
+                          <span className="ml-auto text-[10px] text-[var(--foreground-muted)]">
+                            {tierScenarios} scenario{tierScenarios !== 1 ? 's' : ''} · {jobs.length} job{jobs.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {jobs.map((job, i) => {
+                            const output = job.bundles.length * job.count;
+                            return (
+                              <div key={i} className="flex items-center gap-3 rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2">
+                                {tier !== 'universal' && (
+                                  <span className="w-24 shrink-0 text-xs font-medium text-foreground truncate">{formatScopeLabel(job.scopeKey)}</span>
+                                )}
+                                <div className="flex flex-1 flex-wrap gap-1.5">
+                                  {job.bundles.map((b) => <BundleBadge key={b} bundle={b} />)}
+                                </div>
+                                <span className="shrink-0 text-[11px] font-mono text-[var(--foreground-subtle)]">&times;{job.count}</span>
+                                <span className="shrink-0 min-w-[44px] text-right text-[11px] font-mono text-[var(--foreground-muted)]">{output} out</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })
+                  .filter(Boolean)}
+              </div>
+              <div className="mt-5 pt-4 border-t border-[var(--border)] flex flex-wrap items-center gap-4">
+                <button type="button" onClick={handleBlitzExecute}
+                  disabled={submitting || blitzPlannedJobs.length === 0}
+                  className="btn btn-command">
+                  {submitting ? 'Submitting…' : `Execute Blitz — ${blitzSummary?.scenariosToGenerate ?? 0} scenarios`}
+                </button>
+                {blitzJobIds.length > 0 && (
+                  <Link href={`/jobs/${blitzJobIds[0]}`} className="btn btn-tactical">
+                    View Job{blitzJobIds.length > 1 ? 's' : ''}
+                  </Link>
+                )}
+                {submitError && <span className="text-xs text-[var(--error)]">{submitError}</span>}
+              </div>
+            </CommandPanel>
+          )}
+
+          {blitzAllocation && blitzPlannedJobs.length === 0 && blitzDeficits.length === 0 && (
+            <CommandPanel className="p-5 md:p-6">
+              <div className="text-sm text-[var(--success)]">Inventory is well-stocked — no significant gaps found for this budget.</div>
+            </CommandPanel>
+          )}
+
+          {blitzJobIds.length > 0 && (
+            <div className="space-y-4">
+              <div className="section-kicker">Active Blitz Jobs</div>
+              {blitzJobIds.map((id) => <JobMonitor key={id} jobId={id} />)}
+            </div>
           )}
         </div>
       ) : generationMode === 'manual' ? (

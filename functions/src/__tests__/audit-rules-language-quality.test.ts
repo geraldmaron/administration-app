@@ -13,6 +13,8 @@ function makeAuditConfig(): AuditConfig {
         categoryDomainMetrics: { bundle_economy: ['economy'] },
         metricMappings: {},
         bannedPhrases: [],
+        bannedPhraseRegexes: [],
+        bannedCountryPhrases: new Set(),
         validTokens: new Set(ALL_TOKENS),
         logicParameters: {
             duration: { min: 1, max: 20 },

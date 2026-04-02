@@ -10,6 +10,12 @@ import {
   type CountryEntry,
   type InventoryCell,
 } from '@/lib/blitz-planner';
+import type { GenerationModelConfig } from '@shared/generation-contract';
+import {
+  hasMeaningfulModelConfig,
+  fetchOllamaModels,
+  buildOllamaModelConfig,
+} from '@/lib/generation-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,6 +95,16 @@ async function fetchAvailableSlots(): Promise<{ available: number; pending: numb
   return { available: Math.max(0, max - pending), pending, max };
 }
 
+async function resolveDefaultModelConfig(): Promise<GenerationModelConfig | undefined> {
+  const ollamaBaseUrl =
+    process.env.OLLAMA_BASE_URL ||
+    (await db.doc('world_state/generation_config').get().then((s) => s.data()?.ollama_base_url as string | undefined).catch(() => undefined));
+  if (!ollamaBaseUrl) return undefined;
+  const models = await fetchOllamaModels(ollamaBaseUrl);
+  if (models.length === 0) return undefined;
+  return buildOllamaModelConfig(models);
+}
+
 function parseAnalysisTargetPerBundle(value: unknown): number {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? Math.min(Math.round(n), 200) : DEFAULT_ANALYSIS_TARGET_PER_BUNDLE;
@@ -156,6 +172,8 @@ export async function POST(request: NextRequest) {
     const analysisTargetPerBundle = parseAnalysisTargetPerBundle(body?.analysisTargetPerBundle);
     const maxJobs = parseMaxJobs(body?.maxJobs);
     const executionTarget = body?.executionTarget as string | undefined;
+    const modelConfig = (body?.modelConfig ?? undefined) as GenerationModelConfig | undefined;
+    const userDescription = typeof body?.description === 'string' && body.description.trim() ? body.description.trim() : undefined;
 
     const [countries, slots] = await Promise.all([
       fetchCountries(),
@@ -186,12 +204,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ jobIds: [], message: 'No deficits found — inventory meets the target ratio.' });
     }
 
+    const effectiveModelConfig = hasMeaningfulModelConfig(modelConfig)
+      ? modelConfig
+      : await resolveDefaultModelConfig();
+
     const jobIds: string[] = [];
     const errors: Array<{ index: number; error: string }> = [];
 
     for (let i = 0; i < plan.plannedJobs.length; i++) {
       try {
-        const jobId = await submitJob(plan.plannedJobs[i], executionTarget);
+        const job = {
+          ...plan.plannedJobs[i],
+          ...(effectiveModelConfig ? { modelConfig: effectiveModelConfig } : {}),
+          ...(userDescription ? { description: `${userDescription}\n${plan.plannedJobs[i].description ?? ''}`.trim() } : {}),
+        };
+        const jobId = await submitJob(job, executionTarget);
         jobIds.push(jobId);
       } catch (err) {
         errors.push({ index: i, error: err instanceof Error ? err.message : String(err) });

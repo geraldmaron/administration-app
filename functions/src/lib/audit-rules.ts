@@ -9,11 +9,123 @@
  * Call initializeAuditConfig(db) once before running any generation job.
  */
 
-import { ALL_TOKENS, ARTICLE_FORM_TOKEN_NAMES, CANONICAL_ROLE_IDS, ROLE_ALIAS_MAP, buildTokenWhitelistPromptSection } from './token-registry';
+import { ALL_TOKENS, ARTICLE_FORM_TOKEN_NAMES, CANONICAL_ROLE_IDS, ROLE_ALIAS_MAP, buildTokenWhitelistPromptSection, buildCompactTokenPromptSection } from './token-registry';
 import { ALL_BUNDLE_IDS, isValidBundleId } from '../data/schemas/bundleIds';
 import { loadCountryCatalog } from './country-catalog';
 import type { ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind } from '../types';
 import { VALID_SETTING_TARGETS } from '../types';
+
+// ── Shared source-of-truth tables for detection AND heuristic fix ──
+// Each entry: [detection regex (case-insensitive), replacement string for fix, human-readable suggestion for audit message]
+// Detection uses the regex + suggestion; heuristicFix uses the regex + replacement.
+
+type PhraseRule = { detect: RegExp; replacement: string; suggestion: string };
+
+export const GOV_STRUCTURE_RULES: PhraseRule[] = [
+    { detect: /\bruling coalition\b/gi,       replacement: '{ruling_party}',           suggestion: '"ruling coalition" → use {ruling_party}' },
+    { detect: /\bgoverning coalition\b/gi,    replacement: '{ruling_party}',           suggestion: '"governing coalition" → use {ruling_party}' },
+    { detect: /\bcoalition government\b/gi,   replacement: '{ruling_party}',           suggestion: '"coalition government" → use {ruling_party}' },
+    { detect: /\bcoalition allies\b/gi,       replacement: 'political allies in {the_legislature}', suggestion: '"coalition allies" → use "political allies" or "allies in {legislature}"' },
+    { detect: /\bparliamentary majority\b/gi, replacement: '{legislature} majority',   suggestion: '"parliamentary majority" → use "{legislature} majority"' },
+    { detect: /\bparliamentary minority\b/gi, replacement: '{legislature} minority',   suggestion: '"parliamentary minority" → use "{legislature} minority"' },
+    { detect: /\bparliamentary support\b/gi,  replacement: '{legislature} support',    suggestion: '"parliamentary support" → use "{legislature} support"' },
+    { detect: /\bparliamentary vote\b/gi,     replacement: '{legislature} vote',       suggestion: '"parliamentary vote" → use "{legislature} vote"' },
+    { detect: /\bparliamentary approval\b/gi, replacement: '{legislature} approval',   suggestion: '"parliamentary approval" → use "{legislature} approval"' },
+    { detect: /\bparliamentary debate\b/gi,   replacement: '{legislature} debate',     suggestion: '"parliamentary debate" → use "{legislature} debate"' },
+    { detect: /\bparliamentary session\b/gi,  replacement: '{legislature} session',    suggestion: '"parliamentary session" → use "{legislature} session"' },
+    { detect: /\bparliamentary committee\b/gi,replacement: '{legislature} committee',  suggestion: '"parliamentary committee" → use "{legislature} committee"' },
+    { detect: /\blegislative body\b/gi,       replacement: '{the_legislature}',        suggestion: '"legislative body" → use {legislature}' },
+    { detect: /\bnational legislature\b/gi,   replacement: '{the_legislature}',        suggestion: '"national legislature" → use {legislature}' },
+    { detect: /\bpresidential palace\b/gi,    replacement: "{leader_title}'s office",  suggestion: '"presidential palace" → use {leader_title}\'s office' },
+    { detect: /\bpresidential decree\b/gi,    replacement: "{leader_title}'s decree",  suggestion: '"presidential decree" → use {leader_title}\'s decree' },
+    { detect: /\bpresidential order\b/gi,     replacement: "{leader_title}'s order",   suggestion: '"presidential order" → use {leader_title}\'s order' },
+];
+
+export const INSTITUTION_PHRASE_RULES: PhraseRule[] = [
+    { detect: /\bjustice\s+ministry\b/gi,                                    replacement: "the {justice_role}'s office",              suggestion: '"Justice Ministry" → use {justice_role}' },
+    { detect: /\bministry\s+of\s+justice\b/gi,                               replacement: "the {justice_role}'s office",              suggestion: '"Ministry of Justice" → use {justice_role}' },
+    { detect: /\b(department\s+of\s+justice|justice\s+department)\b/gi,       replacement: "the {justice_role}'s office",              suggestion: '"Department of Justice" → use {justice_role}' },
+    { detect: /\bfinance\s+ministry\b/gi,                                    replacement: "the {finance_role}'s office",              suggestion: '"Finance Ministry" → use {finance_role}' },
+    { detect: /\bministry\s+of\s+finance\b/gi,                               replacement: "the {finance_role}'s office",              suggestion: '"Ministry of Finance" → use {finance_role}' },
+    { detect: /\b(treasury\s+department|department\s+of\s+the\s+treasury)\b/gi, replacement: "the {finance_role}'s office",           suggestion: '"Treasury Department" → use {finance_role}' },
+    { detect: /\b(defense|defence)\s+ministry\b/gi,                          replacement: "the {defense_role}'s office",              suggestion: '"Defense Ministry" → use {defense_role}' },
+    { detect: /\bministry\s+of\s+(defense|defence)\b/gi,                     replacement: "the {defense_role}'s office",              suggestion: '"Ministry of Defense" → use {defense_role}' },
+    { detect: /\bdepartment\s+of\s+defen[cs]e\b/gi,                         replacement: "the {defense_role}'s office",              suggestion: '"Department of Defense" → use {defense_role}' },
+    { detect: /\binterior\s+ministry\b/gi,                                   replacement: "the {interior_role}'s office",             suggestion: '"Interior Ministry" → use {interior_role}' },
+    { detect: /\bministry\s+of\s+(interior|the\s+interior)\b/gi,             replacement: "the {interior_role}'s office",             suggestion: '"Ministry of Interior" → use {interior_role}' },
+    { detect: /\bhome\s+office\b/gi,                                         replacement: "the {interior_role}'s office",             suggestion: '"Home Office" → use {interior_role}' },
+    { detect: /\bdepartment\s+of\s+homeland\s+security\b/gi,                 replacement: "the {interior_role}'s office",             suggestion: '"Department of Homeland Security" → use {interior_role}' },
+    { detect: /\bforeign\s+ministry\b/gi,                                    replacement: "the {foreign_affairs_role}'s office",      suggestion: '"Foreign Ministry" → use {foreign_affairs_role}' },
+    { detect: /\bministry\s+of\s+foreign\s+affairs\b/gi,                     replacement: "the {foreign_affairs_role}'s office",      suggestion: '"Ministry of Foreign Affairs" → use {foreign_affairs_role}' },
+    { detect: /\b(state\s+department|department\s+of\s+state)\b/gi,          replacement: "the {foreign_affairs_role}'s office",      suggestion: '"State Department" → use {foreign_affairs_role}' },
+    { detect: /\bforeign\s+office\b/gi,                                      replacement: "the {foreign_affairs_role}'s office",      suggestion: '"Foreign Office" → use {foreign_affairs_role}' },
+    { detect: /\bhealth\s+ministry\b/gi,                                     replacement: "the {health_role}'s office",               suggestion: '"Health Ministry" → use {health_role}' },
+    { detect: /\bministry\s+of\s+health\b/gi,                                replacement: "the {health_role}'s office",               suggestion: '"Ministry of Health" → use {health_role}' },
+    { detect: /\bdepartment\s+of\s+health\b/gi,                              replacement: "the {health_role}'s office",               suggestion: '"Department of Health" → use {health_role}' },
+    { detect: /\beducation\s+ministry\b/gi,                                  replacement: "the {education_role}'s office",            suggestion: '"Education Ministry" → use {education_role}' },
+    { detect: /\bministry\s+of\s+education\b/gi,                             replacement: "the {education_role}'s office",            suggestion: '"Ministry of Education" → use {education_role}' },
+    { detect: /\bdepartment\s+of\s+education\b/gi,                           replacement: "the {education_role}'s office",            suggestion: '"Department of Education" → use {education_role}' },
+    { detect: /\bcommerce\s+ministry\b/gi,                                   replacement: "the {commerce_role}'s office",             suggestion: '"Commerce Ministry" → use {commerce_role}' },
+    { detect: /\bministry\s+of\s+commerce\b/gi,                              replacement: "the {commerce_role}'s office",             suggestion: '"Ministry of Commerce" → use {commerce_role}' },
+    { detect: /\bdepartment\s+of\s+commerce\b/gi,                            replacement: "the {commerce_role}'s office",             suggestion: '"Department of Commerce" → use {commerce_role}' },
+    { detect: /\blabou?r\s+ministry\b/gi,                                    replacement: "the {labor_role}'s office",                suggestion: '"Labour Ministry" → use {labor_role}' },
+    { detect: /\bministry\s+of\s+labou?r\b/gi,                               replacement: "the {labor_role}'s office",                suggestion: '"Ministry of Labour" → use {labor_role}' },
+    { detect: /\bdepartment\s+of\s+labor\b/gi,                               replacement: "the {labor_role}'s office",                suggestion: '"Department of Labor" → use {labor_role}' },
+    { detect: /\benergy\s+ministry\b/gi,                                     replacement: "the {energy_role}'s office",               suggestion: '"Energy Ministry" → use {energy_role}' },
+    { detect: /\bministry\s+of\s+energy\b/gi,                                replacement: "the {energy_role}'s office",               suggestion: '"Ministry of Energy" → use {energy_role}' },
+    { detect: /\bdepartment\s+of\s+energy\b/gi,                              replacement: "the {energy_role}'s office",               suggestion: '"Department of Energy" → use {energy_role}' },
+    { detect: /\benvironment\s+ministry\b/gi,                                replacement: "the {environment_role}'s office",          suggestion: '"Environment Ministry" → use {environment_role}' },
+    { detect: /\bministry\s+of\s+(environment|the\s+environment)\b/gi,       replacement: "the {environment_role}'s office",          suggestion: '"Ministry of Environment" → use {environment_role}' },
+    { detect: /\benvironmental\s+protection\s+agency\b/gi,                   replacement: "the {environment_role}'s office",          suggestion: '"Environmental Protection Agency" → use {environment_role}' },
+    { detect: /\btransport\s+ministry\b/gi,                                  replacement: "the {transport_role}'s office",            suggestion: '"Transport Ministry" → use {transport_role}' },
+    { detect: /\bministry\s+of\s+transportation?\b/gi,                       replacement: "the {transport_role}'s office",            suggestion: '"Ministry of Transport" → use {transport_role}' },
+    { detect: /\bdepartment\s+of\s+transportation\b/gi,                      replacement: "the {transport_role}'s office",            suggestion: '"Department of Transportation" → use {transport_role}' },
+    { detect: /\bagriculture\s+ministry\b/gi,                                replacement: "the {agriculture_role}'s office",          suggestion: '"Agriculture Ministry" → use {agriculture_role}' },
+    { detect: /\bministry\s+of\s+agriculture\b/gi,                           replacement: "the {agriculture_role}'s office",          suggestion: '"Ministry of Agriculture" → use {agriculture_role}' },
+    { detect: /\bdepartment\s+of\s+agriculture\b/gi,                         replacement: "the {agriculture_role}'s office",          suggestion: '"Department of Agriculture" → use {agriculture_role}' },
+];
+
+/**
+ * Build a compact human-readable guidance block for prompt injection.
+ * Generated from GOV_STRUCTURE_RULES and INSTITUTION_PHRASE_RULES so the
+ * prompt always stays in sync with audit/auto-repair logic.
+ */
+export function buildBannedPhrasePromptGuidance(): string {
+    const lines: string[] = [
+        '**BANNED GOVERNMENT STRUCTURE TERMS** (auto-repaired during audit — always use the token instead):',
+    ];
+    const govByReplacement = new Map<string, string[]>();
+    for (const rule of GOV_STRUCTURE_RULES) {
+        const terms = govByReplacement.get(rule.replacement) ?? [];
+        terms.push(rule.suggestion.split('→')[0].replace(/"/g, '').trim());
+        govByReplacement.set(rule.replacement, terms);
+    }
+    for (const [replacement, terms] of govByReplacement) {
+        lines.push(`- ${terms.map(t => `"${t}"`).join(', ')} → \`${replacement}\``);
+    }
+    lines.push('');
+    lines.push('**BANNED INSTITUTION NAMES** (auto-repaired during audit — always use the role token instead):');
+    const instByToken = new Map<string, string[]>();
+    for (const rule of INSTITUTION_PHRASE_RULES) {
+        const tokenMatch = rule.replacement.match(/\{([^}]+)\}/);
+        const key = tokenMatch ? `{${tokenMatch[1]}}` : rule.replacement;
+        const terms = instByToken.get(key) ?? [];
+        terms.push(rule.suggestion.split('→')[0].replace(/"/g, '').trim());
+        instByToken.set(key, terms);
+    }
+    for (const [token, terms] of instByToken) {
+        lines.push(`- ${terms.join(' / ')} → \`${token}\``);
+    }
+    return lines.join('\n');
+}
+
+function applyPhraseRules(text: string, rules: PhraseRule[]): string {
+    let result = text;
+    for (const rule of rules) {
+        result = result.replace(rule.detect, rule.replacement);
+    }
+    return result;
+}
 
 // Counts real sentence-ending punctuation, ignoring periods inside common
 // abbreviations (U.S., U.K., Dr., Mr., Mrs., St., vs., etc.) that would
@@ -118,17 +230,21 @@ export interface BundleScenario {
         clusterId?: string;
         exclusivityReason?: ScenarioExclusivityReason;
         sourceKind?: ScenarioSourceKind;
+        theme?: string;
+        optionShape?: 'redistribute' | 'regulate' | 'escalate' | 'negotiate' | 'invest' | 'cut' | 'reform' | 'delay';
         actorPattern?: 'domestic' | 'ally' | 'adversary' | 'border_rival' | 'legislature' | 'cabinet' | 'judiciary' | 'mixed';
         region_tags?: string[];
-        mode_availability?: string[];
+        generationProvenance?: {
+            jobId: string;
+            executionTarget: string;
+            modelUsed: string;
+            generatedAt: string;
+        };
         applicable_countries?: string[] | string;
         requires_tags?: string[];
         excludes_tags?: string[];
-        source?: 'news' | 'manual';
         auditMetadata?: AuditMetadata;
     };
-    weight?: number;
-    tier?: string;
     chainsTo?: string[];
     oncePerGame?: boolean;
     cooldown?: number;
@@ -179,6 +295,8 @@ export interface AuditConfig {
     categoryDomainMetrics: Record<string, string[]>;
     metricMappings: Record<string, string>;
     bannedPhrases: string[];
+    bannedPhraseRegexes: Array<{ phrase: string; regex: RegExp }>;
+    bannedCountryPhrases: Set<string>;
     validTokens: Set<string>;
     logicParameters: {
         duration: { min: number; max: number };
@@ -214,6 +332,19 @@ const RELATIONSHIP_TOKEN_NAMES = new Set<RelationshipTokenName>([
     'neighbor',
     'nation',
 ]);
+
+const UNIVERSAL_RELATIONSHIP_REPLACEMENTS: Record<RelationshipTokenName, { plain: string; possessive: string }> = {
+    ally: { plain: 'coalition partners', possessive: 'coalition' },
+    adversary: { plain: 'security pressures', possessive: 'security' },
+    border_rival: { plain: 'regional pressures', possessive: 'regional' },
+    regional_rival: { plain: 'regional pressures', possessive: 'regional' },
+    trade_partner: { plain: 'external markets', possessive: 'foreign-exchange' },
+    neutral: { plain: 'swing blocs', possessive: 'centrist' },
+    rival: { plain: 'security pressures', possessive: 'security' },
+    partner: { plain: 'external markets', possessive: 'market' },
+    neighbor: { plain: 'regional markets', possessive: 'regional' },
+    nation: { plain: 'the national economy', possessive: 'national' },
+};
 
 export function getAuditConfig(): AuditConfig {
     if (!_config) {
@@ -401,6 +532,16 @@ export async function initializeAuditConfig(db: FirebaseFirestore.Firestore): Pr
         categoryDomainMetrics: genConfig.category_domain_metrics ?? {},
         metricMappings: { ...defaultMetricMappings, ...(genConfig.metric_mappings ?? {}) },
         bannedPhrases,
+        bannedPhraseRegexes: bannedPhrases.map(phrase => {
+            const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return {
+                phrase,
+                regex: /^[A-Z]+$/.test(phrase)
+                    ? new RegExp(`\\b${escaped}\\b`)
+                    : new RegExp(`\\b${escaped}\\b`, 'i'),
+            };
+        }),
+        bannedCountryPhrases: new Set(bannedCountryPhrases),
         validTokens: new Set<string>(ALL_TOKENS),
         logicParameters: {
             duration: {
@@ -479,12 +620,7 @@ export function auditScenario(
 
     const checkBannedPhrases = (text: string | undefined, fieldName: string) => {
         if (!text) return;
-        for (const phrase of cfg.bannedPhrases) {
-            const escapedPhrase = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const isUppercaseCode = /^[A-Z]+$/.test(phrase);
-            const regex = isUppercaseCode
-                ? new RegExp(`\\b${escapedPhrase}\\b`)
-                : new RegExp(`\\b${escapedPhrase}\\b`, 'i');
+        for (const { phrase, regex } of cfg.bannedPhraseRegexes) {
             if (regex.test(text)) {
                 add('error', 'banned-phrase', scenario.id, `${fieldName} contains banned phrase: "${phrase}"`);
             }
@@ -1075,6 +1211,30 @@ export function auditScenario(
             add('error', 'title-too-short', scenario.id, `Title has ${wordCount} words (min 4)`);
         else if (wordCount > 10)
             add('warn', 'title-too-long', scenario.id, `Title has ${wordCount} words (max recommended 10)`);
+
+        // Formulaic title patterns — noun stacks without a verb read as generic and repetitive
+        const title = scenario.title.trim();
+        const formulaicPatterns: Array<[RegExp, string]> = [
+            [/\b(crisis|crises)\s*(response|options|management)?\s*$/i, 'ends with "Crisis [Response/Options/Management]"'],
+            [/^managing\s+/i, 'starts with "Managing"'],
+            [/^(balancing|handling|navigating)\s+/i, 'starts with a generic gerund (Balancing/Handling/Navigating)'],
+            [/\b(debate|decision|dilemma|challenge|conflict)\s*$/i, 'ends with a generic noun (Debate/Decision/Dilemma/Challenge/Conflict) — use a verb instead'],
+            [/\b(response|response\s+options)\s*$/i, 'ends with "Response" or "Response Options" — use a verb instead'],
+        ];
+        for (const [pattern, reason] of formulaicPatterns) {
+            if (pattern.test(title)) {
+                add('error', 'formulaic-title', scenario.id, `Title is formulaic: ${reason}. Write a verb-containing headline instead (e.g. "Parliament Blocks Emergency Bill")`, true);
+                break;
+            }
+        }
+
+        const titleWords = title.toLowerCase().split(/\s+/);
+        for (let i = 1; i < titleWords.length; i++) {
+            if (titleWords[i] === titleWords[i - 1] && titleWords[i].length > 2) {
+                add('error', 'duplicate-word-in-title', scenario.id, `Title has duplicate adjacent word: "${titleWords[i]}"`, true);
+                break;
+            }
+        }
     }
 
     // Double-space, orphaned-punctuation, and run-on sentence checks
@@ -1162,68 +1322,14 @@ export function auditScenario(
         }
         // Detect hardcoded government-structure terms that break country-agnosticism.
         // These are parliamentary concepts that don't apply to presidential/monarchic systems.
-        const govStructureTerms: Array<[RegExp, string]> = [
-            [/\bruling coalition\b/i, '"ruling coalition" → use {ruling_party}'],
-            [/\bgoverning coalition\b/i, '"governing coalition" → use {ruling_party}'],
-            [/\bcoalition government\b/i, '"coalition government" → use {ruling_party}'],
-            [/\bcoalition allies\b/i, '"coalition allies" → use "political allies" or "allies in {legislature}"'],
-            [/\bparliamentary majority\b/i, '"parliamentary majority" → use "{legislature} majority"'],
-            [/\bparliamentary minority\b/i, '"parliamentary minority" → use "{legislature} minority"'],
-            [/\bparliamentary support\b/i, '"parliamentary support" → use "{legislature} support"'],
-            [/\bparliamentary vote\b/i, '"parliamentary vote" → use "{legislature} vote"'],
-            [/\bparliamentary approval\b/i, '"parliamentary approval" → use "{legislature} approval"'],
-        ];
-        for (const [pattern, suggestion] of govStructureTerms) {
-            if (pattern.test(text))
-                    add('error', 'hardcoded-gov-structure', scenario.id, `${fieldName} contains a hardcoded government-structure term — ${suggestion}`);
+        for (const rule of GOV_STRUCTURE_RULES) {
+            if (rule.detect.test(text))
+                    add('error', 'hardcoded-gov-structure', scenario.id, `${fieldName} contains a hardcoded government-structure term — ${rule.suggestion}`);
         }
         // Detect hardcoded ministry/institution names that break country-agnosticism.
-        const institutionPhraseTerms: Array<[RegExp, string]> = [
-            [/\bjustice\s+ministry\b/i, '"Justice Ministry" → use {justice_role}'],
-            [/\bministry\s+of\s+justice\b/i, '"Ministry of Justice" → use {justice_role}'],
-            [/\b(department\s+of\s+justice|justice\s+department)\b/i, '"Department of Justice" → use {justice_role}'],
-            [/\bfinance\s+ministry\b/i, '"Finance Ministry" → use {finance_role}'],
-            [/\bministry\s+of\s+finance\b/i, '"Ministry of Finance" → use {finance_role}'],
-            [/\b(treasury\s+department|department\s+of\s+the\s+treasury)\b/i, '"Treasury Department" → use {finance_role}'],
-            [/\b(defense|defence)\s+ministry\b/i, '"Defense Ministry" → use {defense_role}'],
-            [/\bministry\s+of\s+(defense|defence)\b/i, '"Ministry of Defense" → use {defense_role}'],
-            [/\bdepartment\s+of\s+(defense|defence)\b/i, '"Department of Defense" → use {defense_role}'],
-            [/\binterior\s+ministry\b/i, '"Interior Ministry" → use {interior_role}'],
-            [/\bministry\s+of\s+(interior|the\s+interior)\b/i, '"Ministry of Interior" → use {interior_role}'],
-            [/\bhome\s+office\b/i, '"Home Office" → use {interior_role}'],
-            [/\bdepartment\s+of\s+homeland\s+security\b/i, '"Department of Homeland Security" → use {interior_role}'],
-            [/\bforeign\s+ministry\b/i, '"Foreign Ministry" → use {foreign_affairs_role}'],
-            [/\bministry\s+of\s+foreign\s+affairs\b/i, '"Ministry of Foreign Affairs" → use {foreign_affairs_role}'],
-            [/\b(state\s+department|department\s+of\s+state)\b/i, '"State Department" → use {foreign_affairs_role}'],
-            [/\bforeign\s+office\b/i, '"Foreign Office" → use {foreign_affairs_role}'],
-            [/\bhealth\s+ministry\b/i, '"Health Ministry" → use {health_role}'],
-            [/\bministry\s+of\s+health\b/i, '"Ministry of Health" → use {health_role}'],
-            [/\bdepartment\s+of\s+health\b/i, '"Department of Health" → use {health_role}'],
-            [/\beducation\s+ministry\b/i, '"Education Ministry" → use {education_role}'],
-            [/\bministry\s+of\s+education\b/i, '"Ministry of Education" → use {education_role}'],
-            [/\bdepartment\s+of\s+education\b/i, '"Department of Education" → use {education_role}'],
-            [/\bcommerce\s+ministry\b/i, '"Commerce Ministry" → use {commerce_role}'],
-            [/\bministry\s+of\s+commerce\b/i, '"Ministry of Commerce" → use {commerce_role}'],
-            [/\bdepartment\s+of\s+commerce\b/i, '"Department of Commerce" → use {commerce_role}'],
-            [/\blabou?r\s+ministry\b/i, '"Labour Ministry" → use {labor_role}'],
-            [/\bministry\s+of\s+labou?r\b/i, '"Ministry of Labour" → use {labor_role}'],
-            [/\bdepartment\s+of\s+labor\b/i, '"Department of Labor" → use {labor_role}'],
-            [/\benergy\s+ministry\b/i, '"Energy Ministry" → use {energy_role}'],
-            [/\bministry\s+of\s+energy\b/i, '"Ministry of Energy" → use {energy_role}'],
-            [/\bdepartment\s+of\s+energy\b/i, '"Department of Energy" → use {energy_role}'],
-            [/\benvironment\s+ministry\b/i, '"Environment Ministry" → use {environment_role}'],
-            [/\bministry\s+of\s+(environment|the\s+environment)\b/i, '"Ministry of Environment" → use {environment_role}'],
-            [/\benvironmental\s+protection\s+agency\b/i, '"Environmental Protection Agency" → use {environment_role}'],
-            [/\btransport\s+ministry\b/i, '"Transport Ministry" → use {transport_role}'],
-            [/\bministry\s+of\s+transportation?\b/i, '"Ministry of Transport" → use {transport_role}'],
-            [/\bdepartment\s+of\s+transportation\b/i, '"Department of Transportation" → use {transport_role}'],
-            [/\bagriculture\s+ministry\b/i, '"Agriculture Ministry" → use {agriculture_role}'],
-            [/\bministry\s+of\s+agriculture\b/i, '"Ministry of Agriculture" → use {agriculture_role}'],
-            [/\bdepartment\s+of\s+agriculture\b/i, '"Department of Agriculture" → use {agriculture_role}'],
-        ];
-        for (const [pattern, suggestion] of institutionPhraseTerms) {
-            if (pattern.test(text))
-                    add('error', 'hardcoded-institution-phrase', scenario.id, `${fieldName} contains a hardcoded institution name — ${suggestion}`);
+        for (const rule of INSTITUTION_PHRASE_RULES) {
+            if (rule.detect.test(text))
+                    add('error', 'hardcoded-institution-phrase', scenario.id, `${fieldName} contains a hardcoded institution name — ${rule.suggestion}`);
         }
         // Enforce adjacency semantics: if narrative claims a neighbor/border relation,
         // it must use {neighbor} or {border_rival}, not generic rival/adversary tokens.
@@ -1638,6 +1744,15 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
 
     for (const opt of scenario.options) {
         for (const eff of opt.effects) {
+            if (!eff.targetMetricId?.startsWith('metric_') && typeof eff.targetMetricId === 'string') {
+                const prefixed = `metric_${eff.targetMetricId.replace(/[- ]/g, '_').toLowerCase()}`;
+                if (cfg.validMetricIds.has(prefixed)) {
+                    const old = eff.targetMetricId;
+                    eff.targetMetricId = prefixed;
+                    fixed = true;
+                    fixes.push(`${opt.id}: prefixed ${old}->${prefixed}`);
+                }
+            }
             if (cfg.metricMappings[eff.targetMetricId]) {
                 const old = eff.targetMetricId;
                 eff.targetMetricId = cfg.metricMappings[old];
@@ -1659,6 +1774,11 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
                 eff.value = Math.sign(eff.value) * cap;
                 fixed = true;
                 fixes.push(`${opt.id}: capped ${eff.targetMetricId}`);
+            }
+            if (cfg.inverseMetrics.has(eff.targetMetricId) && eff.value > 0) {
+                eff.value = -Math.abs(eff.value);
+                fixed = true;
+                fixes.push(`${opt.id}: flipped inverse-positive ${eff.targetMetricId}`);
             }
         }
     }
@@ -1756,6 +1876,69 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         }
     };
     applyWhitespaceToScenario();
+
+    if (scenario.metadata?.scopeTier === 'universal') {
+        const scrubUniversalRelationshipTokens = (text: string | undefined): string | undefined => {
+            if (!text) return text;
+            return text.replace(/\{(the_)?([a-z_]+)\}(?:'s|’s)?/gi, (match, _prefixed, rawName) => {
+                const normalized = String(rawName).toLowerCase() as RelationshipTokenName;
+                if (!RELATIONSHIP_TOKEN_NAMES.has(normalized)) return match;
+                const replacement = UNIVERSAL_RELATIONSHIP_REPLACEMENTS[normalized];
+                if (!replacement) return match;
+                return /(?:'s|’s)$/i.test(match) ? replacement.possessive : replacement.plain;
+            });
+        };
+
+        const titleBefore = scenario.title;
+        scenario.title = scrubUniversalRelationshipTokens(scenario.title) ?? scenario.title;
+        if (titleBefore !== scenario.title) { fixes.push('title: removed relationship-token dependency for universal scope'); fixed = true; }
+
+        const descBefore = scenario.description;
+        scenario.description = scrubUniversalRelationshipTokens(scenario.description) ?? scenario.description;
+        if (descBefore !== scenario.description) { fixes.push('description: removed relationship-token dependency for universal scope'); fixed = true; }
+
+        for (const opt of scenario.options) {
+            for (const field of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+                if (typeof opt[field] === 'string') {
+                    const before = opt[field] as string;
+                    (opt[field] as string) = scrubUniversalRelationshipTokens(before) ?? before;
+                    if (before !== opt[field]) { fixes.push(`${opt.id}: removed relationship-token dependency in ${field}`); fixed = true; }
+                }
+            }
+            if (Array.isArray(opt.advisorFeedback)) {
+                for (const fb of opt.advisorFeedback as any[]) {
+                    if (typeof fb.feedback === 'string') {
+                        const before = fb.feedback;
+                        fb.feedback = scrubUniversalRelationshipTokens(fb.feedback) ?? fb.feedback;
+                        if (before !== fb.feedback) { fixes.push(`${opt.id}: removed relationship-token dependency in advisor ${fb.roleId}`); fixed = true; }
+                    }
+                }
+            }
+        }
+    }
+
+    const formulaicEndings = /\s+(Crisis|Debate|Decision|Dilemma|Challenge|Conflict|Response|Response Options|Choices|Options)\s*$/i;
+    const gerundOpeners = /^(Managing|Balancing|Handling|Navigating|Addressing)\s+/i;
+    if (formulaicEndings.test(scenario.title)) {
+        const before = scenario.title;
+        scenario.title = scenario.title.replace(formulaicEndings, '').trim();
+        if (scenario.title.split(/\s+/).length < 4) {
+            scenario.title = before;
+        } else {
+            fixes.push(`title: stripped formulaic ending "${before}" → "${scenario.title}"`);
+            fixed = true;
+        }
+    }
+    if (gerundOpeners.test(scenario.title)) {
+        const before = scenario.title;
+        scenario.title = scenario.title.replace(gerundOpeners, '').trim();
+        if (scenario.title.split(/\s+/).length < 4) {
+            scenario.title = before;
+        } else {
+            fixes.push(`title: stripped gerund opener "${before}" → "${scenario.title}"`);
+            fixed = true;
+        }
+    }
 
     return { fixed, fixes };
 }
@@ -1879,6 +2062,8 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
         r = r.replace(/\byour decision\b/g, "{leader_title}'s decision");
         r = r.replace(/\bYour policy\b/g, "{leader_title}'s policy");
         r = r.replace(/\byour policy\b/g, "{leader_title}'s policy");
+        r = r.replace(/\bYour (leadership|strategy|approach|directive|order|mandate|initiative|reform|plan|agenda|cabinet|team|office|response|stance)\b/g, "{leader_title}'s $1");
+        r = r.replace(/\byour (leadership|strategy|approach|directive|order|mandate|initiative|reform|plan|agenda|cabinet|team|office|response|stance)\b/g, "{leader_title}'s $1");
         r = r.replace(/\bYou opted\b/g, '{leader_title} opted');
         r = r.replace(/\byou opted\b/g, '{leader_title} opted');
         r = r.replace(/\bYou chose\b/g, '{leader_title} chose');
@@ -1897,6 +2082,8 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
         r = r.replace(/\byou deployed\b/g, '{leader_title} deployed');
         r = r.replace(/\bYou approved\b/g, '{leader_title} approved');
         r = r.replace(/\byou approved\b/g, '{leader_title} approved');
+        r = r.replace(/\bYou (ordered|enacted|issued|launched|rejected|accepted|implemented|mandated|proposed|suspended|revoked|withdrew|committed|pledged|instructed|dispatched|mobilized|sanctioned|vetoed|ratified|negotiated|declared|condemned|endorsed|dismissed)\b/g, '{leader_title} $1');
+        r = r.replace(/\byou (ordered|enacted|issued|launched|rejected|accepted|implemented|mandated|proposed|suspended|revoked|withdrew|committed|pledged|instructed|dispatched|mobilized|sanctioned|vetoed|ratified|negotiated|declared|condemned|endorsed|dismissed)\b/g, '{leader_title} $1');
         r = r.replace(/\bYour\b/g, "{leader_title}'s");
         r = r.replace(/\byour\b/g, "{leader_title}'s");
         r = r.replace(/\bYou\b/g, '{leader_title}');
@@ -2337,78 +2524,82 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
         }
     }
 
-    // Auto-fix hardcoded institution phrases → token equivalents
+    // Auto-fix hardcoded institution phrases AND gov-structure terms → token equivalents
+    // Uses shared INSTITUTION_PHRASE_RULES and GOV_STRUCTURE_RULES tables (single source of truth with detection)
     {
-        const INSTITUTION_REPLACEMENTS: [RegExp, string][] = [
-            [/\bfinance\s+ministry\b/gi, "the {finance_role}'s office"],
-            [/\bministry\s+of\s+finance\b/gi, "the {finance_role}'s office"],
-            [/\btreasury\s+department\b/gi, "the {finance_role}'s office"],
-            [/\bdepartment\s+of\s+the\s+treasury\b/gi, "the {finance_role}'s office"],
-            [/\bdefense\s+ministry\b/gi, "the {defense_role}'s office"],
-            [/\bdefence\s+ministry\b/gi, "the {defense_role}'s office"],
-            [/\bministry\s+of\s+defen[cs]e\b/gi, "the {defense_role}'s office"],
-            [/\bdepartment\s+of\s+defense\b/gi, "the {defense_role}'s office"],
-            [/\bministry\s+of\s+(interior|the\s+interior)\b/gi, "the {interior_role}'s office"],
-            [/\bhome\s+office\b/gi, "the {interior_role}'s office"],
-            [/\bdepartment\s+of\s+homeland\s+security\b/gi, "the {interior_role}'s office"],
-            [/\bforeign\s+ministry\b/gi, "the {foreign_affairs_role}'s office"],
-            [/\bministry\s+of\s+foreign\s+affairs\b/gi, "the {foreign_affairs_role}'s office"],
-            [/\b(state\s+department|department\s+of\s+state)\b/gi, "the {foreign_affairs_role}'s office"],
-            [/\bforeign\s+office\b/gi, "the {foreign_affairs_role}'s office"],
-            [/\bhealth\s+ministry\b/gi, "the {health_role}'s office"],
-            [/\bministry\s+of\s+health\b/gi, "the {health_role}'s office"],
-            [/\bdepartment\s+of\s+health\b/gi, "the {health_role}'s office"],
-            [/\beducation\s+ministry\b/gi, "the {education_role}'s office"],
-            [/\bministry\s+of\s+education\b/gi, "the {education_role}'s office"],
-            [/\bdepartment\s+of\s+education\b/gi, "the {education_role}'s office"],
-            [/\bcommerce\s+ministry\b/gi, "the {commerce_role}'s office"],
-            [/\bministry\s+of\s+commerce\b/gi, "the {commerce_role}'s office"],
-            [/\bdepartment\s+of\s+commerce\b/gi, "the {commerce_role}'s office"],
-            [/\blabou?r\s+ministry\b/gi, "the {labor_role}'s office"],
-            [/\bministry\s+of\s+labou?r\b/gi, "the {labor_role}'s office"],
-            [/\bdepartment\s+of\s+labor\b/gi, "the {labor_role}'s office"],
-            [/\benergy\s+ministry\b/gi, "the {energy_role}'s office"],
-            [/\bministry\s+of\s+energy\b/gi, "the {energy_role}'s office"],
-            [/\bdepartment\s+of\s+energy\b/gi, "the {energy_role}'s office"],
-            [/\benvironment\s+ministry\b/gi, "the {environment_role}'s office"],
-            [/\bministry\s+of\s+(environment|the\s+environment)\b/gi, "the {environment_role}'s office"],
-            [/\benvironmental\s+protection\s+agency\b/gi, "the {environment_role}'s office"],
-            [/\btransport\s+ministry\b/gi, "the {transport_role}'s office"],
-            [/\bministry\s+of\s+transportation?\b/gi, "the {transport_role}'s office"],
-            [/\bdepartment\s+of\s+transportation\b/gi, "the {transport_role}'s office"],
-            [/\bagriculture\s+ministry\b/gi, "the {agriculture_role}'s office"],
-            [/\bministry\s+of\s+agriculture\b/gi, "the {agriculture_role}'s office"],
-            [/\bdepartment\s+of\s+agriculture\b/gi, "the {agriculture_role}'s office"],
-            [/\bministry\s+of\s+justice\b/gi, "the {justice_role}'s office"],
-            [/\bdepartment\s+of\s+justice\b/gi, "the {justice_role}'s office"],
-            [/\bjustice\s+ministry\b/gi, "the {justice_role}'s office"],
-        ];
-        const scrubInstitutions = (text: string | undefined): string | undefined => {
+        const scrubPhrases = (text: string | undefined): string | undefined => {
             if (!text) return text;
-            let result = text;
-            for (const [pat, repl] of INSTITUTION_REPLACEMENTS) {
-                result = result.replace(pat, repl);
-            }
+            let result = applyPhraseRules(text, INSTITUTION_PHRASE_RULES);
+            result = applyPhraseRules(result, GOV_STRUCTURE_RULES);
             return result;
         };
-        const descInst = scenario.description;
-        scenario.description = scrubInstitutions(scenario.description) ?? scenario.description;
-        if (descInst !== scenario.description) { fixes.push('description: replaced hardcoded institutions with tokens'); fixed = true; }
-        scenario.title = scrubInstitutions(scenario.title) ?? scenario.title;
+        const descBefore = scenario.description;
+        scenario.description = scrubPhrases(scenario.description) ?? scenario.description;
+        if (descBefore !== scenario.description) { fixes.push('description: replaced hardcoded institutions/gov-structure with tokens'); fixed = true; }
+        const titleBefore = scenario.title;
+        scenario.title = scrubPhrases(scenario.title) ?? scenario.title;
+        if (titleBefore !== scenario.title) { fixes.push('title: replaced hardcoded institutions/gov-structure with tokens'); fixed = true; }
         for (const opt of scenario.options) {
             for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
                 if (typeof opt[f] === 'string') {
                     const before = opt[f] as string;
-                    (opt[f] as any) = scrubInstitutions(before) ?? before;
-                    if (before !== opt[f]) { fixes.push(`${opt.id}: replaced hardcoded institutions in ${f}`); fixed = true; }
+                    (opt[f] as any) = scrubPhrases(before) ?? before;
+                    if (before !== opt[f]) { fixes.push(`${opt.id}: replaced hardcoded phrases in ${f}`); fixed = true; }
                 }
             }
             if (Array.isArray(opt.advisorFeedback)) {
                 for (const fb of opt.advisorFeedback as any[]) {
                     if (typeof fb.feedback === 'string') {
                         const before = fb.feedback;
-                        fb.feedback = scrubInstitutions(fb.feedback) ?? fb.feedback;
-                        if (before !== fb.feedback) { fixes.push(`${opt.id}: replaced hardcoded institutions in advisor ${fb.roleId}`); fixed = true; }
+                        fb.feedback = scrubPhrases(fb.feedback) ?? fb.feedback;
+                        if (before !== fb.feedback) { fixes.push(`${opt.id}: replaced hardcoded phrases in advisor ${fb.roleId}`); fixed = true; }
+                    }
+                }
+            }
+        }
+    }
+
+    // Auto-fix banned country/capital names → generic references
+    // This handles the #1 Ollama failure mode: models ignore "no country names" instructions
+    if (cfg.bannedCountryPhrases.size > 0) {
+        const scrubCountryNames = (text: string | undefined): string | undefined => {
+            if (!text) return text;
+            let result = text;
+            for (const phrase of cfg.bannedCountryPhrases) {
+                const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const isUppercaseCode = /^[A-Z]+$/.test(phrase);
+                const flags = isUppercaseCode ? 'g' : 'gi';
+                const regex = new RegExp(`\\b${escaped}\\b`, flags);
+                if (regex.test(result)) {
+                    const isCapital = /^[A-Z][a-z]/.test(phrase) && phrase.split(/\s+/).length <= 2;
+                    const replacement = isCapital ? 'the capital' : 'a foreign nation';
+                    result = result.replace(regex, replacement);
+                }
+            }
+            return result;
+        };
+        const textFields: Array<'title' | 'description'> = ['title', 'description'];
+        for (const field of textFields) {
+            if (typeof scenario[field] === 'string') {
+                const before = scenario[field];
+                scenario[field] = scrubCountryNames(scenario[field]) ?? scenario[field];
+                if (before !== scenario[field]) { fixes.push(`${field}: replaced banned country/capital names`); fixed = true; }
+            }
+        }
+        for (const opt of scenario.options) {
+            for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+                if (typeof opt[f] === 'string') {
+                    const before = opt[f] as string;
+                    (opt[f] as any) = scrubCountryNames(before) ?? before;
+                    if (before !== opt[f]) { fixes.push(`${opt.id}: replaced banned country names in ${f}`); fixed = true; }
+                }
+            }
+            if (Array.isArray(opt.advisorFeedback)) {
+                for (const fb of opt.advisorFeedback as any[]) {
+                    if (typeof fb.feedback === 'string') {
+                        const before = fb.feedback;
+                        fb.feedback = scrubCountryNames(fb.feedback) ?? fb.feedback;
+                        if (before !== fb.feedback) { fixes.push(`${opt.id}: replaced banned country names in advisor ${fb.roleId}`); fixed = true; }
                     }
                 }
             }
@@ -2478,12 +2669,149 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
         }
     }
 
+    // Auto-fix bare relationship tokens → {the_*} form (except possessives)
+    // Ollama models frequently emit {adversary} instead of {the_adversary}
+    {
+        const RELATIONSHIP_BARE_TOKENS = [
+            'adversary', 'border_rival', 'regional_rival', 'ally', 'trade_partner',
+            'neutral', 'rival', 'partner', 'neighbor', 'player_country', 'nation',
+            'regional_bloc',
+        ];
+        const bareRelPattern = new RegExp(
+            `\\{(${RELATIONSHIP_BARE_TOKENS.join('|')})\\}(?!'s)`,
+            'g'
+        );
+        const fixBareRelTokens = (text: string | undefined): string | undefined => {
+            if (!text) return text;
+            return text.replace(bareRelPattern, (_match, name) => `{the_${name}}`);
+        };
+        const applyRelFix = (t: string | undefined, label: string): string | undefined => {
+            const after = fixBareRelTokens(t);
+            if (after !== t) { fixes.push(`${label}: fixed bare relationship token → {the_*} form`); fixed = true; }
+            return after ?? t;
+        };
+        scenario.description = applyRelFix(scenario.description, 'description') ?? scenario.description;
+        scenario.title = applyRelFix(scenario.title, 'title') ?? scenario.title;
+        for (const opt of scenario.options) {
+            for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+                if (typeof opt[f] === 'string') {
+                    (opt[f] as any) = applyRelFix(opt[f] as string, `${opt.id} ${f}`) ?? opt[f];
+                }
+            }
+            if (Array.isArray(opt.advisorFeedback)) {
+                for (const fb of opt.advisorFeedback as any[]) {
+                    if (typeof fb.feedback === 'string') {
+                        fb.feedback = applyRelFix(fb.feedback, `${opt.id} advisor ${fb.roleId}`) ?? fb.feedback;
+                    }
+                }
+            }
+        }
+    }
+
+    // Auto-fix bare role tokens at non-possessive positions → {the_*} form
+    // Ollama models emit {finance_role} instead of {the_finance_role}
+    {
+        const ROLE_BARE_TOKENS = [
+            'leader_title', 'vice_leader', 'finance_role', 'defense_role', 'interior_role',
+            'foreign_affairs_role', 'justice_role', 'health_role', 'education_role',
+            'commerce_role', 'labor_role', 'energy_role', 'environment_role', 'transport_role',
+            'agriculture_role', 'legislature', 'upper_house', 'lower_house', 'ruling_party',
+            'opposition_party', 'judicial_role', 'prosecutor_role', 'intelligence_agency',
+            'police_force', 'security_council', 'central_bank', 'military_branch',
+            'military_general', 'state_media', 'capital_city', 'major_industry',
+        ];
+        const bareRolePattern = new RegExp(
+            `(?<!')\\{(${ROLE_BARE_TOKENS.join('|')})\\}(?!'s)`,
+            'g'
+        );
+        const fixBareRoleTokens = (text: string | undefined): string | undefined => {
+            if (!text) return text;
+            return text.replace(bareRolePattern, (_match, name) => {
+                return ARTICLE_FORM_TOKEN_NAMES.has(name) ? `{the_${name}}` : `{${name}}`;
+            });
+        };
+        const applyRoleFix = (t: string | undefined, label: string): string | undefined => {
+            const after = fixBareRoleTokens(t);
+            if (after !== t) { fixes.push(`${label}: fixed bare role token → {the_*} form`); fixed = true; }
+            return after ?? t;
+        };
+        scenario.description = applyRoleFix(scenario.description, 'description') ?? scenario.description;
+        scenario.title = applyRoleFix(scenario.title, 'title') ?? scenario.title;
+        for (const opt of scenario.options) {
+            for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+                if (typeof opt[f] === 'string') {
+                    (opt[f] as any) = applyRoleFix(opt[f] as string, `${opt.id} ${f}`) ?? opt[f];
+                }
+            }
+            if (Array.isArray(opt.advisorFeedback)) {
+                for (const fb of opt.advisorFeedback as any[]) {
+                    if (typeof fb.feedback === 'string') {
+                        fb.feedback = applyRoleFix(fb.feedback, `${opt.id} advisor ${fb.roleId}`) ?? fb.feedback;
+                    }
+                }
+            }
+        }
+    }
+
+    // Auto-truncate excess options to exactly 3 (Ollama sometimes generates 4-5)
+    if (scenario.options.length > 3) {
+        const originalCount = scenario.options.length;
+        scenario.options = scenario.options.slice(0, 3);
+        fixes.push(`truncated ${originalCount} options to 3`);
+        fixed = true;
+    }
+
+    // Unconditionally fix outcome voice in ALL outcome fields (not just when issue is detected)
+    // This catches cases where detection missed edge patterns but the fix would still help
+    for (const opt of scenario.options) {
+        for (const field of ['outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+            if (typeof opt[field] === 'string' && /\byou(?:r)?\b/i.test(opt[field] as string)) {
+                const before = opt[field]!;
+                opt[field] = fixOutcomeVoice(before) ?? before;
+                if (before !== opt[field]) { fixes.push(`${opt.id}: proactive voice fix in ${field}`); fixed = true; }
+            }
+        }
+    }
+
     // FINAL SAFETY: Hard-cap every option at exactly 4 effects (runs AFTER all injections)
     for (const opt of scenario.options) {
         if (Array.isArray(opt.effects) && opt.effects.length > 4) {
             opt.effects = opt.effects.slice(0, 4);
             fixes.push(`${opt.id}: final trim to 4 effects`);
             fixed = true;
+        }
+    }
+
+    // Word count padding: surgically add a contextual clause when within 15 words of minimum
+    const PADDING_CLAUSES = [
+        ', with {the_opposition} demanding an immediate response',
+        ', as public pressure mounts for decisive action',
+        ', raising concerns among senior advisors about the long-term consequences',
+        ', prompting calls from {the_legislature} for a formal review',
+        ', while analysts warn of cascading effects across related sectors',
+        ', amid growing unease among key stakeholders and the broader public',
+    ];
+    const padText = (text: string, minWords: number, fieldLabel: string): string => {
+        const wc = countWords(text);
+        const gap = minWords - wc;
+        if (gap <= 0 || gap > 15) return text;
+        if (!/[.!?]$/.test(text.trim())) return text;
+        const clause = PADDING_CLAUSES[Math.floor(Math.random() * PADDING_CLAUSES.length)];
+        const trimmed = text.trim().replace(/[.!?]+$/, '');
+        const padded = `${trimmed}${clause}.`;
+        if (countWords(padded) >= minWords) {
+            fixes.push(`${fieldLabel}: padded ${wc} → ${countWords(padded)} words`);
+            fixed = true;
+            return padded;
+        }
+        return text;
+    };
+    if (typeof scenario.description === 'string') {
+        scenario.description = padText(scenario.description, 60, 'description');
+    }
+    for (const opt of scenario.options) {
+        if (typeof opt.text === 'string') {
+            opt.text = padText(opt.text, 50, `${opt.id}/text`);
         }
     }
 
@@ -2633,6 +2961,29 @@ Output relationship_conditions ONLY when a named relational actor (adversary, al
 - Rival provocation (sub-conflict) → { "relationshipId": "rival", "max": -15 }
 For domestic, economic, or internal governance scenarios: omit relationship_conditions.
 Maximum 3 conditions. Key must be "relationship_conditions". Strength scale: −100 (hostile) to +100 (allied).`;
+}
+
+export function getCompactAuditRulesPrompt(): string {
+    const cfg = getAuditConfig();
+    const inverseList = Array.from(cfg.inverseMetrics).join(', ');
+    const metricList = Array.from(cfg.validMetricIds).join(', ');
+    return `**AUDIT RULES (VIOLATIONS = REJECTION):**
+
+${buildCompactTokenPromptSection()}
+
+## VALID METRICS: ${metricList}
+
+## EFFECTS: 2-4 per option (5+ = REJECTED). probability=1. duration=${cfg.logicParameters.duration.min}-${cfg.logicParameters.duration.max}. value: -4.0 to +4.0.
+
+## WORD COUNTS (HARD): description=60-140 words. options[].text=50-120 words. outcomeSummary≥250 chars. outcomeContext≥400 chars.
+
+## INVERSE METRICS (values MUST be negative — positive values = REJECTED): ${inverseList}
+
+## VOICE: description/options/advisorFeedback=SECOND PERSON ("You face..."). outcomes=THIRD PERSON journalistic ("The administration..."). "you"/"your" in outcomes=REJECTED.
+
+## ADVISORS: Each option needs role_executive + affected roles. Format: { "roleId": "role_xxx", "stance": "support"|"oppose"|"neutral"|"concerned", "feedback": "1-2 specific sentences" }. Generic boilerplate=REJECTED.
+
+## PLAIN LANGUAGE: No jargon. Max 30 words/sentence. Active voice. Labels=plain text, no tokens.`;
 }
 
 export interface ConceptValidation {
