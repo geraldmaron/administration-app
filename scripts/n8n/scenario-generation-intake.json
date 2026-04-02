@@ -129,7 +129,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const request = $('Incoming Job Request').item.json.body || {};\nconst queued = $('Queue Generation Job').item.json || {};\nconst bundles = Array.isArray(request.bundles) ? request.bundles : [];\nconst count = typeof request.count === 'number' ? request.count : 1;\n\nconst mc = request.modelConfig || {};\nconst isOllamaJob = Object.values(mc).some(v => typeof v === 'string' && v.startsWith('ollama:'));\nconst CLOUD_URL = 'https://us-central1-the-administration-3a072.cloudfunctions.net/processGenerationBundle';\nconst LOCAL_URL = 'http://localhost:3099/processGenerationBundle';\nconst targetUrl = isOllamaJob ? LOCAL_URL : CLOUD_URL;\n\nconst scope = {\n  scopeTier: request.scopeTier || 'universal',\n  scopeKey: request.scopeKey || 'universal',\n  sourceKind: request.sourceKind || 'evergreen',\n  regions: request.regions || [],\n  region: request.region,\n  applicable_countries: request.applicable_countries || [],\n  exclusivityReason: request.exclusivityReason,\n  clusterId: request.clusterId,\n};\n\nreturn bundles.map(bundle => ({\n  json: {\n    targetUrl,\n    jobId: queued.jobId,\n    bundle,\n    count,\n    mode: request.mode || 'manual',\n    lowLatencyMode: request.lowLatencyMode || false,\n    modelConfig: mc,\n    dryRun: request.dryRun || false,\n    newsContext: request.newsContext || [],\n    ...scope,\n  }\n}));",
+        "jsCode": "const request = $('Incoming Job Request').item.json.body || {};\nconst queued = $('Queue Generation Job').item.json || {};\nconst bundles = Array.isArray(request.bundles) ? request.bundles : [];\nconst count = typeof request.count === 'number' ? request.count : 1;\n\nconst mc = request.modelConfig || {};\nconst isOllamaJob = Object.values(mc).some(v => typeof v === 'string' && v.startsWith('ollama:'));\nconst CLOUD_URL = 'https://us-central1-the-administration-3a072.cloudfunctions.net/processGenerationBundle';\nconst LOCAL_URL = 'http://100.65.198.124:3099/processGenerationBundle';\nconst targetUrl = isOllamaJob ? LOCAL_URL : CLOUD_URL;\n\nconst scope = {\n  scopeTier: request.scopeTier || 'universal',\n  scopeKey: request.scopeKey || 'universal',\n  sourceKind: request.sourceKind || 'evergreen',\n  regions: request.regions || [],\n  region: request.region,\n  applicable_countries: request.applicable_countries || [],\n  exclusivityReason: request.exclusivityReason,\n  clusterId: request.clusterId,\n};\n\nconst payload = {\n  jobId: queued.jobId,\n  count,\n  mode: request.mode || 'manual',\n  lowLatencyMode: request.lowLatencyMode || false,\n  modelConfig: mc,\n  dryRun: request.dryRun || false,\n  newsContext: request.newsContext || [],\n  ...scope,\n};\n\nreturn bundles.map(bundle => ({\n  json: {\n    meta: { targetUrl },\n    payload: { ...payload, bundle },\n  }\n}));",
         "notice": ""
       },
       "id": "prepare-bundles",
@@ -145,7 +145,7 @@
       "parameters": {
         "curlImport": "",
         "method": "POST",
-        "url": "={{ $json.targetUrl }}",
+        "url": "={{ $json.meta.targetUrl }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "provideSslCertificates": false,
@@ -163,7 +163,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ (() => { const d = { ...$json }; delete d.targetUrl; return d; })() }}",
+        "jsonBody": "={{ $json.payload }}",
         "options": {
           "timeout": 540000
         },

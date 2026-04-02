@@ -47,6 +47,35 @@ function formatElapsed(ms: number): string {
   return `${s}s`;
 }
 
+type JobHealth = 'healthy' | 'warning' | 'critical' | 'idle';
+
+const HEARTBEAT_WARNING_MS = 2 * 60 * 1000;
+const HEARTBEAT_CRITICAL_MS = 5 * 60 * 1000;
+
+function computeJobHealth(job: JobDetail): { health: JobHealth; staleMs: number } {
+  if (job.status !== 'running' && job.status !== 'pending') {
+    return { health: 'idle', staleMs: 0 };
+  }
+  const referenceIso = job.lastHeartbeatAt ?? job.startedAt ?? job.requestedAt;
+  if (!referenceIso) return { health: 'idle', staleMs: 0 };
+  const staleMs = Date.now() - new Date(referenceIso).getTime();
+  if (staleMs >= HEARTBEAT_CRITICAL_MS) return { health: 'critical', staleMs };
+  if (staleMs >= HEARTBEAT_WARNING_MS) return { health: 'warning', staleMs };
+  return { health: 'healthy', staleMs };
+}
+
+function formatRelativeTime(isoOrUndef: string | undefined): string {
+  if (!isoOrUndef) return '';
+  const ms = Date.now() - new Date(isoOrUndef).getTime();
+  if (ms < 0) return '';
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ${s % 60}s ago`;
+  const h = Math.floor(m / 60);
+  return `${h}h ${m % 60}m ago`;
+}
+
 function categorizeErrors(errors: JobError[]) {
   const dedupSkips = errors.filter((e) =>
     /duplicate_id|similar_content|similar/i.test(e.error)
@@ -523,6 +552,8 @@ export default function JobDetailPage() {
   );
   const liveProgress = total > 0 ? Math.min(100, Math.round(((savedCount + failedCount) / total) * 100)) : progress;
   const generationProgress = total > 0 ? Math.min(100, Math.round(((generatedDraftCount + failedCount) / total) * 100)) : progress;
+  const { health: jobHealth, staleMs } = computeJobHealth(job);
+  const isActive = job.status === 'running' || job.status === 'pending';
 
   return (
     <div className="mx-auto max-w-[1300px]">
@@ -650,6 +681,27 @@ export default function JobDetailPage() {
             <span style={{ width: `${generationProgress}%` }} />
           </div>
 
+          {jobHealth === 'critical' && (
+            <div className="rounded-[var(--radius-tight)] border border-[var(--error)]/40 bg-[var(--error)]/8 px-4 py-3 text-xs font-mono text-[var(--error)]">
+              No heartbeat for {formatElapsed(staleMs)} — job appears stuck. Zombie recovery will auto-resolve within ~15 minutes, or stop the job manually.
+            </div>
+          )}
+          {jobHealth === 'warning' && (
+            <div className="rounded-[var(--radius-tight)] border border-[#f59e0b]/40 bg-[#f59e0b]/8 px-4 py-3 text-xs font-mono text-[#f59e0b]">
+              No heartbeat for {formatElapsed(staleMs)} — job may be stalling.
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 text-[10px] font-mono text-foreground-subtle">
+            <span>Last heartbeat: {job.lastHeartbeatAt ? `${formatRelativeTime(job.lastHeartbeatAt)}` : 'none'}</span>
+            <span className="text-foreground-subtle">·</span>
+            {job.currentBundle ? (
+              <span>Processing <span className="text-foreground-muted">{job.currentBundle}</span>{job.currentPhase ? ` (${job.currentPhase})` : ''}</span>
+            ) : (
+              <span>Waiting for first bundle to begin processing...</span>
+            )}
+          </div>
+
           {job.bundles.length > 0 && (
             <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(job.bundles.length, 4)}, minmax(0, 1fr))` }}>
               {job.bundles.map((bundleId) => {
@@ -734,7 +786,6 @@ export default function JobDetailPage() {
               ...(job.modelConfig?.repairModel && job.modelConfig.repairModel !== job.modelConfig.drafterModel ? [{ label: 'Repair model', value: job.modelConfig.repairModel.replace('ollama:', '') }] : []),
               { label: 'Current bundle', value: job.currentBundle ?? '—' },
               { label: 'Current phase', value: job.currentPhase ?? '—' },
-              { label: 'Heartbeat', value: formatTimestamp(job.lastHeartbeatAt) },
               { label: 'Submitted', value: formatTimestamp(job.requestedAt) },
               { label: 'Started', value: formatTimestamp(job.startedAt) },
               { label: 'Completed', value: formatTimestamp(job.completedAt) },
@@ -745,6 +796,19 @@ export default function JobDetailPage() {
                 <span className="text-xs font-mono text-foreground-muted text-right">{value}</span>
               </div>
             ))}
+            <div className="px-4 py-2 flex items-center justify-between gap-2">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle">Heartbeat</span>
+              <span className={`text-xs font-mono text-right ${
+                !isActive ? 'text-foreground-muted'
+                  : jobHealth === 'critical' ? 'text-[var(--error)]'
+                  : jobHealth === 'warning' ? 'text-[#f59e0b]'
+                  : 'text-[var(--success)]'
+              }`}>
+                {formatTimestamp(job.lastHeartbeatAt)}
+                {isActive && job.lastHeartbeatAt && ` (${formatRelativeTime(job.lastHeartbeatAt)})`}
+                {isActive && !job.lastHeartbeatAt && ' (none)'}
+              </span>
+            </div>
             <div className="px-4 py-2 flex items-start gap-2">
               <span className="text-[10px] font-mono uppercase tracking-wider text-foreground-subtle shrink-0">Bundles</span>
               <div className="flex flex-wrap gap-1 justify-end ml-auto">
@@ -1094,12 +1158,28 @@ export default function JobDetailPage() {
           )}
 
           {sortedResults.length === 0 && !(job.savedScenarioIds?.length) && !job.errors?.length && !job.error && (
-            <CommandPanel className="p-6 text-center text-sm text-foreground-subtle">
-              {job.status === 'pending'
-                ? 'Waiting to start…'
-                : job.status === 'running'
-                  ? `Generating scenarios — ${generatedDraftCount} drafted, ${savedCount} saved, ${failedCount} failed out of ${total}`
-                  : 'No results recorded for this job.'}
+            <CommandPanel className="p-6 text-center text-sm text-foreground-subtle space-y-2">
+              {job.status === 'pending' ? (
+                <div>Waiting to start…</div>
+              ) : job.status === 'running' ? (
+                <>
+                  <div>Generating scenarios — {generatedDraftCount} drafted, {savedCount} saved, {failedCount} failed out of {total}</div>
+                  {elapsedMs !== null && (
+                    <div className="text-xs text-foreground-subtle">Elapsed: {formatElapsed(elapsedMs)}</div>
+                  )}
+                  {generatedDraftCount === 0 && savedCount === 0 && failedCount === 0 && (
+                    <div className={`text-xs ${jobHealth === 'critical' ? 'text-[var(--error)]' : jobHealth === 'warning' ? 'text-[#f59e0b]' : 'text-foreground-subtle'}`}>
+                      {jobHealth === 'critical'
+                        ? `No activity for ${formatElapsed(staleMs)} — job appears stuck`
+                        : jobHealth === 'warning'
+                          ? `No activity for ${formatElapsed(staleMs)} — may be stalling`
+                          : 'No generation activity yet'}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div>No results recorded for this job.</div>
+              )}
             </CommandPanel>
           )}
         </div>
