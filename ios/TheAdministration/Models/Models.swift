@@ -272,7 +272,7 @@ struct Option: Identifiable, Codable {
     let impactText: String?
     let impactMap: [String: Double]?
     let relationshipImpact: [String: Double]?
-    let relationshipEffects: [String: Double]?
+    let relationshipEffects: [RelationshipEffect]?
     let populationImpact: [PopulationImpact]?
     let economicImpact: [EconomicImpact]?
     let humanCost: HumanCost?
@@ -300,7 +300,7 @@ struct Option: Identifiable, Codable {
         nextScenarioId: String? = nil, impactText: String? = nil,
         impactMap: [String: Double]? = nil,
         relationshipImpact: [String: Double]? = nil,
-        relationshipEffects: [String: Double]? = nil,
+        relationshipEffects: [RelationshipEffect]? = nil,
         populationImpact: [PopulationImpact]? = nil,
         economicImpact: [EconomicImpact]? = nil,
         humanCost: HumanCost? = nil, actor: String? = nil,
@@ -432,7 +432,7 @@ extension Option {
         economicImpact = try container.decodeIfPresent([EconomicImpact].self, forKey: .economicImpact)
         humanCost = try container.decodeIfPresent(HumanCost.self, forKey: .humanCost)
         relationshipImpact = try container.decodeIfPresent([String: Double].self, forKey: .relationshipImpact)
-        relationshipEffects = try container.decodeIfPresent([String: Double].self, forKey: .relationshipEffects)
+        relationshipEffects = try? container.decodeIfPresent([RelationshipEffect].self, forKey: .relationshipEffects)
 
         if let effectArray = try? container.decode([Effect].self, forKey: .effects) {
             effects = effectArray; effectsMap = nil
@@ -462,6 +462,48 @@ struct RelationshipCondition: Codable {
     let relationshipId: String
     let min: Double?
     let max: Double?
+}
+
+struct RelationshipEffect: Codable {
+    let relationshipId: String
+    let delta: Double
+    let probability: Double?
+}
+
+struct ScenarioRequirements: Codable {
+    let landBorderAdversary: Bool?
+    let formalAlly: Bool?
+    let adversary: Bool?
+    let tradePartner: Bool?
+    let nuclearState: Bool?
+    let islandNation: Bool?
+    let landlocked: Bool?
+    let coastal: Bool?
+    let minPowerTier: String?
+    let cyberCapable: Bool?
+    let powerProjection: Bool?
+    let largeMilitary: Bool?
+    let authoritarianRegime: Bool?
+    let democraticRegime: Bool?
+    let fragileState: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case landBorderAdversary = "land_border_adversary"
+        case formalAlly = "formal_ally"
+        case adversary
+        case tradePartner = "trade_partner"
+        case nuclearState = "nuclear_state"
+        case islandNation = "island_nation"
+        case landlocked
+        case coastal
+        case minPowerTier = "min_power_tier"
+        case cyberCapable = "cyber_capable"
+        case powerProjection = "power_projection"
+        case largeMilitary = "large_military"
+        case authoritarianRegime = "authoritarian_regime"
+        case democraticRegime = "democratic_regime"
+        case fragileState = "fragile_state"
+    }
 }
 
 struct TriggerCondition: Codable {
@@ -511,6 +553,10 @@ struct ScenarioMetadata: Codable {
     var scopeTier: String? = nil
     var scopeKey: String? = nil
     var sourceKind: String? = nil
+    var requires: ScenarioRequirements? = nil
+    var primaryMetrics: [String]? = nil
+    var secondaryMetrics: [String]? = nil
+    var actorPattern: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case applicableCountries = "applicable_countries"
@@ -528,6 +574,10 @@ struct ScenarioMetadata: Codable {
         case scopeTier
         case scopeKey
         case sourceKind
+        case requires
+        case primaryMetrics = "primary_metrics"
+        case secondaryMetrics = "secondary_metrics"
+        case actorPattern = "actor_pattern"
     }
 }
 
@@ -829,6 +879,168 @@ struct City: Codable, Hashable {
     let population: Int
 }
 
+struct CountryFacts: Codable, Hashable {
+    struct Demographics: Codable, Hashable {
+        let populationTotal: Int
+        let sourceYear: Int
+
+        enum CodingKeys: String, CodingKey {
+            case populationTotal = "population_total"
+            case sourceYear = "source_year"
+        }
+    }
+
+    struct Economy: Codable, Hashable {
+        let gdpNominalUsd: Double
+        let sourceYear: Int
+        let currencyName: String?
+        let currencyCode: String?
+        let centralBank: String?
+        let primaryExport: String?
+        let primaryImport: String?
+        let majorIndustry: String?
+
+        enum CodingKeys: String, CodingKey {
+            case gdpNominalUsd = "gdp_nominal_usd"
+            case sourceYear = "source_year"
+            case currencyName = "currency_name"
+            case currencyCode = "currency_code"
+            case centralBank = "central_bank"
+            case primaryExport = "primary_export"
+            case primaryImport = "primary_import"
+            case majorIndustry = "major_industry"
+        }
+    }
+
+    struct Geography: Codable, Hashable {
+        let capitalCity: String?
+
+        enum CodingKeys: String, CodingKey {
+            case capitalCity = "capital_city"
+        }
+    }
+
+    struct Institutions: Codable, Hashable {
+        struct Executive: Codable, Hashable {
+            let leaderTitle: String?
+            let headOfStateTitle: String?
+            let viceLeaderTitle: String?
+
+            enum CodingKeys: String, CodingKey {
+                case leaderTitle = "leader_title"
+                case headOfStateTitle = "head_of_state_title"
+                case viceLeaderTitle = "vice_leader_title"
+            }
+        }
+
+        struct Legislature: Codable, Hashable {
+            let legislature: String?
+            let lowerHouse: String?
+            let upperHouse: String?
+
+            enum CodingKeys: String, CodingKey {
+                case legislature
+                case lowerHouse = "lower_house"
+                case upperHouse = "upper_house"
+            }
+        }
+
+        struct OfficeTitles: Codable, Hashable {
+            let financeRole: String?
+            let defenseRole: String?
+            let foreignAffairsRole: String?
+            let justiceRole: String?
+            let healthRole: String?
+            let educationRole: String?
+            let commerceRole: String?
+            let laborRole: String?
+            let energyRole: String?
+            let environmentRole: String?
+            let transportRole: String?
+            let interiorRole: String?
+            let executiveRole: String?
+            let legislatureSpeaker: String?
+            let upperHouseLeader: String?
+            let militaryChiefTitle: String?
+            let capitalMayorTitle: String?
+            let provincialLeaderTitle: String?
+            let regionalGovernorTitle: String?
+            let pressSecretaryTitle: String?
+
+            enum CodingKeys: String, CodingKey {
+                case financeRole = "finance_role"
+                case defenseRole = "defense_role"
+                case foreignAffairsRole = "foreign_affairs_role"
+                case justiceRole = "justice_role"
+                case healthRole = "health_role"
+                case educationRole = "education_role"
+                case commerceRole = "commerce_role"
+                case laborRole = "labor_role"
+                case energyRole = "energy_role"
+                case environmentRole = "environment_role"
+                case transportRole = "transport_role"
+                case interiorRole = "interior_role"
+                case executiveRole = "executive_role"
+                case legislatureSpeaker = "legislature_speaker"
+                case upperHouseLeader = "upper_house_leader"
+                case militaryChiefTitle = "military_chief_title"
+                case capitalMayorTitle = "capital_mayor_title"
+                case provincialLeaderTitle = "provincial_leader_title"
+                case regionalGovernorTitle = "regional_governor_title"
+                case pressSecretaryTitle = "press_secretary_title"
+            }
+        }
+
+        let executive: Executive?
+        let legislature: Legislature?
+        let officeTitles: OfficeTitles?
+
+        enum CodingKeys: String, CodingKey {
+            case executive
+            case legislature
+            case officeTitles = "office_titles"
+        }
+    }
+
+    let schemaVersion: Int
+    let baselineId: String
+    let demographics: Demographics
+    let economy: Economy
+    let institutions: Institutions?
+    let geography: Geography?
+
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion = "schema_version"
+        case baselineId = "baseline_id"
+        case demographics
+        case economy
+        case institutions
+        case geography
+    }
+}
+
+struct CountryAmountValues: Codable, Hashable {
+    let graftAmount: Double?
+    let infrastructureCost: Double?
+    let aidAmount: Double?
+    let tradeValue: Double?
+    let militaryBudgetAmount: Double?
+    let disasterCost: Double?
+    let sanctionsAmount: Double?
+    let currencyCode: String?
+
+    enum CodingKeys: String, CodingKey {
+        case graftAmount = "graft_amount"
+        case infrastructureCost = "infrastructure_cost"
+        case aidAmount = "aid_amount"
+        case tradeValue = "trade_value"
+        case militaryBudgetAmount = "military_budget_amount"
+        case disasterCost = "disaster_cost"
+        case sanctionsAmount = "sanctions_amount"
+        case currencyCode = "currency_code"
+    }
+}
+
 struct Country: Identifiable, Codable, Hashable {
     let id: String
     let name: String
@@ -866,6 +1078,8 @@ struct Country: Identifiable, Codable, Hashable {
     var countryTraits: [CountryTrait]?
     var populationMillions: Double?
     var gdpBillions: Double?
+    var facts: CountryFacts?
+    var amounts: CountryAmountValues?
     
     init(
         id: String,
@@ -903,7 +1117,9 @@ struct Country: Identifiable, Codable, Hashable {
         legislatureInitialState: LegislatureState? = nil,
         countryTraits: [CountryTrait]? = nil,
         populationMillions: Double? = nil,
-        gdpBillions: Double? = nil
+        gdpBillions: Double? = nil,
+        facts: CountryFacts? = nil,
+        amounts: CountryAmountValues? = nil
     ) {
         self.id = id
         self.name = name
@@ -941,10 +1157,12 @@ struct Country: Identifiable, Codable, Hashable {
         self.countryTraits = countryTraits
         self.populationMillions = populationMillions
         self.gdpBillions = gdpBillions
+        self.facts = facts
+        self.amounts = amounts
     }
     
     enum CodingKeys: String, CodingKey {
-        case id, name, definiteArticle, governmentProfileId, attributes, military, diplomacy, region, leaderTitle, leader, difficulty, termLengthYears, currentPopulation, population, gdp, description, subdivisions, blocs, analysisBullets, strengths, weaknesses, vulnerabilities, uniqueCapabilities, tokens, code, flagUrl, alliances, economy, geopoliticalProfile, gameplayProfile, militaryProfile, legislatureProfile, legislatureInitialState, countryTraits, populationMillions, gdpBillions
+        case id, name, definiteArticle, governmentProfileId, attributes, military, diplomacy, region, leaderTitle, leader, difficulty, termLengthYears, currentPopulation, population, gdp, description, subdivisions, blocs, analysisBullets, strengths, weaknesses, vulnerabilities, uniqueCapabilities, tokens, code, flagUrl, alliances, economy, geopoliticalProfile, gameplayProfile, militaryProfile, legislatureProfile, legislatureInitialState, countryTraits, populationMillions, gdpBillions, facts, amounts
     }
     
     init(from decoder: Decoder) throws {
@@ -985,6 +1203,8 @@ struct Country: Identifiable, Codable, Hashable {
         countryTraits = try container.decodeIfPresent([CountryTrait].self, forKey: .countryTraits)
         populationMillions = try container.decodeIfPresent(Double.self, forKey: .populationMillions)
         gdpBillions = try container.decodeIfPresent(Double.self, forKey: .gdpBillions)
+        facts = try container.decodeIfPresent(CountryFacts.self, forKey: .facts)
+        amounts = try container.decodeIfPresent(CountryAmountValues.self, forKey: .amounts)
     }
     
     func encode(to encoder: Encoder) throws {
@@ -1025,6 +1245,8 @@ struct Country: Identifiable, Codable, Hashable {
         try container.encodeIfPresent(countryTraits, forKey: .countryTraits)
         try container.encodeIfPresent(populationMillions, forKey: .populationMillions)
         try container.encodeIfPresent(gdpBillions, forKey: .gdpBillions)
+        try container.encodeIfPresent(facts, forKey: .facts)
+        try container.encodeIfPresent(amounts, forKey: .amounts)
     }
     
     func hash(into hasher: inout Hasher) {
@@ -1037,15 +1259,18 @@ struct Country: Identifiable, Codable, Hashable {
 }
 
 extension Country {
-    /// Resolved GDP in billions, checking all available sources in priority order:
-    /// 1. `gdpBillions` — numeric field from economy sub-document
-    /// 2. `attributes.gdp` — raw integer (stored in full units, e.g. 21_000_000_000_000)
-    /// 3. `gdp` — formatted string (e.g. "$285.7B", "$2.3T", "$45M")
     var resolvedGdpBillions: Double? {
+        if let facts { return facts.economy.gdpNominalUsd / 1_000_000_000 }
         if let b = gdpBillions, b > 0 { return b }
         if attributes.gdp > 0 { return Double(attributes.gdp) / 1_000_000_000 }
         if let s = gdp, !s.isEmpty { return Country.parseGdpString(s) }
         return nil
+    }
+
+    var resolvedPopulation: Int {
+        if let currentPopulation, currentPopulation > 0 { return currentPopulation }
+        if let facts { return facts.demographics.populationTotal }
+        return attributes.population
     }
 
     private static func parseGdpString(_ raw: String) -> Double? {
@@ -1222,6 +1447,12 @@ struct GameState: Codable {
     var countryMilitaryProfile: MilitaryProfile?
     var countryTraits: [CountryTrait]?
     var activeCrises: [ActiveCrisis] = []
+
+    // Per-game scale factors derived from randomized GDP/population at game init.
+    // countryScaleFactor: 0.7 (micro) → 1.0 (medium) → 1.4 (major economy)
+    // Controls how strongly metric effects and human impacts are felt.
+    var countryScaleFactor: Double?
+    var countryAmounts: CountryAmountValues?
 
     // MARK: - §11 additions: parties, locales, military
     var countryParties: [PoliticalParty] = []
@@ -1816,6 +2047,21 @@ struct CountryGameplayProfile: Codable {
     let priorityTags: [String]?
     let suppressedTags: [String]?
     let neighborEventChance: Double?
+    /// Per-metric volatility multiplier (0–2). 1.0 = default. >1 = more reactive, <1 = more stable.
+    let metricSensitivities: [String: Double]?
+    /// Crisis type likelihood weights (0–1) for this country.
+    let crisisProbabilities: [String: Double]?
+
+    enum CodingKeys: String, CodingKey {
+        case startingMetrics = "starting_metrics"
+        case metricEquilibria = "metric_equilibria"
+        case bundleWeightOverrides = "bundle_weight_overrides"
+        case priorityTags = "priority_tags"
+        case suppressedTags = "suppressed_tags"
+        case neighborEventChance = "neighbor_event_chance"
+        case metricSensitivities = "metric_sensitivities"
+        case crisisProbabilities = "crisis_probabilities"
+    }
 }
 
 struct CountryProfile: Codable {
@@ -2403,7 +2649,8 @@ struct CountryEconomicState: Codable {
     var tradeBalance: Double      // surplus/deficit index
     var unemploymentRate: Double  // mirrors metric_employment
     var fiscalReserves: Double    // accumulated surplus/deficit
-    var baseGdpBillions: Double   // snapshot at game start
+    var baseGdpBillions: Double   // snapshot at game start (raw country fact)
+    var randomizedGdpBillions: Double  // per-game randomized GDP (±15%)
 
     enum CodingKeys: String, CodingKey {
         case gdpIndex = "gdp_index"
@@ -2413,6 +2660,7 @@ struct CountryEconomicState: Codable {
         case unemploymentRate = "unemployment_rate"
         case fiscalReserves = "fiscal_reserves"
         case baseGdpBillions = "base_gdp_billions"
+        case randomizedGdpBillions = "randomized_gdp_billions"
     }
 
     var currentGdpBillions: Double {
@@ -2422,6 +2670,7 @@ struct CountryEconomicState: Codable {
 
 struct CountryPopulationState: Codable {
     var populationMillions: Double
+    var randomizedPopulationMillions: Double  // per-game randomized (±10%)
     var growthRatePerTurn: Double      // ~0.0002 baseline
     var displacedMillions: Double
     var cumulativeCasualties: Double   // thousands
@@ -2430,6 +2679,7 @@ struct CountryPopulationState: Codable {
 
     enum CodingKeys: String, CodingKey {
         case populationMillions = "population_millions"
+        case randomizedPopulationMillions = "randomized_population_millions"
         case growthRatePerTurn = "growth_rate_per_turn"
         case displacedMillions = "displaced_millions"
         case cumulativeCasualties = "cumulative_casualties"
@@ -2496,6 +2746,12 @@ struct PoliticalParty: Codable, Identifiable {
     let color: String?          // hex e.g. "#0047AB"
     let keyPolicies: [String]
     let description: String
+    /// -1 to +1 per metric: how strongly the party base cares about each metric direction.
+    let metricBiases: [String: Double]?
+    /// Demographic groups that form this party's base (e.g. ["urban", "youth", "minority"]).
+    let popularBase: [String]?
+    /// 0–1: likelihood the party will cooperate in coalition arrangements.
+    let coalitionWillingness: Double?
 
     enum CodingKeys: String, CodingKey {
         case id, name, description, color, ideology
@@ -2506,6 +2762,9 @@ struct PoliticalParty: Codable, Identifiable {
         case isCoalitionMember = "isCoalitionMember"
         case currentLeader = "currentLeader"
         case keyPolicies = "keyPolicies"
+        case metricBiases = "metricBiases"
+        case popularBase = "popularBase"
+        case coalitionWillingness = "coalitionWillingness"
     }
 
     var ideologyLabel: String {
@@ -2550,7 +2809,7 @@ struct UniversityRecord: Codable, Identifiable {
 struct MilitaryBranchData: Codable {
     let canonicalType: String   // CanonicalBranchType raw string
     let localName: String
-    let tokenKey: String        // e.g. "army_branch", "navy_branch"
+    let tokenKey: String        // e.g. "ground_forces_branch", "maritime_branch"
     var readiness: Int          // 0–100
     let size: Int               // personnel in thousands
     let equipmentLevel: Int     // 0–100

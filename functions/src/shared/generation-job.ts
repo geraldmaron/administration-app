@@ -3,27 +3,17 @@ import type {
   GenerationModelConfig,
   GenerationMode,
   GenerationNewsContextItem,
-  ScenarioExclusivityReason,
-  ScenarioScopeTier,
-  ScenarioSourceKind,
+  GenerationScopeFields,
 } from './generation-contract';
 
 export type GenerationJobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'pending_review';
 
-export interface GenerationJobRecord<TTimestamp = unknown, TBundle extends string = string> {
+export interface GenerationJobRecord<TTimestamp = unknown, TBundle extends string = string> extends GenerationScopeFields {
   bundles: TBundle[];
   count: number;
   mode?: GenerationMode;
   lowLatencyMode?: boolean;
   distributionConfig?: GenerationDistributionConfig;
-  region?: string;
-  regions?: string[];
-  scopeTier?: ScenarioScopeTier;
-  scopeKey?: string;
-  clusterId?: string;
-  exclusivityReason?: ScenarioExclusivityReason;
-  applicable_countries?: string[];
-  sourceKind?: ScenarioSourceKind;
   requestedBy?: string;
   requestedAt?: TTimestamp;
   priority?: 'low' | 'normal' | 'high';
@@ -46,6 +36,8 @@ export interface GenerationJobRecord<TTimestamp = unknown, TBundle extends strin
     outputTokens: number;
     costUsd: number;
     callCount: number;
+    conceptCount?: number;
+    totalDurationMs?: number;
   };
   currentBundle?: string;
   currentPhase?: string;
@@ -54,6 +46,12 @@ export interface GenerationJobRecord<TTimestamp = unknown, TBundle extends strin
   eventCount?: number;
   createdScenarioIds?: string[];
   savedScenarioIds?: string[];
+  failureSummary?: {
+    failureCategory?: string;
+    topIssueRules?: string[];
+    remediationBucket?: string;
+    lastErrorMessage?: string;
+  };
 }
 
 export interface BuildGenerationJobRecordOptions<TTimestamp = unknown, TBundle extends string = string>
@@ -118,5 +116,6 @@ export function buildGenerationJobRecord<TTimestamp = unknown, TBundle extends s
     eventCount: options.eventCount ?? 0,
     createdScenarioIds: options.createdScenarioIds ?? [],
     savedScenarioIds: options.savedScenarioIds ?? [],
+    ...(options.failureSummary ? { failureSummary: options.failureSummary } : {}),
   };
 }

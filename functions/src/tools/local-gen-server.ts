@@ -76,6 +76,13 @@ function readBody(req: http.IncomingMessage): Promise<string> {
     });
 }
 
+interface QueueItem {
+    jobId: string;
+    bundle: string;
+    totalBundles: number;
+    body: any;
+}
+
 async function main() {
     const admin = await initializeFirebase();
     const db = admin.firestore();
@@ -95,16 +102,82 @@ async function main() {
         console.log(`[local-gen-server] Ollama models available: ${models.join(', ') || 'none'}`);
     }
 
+    // Async queue with configurable concurrency.
+    // Set LOCAL_GEN_CONCURRENCY env var to run multiple bundles in parallel.
+    // For Ollama: concurrency > 1 requires enough VRAM to hold multiple models simultaneously.
+    const CONCURRENCY = Math.max(1, parseInt(process.env.LOCAL_GEN_CONCURRENCY || '1', 10));
+    console.log(`[local-gen-server] Concurrency: ${CONCURRENCY}`);
+
+    const queue: QueueItem[] = [];
+    const jobBundlesCompleted = new Map<string, number>();
+    let activeWorkers = 0;
+
+    async function finalizeJob(jobId: string): Promise<void> {
+        const jobSnap = await db.collection('generation_jobs').doc(jobId).get();
+        const data = jobSnap.data();
+        if (!data) return;
+        const completedCount = data.completedCount ?? 0;
+        const failedCount = data.failedCount ?? 0;
+        const status = completedCount > 0 ? 'completed' : 'failed';
+        await db.collection('generation_jobs').doc(jobId).update({
+            status,
+            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
+            progress: 100,
+            currentPhase: status,
+            currentMessage: `Job ${status}: ${completedCount} saved, ${failedCount} failed`,
+        });
+        console.log(`[local-gen-server] Finalized job ${jobId}: ${status} (${completedCount} saved, ${failedCount} failed)`);
+        jobBundlesCompleted.delete(jobId);
+    }
+
+    async function processItem(item: QueueItem): Promise<void> {
+        try {
+            const result = await executeGenerationBundle(item.body);
+            console.log(`[local-gen-server] Bundle ${item.bundle} (job ${item.jobId}): ${result.completedCount} saved, ${result.failedCount} failed`);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.error(`[local-gen-server] Bundle ${item.bundle} (job ${item.jobId}) failed:`, message);
+        }
+        const done = (jobBundlesCompleted.get(item.jobId) ?? 0) + 1;
+        jobBundlesCompleted.set(item.jobId, done);
+        if (done >= item.totalBundles) {
+            await finalizeJob(item.jobId).catch(e =>
+                console.error(`[local-gen-server] Finalization failed for job ${item.jobId}:`, e?.message ?? e)
+            );
+        }
+    }
+
+    function drainQueue(): void {
+        while (activeWorkers < CONCURRENCY && queue.length > 0) {
+            const item = queue.shift()!;
+            activeWorkers++;
+            processItem(item).finally(() => {
+                activeWorkers--;
+                drainQueue(); // fill slot with next queued item
+            });
+        }
+    }
+
     const server = http.createServer(async (req, res) => {
-        if (req.method !== 'POST' || req.url !== '/processGenerationBundle') {
-            res.writeHead(404, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Not found' }));
+        const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
+
+        if (req.method === 'GET' && url.pathname === '/health') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true, concurrency: CONCURRENCY, active: activeWorkers, queued: queue.length, pendingJobs: jobBundlesCompleted.size }));
             return;
         }
 
         if (!isAuthorized(req)) {
             res.writeHead(401, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Unauthorized' }));
+            return;
+        }
+
+        if (req.method !== 'POST' || url.pathname !== '/processGenerationBundle') {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Not found' }));
             return;
         }
 
@@ -118,26 +191,37 @@ async function main() {
             return;
         }
 
-        console.log(`[local-gen-server] Processing bundle: ${body.bundle} (job ${body.jobId})`);
-
-        try {
-            const result = await executeGenerationBundle(body);
-            console.log(`[local-gen-server] Bundle ${body.bundle}: ${result.completedCount} saved, ${result.failedCount} failed`);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(result));
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            console.error(`[local-gen-server] Bundle ${body.bundle} failed:`, message);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: message }));
+        const { jobId, bundle } = body;
+        if (!jobId || !bundle) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'jobId and bundle are required' }));
+            return;
         }
+
+        // totalBundles tells us when a job is fully dispatched so we can finalize it.
+        // n8n passes this in the payload; fall back to reading from Firestore if absent.
+        let totalBundles: number = typeof body.totalBundles === 'number' ? body.totalBundles : 0;
+        if (totalBundles < 1) {
+            const snap = await db.collection('generation_jobs').doc(jobId).get();
+            const bundles = snap.data()?.bundles;
+            totalBundles = Array.isArray(bundles) ? bundles.length : 1;
+        }
+
+        queue.push({ jobId, bundle, totalBundles, body });
+        console.log(`[local-gen-server] Queued bundle ${bundle} (job ${jobId}) — queue depth: ${queue.length}`);
+
+        res.writeHead(202, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ queued: true, jobId, bundle, queuePosition: queue.length }));
+
+        drainQueue();
     });
 
-    server.timeout = 600_000;
+    server.timeout = 0; // No timeout — individual requests return immediately (202)
 
-    server.listen(PORT, () => {
-        console.log(`[local-gen-server] Listening on http://localhost:${PORT}`);
-        console.log(`[local-gen-server] POST /processGenerationBundle`);
+    server.listen(PORT, '0.0.0.0', () => {
+        console.log(`[local-gen-server] Listening on http://0.0.0.0:${PORT}`);
+        console.log(`[local-gen-server] POST /processGenerationBundle  (async queue)`);
+        console.log(`[local-gen-server] GET  /health`);
     });
 }
 

@@ -4,7 +4,7 @@ import * as admin from "firebase-admin";
 import { type CreateJobOptions, createGenerationJob, getJobStatus } from "./background-jobs";
 import { isValidBundleId, type BundleId } from "./data/schemas/bundleIds";
 import { validateConfig, logConfigStatus } from "./lib/config-validator";
-import { hasMeaningfulModelConfig, fetchOllamaModels, buildOllamaModelConfig } from "./lib/generation-models";
+import { hasMeaningfulModelConfig, fetchOllamaModels, buildOllamaModelConfig, normalizeModelConfig } from "./lib/generation-models";
 
 export { onScenarioJobCreated, recoverZombieJobs } from "./background-jobs";
 export { dailyNewsToScenarios } from "./news-to-scenarios";
@@ -80,7 +80,10 @@ function readBearerToken(headerValue?: string): string | undefined {
 
 function isLocalServerRequest(hostname?: string, forwardedHost?: string): boolean {
     const candidates = [hostname, forwardedHost].filter((value): value is string => Boolean(value));
-    return candidates.some((value) => value.startsWith("localhost") || value.startsWith("127.0.0.1"));
+    return candidates.some((value) => {
+        const normalized = value.split(':', 1)[0]?.toLowerCase() ?? value.toLowerCase();
+        return normalized === "localhost" || normalized === "127.0.0.1" || normalized.endsWith(".localhost");
+    });
 }
 
 function isAuthorizedServerRequest(request: { get(name: string): string | undefined; hostname?: string }): boolean {
@@ -167,7 +170,7 @@ function toCreateJobOptions(body: GenerationRequestBody, requestedBy: string): C
 }
 
 async function enqueueGenerationJob(body: GenerationRequestBody, requestedBy: string) {
-    let resolvedModelConfig = body.modelConfig;
+    let resolvedModelConfig = normalizeModelConfig(body.modelConfig as Record<string, unknown>);
     const isDeployed = !process.env.FUNCTIONS_EMULATOR && Boolean(process.env.K_SERVICE);
     if (!hasMeaningfulModelConfig(resolvedModelConfig) && !isDeployed) {
         const configSnap = await db.doc('world_state/generation_config').get();
@@ -325,4 +328,93 @@ export const generateScenariosManual = onCall({
     };
 });
 
+export const resolveTagsBatch = onCall({
+    cors: true,
+    enforceAppCheck: false,
+    timeoutSeconds: 540,
+    memory: "512MiB",
+}, async (request) => {
+    if (!isAdminUser(request)) {
+        throw new Error("Admin privileges required");
+    }
+
+    const { resolveScenarioTags, TAG_RESOLVER_VERSION } = await import("./services/tag-resolver");
+
+    const {
+        bundle,
+        limit = 100,
+        force = false,
+        useLLM = false,
+    } = request.data || {};
+
+    let query: FirebaseFirestore.Query = db.collection("scenarios")
+        .where("is_active", "==", true);
+
+    if (bundle && isValidBundleId(bundle)) {
+        query = query.where("metadata.bundle", "==", bundle);
+    }
+
+    query = query.limit(limit);
+
+    const snapshot = await query.get();
+    let resolved = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    const batch = db.batch();
+    let batchCount = 0;
+
+    for (const doc of snapshot.docs) {
+        const scenario = doc.data();
+
+        const existingResolution = scenario.metadata?.tagResolution;
+        if (!force) {
+            if (existingResolution?.status === "manual") {
+                skipped++;
+                continue;
+            }
+            if (
+                existingResolution?.status === "resolved" &&
+                existingResolution.resolverVersion === TAG_RESOLVER_VERSION
+            ) {
+                skipped++;
+                continue;
+            }
+        }
+
+        try {
+            const result = await resolveScenarioTags(scenario, { force, useLLM });
+
+            batch.update(doc.ref, {
+                "metadata.tags": result.tags,
+                "metadata.tagResolution": result.resolution,
+            });
+            batchCount++;
+            resolved++;
+
+            if (batchCount >= 400) {
+                await batch.commit();
+                batchCount = 0;
+            }
+        } catch (err) {
+            logger.error(`Tag resolution failed for ${doc.id}`, err);
+            failed++;
+        }
+    }
+
+    if (batchCount > 0) {
+        await batch.commit();
+    }
+
+    logger.info(`[resolveTagsBatch] Resolved: ${resolved}, Skipped: ${skipped}, Failed: ${failed}`);
+
+    return {
+        success: true,
+        total: snapshot.size,
+        resolved,
+        skipped,
+        failed,
+        resolverVersion: TAG_RESOLVER_VERSION,
+    };
+});
 

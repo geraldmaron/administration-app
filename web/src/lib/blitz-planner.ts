@@ -1,4 +1,5 @@
 import type { ScenarioScopeTier, GenerationJobRequest } from './types';
+import type { GenerationModelConfig } from './generation-contract';
 
 export type BlitzPriority = 'high' | 'medium' | 'low';
 
@@ -60,6 +61,10 @@ export interface BlitzPreview {
     scenariosToGenerate: number;
     availableSlots: number;
   };
+}
+
+export interface BlitzPlanningOptions {
+  modelConfig?: GenerationModelConfig;
 }
 
 function formatBlitzJobDescription(
@@ -207,13 +212,20 @@ interface JobSlot {
 const MAX_BUNDLES_PER_JOB = 5;
 const MAX_SCENARIOS_PER_JOB = 50;
 
+function getMaxBundlesPerJob(modelConfig?: GenerationModelConfig): number {
+  const values = Object.values(modelConfig ?? {}).filter((v): v is string => typeof v === 'string');
+  return values.some((v) => v.startsWith('ollama:')) ? 2 : MAX_BUNDLES_PER_JOB;
+}
+
 export function groupDeficitsIntoJobs(
   deficits: DeficitCell[],
   availableSlots: number,
   maxJobsPerBlitz: number,
+  options?: BlitzPlanningOptions,
 ): GenerationJobRequest[] {
   const maxJobs = Math.min(maxJobsPerBlitz, availableSlots);
   if (maxJobs <= 0 || deficits.length === 0) return [];
+  const maxBundlesPerJob = Math.max(1, Math.min(MAX_BUNDLES_PER_JOB, getMaxBundlesPerJob(options?.modelConfig)));
 
   const slots = new Map<string, JobSlot>();
   const slotOrder: string[] = [];
@@ -236,7 +248,7 @@ export function groupDeficitsIntoJobs(
       slotOrder.push(slotKey);
     }
 
-    if (slot.bundles.size < MAX_BUNDLES_PER_JOB) {
+    if (slot.bundles.size < maxBundlesPerJob) {
       slot.bundles.add(deficit.bundle);
       slot.totalDeficit += deficit.deficit;
     }
@@ -326,10 +338,11 @@ export function buildBlitzPlan(
   totalScenarios: number,
   availableSlots: number,
   maxJobsPerBlitz: number,
+  options?: BlitzPlanningOptions,
 ): BlitzPreview {
   const allocation = allocateByRatio(totalScenarios);
   const deficits = calculateDeficits(bundles, regions, countries, inventory, analysisTargetPerBundle);
-  const candidateJobs = groupDeficitsIntoJobs(deficits, availableSlots, maxJobsPerBlitz);
+  const candidateJobs = groupDeficitsIntoJobs(deficits, availableSlots, maxJobsPerBlitz, options);
   const plannedJobs = fitJobsToScenarioBudget(candidateJobs, totalScenarios);
 
   const totalDeficit = deficits.reduce((sum, d) => sum + d.deficit, 0);

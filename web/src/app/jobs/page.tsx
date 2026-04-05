@@ -9,8 +9,15 @@ import OperationsNav from '@/components/OperationsNav';
 import ScreenHeader from '@/components/ScreenHeader';
 import StatusBadge from '@/components/StatusBadge';
 import SortHeader, { useSort } from '@/components/SortHeader';
-import { formatRelativeTime } from '@/lib/constants';
+import { formatDuration, formatRelativeTime } from '@/lib/constants';
 import type { JobDetail, JobSummary } from '@/lib/types';
+
+function summarizeProvider(job: Pick<JobSummary, 'executionTarget' | 'modelConfig'>): string {
+  const drafter = job.modelConfig?.drafterModel;
+  if (drafter?.startsWith('ollama:')) return drafter.replace('ollama:', '');
+  if (job.executionTarget === 'n8n') return 'n8n';
+  return 'cloud';
+}
 
 type JobSortField = 'id' | 'status' | 'completedCount' | 'requestedAt';
 
@@ -45,6 +52,7 @@ export default function JobsPage() {
   const [search, setSearch] = useState('');
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [rowActionId, setRowActionId] = useState<string | null>(null);
   const [slideOverJobId, setSlideOverJobId] = useState<string | null>(null);
   const [jobPage, setJobPage] = useState(1);
   const [jobPageSize, setJobPageSize] = useState(25);
@@ -80,6 +88,30 @@ export default function JobsPage() {
       refreshJobs();
     } finally {
       setBulkDeleting(false);
+    }
+  }
+
+  async function handleRowStop(job: JobSummary, action: 'stop' | 'cancel', e: React.MouseEvent) {
+    e.stopPropagation();
+    const verb = action === 'stop' ? 'Stop this running job?' : 'Cancel this pending job?';
+    if (!confirm(verb)) return;
+    setRowActionId(job.id);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}`, action === 'stop'
+        ? {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'stop' }),
+          }
+        : { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? `Failed to ${action} job`);
+        return;
+      }
+      refreshJobs();
+    } finally {
+      setRowActionId(null);
     }
   }
 
@@ -125,6 +157,8 @@ export default function JobsPage() {
 
   const runningCount = jobs.filter((j) => j.status === 'running').length;
   const pendingCount = jobs.filter((j) => j.status === 'pending').length;
+  const runningJobs = jobs.filter((j) => j.status === 'running').slice(0, 5);
+  const pendingJobs = jobs.filter((j) => j.status === 'pending').slice(0, 5);
   const completedCount = jobs.filter((j) => deriveDisplayStatus(j as JobDetail) === 'completed').length;
   const failureCount = jobs.filter((j) => {
     const s = deriveDisplayStatus(j as JobDetail);
@@ -149,6 +183,54 @@ export default function JobsPage() {
         <DataStat size="compact" label="Completed" value={completedCount} accent={completedCount > 0 ? 'success' : undefined} />
         <DataStat size="compact" label="Failures" value={failureCount} accent={failureCount > 0 ? 'warning' : undefined} />
       </div>
+
+      {(runningJobs.length > 0 || pendingJobs.length > 0) && (
+        <div className="mb-3 grid gap-3 lg:grid-cols-2">
+          <div className="command-panel p-4">
+            <div className="mb-3 text-xs font-medium text-[var(--foreground-subtle)]">Active Now</div>
+            <div className="space-y-2">
+              {runningJobs.length === 0 ? (
+                <div className="text-xs text-[var(--foreground-muted)]">No running jobs.</div>
+              ) : runningJobs.map((job) => (
+                <button key={job.id} type="button" onClick={() => setSlideOverJobId(job.id)} className="w-full rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2 text-left hover:bg-[rgba(255,255,255,0.03)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-mono text-[11px] text-foreground">{job.id.slice(0, 12)}…</div>
+                      <div className="text-[11px] text-[var(--foreground-muted)]">{job.currentBundle ?? 'bundle pending'}{job.currentPhase ? ` → ${job.currentPhase}` : ''}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] font-mono text-[var(--accent-primary)]">{summarizeProvider(job)}</div>
+                      <div className="text-[10px] text-[var(--foreground-subtle)]">{job.lastHeartbeatAt ? formatRelativeTime(job.lastHeartbeatAt) : 'no heartbeat'}</div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="command-panel p-4">
+            <div className="mb-3 text-xs font-medium text-[var(--foreground-subtle)]">Pending Queue</div>
+            <div className="space-y-2">
+              {pendingJobs.length === 0 ? (
+                <div className="text-xs text-[var(--foreground-muted)]">No pending jobs.</div>
+              ) : pendingJobs.map((job) => (
+                <button key={job.id} type="button" onClick={() => setSlideOverJobId(job.id)} className="w-full rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2 text-left hover:bg-[rgba(255,255,255,0.03)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-mono text-[11px] text-foreground">{job.id.slice(0, 12)}…</div>
+                      <div className="text-[11px] text-[var(--foreground-muted)]">{job.description || job.bundles.join(', ')}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] font-mono text-[var(--accent-secondary)]">{summarizeProvider(job)}</div>
+                      <div className="text-[10px] text-[var(--foreground-subtle)]">{formatRelativeTime(job.requestedAt)}</div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filter bar */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -237,9 +319,11 @@ export default function JobsPage() {
                 <th style={{ width: 110 }}><SortHeader field="status" label="Status" current={sortField} dir={sortDir} onSort={handleSort} /></th>
                 <th style={{ width: 180 }}>Bundles</th>
                 <th style={{ width: 150 }}><SortHeader field="completedCount" label="Progress" current={sortField} dir={sortDir} onSort={handleSort} /></th>
+                <th style={{ width: 110 }}>Activity</th>
+                <th style={{ width: 110 }}>Provider</th>
                 <th style={{ width: 80 }}>Duration</th>
                 <th style={{ width: 90 }}><SortHeader field="requestedAt" label="Requested" current={sortField} dir={sortDir} onSort={handleSort} /></th>
-                <th style={{ width: 70 }}></th>
+                <th style={{ width: 120 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -254,7 +338,7 @@ export default function JobsPage() {
                 return (
                   <tr
                     key={job.id}
-                    className={`group cursor-pointer ${isRunning ? 'bg-[rgba(25,105,220,0.04)]' : ''} hover:bg-[rgba(255,255,255,0.03)]`}
+                    className={`group cursor-pointer ${isRunning ? 'bg-[var(--accent-muted)]' : ''} hover:bg-[rgba(255,255,255,0.03)]`}
                     onClick={() => setSlideOverJobId(job.id)}
                   >
                     {/* Checkbox */}
@@ -311,9 +395,22 @@ export default function JobsPage() {
                       )}
                     </td>
 
-                    {/* Duration — not available on JobSummary; shown in slide-over */}
                     <td>
-                      <span className="text-[12px] font-mono text-[var(--foreground-subtle)]">—</span>
+                      <div className="text-[11px] text-[var(--foreground-muted)] max-w-[120px] truncate">
+                        {[job.currentBundle, job.currentPhase].filter(Boolean).join(' → ') || '—'}
+                      </div>
+                    </td>
+
+                    <td>
+                      <span className="text-[11px] font-mono text-[var(--foreground-muted)]">
+                        {summarizeProvider(job)}
+                      </span>
+                    </td>
+
+                    <td>
+                      <span className="text-[12px] font-mono text-[var(--foreground-muted)]">
+                        {formatDuration(job.startedAt, job.completedAt)}
+                      </span>
                     </td>
 
                     {/* Requested */}
@@ -323,14 +420,33 @@ export default function JobsPage() {
                       </span>
                     </td>
 
-                    {/* Hover action */}
                     <td onClick={(e) => e.stopPropagation()}>
-                      <Link
-                        href={`/jobs/${job.id}`}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--accent-primary)] hover:underline"
-                      >
-                        Inspect
-                      </Link>
+                      <div className={`flex items-center gap-2 transition-opacity ${job.status === 'running' || job.status === 'pending' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                        {job.status === 'running' && (
+                          <button
+                            type="button"
+                            onClick={(e) => void handleRowStop(job, 'stop', e)}
+                            className="text-xs font-medium text-[var(--danger)] hover:underline"
+                          >
+                            {rowActionId === job.id ? 'Stopping…' : 'Stop'}
+                          </button>
+                        )}
+                        {job.status === 'pending' && (
+                          <button
+                            type="button"
+                            onClick={(e) => void handleRowStop(job, 'cancel', e)}
+                            className="text-xs font-medium text-[var(--danger)] hover:underline"
+                          >
+                            {rowActionId === job.id ? 'Cancelling…' : 'Cancel'}
+                          </button>
+                        )}
+                        <Link
+                          href={`/jobs/${job.id}`}
+                          className="text-xs font-medium text-[var(--accent-primary)] hover:underline"
+                        >
+                          Inspect
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );

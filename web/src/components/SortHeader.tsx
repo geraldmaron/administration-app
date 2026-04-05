@@ -23,7 +23,7 @@ export default function SortHeader<F extends string = string>({
   return (
     <button
       onClick={() => onSort(field)}
-      className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider transition-colors ${
+      className={`flex items-center gap-1 text-xs font-medium transition-colors ${
         active ? 'text-foreground' : 'text-foreground-subtle hover:text-foreground-muted'
       } ${align === 'right' ? 'ml-auto' : ''}`}
     >

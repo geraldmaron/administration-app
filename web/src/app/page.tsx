@@ -86,7 +86,7 @@ export default function DashboardPage() {
         <div className="command-panel overflow-hidden">
           <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-2.5">
             <div className="section-kicker">Bundle Coverage</div>
-            <Link href="/scenarios" className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--accent-primary)] hover:underline">
+            <Link href="/scenarios" className="text-xs font-medium text-[var(--accent-primary)] hover:underline">
               Open Library →
             </Link>
           </div>
@@ -146,7 +146,7 @@ export default function DashboardPage() {
         <div className="command-panel overflow-hidden">
           <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-2.5">
             <div className="section-kicker">Recent Jobs</div>
-            <Link href="/jobs" className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--accent-primary)] hover:underline">
+            <Link href="/jobs" className="text-xs font-medium text-[var(--accent-primary)] hover:underline">
               All Jobs →
             </Link>
           </div>

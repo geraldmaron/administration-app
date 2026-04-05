@@ -13,9 +13,9 @@ Before outputting your scenario JSON, verify every item below. Fix anything that
 ### Structure
 - [ ] Exactly 3 options
 - [ ] description = 2–3 sentences **and 60–140 words** — count words; under 60 is a hard fail
-- [ ] Each option text = 2–3 sentences **and 50–120 words** — count words; under 50 is too thin; over 120, consolidate sentences
-- [ ] outcomeHeadline: 3–8 words
-- [ ] outcomeSummary: ≥200 characters, 2–3 sentences
+- [ ] Each option text = 2–3 sentences **and 50–80 words** — count words; under 50 is too thin; over 80, consolidate sentences
+- [ ] outcomeHeadline: 3–15 words
+- [ ] outcomeSummary: ≥250 characters, 2–3 sentences
 - [ ] outcomeContext: ≥400 characters, 4–6 sentences; names specific institution/group, mechanism, reaction, implication
 - [ ] title: 4–8 words, no tokens
 
@@ -35,20 +35,22 @@ Count every word in each option `text`. If fewer than 50: do not submit — rewr
 - [ ] If bundle = `dick_mode`: options reflect authoritarian/morally dark statecraft with realistic consequences; formal strategic language only (no slurs, dehumanizing language, or graphic violence)
 
 ### Tokens
-- [ ] Country/relation tokens at subject/object/prepositional positions → always `{the_*}` form (`{the_player_country}`, `{the_adversary}`, `{the_ally}`, etc. — full list in Logic Parameters section)
-- [ ] Bare forms (`{player_country}`, `{adversary}`, `{ally}`, etc.) valid ONLY as possessives (`{token}'s ...`) — replace all other bare occurrences with `{the_*}` form
-- [ ] Bare role tokens must use `{the_*}` form when opening a sentence (e.g., `{the_finance_role}`)
+- [ ] Player country: use `{the_player_country}` in subject/object positions; `{player_country}'s` for possessives only
+- [ ] Role/institution tokens at sentence start: use `{the_*}` form (`{the_finance_role}`, `{the_legislature}`, `{the_opposition_party}`)
 - [ ] All token names lowercase; no invented tokens (rewrite the sentence if unsure)
 - [ ] No hard-coded country names, capitals, currencies, or abbreviations (USA, UK, EU, NATO)
-- [ ] Phase 10 domestic institution tokens used where appropriate:
+- [ ] No relationship token placeholders in prose (`{the_ally}`, `{adversary}`, `{border_rival}`, etc.) — write foreign actors as natural language only ("your border rival", "the allied government", "a neighboring state")
+- [ ] Domestic institution tokens used where appropriate:
   - `{opposition_party}` / `{the_opposition_party}` (not a specific party name)
+  - `{governing_party}` / `{the_governing_party}` (not a specific party name)
   - `{regional_bloc}` / `{the_regional_bloc}` (not EU/ASEAN/NATO etc.)
   - `{major_industry}` / `{the_major_industry}` (not oil/tech/banking etc.)
-  - Apply same `{the_*}` rules: subject/object positions → `{the_*}` form; possessives → bare form
+  - Apply `{the_*}` form at sentence start or subject position; bare form for possessives only
 
 ### Voice
 - [ ] description, option text, advisorFeedback → second person: "You face...", "Your administration..."
 - [ ] outcomeHeadline, outcomeSummary, outcomeContext → third-person journalistic, NO "you"/"your"
+- [ ] outcomeHeadline and outcomeSummary open with a capitalized narrative word — never a `{token}` placeholder
 
 ### Content Quality
 - [ ] No policy jargon or think-tank wording; avoid words like "bloc" or "gambit" in player-facing text unless they are part of an official proper name or direct quote

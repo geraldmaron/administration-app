@@ -12,7 +12,7 @@ const STANCE_CONFIG = {
 export default function StanceBadge({ stance }: StanceBadgeProps) {
   const config = STANCE_CONFIG[stance] ?? STANCE_CONFIG.neutral;
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[11px] font-mono tracking-[0.06em] ${config.text}`}>
+    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${config.text}`}>
       <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${config.dot}`} />
       {config.label}
     </span>

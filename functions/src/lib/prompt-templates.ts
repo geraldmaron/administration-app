@@ -12,9 +12,35 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { BundleScenario } from './audit-rules';
 import { buildTokenWhitelistPromptSection } from './token-registry';
+import type { CompiledTokenRegistry } from '../shared/token-registry-contract';
 import { buildBannedPhrasePromptGuidance } from './audit-rules';
 import { ALL_BUNDLE_IDS, type BundleId } from '../data/schemas/bundleIds';
+import { ALL_METRIC_IDS } from '../data/schemas/metricIds';
 import type { ScenarioScopeTier } from '../types';
+
+const BUNDLE_PRIMARY_METRICS: Record<string, string[]> = {
+  economy:     ['metric_economy', 'metric_trade', 'metric_budget', 'metric_inflation', 'metric_employment', 'metric_innovation'],
+  military:    ['metric_military', 'metric_sovereignty', 'metric_foreign_relations', 'metric_public_order', 'metric_budget'],
+  politics:    ['metric_democracy', 'metric_approval', 'metric_liberty', 'metric_public_order', 'metric_equality'],
+  diplomacy:   ['metric_foreign_relations', 'metric_trade', 'metric_sovereignty', 'metric_foreign_influence'],
+  health:      ['metric_health', 'metric_budget', 'metric_approval', 'metric_equality', 'metric_infrastructure'],
+  environment: ['metric_environment', 'metric_energy', 'metric_economy', 'metric_infrastructure', 'metric_innovation'],
+  justice:     ['metric_liberty', 'metric_public_order', 'metric_crime', 'metric_democracy', 'metric_corruption'],
+  social:      ['metric_equality', 'metric_education', 'metric_housing', 'metric_approval', 'metric_immigration'],
+  corruption:  ['metric_corruption', 'metric_bureaucracy', 'metric_budget', 'metric_approval', 'metric_public_order'],
+};
+
+export function buildMetricHintsForSkeleton(bundle: string): string {
+  const primary = BUNDLE_PRIMARY_METRICS[bundle.toLowerCase()];
+  const allList = ALL_METRIC_IDS.join(', ');
+  if (!primary) {
+    return `METRICS: Write option text that maps to specific metrics. All valid: ${allList}`;
+  }
+  return `METRICS THIS SCENARIO SHOULD AFFECT:
+Primary (${bundle}): ${primary.join(', ')}
+All valid: ${allList}
+Write option text with concrete mechanisms that map to specific metrics — not vague outcomes.`;
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -58,6 +84,25 @@ export interface ScopePromptOverlay {
   architect: string;
   drafter: string;
 }
+
+export interface BuildDrafterPromptOptions {
+  lowLatencyMode?: boolean;
+  omitExamples?: boolean;
+  omitReflection?: boolean;
+}
+
+interface DrafterPromptSection {
+  title?: string;
+  body: string;
+}
+
+const RELATIONSHIP_TOKEN_POLICY_SECTION = `
+## Relationship actor policy (hard requirement)
+- Relationship actors MUST be written as natural language in prose: "your border rival", "the allied government", "your adversary", "your trade partner".
+- Never use relationship placeholder tokens in prose ({the_ally}, {ally}, {the_adversary}, {adversary}, {the_border_rival}, {border_rival}, etc.).
+- Keep role/institution tokens for domestic institutions ({leader_title}, {the_legislature}, {finance_role}, {the_central_bank}, etc.).
+- If a relationship is structurally required, encode it in metadata.requires and relationshipEffects/relationship_conditions, not in prose token placeholders.
+`.trim();
 
 const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
   economy: {
@@ -120,8 +165,8 @@ const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
 
 const SCOPE_PROMPT_OVERLAYS: Record<ScenarioScopeTier, ScopePromptOverlay> = {
   universal: {
-    architect: 'Optimize for transferability. Avoid country-unique constitutional assumptions, preserve tokenized institutions, and prefer mechanisms that can plausibly occur across many states. CRITICAL: use only domestic, legislature, cabinet, or judiciary for actorPattern — never ally, adversary, border_rival, or mixed. Relationship tokens ({the_ally}, {the_adversary}, {the_border_rival}, etc.) resolve against country-specific geopolitical profiles and are prohibited in universal scenarios. Do not generate concepts that involve foreign countries, neighboring states, rival nations, or bilateral disputes — not even as generic phrases like "a neighboring country". Universal scenarios must be entirely domestic: internal governance crises, institutional disputes, economic policy dilemmas, domestic security decisions, public health emergencies, civil unrest. If a concept cannot exist without a foreign counterpart, it is not universal.',
-    drafter: 'Write broadly reusable governance dilemmas grounded in domestic institutions. Reject disguised single-country assumptions, hardcoded constitutional structures, and narrow historical framing. CRITICAL: do not use any relationship tokens ({the_ally}, {the_adversary}, {the_border_rival}, {the_neighbor}, {the_rival}, {the_trade_partner}, {the_regional_rival}, {the_partner}, {the_neutral}) — these tokens depend on country-specific geopolitical data and will fail for most countries. Use domestic political actors, cabinet roles, legislature, or judiciary instead.',
+    architect: 'Optimize for transferability. Avoid country-unique constitutional assumptions and prefer mechanisms that can plausibly occur across many states. CRITICAL: use only domestic, legislature, cabinet, or judiciary for actorPattern — never ally, adversary, border_rival, or mixed. Universal scenarios must be entirely domestic: internal governance crises, institutional disputes, economic policy dilemmas, domestic security decisions, public health emergencies, civil unrest. Do not generate concepts that involve foreign countries, neighboring states, rival nations, or bilateral disputes. If a concept cannot exist without a foreign counterpart, it is not universal. Do not set metadata.requires — universal scenarios have no structural geopolitical preconditions.',
+    drafter: 'Write broadly reusable governance dilemmas grounded in domestic institutions. Reject disguised single-country assumptions, hardcoded constitutional structures, and narrow historical framing. Use only domestic political actors: cabinet roles ({finance_role}, {defense_role}, etc.), {legislature}, {governing_party}, {judiciary_body}. Do not write about foreign relationship actors (adversaries, allies, rivals, trade partners) — not even as natural language ("your adversary", "a neighboring rival"). Omit metadata.requires and relationshipEffects entirely.',
   },
   regional: {
     architect: 'Optimize for regional realism. Use geography, regional alliances, migration routes, weather systems, and cross-border knock-on effects that make causal sense within the target region. Prefer plain-language news wording over think-tank jargon.',
@@ -132,8 +177,8 @@ const SCOPE_PROMPT_OVERLAYS: Record<ScenarioScopeTier, ScopePromptOverlay> = {
     drafter: 'Use the cluster brief to produce scenarios that feel institutionally specific yet still portable across the cluster. Reject single-country assumptions unless they are justified by the cluster itself.',
   },
   exclusive: {
-    architect: 'Optimize for controlled uniqueness. The concept must justify why it cannot be generalized beyond the narrow target set and must remain tokenized.',
-    drafter: 'Use exclusivity sparingly. The scenario must honor the exclusivity reason, fit only the intended countries, and fail if the same idea could be expressed at cluster scope.',
+    architect: 'Optimize for controlled uniqueness. The concept must justify why it cannot be generalized beyond the narrow target set. Because this scenario targets a specific country, you may use that country\'s real institution names (e.g. "Bundestag", "Académie française") rather than generic tokens — but institutional role tokens ({finance_role}, {leader_title}, etc.) are still preferred for roles that vary by person. Set metadata.requires to declare any geopolitical preconditions. If the scenario involves a foreign relationship actor, write them as natural language and add relationshipEffects on options that would affect that relationship.',
+    drafter: 'This scenario runs for a specific country only — you may reference that country\'s real institution names where they add specificity. Use institutional role tokens ({leader_title}, {finance_role}, etc.) for personnel roles. Write foreign relationship actors as natural language ("your border rival", "the allied government"). Set metadata.requires for any geopolitical preconditions and add relationshipEffects on options whose outcomes would realistically change a relationship score. Reject the scenario if the same idea could be expressed at cluster scope.',
   },
 };
 
@@ -215,67 +260,6 @@ export async function getPromptTemplate(name: string): Promise<PromptTemplate | 
   }
 }
 
-export async function getPromptTemplateByVersion(
-  name: string,
-  version: string
-): Promise<PromptTemplate | null> {
-  try {
-    const db = getFirestore();
-    const doc = await db.collection('prompt_templates').doc(`${name}_${version}`).get();
-    if (!doc.exists) return null;
-    return doc.data() as PromptTemplate;
-  } catch (error) {
-    console.error('Failed to fetch prompt template by version:', error);
-    return null;
-  }
-}
-
-export async function savePromptTemplate(template: PromptTemplate): Promise<void> {
-  try {
-    const db = getFirestore();
-    await db.collection('prompt_templates').doc(`${template.name}_${template.version}`).set({
-      ...template,
-      updatedAt: Timestamp.now(),
-    });
-    _templateCache.delete(template.name);
-  } catch (error) {
-    console.error('Failed to save prompt template:', error);
-    throw error;
-  }
-}
-
-export async function listPromptVersions(name: string): Promise<PromptTemplate[]> {
-  try {
-    const db = getFirestore();
-    const snapshot = await db.collection('prompt_templates')
-      .where('name', '==', name)
-      .orderBy('createdAt', 'desc')
-      .get();
-    return snapshot.docs.map(doc => doc.data() as PromptTemplate);
-  } catch (error) {
-    console.error('Failed to list prompt versions:', error);
-    return [];
-  }
-}
-
-export async function activatePromptVersion(name: string, version: string): Promise<void> {
-  try {
-    const db = getFirestore();
-    await db.runTransaction(async (transaction) => {
-      const snapshot = await transaction.get(
-        db.collection('prompt_templates').where('name', '==', name)
-      );
-      snapshot.docs.forEach(doc => transaction.update(doc.ref, { active: false }));
-      const targetDoc = db.collection('prompt_templates').doc(`${name}_${version}`);
-      transaction.update(targetDoc, { active: true, updatedAt: Timestamp.now() });
-    });
-    _templateCache.delete(name);
-  } catch (error) {
-    console.error('Failed to activate prompt version:', error);
-    throw error;
-  }
-}
-
 export async function getCurrentPromptVersions(): Promise<PromptVersion> {
   const architectTemplate = await getPromptTemplate('architect_drafter');
   const drafterTemplate = await getPromptTemplate('drafter_details');
@@ -295,11 +279,14 @@ export async function getCurrentPromptVersions(): Promise<PromptVersion> {
 /**
  * Load the active drafter prompt base from Firestore, with local file fallback.
  */
-export async function getDrafterPromptBase(): Promise<string> {
-  const tokenSection = buildTokenWhitelistPromptSection();
+export async function getDrafterPromptBase(registry?: CompiledTokenRegistry): Promise<string> {
+  const tokenSection = buildTokenWhitelistPromptSection(registry);
   const bannedPhraseGuidance = buildBannedPhrasePromptGuidance();
   const applyReplacements = (text: string) =>
-    text.replace('{{TOKEN_SYSTEM}}', tokenSection).replace('{{BANNED_PHRASE_GUIDANCE}}', bannedPhraseGuidance);
+    [
+      text.replace('{{TOKEN_SYSTEM}}', tokenSection).replace('{{BANNED_PHRASE_GUIDANCE}}', bannedPhraseGuidance),
+      RELATIONSHIP_TOKEN_POLICY_SECTION,
+    ].join('\n\n');
   const template = await getPromptTemplate('drafter_details');
   if (template) return applyReplacements(template.sections.constraints);
   const local = getLocalFallbackPrompt('drafter_details');
@@ -309,7 +296,7 @@ export async function getDrafterPromptBase(): Promise<string> {
   }
   throw new Error(
     '[PromptTemplates] No active "drafter_details" prompt template found in Firestore and no local fallback available. ' +
-    'Run the seed script or activate a version via activatePromptVersion().'
+    'Run the seed script or activate a Firestore template for production.'
   );
 }
 
@@ -328,6 +315,7 @@ Write valid JSON only.
 - Use only approved {token} placeholders already provided in the surrounding prompt/context.
 - Never invent tokens.
 - Never output the literal substring "the {".
+- Never use relationship tokens in prose ({the_ally}, {ally}, {the_adversary}, {adversary}, {the_border_rival}, etc.). Use natural language relationship actors instead.
 - Never use hardcoded country names, capitals, party names, or institution names.
 - If scopeTier is universal, keep the scenario entirely domestic. Do not use relationship tokens like {the_trade_partner}, {the_ally}, or {the_adversary}. Use legislature, cabinet, courts, markets, prices, employers, unions, or regulators instead.
 - Title: 4-8 words, concrete headline style, no tokens.
@@ -339,6 +327,7 @@ Write valid JSON only.
 - Count words before returning. If any option text is under 50 words, expand it with mechanism, trade-off, and affected constituency.
 - Each option label: max 3 words, plain text, no tokens.
 - Each option: exactly 3 effects preferred, never more than 4.
+- If concept context provides optionDomains, each option MUST include at least one effect targeting its assigned primary metric and each option must keep at least one unique effect metric not shared by all options.
 - **INVERSE METRICS — SIGN RULE (VIOLATION = REJECTED)**:
   corruption, inflation, crime, bureaucracy are INVERSE metrics (lower = better for player).
   ALL effect values on inverse metrics MUST be NEGATIVE.
@@ -357,6 +346,38 @@ role_executive, role_diplomacy, role_defense, role_economy, role_justice, role_h
 
 ## Output contract
 Return only the requested scenario JSON object matching the schema. No prose outside JSON.`;
+}
+
+function buildLowLatencyDrafterSection(): DrafterPromptSection {
+  return {
+    title: 'LOW-LATENCY MODE',
+    body: 'Return the smallest valid JSON that still satisfies every schema and audit requirement. Do not add extra explanation or decorative prose beyond what the fields require.',
+  };
+}
+
+function buildFewShotExamplesSection(fewShotExamples: BundleScenario[]): DrafterPromptSection {
+  const examplesBody = fewShotExamples
+    .map((example, idx) => `## Example ${idx + 1}: ${example.title}\n\
+\
+\`\`\`json\n${JSON.stringify(example, null, 2)}\n\`\`\`\n`)
+    .join('\n');
+
+  return {
+    title: 'PERFECT EXAMPLES',
+    body: `Study these examples of PERFECT scenarios that meet all requirements:\n\n${examplesBody}\nYour output must match this quality level and structure.`,
+  };
+}
+
+function buildReflectionSection(reflectionPrompt: string): DrafterPromptSection {
+  return {
+    body: reflectionPrompt,
+  };
+}
+
+function assemblePromptSections(sections: readonly DrafterPromptSection[]): string {
+  return sections
+    .map((section) => section.title ? `# ${section.title}\n${section.body}` : section.body)
+    .join('\n\n');
 }
 
 /**
@@ -388,23 +409,38 @@ ${params.tokenContext}
 
 VOICE RULES:
 - description and option text: use "you" / "your" (second person, addressing the player leader).
-- Never use "the government" or "the administration" — say "you" or "your cabinet".
-- When using an introductory framing clause, use the leader token, not "you": ✅ "As {leader_title} of {the_player_country}, you face..." ❌ "As you of {the_player_country}..."
+- NEVER use "the government", "the administration", or third-person framing ("the president decided") — say "you" or "your cabinet".
+- When using an introductory framing clause, use the leader token: ✅ "As {leader_title} of {the_player_country}, you face..." ❌ "As you of {the_player_country}..."
+- BANNED phrases in option text: "aims to", "but risks", "but may", "could lead to", "at the cost of", "balances X with Y", "prioritizes X over Y", "risks provoking", "threatens to"
 
 TOKEN RULES:
-- Use {token} placeholders for countries, leaders, institutions, parties, and currencies.
-- Use {the_*} form at sentence start or as subject (e.g., {the_finance_role}, {the_adversary}).
-- Use bare form only before 's for possessives (e.g., {adversary}'s demands).
+- Use {token} placeholders for institutions, roles, parties, and currencies (e.g., {the_finance_role}, {the_legislature}, {central_bank}).
+- Use {the_player_country} as the subject/object; use {player_country}'s for possessives.
+- Use {regional_bloc} for regional bodies (EU, ASEAN, African Union, etc.).
 - NEVER hardcode country names, capitals, party names, or institution names.
-${isUniversal ? '- UNIVERSAL SCOPE: keep entirely domestic. Do NOT use relationship tokens ({the_adversary}, {the_ally}, etc.).' : ''}
+- For foreign actors, use plain language: "your border rival", "the allied nation", "a neighboring adversary" — never invent relationship tokens.
+${isUniversal ? '- UNIVERSAL SCOPE: keep entirely domestic. No foreign nation actors.' : ''}
 
 STRUCTURE:
-- title: 4-8 words, headline style, contains a verb and institutional actor, no tokens in title.
+- title: 4-8 words, headline style, contains a past-tense or present-tense verb and an institutional actor. No tokens in title.
+  TITLE RULES — titles MUST read like a news headline:
+  ✅ "Parliament Blocks Emergency Bill", "Generals Threaten Mass Resignation", "Central Bank Freezes Currency Reserves"
+  ❌ NEVER start with: "Navigate", "Navigating", "Resolve", "Manage", "Managing", "Balance", "Balancing", "Handle", "Handling", "Decide on", "Address"
+  ❌ NEVER end with: "Crisis", "Challenge", "Conflict", "Dilemma", "Debate", "Decision", "Response", "Dispute", "Standoff", "Transition"
 - description: 2-3 sentences, 60-140 words. Include the trigger event, key actors, and concrete stakes.
 - Exactly 3 options, each with:
   - id: "opt_a", "opt_b", "opt_c"
   - text: 2-3 sentences, 50-80 words. Describe the action, mechanism, and trade-off.
   - label: 1-3 words, plain text, no tokens.
+
+QUALITY RULES:
+- Description: exactly 2-3 sentences. Each sentence under 30 words. Total 60-140 words.
+- Option text: exactly 2-3 sentences. Each sentence under 30 words. Total 50-100 words. Describe the concrete action and mechanism — do not telegraph the outcome.
+- NEVER hardcode institution names (Supreme Court, National Guard, Central Bank, Department of X, Congress, Senate). Use {token} placeholders.
+- NEVER hardcode country names, currency names, or compass directions (northern, eastern).
+- Every {token} must exist in the TOKEN SYSTEM above. Do NOT invent tokens.
+
+${buildMetricHintsForSkeleton(params.bundle)}
 
 ${params.bundleGuidance}
 ${params.scopeGuidance}
@@ -423,12 +459,16 @@ export function getOllamaEffectsPrompt(params: {
   validMetricIds: string[];
   inverseMetrics: string[];
   scopeTier: string;
+  optionDomains?: Array<{ label: string; primaryMetric: string }>;
 }): string {
   const optionsSummary = params.skeleton.options
     .map(o => `- ${o.id} (${o.label}): ${o.text}`)
     .join('\n');
   const metricList = params.validMetricIds.join(', ');
   const inverseList = params.inverseMetrics.join(', ');
+  const optionDomainRules = Array.isArray(params.optionDomains) && params.optionDomains.length === 3
+    ? `\nOPTION DOMAIN REQUIREMENTS:\n${params.optionDomains.map((domain, index) => `- Option ${index + 1} (${domain.label}): MUST include at least one effect with targetMetricId=${domain.primaryMetric}`).join('\n')}`
+    : '';
 
   return `Generate effects, outcomes, and classifications for each option in this scenario.
 
@@ -439,6 +479,7 @@ OPTIONS:
 ${optionsSummary}
 
 BUNDLE: ${params.bundle}
+${optionDomainRules}
 
 For EACH of the 3 options, generate:
 
@@ -449,25 +490,27 @@ EFFECTS (2-4 per option):
 - duration: 1-20 (turns the effect lasts)
 - probability: 1.0
 - At least 1 effect MUST target a metric in the ${params.bundle} domain.
+- Each option MUST affect at least one metric the other two options do not target. Do not give all three options the same metric set.
 - INVERSE METRICS (${inverseList}): ALL values MUST be NEGATIVE. Positive values = instant rejection.
 
-OUTCOMES (third-person news style — NEVER use "you" or "your"):
+OUTCOMES — third-person news report style:
+- NEVER use "you" or "your". Use {leader_title} or {the_player_country} instead.
+- Use {token} placeholders for institutions, roles, and actors (e.g., {the_finance_role}, {the_legislature}, {central_bank}). NEVER hardcode institution names (Supreme Court, National Guard, Central Bank, Department of X).
+- NEVER hardcode country names, capital cities, party names, or currency names.
+- Keep every sentence under 30 words. Use active voice.
 - outcomeHeadline: 3-15 words, newspaper headline
-- outcomeSummary: 2-3 sentences, at least 250 characters, journalistic lede
-- outcomeContext: 4-6 sentences, 70-100 words, at least 400 characters, institutional reactions and implications
+- outcomeSummary: 2-3 sentences, at least 250 characters, journalistic lede covering what happened and immediate consequence
+- outcomeContext: 4-6 sentences, 70-100 words, at least 400 characters. Describe institutional reactions, second-order consequences, and political fallout. Each outcome must be unique to its option — not generic.
+- BANNED phrases in outcomes: "stakeholders", "mixed reactions", "cautious optimism", "continue to assess", "cascading effects", "institutional stability", "broader implications", "evolving situation", "second-order effects", "implementation teams"
 
 CLASSIFICATION:
-- is_authoritarian: boolean
+- is_authoritarian: boolean (true if this option curtails rights, concentrates power, or bypasses institutions)
 - moral_weight: -1.0 to 1.0
 - classification.riskLevel: safe | moderate | risky | dangerous
 - classification.ideology: left | center | right
 - classification.approach: diplomatic | economic | military | humanitarian | administrative
 
-policyImplications (0-2 per option):
-- target: one of the fiscal.* or policy.* enum values
-- delta: -15 to 15
-
-Return JSON with { options: [{ id, effects, policyImplications, outcomeHeadline, outcomeSummary, outcomeContext, is_authoritarian, moral_weight, classification }] }`;
+Return JSON with { options: [{ id, effects, outcomeHeadline, outcomeSummary, outcomeContext, is_authoritarian, moral_weight, classification }] }`;
 }
 
 /**
@@ -483,7 +526,7 @@ export async function getReflectionPrompt(): Promise<string> {
   }
   throw new Error(
     '[PromptTemplates] No active "reflection" prompt template found in Firestore and no local fallback available. ' +
-    'Run the seed script or activate a version via activatePromptVersion().'
+    'Run the seed script or activate a Firestore template for production.'
   );
 }
 
@@ -500,7 +543,7 @@ export async function getArchitectPromptBase(): Promise<string> {
   }
   throw new Error(
     '[PromptTemplates] No active "architect_drafter" prompt template found in Firestore and no local fallback available. ' +
-    'Run the seed script or activate a version via activatePromptVersion().'
+    'Run the seed script or activate a Firestore template for production.'
   );
 }
 
@@ -527,29 +570,25 @@ export function buildDrafterPrompt(
   basePrompt: string,
   fewShotExamples?: BundleScenario[],
   reflectionPrompt?: string,
-  options?: { lowLatencyMode?: boolean; omitExamples?: boolean; omitReflection?: boolean }
+  options?: BuildDrafterPromptOptions
 ): string {
-  let prompt = basePrompt;
+  const sections: DrafterPromptSection[] = [{ body: basePrompt }];
 
   const isLowLatency = Boolean(options?.lowLatencyMode);
 
   if (isLowLatency) {
-    prompt += '\n\n# LOW-LATENCY MODE\nReturn the smallest valid JSON that still satisfies every schema and audit requirement. Do not add extra explanation or decorative prose beyond what the fields require.\n';
+    sections.push(buildLowLatencyDrafterSection());
   }
 
   if (!(options?.omitExamples || isLowLatency) && fewShotExamples && fewShotExamples.length > 0) {
-    prompt += '\n\n# PERFECT EXAMPLES\n\nStudy these examples of PERFECT scenarios that meet all requirements:\n\n';
-    fewShotExamples.forEach((example, idx) => {
-      prompt += `## Example ${idx + 1}: ${example.title}\n\`\`\`json\n${JSON.stringify(example, null, 2)}\n\`\`\`\n\n`;
-    });
-    prompt += 'Your output must match this quality level and structure.\n';
+    sections.push(buildFewShotExamplesSection(fewShotExamples));
   }
 
   if (!(options?.omitReflection || isLowLatency) && reflectionPrompt) {
-    prompt += '\n\n' + reflectionPrompt;
+    sections.push(buildReflectionSection(reflectionPrompt));
   }
 
-  return prompt;
+  return assemblePromptSections(sections);
 }
 
 export function buildArchitectPrompt(

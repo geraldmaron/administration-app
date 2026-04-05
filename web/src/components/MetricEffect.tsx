@@ -29,7 +29,7 @@ export default function MetricEffect({ effect }: MetricEffectProps) {
         {duration}t
       </span>
       {probability < 1 && (
-        <span className="col-span-full text-[10px] uppercase tracking-[0.16em] text-foreground-subtle">
+        <span className="col-span-full text-[10px] text-foreground-subtle">
           ({Math.round(probability * 100)}%)
         </span>
       )}

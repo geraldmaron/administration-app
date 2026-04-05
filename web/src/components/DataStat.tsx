@@ -30,7 +30,7 @@ export default function DataStat({ label, value, detail, accent, size = 'default
   if (size === 'compact') {
     return (
       <div className="control-surface px-3 py-2">
-        <div className="mb-1 text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--foreground-subtle)]">{label}</div>
+        <div className="mb-1 text-[11px] font-medium text-[var(--foreground-subtle)]">{label}</div>
         <div className={`data-value text-[15px] leading-none ${accent ? accentClass[accent] : 'text-foreground'}`}>{value}</div>
       </div>
     );

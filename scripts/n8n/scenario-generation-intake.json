@@ -54,7 +54,7 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "UBv01nlXlbZjNRBJ",
+          "id": "49X1c6tal2u7qR7g",
           "name": "admin-secret"
         }
       },
@@ -95,7 +95,7 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "UBv01nlXlbZjNRBJ",
+          "id": "49X1c6tal2u7qR7g",
           "name": "admin-secret"
         }
       },
@@ -129,7 +129,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const request = $('Incoming Job Request').item.json.body || {};\nconst queued = $('Queue Generation Job').item.json || {};\nconst bundles = Array.isArray(request.bundles) ? request.bundles : [];\nconst count = typeof request.count === 'number' ? request.count : 1;\n\nconst mc = request.modelConfig || {};\nconst isOllamaJob = Object.values(mc).some(v => typeof v === 'string' && v.startsWith('ollama:'));\nconst CLOUD_URL = 'https://us-central1-the-administration-3a072.cloudfunctions.net/processGenerationBundle';\nconst LOCAL_URL = 'http://100.65.198.124:3099/processGenerationBundle';\nconst targetUrl = isOllamaJob ? LOCAL_URL : CLOUD_URL;\n\nconst scope = {\n  scopeTier: request.scopeTier || 'universal',\n  scopeKey: request.scopeKey || 'universal',\n  sourceKind: request.sourceKind || 'evergreen',\n  regions: request.regions || [],\n  region: request.region,\n  applicable_countries: request.applicable_countries || [],\n  exclusivityReason: request.exclusivityReason,\n  clusterId: request.clusterId,\n};\n\nconst payload = {\n  jobId: queued.jobId,\n  count,\n  mode: request.mode || 'manual',\n  lowLatencyMode: request.lowLatencyMode || false,\n  modelConfig: mc,\n  dryRun: request.dryRun || false,\n  newsContext: request.newsContext || [],\n  ...scope,\n};\n\nreturn bundles.map(bundle => ({\n  json: {\n    meta: { targetUrl },\n    payload: { ...payload, bundle },\n  }\n}));",
+        "jsCode": "const request = $('Incoming Job Request').item.json.body || {};\nconst queued = $('Queue Generation Job').item.json || {};\nconst bundles = Array.isArray(request.bundles) ? request.bundles : [];\nconst count = typeof request.count === 'number' ? request.count : 1;\n\nconst mc = request.modelConfig || {};\nconst isOllamaJob = Object.values(mc).some(v => typeof v === 'string' && v.startsWith('ollama:'));\nconst CLOUD_URL = 'https://us-central1-the-administration-3a072.cloudfunctions.net/processGenerationBundle';\nconst LOCAL_URL = 'http://100.65.198.124:3099/processGenerationBundle';\nconst targetUrl = isOllamaJob ? LOCAL_URL : CLOUD_URL;\n\nconst scope = {\n  scopeTier: request.scopeTier || 'universal',\n  scopeKey: request.scopeKey || 'universal',\n  sourceKind: request.sourceKind || 'evergreen',\n  regions: request.regions || [],\n  region: request.region,\n  applicable_countries: request.applicable_countries || [],\n  exclusivityReason: request.exclusivityReason,\n  clusterId: request.clusterId,\n};\n\nconst payload = {\n  jobId: queued.jobId,\n  count,\n  mode: request.mode || 'manual',\n  lowLatencyMode: request.lowLatencyMode || false,\n  modelConfig: mc,\n  dryRun: request.dryRun || false,\n  newsContext: request.newsContext || [],\n  totalBundles: bundles.length,\n  ...scope,\n};\n\nreturn bundles.map(bundle => ({\n  json: {\n    meta: { targetUrl, asyncDispatch: isOllamaJob },\n    payload: { ...payload, bundle },\n  }\n}));",
         "notice": ""
       },
       "id": "prepare-bundles",
@@ -171,7 +171,7 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "UBv01nlXlbZjNRBJ",
+          "id": "49X1c6tal2u7qR7g",
           "name": "admin-secret"
         }
       },
@@ -214,7 +214,7 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "UBv01nlXlbZjNRBJ",
+          "id": "49X1c6tal2u7qR7g",
           "name": "admin-secret"
         }
       },
@@ -231,7 +231,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const results = $input.all();\nconst jobId = $('Queue Generation Job').item.json.jobId || '';\n\nlet totalCompleted = 0;\nlet totalFailed = 0;\nconst allErrors = [];\n\nfor (const item of results) {\n  const r = item.json;\n  totalCompleted += typeof r.completedCount === 'number' ? r.completedCount : 0;\n  totalFailed += typeof r.failedCount === 'number' ? r.failedCount : 0;\n  if (Array.isArray(r.errors)) {\n    allErrors.push(...r.errors);\n  }\n}\n\nconst status = totalFailed > 0 && totalCompleted === 0 ? 'failed' : 'completed';\n\nreturn [{ json: { jobId, status, totalCompleted, totalFailed, errors: allErrors } }];",
+        "jsCode": "const results = $input.all();\nconst jobId = $('Queue Generation Job').item.json.jobId || '';\n\n// Detect async dispatch (local Ollama server returns {queued:true}).\n// In async mode the local server owns finalization \u2014 n8n just exits.\nconst isAsync = results.some(item => item.json?.queued === true);\nif (isAsync) {\n  return [{ json: { jobId, asyncDispatch: true, status: 'dispatched' } }];\n}\n\nlet totalCompleted = 0;\nlet totalFailed = 0;\nconst allErrors = [];\n\nfor (const item of results) {\n  const r = item.json;\n  totalCompleted += typeof r.completedCount === 'number' ? r.completedCount : 0;\n  totalFailed += typeof r.failedCount === 'number' ? r.failedCount : 0;\n  if (Array.isArray(r.errors)) {\n    allErrors.push(...r.errors);\n  }\n}\n\nconst status = totalFailed > 0 && totalCompleted === 0 ? 'failed' : 'completed';\n\nreturn [{ json: { jobId, asyncDispatch: false, status, totalCompleted, totalFailed, errors: allErrors } }];",
         "notice": ""
       },
       "id": "aggregate-results",
@@ -240,6 +240,38 @@
       "typeVersion": 2,
       "position": [
         1580,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "async-check",
+              "leftValue": "={{ $json.asyncDispatch }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-async",
+      "name": "Is Async Job?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1820,
         300
       ]
     },
@@ -271,7 +303,7 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "UBv01nlXlbZjNRBJ",
+          "id": "49X1c6tal2u7qR7g",
           "name": "admin-secret"
         }
       },
@@ -280,8 +312,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1820,
-        300
+        2060,
+        420
       ]
     }
   ],
@@ -359,6 +391,18 @@
     },
     "Aggregate Results": {
       "main": [
+        [
+          {
+            "node": "Is Async Job?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Async Job?": {
+      "main": [
+        [],
         [
           {
             "node": "Finalize Job",

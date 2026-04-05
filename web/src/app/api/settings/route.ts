@@ -37,6 +37,7 @@ export async function PATCH(request: NextRequest) {
       'category_domain_metrics',
       'analytics_retention_days',
       'ollama_base_url',
+      'metric_mappings',
     ]);
 
     const update: Record<string, unknown> = {};

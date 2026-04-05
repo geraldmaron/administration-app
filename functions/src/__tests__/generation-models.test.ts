@@ -1,5 +1,7 @@
 import {
+  exceedsBundleLimitForModel,
   getModelFamily,
+  getMaxBundlesPerJob,
   getRequestedOllamaModels,
   getResolvedGenerationModels,
   isOllamaGeneration,
@@ -51,6 +53,17 @@ describe('generation-models', () => {
     expect(getRequestedOllamaModels(modelConfig, { includeEmbedding: true })).toEqual(['ollama:qwen3:14b']);
     expect(resolvePhaseModel(modelConfig, 'architect')).toBe('gpt-4o-mini');
     expect(resolvePhaseModel(modelConfig, 'repair')).toBe('ollama:qwen3:14b');
+  });
+
+  it('applies stricter bundle limits for ollama generation jobs', () => {
+    const modelConfig = {
+      drafterModel: 'ollama:phi4:14b',
+    };
+
+    expect(getMaxBundlesPerJob(modelConfig)).toBe(2);
+    expect(exceedsBundleLimitForModel(3, modelConfig)).toBe(true);
+    expect(exceedsBundleLimitForModel(2, modelConfig)).toBe(false);
+    expect(exceedsBundleLimitForModel(10)).toBe(false);
   });
 
   it('resolves default models when no overrides are provided', () => {

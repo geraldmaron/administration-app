@@ -6,8 +6,15 @@ import AuditScore from '@/components/AuditScore';
 import BundleBadge from '@/components/BundleBadge';
 import DataStat from '@/components/DataStat';
 import StatusBadge from '@/components/StatusBadge';
-import { formatRelativeTime } from '@/lib/constants';
+import { formatDuration, formatRelativeTime } from '@/lib/constants';
 import type { JobDetail, JobError } from '@/lib/types';
+
+function summarizeProvider(job: Pick<JobDetail, 'executionTarget' | 'modelConfig'>): string {
+  const drafter = job.modelConfig?.drafterModel;
+  if (drafter?.startsWith('ollama:')) return drafter.replace('ollama:', '');
+  if (job.executionTarget === 'n8n') return 'n8n';
+  return 'cloud';
+}
 
 function categorizeErrors(errors: JobError[]) {
   return {
@@ -30,17 +37,6 @@ function deriveDisplayStatus(job: Pick<JobDetail, 'status' | 'completedCount' | 
   const { generationErrors } = categorizeErrors(job.errors ?? []);
   if (generationErrors.length === 0 && completed > 0) return 'remediated';
   return completed > 0 ? 'partial' : 'failed';
-}
-
-function formatDuration(startedAt?: string, completedAt?: string): string {
-  if (!startedAt || !completedAt) return '—';
-  const ms = new Date(completedAt).getTime() - new Date(startedAt).getTime();
-  if (ms < 0) return '—';
-  const seconds = Math.floor(ms / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
-  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
 interface JobSlideOverProps {
@@ -110,7 +106,8 @@ export default function JobSlideOver({ jobId, onClose, onRefresh, onDeleted }: J
   const total = job ? (job.total ?? job.count * job.bundles.length) : 0;
   const completed = job?.completedCount ?? 0;
   const failed = job?.failedCount ?? 0;
-  const progress = total > 0 ? Math.min(100, Math.round(((completed + failed) / total) * 100)) : 0;
+  const isTerminal = job?.status === 'completed' || job?.status === 'pending_review';
+  const progress = isTerminal ? 100 : (total > 0 ? Math.min(100, Math.round(((completed + failed) / total) * 100)) : 0);
   const autoFixed = (job?.results ?? []).filter((r) => r.autoFixed).length;
   const { generationErrors, dedupSkips, cooldownSkips } = categorizeErrors(job?.errors ?? []);
 
@@ -118,7 +115,7 @@ export default function JobSlideOver({ jobId, onClose, onRefresh, onDeleted }: J
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]"
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -161,7 +158,7 @@ export default function JobSlideOver({ jobId, onClose, onRefresh, onDeleted }: J
 
               {/* Progress */}
               <div>
-                <div className="mb-1.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">
+                <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-[var(--foreground-subtle)]">
                   <span>Progress</span>
                   <span>{progress}%</span>
                 </div>
@@ -194,6 +191,10 @@ export default function JobSlideOver({ jobId, onClose, onRefresh, onDeleted }: J
                 <div className="rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2">
                   <div className="section-kicker mb-1">Execution</div>
                   <div>{job.executionTarget ?? 'cloud_function'}</div>
+                </div>
+                <div className="rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2">
+                  <div className="section-kicker mb-1">Provider</div>
+                  <div>{summarizeProvider(job)}</div>
                 </div>
                 <div className="rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2">
                   <div className="section-kicker mb-1">Heartbeat</div>
@@ -267,13 +268,17 @@ export default function JobSlideOver({ jobId, onClose, onRefresh, onDeleted }: J
                 <div className="border-t border-[var(--border)] pt-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="section-kicker">Output</div>
-                    <Link href={`/jobs/${job.id}`} className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--accent-primary)] hover:underline">
+                    <Link href={`/jobs/${job.id}`} className="text-xs font-medium text-[var(--accent-primary)] hover:underline">
                       View all {job.results.length} →
                     </Link>
                   </div>
                   <div className="space-y-1.5">
                     {job.results.slice(0, 5).map((result) => (
-                      <div key={result.id} className="flex items-center justify-between gap-2 rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2">
+                      <Link
+                        key={result.id}
+                        href={`/scenarios/${result.id}`}
+                        className="flex items-center justify-between gap-2 rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2 hover:border-[var(--accent-primary)]/40 hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+                      >
                         <div className="min-w-0">
                           <div className="text-[12px] font-medium text-foreground truncate">{result.title}</div>
                           <div className="text-[10px] font-mono text-[var(--foreground-subtle)] truncate">{result.id}</div>
@@ -282,7 +287,7 @@ export default function JobSlideOver({ jobId, onClose, onRefresh, onDeleted }: J
                           <BundleBadge bundle={result.bundle} />
                           {result.auditScore !== undefined ? <AuditScore score={result.auditScore} /> : null}
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </div>

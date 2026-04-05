@@ -58,6 +58,14 @@ export interface FailureAnalysis {
     message: string;
     impact: number;
   }>;
+  rootCause?: {
+    primaryRule?: string;
+    primarySeverity?: 'error' | 'warn';
+    topRules: string[];
+    errorCount: number;
+    warningCount: number;
+    remediationBucket?: string;
+  };
   rawScenario?: Partial<BundleScenario>;
   attemptNumber: number;
 }
@@ -84,6 +92,8 @@ export type FailureCategory =
   | 'framing-violation'
   | 'gdp-as-amount-violation'
   | 'token-article-form-violation'
+  | 'option-differentiation-violation'
+  | 'editorial-review-required'
   | 'parsing-error'
   | 'other';
 
@@ -209,6 +219,9 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   if (errorCodes.some(code => code === 'outcome-second-person')) {
     return 'outcome-voice-violation';
   }
+  if (errorCodes.some(code => code === 'manual-editorial-review-required' || code === 'editorial-review-violation')) {
+    return 'editorial-review-required';
+  }
   if (errorCodes.some(code => code === 'third-person-framing')) {
     return 'framing-violation';
   }
@@ -228,6 +241,9 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   }
   if (warningCodes.some(code => code === 'hardcoded-gov-structure' || code === 'hardcoded-institution-phrase')) {
     return 'hardcoded-gov-structure';
+  }
+  if (warningCodes.some(code => code === 'option-metric-overlap' || code === 'option-domain-missing-primary' || code === 'option-domain-duplicate-primary')) {
+    return 'option-differentiation-violation';
   }
   if (warningCodes.some(code => code === 'informal-tone')) {
     return 'tonal-violation';

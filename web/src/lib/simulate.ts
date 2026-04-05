@@ -3,8 +3,10 @@ import type {
   Option,
   OptionEffect,
   RelationshipCondition,
+  RelationshipEffect,
   ScenarioCondition,
   ScenarioMetadata,
+  ScenarioRequirements,
   SimulationConditionCheck,
   SimulationDiagnostics,
   SimulationFilteredScenario,
@@ -38,16 +40,45 @@ export interface CountryDoc {
   definiteArticle?: string;
   leader?: string;
   leaderTitle?: string;
+  facts?: {
+    demographics?: {
+      population_total?: number;
+    };
+    economy?: {
+      gdp_nominal_usd?: number;
+      currency_name?: string;
+      central_bank?: string;
+    };
+    geography?: {
+      capital_city?: string;
+    };
+    institutions?: {
+      executive?: {
+        leader_title?: string;
+        head_of_state_title?: string;
+      };
+    };
+  };
   tokens?: Record<string, string>;
+  military?: {
+    doctrine?: string;
+    overall_readiness?: number;
+    branches?: Record<string, { readiness?: number; size?: number }>;
+    cyber?: { offensive?: number; defensive?: number };
+  };
   geopoliticalProfile?: GeopoliticalProfile;
   gameplayProfile?: {
     startingMetrics?: Record<string, number>;
     neighborEventChance?: number;
+    metricSensitivities?: Record<string, number>;
+    crisisProbabilities?: Record<string, number>;
   };
   geopolitical?: GeopoliticalProfile;
   gameplay?: {
     starting_metrics?: Record<string, number>;
     neighbor_event_chance?: number;
+    metric_sensitivities?: Record<string, number>;
+    crisis_probabilities?: Record<string, number>;
   };
 }
 
@@ -74,12 +105,17 @@ interface ResolveTextResult {
 export function normalizeCountryDoc(country: CountryDoc): CountryDoc {
   return {
     ...country,
-    leaderTitle: country.leaderTitle ?? country.tokens?.leader_title,
+    leaderTitle: country.leaderTitle
+      ?? country.facts?.institutions?.executive?.leader_title
+      ?? country.facts?.institutions?.executive?.head_of_state_title
+      ?? country.tokens?.leader_title,
     geopoliticalProfile: country.geopoliticalProfile ?? country.geopolitical,
     gameplayProfile: country.gameplayProfile ?? (country.gameplay
       ? {
           startingMetrics: country.gameplay.starting_metrics,
           neighborEventChance: country.gameplay.neighbor_event_chance,
+          metricSensitivities: country.gameplay.metric_sensitivities,
+          crisisProbabilities: country.gameplay.crisis_probabilities,
         }
       : undefined),
   };
@@ -124,8 +160,8 @@ const FALLBACK_TOKEN_VALUES: Record<string, string> = {
   the_leader_title: 'the national leader',
   legislature: 'legislature',
   the_legislature: 'the legislature',
-  ruling_party: 'ruling party',
-  the_ruling_party: 'the ruling party',
+  governing_party: 'governing party',
+  the_governing_party: 'the governing party',
 };
 
 function titleCaseToken(token: string): string {
@@ -346,6 +382,9 @@ export function buildSimulationTokenContext(
   context.country = country.name;
   context.player_country = country.name;
   context.the_player_country = getCountryNameWithDefiniteArticle(country);
+  setIfMissing(context, 'capital_city', country.facts?.geography?.capital_city);
+  setIfMissing(context, 'currency', country.facts?.economy?.currency_name);
+  setIfMissing(context, 'central_bank', country.facts?.economy?.central_bank);
   if (country.leader) context.leader = country.leader;
   if (country.leaderTitle) {
     context.leader_title = country.leaderTitle;
@@ -476,6 +515,187 @@ function resolveRelationshipForRole(
       return [...(geo.neighbors ?? [])].sort((a, b) => b.strength - a.strength)[0] ?? null;
     default:
       return null;
+  }
+}
+
+const POWER_TIER_ORDER: NonNullable<ScenarioRequirements['min_power_tier']>[] = [
+  'small_state', 'middle_power', 'regional_power', 'great_power', 'superpower',
+];
+
+function buildRequiresChecks(
+  requires: ScenarioRequirements | undefined,
+  country: CountryDoc
+): SimulationValidationCheck[] {
+  if (!requires) return [];
+  const checks: SimulationValidationCheck[] = [];
+  const geo = country.geopoliticalProfile;
+  const tags = new Set(geo?.tags ?? []);
+
+  if (requires.land_border_adversary != null) {
+    const has = (geo?.neighbors ?? []).some(r => r.sharedBorder && ['rival', 'adversary', 'conflict'].includes(r.type));
+    const wanted = requires.land_border_adversary;
+    const passed = has === wanted;
+    pushCheck(checks, 'requires.land_border_adversary', passed,
+      passed
+        ? `Country ${wanted ? 'has' : 'does not have'} a land border adversary as required.`
+        : `requires.land_border_adversary=${wanted} but country ${has ? 'has' : 'does not have'} one.`
+    );
+  }
+
+  if (requires.formal_ally != null) {
+    const has = (geo?.allies ?? []).some(r => r.type === 'formal_ally');
+    const wanted = requires.formal_ally;
+    const passed = has === wanted;
+    pushCheck(checks, 'requires.formal_ally', passed,
+      passed
+        ? `Country ${wanted ? 'has' : 'does not have'} a formal ally as required.`
+        : `requires.formal_ally=${wanted} but country ${has ? 'has' : 'does not have'} one.`
+    );
+  }
+
+  if (requires.adversary != null) {
+    const has = (geo?.adversaries ?? []).length > 0;
+    const wanted = requires.adversary;
+    const passed = has === wanted;
+    pushCheck(checks, 'requires.adversary', passed,
+      passed
+        ? `Country ${wanted ? 'has' : 'does not have'} an adversary as required.`
+        : `requires.adversary=${wanted} but country ${has ? 'has' : 'does not have'} one.`
+    );
+  }
+
+  if (requires.trade_partner != null) {
+    const has = (geo?.allies ?? []).some(r => r.type === 'strategic_partner');
+    const wanted = requires.trade_partner;
+    const passed = has === wanted;
+    pushCheck(checks, 'requires.trade_partner', passed,
+      passed
+        ? `Country ${wanted ? 'has' : 'does not have'} a trade partner as required.`
+        : `requires.trade_partner=${wanted} but country ${has ? 'has' : 'does not have'} one.`
+    );
+  }
+
+  for (const tag of ['nuclear_state', 'island_nation', 'landlocked', 'coastal'] as const) {
+    if (requires[tag] != null) {
+      const has = tags.has(tag);
+      const wanted = requires[tag];
+      const passed = has === wanted;
+      pushCheck(checks, `requires.${tag}`, passed,
+        passed
+          ? `Country ${wanted ? 'has' : 'does not have'} tag "${tag}" as required.`
+          : `requires.${tag}=${wanted} but country ${has ? 'has' : 'does not have'} that tag.`
+      );
+    }
+  }
+
+  if (requires.min_power_tier != null) {
+    const countryTierTag = POWER_TIER_ORDER.find(t => tags.has(t));
+    const countryTierIdx = countryTierTag ? POWER_TIER_ORDER.indexOf(countryTierTag) : -1;
+    const requiredTierIdx = POWER_TIER_ORDER.indexOf(requires.min_power_tier);
+    const passed = countryTierIdx >= requiredTierIdx;
+    pushCheck(checks, 'requires.min_power_tier', passed,
+      passed
+        ? `Country power tier "${countryTierTag ?? 'unknown'}" meets minimum "${requires.min_power_tier}".`
+        : `Country power tier "${countryTierTag ?? 'unknown'}" is below required minimum "${requires.min_power_tier}".`
+    );
+  }
+
+  if (requires.cyber_capable != null) {
+    const offensiveCyber = country.military?.cyber?.offensive ?? 0;
+    const has = offensiveCyber > 50;
+    const wanted = requires.cyber_capable;
+    const passed = has === wanted;
+    pushCheck(checks, 'requires.cyber_capable', passed,
+      passed
+        ? `Country cyber offensive score (${offensiveCyber}) ${wanted ? 'meets' : 'does not meet'} threshold.`
+        : `requires.cyber_capable=${wanted} but country cyber offensive score is ${offensiveCyber}.`
+    );
+  }
+
+  if (requires.power_projection != null) {
+    const has = country.military?.doctrine === 'power_projection';
+    const wanted = requires.power_projection;
+    const passed = has === wanted;
+    pushCheck(checks, 'requires.power_projection', passed,
+      passed
+        ? `Country military doctrine ${wanted ? 'is' : 'is not'} power_projection as required.`
+        : `requires.power_projection=${wanted} but country doctrine is "${country.military?.doctrine ?? 'unknown'}".`
+    );
+  }
+
+  if (requires.large_military != null) {
+    const branches = country.military?.branches ?? {};
+    const branchCount = Object.keys(branches).length;
+    const readiness = country.military?.overall_readiness ?? 0;
+    const has = branchCount >= 4 && readiness >= 60;
+    const wanted = requires.large_military;
+    const passed = has === wanted;
+    pushCheck(checks, 'requires.large_military', passed,
+      passed
+        ? `Country military (${branchCount} branches, ${readiness}% readiness) ${wanted ? 'qualifies' : 'does not qualify'} as large.`
+        : `requires.large_military=${wanted} but country has ${branchCount} branches at ${readiness}% readiness.`
+    );
+  }
+
+  if (requires.authoritarian_regime != null) {
+    const authCats = new Set(['authoritarian', 'totalitarian', 'absolute_monarchy']);
+    const govCat = geo?.governmentCategory ?? '';
+    const has = authCats.has(govCat);
+    const wanted = requires.authoritarian_regime;
+    const passed = has === wanted;
+    pushCheck(checks, 'requires.authoritarian_regime', passed,
+      passed
+        ? `Country government category "${govCat}" ${wanted ? 'is' : 'is not'} authoritarian as required.`
+        : `requires.authoritarian_regime=${wanted} but government category is "${govCat}".`
+    );
+  }
+
+  if (requires.democratic_regime != null) {
+    const demoCats = new Set(['liberal_democracy', 'constitutional_monarchy']);
+    const govCat = geo?.governmentCategory ?? '';
+    const has = demoCats.has(govCat);
+    const wanted = requires.democratic_regime;
+    const passed = has === wanted;
+    pushCheck(checks, 'requires.democratic_regime', passed,
+      passed
+        ? `Country government category "${govCat}" ${wanted ? 'is' : 'is not'} democratic as required.`
+        : `requires.democratic_regime=${wanted} but government category is "${govCat}".`
+    );
+  }
+
+  if (requires.fragile_state != null) {
+    const stability = geo?.regimeStability ?? 50;
+    const has = stability < 35;
+    const wanted = requires.fragile_state;
+    const passed = has === wanted;
+    pushCheck(checks, 'requires.fragile_state', passed,
+      passed
+        ? `Country regime stability (${stability}) ${wanted ? 'indicates' : 'does not indicate'} fragile state.`
+        : `requires.fragile_state=${wanted} but regime stability is ${stability}.`
+    );
+  }
+
+  return checks;
+}
+
+/**
+ * Apply relationship effects from an option choice, mutating the country's
+ * geopolitical profile strength scores. Caller is responsible for persisting the changes.
+ */
+export function applyRelationshipEffects(
+  effects: RelationshipEffect[] | undefined,
+  country: CountryDoc
+): void {
+  if (!effects?.length) return;
+  const geo = country.geopoliticalProfile;
+  if (!geo) return;
+
+  for (const effect of effects) {
+    const probability = effect.probability ?? 1.0;
+    if (Math.random() > probability) continue;
+    const relationship = resolveRelationshipForRole(effect.relationshipId, country);
+    if (!relationship) continue;
+    relationship.strength = Math.max(-100, Math.min(100, relationship.strength + effect.delta));
   }
 }
 
@@ -676,6 +896,10 @@ function buildValidationChecks(
         : 'Country resolves the geopolitical relationship tokens this scenario uses.'
       : `Country is missing relationship-token bindings for: ${unresolvedTokenKeys.join(', ')}.`
   );
+
+  // Structural precondition checks (requires block — preferred over token-graph for new scenarios)
+  const requiresChecks = buildRequiresChecks(scenario.metadata?.requires, country);
+  checks.push(...requiresChecks);
 
   return checks;
 }

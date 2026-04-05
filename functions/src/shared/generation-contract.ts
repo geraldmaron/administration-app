@@ -35,8 +35,7 @@ export interface GenerationNewsContextItem {
   pubDate: string;
 }
 
-export interface GenerationScopeInput {
-  mode?: GenerationMode;
+export interface GenerationScopeFields {
   region?: string;
   regions?: string[];
   scopeTier?: ScenarioScopeTier;
@@ -47,12 +46,13 @@ export interface GenerationScopeInput {
   sourceKind?: ScenarioSourceKind;
 }
 
-export interface NormalizedGenerationScope {
+export interface GenerationScopeInput extends GenerationScopeFields {
+  mode?: GenerationMode;
+}
+
+export interface NormalizedGenerationScope extends Omit<GenerationScopeFields, 'regions' | 'scopeTier' | 'scopeKey' | 'sourceKind'> {
   scopeTier: ScenarioScopeTier;
   scopeKey: string;
-  clusterId?: string;
-  exclusivityReason?: ScenarioExclusivityReason;
-  applicable_countries?: string[];
   sourceKind: ScenarioSourceKind;
   regions: string[];
 }
@@ -109,9 +109,11 @@ export function normalizeGenerationScope(input: GenerationScopeInput): Generatio
   const scopeTier = input.scopeTier ?? 'universal';
   const regions = normalizeRegionIds(input.regions?.length ? input.regions : input.region ? [input.region] : []);
   const applicableCountries = normalizeCountryIds(input.applicable_countries);
-  const clusterId = input.clusterId?.trim() || undefined;
+  const clusterId = input.clusterId ? slugify(input.clusterId) : undefined;
   const explicitScopeKey = input.scopeKey?.trim() || undefined;
-  const sourceKind = input.sourceKind ?? inferDefaultSourceKind(input.mode);
+  const VALID_SOURCE_KINDS: ScenarioSourceKind[] = ['evergreen', 'news', 'neighbor', 'consequence'];
+  const rawSourceKind = input.sourceKind ?? inferDefaultSourceKind(input.mode);
+  const sourceKind: ScenarioSourceKind = VALID_SOURCE_KINDS.includes(rawSourceKind) ? rawSourceKind : inferDefaultSourceKind(input.mode);
 
   if (scopeTier === 'regional' && regions.length === 0) {
     return { ok: false, error: 'Regional jobs require region or regions.' };

@@ -214,6 +214,8 @@ class FirebaseDataService {
         do {
             let snapshot = try await db.collection("scenarios")
                 .whereField("metadata.bundle", isEqualTo: bundleName)
+                .whereField("is_active", isEqualTo: true)
+                .limit(to: 500)
                 .getDocuments()
             let scenarios = snapshot.documents.compactMap { mapScenario(from: $0.data()) }
             cacheQueue.sync { _cache[cacheKey] = scenarios }
@@ -475,19 +477,19 @@ class FirebaseDataService {
     private func mapCountry(from data: [String: Any], id countryId: String) -> Country? {
         guard let name = data["name"] as? String else { return nil }
 
+        let facts: CountryFacts? = (data["facts"] as? [String: Any]).flatMap { decode(CountryFacts.self, from: $0) }
+        let amounts: CountryAmountValues? = (data["amounts"] as? [String: Any]).flatMap { decode(CountryAmountValues.self, from: $0) }
+
         // Extract tokens
         var tokens: [String: String]?
         if let tokensData = data["tokens"] as? [String: String] {
             tokens = tokensData
         }
 
-        // Extract attributes
-        let attributesData = data["attributes"] as? [String: Any]
-        let population = attributesData?["population"] as? Int ?? 0
-        let gdp = attributesData?["gdp"] as? Int ?? 0
+        let population = facts?.demographics.populationTotal ?? 0
+        let gdp = facts.map { Int($0.economy.gdpNominalUsd.rounded()) } ?? 0
         let attributes = CountryAttributes(population: population, gdp: gdp)
 
-        // Extract military stats (legacy simple schema)
         let militaryData = data["military"] as? [String: Any]
         let military = MilitaryStats(
             strength: militaryData?["strength"] as? Double ?? 50.0,
@@ -498,39 +500,25 @@ class FirebaseDataService {
             description: militaryData?["description"] as? String
         )
 
-        // Decode rich MilitaryProfile if present
         let militaryProfile: MilitaryProfile? = militaryData.flatMap { decode(MilitaryProfile.self, from: $0) }
 
         let profiles = Self.decodeCountryProfiles(from: data)
         let geopoliticalProfile = profiles.geopoliticalProfile
         let gameplayProfile = profiles.gameplayProfile
 
-        // Decode LegislatureProfile
         let legislatureProfile: LegislatureProfile? = (data["legislature"] as? [String: Any]).flatMap { decode(LegislatureProfile.self, from: $0) }
 
-        // Decode LegislatureState
         let legislatureInitialState: LegislatureState? = (data["legislature_initial_state"] as? [String: Any]).flatMap { decode(LegislatureState.self, from: $0) }
 
-        // Decode CountryTraits
         let countryTraits: [CountryTrait]? = {
             guard let arr = data["traits"] as? [[String: Any]],
                   let traitsData = try? JSONSerialization.data(withJSONObject: arr) else { return nil }
             return try? JSONDecoder().decode([CountryTrait].self, from: traitsData)
         }()
 
-        // Population and GDP from nested dicts
-        let populationDoc = data["population"] as? [String: Any]
-        let populationMillions = populationDoc?["total_millions"] as? Double
-        let economyDoc = data["economy"] as? [String: Any]
-        let gdpBillions: Double? = {
-            guard let doc = economyDoc else { return nil }
-            if let d = doc["gdp_billions"] as? Double, d > 0 { return d }
-            if let i = doc["gdp_billions"] as? Int, i > 0 { return Double(i) }
-            if let n = doc["gdp_billions"] as? NSNumber, n.doubleValue > 0 { return n.doubleValue }
-            return nil
-        }()
+        let populationMillions = facts.map { Double($0.demographics.populationTotal) / 1_000_000 }
+        let gdpBillions = facts.map { $0.economy.gdpNominalUsd / 1_000_000_000 }
 
-        // Extract diplomacy stats
         let diplomacyData = data["diplomacy"] as? [String: Any]
         let diplomacy = DiplomaticStats(
             relationship: diplomacyData?["relationship"] as? Double ?? 50.0,
@@ -539,8 +527,6 @@ class FirebaseDataService {
             tradeRelationships: diplomacyData?["tradeRelationships"] as? [String: Double]
         )
 
-        // Firestore may store the definite article as `definiteArticle` (camelCase) or
-        // `definite_article` (snake_case). Preserve backward compatibility.
         let definiteArticle = (data["definiteArticle"] as? String) ?? (data["definite_article"] as? String)
 
         return Country(
@@ -552,15 +538,17 @@ class FirebaseDataService {
             military: military,
             diplomacy: diplomacy,
             region: data["region"] as? String,
-            leaderTitle: data["leaderTitle"] as? String,
-            leader: data["leader"] as? String,
+            leaderTitle: facts?.institutions?.executive?.leaderTitle
+                ?? facts?.institutions?.executive?.headOfStateTitle
+                ?? tokens?["leader_title"],
+            leader: nil,
             difficulty: data["difficulty"] as? String,
             termLengthYears: data["termLengthYears"] as? Int,
-            currentPopulation: data["currentPopulation"] as? Int,
-            population: data["population"] as? String,
-            gdp: data["gdp"] as? String,
+            currentPopulation: facts?.demographics.populationTotal,
+            population: nil,
+            gdp: nil,
             description: data["description"] as? String,
-            subdivisions: nil, // TODO: Map subdivisions if needed
+            subdivisions: nil,
             blocs: data["blocs"] as? [String],
             analysisBullets: data["analysisBullets"] as? [String],
             strengths: data["strengths"] as? [String],
@@ -579,7 +567,9 @@ class FirebaseDataService {
             legislatureInitialState: legislatureInitialState,
             countryTraits: countryTraits,
             populationMillions: populationMillions,
-            gdpBillions: gdpBillions
+            gdpBillions: gdpBillions,
+            facts: facts,
+            amounts: amounts
         )
     }
 
@@ -714,7 +704,14 @@ class FirebaseDataService {
             impactText: nil,
             impactMap: data["impact"] as? [String: Double],
             relationshipImpact: data["relationship_impact"] as? [String: Double],
-            relationshipEffects: data["relationship_effects"] as? [String: Double],
+            relationshipEffects: {
+                let raw = data["relationshipEffects"] as? [[String: Any]] ?? data["relationship_effects"] as? [[String: Any]]
+                return raw?.compactMap { d -> RelationshipEffect? in
+                    guard let roleId = d["relationshipId"] as? String,
+                          let delta = d["delta"] as? Double else { return nil }
+                    return RelationshipEffect(relationshipId: roleId, delta: delta, probability: d["probability"] as? Double)
+                }
+            }(),
             populationImpact: nil, // TODO: Map if needed
             economicImpact: nil, // TODO: Map if needed
             humanCost: nil, // TODO: Map if needed

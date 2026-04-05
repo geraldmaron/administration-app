@@ -1,5 +1,6 @@
-import { ALL_TOKENS, CANONICAL_ROLE_IDS } from '../lib/token-registry';
-import { auditScenario, setAuditConfigForTests } from '../lib/audit-rules';
+import { ALL_TOKENS, ARTICLE_FORM_TOKEN_NAMES, CANONICAL_ROLE_IDS } from '../lib/token-registry';
+import { VALID_SETTING_TARGETS } from '../types';
+import { auditScenario, deterministicFix, setAuditConfigForTests } from '../lib/audit-rules';
 import type { AuditConfig, BundleScenario } from '../lib/audit-rules';
 
 function makeAuditConfig(): AuditConfig {
@@ -22,6 +23,9 @@ function makeAuditConfig(): AuditConfig {
         },
         govTypesByCountryId: {},
         countriesById: {},
+        canonicalRoleIds: [...CANONICAL_ROLE_IDS],
+        articleFormTokenNames: new Set<string>(ARTICLE_FORM_TOKEN_NAMES),
+        validSettingTargets: VALID_SETTING_TARGETS as unknown as readonly string[],
     };
 }
 
@@ -138,11 +142,94 @@ describe('auditScenario newsroom language validation', () => {
         setAuditConfigForTests(null);
     });
 
+    test('does not fire lowercase-start on token-led title with lowercase verb', () => {
+        const scenario = makeScenario();
+        scenario.title = '{finance_role} warns of credit downgrade';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'lowercase-start' && i.message.includes('title'))).toBe(false);
+    });
+
+    test('does not fire lowercase-start on token-led option text', () => {
+        const scenario = makeScenario();
+        scenario.options[0].text = '{the_legislature} passes emergency spending bill to stabilize markets and restore investor confidence. The measure redirects funds from discretionary programs, angering social advocates who warn of service cuts across low-income communities.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'lowercase-start' && i.message.includes('option_a') && i.message.includes('lowercase'))).toBe(false);
+    });
+
+    test('still fires lowercase-start on non-token lowercase text', () => {
+        const scenario = makeScenario();
+        scenario.title = 'warns of credit downgrade';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'lowercase-start')).toBe(true);
+    });
+
+    test('does not fire invalid-token on {the_regional_bloc}', () => {
+        const scenario = makeScenario();
+        scenario.description = 'As {leader_title} of {the_player_country}, you face pressure from {the_regional_bloc} to adopt new trade standards that could reshape domestic industry while strengthening multilateral cooperation.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'invalid-token' && i.message.includes('regional_bloc'))).toBe(false);
+    });
+
+    test('fires token-grammar-issue when leading token is followed by uppercase narrative word', () => {
+        const scenario = makeScenario();
+        scenario.options[0].outcomeSummary = '{the_player_country} Signed emergency customs protocol after overnight talks stabilized shipping lanes and reduced immediate market panic.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'token-grammar-issue')).toBe(true);
+    });
+});
+
+describe('auditScenario newsroom language validation', () => {
+    beforeEach(() => {
+        setAuditConfigForTests(makeAuditConfig());
+    });
+
+    afterEach(() => {
+        setAuditConfigForTests(null);
+    });
+
     test('rejects jargon such as bloc and gambit in player-facing text', () => {
         const issues = auditScenario(makeScenario(), 'bundle_economy');
 
         expect(issues.some((issue) => issue.rule === 'newsroom-jargon' && issue.message.includes('title'))).toBe(true);
         expect(issues.some((issue) => issue.rule === 'newsroom-jargon' && issue.message.includes('description'))).toBe(true);
         expect(issues.some((issue) => issue.rule === 'newsroom-jargon' && issue.message.includes('advisorFeedback'))).toBe(true);
+    });
+});
+
+describe('deterministicFix sentence condensing', () => {
+    beforeEach(() => {
+        setAuditConfigForTests(makeAuditConfig());
+    });
+
+    afterEach(() => {
+        setAuditConfigForTests(null);
+    });
+
+    test('condenses a 5-sentence description down to 3 sentences', () => {
+        const scenario = makeScenario();
+        scenario.description = 'A major crisis threatens economic stability. The central bank has issued warnings. Markets are falling rapidly. Investors have pulled out billions. Your cabinet must respond immediately.';
+        const result = deterministicFix(scenario);
+        expect(result.fixed).toBe(true);
+        expect(result.fixes.some(f => f.includes('condensed description'))).toBe(true);
+        const sentenceCount = (scenario.description.match(/[.!?]+/g) || []).length;
+        expect(sentenceCount).toBeLessThanOrEqual(3);
+    });
+
+    test('condenses a 4-sentence option text down to 3 sentences', () => {
+        const scenario = makeScenario();
+        scenario.options[0].text = 'You deploy emergency fiscal measures to stabilize the currency. The package includes temporary capital controls. Export subsidies will cushion the blow for domestic producers. Critics warn this approach may deter foreign investment in the medium term.';
+        const result = deterministicFix(scenario);
+        expect(result.fixed).toBe(true);
+        expect(result.fixes.some(f => f.includes('condensed option text'))).toBe(true);
+        const sentenceCount = (scenario.options[0].text.match(/[.!?]+/g) || []).length;
+        expect(sentenceCount).toBeLessThanOrEqual(3);
+    });
+
+    test('does not condense a 3-sentence description', () => {
+        const scenario = makeScenario();
+        const original = scenario.description;
+        const result = deterministicFix(scenario);
+        expect(result.fixes.some(f => f.includes('condensed description'))).toBe(false);
+        expect(scenario.description).toBe(original);
     });
 });

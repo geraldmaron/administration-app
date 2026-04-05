@@ -9,7 +9,7 @@ import {
   normalizeCountryIds,
   normalizeGenerationScope,
   normalizeRegionId,
-} from '@shared/generation-contract';
+} from '@/lib/generation-contract';
 
 interface SharedRequestFields {
   priority: 'low' | 'normal' | 'high';

@@ -151,7 +151,7 @@ class ScoringEngine {
         return "critical"
     }
 
-    private static func normalizeEffectValue(targetMetricId: String?, rawValue: Double?) -> Double {
+    private static func normalizeEffectValue(targetMetricId: String?, rawValue: Double?, countryScaleFactor: Double = 1.0) -> Double {
         let value = rawValue?.isFinite == true ? rawValue! : 0
         let sign: Double = value >= 0 ? 1 : -1
         let magnitude = abs(value)
@@ -165,7 +165,7 @@ class ScoringEngine {
         default:         chosen = range.critical
         }
         let jitter = chosen.0 + Double.random(in: 0...1) * (chosen.1 - chosen.0)
-        return (sign * jitter * 100).rounded() / 100
+        return (sign * jitter * countryScaleFactor * 100).rounded() / 100
     }
 
     private static func severityMultiplier(_ severity: SeverityLevel?, kind: String) -> Double {
@@ -258,13 +258,14 @@ class ScoringEngine {
         
         let scenario = state.currentScenario
         let metricsBefore = state.metrics
+        let scaleFactor = state.countryScaleFactor ?? 1.0
         
         newState.activeEffects = state.activeEffects
         newState.countries = state.countries
 
         if !option.effects.isEmpty {
             for effect in option.effects {
-                let normalizedValue = normalizeEffectValue(targetMetricId: effect.targetMetricId, rawValue: effect.value)
+                let normalizedValue = normalizeEffectValue(targetMetricId: effect.targetMetricId, rawValue: effect.value, countryScaleFactor: scaleFactor)
                 if Double.random(in: 0...1) <= effect.probability {
                     let jitteredValue = applyJitter(normalizedValue)
                     let activeEffect = ActiveEffect(
@@ -304,7 +305,7 @@ class ScoringEngine {
             var primaryEffects: [String: Double] = [:]
             for (metricId, value) in effectsMap {
                 let targetId = mapMetricNameToId(metricId)
-                let normalizedValue = normalizeEffectValue(targetMetricId: targetId, rawValue: value)
+                let normalizedValue = normalizeEffectValue(targetMetricId: targetId, rawValue: value, countryScaleFactor: scaleFactor)
                 primaryEffects[targetId] = normalizedValue
                 let activeEffect = ActiveEffect(
                     baseEffect: Effect(targetMetricId: targetId, value: applyJitter(normalizedValue), duration: 1, probability: 1, delay: nil),
@@ -376,9 +377,13 @@ class ScoringEngine {
                 relationshipChangesMap[countryId, default: 0] += delta
             }
         }
-        if let relationshipEffects = option.relationshipEffects {
-            for (countryId, delta) in relationshipEffects {
-                relationshipChangesMap[countryId, default: 0] += delta
+        if let roleEffects = option.relationshipEffects {
+            let playerCountry = newState.countries.first(where: { $0.id == (newState.countryId ?? "") })
+            for effect in roleEffects {
+                guard Double.random(in: 0...1) <= (effect.probability ?? 1.0) else { continue }
+                if let targetId = ScoringEngine.resolveRelationshipRole(effect.relationshipId, for: playerCountry) {
+                    relationshipChangesMap[targetId, default: 0] += effect.delta
+                }
             }
         }
 
@@ -392,12 +397,32 @@ class ScoringEngine {
             }
         }
 
+        // Passive geopolitical ripple: metric changes implicitly shift relationships with all
+        // countries that have a relevant role — independently probabilistic so each country
+        // may or may not react, and never uniformly.
+        if !option.effects.isEmpty {
+            let playerCountry = newState.countries.first(where: { $0.id == (newState.countryId ?? "") })
+            let ripple = ScoringEngine.computePassiveGeopoliticalRipple(
+                effects: option.effects,
+                playerCountry: playerCountry,
+                countries: newState.countries
+            )
+            for (countryId, delta) in ripple {
+                if let idx = newState.countries.firstIndex(where: { $0.id == countryId }) {
+                    var country = newState.countries[idx]
+                    let newRelationship = max(-100, min(100, country.diplomacy.relationship + delta))
+                    country.diplomacy = DiplomaticStats(relationship: newRelationship, alignment: country.diplomacy.alignment, tradeAgreements: country.diplomacy.tradeAgreements, tradeRelationships: country.diplomacy.tradeRelationships)
+                    newState.countries[idx] = country
+                }
+            }
+        }
+
         if let populationImpact = option.populationImpact {
             let severity = option.severity ?? state.currentScenario?.severity
             for impact in populationImpact {
                 if let idx = newState.countries.firstIndex(where: { $0.id == impact.countryId }) {
                     var country = newState.countries[idx]
-                    let baselinePop = Double(country.currentPopulation ?? country.attributes.population)
+                    let baselinePop = Double(country.resolvedPopulation)
                     let casualties = clampHumanImpact(population: baselinePop, requested: impact.casualties, severity: impact.severity ?? severity, kind: "casualty")
                     let displaced = clampHumanImpact(population: baselinePop, requested: impact.displaced, severity: impact.severity ?? severity, kind: "displaced")
                     let remaining = max(0, baselinePop - casualties)
@@ -748,6 +773,159 @@ class ScoringEngine {
         min(max(value, minVal), maxVal)
     }
 
+    // ---------------------------------------------------------------------------
+    // Passive Geopolitical Ripple
+    // ---------------------------------------------------------------------------
+
+    // Maps each metric to a set of role reactions: how each relationship role responds
+    // to a significant change in that metric. Factor sign encodes direction — positive
+    // means relationship moves with the metric (both improve together), negative means
+    // they move inversely (your military up → adversary relationship down).
+    private static let metricRelationshipReactions: [String: [(roleId: String, factor: Double, probability: Double, maxAbs: Double, variance: Double)]] = [
+        "metric_military": [
+            (roleId: "adversary",       factor: -0.18, probability: 0.65, maxAbs: 4.0, variance: 0.9),
+            (roleId: "border_rival",    factor: -0.22, probability: 0.70, maxAbs: 5.0, variance: 1.1),
+            (roleId: "regional_rival",  factor: -0.12, probability: 0.55, maxAbs: 3.0, variance: 0.7),
+            (roleId: "ally",            factor:  0.07, probability: 0.45, maxAbs: 2.0, variance: 0.5),
+            (roleId: "neutral",         factor: -0.04, probability: 0.25, maxAbs: 1.5, variance: 0.4),
+        ],
+        "metric_economy": [
+            (roleId: "trade_partner",   factor:  0.14, probability: 0.60, maxAbs: 3.5, variance: 0.8),
+            (roleId: "ally",            factor:  0.08, probability: 0.45, maxAbs: 2.5, variance: 0.6),
+            (roleId: "adversary",       factor: -0.07, probability: 0.40, maxAbs: 2.0, variance: 0.5),
+            (roleId: "neighbor",        factor:  0.04, probability: 0.30, maxAbs: 1.5, variance: 0.4),
+        ],
+        "metric_foreign_relations": [
+            (roleId: "adversary",       factor:  0.12, probability: 0.55, maxAbs: 3.5, variance: 0.7),
+            (roleId: "ally",            factor:  0.10, probability: 0.55, maxAbs: 3.0, variance: 0.6),
+            (roleId: "trade_partner",   factor:  0.09, probability: 0.50, maxAbs: 2.5, variance: 0.5),
+            (roleId: "neighbor",        factor:  0.07, probability: 0.40, maxAbs: 2.0, variance: 0.5),
+            (roleId: "neutral",         factor:  0.05, probability: 0.35, maxAbs: 1.5, variance: 0.4),
+        ],
+        "metric_public_order": [
+            (roleId: "neighbor",        factor:  0.08, probability: 0.50, maxAbs: 2.5, variance: 0.6),
+            (roleId: "border_rival",    factor: -0.05, probability: 0.45, maxAbs: 2.5, variance: 0.6),
+            (roleId: "adversary",       factor: -0.04, probability: 0.30, maxAbs: 2.0, variance: 0.5),
+            (roleId: "ally",            factor:  0.04, probability: 0.30, maxAbs: 1.5, variance: 0.4),
+        ],
+        "metric_democracy": [
+            (roleId: "ally",            factor:  0.06, probability: 0.35, maxAbs: 2.0, variance: 0.5),
+            (roleId: "trade_partner",   factor:  0.04, probability: 0.30, maxAbs: 1.5, variance: 0.4),
+            (roleId: "adversary",       factor: -0.04, probability: 0.25, maxAbs: 1.5, variance: 0.4),
+        ],
+        "metric_corruption": [
+            (roleId: "trade_partner",   factor: -0.09, probability: 0.45, maxAbs: 2.5, variance: 0.6),
+            (roleId: "ally",            factor: -0.07, probability: 0.40, maxAbs: 2.0, variance: 0.5),
+            (roleId: "adversary",       factor:  0.05, probability: 0.30, maxAbs: 1.5, variance: 0.4),
+        ],
+        "metric_sovereignty": [
+            (roleId: "border_rival",    factor: -0.13, probability: 0.60, maxAbs: 4.0, variance: 0.8),
+            (roleId: "adversary",       factor: -0.10, probability: 0.55, maxAbs: 3.0, variance: 0.7),
+            (roleId: "ally",            factor:  0.05, probability: 0.35, maxAbs: 2.0, variance: 0.5),
+        ],
+        "metric_trade": [
+            (roleId: "trade_partner",   factor:  0.10, probability: 0.50, maxAbs: 3.0, variance: 0.7),
+            (roleId: "neighbor",        factor:  0.05, probability: 0.35, maxAbs: 2.0, variance: 0.5),
+            (roleId: "adversary",       factor: -0.05, probability: 0.30, maxAbs: 1.5, variance: 0.4),
+        ],
+        "metric_crime": [
+            (roleId: "neighbor",        factor: -0.05, probability: 0.35, maxAbs: 2.0, variance: 0.5),
+            (roleId: "adversary",       factor: -0.04, probability: 0.25, maxAbs: 1.5, variance: 0.4),
+        ],
+    ]
+
+    // Returns ALL relationships matching the given role — unlike resolveRelationshipRole which
+    // picks only the strongest. Used so every adversary/ally/neighbor gets an independent reaction.
+    private static func resolveAllRelationshipsForRole(_ roleId: String, geo: GeopoliticalProfile) -> [CountryRelationship] {
+        switch roleId {
+        case "adversary":
+            return geo.adversaries
+        case "ally":
+            return geo.allies.filter { $0.type == "formal_ally" }
+        case "trade_partner", "partner":
+            return geo.allies.filter { $0.type == "strategic_partner" }
+        case "rival", "regional_rival":
+            return geo.adversaries.filter { $0.type == "rival" } + geo.neighbors.filter { $0.type == "rival" }
+        case "border_rival":
+            return geo.neighbors.filter { $0.sharedBorder && ["rival", "adversary", "conflict"].contains($0.type) }
+        case "neutral":
+            return (geo.allies + geo.neighbors).filter { $0.type == "neutral" }
+        case "neighbor", "nation":
+            return geo.neighbors
+        default:
+            return []
+        }
+    }
+
+    // Computes implicit relationship deltas caused by the metric changes a decision stages.
+    // Each country rolls its reaction probability independently, producing natural non-uniformity.
+    // Sensitivity is attenuated by current relationship depth — deeply adversarial countries
+    // react harder than distant ones.
+    private static func computePassiveGeopoliticalRipple(
+        effects: [Effect],
+        playerCountry: Country?,
+        countries: [Country]
+    ) -> [String: Double] {
+        var rippleMap: [String: Double] = [:]
+        guard let geo = playerCountry?.geopoliticalProfile else { return rippleMap }
+
+        // Aggregate per-turn signal for each metric (skip branch-specific effects)
+        var metricSignals: [String: Double] = [:]
+        for effect in effects where effect.targetBranchId == nil && (effect.targetBranchType ?? "").isEmpty {
+            guard Double.random(in: 0...1) <= effect.probability else { continue }
+            metricSignals[effect.targetMetricId, default: 0] += effect.value
+        }
+
+        for (metricId, signal) in metricSignals {
+            guard abs(signal) >= 0.5 else { continue }
+            guard let reactions = metricRelationshipReactions[metricId] else { continue }
+
+            for reaction in reactions {
+                let relationships = resolveAllRelationshipsForRole(reaction.roleId, geo: geo)
+                for rel in relationships {
+                    // Independent probability roll per country — not all react every time
+                    guard Double.random(in: 0...1) <= reaction.probability else { continue }
+
+                    // Deeper relationships are more sensitive to shifts in power/alignment
+                    let currentStrength = countries.first(where: { $0.id == rel.countryId })?.diplomacy.relationship ?? rel.strength
+                    let sensitivity = 0.4 + 0.6 * (abs(currentStrength) / 100.0)
+
+                    let baseDelta = signal * reaction.factor * sensitivity
+                    let noise = Double.random(in: -reaction.variance...reaction.variance)
+                    let rawDelta = baseDelta + noise
+                    let clampedDelta = max(-reaction.maxAbs, min(reaction.maxAbs, rawDelta))
+
+                    rippleMap[rel.countryId, default: 0] += clampedDelta
+                }
+            }
+        }
+
+        return rippleMap
+    }
+
+    private static func resolveRelationshipRole(_ role: String, for country: Country?) -> String? {
+        guard let geo = country?.geopoliticalProfile else { return nil }
+        switch role {
+        case "adversary":
+            return geo.adversaries.sorted { abs($0.strength) > abs($1.strength) }.first?.countryId
+        case "ally":
+            return geo.allies.filter { $0.type == "formal_ally" }.sorted { $0.strength > $1.strength }.first?.countryId
+        case "trade_partner", "partner":
+            return geo.allies.filter { $0.type == "strategic_partner" }.sorted { $0.strength > $1.strength }.first?.countryId
+        case "border_rival":
+            return geo.neighbors.filter { $0.sharedBorder && ["rival", "adversary", "conflict"].contains($0.type) }.sorted { $0.strength > $1.strength }.first?.countryId
+        case "rival", "regional_rival":
+            return (geo.adversaries.filter { $0.type == "rival" } + geo.neighbors.filter { $0.type == "rival" })
+                .sorted { $0.strength > $1.strength }.first?.countryId
+        case "neutral":
+            return (geo.allies + geo.neighbors).filter { $0.type == "neutral" }.sorted { $0.strength > $1.strength }.first?.countryId
+        case "neighbor", "nation":
+            return geo.neighbors.sorted { $0.strength > $1.strength }.first?.countryId
+        default:
+            return nil
+        }
+    }
+
     static func cleanupExpiredConsequences(state: inout GameState) {
         guard let pending = state.pendingConsequences else { return }
         state.pendingConsequences = pending.filter { $0.triggerTurn >= state.turn }
@@ -897,6 +1075,16 @@ class ScoringEngine {
                 }
             }
             
+            let partyBias: Double = {
+                guard let party = newState.countryParties.first(where: { $0.isRuling }),
+                      let biases = party.metricBiases,
+                      let bias = biases[effect.baseEffect.targetMetricId] else { return 0.0 }
+                return bias * 0.15
+            }()
+            if partyBias != 0 {
+                effectValue *= (1 + partyBias)
+            }
+            
             let cabinetOffset = effectValue - baseEffect
             cabinetOffsets[effect.baseEffect.targetMetricId] = (cabinetOffsets[effect.baseEffect.targetMetricId] ?? 0) + cabinetOffset
             baseEffectValues[effect.baseEffect.targetMetricId] = (baseEffectValues[effect.baseEffect.targetMetricId] ?? 0) + baseEffect
@@ -951,8 +1139,16 @@ class ScoringEngine {
             }
             
             var delta = metricDeltas[metricId] ?? 0
+
+            // Apply per-country metric sensitivity multiplier (0–2, default 1.0)
+            if let sensitivity = newState.countries.first(where: { $0.id == newState.countryId })?
+                .gameplayProfile?.metricSensitivities?[metricId] {
+                let clamped = max(0.1, min(2.0, sensitivity))
+                delta *= clamped
+            }
+
             let baseDelta = delta
-            
+
             // ADDED: Strategic plan drift (web scoring.ts lines 1132-1147)
             if let plan = newState.strategicPlan, let targetMetrics = plan.targetMetrics as [String: Double]?,
                let targetValue = targetMetrics[metricId],
@@ -1359,6 +1555,23 @@ class ScoringEngine {
             let foreignPenalty = (35 - foreignRelations) * 0.30
             let fJitter = (Double.random(in: 0...1) * 0.04) - 0.02
             base -= (foreignPenalty + fJitter) * 0.5
+        }
+
+        // Governing party bias — adjusts approval based on how well current metric values
+        // align with the ruling party's base priorities. A party with high economy bias scores
+        // more approval when the economy is strong; a party with high environment bias scores
+        // more when the environment metric is high. Contribution capped at ±8 to remain a
+        // modifier rather than the dominant driver.
+        if let governingParty = state.countryParties.first(where: { $0.isRuling }),
+           let biases = governingParty.metricBiases {
+            var partyAlignmentScore = 0.0
+            for (metricId, bias) in biases {
+                let value = state.metrics[metricId] ?? 50.0
+                let adjusted = isInverseMetric(metricId) ? (100 - value) : value
+                // bias is -1 to +1; metric deviation from neutral (50) weighted by bias strength
+                partyAlignmentScore += (adjusted - 50.0) * bias
+            }
+            base += max(-8.0, min(8.0, partyAlignmentScore * 0.08))
         }
 
         // Diplomatic/military shock — persistent approval pressure from hostile diplomatic or

@@ -85,6 +85,15 @@ class CandidateGenerator {
         return "\(first) \(last)"
     }
 
+    // MARK: - Public API — standalone name generation
+
+    /// Generate a party leader name for a given country region using the name pools from AppConfig.
+    /// Falls back to a generic name if no pool exists for the region.
+    static func generateLeaderName(forRegion region: String?, config: AppConfig?) -> String {
+        let rng = RNG(seed: nil)
+        return pickNameForRegion(rng, region: region, config: config, gender: .nonbinary)
+    }
+
     // MARK: - Institution picking
 
     private static func pickInstitutionForRegion(_ rng: RNG, region: String?, config: AppConfig?) -> String {

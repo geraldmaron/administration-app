@@ -12,6 +12,8 @@ function toSummary(id: string, data: FirebaseFirestore.DocumentData): JobSummary
     bundles: data.bundles ?? [],
     count: data.count ?? 0,
     requestedAt: data.requestedAt?.toDate?.()?.toISOString() ?? new Date(0).toISOString(),
+    startedAt: data.startedAt?.toDate?.()?.toISOString(),
+    completedAt: data.completedAt?.toDate?.()?.toISOString(),
     progress: data.progress,
     completedCount: data.completedCount,
     failedCount: data.failedCount,
@@ -24,6 +26,8 @@ function toSummary(id: string, data: FirebaseFirestore.DocumentData): JobSummary
     currentMessage: data.currentMessage,
     lastHeartbeatAt: data.lastHeartbeatAt?.toDate?.()?.toISOString(),
     executionTarget: data.executionTarget,
+    requestedBy: data.requestedBy,
+    modelConfig: data.modelConfig,
     eventCount: data.eventCount,
   };
 }

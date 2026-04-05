@@ -57,11 +57,12 @@ export async function GET(request: NextRequest) {
   const countriesById = Object.fromEntries(
     countriesSnap.docs.map((doc) => [doc.id, normalizeCountryDoc({ id: doc.id, ...doc.data() } as CountryDoc)])
   );
-  const { eligible, filtered } = simulateScenarioLibrary(scenarios, country, countriesById, metrics);
+  const { eligible, filtered, context } = simulateScenarioLibrary(scenarios, country, countriesById, metrics);
 
   return NextResponse.json({
     country: { id: country.id, name: country.name, region: country.region, governmentCategory: country.geopoliticalProfile?.governmentCategory, tags: country.geopoliticalProfile?.tags ?? [] },
     metrics,
+    context,
     totalScenarios: scenarios.length,
     eligibleCount: eligible.length,
     filteredCount: filtered.length,

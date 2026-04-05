@@ -8,6 +8,7 @@ const config: Config = {
         background: 'var(--background)',
         'background-elevated': 'var(--background-elevated)',
         'background-muted': 'var(--background-muted)',
+        'background-surface': 'var(--background-surface)',
         foreground: 'var(--foreground)',
         'foreground-muted': 'var(--foreground-muted)',
         'foreground-subtle': 'var(--foreground-subtle)',
@@ -24,6 +25,7 @@ const config: Config = {
         DEFAULT: 'var(--radius)',
       },
       fontFamily: {
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Inter', 'Roboto', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
     },

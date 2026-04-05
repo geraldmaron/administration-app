@@ -834,7 +834,7 @@ Hard country, government-category, geography, relationship, and geopolitical exc
 
 ### Tier 5 — AI Service
 
-`aiService.generateScenario(context:)` — real-time generation via the configured model provider path. OpenAI is the canonical production default; LM Studio is local-only.
+`aiService.generateScenario(context:)` — real-time generation via the configured model provider path. OpenAI is the canonical production default; local generation now uses the Ollama provider path.
 
 ### Tier 6 — Hard Fallback
 
@@ -972,7 +972,7 @@ Its job is **not** to excuse an invalid scenario premise. A border-war scenario 
 
 **Executive**: `{leader_title}`, `{vice_leader}`
 
-**Legislative**: `{legislature}`, `{upper_house}`, `{lower_house}`, `{ruling_party}`
+**Legislative**: `{legislature}`, `{upper_house}`, `{lower_house}`, `{governing_party}`
 
 **Judicial**: `{judicial_role}`, `{chief_justice_role}`, `{prosecutor_role}`
 
@@ -980,7 +980,7 @@ Its job is **not** to excuse an invalid scenario premise. A border-war scenario 
 
 **Intelligence**: `{intelligence_agency}`, `{domestic_intelligence}`, `{security_council}`
 
-**Military**: `{military_general}`, `{military_branch}`, `{special_forces}`, `{naval_commander}`, `{air_commander}`
+**Military**: `{armed_forces_name}`, `{military_chief_title}`, `{special_forces}`, `{ground_forces_branch}`, `{maritime_branch}`, `{air_branch}`, `{cyber_branch}`, `{intel_branch}`, `{strategic_nuclear_branch}`, `{paramilitary_branch}`, `{coalition_name}`
 
 **Economic**: `{central_bank}`, `{currency}`, `{stock_exchange}`, `{sovereign_fund}`, `{state_enterprise}`, `{commodity_name}`
 
@@ -1496,26 +1496,41 @@ The generation pipeline exists to produce scenarios that are:
 
 | Role | Production Default | Local Default | Notes |
 |------|--------------------|---------------|-------|
-| Architect | `gpt-4o-mini` | `lmstudio:*` | Concept seeding |
-| Drafter | `gpt-4o-mini` | `lmstudio:*` | Scenario drafting |
-| Repair | `gpt-4o-mini` | `lmstudio:*` | Local repair stays on LM Studio |
-| Content quality | `gpt-4o-mini` | `lmstudio:*` | Quality gate |
-| Narrative review | `gpt-4o-mini` | `lmstudio:*` | Editorial gate |
-| Embeddings | `text-embedding-3-small` | `lmstudio:*` | Local semantic dedup should remain local |
+| Architect | `gpt-4o-mini` | `ollama:*` | Concept seeding |
+| Drafter | `gpt-4o-mini` | `ollama:*` | Scenario drafting |
+| Advisor | `gpt-4o-mini` | `ollama:*` | Advisor-feedback phase |
+| Repair | `gpt-4o-mini` | `ollama:*` | Local repair stays on the local Ollama family |
+| Content quality | `gpt-4o-mini` | `ollama:*` | Quality gate |
+| Narrative review | `gpt-4o-mini` | `ollama:*` | Editorial gate |
+| Embeddings | `text-embedding-3-small` | OpenAI-only in current live path | Ollama jobs currently skip embedding-based dedup |
 
-LM Studio is the required local and emulator-only path across the full generation pipeline. OpenAI remains the canonical production path for authoritative saved content.
+Current implementation note:
+
+1. The approved docs still reference LM Studio in some places, but the live local-provider contract in code is now `ollama:*`.
+2. OpenAI remains the canonical production path for authoritative saved content.
+3. Local/Ollama runs use the same phase structure, but some downstream validation behavior differs where OpenAI-only embeddings are still required.
 
 ### 23.3 Canonical Pipeline Stages
 
-1. **Inventory planning**: Identify deficits by `bundle x scopeTier x region-or-cluster x severity x difficulty` so generation is driven by content gaps, not raw volume.
-2. **Concept seeding**: Produce scenario premises that already respect country realism, region realism, and state realism.
-3. **Blueprint planning**: Expand the premise into a structure that defines the policy dilemma, the main actors, the likely tradeoffs, and the intended consequence lane.
-4. **Act drafting**: Produce the full scenario JSON with title, description, 3 options, effects, advisor feedback, and outcome package.
-5. **Audit and repair**: Reject or repair outputs that violate schema, realism, token, or narrative rules.
-6. **Scope integrity review**: Confirm that the saved scenario actually belongs to its declared `scopeTier`, `scopeKey`, region, cluster, or exclusivity contract.
-7. **Semantic dedup**: Compare the candidate against relevant saved scenarios so the library grows in breadth rather than near-duplicates.
-8. **Storage**: Write passing scenarios and acceptance metadata to Firestore.
-9. **Bundle export and runtime availability**: Make valid scenarios available to the runtime bundle system without weakening country or state eligibility rules.
+Live generation currently runs in this order:
+
+1. **Concept seeding**: Produce scenario premises that already respect country realism, region realism, and state realism.
+2. **Concept diversification**: Deduplicate and diversify concept seeds before expansion when the local path supports it.
+3. **Loop-length planning**: Decide whether the concept should become a standalone scenario or a multi-act chain.
+4. **Draft path selection**: Route the concept either through the standard direct-draft path or the longer structured path, depending on feature flags and generation mode.
+5. **Act drafting**: Produce the full scenario JSON with title, description, 3 options, effects, advisor feedback, and outcome package.
+6. **Deterministic normalization and audit**: Normalize tokens/text, apply deterministic fixes, infer missing structural metadata, and run schema/realism/token checks.
+7. **Grounded-effects repair and validation**: Reconcile narrative consequence language with effect magnitudes and append any unresolved grounding issues to audit output.
+8. **Targeted repair**: Apply deterministic, heuristic, and optional LLM/agentic repair to scenarios that remain below threshold but are still salvageable.
+9. **Editorial quality gates**: Run content-quality and narrative-review scoring when enabled for the job path.
+10. **Acceptance decision**: Accept only if audit, quality, and narrative gates all pass the current policy.
+11. **Semantic dedup**: Compare accepted candidates against saved scenarios when embedding-backed dedup is available for the active model family.
+12. **Storage and export availability**: Write passing scenarios and acceptance metadata to Firestore, then expose them to bundle/export tooling.
+
+Current implementation note:
+
+1. Inventory planning and deficit-driven generation remain the intended target state, but the live generation path is still primarily request-driven rather than fully deficit-planned.
+2. Blueprint planning is no longer a guaranteed stage for every concept; the live system can bypass it through the standard direct-draft path.
 
 ### 23.4 Architect Concept Schema
 
@@ -1597,7 +1612,7 @@ Rules:
 2. `clusterId` is required for cluster jobs.
 3. `applicable_countries` should be used mainly for exclusive and narrow news jobs.
 4. Generation planning should fill inventory deficits, not raw bundle counts.
-5. Local `modelConfig` should keep all supported phases on `lmstudio:*` models and fail fast instead of silently routing local work to OpenAI.
+5. Local `modelConfig` should keep all supported phases on `ollama:*` models and fail fast instead of silently routing local work to OpenAI.
 
 ### 23.7 Generation Config (`world_state/generation_config`)
 
@@ -1616,7 +1631,7 @@ narrative_review_enabled: true
 
 ### 23.8 Deduplication
 
-Cosine similarity on `text-embedding-3-small` vectors remains the canonical dedup mechanism.
+Cosine similarity on `text-embedding-3-small` vectors remains the canonical production dedup mechanism.
 
 Target behavior:
 
@@ -1624,7 +1639,13 @@ Target behavior:
 2. `regional` scenarios compare against regional and universal content in the same bundle.
 3. `cluster` scenarios compare against same-cluster content and broader-scope analogs.
 4. `exclusive` scenarios compare against same-country content and nearby broad-scope analogs.
-5. Local generation should keep dedup local as well, using an LM Studio embedding model or a documented local-only fallback.
+5. Local generation should keep dedup local as well, using an Ollama-compatible embedding model or a documented local-only fallback.
+
+Current implementation note:
+
+1. OpenAI-backed embedding dedup is live.
+2. Ollama jobs currently skip embedding-based semantic dedup rather than routing those calls back to OpenAI.
+3. This means local generation is still weaker at portfolio-level duplicate prevention than the canonical target state.
 
 ### 23.9 Execution Modes
 
@@ -1635,7 +1656,7 @@ Target behavior:
 | CLI | `functions/src/tools/generate-bundle.ts` |
 | Daily news batch | `news-to-scenarios.ts` |
 
-### 23.10 Scope Prompt Modes (Pending Implementation)
+### 23.10 Scope Prompt Modes (Partially Implemented)
 
 Prompt overlays should branch by `scopeTier`:
 
@@ -1644,14 +1665,20 @@ Prompt overlays should branch by `scopeTier`:
 3. `cluster`: inject shared political-economic structure for the target cluster.
 4. `exclusive`: require `exclusivityReason` and reject content that can be generalized.
 
+Current implementation note:
+
+1. Scope metadata is written into accepted scenarios during enrichment.
+2. Scope-aware prompt overlays exist, but the wider scope-aware planning, retrieval, and runtime-selection model is still incomplete.
+
 ### 23.11 Current Implementation Notes
 
 Current implementation gaps that should remain visible during the rebuild:
 
 1. `GenerationJobData` is still primarily bundle-oriented.
 2. `training_scenarios` retrieval is still bundle plus score driven.
-3. `scenario_embeddings` dedup is currently bundle-scoped and OpenAI-based.
-4. Local LM Studio generation therefore requires either a local embedding model or an explicit local-only fallback dedup strategy.
+3. `scenario_embeddings` dedup is currently OpenAI-based and not yet equivalent across local Ollama runs.
+4. Scope-aware runtime selection is still not the authoritative live selector in the game runtime.
+5. Rendered-output QA after token substitution is still weaker than pre-save audit of the tokenized source text.
 
 ---
 
@@ -1732,7 +1759,14 @@ An additional audit family should validate scenario scope:
 ### 24.6 Auto-Fix Passes
 
 - **Deterministic fixes**: clamp values, fix duration, fill missing defaults.
-- **AI-assisted fixes**: `llm_repair_enabled = true` → re-prompt Drafter to generate missing text fields (up to 2 attempts).
+- **Heuristic fixes**: targeted structural cleanup after deterministic normalization.
+- **AI-assisted fixes**: `llm_repair_enabled = true` → targeted repair actions against specific failing fields.
+- **Agentic repair**: optional multi-step repair path when `agentic_repair_enabled = true`.
+
+Current implementation note:
+
+1. The live repair path is no longer just “re-prompt the drafter.” It now includes deterministic fixes, heuristic fixes, grounded-effects correction, targeted LLM patching, and optional agentic repair.
+2. Repair remains bounded by configured attempt limits and acceptance thresholds.
 
 ### 24.7 Notable Rule: Voice Separation
 
@@ -1815,7 +1849,7 @@ Expand:
 1. scenario metadata for scope-tier architecture
 2. generation jobs for scope-targeted planning
 3. golden-example metadata and retrieval for scope diversity
-4. dedup strategy so local LM Studio flows have explicit behavior
+4. dedup strategy so local Ollama flows have explicit behavior
 
 Clean up:
 

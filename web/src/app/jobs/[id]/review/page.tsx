@@ -6,6 +6,7 @@ import Link from 'next/link';
 import CommandPanel from '@/components/CommandPanel';
 import BundleBadge from '@/components/BundleBadge';
 import MetricEffect from '@/components/MetricEffect';
+import ScreenHeader from '@/components/ScreenHeader';
 import type { PendingScenario } from '@/lib/types';
 
 const OPTION_LABELS = ['A', 'B', 'C'];
@@ -40,12 +41,12 @@ function ScenarioCard({
           <div className="mb-1 flex flex-wrap items-center gap-2">
             {scenario.bundle ? <BundleBadge bundle={scenario.bundle} /> : null}
             {scenario.difficulty != null ? (
-              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">
+              <span className="text-xs font-medium text-[var(--foreground-subtle)]">
                 Diff {scenario.difficulty}
               </span>
             ) : null}
             {scenario.auditScore != null ? (
-              <span className={`text-[10px] font-mono uppercase tracking-[0.14em] ${scenario.auditScore >= 80 ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`}>
+              <span className={`text-xs font-medium ${scenario.auditScore >= 80 ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`}>
                 Audit {scenario.auditScore}
               </span>
             ) : null}
@@ -55,13 +56,23 @@ function ScenarioCard({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="shrink-0 text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-muted)] hover:text-foreground"
+          className="shrink-0 text-xs font-medium text-[var(--foreground-muted)] hover:text-foreground"
         >
           {expanded ? 'Collapse' : 'Expand'}
         </button>
       </div>
 
       <p className="mb-3 text-sm leading-relaxed text-[var(--foreground-muted)]">{scenario.description}</p>
+
+      {scenario.metadata?.requires && Object.keys(scenario.metadata.requires).length > 0 ? (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {Object.entries(scenario.metadata.requires).map(([key, val]) => (
+            <span key={key} className="rounded border border-[var(--accent-primary)]/30 px-2 py-0.5 text-[10px] font-mono text-[var(--accent-primary)]">
+              {key.replace(/_/g, ' ')}{typeof val === 'string' ? `: ${val}` : ''}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       {scenario.conditions && scenario.conditions.length > 0 ? (
         <div className="mb-3 flex flex-wrap gap-2">
@@ -78,11 +89,11 @@ function ScenarioCard({
           {scenario.options.map((option, i) => (
             <div key={option.id ?? i}>
               <div className="mb-2 flex items-center gap-2">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-[8px] border border-[var(--border)] bg-[rgba(25,105,220,0.14)] text-[10px] font-mono font-bold text-[var(--accent-primary)]">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-[8px] border border-[var(--border)] bg-[var(--accent-muted)] text-[10px] font-mono font-bold text-[var(--accent-primary)]">
                   {OPTION_LABELS[i] ?? i + 1}
                 </span>
                 {option.label ? (
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--foreground-subtle)]">{option.label}</span>
+                  <span className="text-xs font-medium text-[var(--foreground-subtle)]">{option.label}</span>
                 ) : null}
               </div>
               <p className="mb-2 text-sm leading-relaxed text-[var(--foreground-muted)]">{option.text}</p>
@@ -90,6 +101,20 @@ function ScenarioCard({
                 <div className="space-y-1">
                   {option.effects.map((effect, ei) => (
                     <MetricEffect key={ei} effect={effect} />
+                  ))}
+                </div>
+              ) : null}
+              {option.relationshipEffects && option.relationshipEffects.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {option.relationshipEffects.map((re, ri) => (
+                    <span
+                      key={ri}
+                      className={`rounded border px-2 py-0.5 text-[10px] font-mono ${
+                        re.delta < 0 ? 'border-[var(--error)]/40 text-[var(--error)]' : 'border-[var(--success)]/40 text-[var(--success)]'
+                      }`}
+                    >
+                      {re.relationshipId} {re.delta > 0 ? `+${re.delta}` : re.delta}
+                    </span>
                   ))}
                 </div>
               ) : null}
@@ -194,21 +219,17 @@ export default function ReviewPage() {
 
   return (
     <div className="mx-auto max-w-[1200px]">
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="section-kicker mb-2">Dry Run Review</div>
-          <h1 className="text-2xl font-bold text-foreground">Job {jobId.slice(0, 8)}</h1>
-          <p className="mt-1 text-sm text-[var(--foreground-muted)]">
-            {scenarios.length} scenario{scenarios.length === 1 ? '' : 's'} pending review ·{' '}
-            {selected.size} selected for acceptance
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
+      <ScreenHeader
+        section="Content Operations"
+        eyebrow="Review"
+        title={`Job ${jobId.slice(0, 8)}`}
+        subtitle={`${scenarios.length} scenario${scenarios.length === 1 ? '' : 's'} pending review · ${selected.size} selected for acceptance`}
+        actions={
           <Link href={`/jobs/${jobId}`} className="btn btn-ghost">
             Back to Job
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       {error ? (
         <CommandPanel tone="danger" className="mb-6 p-4 text-sm text-[var(--error)]">
@@ -229,7 +250,7 @@ export default function ReviewPage() {
         </CommandPanel>
       ) : (
         <>
-          <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="sticky top-4 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background-elevated)]/95 p-3 backdrop-blur">
             <button type="button" onClick={toggleAll} className="btn btn-ghost">
               {allSelected ? 'Deselect All' : 'Select All'}
             </button>

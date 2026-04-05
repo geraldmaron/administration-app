@@ -10,16 +10,17 @@
 import * as admin from 'firebase-admin';
 import { onRequest } from 'firebase-functions/v2/https';
 import * as logger from 'firebase-functions/logger';
-import { generateScenarios, getGenerationConfig, setEngineEventHandler } from './scenario-engine';
+import { generateScenarios, getGenerationConfig, addEngineEventHandler, removeEngineEventHandler } from './scenario-engine';
 import { saveScenario, getActiveBundleCount } from './storage';
 import { isValidBundleId, type BundleId } from './data/schemas/bundleIds';
 import { normalizeGenerationScopeInput } from './lib/generation-scope';
-import { hasMeaningfulModelConfig, isOllamaGeneration } from './lib/generation-models';
+import { hasMeaningfulModelConfig, isOllamaGeneration, normalizeModelConfig } from './lib/generation-models';
 import type {
-    ScenarioExclusivityReason,
-    ScenarioScopeTier,
-    ScenarioSourceKind,
-} from './types';
+    GenerationModelConfig,
+    GenerationNewsContextItem,
+    GenerationScopeFields,
+    GenerationMode,
+} from './shared/generation-contract';
 
 // ---------------------------------------------------------------------------
 // Auth helpers (same contract as index.ts)
@@ -38,7 +39,10 @@ function readBearerToken(headerValue?: string): string | undefined {
 
 function isLocalRequest(hostname?: string, forwardedHost?: string): boolean {
     const candidates = [hostname, forwardedHost].filter((v): v is string => Boolean(v));
-    return candidates.some((v) => v.startsWith('localhost') || v.startsWith('127.0.0.1'));
+    return candidates.some((value) => {
+        const normalized = value.split(':', 1)[0]?.toLowerCase() ?? value.toLowerCase();
+        return normalized === 'localhost' || normalized === '127.0.0.1' || normalized.endsWith('.localhost');
+    });
 }
 
 function isAuthorized(req: { get(name: string): string | undefined; hostname?: string }): boolean {
@@ -58,31 +62,15 @@ function parseBody<T>(raw: unknown): T {
 // processGenerationBundle
 // ---------------------------------------------------------------------------
 
-export interface ProcessBundleBody {
+export interface ProcessBundleBody extends GenerationScopeFields {
     jobId: string;
     bundle: string;
     count: number;
-    mode?: 'manual' | 'news' | 'blitz';
+    mode?: GenerationMode;
     lowLatencyMode?: boolean;
-    scopeTier?: ScenarioScopeTier;
-    scopeKey?: string;
-    region?: string;
-    regions?: string[];
-    applicable_countries?: string[];
-    sourceKind?: ScenarioSourceKind;
-    exclusivityReason?: ScenarioExclusivityReason;
-    clusterId?: string;
-    modelConfig?: {
-        architectModel?: string;
-        drafterModel?: string;
-        advisorModel?: string;
-        repairModel?: string;
-        contentQualityModel?: string;
-        narrativeReviewModel?: string;
-        embeddingModel?: string;
-    };
+    modelConfig?: GenerationModelConfig;
     dryRun?: boolean;
-    newsContext?: Array<{ title: string; link: string; snippet?: string; source: string; pubDate: string }>;
+    newsContext?: GenerationNewsContextItem[];
     preSeededConcepts?: Array<{
         concept: string;
         theme: string;
@@ -102,7 +90,7 @@ export interface BundleResult {
     errors: Array<{ id?: string; bundle: string; error: string }>;
     skipped: boolean;
     skipReason?: string;
-    tokenSummary?: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number };
+    tokenSummary?: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number; conceptCount?: number; totalDurationMs?: number };
 }
 
 function validateBundleBody(body: ProcessBundleBody): { ok: true } | { ok: false; error: string } {
@@ -113,7 +101,8 @@ function validateBundleBody(body: ProcessBundleBody): { ok: true } | { ok: false
 }
 
 export async function executeGenerationBundle(body: ProcessBundleBody): Promise<BundleResult> {
-    const { jobId, count, mode, lowLatencyMode, modelConfig, dryRun, newsContext } = body;
+    const { jobId, count, mode, lowLatencyMode, dryRun, newsContext } = body;
+    const modelConfig = normalizeModelConfig(body.modelConfig as Record<string, unknown>);
     const bundle = body.bundle as BundleId;
 
     const scopeResult = normalizeGenerationScopeInput({
@@ -165,14 +154,14 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
     const errors: Array<{ id?: string; bundle: string; error: string }> = [];
     let completedCount = 0;
     let failedCount = 0;
-    let bundleTokenSummary: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number } | undefined;
+    let bundleTokenSummary: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number; conceptCount?: number; totalDurationMs?: number } | undefined;
 
     const jobSnap = await jobRef.get();
     const jobModelConfig = jobSnap.data()?.modelConfig;
     const effectiveModelConfig = hasMeaningfulModelConfig(modelConfig)
         ? modelConfig
         : (hasMeaningfulModelConfig(jobModelConfig) ? jobModelConfig : modelConfig);
-    const effectiveModelUsed = effectiveModelConfig?.drafterModel ?? 'gpt-4o-mini';
+    const effectiveModelUsed = effectiveModelConfig?.drafterModel ?? 'unknown';
     const provenance = {
         jobId,
         executionTarget: jobSnap.data()?.executionTarget ?? 'n8n',
@@ -185,8 +174,9 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
     const THROTTLED_CODES = new Set(['llm_request', 'llm_response']);
     let lastThrottledWriteMs = 0;
     const THROTTLE_INTERVAL_MS = 3000;
+    let failedEventWrites = 0;
 
-    setEngineEventHandler((event) => {
+    const bundleEventHandler = (event: import('./lib/model-providers').ModelEvent) => {
         const now = Date.now();
         if (THROTTLED_CODES.has(event.code) && now - lastThrottledWriteMs < THROTTLE_INTERVAL_MS) return;
         if (THROTTLED_CODES.has(event.code)) lastThrottledWriteMs = now;
@@ -202,9 +192,27 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
                 lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
                 eventCount: admin.firestore.FieldValue.increment(1),
             }, { merge: true });
-        }).catch(() => { /* never throw from event emission */ });
+        }).catch((err) => {
+            failedEventWrites++;
+            logger.warn(`[processGenerationBundle] Event write failed (non-fatal, total=${failedEventWrites}): ${err?.message ?? err}`);
+            jobRef.set({
+                lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true }).catch((hbErr) => {
+                logger.warn(`[processGenerationBundle] Heartbeat fallback also failed: ${hbErr?.message ?? hbErr}`);
+            });
+        });
         pendingEventWrites.push(write);
-    });
+    };
+    addEngineEventHandler(bundleEventHandler);
+
+    const HEARTBEAT_INTERVAL_MS = 30_000;
+    const heartbeatTimer = setInterval(() => {
+        jobRef.set({
+            lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true }).catch((err) => {
+            logger.warn(`[processGenerationBundle] Heartbeat write failed: ${err?.message ?? err}`);
+        });
+    }, HEARTBEAT_INTERVAL_MS);
 
     const savedByCallback = new Set<string>();
     const erroredByCallback = new Set<string>();
@@ -243,6 +251,13 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
         }
     };
 
+    const JOB_TIMEOUT_MS = 500_000;
+    const abortController = new AbortController();
+    const abortTimer = setTimeout(() => {
+        logger.warn(`[processGenerationBundle] Job timeout (${JOB_TIMEOUT_MS / 1000}s) reached for ${bundle} — aborting gracefully`);
+        abortController.abort();
+    }, JOB_TIMEOUT_MS);
+
     try {
         const genResult = await generateScenarios({
             mode: mode ?? 'manual',
@@ -259,6 +274,7 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
             ...(newsContext?.length ? { newsContext } : {}),
             ...(effectiveModelConfig ? { modelConfig: effectiveModelConfig } : {}),
             ...(lowLatencyMode ? { lowLatencyMode: true } : {}),
+            abortSignal: abortController.signal,
             ...(body.preSeededConcepts?.length ? { preSeededConcepts: body.preSeededConcepts } : {}),
             onAttemptFailed: ({ attempt, maxAttempts, score, topIssues }) => {
                 logger.warn(`[processGenerationBundle] ${bundle} attempt ${attempt}/${maxAttempts}: score ${score} — ${topIssues.slice(0, 3).join('; ')}`);
@@ -291,6 +307,20 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
 
         const fallbackCompletedIds = completedScenarioIds.filter(id => !savedByCallback.has(id));
         const fallbackErrors = errors.filter(e => e.id !== undefined && !erroredByCallback.has(e.id));
+
+        // If generation ran but produced nothing (all scenarios rejected by audit),
+        // record the unaccounted count as failures so jobs don't silently show 0/0.
+        const totalAccountedFor = completedCount + failedCount;
+        let auditRejectCount = 0;
+        const pendingFailErrors: Array<{ id?: string; bundle: string; error: string }> = [...fallbackErrors];
+        if (totalAccountedFor < count && genResult.scenarios.length === 0) {
+            auditRejectCount = count - totalAccountedFor;
+            failedCount += auditRejectCount;
+            pendingFailErrors.push({ bundle, error: `${auditRejectCount} scenario(s) rejected — audit score below threshold` });
+            logger.warn(`[processGenerationBundle] ${bundle}: ${auditRejectCount} scenario(s) rejected by audit, none saved`);
+        }
+        const pendingFailCount = fallbackErrors.length + auditRejectCount;
+
         await jobRef.update({
             currentPhase: 'done',
             currentMessage: `${bundle}: ${completedCount} saved, ${failedCount} failed`,
@@ -299,10 +329,11 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
                 completedCount: admin.firestore.FieldValue.increment(fallbackCompletedIds.length),
                 savedScenarioIds: admin.firestore.FieldValue.arrayUnion(...fallbackCompletedIds),
             } : {}),
-            ...(fallbackErrors.length > 0 ? {
-                failedCount: admin.firestore.FieldValue.increment(fallbackErrors.length),
-                errors: admin.firestore.FieldValue.arrayUnion(...fallbackErrors),
+            ...(pendingFailCount > 0 ? {
+                failedCount: admin.firestore.FieldValue.increment(pendingFailCount),
+                errors: admin.firestore.FieldValue.arrayUnion(...pendingFailErrors),
             } : {}),
+            ...(failedEventWrites > 0 ? { failedEventWrites } : {}),
         });
 
     } catch (error: unknown) {
@@ -317,7 +348,9 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
             failedCount: admin.firestore.FieldValue.increment(count),
         });
     } finally {
-        setEngineEventHandler(null);
+        clearTimeout(abortTimer);
+        clearInterval(heartbeatTimer);
+        removeEngineEventHandler(bundleEventHandler);
         await Promise.allSettled(pendingEventWrites);
     }
 
@@ -335,6 +368,7 @@ export const processGenerationBundle = onRequest({
     cors: false,
     timeoutSeconds: 540,
     memory: '1GiB',
+    maxInstances: 4,
     secrets: ['GENERATION_INTAKE_SECRET', 'OPENAI_API_KEY'],
 }, async (request, response) => {
     if (request.method !== 'POST') {
@@ -430,6 +464,13 @@ export const updateJobProgress = onRequest({
 
     if (status === 'completed' || status === 'failed' || status === 'cancelled') {
         update.completedAt = admin.firestore.FieldValue.serverTimestamp();
+    }
+
+    if (status === 'completed' || status === 'pending_review') {
+        update.progress = 100;
+        update.currentBundle = admin.firestore.FieldValue.delete();
+        update.currentPhase = status;
+        update.currentMessage = `Job ${status}: ${completedCount ?? 0} saved, ${failedCount ?? 0} failed`;
     }
 
     await admin.firestore().collection('generation_jobs').doc(jobId).update(update);

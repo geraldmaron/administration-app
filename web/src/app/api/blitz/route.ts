@@ -187,6 +187,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const effectiveModelConfig = hasMeaningfulModelConfig(modelConfig)
+      ? modelConfig
+      : await resolveDefaultModelConfig();
+
     const inventory = await fetchInventory(countries);
 
     const plan = buildBlitzPlan(
@@ -198,15 +202,12 @@ export async function POST(request: NextRequest) {
       totalScenarios,
       slots.available,
       maxJobs,
+      { modelConfig: effectiveModelConfig },
     );
 
     if (plan.plannedJobs.length === 0) {
       return NextResponse.json({ jobIds: [], message: 'No deficits found — inventory meets the target ratio.' });
     }
-
-    const effectiveModelConfig = hasMeaningfulModelConfig(modelConfig)
-      ? modelConfig
-      : await resolveDefaultModelConfig();
 
     const jobIds: string[] = [];
     const errors: Array<{ index: number; error: string }> = [];

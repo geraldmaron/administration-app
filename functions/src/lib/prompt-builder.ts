@@ -68,6 +68,7 @@ Each entry MUST:
 - Address the player in second person ("Your decision to...", "You have committed...")
 - Reference the SPECIFIC policy action and the role's domain area
 - State a causal impact — what will happen in that domain as a result
+- Never use relationship token placeholders in prose ({the_ally}, {the_adversary}, {the_border_rival}, etc.). Use natural-language relationship actors instead.
 - NOT use generic phrases like "Our department supports this", "This aligns with our priorities", "This warrants monitoring"
 - Be 1–2 sentences only
 
@@ -94,7 +95,9 @@ Write a 4–6 sentence news article body (outcomeContext) in THIRD PERSON only:
 - NEVER use "you", "your", "Your administration" — this is a news report, NOT addressed to the player
 - Describe the immediate aftermath and downstream effects: economic signals, public reaction, international response
 - Use {token} placeholders for country-specific references from the APPROVED TOKEN WHITELIST above
-- Formal journalistic tone, no informal language, minimum 200 characters
+- Never use relationship token placeholders in prose ({the_ally}, {the_adversary}, {the_border_rival}, etc.). Use natural-language relationship actors instead.
+- Formal journalistic tone, no informal language
+- MINIMUM HARD REQUIREMENT: 400+ characters AND at least 4 sentences (70–100 words). Structure: name an institution or actor, describe the mechanism, include a reaction (opposition, market, or public), close with a broader implication. Anything under 400 characters is an automatic audit rejection.
 
 Return JSON: { "outcomeContext": "..." }`;
 }
@@ -116,7 +119,8 @@ Write a 2–3 sentence outcomeSummary (news lead) in THIRD PERSON only:
 - NEVER use "you", "your", "Your administration" — this is a news report, NOT addressed to the player
 - Summarize the immediate consequence of the decision
 - Use {token} placeholders from the APPROVED TOKEN WHITELIST above
-- Minimum 200 characters
+- Never use relationship token placeholders in prose ({the_ally}, {the_adversary}, {the_border_rival}, etc.). Use natural-language relationship actors instead.
+- MINIMUM HARD REQUIREMENT: 250+ characters AND at least 2 sentences. A single sentence that reaches 260 characters still fails sentence validation. Write at minimum: one lede sentence stating the action and immediate consequence, then a second sentence expanding the impact or naming a secondary effect.
 
 Return JSON: { "outcomeSummary": "..." }`;
 }

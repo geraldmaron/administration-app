@@ -1,16 +1,18 @@
 import type {
   GenerationDistributionConfig,
+  GenerationMode,
   GenerationModelConfig,
+  GenerationScopeFields,
   ScenarioExclusivityReason,
   ScenarioScopeTier,
   ScenarioSourceKind,
-} from '@shared/generation-contract';
+} from '@/lib/generation-contract';
 
 export type {
   ScenarioExclusivityReason,
   ScenarioScopeTier,
   ScenarioSourceKind,
-} from '@shared/generation-contract';
+} from '@/lib/generation-contract';
 
 export interface ScenarioSummary {
   id: string;
@@ -29,6 +31,9 @@ export interface ScenarioSummary {
   scopeTier: string | null;
   scopeKey: string | null;
   countryCount: number | null;
+  conditionCount?: number;
+  tagCount: number;
+  tagResolutionStatus: 'unresolved' | 'resolved' | 'manual' | null;
 }
 
 export interface OptionEffect {
@@ -46,11 +51,48 @@ export interface AdvisorFeedback {
   feedback: string;
 }
 
+export type RelationshipRoleId =
+  | 'border_rival'
+  | 'adversary'
+  | 'ally'
+  | 'trade_partner'
+  | 'partner'
+  | 'rival'
+  | 'regional_rival'
+  | 'neutral'
+  | 'neighbor'
+  | 'nation';
+
+export interface RelationshipEffect {
+  relationshipId: RelationshipRoleId;
+  delta: number;
+  probability?: number;
+}
+
+export interface ScenarioRequirements {
+  land_border_adversary?: boolean;
+  formal_ally?: boolean;
+  adversary?: boolean;
+  trade_partner?: boolean;
+  nuclear_state?: boolean;
+  island_nation?: boolean;
+  landlocked?: boolean;
+  coastal?: boolean;
+  min_power_tier?: 'superpower' | 'great_power' | 'regional_power' | 'middle_power' | 'small_state';
+  cyber_capable?: boolean;
+  power_projection?: boolean;
+  large_military?: boolean;
+  authoritarian_regime?: boolean;
+  democratic_regime?: boolean;
+  fragile_state?: boolean;
+}
+
 export interface Option {
   id: string;
   text: string;
   label?: string;
   effects: OptionEffect[];
+  relationshipEffects?: RelationshipEffect[];
   advisorFeedback?: AdvisorFeedback[];
   outcomeHeadline?: string;
   outcomeSummary?: string;
@@ -104,6 +146,25 @@ export interface ScenarioMetadata {
   involvedCountries?: string[];
   auditMetadata?: AuditMetadata;
   regionalBoost?: Record<string, number>;
+  requires?: ScenarioRequirements;
+  tagResolution?: TagResolutionMetadata;
+  repairMetadata?: RepairMetadata;
+}
+
+export interface RepairMetadata {
+  lastRepairedAt: string;
+  repairCount: number;
+}
+
+export type { FieldChange, RepairAnalysis, ApprovedRepair } from '@shared/scenario-repair';
+
+export interface TagResolutionMetadata {
+  status: 'unresolved' | 'resolved' | 'manual';
+  method?: 'deterministic' | 'llm' | 'manual';
+  resolverVersion?: number;
+  resolvedAt?: string;
+  resolvedTags?: string[];
+  confidence?: number;
 }
 
 export interface ScenarioDetail {
@@ -145,6 +206,10 @@ export interface JobResult {
   bundle: string;
   auditScore?: number;
   autoFixed?: boolean;
+  scopeTier?: string;
+  countryCount?: number | null;
+  requires?: Record<string, boolean | string>;
+  tags?: string[];
 }
 
 export interface JobError {
@@ -202,6 +267,8 @@ export interface JobSummary {
   bundles: string[];
   count: number;
   requestedAt: string;
+  startedAt?: string;
+  completedAt?: string;
   progress?: number;
   completedCount?: number;
   failedCount?: number;
@@ -215,6 +282,8 @@ export interface JobSummary {
   currentMessage?: string;
   lastHeartbeatAt?: string;
   executionTarget?: string;
+  requestedBy?: string;
+  modelConfig?: JobModelConfig;
   eventCount?: number;
 }
 
@@ -264,7 +333,7 @@ export interface JobDetail extends JobSummary {
   lastHeartbeatAt?: string;
   executionTarget?: string;
   modelConfig?: JobModelConfig;
-  tokenSummary?: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number };
+  tokenSummary?: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number; conceptCount?: number; totalDurationMs?: number };
   eventCount?: number;
   events?: JobEvent[];
   attemptSummary?: JobAttemptSummary[];
@@ -331,7 +400,7 @@ export interface SimulationScenario extends ScenarioDetail {
 }
 
 export interface SimulationFilteredScenario {
-  scenario: Pick<ScenarioDetail, 'id' | 'title' | 'metadata'>;
+  scenario: Pick<ScenarioDetail, 'id' | 'title' | 'metadata' | 'legislature_requirement'>;
   reason: string;
   diagnostics: Pick<SimulationDiagnostics, 'conditionChecks' | 'relationshipConditionChecks' | 'validationChecks' | 'fallbackTokens' | 'unresolvedTokens'>;
 }
@@ -339,6 +408,7 @@ export interface SimulationFilteredScenario {
 export interface SimulationResult {
   country: SimulationCountry;
   metrics: Record<string, number>;
+  context: Record<string, string>;
   totalScenarios: number;
   eligibleCount: number;
   filteredCount: number;
@@ -409,23 +479,15 @@ export interface ArticleClassification {
   rationale: string;
 }
 
-export interface GenerationJobRequest {
+export interface GenerationJobRequest extends GenerationScopeFields {
   bundles: string[];
   count: number;
   lowLatencyMode?: boolean;
-  regions?: string[];
-  region?: string;
-  scopeTier?: ScenarioScopeTier;
-  scopeKey?: string;
-  clusterId?: string;
-  exclusivityReason?: ScenarioExclusivityReason;
-  applicable_countries?: string[];
-  sourceKind?: ScenarioSourceKind;
   description?: string;
   priority?: 'low' | 'normal' | 'high';
   distributionConfig?: DistributionConfig;
   dryRun?: boolean;
-  mode?: 'manual' | 'news' | 'blitz';
+  mode?: GenerationMode;
   newsContext?: NewsArticle[];
   modelConfig?: GenerationModelConfig;
   executionTarget?: 'cloud_function' | 'n8n';

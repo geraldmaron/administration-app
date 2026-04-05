@@ -7,7 +7,8 @@ export type RepairActionType =
     | 'title-fix'
     | 'label-fix'
     | 'voice-fix'
-    | 'tone-fix';
+    | 'tone-fix'
+    | 'option-differentiation-fix';
 
 export interface RepairAction {
     type: RepairActionType;
@@ -26,6 +27,7 @@ const RULE_TO_ACTION: Record<string, RepairActionType> = {
     'hardcoded-the-before-token': 'token-fix',
     'sentence-start-bare-token': 'token-fix',
     'adjacency-token-mismatch': 'token-fix',
+    'token-grammar-issue': 'token-fix',
     'hard-coded-currency': 'token-fix',
     'gdp-as-amount': 'token-fix',
 
@@ -43,6 +45,7 @@ const RULE_TO_ACTION: Record<string, RepairActionType> = {
     'outcome-second-person': 'voice-fix',
     'third-person-framing': 'voice-fix',
     'high-passive-voice': 'voice-fix',
+    'complex-sentence': 'voice-fix',
     'lowercase-start': 'voice-fix',
 
     'banned-phrase': 'tone-fix',
@@ -50,6 +53,10 @@ const RULE_TO_ACTION: Record<string, RepairActionType> = {
     'hardcoded-gov-structure': 'tone-fix',
     'informal-tone': 'tone-fix',
     'jargon-use': 'tone-fix',
+
+    'option-metric-overlap': 'option-differentiation-fix',
+    'option-domain-missing-primary': 'option-differentiation-fix',
+    'option-domain-duplicate-primary': 'option-differentiation-fix',
 };
 
 export function classifyRepairActions(issues: Issue[]): RepairAction[] {
@@ -118,6 +125,9 @@ export const HEURISTIC_FIXABLE_RULE_IDS = new Set([
     'dangling-ending',
     'headline-fragment',
     'missing-direct-object',
+    'option-metric-overlap',
+    'option-domain-missing-primary',
+    'option-domain-duplicate-primary',
 ]);
 
 export type RemediationBucket = 'clean' | 'auto-fix' | 'heuristic-fix' | 'manual-review';

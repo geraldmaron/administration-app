@@ -68,30 +68,30 @@ export default function BlitzInventoryGrid({ deficits, allocation }: BlitzInvent
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
         <div className="control-surface px-3 py-2">
-          <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--foreground-subtle)] mb-1">Universal Gap</div>
+          <div className="text-[11px] font-medium text-[var(--foreground-subtle)] mb-1">Universal Gap</div>
           <div className={`data-value text-[15px] leading-none ${gapU > 0 ? 'text-[var(--warning)]' : 'text-[var(--success)]'}`}>{gapU}</div>
           <div className="text-[9px] text-[var(--foreground-subtle)] mt-0.5">40% ratio</div>
         </div>
         <div className="control-surface px-3 py-2">
-          <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--foreground-subtle)] mb-1">Regional Gap</div>
+          <div className="text-[11px] font-medium text-[var(--foreground-subtle)] mb-1">Regional Gap</div>
           <div className={`data-value text-[15px] leading-none ${gapR > 0 ? 'text-[var(--warning)]' : 'text-[var(--success)]'}`}>{gapR}</div>
           <div className="text-[9px] text-[var(--foreground-subtle)] mt-0.5">25% ratio</div>
         </div>
         <div className="control-surface px-3 py-2">
-          <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--foreground-subtle)] mb-1">Exclusive Gap</div>
+          <div className="text-[11px] font-medium text-[var(--foreground-subtle)] mb-1">Exclusive Gap</div>
           <div className={`data-value text-[15px] leading-none ${gapE > 0 ? 'text-[var(--warning)]' : 'text-[var(--success)]'}`}>{gapE}</div>
           <div className="text-[9px] text-[var(--foreground-subtle)] mt-0.5">10% ratio</div>
         </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-[11px] font-mono">
+        <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-[var(--border)]">
-              <th className="text-left py-2 px-2 text-[var(--foreground-subtle)] uppercase tracking-[0.15em] font-normal">Bundle</th>
-              <th className="text-center py-2 px-2 text-[var(--foreground-subtle)] uppercase tracking-[0.15em] font-normal">Universal</th>
-              <th className="text-center py-2 px-2 text-[var(--foreground-subtle)] uppercase tracking-[0.15em] font-normal">Regional</th>
-              <th className="text-center py-2 px-2 text-[var(--foreground-subtle)] uppercase tracking-[0.15em] font-normal">Exclusive</th>
+              <th className="text-left py-2 px-2 text-[var(--foreground-subtle)] font-medium">Bundle</th>
+              <th className="text-center py-2 px-2 text-[var(--foreground-subtle)] font-medium">Universal</th>
+              <th className="text-center py-2 px-2 text-[var(--foreground-subtle)] font-medium">Regional</th>
+              <th className="text-center py-2 px-2 text-[var(--foreground-subtle)] font-medium">Exclusive</th>
             </tr>
           </thead>
           <tbody>

@@ -1,0 +1,744 @@
+{
+  "id": "yuRHAR1KTM9A7yhg",
+  "name": "scenario-run-dispatcher",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "scenario-run",
+        "authentication": "none",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-run",
+      "name": "Incoming Run Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        100,
+        300
+      ],
+      "webhookId": "scenario-run-dispatcher"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/updateJobProgress",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const request = $(\"Incoming Run Request\").item.json.body || {}; const bundles = Array.isArray(request.bundles) ? request.bundles : []; const count = typeof request.count === \"number\" ? request.count : 1; return { jobId: request.jobId, status: \"running\", currentPhase: \"starting\", currentMessage: \"n8n runner: starting bundle fan-out\", totalCount: bundles.length * count }; })() }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "49X1c6tal2u7qR7g",
+          "name": "admin-secret"
+        }
+      },
+      "id": "mark-running-run",
+      "name": "Mark Running",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, jobId: $(\"Incoming Run Request\").item.json.body.jobId, status: \"running\" } }}",
+        "options": {}
+      },
+      "id": "respond-run",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const request = $(\"Incoming Run Request\").item.json.body || {};\nconst jobId = request.jobId;\nconst bundles = Array.isArray(request.bundles) ? request.bundles : [];\nconst count = typeof request.count === \"number\" ? request.count : 1;\n\nconst mc = request.modelConfig || {};\nconst isOllamaJob = Object.values(mc).some(v => typeof v === \"string\" && v.startsWith(\"ollama:\"));\nconst CLOUD_URL = \"https://us-central1-the-administration-3a072.cloudfunctions.net/processGenerationBundle\";\nconst LOCAL_URL = \"http://100.65.198.124:3099/processGenerationBundle\";\nconst targetUrl = isOllamaJob ? LOCAL_URL : CLOUD_URL;\n\nconst scope = {\n  scopeTier: request.scopeTier || \"universal\",\n  scopeKey: request.scopeKey || \"universal\",\n  sourceKind: request.sourceKind || \"evergreen\",\n  regions: request.regions || [],\n  region: request.region,\n  applicable_countries: request.applicable_countries || [],\n  exclusivityReason: request.exclusivityReason,\n  clusterId: request.clusterId,\n};\n\nconst payload = {\n  jobId,\n  count,\n  mode: request.mode || \"manual\",\n  lowLatencyMode: request.lowLatencyMode || false,\n  modelConfig: mc,\n  dryRun: request.dryRun || false,\n  newsContext: request.newsContext || [],\n  totalBundles: bundles.length,\n  ...scope,\n};\n\nreturn bundles.map(bundle => ({\n  json: {\n    meta: { targetUrl, asyncDispatch: isOllamaJob },\n    payload: { ...payload, bundle },\n  }\n}));",
+        "notice": ""
+      },
+      "id": "prepare-bundles-run",
+      "name": "Prepare Bundle Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        840,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.meta.targetUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.payload }}",
+        "options": {
+          "timeout": 540000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "49X1c6tal2u7qR7g",
+          "name": "admin-secret"
+        }
+      },
+      "id": "process-bundle-run",
+      "name": "Process Bundle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/updateJobProgress",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { jobId: $(\"Incoming Run Request\").item.json.body.jobId } }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "49X1c6tal2u7qR7g",
+          "name": "admin-secret"
+        }
+      },
+      "id": "heartbeat-run",
+      "name": "Heartbeat Bundle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const results = $input.all();\nconst jobId = $(\"Incoming Run Request\").item.json.body.jobId || \"\";\n\nconst isAsync = results.some(item => item.json?.queued === true);\nif (isAsync) {\n  return [{ json: { jobId, asyncDispatch: true, status: \"dispatched\" } }];\n}\n\nlet totalCompleted = 0;\nlet totalFailed = 0;\nconst allErrors = [];\n\nfor (const item of results) {\n  const r = item.json;\n  totalCompleted += typeof r.completedCount === \"number\" ? r.completedCount : 0;\n  totalFailed += typeof r.failedCount === \"number\" ? r.failedCount : 0;\n  if (Array.isArray(r.errors)) {\n    allErrors.push(...r.errors);\n  }\n}\n\nconst status = totalFailed > 0 && totalCompleted === 0 ? \"failed\" : \"completed\";\n\nreturn [{ json: { jobId, asyncDispatch: false, status, totalCompleted, totalFailed, errors: allErrors } }];",
+        "notice": ""
+      },
+      "id": "aggregate-run",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "async-check-run",
+              "leftValue": "={{ $json.asyncDispatch }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-async-run",
+      "name": "Is Async Job?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/updateJobProgress",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { jobId: $json.jobId, status: $json.status, currentPhase: \"complete\", currentMessage: \"n8n runner: \" + $json.totalCompleted + \" saved, \" + $json.totalFailed + \" failed\", completedCount: $json.totalCompleted, failedCount: $json.totalFailed } }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "49X1c6tal2u7qR7g",
+          "name": "admin-secret"
+        }
+      },
+      "id": "finalize-run",
+      "name": "Finalize Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Incoming Run Request": {
+      "main": [
+        [
+          {
+            "node": "Mark Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Running": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond OK": {
+      "main": [
+        [
+          {
+            "node": "Prepare Bundle Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Bundle Items": {
+      "main": [
+        [
+          {
+            "node": "Process Bundle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Bundle": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Heartbeat Bundle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          {
+            "node": "Is Async Job?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Async Job?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Finalize Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "activeVersionId": "5236b9ed-681f-47cc-881b-48e45f2506a2",
+  "versionCounter": 3,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-04-05T21:53:35.496Z",
+      "createdAt": "2026-04-05T21:53:35.496Z",
+      "role": "workflow:owner",
+      "workflowId": "yuRHAR1KTM9A7yhg",
+      "projectId": "RILozmcz2cCnuDaw",
+      "project": {
+        "updatedAt": "2026-04-05T21:49:42.254Z",
+        "createdAt": "2026-04-05T20:20:50.174Z",
+        "id": "RILozmcz2cCnuDaw",
+        "name": "Gerald Dagher <geraldmdagher@outlook.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "e4c35d42-821c-45ff-968c-3668b663206c"
+      }
+    }
+  ],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-04-05T21:53:35.502Z",
+    "createdAt": "2026-04-05T21:53:35.502Z",
+    "versionId": "5236b9ed-681f-47cc-881b-48e45f2506a2",
+    "workflowId": "yuRHAR1KTM9A7yhg",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "scenario-run",
+          "authentication": "none",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "webhook-run",
+        "name": "Incoming Run Request",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          100,
+          300
+        ],
+        "webhookId": "scenario-run-dispatcher"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/updateJobProgress",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ (() => { const request = $(\"Incoming Run Request\").item.json.body || {}; const bundles = Array.isArray(request.bundles) ? request.bundles : []; const count = typeof request.count === \"number\" ? request.count : 1; return { jobId: request.jobId, status: \"running\", currentPhase: \"starting\", currentMessage: \"n8n runner: starting bundle fan-out\", totalCount: bundles.length * count }; })() }}",
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "49X1c6tal2u7qR7g",
+            "name": "admin-secret"
+          }
+        },
+        "id": "mark-running-run",
+        "name": "Mark Running",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          360,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ { ok: true, jobId: $(\"Incoming Run Request\").item.json.body.jobId, status: \"running\" } }}",
+          "options": {}
+        },
+        "id": "respond-run",
+        "name": "Respond OK",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          600,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const request = $(\"Incoming Run Request\").item.json.body || {};\nconst jobId = request.jobId;\nconst bundles = Array.isArray(request.bundles) ? request.bundles : [];\nconst count = typeof request.count === \"number\" ? request.count : 1;\n\nconst mc = request.modelConfig || {};\nconst isOllamaJob = Object.values(mc).some(v => typeof v === \"string\" && v.startsWith(\"ollama:\"));\nconst CLOUD_URL = \"https://us-central1-the-administration-3a072.cloudfunctions.net/processGenerationBundle\";\nconst LOCAL_URL = \"http://100.65.198.124:3099/processGenerationBundle\";\nconst targetUrl = isOllamaJob ? LOCAL_URL : CLOUD_URL;\n\nconst scope = {\n  scopeTier: request.scopeTier || \"universal\",\n  scopeKey: request.scopeKey || \"universal\",\n  sourceKind: request.sourceKind || \"evergreen\",\n  regions: request.regions || [],\n  region: request.region,\n  applicable_countries: request.applicable_countries || [],\n  exclusivityReason: request.exclusivityReason,\n  clusterId: request.clusterId,\n};\n\nconst payload = {\n  jobId,\n  count,\n  mode: request.mode || \"manual\",\n  lowLatencyMode: request.lowLatencyMode || false,\n  modelConfig: mc,\n  dryRun: request.dryRun || false,\n  newsContext: request.newsContext || [],\n  totalBundles: bundles.length,\n  ...scope,\n};\n\nreturn bundles.map(bundle => ({\n  json: {\n    meta: { targetUrl, asyncDispatch: isOllamaJob },\n    payload: { ...payload, bundle },\n  }\n}));",
+          "notice": ""
+        },
+        "id": "prepare-bundles-run",
+        "name": "Prepare Bundle Items",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          840,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $json.meta.targetUrl }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ $json.payload }}",
+          "options": {
+            "timeout": 540000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "49X1c6tal2u7qR7g",
+            "name": "admin-secret"
+          }
+        },
+        "id": "process-bundle-run",
+        "name": "Process Bundle",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1080,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/updateJobProgress",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ { jobId: $(\"Incoming Run Request\").item.json.body.jobId } }}",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "49X1c6tal2u7qR7g",
+            "name": "admin-secret"
+          }
+        },
+        "id": "heartbeat-run",
+        "name": "Heartbeat Bundle",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1320,
+          500
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const results = $input.all();\nconst jobId = $(\"Incoming Run Request\").item.json.body.jobId || \"\";\n\nconst isAsync = results.some(item => item.json?.queued === true);\nif (isAsync) {\n  return [{ json: { jobId, asyncDispatch: true, status: \"dispatched\" } }];\n}\n\nlet totalCompleted = 0;\nlet totalFailed = 0;\nconst allErrors = [];\n\nfor (const item of results) {\n  const r = item.json;\n  totalCompleted += typeof r.completedCount === \"number\" ? r.completedCount : 0;\n  totalFailed += typeof r.failedCount === \"number\" ? r.failedCount : 0;\n  if (Array.isArray(r.errors)) {\n    allErrors.push(...r.errors);\n  }\n}\n\nconst status = totalFailed > 0 && totalCompleted === 0 ? \"failed\" : \"completed\";\n\nreturn [{ json: { jobId, asyncDispatch: false, status, totalCompleted, totalFailed, errors: allErrors } }];",
+          "notice": ""
+        },
+        "id": "aggregate-run",
+        "name": "Aggregate Results",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "async-check-run",
+                "leftValue": "={{ $json.asyncDispatch }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "check-async-run",
+        "name": "Is Async Job?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          1560,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://us-central1-the-administration-3a072.cloudfunctions.net/updateJobProgress",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ { jobId: $json.jobId, status: $json.status, currentPhase: \"complete\", currentMessage: \"n8n runner: \" + $json.totalCompleted + \" saved, \" + $json.totalFailed + \" failed\", completedCount: $json.totalCompleted, failedCount: $json.totalFailed } }}",
+          "options": {}
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "49X1c6tal2u7qR7g",
+            "name": "admin-secret"
+          }
+        },
+        "id": "finalize-run",
+        "name": "Finalize Job",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1800,
+          420
+        ]
+      }
+    ],
+    "connections": {
+      "Incoming Run Request": {
+        "main": [
+          [
+            {
+              "node": "Mark Running",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark Running": {
+        "main": [
+          [
+            {
+              "node": "Respond OK",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Respond OK": {
+        "main": [
+          [
+            {
+              "node": "Prepare Bundle Items",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Bundle Items": {
+        "main": [
+          [
+            {
+              "node": "Process Bundle",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process Bundle": {
+        "main": [
+          [
+            {
+              "node": "Aggregate Results",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Heartbeat Bundle",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aggregate Results": {
+        "main": [
+          [
+            {
+              "node": "Is Async Job?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Async Job?": {
+        "main": [
+          [],
+          [
+            {
+              "node": "Finalize Job",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Gerald Dagher",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-04-05T21:56:09.603Z",
+        "id": 2,
+        "workflowId": "yuRHAR1KTM9A7yhg",
+        "versionId": "5236b9ed-681f-47cc-881b-48e45f2506a2",
+        "event": "activated",
+        "userId": "e4c35d42-821c-45ff-968c-3668b663206c"
+      }
+    ]
+  },
+  "scopes": [
+    "workflow:create",
+    "workflow:delete",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update",
+    "workflow:updateRedactionSetting"
+  ],
+  "checksum": "ddb56fc785b254d021a14a9a2eae084c14a988d46718794646a7bc6ece64fe76"
+}

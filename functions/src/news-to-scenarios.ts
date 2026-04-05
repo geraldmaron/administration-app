@@ -18,7 +18,6 @@ import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import RssParser from 'rss-parser';
-import { generateScenarios, getGenerationConfig } from './scenario-engine';
 import { saveScenario, getActiveBundleCount } from './storage';
 import { validateConfig } from './lib/config-validator';
 import { callModelProvider } from './lib/model-providers';
@@ -467,6 +466,7 @@ export const dailyNewsToScenarios = onSchedule(
                 return;
             }
 
+            const { generateScenarios, getGenerationConfig } = await import('./scenario-engine');
             const genConfig = await getGenerationConfig();
 
             // Step 1 — Fetch headlines

@@ -41,15 +41,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
-        { "fieldPath": "metadata.clusterId", "order": "ASCENDING" },
-        { "fieldPath": "is_active", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "scenarios",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
         { "fieldPath": "metadata.sourceKind", "order": "ASCENDING" },
         { "fieldPath": "is_active", "order": "ASCENDING" }
       ]
@@ -61,23 +52,6 @@
         { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
         { "fieldPath": "metadata.region_tags", "arrayConfig": "CONTAINS" },
         { "fieldPath": "is_active", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "scenarios",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
-        { "fieldPath": "metadata.source", "order": "ASCENDING" },
-        { "fieldPath": "is_active", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "scenarios",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "metadata.source", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
@@ -113,21 +87,51 @@
       ]
     },
     {
-      "collectionGroup": "generation_tracking",
+      "collectionGroup": "scenarios",
       "queryScope": "COLLECTION",
       "fields": [
-        {
-          "fieldPath": "bundle",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "mode",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "timestamp",
-          "order": "DESCENDING"
-        }
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "metadata.source", "order": "ASCENDING" },
+        { "fieldPath": "is_active", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "metadata.sourceKind", "order": "ASCENDING" },
+        { "fieldPath": "is_active", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "metadata.scopeTier", "order": "ASCENDING" },
+        { "fieldPath": "metadata.applicable_countries", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "is_active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "scenarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
+        { "fieldPath": "metadata.scopeTier", "order": "ASCENDING" },
+        { "fieldPath": "metadata.region_tags", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "is_active", "order": "ASCENDING" }
       ]
     },
     {
@@ -177,72 +181,6 @@
       ]
     },
     {
-      "collectionGroup": "training_scenarios",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "bundle", "order": "ASCENDING" },
-        { "fieldPath": "isGolden", "order": "ASCENDING" },
-        { "fieldPath": "scopeKey", "order": "ASCENDING" },
-        { "fieldPath": "auditScore", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "countries",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "region", "order": "ASCENDING" },
-        { "fieldPath": "gameplay.difficulty", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "countries",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "geopolitical.tags", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "region", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "people_pool",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "region", "order": "ASCENDING" },
-        { "fieldPath": "role_affinity", "arrayConfig": "CONTAINS" }
-      ]
-    },
-    {
-      "collectionGroup": "people_pool",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "country_id", "order": "ASCENDING" },
-        { "fieldPath": "role_affinity", "arrayConfig": "CONTAINS" }
-      ]
-    },
-    {
-      "collectionGroup": "locales",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "countryId", "order": "ASCENDING" },
-        { "fieldPath": "type", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "parties",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "countryId", "order": "ASCENDING" },
-        { "fieldPath": "isRuling", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "scenarios",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
-        { "fieldPath": "created_at", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "generation_jobs",
       "queryScope": "COLLECTION",
       "fields": [
@@ -270,39 +208,139 @@
       ]
     },
     {
-      "collectionGroup": "scenarios",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "metadata.source", "order": "ASCENDING" },
-        { "fieldPath": "created_at", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "scenarios",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "metadata.bundle", "order": "ASCENDING" },
-        { "fieldPath": "metadata.source", "order": "ASCENDING" },
-        { "fieldPath": "is_active", "order": "ASCENDING" },
-        { "fieldPath": "created_at", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "prompt_templates",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "name", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "failure_analysis",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "failureCategory", "order": "ASCENDING" },
         { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "token_rejections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "count", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "token_rejections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "lastSeenAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "concept_seeds",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "bundle", "order": "ASCENDING" },
+        { "fieldPath": "persistedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "concept_seeds",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "bundle", "order": "ASCENDING" },
+        { "fieldPath": "fingerprint", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "admin_quality_reviews",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "bundle", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "scenarios",
+      "fieldPath": "options",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "scenarios",
+      "fieldPath": "description",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "scenarios",
+      "fieldPath": "conditions",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "scenarios",
+      "fieldPath": "metadata.auditMetadata",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "scenarios",
+      "fieldPath": "metadata.generationProvenance",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "scenarios",
+      "fieldPath": "metadata.acceptanceMetadata",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "scenarios",
+      "fieldPath": "metadata.source_news",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "scenarios",
+      "fieldPath": "metadata.tagResolution",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "scenarios",
+      "fieldPath": "metadata.requires",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "countries",
+      "fieldPath": "economy",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "countries",
+      "fieldPath": "military",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "countries",
+      "fieldPath": "legislature",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "countries",
+      "fieldPath": "legislature_initial_state",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "countries",
+      "fieldPath": "tokens",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "countries",
+      "fieldPath": "cabinet_pool",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "countries",
+      "fieldPath": "population",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "countries",
+      "fieldPath": "description",
+      "indexes": []
+    }
+  ]
 }

@@ -1,0 +1,386 @@
+[
+  {
+    "id": "test_econ_001",
+    "title": "The Sovereign Debt Crisis",
+    "description": "Your finance minister arrives with grim news: the national debt has hit 140% of GDP and bond markets are demanding a 9% yield to refinance next month's maturing obligations. The IMF is prepared to offer an emergency credit line — but only if you accept a structural adjustment programme that includes cuts to public sector wages and pension indexation. Opposition parties are already calling it a national humiliation.",
+    "is_active": true,
+    "createdAt": "2026-04-04T00:00:00.000Z",
+    "options": [
+      {
+        "id": "test_econ_001_opt_a",
+        "text": "Accept the IMF programme in full, announcing a three-year fiscal consolidation path.",
+        "label": "Accept IMF terms",
+        "effects": [
+          { "targetMetricId": "metric_economy", "value": 8, "duration": 4, "probability": 0.75 },
+          { "targetMetricId": "metric_budget", "value": 12, "duration": 3, "probability": 0.85 },
+          { "targetMetricId": "metric_approval", "value": -10, "duration": 3, "probability": 0.90 },
+          { "targetMetricId": "metric_equality", "value": -6, "duration": 4, "probability": 0.80 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "finance_minister", "stance": "support", "feedback": "This is the only credible path to restoring market confidence." },
+          { "roleId": "labour_minister", "stance": "oppose", "feedback": "Wage cuts will trigger industrial action across the public sector." }
+        ],
+        "outcomeHeadline": "Markets Rally on IMF Deal",
+        "outcomeSummary": "Bond yields drop sharply within days of the announcement. The fiscal adjustment is painful but the debt trajectory stabilises.",
+        "outcomeContext": "Pension groups launch a legal challenge; the opposition calls for early elections."
+      },
+      {
+        "id": "test_econ_001_opt_b",
+        "text": "Reject the IMF and pursue unilateral debt restructuring, seeking bilateral rollovers from friendly creditors.",
+        "label": "Restructure unilaterally",
+        "effects": [
+          { "targetMetricId": "metric_economy", "value": -8, "duration": 3, "probability": 0.70 },
+          { "targetMetricId": "metric_trade", "value": -10, "duration": 3, "probability": 0.65 },
+          { "targetMetricId": "metric_approval", "value": 4, "duration": 2, "probability": 0.60 },
+          { "targetMetricId": "metric_sovereignty", "value": 6, "duration": 3, "probability": 0.80 },
+          { "targetMetricId": "metric_foreign_relations", "value": -8, "duration": 3, "probability": 0.75 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "foreign_minister", "stance": "concerned", "feedback": "Bilateral rollovers are not guaranteed. We could default if negotiations drag." },
+          { "roleId": "finance_minister", "stance": "oppose", "feedback": "Capital markets will shut us out for years. This is reckless." }
+        ],
+        "outcomeHeadline": "Government Defies IMF",
+        "outcomeSummary": "A nationalist reception at home. Creditors freeze discretionary credit lines pending restructuring talks.",
+        "outcomeContext": "Two allied nations agree to roll over short-term debt, buying time but not solving the structural problem."
+      },
+      {
+        "id": "test_econ_001_opt_c",
+        "text": "Negotiate a modified programme — accept fiscal targets but reject wage cuts, offering privatisation proceeds instead.",
+        "label": "Negotiate modified terms",
+        "effects": [
+          { "targetMetricId": "metric_economy", "value": 4, "duration": 3, "probability": 0.65 },
+          { "targetMetricId": "metric_budget", "value": 7, "duration": 3, "probability": 0.70 },
+          { "targetMetricId": "metric_approval", "value": -4, "duration": 2, "probability": 0.70 },
+          { "targetMetricId": "metric_innovation", "value": -3, "duration": 3, "probability": 0.55 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "finance_minister", "stance": "support", "feedback": "The IMF has shown flexibility on this before. Worth attempting." },
+          { "roleId": "labour_minister", "stance": "neutral", "feedback": "Better than wage cuts. But privatisation has its own political risks." }
+        ],
+        "outcomeHeadline": "IMF Talks Continue",
+        "outcomeSummary": "Negotiations extend by six weeks. A watered-down deal is eventually reached, offering partial market relief.",
+        "outcomeContext": "Privatisation of the national carrier raises funds but draws protests over job security."
+      }
+    ],
+    "metadata": {
+      "bundle": "economy",
+      "severity": "high",
+      "difficulty": 4,
+      "tags": ["debt", "fiscal_crisis", "imf", "austerity"],
+      "scopeTier": "universal",
+      "scopeKey": "universal",
+      "sourceKind": "evergreen",
+      "theme": "fiscal"
+    }
+  },
+  {
+    "id": "test_mil_001",
+    "title": "Border Provocation",
+    "description": "A neighbouring state's armoured column crossed the demarcation line at 0300 hours, advancing three kilometres before halting. The incursion appears deliberate — it stopped short of your forward positions but has occupied a disputed farming village. Your chief of defence wants authorisation to respond. Your foreign minister has a direct line to their capital. International media is already broadcasting footage from drones.",
+    "is_active": true,
+    "createdAt": "2026-04-04T00:00:01.000Z",
+    "options": [
+      {
+        "id": "test_mil_001_opt_a",
+        "text": "Authorise a proportionate military response to retake the village and restore the line.",
+        "label": "Military response",
+        "effects": [
+          { "targetMetricId": "metric_military", "value": 6, "duration": 2, "probability": 0.70 },
+          { "targetMetricId": "metric_approval", "value": 5, "duration": 2, "probability": 0.65 },
+          { "targetMetricId": "metric_foreign_relations", "value": -12, "duration": 4, "probability": 0.85 },
+          { "targetMetricId": "metric_economy", "value": -5, "duration": 3, "probability": 0.70 },
+          { "targetMetricId": "metric_unrest", "value": 8, "duration": 3, "probability": 0.60 }
+        ],
+        "relationshipEffects": [
+          { "relationshipId": "border_rival", "delta": -20, "probability": 0.90 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "defence_minister", "stance": "support", "feedback": "Any restraint now signals weakness and invites further incursions." },
+          { "roleId": "foreign_minister", "stance": "concerned", "feedback": "Escalation risks drawing in third-party actors who have treaty obligations to them." }
+        ],
+        "outcomeHeadline": "Forces Retake Border Village",
+        "outcomeSummary": "The incursion is reversed within 48 hours. Casualties on both sides remain low but diplomatic channels go dark.",
+        "outcomeContext": "The UN Security Council convenes an emergency session. Your ally signals it will not escalate on your behalf."
+      },
+      {
+        "id": "test_mil_001_opt_b",
+        "text": "Stand forces down and pursue emergency diplomatic talks, demanding withdrawal before any bilateral meeting.",
+        "label": "Diplomatic channel",
+        "effects": [
+          { "targetMetricId": "metric_foreign_relations", "value": 4, "duration": 3, "probability": 0.60 },
+          { "targetMetricId": "metric_approval", "value": -6, "duration": 2, "probability": 0.70 },
+          { "targetMetricId": "metric_military", "value": -4, "duration": 2, "probability": 0.65 },
+          { "targetMetricId": "metric_sovereignty", "value": -5, "duration": 3, "probability": 0.75 }
+        ],
+        "relationshipEffects": [
+          { "relationshipId": "border_rival", "delta": 5, "probability": 0.50 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "foreign_minister", "stance": "support", "feedback": "If they want to talk, they will withdraw. If they don't, we'll know their intent." },
+          { "roleId": "defence_minister", "stance": "oppose", "feedback": "We look weak. Expect the village to be fortified while we negotiate." }
+        ],
+        "outcomeHeadline": "Talks Begin as Tensions Simmer",
+        "outcomeSummary": "The neighbour agrees to a back-channel discussion but does not immediately withdraw. The village remains occupied for weeks.",
+        "outcomeContext": "Domestic critics accuse the government of capitulation. The talks produce a face-saving agreement to restore the original line gradually."
+      },
+      {
+        "id": "test_mil_001_opt_c",
+        "text": "Formally request emergency consultations with allied nations and push for a multilateral response.",
+        "label": "Invoke allied support",
+        "effects": [
+          { "targetMetricId": "metric_foreign_relations", "value": 7, "duration": 4, "probability": 0.70 },
+          { "targetMetricId": "metric_military", "value": 3, "duration": 3, "probability": 0.65 },
+          { "targetMetricId": "metric_sovereignty", "value": -3, "duration": 2, "probability": 0.55 },
+          { "targetMetricId": "metric_approval", "value": 2, "duration": 2, "probability": 0.55 }
+        ],
+        "relationshipEffects": [
+          { "relationshipId": "ally", "delta": 8, "probability": 0.75 },
+          { "relationshipId": "border_rival", "delta": -10, "probability": 0.80 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "foreign_minister", "stance": "support", "feedback": "Collective pressure is harder to ignore than bilateral demands." },
+          { "roleId": "defence_minister", "stance": "neutral", "feedback": "Allied consultations take time. The situation on the ground will evolve." }
+        ],
+        "outcomeHeadline": "Allies Condemn Incursion",
+        "outcomeSummary": "A joint statement from three allied nations demands immediate withdrawal. The neighbour begins a staged pullback within the week.",
+        "outcomeContext": "The multilateral response sets a precedent, but some allies extract concessions on unrelated trade issues in exchange for their public support."
+      }
+    ],
+    "metadata": {
+      "bundle": "military",
+      "severity": "critical",
+      "difficulty": 5,
+      "tags": ["border_dispute", "military_incursion", "diplomacy", "escalation"],
+      "scopeTier": "universal",
+      "scopeKey": "universal",
+      "sourceKind": "evergreen",
+      "theme": "security",
+      "requires": {
+        "land_border_adversary": true
+      }
+    }
+  },
+  {
+    "id": "test_env_001",
+    "title": "Industrial River Contamination",
+    "description": "A chemical plant upstream has been discharging industrial effluent into the national river system for an estimated eighteen months. A whistleblower's documents — now published by an investigative outlet — show your environment regulator received early warnings and took no action. Seventy kilometres of river are contaminated. Three rural municipalities have lost their drinking water supply and fishing communities are facing total income collapse.",
+    "is_active": true,
+    "createdAt": "2026-04-04T00:00:02.000Z",
+    "options": [
+      {
+        "id": "test_env_001_opt_a",
+        "text": "Immediately nationalise the plant, halt production, and launch a full criminal investigation of its directors and complicit regulators.",
+        "label": "Nationalise and prosecute",
+        "effects": [
+          { "targetMetricId": "metric_environment", "value": 6, "duration": 4, "probability": 0.75 },
+          { "targetMetricId": "metric_approval", "value": 8, "duration": 2, "probability": 0.70 },
+          { "targetMetricId": "metric_economy", "value": -5, "duration": 3, "probability": 0.65 },
+          { "targetMetricId": "metric_corruption", "value": -8, "duration": 3, "probability": 0.80 },
+          { "targetMetricId": "metric_employment", "value": -4, "duration": 2, "probability": 0.60 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "environment_minister", "stance": "support", "feedback": "Decisive action is the only way to signal this cannot happen again." },
+          { "roleId": "economy_minister", "stance": "concerned", "feedback": "Nationalisation sets a dangerous precedent and will deter investment in the sector." }
+        ],
+        "outcomeHeadline": "Plant Seized, Directors Arrested",
+        "outcomeSummary": "Immediate public support surges. Remediation work begins within days. The criminal process moves slowly through the courts.",
+        "outcomeContext": "The plant's 800 workers face uncertainty. A union delegation arrives demanding job guarantees under state ownership."
+      },
+      {
+        "id": "test_env_001_opt_b",
+        "text": "Issue a substantial fine and mandatory remediation order, fire the regulator's leadership, and fund clean-up from a new environment bond.",
+        "label": "Fine and remediate",
+        "effects": [
+          { "targetMetricId": "metric_environment", "value": 4, "duration": 4, "probability": 0.70 },
+          { "targetMetricId": "metric_corruption", "value": -4, "duration": 3, "probability": 0.65 },
+          { "targetMetricId": "metric_approval", "value": 2, "duration": 2, "probability": 0.55 },
+          { "targetMetricId": "metric_budget", "value": -5, "duration": 2, "probability": 0.80 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "economy_minister", "stance": "support", "feedback": "A proportionate response that preserves jobs and private sector confidence." },
+          { "roleId": "environment_minister", "stance": "concerned", "feedback": "Fines this company can absorb. Affected communities will see this as a shrug." }
+        ],
+        "outcomeHeadline": "Regulator Chief Dismissed, Fine Issued",
+        "outcomeSummary": "Critics call the fine inadequate. Clean-up begins but is slow. The affected communities receive emergency drinking water.",
+        "outcomeContext": "An NGO coalition files a class action on behalf of fishing communities. The bond issuance attracts strong institutional demand."
+      },
+      {
+        "id": "test_env_001_opt_c",
+        "text": "Commission an independent public inquiry, suspend the plant pending findings, and provide immediate financial relief to affected communities.",
+        "label": "Inquiry and relief",
+        "effects": [
+          { "targetMetricId": "metric_environment", "value": 2, "duration": 3, "probability": 0.60 },
+          { "targetMetricId": "metric_approval", "value": 4, "duration": 2, "probability": 0.60 },
+          { "targetMetricId": "metric_democracy", "value": 4, "duration": 3, "probability": 0.65 },
+          { "targetMetricId": "metric_budget", "value": -3, "duration": 2, "probability": 0.75 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "justice_minister", "stance": "support", "feedback": "An inquiry establishes the full facts and gives findings legal standing for prosecution." },
+          { "roleId": "environment_minister", "stance": "neutral", "feedback": "Inquiries take eighteen months. The river won't wait." }
+        ],
+        "outcomeHeadline": "Inquiry Launched, Plant Suspended",
+        "outcomeSummary": "The inquiry process is seen as credible but slow. Affected communities receive emergency grants while proceedings continue.",
+        "outcomeContext": "The inquiry's interim report at six months triggers additional regulatory resignations."
+      }
+    ],
+    "metadata": {
+      "bundle": "environment",
+      "severity": "high",
+      "difficulty": 3,
+      "tags": ["pollution", "corporate_misconduct", "regulatory_failure", "clean_water"],
+      "scopeTier": "universal",
+      "scopeKey": "universal",
+      "sourceKind": "evergreen",
+      "theme": "welfare"
+    }
+  },
+  {
+    "id": "test_pol_001",
+    "title": "Coalition Fracture",
+    "description": "Your junior coalition partner has announced it will withdraw from government unless you abandon a flagship pension reform bill scheduled for a parliamentary vote in ten days. Their leader holds a press conference flanked by three of their cabinet ministers, citing 'fundamental incompatibility' with the reform's means-testing provisions. Without their votes the bill fails. Without their support your government loses its parliamentary majority.",
+    "is_active": true,
+    "createdAt": "2026-04-04T00:00:03.000Z",
+    "options": [
+      {
+        "id": "test_pol_001_opt_a",
+        "text": "Call their bluff. Proceed with the vote as scheduled and dare them to collapse the government.",
+        "label": "Force the vote",
+        "effects": [
+          { "targetMetricId": "metric_democracy", "value": -4, "duration": 3, "probability": 0.60 },
+          { "targetMetricId": "metric_approval", "value": -8, "duration": 3, "probability": 0.70 },
+          { "targetMetricId": "metric_public_order", "value": -4, "duration": 2, "probability": 0.55 },
+          { "targetMetricId": "metric_equality", "value": 5, "duration": 4, "probability": 0.65 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "chief_of_staff", "stance": "concerned", "feedback": "If they follow through we lose the majority and fall into a caretaker administration." },
+          { "roleId": "finance_minister", "stance": "support", "feedback": "The reform is fiscally essential. Backing down signals every junior partner can veto policy." }
+        ],
+        "outcomeHeadline": "Junior Partner Quits Coalition",
+        "outcomeSummary": "The reform passes narrowly with support from independents. The coalition formally collapses. You govern as a minority for four months before surviving a confidence vote.",
+        "outcomeContext": "The pension reform is enacted but faces ongoing legal challenges. Early election speculation dominates media coverage."
+      },
+      {
+        "id": "test_pol_001_opt_b",
+        "text": "Offer a two-year implementation delay and a joint review committee with the junior partner's nominees.",
+        "label": "Offer delay and review",
+        "effects": [
+          { "targetMetricId": "metric_approval", "value": -3, "duration": 2, "probability": 0.60 },
+          { "targetMetricId": "metric_democracy", "value": 3, "duration": 2, "probability": 0.60 },
+          { "targetMetricId": "metric_budget", "value": -4, "duration": 3, "probability": 0.65 },
+          { "targetMetricId": "metric_equality", "value": 2, "duration": 3, "probability": 0.55 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "chief_of_staff", "stance": "support", "feedback": "Buying time preserves the coalition and lets fiscal pressures make the case for reform themselves." },
+          { "roleId": "finance_minister", "stance": "concerned", "feedback": "Delay costs four billion in projected savings. The budget window will be much tighter in two years." }
+        ],
+        "outcomeHeadline": "Coalition Intact After Compromise",
+        "outcomeSummary": "The junior partner accepts the delay. The coalition survives. The review committee becomes a political battleground but keeps both parties at the table.",
+        "outcomeContext": "Fiscal hawks in your own party are furious. An internal memo questioning your leadership leaks to the press."
+      },
+      {
+        "id": "test_pol_001_opt_c",
+        "text": "Remove the means-testing clause entirely and replace it with a contribution-based taper, which addresses their stated objection.",
+        "label": "Revise means-testing",
+        "effects": [
+          { "targetMetricId": "metric_approval", "value": 3, "duration": 2, "probability": 0.65 },
+          { "targetMetricId": "metric_democracy", "value": 5, "duration": 2, "probability": 0.70 },
+          { "targetMetricId": "metric_budget", "value": -7, "duration": 4, "probability": 0.75 },
+          { "targetMetricId": "metric_equality", "value": -3, "duration": 3, "probability": 0.60 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "chief_of_staff", "stance": "support", "feedback": "This is a genuine policy concession that addresses their core concern. They'll take it." },
+          { "roleId": "finance_minister", "stance": "oppose", "feedback": "The taper is less efficient than means-testing. Projected savings fall by nearly a third." }
+        ],
+        "outcomeHeadline": "Reform Amended, Coalition Holds",
+        "outcomeSummary": "The junior partner backs the revised bill. It passes with a comfortable majority. The coalition emerges politically strengthened.",
+        "outcomeContext": "Pension advocacy groups are divided on the new taper mechanism. An independent fiscal body flags the reduced savings target."
+      }
+    ],
+    "metadata": {
+      "bundle": "politics",
+      "severity": "high",
+      "difficulty": 4,
+      "tags": ["coalition", "parliament", "pension_reform", "political_crisis"],
+      "scopeTier": "universal",
+      "scopeKey": "universal",
+      "sourceKind": "evergreen",
+      "theme": "governance"
+    }
+  },
+  {
+    "id": "test_tech_001",
+    "title": "Critical Infrastructure Cyberattack",
+    "description": "At 06:12 this morning, ransomware encrypted the operational technology systems of your national electricity grid operator. Three regional grids are offline. The attack signature matches a group previously linked to a hostile state. The attacker has sent a demand: payment of 200 million in cryptocurrency within 72 hours or they will target water treatment and gas distribution. Your national cyber agency has partial decryption keys but needs seventy-two hours to restore full operations through clean backups — if nothing else is targeted.",
+    "is_active": true,
+    "createdAt": "2026-04-04T00:00:04.000Z",
+    "options": [
+      {
+        "id": "test_tech_001_opt_a",
+        "text": "Refuse to pay. Activate national emergency protocols, deploy military cyber units, and begin backup-based restoration immediately.",
+        "label": "Refuse and restore",
+        "effects": [
+          { "targetMetricId": "metric_sovereignty", "value": 7, "duration": 3, "probability": 0.75 },
+          { "targetMetricId": "metric_military", "value": 4, "duration": 3, "probability": 0.65 },
+          { "targetMetricId": "metric_infrastructure", "value": -8, "duration": 2, "probability": 0.85 },
+          { "targetMetricId": "metric_economy", "value": -7, "duration": 2, "probability": 0.80 },
+          { "targetMetricId": "metric_innovation", "value": 3, "duration": 4, "probability": 0.60 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "defence_minister", "stance": "support", "feedback": "Payment funds future attacks and establishes us as a paying target. We cannot capitulate." },
+          { "roleId": "infrastructure_minister", "stance": "concerned", "feedback": "Seventy-two hours without power in winter conditions will result in hospital incidents and cold-weather casualties." }
+        ],
+        "outcomeHeadline": "Grid Restoration Underway — No Payment",
+        "outcomeSummary": "Full power restoration takes 81 hours due to a secondary attack on a gas distribution node. Economic damage is significant but the state does not pay. International partners share threat intelligence.",
+        "outcomeContext": "A parliamentary inquiry is announced. The grid operator's CEO resigns. Cyber defence funding is doubled in the emergency budget."
+      },
+      {
+        "id": "test_tech_001_opt_b",
+        "text": "Authorise a covert payment through an intermediary while publicly denying any negotiation, buying time for restoration.",
+        "label": "Pay covertly",
+        "effects": [
+          { "targetMetricId": "metric_infrastructure", "value": 6, "duration": 2, "probability": 0.70 },
+          { "targetMetricId": "metric_economy", "value": 3, "duration": 2, "probability": 0.65 },
+          { "targetMetricId": "metric_sovereignty", "value": -10, "duration": 4, "probability": 0.80 },
+          { "targetMetricId": "metric_democracy", "value": -6, "duration": 3, "probability": 0.70 },
+          { "targetMetricId": "metric_budget", "value": -4, "duration": 1, "probability": 0.90 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "chief_of_staff", "stance": "support", "feedback": "The public health risk in the next seventy-two hours is real and immediate. The reputational cost is manageable if it stays quiet." },
+          { "roleId": "defence_minister", "stance": "oppose", "feedback": "These things never stay quiet. When it leaks the damage will be far worse than refusing to pay." }
+        ],
+        "outcomeHeadline": "Grid Restored; Questions Emerge",
+        "outcomeSummary": "Power is restored within 36 hours. Six months later, an investigative journalist reports the payment. A crisis of confidence follows.",
+        "outcomeContext": "Opposition parties table a motion of no confidence. Three cabinet ministers resign pre-emptively."
+      },
+      {
+        "id": "test_tech_001_opt_c",
+        "text": "Convene an emergency G7 session, seek a joint attribution and coordinated sanctions response, and begin restoration in parallel.",
+        "label": "Multilateral response",
+        "effects": [
+          { "targetMetricId": "metric_foreign_relations", "value": 9, "duration": 4, "probability": 0.75 },
+          { "targetMetricId": "metric_sovereignty", "value": 4, "duration": 3, "probability": 0.65 },
+          { "targetMetricId": "metric_infrastructure", "value": -5, "duration": 2, "probability": 0.75 },
+          { "targetMetricId": "metric_innovation", "value": 5, "duration": 4, "probability": 0.65 },
+          { "targetMetricId": "metric_economy", "value": -4, "duration": 2, "probability": 0.70 }
+        ],
+        "advisorFeedback": [
+          { "roleId": "foreign_minister", "stance": "support", "feedback": "Collective attribution is harder to challenge legally and makes sanctions multilaterally enforceable." },
+          { "roleId": "defence_minister", "stance": "neutral", "feedback": "G7 coordination takes days we might not have. Parallel restoration is critical." }
+        ],
+        "outcomeHeadline": "Allies Rally as Grid Comes Back Online",
+        "outcomeSummary": "Coordinated sanctions against the suspected state are announced within five days. Restoration takes 78 hours with allied technical assistance.",
+        "outcomeContext": "The episode accelerates a joint allied cyber defence framework. Your country assumes a leading role in its governance."
+      }
+    ],
+    "metadata": {
+      "bundle": "tech",
+      "severity": "critical",
+      "difficulty": 5,
+      "tags": ["cyberattack", "ransomware", "critical_infrastructure", "state_sponsored"],
+      "scopeTier": "universal",
+      "scopeKey": "universal",
+      "sourceKind": "evergreen",
+      "theme": "security"
+    }
+  }
+]

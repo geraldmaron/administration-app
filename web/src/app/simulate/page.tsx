@@ -11,6 +11,8 @@ import { METRIC_DISPLAY, STANCE_CLASSES } from '@/lib/constants';
 import { formatEffectCount, hasEffects, hasMeaningfulOutcome, summarizeAdvisorStances } from '@/lib/simulate';
 import type {
   CountrySummary,
+  LegislatureRequirement,
+  ScenarioMetadata,
   SimulationFilteredScenario,
   SimulationResult,
   SimulationScenario,
@@ -34,6 +36,10 @@ const INVERSE_METRICS = new Set(['metric_inflation', 'metric_crime', 'metric_cor
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 
+const GEO_RELATIONSHIP_KEYS = [
+  'adversary', 'ally', 'trade_partner', 'border_rival', 'regional_rival', 'neutral', 'neighbor',
+] as const;
+
 function uniqueTokenUsages(usages: SimulationTokenUsage[]): SimulationTokenUsage[] {
   const seen = new Set<string>();
   return usages.filter((usage) => {
@@ -55,12 +61,177 @@ function ValidationRow({ check }: { check: SimulationValidationCheck }) {
   );
 }
 
+function hasEligibilityContent(
+  metadata?: ScenarioMetadata,
+  legislature_requirement?: LegislatureRequirement,
+): boolean {
+  if (!metadata) return !!legislature_requirement;
+  const hasRequires = metadata.requires != null && Object.values(metadata.requires).some((v) => v != null);
+  const hasCountries = Array.isArray(metadata.applicable_countries)
+    ? metadata.applicable_countries.length > 0
+    : !!metadata.applicable_countries;
+  return !!(
+    metadata.tags?.length ||
+    metadata.scopeTier ||
+    metadata.sourceKind ||
+    metadata.requiredGeopoliticalTags?.length ||
+    metadata.excludedGeopoliticalTags?.length ||
+    metadata.requiredGovernmentCategories?.length ||
+    metadata.excludedGovernmentCategories?.length ||
+    hasRequires ||
+    hasCountries ||
+    legislature_requirement
+  );
+}
+
+const REQUIRES_TAG_KEYS = ['coastal', 'landlocked', 'island_nation', 'nuclear_state'] as const;
+const REQUIRES_REL_KEYS = ['formal_ally', 'adversary', 'trade_partner', 'land_border_adversary'] as const;
+
+function ScenarioEligibility({
+  metadata,
+  legislature_requirement,
+  passing,
+}: {
+  metadata?: ScenarioMetadata;
+  legislature_requirement?: LegislatureRequirement;
+  passing: boolean;
+}) {
+  if (!hasEligibilityContent(metadata, legislature_requirement)) return null;
+
+  const passChip = 'rounded border border-[var(--success)]/25 bg-[var(--success)]/5 px-1.5 py-0.5 text-[9px] font-mono text-[var(--success)]';
+  const neutralChip = 'rounded border border-[var(--border)] px-1.5 py-0.5 text-[9px] font-mono text-[var(--foreground-subtle)]';
+  const chip = passing ? passChip : neutralChip;
+
+  const applicableCountries = metadata?.applicable_countries
+    ? (Array.isArray(metadata.applicable_countries) ? metadata.applicable_countries : [metadata.applicable_countries])
+    : [];
+
+  const requires = metadata?.requires;
+  const requiresEntries: string[] = [];
+  if (requires) {
+    if (requires.min_power_tier != null) {
+      requiresEntries.push(`power ≥ ${requires.min_power_tier.replace(/_/g, ' ')}`);
+    }
+    for (const key of REQUIRES_TAG_KEYS) {
+      if (requires[key] != null) requiresEntries.push(`${key.replace(/_/g, ' ')} ${requires[key] ? '✓' : '✗'}`);
+    }
+    for (const key of REQUIRES_REL_KEYS) {
+      if (requires[key] != null) requiresEntries.push(`${key.replace(/_/g, ' ')} ${requires[key] ? '✓' : '✗'}`);
+    }
+  }
+
+  return (
+    <div className="space-y-2 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.01)] px-3 py-2.5">
+      <div className="text-xs font-medium text-[var(--foreground-subtle)]">Eligibility</div>
+
+      {metadata?.tags?.length ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-20 flex-shrink-0 text-[9px] font-mono text-[var(--foreground-subtle)]">tags</span>
+          {metadata.tags.map((tag) => (
+            <span key={tag} className={neutralChip}>{tag}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {(metadata?.scopeTier || metadata?.sourceKind) ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-20 flex-shrink-0 text-[9px] font-mono text-[var(--foreground-subtle)]">scope</span>
+          {metadata?.scopeTier ? <span className={chip}>{metadata.scopeTier}</span> : null}
+          {metadata?.sourceKind ? <span className={chip}>{metadata.sourceKind}</span> : null}
+        </div>
+      ) : null}
+
+      {metadata?.requiredGeopoliticalTags?.length ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-20 flex-shrink-0 text-[9px] font-mono text-[var(--foreground-subtle)]">req geo</span>
+          {metadata.requiredGeopoliticalTags.map((tag) => (
+            <span key={tag} className={chip}>{tag}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {metadata?.excludedGeopoliticalTags?.length ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-20 flex-shrink-0 text-[9px] font-mono text-[var(--foreground-subtle)]">excl geo</span>
+          {metadata.excludedGeopoliticalTags.map((tag) => (
+            <span key={tag} className={chip}>{tag}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {metadata?.requiredGovernmentCategories?.length ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-20 flex-shrink-0 text-[9px] font-mono text-[var(--foreground-subtle)]">req gov</span>
+          {metadata.requiredGovernmentCategories.map((cat) => (
+            <span key={cat} className={chip}>{cat}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {metadata?.excludedGovernmentCategories?.length ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-20 flex-shrink-0 text-[9px] font-mono text-[var(--foreground-subtle)]">excl gov</span>
+          {metadata.excludedGovernmentCategories.map((cat) => (
+            <span key={cat} className={chip}>{cat}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {requiresEntries.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-20 flex-shrink-0 text-[9px] font-mono text-[var(--foreground-subtle)]">requires</span>
+          {requiresEntries.map((entry) => (
+            <span key={entry} className={chip}>{entry}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {applicableCountries.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-20 flex-shrink-0 text-[9px] font-mono text-[var(--foreground-subtle)]">countries</span>
+          {applicableCountries.map((id) => (
+            <span key={id} className={chip}>{id}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {legislature_requirement ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="w-20 flex-shrink-0 text-[9px] font-mono text-[var(--foreground-subtle)]">legislature</span>
+          <span className={chip}>
+            approval ≥ {legislature_requirement.min_approval}%
+            {legislature_requirement.chamber ? ` (${legislature_requirement.chamber})` : ''}
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
   const [expanded, setExpanded] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const failedChecks = scenario.diagnostics.validationChecks.filter((c) => !c.passed);
   const fallbackTokens = scenario.diagnostics.fallbackTokens;
   const uniqueUsages = uniqueTokenUsages(scenario.diagnostics.tokenUsages).slice(0, 16);
+
+  const filteredValidationChecks = scenario.diagnostics.validationChecks.filter((check) => {
+    if (!check.passed) return true;
+    if (check.kind.startsWith('requires.')) return true;
+    if (check.kind === 'border-rival-actor-pattern') return true;
+    if (check.kind === 'token-graph') return !check.detail.includes('does not require');
+    const meta = scenario.metadata;
+    if (check.kind === 'required-tags') return !!(meta?.requiredGeopoliticalTags?.length);
+    if (check.kind === 'excluded-tags') return !!(meta?.excludedGeopoliticalTags?.length);
+    if (check.kind === 'required-government-category') return !!(meta?.requiredGovernmentCategories?.length);
+    if (check.kind === 'excluded-government-category') return !!(meta?.excludedGovernmentCategories?.length);
+    if (check.kind === 'applicable-countries') {
+      const list = meta?.applicable_countries;
+      return !!(Array.isArray(list) ? list.length > 0 : list);
+    }
+    return true;
+  });
+  const hiddenCheckCount = scenario.diagnostics.validationChecks.length - filteredValidationChecks.length;
 
   return (
     <div className="border-b border-[var(--border)] last:border-b-0">
@@ -71,6 +242,16 @@ function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
       >
         {scenario.metadata?.bundle ? <BundleBadge bundle={scenario.metadata.bundle} /> : null}
         <span className="flex-1 text-[13px] text-foreground truncate">{scenario.title}</span>
+        {scenario.metadata?.tags?.slice(0, 3).map((tag) => (
+          <span key={tag} className="flex-shrink-0 rounded border border-[var(--border)] px-1.5 py-0.5 text-[9px] font-mono text-[var(--foreground-subtle)]">
+            {tag}
+          </span>
+        ))}
+        {(scenario.metadata?.tags?.length ?? 0) > 3 ? (
+          <span className="flex-shrink-0 text-[9px] font-mono text-[var(--foreground-muted)]">
+            +{scenario.metadata!.tags!.length - 3}
+          </span>
+        ) : null}
         {scenario.conditions?.length ? (
           <span className="flex-shrink-0 text-[10px] font-mono text-[var(--accent-secondary)]">
             {scenario.conditions.length}c
@@ -85,7 +266,7 @@ function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
           {failedChecks.length === 0 ? 'PASS' : `${failedChecks.length} FAIL`}
         </span>
         {fallbackTokens.length > 0 ? (
-          <span className="flex-shrink-0 text-[10px] font-mono text-[var(--warning)]">{fallbackTokens.length} fallback</span>
+          <span className="flex-shrink-0 text-[10px] font-mono text-[var(--warning)]">{fallbackTokens.length} token fallback</span>
         ) : null}
         <svg
           className={`flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
@@ -100,10 +281,10 @@ function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
         <div className="border-t border-[var(--border)] bg-[rgba(255,255,255,0.01)] px-4 py-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             {scenario.metadata?.difficulty != null ? (
-              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">Diff {scenario.metadata.difficulty}</span>
+              <span className="text-xs font-medium text-[var(--foreground-subtle)]">Diff {scenario.metadata.difficulty}</span>
             ) : null}
             {scenario.metadata?.severity ? (
-              <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">{scenario.metadata.severity}</span>
+              <span className="text-xs font-medium text-[var(--foreground-subtle)]">{scenario.metadata.severity}</span>
             ) : null}
             <span className={`rounded border px-2 py-0.5 text-[10px] font-mono ${failedChecks.length === 0 ? 'border-[var(--success)]/30 text-[var(--success)]' : 'border-[var(--error)]/30 text-[var(--error)]'}`}>
               {failedChecks.length === 0 ? 'Country checks pass' : `${failedChecks.length} failing`}
@@ -116,6 +297,12 @@ function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
           </div>
 
           <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">{scenario.description}</p>
+
+          <ScenarioEligibility
+            metadata={scenario.metadata}
+            legislature_requirement={scenario.legislature_requirement}
+            passing={failedChecks.length === 0}
+          />
 
           {scenario.conditions?.length ? (
             <div className="flex flex-wrap gap-2">
@@ -146,7 +333,7 @@ function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setShowDiagnostics((v) => !v); }}
-              className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-muted)] hover:text-foreground"
+              className="text-xs font-medium text-[var(--foreground-muted)] hover:text-foreground"
             >
               {showDiagnostics ? 'Hide diagnostics' : 'Show diagnostics'}
             </button>
@@ -157,16 +344,16 @@ function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
             {scenario.options.map((opt, i) => (
               <div key={opt.id ?? i}>
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-[6px] border border-[var(--border)] bg-[rgba(25,105,220,0.14)] text-[9px] font-mono font-bold text-[var(--accent-primary)]">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--accent-muted)] text-[9px] font-mono font-bold text-[var(--accent-primary)]">
                     {OPTION_LABELS[i]}
                   </span>
-                  {opt.label ? <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--foreground-subtle)]">{opt.label}</span> : null}
+                  {opt.label ? <span className="text-xs font-medium text-[var(--foreground-subtle)]">{opt.label}</span> : null}
                 </div>
                 <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">{opt.text}</p>
 
                 {opt.advisorFeedback?.length ? (
                   <div className="mt-3 rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-3">
-                    <div className="mb-2 flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">
+                    <div className="mb-2 flex flex-wrap gap-2 text-xs font-medium text-[var(--foreground-subtle)]">
                       {Object.entries(summarizeAdvisorStances(opt.advisorFeedback)).map(([stance, count]) => (
                         <span key={stance} className={STANCE_CLASSES[stance] ?? 'text-[var(--foreground-muted)]'}>
                           {count} {stance}
@@ -176,7 +363,7 @@ function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
                     <div className="space-y-2">
                       {opt.advisorFeedback.map((feedback) => (
                         <div key={`${opt.id}-${feedback.roleId}-${feedback.stance}`} className="text-xs text-[var(--foreground-muted)]">
-                          <span className={`${STANCE_CLASSES[feedback.stance] ?? 'text-[var(--foreground-muted)]'} font-mono uppercase tracking-[0.12em]`}>
+                          <span className={`${STANCE_CLASSES[feedback.stance] ?? 'text-[var(--foreground-muted)]'} font-medium`}>
                             {feedback.stance}
                           </span>
                           {' · '}{feedback.roleId}{' · '}{feedback.feedback}
@@ -188,7 +375,7 @@ function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
 
                 {hasEffects(opt) ? (
                   <div className="mt-3 space-y-2">
-                    <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">{formatEffectCount(opt.effects)}</div>
+                    <div className="text-xs font-medium text-[var(--foreground-subtle)]">{formatEffectCount(opt.effects)}</div>
                     <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                       {opt.effects.map((effect, effectIndex) => (
                         <MetricEffect key={`${opt.id}-${effect.targetMetricId}-${effectIndex}`} effect={effect} />
@@ -199,7 +386,7 @@ function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
 
                 {hasMeaningfulOutcome(opt) ? (
                   <div className="mt-3 space-y-2 rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-3">
-                    <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">Resolved outcome</div>
+                    <div className="text-xs font-medium text-[var(--foreground-subtle)]">Resolved outcome</div>
                     {opt.outcomeHeadline ? <p className="text-xs font-semibold text-foreground">{opt.outcomeHeadline}</p> : null}
                     {opt.outcomeSummary ? <p className="text-sm leading-relaxed text-[var(--foreground-muted)]">{opt.outcomeSummary}</p> : null}
                     {opt.outcomeContext ? <p className="text-xs leading-relaxed text-[var(--foreground-subtle)]">{opt.outcomeContext}</p> : null}
@@ -212,17 +399,26 @@ function ScenarioCard({ scenario }: { scenario: SimulationScenario }) {
           {showDiagnostics && (
             <div className="space-y-4 border-t border-[var(--border)] pt-3">
               <div>
-                <div className="mb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">Country validation</div>
+                <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[var(--foreground-subtle)]">
+                  Country validation
+                  {hiddenCheckCount > 0 ? (
+                    <span className="opacity-50">({hiddenCheckCount} trivial hidden)</span>
+                  ) : null}
+                </div>
                 <div className="space-y-2">
-                  {scenario.diagnostics.validationChecks.map((check) => (
-                    <ValidationRow key={`${scenario.id}-${check.kind}`} check={check} />
-                  ))}
+                  {filteredValidationChecks.length === 0 ? (
+                    <div className="text-xs text-[var(--foreground-muted)]">No significant validation checks for this scenario.</div>
+                  ) : (
+                    filteredValidationChecks.map((check) => (
+                      <ValidationRow key={`${scenario.id}-${check.kind}`} check={check} />
+                    ))
+                  )}
                 </div>
               </div>
               <div>
-                <div className="mb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-[var(--foreground-subtle)]">Token resolution</div>
+                <div className="mb-2 text-xs font-medium text-[var(--foreground-subtle)]">Institutional tokens</div>
                 {uniqueUsages.length === 0 ? (
-                  <div className="text-xs text-[var(--foreground-muted)]">No scenario tokens were resolved.</div>
+                  <div className="text-xs text-[var(--foreground-muted)]">No institutional tokens in this scenario.</div>
                 ) : (
                   <div className="grid gap-2 lg:grid-cols-2">
                     {uniqueUsages.map((usage) => (
@@ -254,6 +450,11 @@ function FilteredScenarioCard({ item }: { item: SimulationFilteredScenario }) {
       >
         {item.scenario.metadata?.bundle ? <BundleBadge bundle={item.scenario.metadata.bundle} /> : null}
         <span className="flex-1 text-[13px] text-[var(--foreground-muted)] truncate">{item.scenario.title}</span>
+        {item.scenario.metadata?.tags?.slice(0, 2).map((tag) => (
+          <span key={tag} className="flex-shrink-0 rounded border border-[var(--border)] px-1.5 py-0.5 text-[9px] font-mono text-[var(--foreground-subtle)]">
+            {tag}
+          </span>
+        ))}
         <span className="flex-shrink-0 rounded border border-[var(--error)]/30 px-2 py-0.5 text-[10px] font-mono text-[var(--error)]">
           {item.reason}
         </span>
@@ -267,18 +468,36 @@ function FilteredScenarioCard({ item }: { item: SimulationFilteredScenario }) {
 
       {expanded && (
         <div className="border-t border-[var(--border)] bg-[rgba(255,255,255,0.01)] px-4 py-3 space-y-3">
+          <ScenarioEligibility
+            metadata={item.scenario.metadata}
+            legislature_requirement={item.scenario.legislature_requirement}
+            passing={false}
+          />
           <div className="space-y-2">
             {item.diagnostics.validationChecks.map((check) => (
               <ValidationRow key={`${item.scenario.id}-${check.kind}`} check={check} />
             ))}
           </div>
           {item.diagnostics.conditionChecks.length ? (
-            <div className="space-y-2">
-              {item.diagnostics.conditionChecks.map((check) => (
-                <div key={`${item.scenario.id}-${check.metricId}`} className="text-xs text-[var(--foreground-muted)]">
+            <div className="flex flex-wrap gap-2">
+              {item.diagnostics.conditionChecks.map((check, i) => (
+                <span key={i} className="rounded border border-[var(--border)] px-2 py-0.5 text-[10px] font-mono text-[var(--foreground-subtle)]">
                   <span className={check.passed ? 'text-[var(--success)]' : 'text-[var(--error)]'}>{check.passed ? 'PASS' : 'FAIL'}</span>
                   {' · '}{check.detail}
-                </div>
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {item.diagnostics.relationshipConditionChecks.length ? (
+            <div className="flex flex-wrap gap-2">
+              {item.diagnostics.relationshipConditionChecks.map((c, i) => (
+                <span key={i} className="rounded border border-[var(--border)] px-2 py-0.5 text-[10px] font-mono text-[var(--foreground-subtle)]">
+                  <span className={c.passed ? 'text-[var(--success)]' : 'text-[var(--error)]'}>{c.passed ? 'PASS' : 'FAIL'}</span>
+                  {' · '}{c.relationshipId}
+                  {c.resolvedCountryId ? ` (${c.resolvedCountryId})` : ' (unresolved)'}
+                  {c.actual != null ? ` = ${c.actual}` : ''}
+                  {c.min != null ? ` ≥ ${c.min}` : ''}{c.max != null ? ` ≤ ${c.max}` : ''}
+                </span>
               ))}
             </div>
           ) : null}
@@ -392,6 +611,27 @@ export default function SimulatePage() {
                   ))}
                 </div>
               ) : null}
+              {(() => {
+                const pairs = GEO_RELATIONSHIP_KEYS
+                  .map((k) => ({ k, v: result.context?.[k] ?? '' }))
+                  .filter((p) => !!p.v.trim());
+                if (!pairs.length) return null;
+                return (
+                  <div className="mt-3">
+                    <div className="section-kicker mb-1.5">Relationships</div>
+                    <div className="space-y-1">
+                      {pairs.map(({ k, v }) => (
+                        <div key={k} className="flex items-center gap-2">
+                          <span className="w-20 flex-shrink-0 text-[11px] font-medium text-[var(--foreground-subtle)]">
+                            {k.replace(/_/g, ' ')}
+                          </span>
+                          <span className="text-[11px] text-foreground">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </CommandPanel>
           ) : null}
 
@@ -450,7 +690,7 @@ export default function SimulatePage() {
                     key={tab}
                     type="button"
                     onClick={() => setActiveTab(tab)}
-                    className={`pb-2.5 text-[11px] font-mono uppercase tracking-[0.14em] transition-colors ${
+                    className={`pb-2.5 text-xs font-medium transition-colors ${
                       activeTab === tab
                         ? 'border-b-2 border-[var(--accent-primary)] text-foreground'
                         : 'text-[var(--foreground-muted)] hover:text-foreground'

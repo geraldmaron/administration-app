@@ -584,7 +584,7 @@ struct CountryDetailView: View {
         sectionBlock(title: "Economic Profile") {
             VStack(spacing: 10) {
                 statRow(label: "GDP", value: country.resolvedGdpBillions.map { formatMoney($0 * 1_000_000_000) } ?? "N/A")
-                statRow(label: "Population", value: formatPop(Double(country.attributes.population)))
+                statRow(label: "Population", value: formatPop(Double(country.resolvedPopulation)))
                 if let difficulty = country.difficulty {
                     statRow(label: "Governance", value: difficulty.capitalized)
                 }
@@ -595,6 +595,15 @@ struct CountryDetailView: View {
                     if !economy.tradeDependencies.isEmpty {
                         statRow(label: "Trade ties", value: economy.tradeDependencies.prefix(3).joined(separator: ", "))
                     }
+                }
+                if let amounts = country.amounts {
+                    statRow(label: "Aid benchmark", value: amounts.aidAmount.map(formatMoney) ?? "N/A")
+                    statRow(label: "Disaster cost", value: amounts.disasterCost.map(formatMoney) ?? "N/A")
+                    statRow(label: "Graft amount", value: amounts.graftAmount.map(formatMoney) ?? "N/A")
+                    statRow(label: "Infrastructure", value: amounts.infrastructureCost.map(formatMoney) ?? "N/A")
+                    statRow(label: "Military budget", value: amounts.militaryBudgetAmount.map(formatMoney) ?? "N/A")
+                    statRow(label: "Sanctions impact", value: amounts.sanctionsAmount.map(formatMoney) ?? "N/A")
+                    statRow(label: "Trade benchmark", value: amounts.tradeValue.map(formatMoney) ?? "N/A")
                 }
             }
         }

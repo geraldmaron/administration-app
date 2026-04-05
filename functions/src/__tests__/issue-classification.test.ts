@@ -46,4 +46,22 @@ describe('classifyRepairActions', () => {
         const actions = classifyRepairActions(issues);
         expect(actions).toHaveLength(0);
     });
+
+    test('maps token-grammar-issue to token-fix action', () => {
+        const issues: Issue[] = [makeIssue('token-grammar-issue', 'warn')];
+        const actions = classifyRepairActions(issues);
+        expect(actions.some((action) => action.type === 'token-fix')).toBe(true);
+    });
+
+    test('maps complex-sentence to voice-fix action', () => {
+        const issues: Issue[] = [makeIssue('complex-sentence', 'warn')];
+        const actions = classifyRepairActions(issues);
+        expect(actions.some((action) => action.type === 'voice-fix')).toBe(true);
+    });
+
+    test('maps option-metric-overlap to option-differentiation-fix action', () => {
+        const issues: Issue[] = [makeIssue('option-metric-overlap', 'warn')];
+        const actions = classifyRepairActions(issues);
+        expect(actions.some((action) => action.type === 'option-differentiation-fix')).toBe(true);
+    });
 });

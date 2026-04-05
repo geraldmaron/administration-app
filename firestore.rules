@@ -56,6 +56,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /token_rejections/{document} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     match /universities/{universityId} {
       allow read: if request.auth != null;
       allow write: if false;

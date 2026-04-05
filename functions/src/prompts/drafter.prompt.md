@@ -40,29 +40,28 @@ The player is always **you** — never "the government", "the president", or "th
 
 {{TOKEN_SYSTEM}}
 
-Use `the_*` forms for all country relationship tokens in narrative text. For role/title tokens, use the `the_*` form when the token opens a sentence. Never hard-code country names, currencies, or political party names.
+For foreign relationship actors, use natural language in prose (`your border rival`, `the allied government`, `your adversary`, `your trade partner`). Never use relationship placeholder tokens in prose (`{the_ally}`, `{ally}`, `{the_adversary}`, `{adversary}`, `{the_border_rival}`, etc.). For domestic role/title/institution tokens, use the `the_*` form when the token opens a sentence. Never hard-code country names, currencies, or political party names.
 
-**Country/relationship token rules** (full token list is in the Logic Parameters section injected before this prompt):
+**Country/relationship actor rules** (full token list is in the Logic Parameters section injected before this prompt):
 
-- **Subject, object, or any non-possessive position** → always use `{the_*}` form: `{the_player_country}`, `{the_adversary}`, `{the_ally}`, `{the_rival}`, `{the_trade_partner}`, `{the_partner}`, `{the_neutral}`, `{the_neighbor}`, `{the_nation}`, `{the_border_rival}`, `{the_regional_rival}`
-  - ❌ `{player_country} must decide...` → ✅ `{the_player_country} must decide...`
-  - ❌ `Relations between your government and {ally}...` → ✅ `...and {the_ally}...`
-- **Possessive constructions** → bare form followed immediately by `'s` is valid:
-  - ✅ `{player_country}'s economy collapsed`
-  - ✅ `{adversary}'s claims were dismissed`
-  - ✅ `{ally}'s position hardened`
+- **Player country references**: use `{the_player_country}` for subject/object and `{player_country}'s` for possessive.
+- **Foreign relationship actors in prose**: use natural language only (`your border rival`, `the allied government`, `your adversary`, `a neighboring rival`).
+- **Do not output relationship placeholders in prose**: `{the_ally}`, `{ally}`, `{the_adversary}`, `{adversary}`, `{the_border_rival}`, `{border_rival}`, `{the_trade_partner}`, `{trade_partner}`, etc.
 
 **Role/institution tokens at sentence start or after a preposition** → use `{the_*}` form:
 - ❌ `{finance_role} presented the plan.` → ✅ `{the_finance_role} presented the plan.`
 - ❌ `{foreign_affairs_role} rejected the proposal.` → ✅ `{the_foreign_affairs_role} rejected the proposal.`
 - ❌ `{legislature} blocked the vote.` → ✅ `{the_legislature} blocked the vote.`
+- ❌ `{opposition_party} criticized the move.` → ✅ `{the_opposition_party} criticized the move.`
+- ❌ `the {finance_role}` → ✅ `{the_finance_role}` (never write "the" before a bare token)
+- ❌ `the {opposition_party}` → ✅ `{the_opposition_party}` (article is part of the token)
 
-**PRE-SUBMIT SCAN**: Before outputting your JSON, check for any bare relationship token (`{player_country}`, `{adversary}`, `{ally}`, `{nation}`, `{neighbor}`, `{rival}`, `{partner}`, `{trade_partner}`, `{neutral}`, `{border_rival}`, `{regional_rival}`) that is NOT followed immediately by `'s`. Replace those with the `{the_*}` form. Possessives like `{player_country}'s` and `{adversary}'s` are valid — do NOT replace them.
+**PRE-SUBMIT SCAN**: Before outputting your JSON, scan for relationship placeholders (`{the_ally}`, `{ally}`, `{the_adversary}`, `{adversary}`, `{the_border_rival}`, `{border_rival}`, `{the_trade_partner}`, `{trade_partner}`, `{the_neighbor}`, `{neighbor}`, `{the_rival}`, `{rival}`, `{the_partner}`, `{partner}`, `{the_neutral}`, `{neutral}`, `{the_nation}`, `{nation}`). Replace them with natural language relationship actors.
 
 **COUNTRY NAME HARD-FAIL EXAMPLES:**
-- ❌ "Nigeria faces a debt shock" → ✅ "{player_country} faces a debt shock"
+- ❌ "Nigeria faces a debt shock" → ✅ "{the_player_country} faces a debt shock"
 - ❌ "London rejects the proposal" → ✅ "{capital_city} rejects the proposal"
-- ❌ "The UK imposes penalties" → ✅ "{the_adversary} imposes penalties"
+- ❌ "The UK imposes penalties" → ✅ "your adversary imposes penalties"
 - Literal country names, capitals, and abbreviations in output are immediate rejection conditions.
 
 **TOKEN WHITELIST SAFETY (hard requirement):**
@@ -82,6 +81,8 @@ Use `the_*` forms for all country relationship tokens in narrative text. For rol
 - `{infrastructure_role}` — NOT valid. Use `{transport_role}`.
 - `{military_role}` — NOT valid. Use `{defense_role}`.
 - `{housing_role}`, `{welfare_role}`, `{social_role}` — NOT valid. Use `{labor_role}`.
+- `{the_opposition}`, `{opposition}` — NOT valid relationship tokens in prose. Use `{the_opposition_party}` / `{opposition_party}` for the domestic political opposition, or rewrite as "opposition lawmakers", "opposition leaders".
+- `{ally}`, `{the_ally}`, `{adversary}`, `{the_adversary}`, `{border_rival}`, `{the_border_rival}`, `{trade_partner}`, `{the_trade_partner}`, `{neighbor}`, `{the_neighbor}`, `{rival}`, `{the_rival}`, `{partner}`, `{the_partner}` — relationship placeholders are NEVER valid in prose. Use natural language: "your border rival", "the allied government", "your adversary", "a neighboring state".
 - Any token not in the approved list fails validation. When in doubt, use approved tokens only.
 
 **FINAL SELF-CHECK BEFORE OUTPUT:**
@@ -99,17 +100,17 @@ Use `the_*` forms for all country relationship tokens in narrative text. For rol
 ✅ CORRECT: `"{the_finance_role} warned the cabinet that the proposed subsidy exceeds available reserves."`
 ❌ WRONG: `"The Treasury Department warned the cabinet..."` (US-only phrasing)
 
-✅ CORRECT: `"Your {ruling_party} warns that the reform threatens their influence in {legislature}."`
+✅ CORRECT: `"Your {governing_party} warns that the reform threatens their influence in {legislature}."`
 ❌ WRONG: `"Your ruling coalition warns that the reform could collapse your parliamentary majority."`
 
-**PHASE 10 POLITICAL AND ECONOMIC INSTITUTION TOKENS:**
+**POLITICAL AND ECONOMIC INSTITUTION TOKENS:**
 These tokens represent abstract domestic institutions and must be used instead of invented names:
 - `{opposition_party}` / `{the_opposition_party}` — the main political opposition (not a party name)
 - `{regional_bloc}` / `{the_regional_bloc}` — a regional economic/political grouping (not "the EU", "ASEAN", etc.)
 - `{major_industry}` / `{the_major_industry}` — the dominant industry sector in the player's economy (not "oil", "tech", etc.)
 
 Usage examples:
-- ✅ `"Your {ruling_party} pushes the bill forward as {the_opposition_party} threatens a floor walkout."`
+- ✅ `"Your {governing_party} pushes the bill forward as {the_opposition_party} threatens a floor walkout."`
 - ✅ `"{the_regional_bloc} trade ministers convened to review tariff schedules."`
 - ✅ `"Lobbying pressure from {the_major_industry} intensified after the announcement."`
 - ✅ `"You face {the_opposition_party}'s latest challenge with a slim floor majority."`
@@ -117,7 +118,7 @@ Usage examples:
 - ❌ `"Oil companies warned of divestment"` → ✅ `"{the_major_industry} warned of divestment"`
 - ❌ `"The Democratic Party filed a motion"` → ✅ `"{the_opposition_party} filed a motion"`
 
-Apply the same `{the_*}` rules for these tokens as for relationship tokens: use the `the_*` form in subject/object positions; use the bare form only in possessives (`{opposition_party}'s demands`).
+Apply the same `{the_*}` rules for these tokens as domestic institution tokens: use the `the_*` form in subject/object positions; use the bare form only in possessives (`{opposition_party}'s demands`).
 
 **CANONICAL ADVISOR ROLES** (only these 13 are valid for `advisorFeedback.roleId`):
 `role_executive`, `role_diplomacy`, `role_defense`, `role_economy`, `role_justice`, `role_health`, `role_commerce`, `role_labor`, `role_interior`, `role_energy`, `role_environment`, `role_transport`, `role_education`
@@ -261,7 +262,7 @@ Feedback must reference the **concrete policy action, affected institution, and 
 
 ✅ EXAMPLES:
 - role_economy: "The phased wage adjustment shields the lowest-income quartile from a consumption cliff that would otherwise trigger secondary job losses in the service sector."
-- role_defense: "Deploying {military_general}'s rapid-response units signals resolve but raises the risk of miscalculation at the frontier — rules of engagement must be clarified before orders are issued."
+- role_defense: "Deploying {the_armed_forces_name}'s rapid-response units signals resolve but raises the risk of miscalculation at the frontier — rules of engagement must be clarified before orders are issued."
 - role_health: "Redirecting pandemic preparedness funding to infrastructure leaves the national stockpile below WHO-recommended thresholds for the next respiratory season."
 
 ❌ REJECTED: "This aligns well with our defense priorities." | "Our department has no strong position." | "This warrants careful monitoring from our department."
@@ -277,7 +278,7 @@ Feedback must reference the **concrete policy action, affected institution, and 
 - Scenarios should feel like a classified briefing on a real crisis: here is what happened, here is who is involved, here is what each response entails. The stakes must feel visceral — jobs lost, protests erupting, markets crashing, alliances fracturing. The outcome is unknown. The player decides.
 - Scenarios should feel grounded in a concrete situation, not like generic policy exercises. Name the trigger event, the pressure group, the minister, the market. ❌ "Economic challenges require a policy response." → ✅ "A wave of factory closures has left 40,000 workers without income, and {the_opposition_party}'s call for emergency hearings has forced {the_legislature} into a special session."
 - When using `{major_industry}` or `{the_major_industry}`, the surrounding narrative must be sector-specific. If the country context includes industry-type tags (oil, tourism, agriculture, manufacturing, mining, tech), write scenario details — supply chains, regulatory bodies, workforce segments, export markets — that only make sense for that sector. Never write "Your {major_industry} is struggling" — write "A critical supplier to your {major_industry} has declared force majeure, threatening to idle assembly lines within 72 hours."
-- Apply the same specificity to `{regional_bloc}`, `{opposition_party}`, and `{ruling_party}` — the surrounding context must define them by their actions, demands, and leverage, not generic labels.
+- Apply the same specificity to `{regional_bloc}`, `{opposition_party}`, and `{governing_party}` — the surrounding context must define them by their actions, demands, and leverage, not generic labels.
 
 ### Layman-Friendly Language (Strict)
 - Write for non-expert players. Use plain words over policy jargon.
@@ -306,8 +307,8 @@ Feedback must reference the **concrete policy action, affected institution, and 
 - **GDP is not a steal-able amount**: `{gdp_description}` describes the scale of the economy, not an amount that can be embezzled or diverted. Use `{graft_amount}` for corruption scenarios.
 - **Second person in scenario/option fields only**: `description`, `options[].text`, `advisorFeedback` use "You...", "Your administration...", "You direct..."
 - **Third person in outcome fields**: `outcomeHeadline`, `outcomeSummary`, `outcomeContext` must NEVER contain "you" or "your" — write as a newspaper reporter covering the aftermath
-- **Actor-role consistency**: keep international actors logically distinct where relevant (e.g., `{ally}` and `{trade_partner}` should not be treated as opposing sides in the same sentence). Avoid self-referential constructions like "{the_ally} warned that concessions to {the_ally}...".
-- **Adjacency semantics**: if wording includes “neighboring”, “bordering”, or “across the border”, use `{neighbor}` or `{border_rival}` (and their `{the_*}` forms) rather than `{rival}` / `{adversary}`.
+- **Actor-role consistency**: keep international actors logically distinct where relevant. Avoid self-referential constructions like “the allied government warned that concessions to the allied government...”.
+- **Adjacency semantics**: if wording includes “neighboring”, “bordering”, or “across the border”, use phrases like “your border rival”, “the neighboring state”, “a bordering country” — never relationship token placeholders.
 - **No advisor boilerplate**: any feedback sentence that resembles generic templates (e.g., “supports this course of action”, “warrants careful monitoring”) must be rewritten with concrete scenario details.
 **BANNED WORDS AND PHRASES (hard failures — these cause immediate scenario rejection):**
 - Measurement units: `kilometer`, `kilometers`, `km`, `mile`, `miles`, `meter`, `meters`, `foot`, `feet`, `pound`, `pounds`, `kg`, `kilogram`

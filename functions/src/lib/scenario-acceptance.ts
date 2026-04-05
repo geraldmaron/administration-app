@@ -1,6 +1,8 @@
 import type { Issue } from './audit-rules';
 import type { ContentQualityResult } from './content-quality';
+import { combineEditorialReview, type EditorialReviewResult } from './editorial-review';
 import type { NarrativeReviewResult } from './narrative-review';
+import type { RenderedOutputQaResult } from './rendered-output-qa';
 
 export const SCENARIO_ACCEPTANCE_POLICY_VERSION = '2026-03-17-success-optimization-v1';
 
@@ -59,6 +61,7 @@ export interface ScenarioAcceptanceInput {
     issues: readonly Issue[];
     contentQualityGate: EvaluatorDecisionInput<ContentQualityResult>;
     narrativeReviewGate: EvaluatorDecisionInput<NarrativeReviewResult>;
+    renderedOutputGate?: EvaluatorDecisionInput<RenderedOutputQaResult>;
 }
 
 export interface ScenarioAcceptanceDecision {
@@ -67,6 +70,7 @@ export interface ScenarioAcceptanceDecision {
     blockingIssues: Issue[];
     rejectionIssues: Issue[];
     rejectionReasons: string[];
+    editorialReview: EditorialReviewResult;
 }
 
 function makeDecisionIssue(rule: string, message: string, target: string): Issue {
@@ -85,6 +89,7 @@ export function decideScenarioAcceptance(input: ScenarioAcceptanceInput): Scenar
     );
     const rejectionIssues: Issue[] = [];
     const target = input.issues[0]?.target || 'scenario';
+    const editorialReview = combineEditorialReview(input.contentQualityGate, input.narrativeReviewGate);
     const unresolvedErrorIssues = input.issues.filter(
         (issue) => issue.severity === 'error' && !BLOCKING_AUDIT_RULE_IDS.has(issue.rule)
     );
@@ -108,6 +113,24 @@ export function decideScenarioAcceptance(input: ScenarioAcceptanceInput): Scenar
         );
     }
 
+    if (
+        editorialReview.usable &&
+        (input.contentQualityGate.enabled || input.narrativeReviewGate.enabled) &&
+        editorialReview.pass !== true
+    ) {
+        const detail = editorialReview.reasons.length > 0
+            ? editorialReview.reasons.join('; ')
+            : `overall=${editorialReview.overallScore.toFixed(2)}`;
+
+        rejectionIssues.push(
+            makeDecisionIssue(
+                'editorial-review-violation',
+                `Editorial review failed: ${detail}.`,
+                target
+            )
+        );
+    }
+
     if (input.contentQualityGate.enabled && input.contentQualityGate.usable && input.contentQualityGate.result) {
         if (input.contentQualityGate.result.pass !== true || input.contentQualityGate.result.overallScore < 3.0) {
             rejectionIssues.push(
@@ -120,18 +143,32 @@ export function decideScenarioAcceptance(input: ScenarioAcceptanceInput): Scenar
         }
     }
 
-    if (input.narrativeReviewGate.enabled && input.narrativeReviewGate.usable && input.narrativeReviewGate.result) {
-        const narrative = input.narrativeReviewGate.result;
-        if (
-            narrative.overallScore < 2.5 ||
-            narrative.optionDifferentiation.score < 2 ||
-            narrative.consequenceQuality.score < 2 ||
-            narrative.replayValue.score < 2
-        ) {
+    if (input.contentQualityGate.enabled && !input.contentQualityGate.usable) {
+        rejectionIssues.push(
+            makeDecisionIssue(
+                'content-quality-unavailable',
+                `Content quality gate was enabled but produced no usable result${input.contentQualityGate.error ? `: ${input.contentQualityGate.error}` : '.'}`,
+                target
+            )
+        );
+    }
+
+    if (input.narrativeReviewGate.enabled && !input.narrativeReviewGate.usable) {
+        rejectionIssues.push(
+            makeDecisionIssue(
+                'narrative-review-unavailable',
+                `Narrative review gate was enabled but produced no usable result${input.narrativeReviewGate.error ? `: ${input.narrativeReviewGate.error}` : '.'}`,
+                target
+            )
+        );
+    }
+
+    if (input.renderedOutputGate?.enabled && input.renderedOutputGate.usable && input.renderedOutputGate.result) {
+        if (input.renderedOutputGate.result.pass !== true) {
             rejectionIssues.push(
                 makeDecisionIssue(
-                    'narrative-review-violation',
-                    `Narrative review failed: overall=${narrative.overallScore.toFixed(2)}, differentiation=${narrative.optionDifferentiation.score}, consequence=${narrative.consequenceQuality.score}, replay=${narrative.replayValue.score}.`,
+                    'rendered-output-violation',
+                    `Rendered output QA failed with ${input.renderedOutputGate.result.issues.length} issue(s).`,
                     target
                 )
             );
@@ -149,5 +186,6 @@ export function decideScenarioAcceptance(input: ScenarioAcceptanceInput): Scenar
         blockingIssues,
         rejectionIssues,
         rejectionReasons,
+        editorialReview,
     };
 }

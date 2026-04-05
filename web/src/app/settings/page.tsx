@@ -4,6 +4,36 @@ import { useEffect, useState, useCallback } from 'react';
 import CommandPanel from '@/components/CommandPanel';
 import OperationsNav from '@/components/OperationsNav';
 import ScreenHeader from '@/components/ScreenHeader';
+import { METRIC_DISPLAY } from '@/lib/constants';
+
+const VALID_METRIC_IDS = Object.keys(METRIC_DISPLAY);
+
+const BUILT_IN_ALIASES: Record<string, string> = {
+  metric_justice: 'metric_public_order',
+  metric_culture: 'metric_education',
+  metric_resources: 'metric_energy',
+  metric_social: 'metric_equality',
+  metric_governance: 'metric_democracy',
+  metric_defense: 'metric_military',
+  metric_commerce: 'metric_trade',
+  metric_diplomacy: 'metric_foreign_relations',
+  metric_politics: 'metric_democracy',
+  metric_safety: 'metric_public_order',
+  metric_science: 'metric_innovation',
+  metric_security: 'metric_military',
+  metric_tech: 'metric_innovation',
+  metric_freedom: 'metric_liberty',
+  metric_equity: 'metric_equality',
+  metric_anti_corruption: 'metric_corruption',
+  metric_civil_liberties: 'metric_liberty',
+  metric_social_cohesion: 'metric_public_order',
+  metric_unemployment: 'metric_employment',
+  metric_inequality: 'metric_equality',
+  metric_tourism: 'metric_economy',
+  metric_water: 'metric_infrastructure',
+  metric_environment_stability: 'metric_environment',
+  metric_commerce_role: 'metric_trade',
+};
 
 interface GenerationConfig {
   content_quality_gate_enabled?: boolean;
@@ -15,6 +45,7 @@ interface GenerationConfig {
   concept_concurrency?: number;
   dedup_similarity_threshold?: number;
   max_llm_repair_attempts?: number;
+  metric_mappings?: Record<string, string>;
 }
 
 export default function SettingsPage() {
@@ -179,6 +210,34 @@ export default function SettingsPage() {
         )}
       </CommandPanel>
 
+      {/* Metric Mappings */}
+      <MetricMappingsPanel
+        dynamicMappings={config?.metric_mappings ?? {}}
+        onUpdate={async (mappings) => {
+          setSaving(true);
+          setSaveMessage(null);
+          try {
+            const res = await fetch('/api/settings', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ metric_mappings: mappings }),
+            });
+            if (res.ok) {
+              setConfig(prev => prev ? { ...prev, metric_mappings: mappings } : prev);
+              setSaveMessage('Metric mappings updated');
+            } else {
+              setSaveMessage('Failed to save mappings');
+            }
+          } catch {
+            setSaveMessage('Network error');
+          } finally {
+            setSaving(false);
+            setTimeout(() => setSaveMessage(null), 3000);
+          }
+        }}
+        saving={saving}
+      />
+
       {/* Pipeline Info */}
       <CommandPanel className="p-5 md:p-6">
         <div className="section-kicker mb-3">
@@ -234,5 +293,134 @@ export default function SettingsPage() {
         </div>
       </CommandPanel>
     </div>
+  );
+}
+
+function MetricMappingsPanel({
+  dynamicMappings,
+  onUpdate,
+  saving,
+}: {
+  dynamicMappings: Record<string, string>;
+  onUpdate: (mappings: Record<string, string>) => Promise<void>;
+  saving: boolean;
+}) {
+  const [showBuiltIn, setShowBuiltIn] = useState(false);
+  const [newFrom, setNewFrom] = useState('');
+  const [newTo, setNewTo] = useState('');
+
+  const dynamicEntries = Object.entries(dynamicMappings);
+
+  async function handleAdd() {
+    const from = newFrom.trim().toLowerCase().replace(/[- ]/g, '_');
+    if (!from || !newTo) return;
+    const prefixed = from.startsWith('metric_') ? from : `metric_${from}`;
+    if (VALID_METRIC_IDS.includes(prefixed)) return;
+    if (BUILT_IN_ALIASES[prefixed]) return;
+    const updated = { ...dynamicMappings, [prefixed]: newTo };
+    await onUpdate(updated);
+    setNewFrom('');
+    setNewTo('');
+  }
+
+  async function handleRemove(key: string) {
+    const updated = { ...dynamicMappings };
+    delete updated[key];
+    await onUpdate(updated);
+  }
+
+  return (
+    <CommandPanel className="mb-6 p-5 md:p-6">
+      <div className="section-kicker mb-3">Metric ID Mappings</div>
+      <p className="text-[10px] text-foreground-subtle mb-4">
+        When the LLM generates an invalid metric ID, the deterministic fixer maps it to a valid one.
+        Built-in aliases are hardcoded; dynamic mappings are stored in Firestore and applied at runtime.
+      </p>
+
+      {/* Dynamic mappings (editable) */}
+      <div className="mb-4">
+        <div className="text-[10px] font-medium text-foreground-muted mb-2">
+          Dynamic Mappings
+        </div>
+        {dynamicEntries.length === 0 ? (
+          <div className="text-[10px] text-foreground-subtle font-mono py-2">No dynamic mappings configured</div>
+        ) : (
+          <div className="space-y-1">
+            {dynamicEntries.map(([from, to]) => (
+              <div key={from} className="flex items-center gap-2 text-xs font-mono">
+                <span className="text-[var(--error)]">{from}</span>
+                <span className="text-foreground-subtle">&rarr;</span>
+                <span className="text-[var(--success)]">{METRIC_DISPLAY[to] ?? to}</span>
+                <button
+                  onClick={() => handleRemove(from)}
+                  disabled={saving}
+                  className="ml-auto text-[10px] text-foreground-subtle hover:text-[var(--error)] transition-colors"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add new mapping */}
+        <div className="flex items-end gap-2 mt-3 pt-3 border-t border-[var(--border)]">
+          <div className="flex-1 min-w-0">
+            <label className="text-[10px] text-foreground-muted block mb-1">Invalid ID</label>
+            <input
+              type="text"
+              value={newFrom}
+              onChange={(e) => setNewFrom(e.target.value)}
+              placeholder="e.g. metric_justice"
+              className="w-full bg-background border border-[var(--border-strong)] text-foreground text-xs font-mono px-2 py-1 rounded-[2px] focus:outline-none focus:border-accent"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <label className="text-[10px] text-foreground-muted block mb-1">Maps To</label>
+            <select
+              value={newTo}
+              onChange={(e) => setNewTo(e.target.value)}
+              className="w-full bg-background border border-[var(--border-strong)] text-foreground text-xs font-mono px-2 py-1 rounded-[2px] focus:outline-none focus:border-accent"
+            >
+              <option value="">Select metric…</option>
+              {VALID_METRIC_IDS.map((id) => (
+                <option key={id} value={id}>
+                  {METRIC_DISPLAY[id]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={handleAdd}
+            disabled={saving || !newFrom.trim() || !newTo}
+            className="btn btn-primary text-xs px-3 py-1 shrink-0"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      {/* Built-in aliases (read-only) */}
+      <div>
+        <button
+          onClick={() => setShowBuiltIn(!showBuiltIn)}
+          className="text-[10px] font-medium text-foreground-muted mb-2 flex items-center gap-1 hover:text-foreground transition-colors"
+        >
+          <span className="text-foreground-subtle">{showBuiltIn ? '▼' : '▸'}</span>
+          Built-in Aliases ({Object.keys(BUILT_IN_ALIASES).length})
+        </button>
+        {showBuiltIn && (
+          <div className="space-y-1 max-h-60 overflow-y-auto">
+            {Object.entries(BUILT_IN_ALIASES).map(([from, to]) => (
+              <div key={from} className="flex items-center gap-2 text-xs font-mono">
+                <span className="text-foreground-subtle">{from}</span>
+                <span className="text-foreground-subtle">&rarr;</span>
+                <span className="text-foreground-subtle">{METRIC_DISPLAY[to] ?? to}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </CommandPanel>
   );
 }

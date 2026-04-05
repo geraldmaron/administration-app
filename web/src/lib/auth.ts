@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export function requireAdminAuth(request: NextRequest): NextResponse | null {
   const host = request.headers.get('host') ?? '';
-  if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) {
+  const hostname = host.split(':', 1)[0]?.toLowerCase() ?? '';
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost')) {
     return null;
   }
 

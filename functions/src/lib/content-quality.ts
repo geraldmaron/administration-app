@@ -165,11 +165,14 @@ export async function evaluateContentQuality(
 ): Promise<ContentQualityResult> {
     const prompt = buildQualityPrompt(scenario);
 
+    const defaultModel = process.env.OLLAMA_BASE_URL
+        ? (process.env.CONTENT_QUALITY_MODEL || 'ollama:ai-fast:latest')
+        : 'gpt-4o-mini';
     const result = await callModelProvider<QualityLLMResponse>(
         { maxTokens: 2048, temperature: 0.2 },
         prompt,
         QUALITY_SCHEMA,
-        modelOverride || 'gpt-4o-mini'
+        modelOverride || defaultModel
     );
 
     if (!result.data) {

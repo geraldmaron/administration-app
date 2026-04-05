@@ -125,6 +125,17 @@ export const INVERSE_METRICS = new Set([
 export const BUNDLE_IDS = ALL_BUNDLES.map((b) => b.id);
 export const REGION_IDS = ALL_REGIONS.map((r) => r.id);
 
+export function formatDuration(startedAt?: string, completedAt?: string): string {
+  if (!startedAt || !completedAt) return '—';
+  const ms = new Date(completedAt).getTime() - new Date(startedAt).getTime();
+  if (ms < 0) return '—';
+  const seconds = Math.floor(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
+  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
+
 export function formatRelativeTime(isoString: string): string {
   const diff = Date.now() - new Date(isoString).getTime();
   const minutes = Math.floor(diff / 60000);
@@ -140,9 +151,11 @@ export function formatShortDate(isoString: string): string {
   const d = new Date(isoString);
   const now = new Date();
   const sameYear = d.getFullYear() === now.getFullYear();
-  return d.toLocaleDateString('en-US', {
+  return d.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
     ...(sameYear ? {} : { year: 'numeric' }),
   });
 }

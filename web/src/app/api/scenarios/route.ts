@@ -36,6 +36,9 @@ function toSummary(id: string, data: FirebaseFirestore.DocumentData): ScenarioSu
     scopeTier: data.metadata?.scopeTier ?? null,
     scopeKey: data.metadata?.scopeKey ?? null,
     countryCount,
+    conditionCount: Array.isArray(data.conditions) ? data.conditions.length : 0,
+    tagCount: tags.length,
+    tagResolutionStatus: data.metadata?.tagResolution?.status ?? null,
   };
 }
 
@@ -52,37 +55,24 @@ export async function GET(request: NextRequest) {
     let scenarios: ScenarioSummary[] = [];
 
     if (active === 'all') {
-      let trueQuery: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = db.collection('scenarios');
-      let falseQuery: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = db.collection('scenarios');
+      let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = db.collection('scenarios');
 
       if (bundleFilter) {
-        trueQuery = trueQuery.where('metadata.bundle', '==', bundleFilter);
-        falseQuery = falseQuery.where('metadata.bundle', '==', bundleFilter);
+        query = query.where('metadata.bundle', '==', bundleFilter);
       }
 
-      trueQuery = trueQuery.where('is_active', '==', true).orderBy('created_at', 'desc').limit(pageSize);
-      falseQuery = falseQuery.where('is_active', '==', false).orderBy('created_at', 'desc').limit(pageSize);
+      query = query.orderBy('created_at', 'desc').limit(pageSize + 1);
 
       if (startAfter) {
         const cursorDoc = await db.collection('scenarios').doc(startAfter).get();
         if (cursorDoc.exists) {
-          trueQuery = trueQuery.startAfter(cursorDoc);
-          falseQuery = falseQuery.startAfter(cursorDoc);
+          query = query.startAfter(cursorDoc);
         }
       }
 
-      const [trueSnap, falseSnap] = await Promise.all([trueQuery.get(), falseQuery.get()]);
-
-      const combined = [
-        ...trueSnap.docs.map((d) => ({ doc: d, data: d.data() })),
-        ...falseSnap.docs.map((d) => ({ doc: d, data: d.data() })),
-      ].sort((a, b) => {
-        const at = a.data.created_at?.toMillis?.() ?? 0;
-        const bt = b.data.created_at?.toMillis?.() ?? 0;
-        return bt - at;
-      });
-
-      scenarios = combined.slice(0, pageSize).map(({ doc, data }) => toSummary(doc.id, data));
+      const snap = await query.get();
+      const docs = snap.docs.slice(0, pageSize);
+      scenarios = docs.map((d) => toSummary(d.id, d.data()));
     } else {
       const isActive = active === 'true';
       let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = db.collection('scenarios');
@@ -128,7 +118,21 @@ export async function DELETE(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    const body = await request.json() as { ids?: unknown };
+    const body = await request.json() as { ids?: unknown; deleteAll?: unknown };
+
+    if (body.deleteAll === true) {
+      let totalDeleted = 0;
+      while (true) {
+        const snap = await db.collection('scenarios').limit(400).get();
+        if (snap.empty) break;
+        const batch = db.batch();
+        snap.docs.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+        totalDeleted += snap.docs.length;
+      }
+      return NextResponse.json({ deleted: totalDeleted });
+    }
+
     const ids = body.ids;
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: 'ids must be a non-empty array' }, { status: 400 });

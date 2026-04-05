@@ -15,15 +15,14 @@ import * as admin from 'firebase-admin';
 import * as logger from "firebase-functions/logger";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { generateScenarios, getGenerationConfig } from './scenario-engine';
 import { saveScenario, getActiveBundleCount } from './storage';
 import { ALL_BUNDLE_IDS, isValidBundleId, STANDARD_BUNDLE_IDS, type BundleId } from './data/schemas/bundleIds';
 import type { ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind } from './types';
 import { validateConfig, logConfigStatus } from './lib/config-validator';
 import { normalizeGenerationScopeInput } from './lib/generation-scope';
+import { exceedsBundleLimitForModel, getMaxBundlesPerJob } from './lib/generation-models';
 import { getProviderRetryTelemetry, resetProviderRetryTelemetry } from './lib/model-providers';
-import { buildGenerationJobRecord, estimateExpectedScenarios } from './shared/generation-job';
-import type { GenerationModelConfig } from './shared/generation-contract';
+import { buildGenerationJobRecord, estimateExpectedScenarios, type GenerationJobRecord } from './shared/generation-job';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -57,61 +56,7 @@ export const GENERATION_JOB_TRIGGER_CONCURRENCY = 1;
 // Types
 // ---------------------------------------------------------------------------
 
-export interface GenerationJobData {
-    // Required fields
-    bundles: BundleId[];
-    count: number;
-    lowLatencyMode?: boolean;
-    
-    // Optional configuration
-    mode?: 'news' | 'manual' | 'blitz';
-    distributionConfig?: {
-        mode: 'fixed' | 'auto';
-        loopLength?: 1 | 2 | 3;
-        gameLength?: 'short' | 'medium' | 'long';
-    };
-
-    // Region targeting — scenarios are tagged and filtered by region
-    region?: string;    // Single region hint for prompt context
-    regions?: string[]; // Canonical region IDs written to scenario metadata.region_tags
-    scopeTier?: ScenarioScopeTier;
-    scopeKey?: string;
-    clusterId?: string;
-    exclusivityReason?: ScenarioExclusivityReason;
-    applicable_countries?: string[];
-    sourceKind?: ScenarioSourceKind;
-    
-    // Job metadata (set by client)
-    requestedBy?: string;
-    requestedAt?: admin.firestore.Timestamp;
-    priority?: 'low' | 'normal' | 'high';
-    description?: string;
-    modelConfig?: GenerationModelConfig;
-
-    // Dry run — generate but hold for review before saving
-    dryRun?: boolean;
-
-    // News articles to seed generation when mode === 'news'
-    newsContext?: Array<{ title: string; link: string; snippet?: string; source: string; pubDate: string; }>;
-
-    // Job status (set by system)
-    status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'pending_review';
-    startedAt?: admin.firestore.Timestamp;
-    updatedAt?: admin.firestore.Timestamp;
-    completedAt?: admin.firestore.Timestamp;
-    progress?: number;
-    total?: number;
-    totalCount?: number;
-    completedCount?: number;
-    failedCount?: number;
-    executionTarget?: string;
-    currentBundle?: string;
-    currentPhase?: string;
-    currentMessage?: string;
-    lastHeartbeatAt?: admin.firestore.Timestamp;
-    eventCount?: number;
-    createdScenarioIds?: string[];
-    savedScenarioIds?: string[];
+export interface GenerationJobData extends GenerationJobRecord<admin.firestore.Timestamp, BundleId> {
     results?: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; countrySource?: string; policyVersion?: string; scopeTier?: ScenarioScopeTier; scopeKey?: string; sourceKind?: ScenarioSourceKind }[];
     errors?: { id?: string; bundle?: string; error: string }[];
     error?: string;
@@ -243,15 +188,20 @@ export const onScenarioJobCreated = onDocumentCreated({
     const jobId = event.params.jobId;
     const jobRef = snapshot.ref;
 
-    if (jobData.status !== 'pending') {
-        logger.info(`Job ${jobId} skipped - status is ${jobData.status}`);
-        return;
-    }
+    // Atomically claim this job to prevent duplicate trigger execution.
+    // Firestore triggers can fire more than once; a plain status read is racy.
+    const db = admin.firestore();
+    const claimed = await db.runTransaction(async (txn) => {
+        const freshSnap = await txn.get(jobRef);
+        const freshData = freshSnap.data();
+        if (!freshData || freshData.status !== 'pending') return false;
+        if (freshData.executionTarget === 'n8n') return false;
+        txn.update(jobRef, { status: 'claimed', claimedAt: admin.firestore.FieldValue.serverTimestamp() });
+        return true;
+    });
 
-    // Jobs with executionTarget=n8n are driven by the n8n orchestrator instead.
-    // The Firestore trigger must not process them to avoid a double-execution conflict.
-    if ((jobData as any).executionTarget === 'n8n') {
-        logger.info(`Job ${jobId} skipped - executionTarget is n8n; loop will be driven by n8n orchestrator`);
+    if (!claimed) {
+        logger.info(`Job ${jobId} skipped - not claimable (status: ${jobData.status}, target: ${jobData.executionTarget ?? 'cloud_function'})`);
         return;
     }
 
@@ -307,9 +257,8 @@ export const onScenarioJobCreated = onDocumentCreated({
         return;
     }
 
-    // Fetch generation config (cached after first call)
+    const { generateScenarios, getGenerationConfig } = await import('./scenario-engine');
     const genConfig = await getGenerationConfig();
-    const db = admin.firestore();
 
     // Validate count
     const count = Math.min(Math.max(1, jobData.count || 1), genConfig.max_scenarios_per_job);
@@ -362,7 +311,7 @@ export const onScenarioJobCreated = onDocumentCreated({
 
         let totalCompleted = 0;
         let totalFailed = 0;
-        const jobTokenSummary = { inputTokens: 0, outputTokens: 0, costUsd: 0, callCount: 0 };
+        const jobTokenSummary = { inputTokens: 0, outputTokens: 0, costUsd: 0, callCount: 0, conceptCount: 0, totalDurationMs: 0 };
         const allResults: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; auditScore?: number; autoFixed?: boolean; countrySource?: string; policyVersion?: string; scopeTier?: ScenarioScopeTier; scopeKey?: string; sourceKind?: ScenarioSourceKind }[] = [];
         const allErrors: { id?: string; bundle?: string; error: string }[] = [];
         const savedScenarioIds: string[] = [];
@@ -502,6 +451,8 @@ export const onScenarioJobCreated = onDocumentCreated({
                     jobTokenSummary.outputTokens += bundleTokens.outputTokens;
                     jobTokenSummary.costUsd += bundleTokens.costUsd;
                     jobTokenSummary.callCount += bundleTokens.callCount;
+                    jobTokenSummary.conceptCount += bundleTokens.conceptCount ?? 0;
+                    jobTokenSummary.totalDurationMs += bundleTokens.totalDurationMs ?? 0;
                 }
                 if (error === 'cancelled') continue;
                 if (skippedReason === 'ceiling') {
@@ -536,7 +487,7 @@ export const onScenarioJobCreated = onDocumentCreated({
                 const provenance = {
                     jobId,
                     executionTarget: jobData.executionTarget ?? 'cloud_function',
-                    modelUsed: jobData.modelConfig?.drafterModel ?? 'gpt-4o-mini',
+                    modelUsed: jobData.modelConfig?.drafterModel ?? 'unknown',
                     generatedAt: new Date().toISOString(),
                 };
                 for (const s of scenarios) {
@@ -735,6 +686,10 @@ export const onScenarioJobCreated = onDocumentCreated({
                 outputTokens: jobTokenSummary.outputTokens,
                 costUsd: Math.round(jobTokenSummary.costUsd * 10000) / 10000,
                 callCount: jobTokenSummary.callCount,
+                ...(jobTokenSummary.conceptCount > 0 ? {
+                    conceptCount: jobTokenSummary.conceptCount,
+                    totalDurationMs: jobTokenSummary.totalDurationMs,
+                } : {}),
             },
             currentPhase: finalStatus,
             currentMessage: `Job ${finalStatus}: ${totalCompleted} saved, ${totalFailed} failed`,
@@ -793,6 +748,7 @@ export async function createGenerationJob(
     db: admin.firestore.Firestore,
     options: CreateJobOptions
 ): Promise<{ jobId: string; bundles: BundleId[]; expectedScenarios: number }> {
+    const { getGenerationConfig } = await import('./scenario-engine');
     const genConfig = await getGenerationConfig();
 
     // Check pending job limit
@@ -805,6 +761,14 @@ export async function createGenerationJob(
     const bundles = resolveBundles(options.bundles);
     if (bundles.length === 0) {
         throw new Error(`No valid bundles specified. Valid bundles: ${ALL_BUNDLE_IDS.join(', ')}`);
+    }
+
+    if (exceedsBundleLimitForModel(bundles.length, options.modelConfig)) {
+        const maxBundles = getMaxBundlesPerJob(options.modelConfig);
+        throw new Error(
+            `This model configuration supports at most ${maxBundles} bundle${maxBundles === 1 ? '' : 's'} per job. ` +
+            `Requested ${bundles.length}. Split the request into smaller jobs.`
+        );
     }
 
     // Validate count
@@ -922,6 +886,45 @@ export async function cancelJob(
 function toMillis(ts?: admin.firestore.Timestamp): number | null {
     if (!ts) return null;
     return ts.toDate().getTime();
+}
+
+export function shouldFinalizeHardCappedJob(params: {
+    startedAtMs?: number | null;
+    updatedAtMs?: number | null;
+    lastHeartbeatAtMs?: number | null;
+    hardCapMinutes: number;
+    nowMs?: number;
+    executionTarget?: string;
+}): boolean {
+    const {
+        startedAtMs,
+        updatedAtMs,
+        lastHeartbeatAtMs,
+        hardCapMinutes,
+        nowMs = Date.now(),
+        executionTarget,
+    } = params;
+
+    if (!startedAtMs || hardCapMinutes <= 0) {
+        return false;
+    }
+
+    const hardCapWindowMs = hardCapMinutes * 60 * 1000;
+    const startedExceeded = startedAtMs <= (nowMs - hardCapWindowMs);
+    if (!startedExceeded) {
+        return false;
+    }
+
+    const lastActivityMs = Math.max(startedAtMs ?? 0, updatedAtMs ?? 0, lastHeartbeatAtMs ?? 0);
+    if (!lastActivityMs) {
+        return true;
+    }
+
+    if (executionTarget === 'n8n' && lastActivityMs > (nowMs - hardCapWindowMs)) {
+        return false;
+    }
+
+    return true;
 }
 
 /**
@@ -1070,6 +1073,54 @@ export const recoverZombieJobs = onSchedule({
             logger.info(`[ZombieRecovery] Sweep 2: Terminated ${loopCandidates.length} loop-failure job(s)`);
         } else {
             logger.info('[ZombieRecovery] Sweep 2: No loop-failure jobs found');
+        }
+
+        // -------------------------------------------------------------------------
+        // Sweep 3: Hard runtime cap (catches all edge cases — stuck n8n loops,
+        // Cloud Functions killed without cleanup, orphaned local-gen-server jobs)
+        // -------------------------------------------------------------------------
+        const HARD_CAP_MINUTES = 20;
+        const hardCapCutoff = new Date(Date.now() - HARD_CAP_MINUTES * 60 * 1000);
+        const hardCapTs = admin.firestore.Timestamp.fromDate(hardCapCutoff);
+
+        const longRunning = await db.collection('generation_jobs')
+            .where('status', '==', 'running')
+            .where('startedAt', '<', hardCapTs)
+            .get();
+
+        const hardCapCandidates = longRunning.docs.filter((doc) => {
+            if (candidates.some(c => c.id === doc.id) || loopCandidates.some(c => c.id === doc.id)) {
+                return false;
+            }
+
+            const data = doc.data() as GenerationJobData;
+            return shouldFinalizeHardCappedJob({
+                startedAtMs: toMillis(data.startedAt),
+                updatedAtMs: toMillis(data.updatedAt),
+                lastHeartbeatAtMs: toMillis(data.lastHeartbeatAt),
+                hardCapMinutes: HARD_CAP_MINUTES,
+                executionTarget: data.executionTarget,
+            });
+        });
+
+        if (hardCapCandidates.length > 0) {
+            logger.warn(`[ZombieRecovery] Sweep 3: Found ${hardCapCandidates.length} job(s) exceeding ${HARD_CAP_MINUTES}m hard cap — finalizing`);
+            const capBatch = db.batch();
+            for (const doc of hardCapCandidates) {
+                const data = doc.data() as GenerationJobData;
+                const completed = Math.max(0, Number(data.completedCount ?? 0));
+                const hasPartial = completed > 0;
+                capBatch.update(doc.ref, {
+                    status: hasPartial ? 'completed' : 'failed',
+                    error: `Job exceeded ${HARD_CAP_MINUTES}-minute hard runtime cap. ${completed > 0 ? `${completed} scenario(s) saved before cutoff.` : 'No scenarios were saved.'} Retry with fewer bundles or check provider connectivity.`,
+                    completedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+            }
+            await capBatch.commit();
+            logger.info(`[ZombieRecovery] Sweep 3: Finalized ${hardCapCandidates.length} hard-cap job(s)`);
+        } else {
+            logger.info('[ZombieRecovery] Sweep 3: No hard-cap violations found');
         }
     } catch (err) {
         logger.error('[ZombieRecovery] Uncaught error in scheduler handler:', err);

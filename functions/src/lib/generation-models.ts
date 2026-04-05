@@ -5,6 +5,8 @@ export type GenerationPhase = 'architect' | 'drafter' | 'advisor' | 'repair' | '
 
 export type ModelFamily = 'openai' | 'ollama';
 
+export const MAX_OLLAMA_BUNDLES_PER_JOB = 2;
+
 const LANGUAGE_MODEL_KEYS = [
   'architectModel',
   'drafterModel',
@@ -78,19 +80,30 @@ export function getModelFamily(modelConfig?: GenerationModelConfig): ModelFamily
   return isOllamaGeneration(modelConfig) ? 'ollama' : 'openai';
 }
 
+export function getMaxBundlesPerJob(modelConfig?: GenerationModelConfig): number {
+  return isOllamaGeneration(modelConfig) ? MAX_OLLAMA_BUNDLES_PER_JOB : Number.POSITIVE_INFINITY;
+}
+
+export function exceedsBundleLimitForModel(bundleCount: number, modelConfig?: GenerationModelConfig): boolean {
+  return bundleCount > getMaxBundlesPerJob(modelConfig);
+}
+
 /**
  * Optimal Ollama model selection per generation phase.
- * Prioritises mid-range (12-15B) models for speed+quality balance.
- * 30B+ models are too slow for decomposed sub-phases (~160-300s TTFT).
- * 8B models are fast but may lack nuance for creative writing.
+ * Semantic aliases (ai-reasoning, ai-coding, ai-fast, ai-general) are preferred first
+ * as they are purpose-mapped on the Corsair server. Falls back to raw model names
+ * for servers without the aliased setup.
+ *
+ * architect/drafter use 30B reasoning/coding models for quality.
+ * advisor/repair/contentQuality/narrativeReview use 8B fast models to minimise latency.
  */
 const OLLAMA_PHASE_PREFERENCE: Record<GenerationPhase, string[]> = {
-  architect: ['gemma3:12b', 'phi4:14b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
-  drafter: ['phi4:14b', 'gemma3:12b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
-  advisor: ['ai-fast', 'qwen3:8b', 'gemma3:12b'],
-  repair: ['ai-fast', 'qwen3:8b', 'gemma3:12b', 'ai-coding'],
-  contentQuality: ['ai-fast', 'qwen3:8b', 'gemma3:12b'],
-  narrativeReview: ['ai-fast', 'qwen3:8b', 'gemma3:12b'],
+  architect: ['ai-reasoning', 'ai-general', 'deepseek-r1:32b', 'qwen3:30b', 'gemma3:12b', 'phi4:14b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
+  drafter:   ['ai-coding', 'ai-general', 'qwen3-coder:30b', 'qwen3:30b', 'phi4:14b', 'gemma3:12b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
+  advisor:   ['ai-fast', 'qwen3:8b', 'ai-general', 'gemma3:12b'],
+  repair:    ['ai-coding', 'ai-general', 'ai-fast', 'qwen3:8b', 'gemma3:12b'],
+  contentQuality:  ['ai-general', 'ai-reasoning', 'gemma3:12b', 'ai-fast', 'qwen3:8b'],
+  narrativeReview: ['ai-general', 'ai-reasoning', 'gemma3:12b', 'ai-fast', 'qwen3:8b'],
 };
 
 export function resolveOllamaPhaseModel(phase: GenerationPhase, availableModels: string[]): string | undefined {
@@ -115,6 +128,28 @@ export function buildOllamaModelConfig(availableModels: string[]): GenerationMod
     contentQualityModel: resolve('contentQuality'),
     narrativeReviewModel: resolve('narrativeReview'),
   };
+}
+
+const SHORTHAND_TO_CANONICAL: Record<string, keyof GenerationModelConfig> = {
+  architect: 'architectModel',
+  drafter: 'drafterModel',
+  advisor: 'advisorModel',
+  repair: 'repairModel',
+  contentQuality: 'contentQualityModel',
+  narrativeReview: 'narrativeReviewModel',
+  embedding: 'embeddingModel',
+};
+
+export function normalizeModelConfig(config?: Record<string, unknown> | null): GenerationModelConfig | undefined {
+  if (!config) return undefined;
+  const result: Record<string, unknown> = { ...config };
+  for (const [shorthand, canonical] of Object.entries(SHORTHAND_TO_CANONICAL)) {
+    if (shorthand in result && !(canonical in result)) {
+      result[canonical] = result[shorthand];
+      delete result[shorthand];
+    }
+  }
+  return result as GenerationModelConfig;
 }
 
 export function hasMeaningfulModelConfig(config?: GenerationModelConfig | null): boolean {

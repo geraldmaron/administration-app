@@ -357,6 +357,11 @@ extension ScenarioNavigator {
             return 0
         }
 
+        // Structural preconditions (requires block)
+        if let req = scenario.metadata?.requires, !passesRequirements(req, for: country) {
+            return 0
+        }
+
         // Geopolitical tag requirements / exclusions
         if let requiredGeo = scenario.metadata?.requiredGeopoliticalTags,
            !requiredGeo.isEmpty {
@@ -434,6 +439,75 @@ extension ScenarioNavigator {
             return false
         }
         return regionTags.contains { normalizedRegionId($0) == countryRegion }
+    }
+
+    private func passesRequirements(_ req: ScenarioRequirements, for country: Country?) -> Bool {
+        let geo = country?.geopoliticalProfile
+        let tags = Set(geo?.tags ?? [])
+        let powerTierOrder = ["small_state", "middle_power", "regional_power", "great_power", "superpower"]
+
+        if let needed = req.landBorderAdversary {
+            let has = (geo?.neighbors ?? []).contains { $0.sharedBorder && ["rival", "adversary", "conflict"].contains($0.type) }
+            if has != needed { return false }
+        }
+        if let needed = req.formalAlly {
+            let has = (geo?.allies ?? []).contains { $0.type == "formal_ally" }
+            if has != needed { return false }
+        }
+        if let needed = req.adversary {
+            let has = !(geo?.adversaries ?? []).isEmpty
+            if has != needed { return false }
+        }
+        if let needed = req.tradePartner {
+            let has = (geo?.allies ?? []).contains { $0.type == "strategic_partner" }
+            if has != needed { return false }
+        }
+        if let needed = req.nuclearState {
+            if tags.contains("nuclear_state") != needed { return false }
+        }
+        if let needed = req.islandNation {
+            if tags.contains("island_nation") != needed { return false }
+        }
+        if let needed = req.landlocked {
+            if tags.contains("landlocked") != needed { return false }
+        }
+        if let needed = req.coastal {
+            if tags.contains("coastal") != needed { return false }
+        }
+        if let minTier = req.minPowerTier,
+           let minIndex = powerTierOrder.firstIndex(of: minTier) {
+            let countryTier = tags.first(where: { powerTierOrder.contains($0) }) ?? "small_state"
+            let countryIndex = powerTierOrder.firstIndex(of: countryTier) ?? 0
+            if countryIndex < minIndex { return false }
+        }
+        if let needed = req.cyberCapable {
+            let offensiveCyber = country?.militaryProfile?.cyber?.offensive ?? 0
+            if (offensiveCyber > 50) != needed { return false }
+        }
+        if let needed = req.powerProjection {
+            let doctrine = country?.militaryProfile?.doctrine ?? ""
+            if (doctrine == "power_projection") != needed { return false }
+        }
+        if let needed = req.largeMilitary {
+            let branchCount = country?.militaryProfile?.branches.count ?? 0
+            let readiness = country?.militaryProfile?.overallReadiness ?? 0
+            if (branchCount >= 4 && readiness >= 60) != needed { return false }
+        }
+        if let needed = req.authoritarianRegime {
+            let authCategories: Set<String> = ["authoritarian", "totalitarian", "absolute_monarchy"]
+            let govCat = country?.geopoliticalProfile?.governmentCategory ?? ""
+            if authCategories.contains(govCat) != needed { return false }
+        }
+        if let needed = req.democraticRegime {
+            let demoCategories: Set<String> = ["liberal_democracy", "constitutional_monarchy"]
+            let govCat = country?.geopoliticalProfile?.governmentCategory ?? ""
+            if demoCategories.contains(govCat) != needed { return false }
+        }
+        if let needed = req.fragileState {
+            let stability = country?.geopoliticalProfile?.regimeStability ?? 50
+            if (stability < 35) != needed { return false }
+        }
+        return true
     }
 
     private func normalizedRegionId(_ rawRegion: String?) -> String? {

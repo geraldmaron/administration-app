@@ -1,4 +1,5 @@
-import { ALL_TOKENS, CANONICAL_ROLE_IDS } from '../lib/token-registry';
+import { ALL_TOKENS, ARTICLE_FORM_TOKEN_NAMES, CANONICAL_ROLE_IDS } from '../lib/token-registry';
+import { VALID_SETTING_TARGETS } from '../types';
 import { auditScenario, setAuditConfigForTests } from '../lib/audit-rules';
 import type { AuditConfig, BundleScenario } from '../lib/audit-rules';
 
@@ -20,6 +21,9 @@ function makeAuditConfig(): AuditConfig {
             duration: { min: 1, max: 20 },
             probability: { required: 1 },
         },
+        canonicalRoleIds: [...CANONICAL_ROLE_IDS],
+        articleFormTokenNames: new Set<string>(ARTICLE_FORM_TOKEN_NAMES),
+        validSettingTargets: VALID_SETTING_TARGETS as unknown as readonly string[],
         govTypesByCountryId: {
             us: 'Presidential',
             jp: 'Parliamentary',

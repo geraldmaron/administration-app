@@ -2,6 +2,7 @@ import { decideScenarioAcceptance } from '../lib/scenario-acceptance';
 import type { Issue } from '../lib/audit-rules';
 import type { ContentQualityResult } from '../lib/content-quality';
 import type { NarrativeReviewResult } from '../lib/narrative-review';
+import type { RenderedOutputQaResult } from '../lib/rendered-output-qa';
 
 function makeIssue(rule: string, severity: 'error' | 'warn' = 'error', message?: string): Issue {
     return {
@@ -58,6 +59,16 @@ function makeInput(overrides: Partial<Parameters<typeof decideScenarioAcceptance
             enabled: true,
             usable: true,
             result: makeNarrativeReviewResult(),
+        },
+        renderedOutputGate: {
+            enabled: true,
+            usable: true,
+            result: {
+                pass: true,
+                sampleCount: 1,
+                issues: [],
+                samples: [],
+            } satisfies RenderedOutputQaResult,
         },
         ...overrides,
     };
@@ -123,10 +134,12 @@ describe('decideScenarioAcceptance', () => {
             },
         }));
         expect(decision.accepted).toBe(false);
+        expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('editorial-review-violation');
         expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('content-quality-violation');
+        expect(decision.editorialReview.pass).toBe(false);
     });
 
-    test('does not reject when enabled content quality gate result is unavailable', () => {
+    test('rejects when enabled content quality gate result is unavailable', () => {
         const decision = decideScenarioAcceptance(makeInput({
             contentQualityGate: {
                 enabled: true,
@@ -135,7 +148,8 @@ describe('decideScenarioAcceptance', () => {
                 error: 'content quality timeout',
             },
         }));
-        expect(decision.accepted).toBe(true);
+        expect(decision.accepted).toBe(false);
+        expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('content-quality-unavailable');
     });
 
     test('rejects when narrative differentiation, consequence, or replay is catastrophically low', () => {
@@ -152,10 +166,11 @@ describe('decideScenarioAcceptance', () => {
             },
         }));
         expect(decision.accepted).toBe(false);
-        expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('narrative-review-violation');
+        expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('editorial-review-violation');
+        expect(decision.editorialReview.pass).toBe(false);
     });
 
-    test('does not reject when enabled narrative review gate result is unavailable', () => {
+    test('rejects when enabled narrative review gate result is unavailable', () => {
         const decision = decideScenarioAcceptance(makeInput({
             narrativeReviewGate: {
                 enabled: true,
@@ -164,7 +179,25 @@ describe('decideScenarioAcceptance', () => {
                 error: 'narrative review unavailable',
             },
         }));
-        expect(decision.accepted).toBe(true);
+        expect(decision.accepted).toBe(false);
+        expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('narrative-review-unavailable');
+    });
+
+    test('rejects when rendered output QA fails', () => {
+        const decision = decideScenarioAcceptance(makeInput({
+            renderedOutputGate: {
+                enabled: true,
+                usable: true,
+                result: {
+                    pass: false,
+                    sampleCount: 2,
+                    issues: [makeIssue('rendered-output-unresolved-token')],
+                    samples: [],
+                },
+            },
+        }));
+        expect(decision.accepted).toBe(false);
+        expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('rendered-output-violation');
     });
 
     test('rejects when unresolved non-blocking audit errors remain', () => {
@@ -179,5 +212,29 @@ describe('decideScenarioAcceptance', () => {
         const decision = decideScenarioAcceptance(makeInput());
         expect(decision.accepted).toBe(true);
         expect(decision.rejectionIssues).toHaveLength(0);
+        expect(decision.editorialReview.pass).toBe(true);
+        expect(decision.editorialReview.usable).toBe(true);
+    });
+
+    test('rejects when editorial gates are enabled but both results are unavailable', () => {
+        const decision = decideScenarioAcceptance(makeInput({
+            contentQualityGate: {
+                enabled: true,
+                usable: false,
+                result: null,
+                error: 'content quality timeout',
+            },
+            narrativeReviewGate: {
+                enabled: true,
+                usable: false,
+                result: null,
+                error: 'narrative review timeout',
+            },
+        }));
+
+        expect(decision.accepted).toBe(false);
+        expect(decision.editorialReview.usable).toBe(false);
+        expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('content-quality-unavailable');
+        expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('narrative-review-unavailable');
     });
 });

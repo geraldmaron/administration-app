@@ -1,4 +1,4 @@
-import { normalizeTokenAliases, fuzzyCanonicalizeToken } from '../lib/token-registry';
+import { normalizeTokenAliases } from '../lib/token-registry';
 
 describe('normalizeTokenAliases', () => {
     test('normalizes hallucinated ministry and culture tokens to valid role tokens', () => {
@@ -31,37 +31,18 @@ describe('normalizeTokenAliases', () => {
         expect(normalizeTokenAliases(text)).toBe('{the_transport_role} delayed the bill while {education_role} objected.');
     });
 
-    test('fuzzy-resolves unique-stem tokens via normalizeTokenAliases', () => {
-        // {agriculture} is the stem of only one valid token: agriculture_role
-        const text = '{the_agriculture} backed the subsidy proposal.';
-        expect(normalizeTokenAliases(text)).toBe('{the_agriculture_role} backed the subsidy proposal.');
-    });
-
-    test('leaves ambiguous stems unresolved', () => {
-        // {ruling} could be ruling_party, ruling_party_leader, ruling_party_ideology — no unique match
+    test('leaves unresolvable tokens unchanged', () => {
         const text = '{the_ruling} bloc passed the budget.';
         expect(normalizeTokenAliases(text)).toBe('{the_ruling} bloc passed the budget.');
     });
-});
 
-describe('fuzzyCanonicalizeToken', () => {
-    test('resolves _minister suffix to _role', () => {
-        expect(fuzzyCanonicalizeToken('transport_minister')).toBe('transport_role');
-        expect(fuzzyCanonicalizeToken('energy_minister')).toBe('energy_role');
-        expect(fuzzyCanonicalizeToken('education_secretary')).toBe('education_role');
+    test('normalizes judiciary and court aliases to judicial_role', () => {
+        const text = '{the_judiciary} ruled while {judiciary_body} convened.';
+        expect(normalizeTokenAliases(text)).toBe('{the_judicial_role} ruled while {judicial_role} convened.');
     });
 
-    test('resolves unique prefix stems', () => {
-        expect(fuzzyCanonicalizeToken('agriculture')).toBe('agriculture_role');
-        expect(fuzzyCanonicalizeToken('environment')).toBe('environment_role');
-    });
-
-    test('returns null for ambiguous stems with multiple prefix matches', () => {
-        // ruling_party, ruling_party_leader, ruling_party_ideology all start with ruling_
-        expect(fuzzyCanonicalizeToken('ruling')).toBeNull();
-    });
-
-    test('returns null for completely unknown tokens', () => {
-        expect(fuzzyCanonicalizeToken('nonexistent_xyz')).toBeNull();
+    test('normalizes security and police aliases', () => {
+        const text = '{police} deployed while {security_forces} secured the area.';
+        expect(normalizeTokenAliases(text)).toBe('{police_force} deployed while {police_force} secured the area.');
     });
 });

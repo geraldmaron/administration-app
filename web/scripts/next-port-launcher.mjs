@@ -5,6 +5,8 @@
 
 import net from 'node:net';
 import { spawn } from 'node:child_process';
+import { rm } from 'node:fs/promises';
+import path from 'node:path';
 
 const mode = process.argv[2];
 
@@ -16,6 +18,8 @@ if (!mode || (mode !== 'dev' && mode !== 'start')) {
 const requestedPort = Number.parseInt(process.env.PORT ?? '3001', 10);
 const startPort = Number.isFinite(requestedPort) ? requestedPort : 3001;
 const scanLimit = 20;
+const requestedHost = process.env.HOST?.trim() || '0.0.0.0';
+const displayHost = process.env.PUBLIC_DEV_HOST?.trim() || 'adminapp.localhost';
 
 function isPortAvailable(port) {
   return new Promise((resolve) => {
@@ -48,6 +52,11 @@ async function findAvailablePort() {
 }
 
 async function main() {
+  if (mode === 'dev') {
+    const nextCacheDir = path.join(process.cwd(), '.next');
+    await rm(nextCacheDir, { recursive: true, force: true });
+  }
+
   const port = await findAvailablePort();
   if (port !== startPort) {
     console.log(`[next-port-launcher] Port ${startPort} busy; using ${port}`);
@@ -55,7 +64,9 @@ async function main() {
     console.log(`[next-port-launcher] Using port ${port}`);
   }
 
-  const child = spawn('next', [mode, '-p', String(port)], {
+  console.log(`[next-port-launcher] Open http://${displayHost}:${port}`);
+
+  const child = spawn('next', [mode, '-H', requestedHost, '-p', String(port)], {
     stdio: 'inherit',
     shell: process.platform === 'win32',
     env: process.env,

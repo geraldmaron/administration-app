@@ -7,6 +7,7 @@ import * as admin from 'firebase-admin';
 import { Scenario } from './types';
 import * as crypto from 'crypto';
 import { type BundleId } from './data/schemas/bundleIds';
+import type { NormalizedGenerationScope, ScenarioScopeTier, ScenarioSourceKind } from './shared/generation-contract';
 import {
     generateEmbedding,
     getEmbeddingText,
@@ -56,7 +57,20 @@ interface CachedScenario {
     title: string;
     description: string;
     bundle: string;
+    scopeTier?: ScenarioScopeTier;
+    scopeKey?: string;
+    sourceKind?: ScenarioSourceKind;
+    regionTags?: string[];
+    theme?: string;
     timestamp: number;
+}
+
+export interface ScenarioInventoryScopeFilter extends Pick<NormalizedGenerationScope, 'scopeTier' | 'scopeKey' | 'sourceKind'> {}
+
+export interface ScenarioInventoryCounts {
+    total: number;
+    byScopeTier: Partial<Record<ScenarioScopeTier, number>>;
+    bySourceKind: Partial<Record<ScenarioSourceKind, number>>;
 }
 
 interface BundleCache {
@@ -92,7 +106,7 @@ async function getCachedScenariosForBundle(bundle: string): Promise<CachedScenar
         .where('is_active', '==', true)
         .orderBy('created_at', 'desc')
         .limit(50) // Reduced from 100 to 50 for better performance
-        .select('title', 'description', 'metadata.bundle') // Only fetch needed fields
+        .select('title', 'description', 'metadata.bundle', 'metadata.scopeTier', 'metadata.scopeKey', 'metadata.sourceKind', 'metadata.region_tags', 'metadata.theme')
         .get();
 
     const scenarios: CachedScenario[] = recentScenarios.docs.map(doc => ({
@@ -100,6 +114,11 @@ async function getCachedScenariosForBundle(bundle: string): Promise<CachedScenar
         title: doc.data().title || '',
         description: doc.data().description || '',
         bundle: doc.data().metadata?.bundle || bundle,
+        scopeTier: doc.data().metadata?.scopeTier,
+        scopeKey: doc.data().metadata?.scopeKey,
+        sourceKind: doc.data().metadata?.sourceKind,
+        regionTags: Array.isArray(doc.data().metadata?.region_tags) ? doc.data().metadata.region_tags : undefined,
+        theme: doc.data().metadata?.theme,
         timestamp: now
     }));
 
@@ -134,9 +153,22 @@ export async function getRecentScenarioTitles(bundle: string, limit = 30): Promi
         .filter(Boolean);
 }
 
-export async function getRecentScenarioSummaries(bundle: string, limit = 30): Promise<Array<{ title: string; description: string }>> {
+function matchesScopeFilter(scenario: CachedScenario, scope?: ScenarioInventoryScopeFilter): boolean {
+    if (!scope) return true;
+    if (scope.scopeTier && scenario.scopeTier !== scope.scopeTier) return false;
+    if (scope.scopeKey && scenario.scopeKey !== scope.scopeKey) return false;
+    if (scope.sourceKind && scenario.sourceKind !== scope.sourceKind) return false;
+    return true;
+}
+
+export async function getRecentScenarioSummaries(
+    bundle: string,
+    limit = 30,
+    scope?: ScenarioInventoryScopeFilter
+): Promise<Array<{ title: string; description: string }>> {
     const scenarios = await getCachedScenariosForBundle(bundle);
     return scenarios
+        .filter((scenario) => matchesScopeFilter(scenario, scope))
         .slice(0, limit)
         .filter((s) => s.title)
         .map((s) => ({ title: s.title, description: (s.description || '').substring(0, 80) }));
@@ -146,23 +178,101 @@ export async function getRecentScenarioSummaries(bundle: string, limit = 30): Pr
  * Returns a frequency map of themes used by active scenarios in a bundle.
  * Used to identify underrepresented themes for the architect prompt.
  */
-export async function getThemeDistribution(bundle: string): Promise<Map<string, number>> {
+export async function getThemeDistribution(bundle: string, scope?: ScenarioInventoryScopeFilter): Promise<Map<string, number>> {
     const snapshot = await db
         .collection('scenarios')
         .where('metadata.bundle', '==', bundle)
         .where('is_active', '==', true)
         .orderBy('created_at', 'desc')
         .limit(100)
-        .select('metadata.theme')
+        .select('metadata.theme', 'metadata.scopeTier', 'metadata.scopeKey', 'metadata.sourceKind')
         .get();
 
     const counts = new Map<string, number>();
     for (const doc of snapshot.docs) {
+        const metadata = doc.data()?.metadata;
+        if (!matchesScopeFilter({
+            id: doc.id,
+            title: '',
+            description: '',
+            bundle,
+            scopeTier: metadata?.scopeTier,
+            scopeKey: metadata?.scopeKey,
+            sourceKind: metadata?.sourceKind,
+            timestamp: 0,
+        }, scope)) {
+            continue;
+        }
         const theme: string | undefined = doc.data()?.metadata?.theme;
         if (theme) {
             counts.set(theme, (counts.get(theme) ?? 0) + 1);
         }
     }
+    return counts;
+}
+
+export async function getActiveBundleCountByScope(
+    bundle: BundleId,
+    db: admin.firestore.Firestore,
+    scope?: ScenarioInventoryScopeFilter
+): Promise<number> {
+    if (!scope) {
+        return getActiveBundleCount(bundle, db);
+    }
+
+    let query: admin.firestore.Query = db
+        .collection('scenarios')
+        .where('metadata.bundle', '==', bundle)
+        .where('is_active', '==', true);
+    if (scope.scopeTier) query = query.where('metadata.scopeTier', '==', scope.scopeTier);
+    if (scope.scopeKey) query = query.where('metadata.scopeKey', '==', scope.scopeKey);
+    if (scope.sourceKind) query = query.where('metadata.sourceKind', '==', scope.sourceKind);
+
+    const snap = await query.count().get();
+    return snap.data().count;
+}
+
+export async function getActiveScenarioInventory(
+    bundle: BundleId,
+    scope?: ScenarioInventoryScopeFilter
+): Promise<ScenarioInventoryCounts> {
+    const snapshot = await db
+        .collection('scenarios')
+        .where('metadata.bundle', '==', bundle)
+        .where('is_active', '==', true)
+        .select('metadata.scopeTier', 'metadata.scopeKey', 'metadata.sourceKind')
+        .get();
+
+    const counts: ScenarioInventoryCounts = {
+        total: 0,
+        byScopeTier: {},
+        bySourceKind: {},
+    };
+
+    for (const doc of snapshot.docs) {
+        const metadata = doc.data()?.metadata;
+        const candidate: CachedScenario = {
+            id: doc.id,
+            title: '',
+            description: '',
+            bundle,
+            scopeTier: metadata?.scopeTier,
+            scopeKey: metadata?.scopeKey,
+            sourceKind: metadata?.sourceKind,
+            timestamp: 0,
+        };
+
+        if (!matchesScopeFilter(candidate, scope)) continue;
+
+        counts.total += 1;
+        if (candidate.scopeTier) {
+            counts.byScopeTier[candidate.scopeTier] = (counts.byScopeTier[candidate.scopeTier] ?? 0) + 1;
+        }
+        if (candidate.sourceKind) {
+            counts.bySourceKind[candidate.sourceKind] = (counts.bySourceKind[candidate.sourceKind] ?? 0) + 1;
+        }
+    }
+
     return counts;
 }
 

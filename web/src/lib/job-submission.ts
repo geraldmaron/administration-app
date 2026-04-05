@@ -1,7 +1,9 @@
 import { isEmulatorMode } from '@/lib/firebase-admin';
+import { hasRequestedOllamaModel } from '@/lib/generation-models';
 import type { GenerationJobRequest } from '@/lib/types';
 
 const DEFAULT_N8N_WEBHOOK_PATH = 'scenario-generate';
+const DEFAULT_N8N_RUNNER_WEBHOOK_PATH = 'scenario-run';
 
 export function getN8NBaseUrl(): string | undefined {
   const baseUrl = process.env.N8N_BASE_URL?.trim();
@@ -12,6 +14,12 @@ export function getN8NScenarioWebhookUrl(): string | undefined {
   const baseUrl = getN8NBaseUrl();
   if (!baseUrl) return undefined;
   return `${baseUrl}/webhook/${DEFAULT_N8N_WEBHOOK_PATH}`;
+}
+
+export function getN8NRunnerWebhookUrl(): string | undefined {
+  const baseUrl = getN8NBaseUrl();
+  if (!baseUrl) return undefined;
+  return `${baseUrl}/webhook/${DEFAULT_N8N_RUNNER_WEBHOOK_PATH}`;
 }
 
 export function getGenerationIntakeUrl(): string {
@@ -30,6 +38,12 @@ export function getGenerationIntakeUrl(): string {
 
 export function getGenerationIntakeSecret(): string | undefined {
   return process.env.GENERATION_INTAKE_SECRET || process.env.ADMIN_SECRET;
+}
+
+export function getLocalGenerationDispatchUrl(): string {
+  const explicitUrl = process.env.LOCAL_GENERATION_DISPATCH_URL?.trim();
+  if (explicitUrl) return explicitUrl;
+  return 'http://127.0.0.1:3099/processGenerationBundle';
 }
 
 export async function submitQueuedGenerationJob(payload: GenerationJobRequest): Promise<string> {
@@ -80,25 +94,138 @@ export async function submitGenerationJobViaN8n(payload: GenerationJobRequest): 
     headers['x-admin-secret'] = intakeSecret;
   }
 
-  const response = await fetch(webhookUrl, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  const responseBody = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message = typeof responseBody?.error === 'string'
-      ? responseBody.error
-      : 'Failed to submit generation job to n8n';
-    throw new Error(message);
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    const rawBody = await response.text().catch(() => '');
+    const responseBody = (() => {
+      if (!rawBody.trim()) return {} as Record<string, unknown>;
+      try {
+        return JSON.parse(rawBody) as Record<string, unknown>;
+      } catch {
+        return {} as Record<string, unknown>;
+      }
+    })();
+
+    if (!response.ok) {
+      const message = typeof responseBody?.error === 'string'
+        ? responseBody.error
+        : 'Failed to submit generation job to n8n';
+      throw new Error(message);
+    }
+
+    if (typeof responseBody?.jobId === 'string' && responseBody.jobId.length > 0) {
+      return responseBody.jobId as string;
+    }
+
+    const requestIdHeader = response.headers.get('x-n8n-job-id');
+    if (requestIdHeader) {
+      return requestIdHeader;
+    }
+
+    if (!rawBody.trim()) {
+      throw new Error('n8n intake returned an empty body; workflow accepted the request but did not return a jobId');
+    }
+
+    if (!responseBody?.jobId || typeof responseBody.jobId !== 'string') {
+      throw new Error('n8n intake response did not include a jobId');
+    }
+
+    return responseBody.jobId as string;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function dispatchQueuedGenerationJobViaN8n(jobId: string, payload: GenerationJobRequest): Promise<void> {
+  const webhookUrl = getN8NRunnerWebhookUrl();
+  if (!webhookUrl) {
+    throw new Error('N8N runner webhook is not configured');
   }
 
-  if (!responseBody?.jobId || typeof responseBody.jobId !== 'string') {
-    throw new Error('n8n intake response did not include a jobId');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-request-origin': 'admin-web',
+  };
+
+  const intakeSecret = getGenerationIntakeSecret();
+  if (intakeSecret) {
+    headers['x-admin-secret'] = intakeSecret;
   }
 
-  return responseBody.jobId as string;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ jobId, ...payload }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const rawBody = await response.text().catch(() => '');
+      throw new Error(rawBody || 'Failed to dispatch queued generation job to n8n runner');
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function dispatchQueuedGenerationJobLocally(jobId: string, payload: GenerationJobRequest): Promise<void> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-request-origin': 'admin-web',
+  };
+
+  const intakeSecret = getGenerationIntakeSecret();
+  if (intakeSecret) {
+    headers['x-admin-secret'] = intakeSecret;
+  }
+
+  const bundles = Array.isArray(payload.bundles) ? payload.bundles : [];
+  const totalBundles = bundles.length;
+  const requests = bundles.map((bundle) =>
+    fetch(getLocalGenerationDispatchUrl(), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        jobId,
+        bundle,
+        count: payload.count,
+        mode: payload.mode,
+        lowLatencyMode: payload.lowLatencyMode ?? false,
+        modelConfig: payload.modelConfig ?? {},
+        dryRun: payload.dryRun ?? false,
+        newsContext: payload.newsContext ?? [],
+        totalBundles,
+        scopeTier: payload.scopeTier,
+        scopeKey: payload.scopeKey,
+        sourceKind: payload.sourceKind,
+        regions: payload.regions,
+        region: payload.region,
+        applicable_countries: payload.applicable_countries,
+        exclusivityReason: payload.exclusivityReason,
+        clusterId: payload.clusterId,
+      }),
+    }).then(async (response) => {
+      if (!response.ok) {
+        const rawBody = await response.text().catch(() => '');
+        throw new Error(rawBody || `Local generation dispatch failed for bundle ${bundle}`);
+      }
+    })
+  );
+
+  await Promise.all(requests);
 }
 
 export function resolveSubmissionMethod(executionTarget?: string): 'n8n' | 'cloud_function' {
@@ -110,7 +237,15 @@ export function resolveSubmissionMethod(executionTarget?: string): 'n8n' | 'clou
 
 export async function submitJob(payload: GenerationJobRequest, executionTarget?: string): Promise<string> {
   const method = resolveSubmissionMethod(executionTarget);
-  return method === 'n8n'
-    ? submitGenerationJobViaN8n(payload)
-    : submitQueuedGenerationJob(payload);
+  if (method !== 'n8n') {
+    return submitQueuedGenerationJob(payload);
+  }
+
+  const jobId = await submitQueuedGenerationJob({
+    ...payload,
+    executionTarget: 'n8n',
+  });
+
+  await dispatchQueuedGenerationJobViaN8n(jobId, payload);
+  return jobId;
 }

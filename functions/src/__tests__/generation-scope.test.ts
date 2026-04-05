@@ -63,4 +63,21 @@ describe('generation scope normalization', () => {
         expect(inferDefaultSourceKind('news')).toBe('news');
         expect(inferDefaultSourceKind('manual')).toBe('evergreen');
     });
+
+    test('normalizes cluster jobs with canonical cluster scope key', () => {
+        const result = normalizeGenerationScopeInput({
+            mode: 'manual',
+            scopeTier: 'cluster',
+            clusterId: ' eu_nato ',
+            sourceKind: 'evergreen',
+        });
+
+        expect(result.ok).toBe(true);
+        expect(result.value).toMatchObject({
+            scopeTier: 'cluster',
+            scopeKey: 'cluster:eu_nato',
+            clusterId: 'eu_nato',
+            sourceKind: 'evergreen',
+        });
+    });
 });

@@ -359,6 +359,10 @@ export async function GET(
             bundle: s.metadata?.bundle ?? '',
             auditScore: s.metadata?.auditMetadata?.score,
             autoFixed: s.metadata?.auditMetadata?.autoFixed ?? false,
+            scopeTier: s.metadata?.scopeTier,
+            countryCount: Array.isArray(s.metadata?.applicable_countries) ? s.metadata.applicable_countries.length : (s.metadata?.applicable_countries === 'all' ? null : undefined),
+            requires: s.metadata?.requires,
+            tags: Array.isArray(s.metadata?.tags) ? s.metadata.tags : [],
           };
         });
     }

@@ -16,7 +16,7 @@ export default function AuditScore({ score }: AuditScoreProps) {
   }
   const { letter, className } = getGrade(score);
   return (
-    <span className="font-mono text-[11px] tracking-[0.06em]">
+    <span className="font-mono text-xs">
       <span className={`font-bold ${className}`}>{letter}</span>
       <span className="text-foreground-muted ml-1">{score}</span>
     </span>

@@ -410,6 +410,8 @@ class GameStore: ObservableObject {
         }
 
         if let gdpBillions = randomCountry.gdpBillions {
+            let randomizedGdp = gdpBillions * (0.85 + Double.random(in: 0...0.30))
+            let scaleFactor = Self.computeCountryScaleFactor(gdpBillions: randomizedGdp)
             state.countryEconomicState = CountryEconomicState(
                 gdpIndex: 100.0,
                 gdpGrowthRate: 0.0,
@@ -417,13 +419,18 @@ class GameStore: ObservableObject {
                 tradeBalance: 0.0,
                 unemploymentRate: 5.0,
                 fiscalReserves: 0.0,
-                baseGdpBillions: gdpBillions
+                baseGdpBillions: gdpBillions,
+                randomizedGdpBillions: randomizedGdp
             )
+            state.countryScaleFactor = scaleFactor
+            state.countryAmounts = Self.deriveAmountsFromGdp(gdpUsd: randomizedGdp * 1_000_000_000, currencyCode: randomCountry.amounts?.currencyCode ?? "USD")
         }
         
         if let popMillions = randomCountry.populationMillions {
+            let randomizedPop = popMillions * (0.90 + Double.random(in: 0...0.20))
             state.countryPopulationState = CountryPopulationState(
                 populationMillions: popMillions,
+                randomizedPopulationMillions: randomizedPop,
                 growthRatePerTurn: 0.0002,
                 displacedMillions: 0.0,
                 cumulativeCasualties: 0.0,
@@ -601,6 +608,8 @@ class GameStore: ObservableObject {
         }
 
         if let country = currentCountry, let gdpBillions = country.gdpBillions {
+            let randomizedGdp = gdpBillions * (0.85 + Double.random(in: 0...0.30))
+            let scaleFactor = Self.computeCountryScaleFactor(gdpBillions: randomizedGdp)
             state.countryEconomicState = CountryEconomicState(
                 gdpIndex: 100.0,
                 gdpGrowthRate: 0.0,
@@ -608,13 +617,18 @@ class GameStore: ObservableObject {
                 tradeBalance: 0.0,
                 unemploymentRate: 5.0,
                 fiscalReserves: 0.0,
-                baseGdpBillions: gdpBillions
+                baseGdpBillions: gdpBillions,
+                randomizedGdpBillions: randomizedGdp
             )
+            state.countryScaleFactor = scaleFactor
+            state.countryAmounts = Self.deriveAmountsFromGdp(gdpUsd: randomizedGdp * 1_000_000_000, currencyCode: country.amounts?.currencyCode ?? "USD")
         }
         
         if let country = currentCountry, let popMillions = country.populationMillions {
+            let randomizedPop = popMillions * (0.90 + Double.random(in: 0...0.20))
             state.countryPopulationState = CountryPopulationState(
                 populationMillions: popMillions,
+                randomizedPopulationMillions: randomizedPop,
                 growthRatePerTurn: 0.0002,
                 displacedMillions: 0.0,
                 cumulativeCasualties: 0.0,
@@ -1300,6 +1314,30 @@ class GameStore: ObservableObject {
         else { state.phase = .endgame }
     }
 
+    static func computeCountryScaleFactor(gdpBillions: Double) -> Double {
+        if gdpBillions <= 0 { return 1.0 }
+        if gdpBillions >= 20_000 { return 1.4 }
+        if gdpBillions >= 5_000 { return 1.25 }
+        if gdpBillions >= 1_000 { return 1.1 }
+        if gdpBillions >= 100 { return 1.0 }
+        if gdpBillions >= 10 { return 0.85 }
+        return 0.7
+    }
+
+    static func deriveAmountsFromGdp(gdpUsd: Double, currencyCode: String) -> CountryAmountValues {
+        let variance: (Double) -> Double = { $0 * (0.85 + Double.random(in: 0...0.30)) }
+        return CountryAmountValues(
+            graftAmount: variance(gdpUsd * 0.0175),
+            infrastructureCost: variance(gdpUsd * 0.03),
+            aidAmount: variance(gdpUsd * 0.0055),
+            tradeValue: variance(gdpUsd * 0.1),
+            militaryBudgetAmount: variance(gdpUsd * 0.0275),
+            disasterCost: variance(gdpUsd * 0.0425),
+            sanctionsAmount: variance(gdpUsd * 0.06),
+            currencyCode: currencyCode
+        )
+    }
+
     static func buildRealisticBlocs(from parties: [PoliticalParty], playerParty: String) -> [LegislativeBloc] {
         let playerPartyObj = parties.first(where: { $0.name == playerParty })
         let playerIdeology = playerPartyObj?.ideology ?? 5
@@ -1499,6 +1537,7 @@ class GameStore: ObservableObject {
             return availableCountries.first
         }()
 
+        let governingParty = state.countryParties.first(where: { $0.isRuling })
         let weights = candidates.map { s -> Double in
             let baseScore = ScenarioNavigator.shared.scoreScenario(s, for: activeCountry, gameState: state)
             if baseScore <= 0 {
@@ -1515,7 +1554,21 @@ class GameStore: ObservableObject {
             } else {
                 bundleBoost = 1.0
             }
-            return baseScore * tagPenalty * bundleBoost
+            let partyBias: Double = {
+                guard let party = governingParty, let biases = party.metricBiases, let primaryMetrics = s.metadata?.primaryMetrics else { return 1.0 }
+                var totalBias = 0.0
+                var count = 0
+                for metricId in primaryMetrics {
+                    if let bias = biases[metricId] {
+                        totalBias += abs(bias)
+                        count += 1
+                    }
+                }
+                guard count > 0 else { return 1.0 }
+                let avgBias = totalBias / Double(count)
+                return 1.0 + avgBias * 0.5
+            }()
+            return baseScore * tagPenalty * bundleBoost * partyBias
         }
 
         let positiveWeights = weights.filter { $0 > 0 }
@@ -2000,7 +2053,10 @@ class GameStore: ObservableObject {
 
     func updateCountryStats(_ countryId: String, population: Int? = nil, gdp: Int? = nil, militaryStrength: Double? = nil) {
         guard let idx = state.countries.firstIndex(where: { $0.id == countryId }) else { return }
-        if let pop = population { state.countries[idx].attributes.population = pop }
+        if let pop = population {
+            state.countries[idx].currentPopulation = pop
+            state.countries[idx].attributes.population = pop
+        }
         if let g = gdp { state.countries[idx].attributes.gdp = g }
         if let ms = militaryStrength { state.countries[idx].military.strength = ms }
         saveGame()
@@ -2045,7 +2101,7 @@ class GameStore: ObservableObject {
                 : nil,
             targetRegion: targetCountry?.region,
             targetGdpTier: targetCountry.map { c in
-                let billions = c.gdpBillions ?? (Double(c.attributes.gdp) / 1_000_000_000)
+                let billions = c.resolvedGdpBillions ?? 0
                 return gdpTier(gdpBillions: billions)
             },
             targetVulnerabilities: targetCountry?.vulnerabilities.flatMap { $0.isEmpty ? nil : Array($0.prefix(4)) },

@@ -110,12 +110,68 @@ export interface ScenarioMetadata {
     regionalBoost?: Partial<Record<RegionId, number>>;
     isNeighborEvent?: boolean;
     involvedCountries?: string[];
+    // Explicit structural preconditions (preferred over implicit token-graph analysis)
+    requires?: ScenarioRequirements;
+    tagResolution?: TagResolutionMetadata;
+}
+
+export type TagResolutionMethod = 'deterministic' | 'llm' | 'manual';
+export type TagResolutionStatus = 'unresolved' | 'resolved' | 'manual';
+
+export interface TagResolutionMetadata {
+    status: TagResolutionStatus;
+    method?: TagResolutionMethod;
+    resolverVersion?: number;
+    resolvedAt?: string;
+    resolvedTags?: string[];
+    confidence?: number;
 }
 
 export interface ScenarioCondition {
     metricId: string;
     min?: number;
     max?: number;
+}
+
+// Role identifiers used for relationship targeting (eligibility, effects, conditions)
+export type RelationshipRoleId =
+    | 'border_rival'
+    | 'adversary'
+    | 'ally'
+    | 'trade_partner'
+    | 'partner'
+    | 'rival'
+    | 'regional_rival'
+    | 'neutral'
+    | 'neighbor'
+    | 'nation';
+
+// Applied after an option is chosen — mutates the resolved relationship's strength
+export interface RelationshipEffect {
+    relationshipId: RelationshipRoleId;
+    delta: number;        // applied to relationship.strength; clamped to [-100, 100]
+    probability?: number; // default 1.0
+}
+
+// Explicit structural preconditions a country must satisfy for a scenario to be eligible
+export interface ScenarioRequirements {
+    land_border_adversary?: boolean;
+    formal_ally?: boolean;
+    adversary?: boolean;
+    trade_partner?: boolean;
+    nuclear_state?: boolean;
+    island_nation?: boolean;
+    landlocked?: boolean;
+    coastal?: boolean;
+    min_power_tier?: 'superpower' | 'great_power' | 'regional_power' | 'middle_power' | 'small_state';
+    // Military capability gates
+    cyber_capable?: boolean;       // military.cyber.offensive > 50
+    power_projection?: boolean;    // military.doctrine === 'power_projection'
+    large_military?: boolean;      // aggregate branch size above threshold
+    // Regime and stability gates
+    authoritarian_regime?: boolean; // geopolitical.governmentCategory in ['authoritarian','totalitarian','absolute_monarchy']
+    democratic_regime?: boolean;    // geopolitical.governmentCategory in ['liberal_democracy','constitutional_monarchy']
+    fragile_state?: boolean;        // geopolitical.regimeStability < 35
 }
 
 export interface Scenario {
@@ -201,6 +257,7 @@ export interface Option {
     label?: string;
     effects: OptionEffect[];
     policyImplications?: PolicyImplication[];
+    relationshipEffects?: RelationshipEffect[];
     advisorFeedback?: AdvisorFeedback[];
     outcomeHeadline?: string;
     outcomeSummary?: string;
@@ -220,7 +277,7 @@ export interface NewsItem {
 export interface MilitaryBranch {
     canonical_type: CanonicalBranchType;
     local_name: string;           // "British Army", "People's Liberation Army", etc.
-    token_key: string;            // which token this branch maps to: "army_branch", "navy_branch", etc.
+    token_key: string;            // which token this branch maps to: "ground_forces_branch", "maritime_branch", etc.
     readiness: number;            // 0–100
     size: number;                 // personnel in thousands
     equipment_level: number;      // 0–100
@@ -286,6 +343,89 @@ export interface EconomyProfile {
     trade_dependencies: string[];
 }
 
+export interface CountryFactsDemographics {
+    population_total: number;
+    source_year: number;
+}
+
+export interface CountryFactsEconomy {
+    gdp_nominal_usd: number;
+    source_year: number;
+    currency_name?: string;
+    currency_code?: string;
+    central_bank?: string;
+    primary_export?: string;
+    primary_import?: string;
+    major_industry?: string;
+}
+
+export interface CountryFactsExecutive {
+    leader_title?: string;
+    head_of_state_title?: string;
+    vice_leader_title?: string;
+}
+
+export interface CountryFactsLegislature {
+    legislature?: string;
+    lower_house?: string | null;
+    upper_house?: string | null;
+}
+
+export interface CountryFactsOfficeTitles {
+    executive_role?: string | null;
+    finance_role?: string | null;
+    defense_role?: string | null;
+    foreign_affairs_role?: string | null;
+    justice_role?: string | null;
+    health_role?: string | null;
+    education_role?: string | null;
+    commerce_role?: string | null;
+    labor_role?: string | null;
+    energy_role?: string | null;
+    environment_role?: string | null;
+    transport_role?: string | null;
+    interior_role?: string | null;
+    agriculture_role?: string | null;
+    legislature_speaker?: string | null;
+    upper_house_leader?: string | null;
+    judiciary_role?: string | null;
+    chief_justice_role?: string | null;
+    prosecutor_role?: string | null;
+    military_chief_title?: string | null;
+    capital_mayor_title?: string | null;
+    provincial_leader_title?: string | null;
+    regional_governor_title?: string | null;
+    press_secretary_title?: string | null;
+}
+
+export interface CountryFactsGeography {
+    capital_city?: string;
+}
+
+export interface CountryFacts {
+    schema_version: 2;
+    baseline_id: string;
+    demographics: CountryFactsDemographics;
+    economy: CountryFactsEconomy;
+    institutions?: {
+        executive?: CountryFactsExecutive;
+        legislature?: CountryFactsLegislature;
+        office_titles?: CountryFactsOfficeTitles;
+    };
+    geography?: CountryFactsGeography;
+}
+
+export interface CountryAmountValues {
+    graft_amount: number | null;
+    infrastructure_cost: number | null;
+    aid_amount: number | null;
+    trade_value: number | null;
+    military_budget_amount: number | null;
+    disaster_cost: number | null;
+    sanctions_amount: number | null;
+    currency_code: 'USD';
+}
+
 // ── Country (new top-level collection document) ───────────────────────────────
 
 export interface CountryDocument {
@@ -293,8 +433,10 @@ export interface CountryDocument {
     name: string;
     code: string; // 2-letter ISO
     region: RegionId;
-    population: PopulationStats;
-    economy: EconomyProfile;
+    facts: CountryFacts;
+    amounts?: CountryAmountValues;
+    population?: PopulationStats;
+    economy?: EconomyProfile;
     military: MilitaryProfile;
     geopolitical: GeopoliticalProfile;
     legislature: LegislatureProfile;
@@ -310,6 +452,10 @@ export interface CountryDocument {
         term_turn_fraction: number; // default 1.0
         difficulty: 'low' | 'medium' | 'high' | 'expert';
         blitz_priority?: 'high' | 'medium' | 'low';
+        // Scoring modifiers: how reactive each metric is for this country (0–2 multiplier, default 1.0)
+        metric_sensitivities?: Partial<Record<MetricId, number>>;
+        // Likelihood of crisis types specific to this country (0–1 probability weight)
+        crisis_probabilities?: Partial<Record<string, number>>;
     };
     traits: CountryTrait[];
     description: string;
@@ -366,6 +512,10 @@ export interface PoliticalParty {
     color?: string;             // hex color e.g. "#0047AB"
     keyPolicies: string[];      // 2–4 brief policy descriptors
     description: string;        // 1–2 sentence party background
+    // Gameplay scoring data
+    metricBiases?: Partial<Record<MetricId, number>>;  // -1 to +1: how strongly this party's base cares about each metric
+    popularBase?: string[];                             // demographic groups: ["urban", "youth", "labor", "rural", "business", etc.]
+    coalitionWillingness?: number;                      // 0–1: likelihood to cooperate with player; 1=fully supportive, 0=total opposition
 }
 
 // ── Universities ──────────────────────────────────────────────────────────────

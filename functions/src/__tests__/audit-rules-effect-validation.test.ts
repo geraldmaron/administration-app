@@ -1,5 +1,6 @@
-import { ALL_TOKENS, CANONICAL_ROLE_IDS } from '../lib/token-registry';
-import { auditScenario, deterministicFix, setAuditConfigForTests } from '../lib/audit-rules';
+import { ALL_TOKENS, ARTICLE_FORM_TOKEN_NAMES, CANONICAL_ROLE_IDS } from '../lib/token-registry';
+import { VALID_SETTING_TARGETS } from '../types';
+import { auditScenario, deterministicFix, heuristicFix, setAuditConfigForTests } from '../lib/audit-rules';
 import type { AuditConfig, BundleScenario } from '../lib/audit-rules';
 
 function makeAuditConfig(): AuditConfig {
@@ -17,6 +18,7 @@ function makeAuditConfig(): AuditConfig {
         metricMappings: {},
         bannedPhrases: [],
         bannedPhraseRegexes: [],
+        bannedCountryPhrases: new Set(),
         validTokens: new Set(ALL_TOKENS),
         logicParameters: {
             duration: { min: 1, max: 20 },
@@ -24,6 +26,9 @@ function makeAuditConfig(): AuditConfig {
         },
         govTypesByCountryId: {},
         countriesById: {},
+        canonicalRoleIds: [...CANONICAL_ROLE_IDS],
+        articleFormTokenNames: new Set<string>(ARTICLE_FORM_TOKEN_NAMES),
+        validSettingTargets: VALID_SETTING_TARGETS as unknown as readonly string[],
     };
 }
 
@@ -207,5 +212,25 @@ describe('auditScenario effect cap validation', () => {
         const afterIssues = auditScenario(scenario, 'bundle_economy');
         expect(afterIssues.some((issue) => issue.rule === 'universal-relationship-token')).toBe(false);
         expect(afterIssues.some((issue) => issue.rule === 'hardcoded-the-before-token')).toBe(false);
+    });
+
+    test('heuristicFix injects option-domain primary metric effects when missing', () => {
+        const scenario = makeScenario(1.2);
+        scenario.metadata = {
+            ...scenario.metadata,
+            optionDomains: [
+                { label: 'growth', primaryMetric: 'economy' },
+                { label: 'stability', primaryMetric: 'approval' },
+                { label: 'reform', primaryMetric: 'economy' },
+            ],
+        };
+        scenario.options[1].effects = [{ targetMetricId: 'economy', value: -1, duration: 3, probability: 1 }];
+
+        const beforeIssues = auditScenario(scenario, 'bundle_economy');
+        expect(beforeIssues.some((issue) => issue.rule === 'option-domain-missing-primary')).toBe(true);
+
+        const fixResult = heuristicFix(scenario, beforeIssues, 'bundle_economy');
+        expect(fixResult.fixed).toBe(true);
+        expect(scenario.options[1].effects.some((effect) => effect.targetMetricId === 'approval')).toBe(true);
     });
 });

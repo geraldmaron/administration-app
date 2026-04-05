@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AuditScore from '@/components/AuditScore';
@@ -11,7 +11,7 @@ import SortHeader, { useSort } from '@/components/SortHeader';
 import { ALL_BUNDLES, formatShortDate } from '@/lib/constants';
 import type { ScenarioSummary } from '@/lib/types';
 
-type ScenarioSortField = 'title' | 'bundle' | 'severity' | 'auditScore' | 'countryCount' | 'isActive' | 'createdAt' | 'updatedAt';
+type ScenarioSortField = 'title' | 'bundle' | 'severity' | 'auditScore' | 'countryCount' | 'scopeTier' | 'isActive' | 'createdAt' | 'updatedAt';
 
 interface ScenariosResponse {
   scenarios: ScenarioSummary[];
@@ -39,6 +39,8 @@ function ScenariosInner() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deletingBulk, setDeletingBulk] = useState(false);
   const [bulkUpdating, setBulkUpdating] = useState<'activate' | 'deactivate' | null>(null);
+  const [tagFilter, setTagFilter] = useState<string>('all');
+  const [tagResolutionFilter, setTagResolutionFilter] = useState<string>('all');
 
   const bundleOptions = useMemo(() => {
     const sortedBundles = [...ALL_BUNDLES].sort((a, b) => a.label.localeCompare(b.label));
@@ -150,6 +152,24 @@ function ScenariosInner() {
   function selectAll() { setSelectedIds(new Set(filteredScenarios.map((s) => s.id))); }
   function clearSelection() { setSelectedIds(new Set()); }
 
+  const INITIAL_COL_WIDTHS = { checkbox: 36, title: 240, bundle: 100, severity: 80, audit: 56, tags: 80, scope: 90, state: 56, created: 100, updated: 100 };
+  type ColKey = keyof typeof INITIAL_COL_WIDTHS;
+  const [colWidths, setColWidths] = useState(INITIAL_COL_WIDTHS);
+  const resizeDrag = useRef<{ col: ColKey; startX: number; startWidth: number } | null>(null);
+
+  function startColResize(e: React.MouseEvent, col: ColKey) {
+    e.preventDefault();
+    e.stopPropagation();
+    resizeDrag.current = { col, startX: e.clientX, startWidth: colWidths[col] };
+    function onMove(me: MouseEvent) {
+      if (!resizeDrag.current) return;
+      setColWidths(prev => ({ ...prev, [resizeDrag.current!.col]: Math.max(40, resizeDrag.current!.startWidth + (me.clientX - resizeDrag.current!.startX)) }));
+    }
+    function onUp() { resizeDrag.current = null; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); }
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
   const { sortField, sortDir, handleSort, compare } = useSort<ScenarioSortField>('title');
 
   const SEVERITY_ORDER: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 };
@@ -165,6 +185,11 @@ function ScenariosInner() {
         if (countryCountFilter === '11-50' && (cc < 11 || cc > 50)) return false;
         if (countryCountFilter === '50+' && cc <= 50) return false;
       }
+      if (tagFilter !== 'all' && !s.tags.includes(tagFilter)) return false;
+      if (tagResolutionFilter !== 'all') {
+        const status = s.tagResolutionStatus ?? 'unresolved';
+        if (tagResolutionFilter !== status) return false;
+      }
       return true;
     }) ?? [];
     return [...base].sort((a, b) => {
@@ -174,12 +199,21 @@ function ScenariosInner() {
       if (sortField === 'isActive') {
         return compare(a.isActive ? 1 : 0, b.isActive ? 1 : 0);
       }
+      if (sortField === 'scopeTier') {
+        return compare(a.scopeTier ?? '', b.scopeTier ?? '');
+      }
       return compare(a[sortField], b[sortField]);
     });
-  }, [data, localSearch, severityFilter, sortField, sortDir]);
+  }, [data, localSearch, severityFilter, countryCountFilter, tagFilter, tagResolutionFilter, sortField, sortDir]);
 
   const activeVisibleCount = filteredScenarios.filter((s) => s.isActive).length;
   const selectedVisibleCount = filteredScenarios.filter((s) => selectedIds.has(s.id)).length;
+
+  const uniqueTags = useMemo(() => {
+    const tags = new Set<string>();
+    data?.scenarios.forEach((s) => s.tags?.forEach((t) => tags.add(t)));
+    return [...tags].sort();
+  }, [data]);
 
   const filterBar = (
     <div className="flex flex-wrap items-center gap-2">
@@ -216,6 +250,28 @@ function ScenariosInner() {
         <option value="1-10">1–10 countries</option>
         <option value="11-50">11–50 countries</option>
         <option value="50+">50+ countries</option>
+      </select>
+      <select
+        value={tagFilter}
+        onChange={(e) => setTagFilter(e.target.value)}
+        className="input-shell"
+        style={{ width: 'auto', minWidth: 110 }}
+      >
+        <option value="all">All tags</option>
+        {uniqueTags.map((t) => (
+          <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>
+        ))}
+      </select>
+      <select
+        value={tagResolutionFilter}
+        onChange={(e) => setTagResolutionFilter(e.target.value)}
+        className="input-shell"
+        style={{ width: 'auto', minWidth: 110 }}
+      >
+        <option value="all">All resolution</option>
+        <option value="unresolved">Unresolved</option>
+        <option value="resolved">Resolved</option>
+        <option value="manual">Manual</option>
       </select>
       <input
         type="text"
@@ -254,13 +310,26 @@ function ScenariosInner() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="mb-2 flex items-center gap-3 rounded-[var(--radius-tight)] border border-[var(--border-strong)] bg-[rgba(255,255,255,0.04)] px-3 py-2">
+        <div className="mb-2 flex items-center gap-3 rounded-[var(--radius-tight)] border border-[var(--border-strong)] bg-[var(--background-elevated)] px-3 py-2">
           <span className="text-[11px] font-mono text-[var(--foreground-muted)]">{selectedIds.size} selected</span>
           <button onClick={() => setSelectedActiveState(true)} disabled={bulkUpdating !== null} className="btn btn-ghost disabled:opacity-50">
             {bulkUpdating === 'activate' ? 'Activating…' : 'Activate'}
           </button>
           <button onClick={() => setSelectedActiveState(false)} disabled={bulkUpdating !== null} className="btn btn-ghost disabled:opacity-50">
             {bulkUpdating === 'deactivate' ? 'Deactivating…' : 'Deactivate'}
+          </button>
+          <button
+            onClick={() => {
+              const ids = Array.from(selectedIds);
+              if (ids.length > 50) { alert('Repair is limited to 50 scenarios at a time.'); return; }
+              const params = new URLSearchParams();
+              ids.forEach((id) => params.append('ids', id));
+              router.push(`/scenarios/repair?${params.toString()}`);
+            }}
+            disabled={bulkUpdating !== null || deletingBulk}
+            className="btn btn-ghost disabled:opacity-50"
+          >
+            Repair
           </button>
           <button onClick={deleteSelected} disabled={deletingBulk} className="btn btn-destructive disabled:opacity-50">
             {deletingBulk ? 'Deleting…' : `Delete ${selectedIds.size}`}
@@ -292,15 +361,16 @@ function ScenariosInner() {
         <div className="command-panel overflow-hidden">
           <table className="table-dense" style={{ tableLayout: 'fixed', width: '100%' }}>
             <colgroup>
-              <col style={{ width: 36 }} />
-              <col />
-              <col style={{ width: 120 }} />
-              <col style={{ width: 80 }} />
-              <col style={{ width: 64 }} />
-              <col style={{ width: 72 }} />
-              <col style={{ width: 56 }} />
-              <col style={{ width: 72 }} />
-              <col style={{ width: 72 }} />
+              <col style={{ width: colWidths.checkbox }} />
+              <col style={{ width: colWidths.title }} />
+              <col style={{ width: colWidths.bundle }} />
+              <col style={{ width: colWidths.severity }} />
+              <col style={{ width: colWidths.audit }} />
+              <col style={{ width: colWidths.tags }} />
+              <col style={{ width: colWidths.scope }} />
+              <col style={{ width: colWidths.state }} />
+              <col style={{ width: colWidths.created }} />
+              <col style={{ width: colWidths.updated }} />
             </colgroup>
             <thead>
               <tr>
@@ -312,21 +382,49 @@ function ScenariosInner() {
                     className="accent-[var(--accent-primary)]"
                   />
                 </th>
-                <th><SortHeader field="title" label="Title" current={sortField} dir={sortDir} onSort={handleSort} /></th>
-                <th><SortHeader field="bundle" label="Bundle" current={sortField} dir={sortDir} onSort={handleSort} /></th>
-                <th><SortHeader field="severity" label="Severity" current={sortField} dir={sortDir} onSort={handleSort} /></th>
-                <th><SortHeader field="auditScore" label="Audit" current={sortField} dir={sortDir} onSort={handleSort} align="right" /></th>
-                <th><SortHeader field="countryCount" label="Scope" current={sortField} dir={sortDir} onSort={handleSort} /></th>
-                <th><SortHeader field="isActive" label="State" current={sortField} dir={sortDir} onSort={handleSort} /></th>
-                <th><SortHeader field="createdAt" label="Created" current={sortField} dir={sortDir} onSort={handleSort} /></th>
-                <th><SortHeader field="updatedAt" label="Updated" current={sortField} dir={sortDir} onSort={handleSort} /></th>
+                <th style={{ position: 'relative' }}>
+                  <SortHeader field="title" label="Title" current={sortField} dir={sortDir} onSort={handleSort} />
+                  <div onMouseDown={(e) => startColResize(e, 'title')} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4, cursor: 'col-resize' }} className="hover:bg-[var(--accent-primary)]/40" />
+                </th>
+                <th style={{ position: 'relative' }}>
+                  <SortHeader field="bundle" label="Bundle" current={sortField} dir={sortDir} onSort={handleSort} />
+                  <div onMouseDown={(e) => startColResize(e, 'bundle')} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4, cursor: 'col-resize' }} className="hover:bg-[var(--accent-primary)]/40" />
+                </th>
+                <th style={{ position: 'relative' }}>
+                  <SortHeader field="severity" label="Severity" current={sortField} dir={sortDir} onSort={handleSort} />
+                  <div onMouseDown={(e) => startColResize(e, 'severity')} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4, cursor: 'col-resize' }} className="hover:bg-[var(--accent-primary)]/40" />
+                </th>
+                <th style={{ position: 'relative' }}>
+                  <SortHeader field="auditScore" label="Audit" current={sortField} dir={sortDir} onSort={handleSort} align="right" />
+                  <div onMouseDown={(e) => startColResize(e, 'audit')} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4, cursor: 'col-resize' }} className="hover:bg-[var(--accent-primary)]/40" />
+                </th>
+                <th style={{ position: 'relative' }}>
+                  <span className="text-xs font-medium text-[var(--foreground-muted)]">Tags</span>
+                  <div onMouseDown={(e) => startColResize(e, 'tags')} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4, cursor: 'col-resize' }} className="hover:bg-[var(--accent-primary)]/40" />
+                </th>
+                <th style={{ position: 'relative' }}>
+                  <SortHeader field="scopeTier" label="Scope" current={sortField} dir={sortDir} onSort={handleSort} />
+                  <div onMouseDown={(e) => startColResize(e, 'scope')} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4, cursor: 'col-resize' }} className="hover:bg-[var(--accent-primary)]/40" />
+                </th>
+                <th style={{ position: 'relative' }}>
+                  <SortHeader field="isActive" label="State" current={sortField} dir={sortDir} onSort={handleSort} />
+                  <div onMouseDown={(e) => startColResize(e, 'state')} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4, cursor: 'col-resize' }} className="hover:bg-[var(--accent-primary)]/40" />
+                </th>
+                <th style={{ position: 'relative' }}>
+                  <SortHeader field="createdAt" label="Created" current={sortField} dir={sortDir} onSort={handleSort} />
+                  <div onMouseDown={(e) => startColResize(e, 'created')} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4, cursor: 'col-resize' }} className="hover:bg-[var(--accent-primary)]/40" />
+                </th>
+                <th style={{ position: 'relative' }}>
+                  <SortHeader field="updatedAt" label="Updated" current={sortField} dir={sortDir} onSort={handleSort} />
+                  <div onMouseDown={(e) => startColResize(e, 'updated')} style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 4, cursor: 'col-resize' }} className="hover:bg-[var(--accent-primary)]/40" />
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredScenarios.map((scenario) => (
                 <tr
                   key={scenario.id}
-                  className="group cursor-pointer hover:bg-[rgba(255,255,255,0.035)]"
+                  className="group cursor-pointer hover:bg-[var(--background-overlay)]"
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest('input,button,a')) return;
                     router.push(`/scenarios/${scenario.id}`);
@@ -360,13 +458,32 @@ function ScenariosInner() {
                   </td>
 
                   <td>
-                    <span className="font-mono text-[11px] text-[var(--foreground-muted)]">
-                      {scenario.region
-                        ? scenario.region
-                        : scenario.countryCount != null
-                        ? `${scenario.countryCount}`
-                        : '—'}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-mono text-[11px] text-[var(--foreground-muted)]">{scenario.tagCount ?? scenario.tags?.length ?? 0}</span>
+                      {scenario.tagResolutionStatus === 'resolved' && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)] flex-shrink-0" title="Tags resolved" />
+                      )}
+                      {scenario.tagResolutionStatus === 'manual' && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#818cf8] flex-shrink-0" title="Tags set manually" />
+                      )}
+                      {(!scenario.tagResolutionStatus || scenario.tagResolutionStatus === 'unresolved') && scenario.tagCount > 0 && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#f59e0b] flex-shrink-0" title="Tags unresolved" />
+                      )}
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="flex items-center gap-1.5">
+                      {scenario.conditionCount ? (
+                        <span title="Has metric conditions" className="h-1.5 w-1.5 rounded-full bg-[#f59e0b] flex-shrink-0" />
+                      ) : null}
+                      <span className="font-mono text-[11px] text-[var(--foreground-muted)]">
+                        {scenario.scopeTier ?? '—'}
+                      </span>
+                      {scenario.countryCount != null && scenario.countryCount > 0 && (
+                        <span className="font-mono text-[10px] text-[var(--foreground-subtle)]">({scenario.countryCount})</span>
+                      )}
+                    </div>
                   </td>
 
                   <td onClick={(e) => e.stopPropagation()}>
@@ -377,7 +494,7 @@ function ScenariosInner() {
                       title={scenario.isActive ? 'Click to deactivate' : 'Click to activate'}
                     >
                       <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${scenario.isActive ? 'bg-[var(--success)]' : 'bg-[var(--foreground-subtle)]'}`} />
-                      <span className="text-[10px] font-mono text-[var(--foreground-subtle)] group-hover:text-[var(--foreground-muted)] transition-colors">
+                      <span className="text-[11px] font-medium text-[var(--foreground-subtle)] group-hover:text-[var(--foreground-muted)] transition-colors">
                         {scenario.isActive ? 'On' : 'Off'}
                       </span>
                     </button>
@@ -418,7 +535,7 @@ function ScenariosInner() {
             <button onClick={() => setParam('page', String(page + 1))} className="btn btn-ghost">Next →</button>
           )}
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-[10px] font-mono text-[var(--foreground-subtle)]">Per page</span>
+            <span className="text-[11px] font-medium text-[var(--foreground-subtle)]">Per page</span>
             <select
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setCursors([]); setParam('page', '1'); }}
@@ -438,7 +555,7 @@ function ScenariosInner() {
 
 export default function ScenariosPage() {
   return (
-    <Suspense fallback={<div className="p-4 text-[var(--foreground-subtle)] text-sm font-mono">Loading…</div>}>
+    <Suspense fallback={<div className="p-4 text-[var(--foreground-subtle)] text-sm">Loading…</div>}>
       <ScenariosInner />
     </Suspense>
   );

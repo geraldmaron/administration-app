@@ -32,7 +32,10 @@ function readBearerToken(headerValue?: string): string | undefined {
 
 function isLocalRequest(hostname?: string, forwardedHost?: string): boolean {
     const candidates = [hostname, forwardedHost].filter((v): v is string => Boolean(v));
-    return candidates.some((v) => v.startsWith('localhost') || v.startsWith('127.0.0.1'));
+    return candidates.some((value) => {
+        const normalized = value.split(':', 1)[0]?.toLowerCase() ?? value.toLowerCase();
+        return normalized === 'localhost' || normalized === '127.0.0.1' || normalized.endsWith('.localhost');
+    });
 }
 
 async function isAuthorized(req: { get(name: string): string | undefined; hostname?: string }): Promise<boolean> {

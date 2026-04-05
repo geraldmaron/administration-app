@@ -23,7 +23,7 @@ Every concept must:
    - ❌ "The USA threatens sanctions" → ✅ "{the_adversary} threatens sanctions"
    - Any literal country name, capital city, or abbreviation in output is a hard failure.
 
-   **All political structures, institutions, and actor names must use tokens.** Never hardcode: party or coalition names (use `{ruling_party}`, `{opposition_party}`), chamber names (use `{legislature}`), government structure terms like "parliament" or "ruling coalition", regional blocs (use `{regional_bloc}`), industry sectors (use `{major_industry}`). Full banned-term lists are enforced by the drafter audit.
+   **All political structures, institutions, and actor names must use tokens.** Never hardcode: party or coalition names (use `{governing_party}`, `{opposition_party}`), chamber names (use `{legislature}`), government structure terms like "parliament" or "governing coalition", regional blocs (use `{regional_bloc}`), industry sectors (use `{major_industry}`). Full banned-term lists are enforced by the drafter audit.
 
 2. **Present a genuine dilemma** — the best response should not be obvious. Trade-offs should involve real governance tensions (economic vs. social, security vs. liberty, short-term vs. long-term).
 

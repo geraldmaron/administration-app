@@ -39,6 +39,7 @@ export const VALID_METRICS = {
 export const ALL_METRIC_IDS = new Set(ALL_METRIC_IDS_ARRAY);
 
 import { TOKEN_CATEGORIES, CONCEPT_TO_TOKEN_MAP as _CONCEPT_TO_TOKEN_MAP } from './token-registry';
+import type { CompiledTokenRegistry } from '../shared/token-registry-contract';
 
 
 export const LOGIC_PARAMETERS = {
@@ -114,8 +115,14 @@ export const NARRATIVE_TO_METRIC_ALIGNMENT: ReadonlyArray<{ concepts: string; me
  * Generate a prompt-ready string with logic parameters
  * to be injected into AI generation prompts
  */
-export function getLogicParametersPrompt(severity: 'low' | 'medium' | 'high' | 'extreme' | 'critical' = 'medium'): string {
-  // Determine appropriate effect magnitude
+export function getLogicParametersPrompt(severity: 'low' | 'medium' | 'high' | 'extreme' | 'critical' = 'medium', registry?: CompiledTokenRegistry): string {
+  const cats: Readonly<Record<string, readonly string[]>> = registry
+    ? registry.tokensByCategory
+    : (TOKEN_CATEGORIES as Readonly<Record<string, readonly string[]>>);
+  const concepts: ReadonlyArray<{ concept: string; token: string }> = registry
+    ? registry.conceptToTokenMap
+    : _CONCEPT_TO_TOKEN_MAP;
+
   let magnitudeGuidance: string;
   switch (severity) {
     case 'low':
@@ -143,28 +150,26 @@ export function getLogicParametersPrompt(severity: 'low' | 'medium' | 'high' | '
    - Hidden: ${VALID_METRICS.hidden.join(', ')}
 
 2. **Template Tokens**: Use these placeholders in descriptions/outcomes:
-   - Executive: {${TOKEN_CATEGORIES.executive.join('}, {')}}
-   - Legislative: {${TOKEN_CATEGORIES.legislative.join('}, {')}}
-   - Judicial: {${TOKEN_CATEGORIES.judicial.join('}, {')}}
-   - Ministers: {${TOKEN_CATEGORIES.ministers.join('}, {')}}
-   - Security: {${TOKEN_CATEGORIES.security.join('}, {')}}
-   - Military: {${TOKEN_CATEGORIES.military.join('}, {')}}
-   - Economic: {${TOKEN_CATEGORIES.economic.join('}, {')}}
-   - Local: {${TOKEN_CATEGORIES.local.join('}, {')}}
-   - Civil: {${TOKEN_CATEGORIES.civil.join('}, {')}}
-   - Media: {${TOKEN_CATEGORIES.media.join('}, {')}}
-   - Country/relationship — subject, object, or prepositional position → ALWAYS use the {the_*} article form (auto-adds "the" where required, e.g. "the United States" but not "Germany"):
-     {${TOKEN_CATEGORIES.article_forms.filter(t => ['the_adversary','the_border_rival','the_regional_rival','the_ally','the_neutral','the_rival','the_partner','the_trade_partner','the_neighbor','the_player_country','the_nation','the_regional_bloc'].includes(t)).join('}, {')}}
-   - Possessive constructions only → bare form immediately followed by 's is valid: {${TOKEN_CATEGORIES.relationships.join('}, {')}}
-     ✅ "{player_country}'s economy collapsed" / "{adversary}'s claims were dismissed"
-     ❌ "{player_country} faces..." → ✅ "{the_player_country} faces..."
+   - Executive: {${Array.from(cats['executive'] ?? TOKEN_CATEGORIES.executive).join('}, {')}}
+   - Legislative: {${Array.from(cats['legislative'] ?? TOKEN_CATEGORIES.legislative).join('}, {')}}
+   - Judicial: {${Array.from(cats['judicial'] ?? TOKEN_CATEGORIES.judicial).join('}, {')}}
+   - Ministers: {${Array.from(cats['ministers'] ?? TOKEN_CATEGORIES.ministers).join('}, {')}}
+   - Security: {${Array.from(cats['security'] ?? TOKEN_CATEGORIES.security).join('}, {')}}
+   - Military: {${Array.from(cats['military'] ?? TOKEN_CATEGORIES.military).join('}, {')}}
+   - Economic: {${Array.from(cats['economic'] ?? TOKEN_CATEGORIES.economic).join('}, {')}}
+   - Local: {${Array.from(cats['local'] ?? TOKEN_CATEGORIES.local).join('}, {')}}
+   - Media: {${Array.from(cats['media'] ?? TOKEN_CATEGORIES.media).join('}, {')}}
+   - Country reference — {the_player_country} as subject/object, {player_country}'s for possessive, {regional_bloc} for regional bodies:
+     ✅ "{the_player_country} faces..." / "{player_country}'s economy collapsed"
+     ✅ "{regional_bloc} imposed new trade rules" (for EU, ASEAN, African Union, etc.)
+     ❌ NEVER hardcode foreign country names — use natural language: "your border rival", "the allied nation", "a neighboring adversary"
    - Article forms ({the_*}) for roles and institutions — use when a role title is a sentence subject or follows a preposition:
-     {${TOKEN_CATEGORIES.article_forms.join('}, {')}}
-     e.g. "{the_legislature} passed a bill" / "sanctions imposed by {the_adversary}"
+     {${Array.from(cats['article_forms'] ?? TOKEN_CATEGORIES.article_forms).join('}, {')}}
+     e.g. "{the_legislature} passed a bill" / "a motion by {the_finance_role}"
    - Example: "{the_player_country} faces pressure from {the_legislature} over {central_bank} policy"
 
    **CONCEPT → TOKEN** (never hardcode — always use the right token for the concept):
-${_CONCEPT_TO_TOKEN_MAP.map(({ concept, token }) => `   - ${concept} → ${token}`).join('\n')}
+${concepts.map(({ concept, token }) => `   - ${concept} → ${token}`).join('\n')}
 
 3. **Effect Values**: ${magnitudeGuidance}
    - Minor: ${LOGIC_PARAMETERS.effectRanges.minor.min}–${LOGIC_PARAMETERS.effectRanges.minor.max} (e.g. 0.4, 0.6, 0.9)
@@ -204,32 +209,46 @@ ${_CONCEPT_TO_TOKEN_MAP.map(({ concept, token }) => `   - ${concept} → ${token
     Narrative concept → use this metric ID:
 ${NARRATIVE_TO_METRIC_ALIGNMENT.map(({ concepts, metricIds, note }) => `    - ${concepts} → ${metricIds}${note ? ` (${note})` : ''}`).join('\n')}
 
-14. **Relationship Token Semantics** (CRITICAL — prevents ally/adversary role confusion):
-    HOSTILE tokens ({the_adversary}, {the_border_rival}, {the_regional_rival}, {the_rival}):
-    - ONLY use when the foreign actor is threatening, attacking, sanctioning, conducting espionage,
-      violating borders, escalating militarily, or acting in bad faith.
-    - NEVER use with: aid offers, joint exercises, trade agreements, diplomatic cooperation,
-      or any framing where the foreign actor is acting in good faith.
-    COOPERATIVE tokens ({the_ally}, {the_partner}, {the_trade_partner}):
-    - ONLY use when the foreign actor is supporting, coordinating, providing aid, or acting
-      as a willing partner.
-    - NEVER use with: sanctions, military threats, territorial claims, espionage, or hostile acts.
-    NEUTRAL tokens ({the_neutral}, {the_neighbor}, {the_nation}, {the_player_country}):
-    - Use for third-party observers, mediators, or uninvolved parties.
-    Generating {the_ally} imposing sanctions or {the_adversary} offering unconditional cooperation
-    is semantically invalid output and will be rejected.
+14. **Scenario Conditions** (when to add \`conditions\` to gate eligibility):
+    Add \`conditions\` when the scenario only makes sense if the player is in a specific metric state.
+    Omit \`conditions\` for general governance challenges that can occur at any metric level.
 
-15. **Context Token Semantics** (CRITICAL — prevents unrealistic monetary references):
-    DESCRIPTIVE tokens (describe the country, never use as line-item amounts):
+    Canonical thresholds — use these exact values when a state is required:
+    | Metric state                        | metricId                 | operator | value |
+    |-------------------------------------|--------------------------|----------|-------|
+    | Economic recession / crisis         | metric_economy           | max      | 38    |
+    | High unemployment                   | metric_employment        | max      | 35    |
+    | Inflation crisis                    | metric_inflation         | min      | 65    |
+    | Severe budget deficit               | metric_budget            | max      | -40   |
+    | Public disorder / street unrest     | metric_public_order      | max      | 35    |
+    | Crime wave / lawlessness            | metric_crime             | min      | 65    |
+    | Serious corruption / scandal        | metric_corruption        | min      | 60    |
+    | Military weakness / unreadiness     | metric_military          | max      | 30    |
+    | Diplomatic crisis / isolation       | metric_foreign_relations | max      | 30    |
+    | Approval collapse                   | metric_approval          | max      | 25    |
+    | Authoritarian drift / low liberty   | metric_liberty           | max      | 30    |
+    | Environmental crisis                | metric_environment       | max      | 30    |
+
+    Examples:
+    - Austerity response scenario → \`[{ "metricId": "metric_economy", "max": 38 }]\`
+    - Crime wave policing scenario → \`[{ "metricId": "metric_crime", "min": 65 }]\`
+    - Dual-condition scenario (collapsed economy AND approval) → \`[{ "metricId": "metric_economy", "max": 38 }, { "metricId": "metric_approval", "max": 40 }]\`
+
+15. **Descriptive and Monetary Token Semantics** (CRITICAL — prevents unrealistic monetary references):
+    CONTEXT tokens (describe the country at a qualitative level, never use as line-item amounts):
     - {gdp_description} → Resolves to the ENTIRE national GDP (e.g., "a 25 trillion dollars economy").
       NEVER use as a stolen, siphoned, lost, or misappropriated amount. It is the TOTAL economic output.
     - {economic_scale} → Qualitative descriptor ("the world's largest economy", "small island economy").
     - {population_scale} → "a nation of over 330 million" etc.
+    - {fiscal_condition} → Fiscal health descriptor ("strong fiscal reserves", "manageable debt levels", "persistent deficits").
+
+    GEOGRAPHY tokens (spatial/terrain descriptors):
     - {geography_type}, {climate_risk} → Geographic/environmental descriptors.
 
-    ADDITIONAL DESCRIPTORS (country context):
+    MILITARY tokens (military standing descriptor):
     - {military_capability} → Military standing descriptor ("world-class military superpower", "limited defense capacity").
-    - {fiscal_condition} → Fiscal health descriptor ("strong fiscal reserves", "manageable debt levels", "persistent deficits").
+
+    LEGISLATIVE tokens (political opposition):
     - {opposition_leader} → Name or title of the leading opposition figure.
 
     SCALED MONETARY tokens (auto-proportional to the player's GDP — USE THESE for specific amounts):

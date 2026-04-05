@@ -22,7 +22,7 @@ export default function StatusBadge({ status, pulse = false }: StatusBadgeProps)
   };
 
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[11px] font-mono tracking-[0.06em] ${config.text}`}>
+    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${config.text}`}>
       <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${config.dot} ${pulse ? 'animate-pulse' : ''}`} />
       {config.label}
     </span>

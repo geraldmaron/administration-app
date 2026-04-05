@@ -203,24 +203,37 @@ function startRequestHeartbeat(params: {
 
 class Semaphore {
   private permits: number;
-  private readonly queue: Array<() => void> = [];
+  private readonly queue: Array<{ resolve: () => void; reject: (err: Error) => void; timer?: ReturnType<typeof setTimeout> }> = [];
 
   constructor(permits: number) {
     this.permits = permits;
   }
 
-  acquire(): Promise<void> {
+  acquire(timeoutMs?: number): Promise<void> {
     if (this.permits > 0) {
       this.permits--;
       return Promise.resolve();
     }
-    return new Promise(resolve => this.queue.push(resolve));
+    return new Promise((resolve, reject) => {
+      const entry = { resolve, reject, timer: undefined as ReturnType<typeof setTimeout> | undefined };
+      this.queue.push(entry);
+      if (timeoutMs && timeoutMs > 0) {
+        entry.timer = setTimeout(() => {
+          const idx = this.queue.indexOf(entry);
+          if (idx !== -1) {
+            this.queue.splice(idx, 1);
+            reject(new Error(`Semaphore acquire timed out after ${timeoutMs}ms`));
+          }
+        }, timeoutMs);
+      }
+    });
   }
 
   release(): void {
     const next = this.queue.shift();
     if (next) {
-      next();
+      if (next.timer) clearTimeout(next.timer);
+      next.resolve();
     } else {
       this.permits++;
     }
@@ -267,7 +280,7 @@ class TpmThrottle {
 
 // Conservative Tier 1 defaults — override via env vars when on higher tiers:
 //   OPENAI_MAX_CONCURRENT=10 OPENAI_TPM_LIMIT=2000000 for Tier 2
-const OPENAI_MAX_CONCURRENT = parseInt(process.env.OPENAI_MAX_CONCURRENT || (process.env.K_SERVICE ? '1' : '3'), 10);
+const OPENAI_MAX_CONCURRENT = parseInt(process.env.OPENAI_MAX_CONCURRENT || (process.env.K_SERVICE ? '2' : '3'), 10);
 const OPENAI_TPM_LIMIT = parseInt(process.env.OPENAI_TPM_LIMIT || '200000', 10);
 const openAISemaphore = new Semaphore(OPENAI_MAX_CONCURRENT);
 const openAITpmThrottle = new TpmThrottle(OPENAI_TPM_LIMIT);
@@ -283,7 +296,7 @@ async function callOpenAI<T>(
 ): Promise<CallResult<T>> {
   const modelToUse = modelOverride || 'gpt-4o-mini';
   const timeout = config.timeoutMs ?? getModelTimeout(modelToUse);
-  const maxRetries = config.maxRetries ?? parseInt(process.env.OPENAI_MAX_RETRIES || (process.env.K_SERVICE ? '1' : '3'), 10);
+  const maxRetries = config.maxRetries ?? parseInt(process.env.OPENAI_MAX_RETRIES || (process.env.K_SERVICE ? '2' : '3'), 10);
   const baseDelay = 2000;
 
   const apiKey = getOpenAIApiKey();
@@ -302,6 +315,8 @@ async function callOpenAI<T>(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+      const useStructuredOutput = /^gpt-4\.[1-9]|^gpt-4\.1|^gpt-5/.test(modelToUse);
+
       const requestBody: Record<string, any> = {
         model: modelToUse,
         messages: [
@@ -311,11 +326,15 @@ async function callOpenAI<T>(
           },
           {
             role: 'user',
-            content: `${prompt}\n\nRespond with ONLY valid JSON matching this schema:\n${JSON.stringify(schema, null, 2)}`
+            content: useStructuredOutput
+              ? prompt
+              : `${prompt}\n\nRespond with ONLY valid JSON matching this schema:\n${JSON.stringify(schema, null, 2)}`
           }
         ],
         max_completion_tokens: config.maxTokens,
-        response_format: { type: 'json_object' }
+        response_format: useStructuredOutput
+          ? { type: 'json_schema', json_schema: { name: 'response', schema, strict: false } }
+          : { type: 'json_object' },
       };
 
       // Apply temperature for non-reasoning models
@@ -328,7 +347,7 @@ async function callOpenAI<T>(
         level: 'info',
         code: 'llm_request',
         message: `→ ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1}) — ${prompt.length} chars`,
-        data: { model: modelToUse, promptLength: prompt.length, attempt: attempt + 1 },
+        data: { model: modelToUse, promptLength: prompt.length, attempt: attempt + 1, promptPreview: prompt.length > 600 ? prompt.slice(0, 600) + '\n…[truncated]' : prompt },
       });
       stopHeartbeat = startRequestHeartbeat({
         provider: 'openai',
@@ -338,7 +357,7 @@ async function callOpenAI<T>(
         timeoutMs: timeout,
       });
 
-      await openAISemaphore.acquire();
+      await openAISemaphore.acquire(Math.floor(timeout / 2));
       const estimatedTokens = (config.maxTokens ?? 4096) + 4096;
       await openAITpmThrottle.reserve(estimatedTokens);
       let response: Response;
@@ -399,7 +418,7 @@ async function callOpenAI<T>(
         level: 'info',
         code: 'llm_response',
         message: `← ${modelToUse} ${elapsed}ms — ${usage.inputTokens}↑ ${usage.outputTokens}↓ tokens`,
-        data: { provider: 'openai' as const, model: modelToUse, elapsed, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens },
+        data: { provider: 'openai' as const, model: modelToUse, elapsed, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, responsePreview: responseText ? (responseText.length > 800 ? responseText.slice(0, 800) + '\n…[truncated]' : responseText) : undefined },
       });
 
       if (!responseText) {
@@ -465,6 +484,22 @@ async function callOllama<T>(
     return { data: null, usage: null, error: 'No Ollama model configured' };
   }
 
+  try {
+    const preCheckUrl = new URL(`${baseUrl}/models`);
+    const preCheckLib = preCheckUrl.protocol === 'https:' ? https : http;
+    await new Promise<void>((resolve) => {
+      const req = preCheckLib.request(
+        { hostname: preCheckUrl.hostname, port: preCheckUrl.port || (preCheckUrl.protocol === 'https:' ? '443' : '80'), path: preCheckUrl.pathname, method: 'GET', headers: { Authorization: 'Bearer ollama' }, timeout: 5000 },
+        (res) => { res.resume(); resolve(); }
+      );
+      req.on('error', () => resolve());
+      req.on('timeout', () => { req.destroy(); resolve(); });
+      req.end();
+    });
+  } catch {
+    console.warn(`[Ollama] Pre-check to ${baseUrl}/models failed (non-fatal)`);
+  }
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const startTime = Date.now();
     let stopHeartbeat: (() => void) | null = null;
@@ -516,7 +551,7 @@ async function callOllama<T>(
         level: 'info',
         code: 'llm_request',
         message: `→ ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1}) — ${prompt.length} chars`,
-        data: { model: modelToUse, promptLength: prompt.length, attempt: attempt + 1 },
+        data: { model: modelToUse, promptLength: prompt.length, attempt: attempt + 1, promptPreview: prompt.length > 600 ? prompt.slice(0, 600) + '\n…[truncated]' : prompt },
       });
       stopHeartbeat = startRequestHeartbeat({
         provider: 'ollama',
@@ -664,7 +699,7 @@ async function callOllama<T>(
         level: 'info',
         code: 'llm_response',
         message: `← ${modelToUse} ${elapsed}ms — ${usage.inputTokens}↑ ${usage.outputTokens}↓ tokens`,
-        data: { provider: 'ollama' as const, model: modelToUse, elapsed, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, finishReason },
+        data: { provider: 'ollama' as const, model: modelToUse, elapsed, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, finishReason, responsePreview: responseText ? (responseText.length > 800 ? responseText.slice(0, 800) + '\n…[truncated]' : responseText) : undefined },
       });
 
       if (finishReason === 'length') {

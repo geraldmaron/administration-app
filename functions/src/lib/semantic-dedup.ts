@@ -155,3 +155,43 @@ export async function deleteEmbedding(scenarioId: string): Promise<void> {
 export function isSemanticDedupEnabled(): boolean {
     return ENABLE_SEMANTIC_DEDUP;
 }
+
+/**
+ * Compute Jaccard similarity between two tag arrays.
+ * Returns a value between 0 (no overlap) and 1 (identical sets).
+ */
+export function tagJaccardSimilarity(tagsA: string[], tagsB: string[]): number {
+    if (tagsA.length === 0 && tagsB.length === 0) return 0;
+    const setA = new Set(tagsA);
+    const setB = new Set(tagsB);
+    let intersection = 0;
+    for (const tag of setA) {
+        if (setB.has(tag)) intersection++;
+    }
+    const union = setA.size + setB.size - intersection;
+    return union === 0 ? 0 : intersection / union;
+}
+
+/**
+ * Pre-filter check: returns true if the candidate's tags overlap significantly
+ * with any existing scenario's tags in the same bundle, suggesting potential duplication.
+ * Use as a cheap signal before expensive embedding comparison.
+ *
+ * @param candidateTags Tags of the new scenario
+ * @param existingScenarioTags Array of tag arrays from existing scenarios
+ * @param threshold Jaccard threshold (default 0.6 — 60% tag overlap)
+ * @returns The index of the first overlapping scenario, or -1 if none
+ */
+export function findTagOverlap(
+    candidateTags: string[],
+    existingScenarioTags: string[][],
+    threshold = 0.6
+): number {
+    if (candidateTags.length === 0) return -1;
+    for (let i = 0; i < existingScenarioTags.length; i++) {
+        if (tagJaccardSimilarity(candidateTags, existingScenarioTags[i]) >= threshold) {
+            return i;
+        }
+    }
+    return -1;
+}

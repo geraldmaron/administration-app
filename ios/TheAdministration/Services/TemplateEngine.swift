@@ -12,7 +12,7 @@ class TemplateEngine {
     private static let optionalBranchTokens: Set<String> = [
         "marine_branch", "space_branch", "paramilitary_branch",
         "coast_guard_branch", "intel_branch", "cyber_branch",
-        "sovereign_fund", "special_forces", "strategic_nuclear_branch"
+        "sovereign_fund", "special_forces", "strategic_nuclear_branch",
     ]
 
     private var countries: [Country] = []
@@ -164,11 +164,12 @@ class TemplateEngine {
         let oppositionParty = gameState.countryParties.first(where: { !$0.isRuling && !$0.isCoalitionMember })
 
         if let ruling = rulingParty {
-            context["ruling_party"] = ruling.name
-            context["ruling_party_leader"] = ruling.currentLeader ?? ""
-            context["ruling_party_ideology"] = ruling.ideologyLabel
+            context["governing_party"] = ruling.name
+            context["governing_party_leader"] = ruling.currentLeader
+                ?? CandidateGenerator.generateLeaderName(forRegion: country.region, config: FirebaseDataService.shared.config)
+            context["governing_party_ideology"] = ruling.ideologyLabel
             if let short = ruling.shortName {
-                context["ruling_party_short"] = short
+                context["governing_party_short"] = short
             }
         }
         if let coalition = coalitionParty {
@@ -176,8 +177,10 @@ class TemplateEngine {
         }
         if let opposition = oppositionParty {
             context["opposition_party"] = opposition.name
-            context["opposition_party_leader"] = opposition.currentLeader ?? ""
-            context["opposition_leader"] = opposition.currentLeader ?? ""
+            let leaderName = opposition.currentLeader
+                ?? CandidateGenerator.generateLeaderName(forRegion: country.region, config: FirebaseDataService.shared.config)
+            context["opposition_party_leader"] = leaderName
+            context["opposition_leader"] = leaderName
         }
 
         // Resolve locale tokens if an active locale is set
@@ -306,7 +309,7 @@ class TemplateEngine {
             ("transport_role", "the_transport_role"),
             ("agriculture_role", "the_agriculture_role"),
             ("prosecutor_role", "the_prosecutor_role"),
-            ("ruling_party", "the_ruling_party"),
+            ("governing_party", "the_governing_party"),
             ("opposition_party", "the_opposition_party"),
             ("opposition_leader", "the_opposition_leader"),
             ("intelligence_agency", "the_intelligence_agency"),
@@ -319,20 +322,18 @@ class TemplateEngine {
             ("lower_house", "the_lower_house"),
             ("judicial_role", "the_judicial_role"),
             ("state_media", "the_state_media"),
-            ("press_secretary", "the_press_secretary"),
-            ("military_branch", "the_military_branch"),
-            ("military_general", "the_military_general"),
-            ("cabinet_secretary", "the_cabinet_secretary"),
-            ("senior_official", "the_senior_official"),
+            ("press_role", "the_press_role"),
+            ("armed_forces_name", "the_armed_forces_name"),
+            ("military_chief_title", "the_military_chief_title"),
             ("capital_mayor", "the_capital_mayor"),
             ("regional_governor", "the_regional_governor"),
             ("major_industry", "the_major_industry"),
             ("regional_bloc", "the_regional_bloc"),
-            ("army_name", "the_army_name"),
-            ("naval_fleet", "the_naval_fleet"),
-            ("air_wing", "the_air_wing"),
-            ("cyber_agency", "the_cyber_agency"),
-            ("nuclear_command", "the_nuclear_command"),
+            ("ground_forces_branch", "the_ground_forces_branch"),
+            ("maritime_branch", "the_maritime_branch"),
+            ("air_branch", "the_air_branch"),
+            ("cyber_branch", "the_cyber_branch"),
+            ("strategic_nuclear_branch", "the_strategic_nuclear_branch"),
             ("coalition_name", "the_coalition_name"),
         ]
         for (bare, article) in articleFormPairs {
@@ -393,7 +394,7 @@ class TemplateEngine {
             ("transport_role", "the_transport_role"),
             ("agriculture_role", "the_agriculture_role"),
             ("prosecutor_role", "the_prosecutor_role"),
-            ("ruling_party", "the_ruling_party"),
+            ("governing_party", "the_governing_party"),
             ("opposition_party", "the_opposition_party"),
             ("opposition_leader", "the_opposition_leader"),
             ("intelligence_agency", "the_intelligence_agency"),
@@ -406,20 +407,18 @@ class TemplateEngine {
             ("lower_house", "the_lower_house"),
             ("judicial_role", "the_judicial_role"),
             ("state_media", "the_state_media"),
-            ("press_secretary", "the_press_secretary"),
-            ("military_branch", "the_military_branch"),
-            ("military_general", "the_military_general"),
-            ("cabinet_secretary", "the_cabinet_secretary"),
-            ("senior_official", "the_senior_official"),
+            ("press_role", "the_press_role"),
+            ("armed_forces_name", "the_armed_forces_name"),
+            ("military_chief_title", "the_military_chief_title"),
             ("capital_mayor", "the_capital_mayor"),
             ("regional_governor", "the_regional_governor"),
             ("major_industry", "the_major_industry"),
             ("regional_bloc", "the_regional_bloc"),
-            ("army_name", "the_army_name"),
-            ("naval_fleet", "the_naval_fleet"),
-            ("air_wing", "the_air_wing"),
-            ("cyber_agency", "the_cyber_agency"),
-            ("nuclear_command", "the_nuclear_command"),
+            ("ground_forces_branch", "the_ground_forces_branch"),
+            ("maritime_branch", "the_maritime_branch"),
+            ("air_branch", "the_air_branch"),
+            ("cyber_branch", "the_cyber_branch"),
+            ("strategic_nuclear_branch", "the_strategic_nuclear_branch"),
             ("coalition_name", "the_coalition_name"),
         ]
         for (bare, article) in articleFormPairs {
@@ -463,8 +462,8 @@ class TemplateEngine {
         "the_leader_title": "the national leader",
         "legislature": "legislature",
         "the_legislature": "the legislature",
-        "ruling_party": "ruling party",
-        "the_ruling_party": "the ruling party"
+        "governing_party": "governing party",
+        "the_governing_party": "the governing party"
     ]
 
     private func titleCaseToken(_ token: String) -> String {

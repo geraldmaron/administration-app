@@ -1,0 +1,32 @@
+{
+  "servers": [
+    {
+      "name": "web",
+      "label": "Next.js Web App",
+      "cwd": "web",
+      "command": "npm run dev",
+      "port": 3001,
+      "portRange": [3001, 3020],
+      "notes": "Custom port launcher at web/scripts/next-port-launcher.mjs — auto-scans 3001-3020 if port in use"
+    },
+    {
+      "name": "functions",
+      "label": "Firebase Functions Emulator",
+      "cwd": "functions",
+      "command": "pnpm run serve",
+      "fullCommand": "pnpm run build && firebase emulators:start --only functions",
+      "port": 5001
+    },
+    {
+      "name": "firebase-emulator",
+      "label": "Firebase Full Emulator Suite",
+      "cwd": ".",
+      "command": "firebase emulators:start",
+      "ports": {
+        "functions": 5001,
+        "firestore": 8080,
+        "storage": 9199
+      }
+    }
+  ]
+}
