@@ -193,6 +193,9 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   if (errorCodes.some(code => code.includes('token') || code === 'invalid-country-name')) {
     return 'token-violation';
   }
+  if (errorCodes.some(code => code === 'rendered-output-unresolved-token' || code === 'rendered-output-token-leak')) {
+    return 'token-violation';
+  }
   if (errorCodes.some(code => code === 'banned-phrase')) {
     return 'banned-phrase-violation';
   }
@@ -207,7 +210,7 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   if (errorCodes.some(code => code === 'option-preview-in-description')) {
     return 'option-preview-violation';
   }
-  if (errorCodes.some(code => code === 'invalid-metric' || code === 'unknown-metric')) {
+  if (errorCodes.some(code => code === 'invalid-metric' || code === 'invalid-metric-id' || code === 'unknown-metric')) {
     return 'invalid-metric';
   }
   if (errorCodes.some(code => code === 'missing-advisor-feedback' || code === 'incomplete-advisor-feedback' || code === 'missing-role-feedback')) {
@@ -238,6 +241,9 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   // Check warnings
   if (warningCodes.some(code => code === 'jargon-use' || code === 'complex-sentence' || code === 'high-clause-density' || code === 'high-passive-voice' || code === 'label-complexity')) {
     return 'readability-violation';
+  }
+  if (warningCodes.some(code => code === 'rendered-output-fallback-heavy')) {
+    return 'token-violation';
   }
   if (warningCodes.some(code => code === 'hardcoded-gov-structure' || code === 'hardcoded-institution-phrase')) {
     return 'hardcoded-gov-structure';

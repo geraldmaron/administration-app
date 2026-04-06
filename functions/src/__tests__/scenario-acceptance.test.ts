@@ -197,6 +197,7 @@ describe('decideScenarioAcceptance', () => {
             },
         }));
         expect(decision.accepted).toBe(false);
+        expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('rendered-output-unresolved-token');
         expect(decision.rejectionIssues.map((issue) => issue.rule)).toContain('rendered-output-violation');
     });
 

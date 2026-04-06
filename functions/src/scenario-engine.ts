@@ -950,7 +950,8 @@ ADVISORS (use these roleId values exactly):
 
 RULES:
 - Each feedback: 1 sentence, 15-30 words, specific to THIS scenario
-- Use {token} placeholders for institutions (e.g., {the_legislature}, {central_bank}). NEVER hardcode institution names.
+- Use {token} placeholders for institutions (e.g., {legislature}, {central_bank}). NEVER hardcode institution names.
+- Use only token spellings that already appear in the token system for this run. Do NOT invent article-form tokens like {the_press_role} unless they are explicitly listed.
 - Stances must vary across options — at least 4 advisors should change stance between options
 - NEVER write these boilerplate patterns:
   "aligns well with our priorities", "supports this course of action", "could undermine our objectives",
@@ -2681,6 +2682,12 @@ async function expandConceptToLoop(
           if (retryRuleSet.has('option-metric-overlap') || retryRuleSet.has('option-domain-missing-primary')) {
             drafterPrompt += `\nOPTION DIFFERENTIATION RULE: each option must target a distinct strategic metric profile. If optionDomains are provided, each option must include at least one effect on its assigned primary metric.\n`;
           }
+          if (retryRuleSet.has('invalid-metric-id')) {
+            drafterPrompt += `\nMETRIC RULE: every effect targetMetricId must come from the approved metric list exactly as written. Do not invent variants like "metric_interest_rates", "metric_supply_chain", or "metric_price_controls". If a concept suggests those ideas, map them to existing canonical metrics such as metric_economy, metric_trade, metric_budget, metric_inflation, metric_public_order, or other listed metrics.\n`;
+          }
+          if (retryRuleSet.has('rendered-output-unresolved-token') || retryRuleSet.has('rendered-output-token-leak') || retryRuleSet.has('rendered-output-fallback-heavy')) {
+            drafterPrompt += `\nRENDERED OUTPUT RULE: the scenario must render cleanly for real countries. Use only approved tokens already listed in the token system. Prefer core domestic tokens that are widely available ({leader_title}, {finance_role}, {legislature}, {governing_party}, {player_country}, {the_player_country}, {central_bank}). Avoid niche or article-form tokens unless they are explicitly listed. Do not leave raw tokens in titles.\n`;
+          }
         } else if (failureCategory === 'token-violation') {
           const hasNoTokens = lastAuditResult.issues.some((i: any) => i.rule === 'no-tokens');
           if (hasNoTokens) {
@@ -2935,34 +2942,94 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
                   relationship_conditions: [],
                 };
 
-                // Phase D: Advisor Feedback (existing logic)
-                const advisorPrompt = buildAdvisorFeedbackPrompt({
-                  title: coreData.title,
-                  description: coreData.description,
-                  options: mergedOptions.map((o: any) => ({ id: o.id, text: o.text, label: o.label })),
-                });
-                const advisorModel = resolvePhaseModel(request?.modelConfig, 'advisor');
-                emitEngineEvent({ level: 'info', code: 'phase_advisor', message: `Phase D: advisor feedback (model=${advisorModel})` });
+                const preAdvisorScenario: BundleScenario = {
+                  ...coreData,
+                  id: `${baseId}_act${actPlan.actIndex}`,
+                  phase: 'mid',
+                  actIndex: actPlan.actIndex,
+                  metadata: {
+                    ...(metadata as any),
+                    source: mode as any,
+                    severity: concept.severity,
+                    difficulty: concept.difficulty,
+                    actorPattern: concept.actorPattern,
+                    optionShape: concept.optionShape,
+                    ...(concept.optionDomains?.length ? { optionDomains: concept.optionDomains } : {}),
+                    theme: concept.theme,
+                    scopeTier,
+                    scopeKey,
+                    ...(request?.clusterId ? { clusterId: request.clusterId } : {}),
+                    ...(request?.exclusivityReason ? { exclusivityReason: request.exclusivityReason } : {}),
+                    ...(request?.sourceKind ? { sourceKind: request.sourceKind } : {}),
+                    ...(request?.applicable_countries?.length ? { applicable_countries: request.applicable_countries } : {}),
+                    ...(requestedRegions?.length ? { region_tags: requestedRegions } : {}),
+                  },
+                };
 
-                const advStartMs = Date.now();
-                const advisorResult = await callModel(OLLAMA_ADVISOR_CONFIG, advisorPrompt, ADVISOR_FEEDBACK_SCHEMA, advisorModel);
-                const advDurationMs = Date.now() - advStartMs;
-                emitEngineEvent({ level: advisorResult?.data ? 'success' : 'error', code: 'phase_advisor_result', message: `Phase D result: ${advisorResult?.data ? 'OK' : advisorResult?.error ?? 'null'} (${advDurationMs}ms)`, data: { error: advisorResult?.error, durationMs: advDurationMs } });
-                if (!advisorResult?.data) {
-                  drafterError = advisorResult?.error ?? 'Advisor phase returned null';
-                } else {
-                  const advisorData = advisorResult.data as any;
-                  const advisorMap = new Map<string, any[]>();
-                  for (const entry of (advisorData.advisorsByOption || [])) {
-                    advisorMap.set(entry.optionId, entry.advisorFeedback || []);
+                const renderCountries = request?.countries ?? {};
+                const shouldRunPreAdvisorRenderCheck = Object.keys(renderCountries).length > 0;
+                let preAdvisorRenderBlocked = false;
+                if (shouldRunPreAdvisorRenderCheck) {
+                  const preAdvisorRenderedOutput = evaluateRenderedOutputQuality(
+                    preAdvisorScenario,
+                    renderCountries,
+                    { strictScopeTier: scopeTier }
+                  );
+                  if (!preAdvisorRenderedOutput.pass) {
+                    const topRenderedIssues = preAdvisorRenderedOutput.issues.slice(0, 5);
+                    drafterError = `Pre-advisor rendered output validation failed: ${topRenderedIssues.map((issue) => issue.rule).join(', ')}`;
+                    lastAuditResult = {
+                      scenario: null,
+                      score: scoreScenario(topRenderedIssues),
+                      issues: topRenderedIssues,
+                    };
+                    preAdvisorRenderBlocked = true;
+                    emitEngineEvent({
+                      level: 'warning',
+                      code: 'rendered_output_precheck_failed',
+                      message: `Phase C.5 rendered output precheck failed: ${topRenderedIssues.map((issue) => issue.rule).join(', ')}`,
+                      data: {
+                        actIndex: actPlan.actIndex,
+                        issues: topRenderedIssues.map((issue) => ({
+                          rule: issue.rule,
+                          severity: issue.severity,
+                          message: issue.message,
+                        })),
+                      },
+                    });
                   }
-                  actDetails = {
-                    ...coreData,
-                    options: coreData.options.map((opt: any) => ({
-                      ...opt,
-                      advisorFeedback: advisorMap.get(opt.id) ?? [],
-                    })),
-                  };
+                }
+
+                if (!preAdvisorRenderBlocked) {
+                  // Phase D: Advisor Feedback (existing logic)
+                  const advisorPrompt = buildAdvisorFeedbackPrompt({
+                    title: coreData.title,
+                    description: coreData.description,
+                    options: mergedOptions.map((o: any) => ({ id: o.id, text: o.text, label: o.label })),
+                  });
+                  const advisorModel = resolvePhaseModel(request?.modelConfig, 'advisor');
+                  emitEngineEvent({ level: 'info', code: 'phase_advisor', message: `Phase D: advisor feedback (model=${advisorModel})` });
+
+                  const advStartMs = Date.now();
+                  const advisorResult = await callModel(OLLAMA_ADVISOR_CONFIG, advisorPrompt, ADVISOR_FEEDBACK_SCHEMA, advisorModel);
+                  const advDurationMs = Date.now() - advStartMs;
+                  emitEngineEvent({ level: advisorResult?.data ? 'success' : 'error', code: 'phase_advisor_result', message: `Phase D result: ${advisorResult?.data ? 'OK' : advisorResult?.error ?? 'null'} (${advDurationMs}ms)`, data: { error: advisorResult?.error, durationMs: advDurationMs } });
+                  if (!advisorResult?.data) {
+                    drafterError = advisorResult?.error ?? 'Advisor phase returned null';
+                  } else {
+                    const advisorData = advisorResult.data as any;
+                    const advisorMap = new Map<string, any[]>();
+                    for (const entry of (advisorData.advisorsByOption || [])) {
+                      advisorMap.set(entry.optionId, entry.advisorFeedback || []);
+                    }
+                    actDetails = {
+                      ...coreData,
+                      options: coreData.options.map((opt: any) => ({
+                        ...opt,
+                        advisorFeedback: advisorMap.get(opt.id) ?? [],
+                      })),
+                    };
+                  }
                 }
               } // end effects validation else
               }

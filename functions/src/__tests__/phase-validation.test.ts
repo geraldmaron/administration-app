@@ -156,17 +156,17 @@ describe('validateEffects', () => {
         expect(result.fixes.some(f => f.includes('duration'))).toBe(true);
     });
 
-    it('fails when >50% of effects have unmappable metrics', () => {
+    it('fails when any effects have unmappable metrics', () => {
         const eff = {
             options: [
-                { id: 'opt_a', effects: [{ targetMetricId: 'metric_fake_one', value: 1, duration: 1, probability: 1 }, { targetMetricId: 'metric_fake_two', value: 1, duration: 1, probability: 1 }] },
-                { id: 'opt_b', effects: [{ targetMetricId: 'metric_fake_three', value: 1, duration: 1, probability: 1 }] },
-                { id: 'opt_c', effects: [{ targetMetricId: 'metric_economy', value: 1, duration: 1, probability: 1 }] },
+                { id: 'opt_a', effects: [{ targetMetricId: 'metric_economy', value: 1, duration: 1, probability: 1 }, { targetMetricId: 'metric_fake_two', value: 1, duration: 1, probability: 1 }] },
+                { id: 'opt_b', effects: [{ targetMetricId: 'metric_trade', value: 1, duration: 1, probability: 1 }] },
+                { id: 'opt_c', effects: [{ targetMetricId: 'metric_budget', value: 1, duration: 1, probability: 1 }] },
             ],
         };
         const result = validateEffects(eff, validMetricIds, inverseMetrics);
         expect(result.pass).toBe(false);
-        expect(result.issues.some(i => i.includes('unmappable metrics'))).toBe(true);
+        expect(result.issues.some(i => i.includes('unmappable metrics remain'))).toBe(true);
     });
 
     it('reports issues for options with no effects', () => {

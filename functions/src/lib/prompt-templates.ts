@@ -414,11 +414,12 @@ VOICE RULES:
 - BANNED phrases in option text: "aims to", "but risks", "but may", "could lead to", "at the cost of", "balances X with Y", "prioritizes X over Y", "risks provoking", "threatens to"
 
 TOKEN RULES:
-- Use {token} placeholders for institutions, roles, parties, and currencies (e.g., {the_finance_role}, {the_legislature}, {central_bank}).
+- Use {token} placeholders for institutions, roles, parties, and currencies (e.g., {finance_role}, {legislature}, {central_bank}).
 - Use {the_player_country} as the subject/object; use {player_country}'s for possessives.
 - Use {regional_bloc} for regional bodies (EU, ASEAN, African Union, etc.).
 - NEVER hardcode country names, capitals, party names, or institution names.
 - For foreign actors, use plain language: "your border rival", "the allied nation", "a neighboring adversary" — never invent relationship tokens.
+- Use only the exact token spellings shown in the Token System above. Do NOT synthesize a {the_*} article-form token unless that exact token appears there.
 ${isUniversal ? '- UNIVERSAL SCOPE: keep entirely domestic. No foreign nation actors.' : ''}
 
 STRUCTURE:
@@ -495,7 +496,8 @@ EFFECTS (2-4 per option):
 
 OUTCOMES — third-person news report style:
 - NEVER use "you" or "your". Use {leader_title} or {the_player_country} instead.
-- Use {token} placeholders for institutions, roles, and actors (e.g., {the_finance_role}, {the_legislature}, {central_bank}). NEVER hardcode institution names (Supreme Court, National Guard, Central Bank, Department of X).
+- Use {token} placeholders for institutions, roles, and actors (e.g., {finance_role}, {legislature}, {central_bank}). NEVER hardcode institution names (Supreme Court, National Guard, Central Bank, Department of X).
+- Use only the exact token spellings shown in the Token System above. Do NOT invent {the_*} variants for roles unless they are explicitly listed there.
 - NEVER hardcode country names, capital cities, party names, or currency names.
 - Keep every sentence under 30 words. Use active voice.
 - outcomeHeadline: 3-15 words, newspaper headline

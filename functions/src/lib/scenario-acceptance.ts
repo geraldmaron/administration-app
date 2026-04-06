@@ -165,6 +165,7 @@ export function decideScenarioAcceptance(input: ScenarioAcceptanceInput): Scenar
 
     if (input.renderedOutputGate?.enabled && input.renderedOutputGate.usable && input.renderedOutputGate.result) {
         if (input.renderedOutputGate.result.pass !== true) {
+            rejectionIssues.push(...input.renderedOutputGate.result.issues);
             rejectionIssues.push(
                 makeDecisionIssue(
                     'rendered-output-violation',

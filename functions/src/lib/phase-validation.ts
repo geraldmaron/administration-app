@@ -135,6 +135,7 @@ export function validateEffects(
 
     let totalEffects = 0;
     let unmappableMetrics = 0;
+    const unmappableMetricDetails = new Set<string>();
 
     for (const opt of effectOptions) {
         const effects = opt.effects || [];
@@ -153,6 +154,7 @@ export function validateEffects(
                     eff.targetMetricId = resolved;
                 } else {
                     unmappableMetrics++;
+                    unmappableMetricDetails.add(`${opt.id}:${eff.targetMetricId}`);
                     issues.push(`${opt.id}: unmappable metric "${eff.targetMetricId}"`);
                 }
             }
@@ -182,8 +184,8 @@ export function validateEffects(
         }
     }
 
-    if (totalEffects > 0 && unmappableMetrics / totalEffects > 0.5) {
-        issues.push(`${unmappableMetrics}/${totalEffects} effects have unmappable metrics — failing phase`);
+    if (unmappableMetrics > 0) {
+        issues.push(`unmappable metrics remain after normalization: ${Array.from(unmappableMetricDetails).join(', ')}`);
         return { pass: false, fixes, issues };
     }
 
