@@ -38,13 +38,21 @@ export interface RepairableOption {
   advisorFeedback?: { feedback?: string }[];
 }
 
+export interface RelationshipCondition {
+  relationshipId: string;
+  min?: number;
+  max?: number;
+}
+
 export interface RepairableScenario {
   id: string;
   title: string;
   description: string;
   options: RepairableOption[];
+  relationship_conditions?: RelationshipCondition[];
   metadata?: {
     bundle?: string;
+    actorPattern?: string;
     auditMetadata?: {
       score?: number;
       issues?: string[];
@@ -163,11 +171,7 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
       changed = true;
     }
 
-    const { result: hardcodedFixed, changed: hardcodedChanged } = applyHardcodedTheFixes(updated);
-    if (hardcodedChanged && hardcodedFixed) { updated = hardcodedFixed; changed = true; }
-
-    const { result: articleFixed, changed: articleChanged } = applyArticleFormFixes(updated);
-    if (articleChanged && articleFixed) { updated = articleFixed; changed = true; }
+    // Article form fixes removed — LLM writes "the {token}" naturally, no conversion to {the_token}.
 
     const { result: wsFixed, changed: wsChanged } = applyWhitespaceFixes(updated);
     if (wsChanged && wsFixed) { updated = wsFixed; changed = true; }
@@ -194,6 +198,30 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
   });
 
   return { updated: clone, changed };
+}
+
+// ── Relationship condition repair ──────────────────────────────────────────
+
+const ACTOR_PATTERN_DEFAULT_CONDITIONS: Record<string, RelationshipCondition> = {
+  adversary: { relationshipId: 'adversary', min: -100, max: -40 },
+  border_rival: { relationshipId: 'border_rival', min: -60, max: 0 },
+  rival: { relationshipId: 'rival', min: -80, max: -20 },
+  regional_rival: { relationshipId: 'regional_rival', min: -70, max: -10 },
+  ally: { relationshipId: 'ally', min: 40, max: 100 },
+};
+
+export function applyRelationshipConditionRepair<T extends RepairableScenario>(
+  scenario: T
+): { updated: T; changed: boolean } {
+  const actorPattern = scenario.metadata?.actorPattern;
+  if (!actorPattern) return { updated: scenario, changed: false };
+  const defaultCondition = ACTOR_PATTERN_DEFAULT_CONDITIONS[actorPattern];
+  if (!defaultCondition) return { updated: scenario, changed: false };
+  const hasConditions = Array.isArray(scenario.relationship_conditions) && scenario.relationship_conditions.length > 0;
+  if (hasConditions) return { updated: scenario, changed: false };
+  const clone: T = JSON.parse(JSON.stringify(scenario));
+  clone.relationship_conditions = [defaultCondition];
+  return { updated: clone, changed: true };
 }
 
 // ── Analysis ───────────────────────────────────────────────────────────────

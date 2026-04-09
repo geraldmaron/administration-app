@@ -1,7 +1,9 @@
 import type {
   GenerationDistributionConfig,
+  GenerationExecutionTarget,
   GenerationMode,
   GenerationModelConfig,
+  GenerationRunKind,
   GenerationScopeFields,
   ScenarioExclusivityReason,
   ScenarioScopeTier,
@@ -20,7 +22,7 @@ export interface ScenarioSummary {
   bundle: string | null;
   severity: string | null;
   isActive: boolean;
-  createdAt: string;
+  createdAt: string | undefined;
   updatedAt: string | null;
   auditScore: number | null;
   region: string | null;
@@ -85,6 +87,11 @@ export interface ScenarioRequirements {
   authoritarian_regime?: boolean;
   democratic_regime?: boolean;
   fragile_state?: boolean;
+  has_legislature?: boolean;
+  has_opposition_party?: boolean;
+  has_stock_exchange?: boolean;
+  has_central_bank?: boolean;
+  resource_rich?: boolean;
 }
 
 export interface Option {
@@ -149,6 +156,7 @@ export interface ScenarioMetadata {
   requires?: ScenarioRequirements;
   tagResolution?: TagResolutionMetadata;
   repairMetadata?: RepairMetadata;
+  actorPattern?: string;
 }
 
 export interface RepairMetadata {
@@ -173,7 +181,7 @@ export interface ScenarioDetail {
   description: string;
   is_active: boolean;
   isGolden?: boolean;
-  createdAt: string;
+  createdAt?: string;
   updatedAt?: string;
   phase?: string;
   actIndex?: number;
@@ -264,6 +272,11 @@ export interface PendingScenario {
 export interface JobSummary {
   id: string;
   status: string;
+  runId?: string;
+  runKind?: GenerationRunKind;
+  runJobIndex?: number;
+  runTotalJobs?: number;
+  runLabel?: string;
   bundles: string[];
   count: number;
   requestedAt: string;
@@ -281,7 +294,7 @@ export interface JobSummary {
   currentPhase?: string;
   currentMessage?: string;
   lastHeartbeatAt?: string;
-  executionTarget?: string;
+  executionTarget?: GenerationExecutionTarget;
   requestedBy?: string;
   modelConfig?: JobModelConfig;
   eventCount?: number;
@@ -304,6 +317,44 @@ export interface JobFailureAnalysis {
   source: 'runner-log';
   summary: string;
   evidence: string[];
+}
+
+export interface JobIssueSummary {
+  category: 'fatal' | 'audit' | 'token' | 'timeout' | 'runtime' | 'dedup' | 'cooldown';
+  severity: 'error' | 'warning' | 'info';
+  title: string;
+  summary: string;
+  count: number;
+  examples: string[];
+}
+
+export interface GenerationRunSummary {
+  id: string;
+  kind: 'blitz' | 'manual';
+  status: string;
+  requestedAt?: string;
+  submittedAt?: string;
+  requestedBy?: string;
+  totalJobs: number;
+  failedJobCount?: number;
+  description?: string;
+  executionTarget?: GenerationExecutionTarget;
+  jobIds: string[];
+}
+
+export interface GenerationRunDetail extends GenerationRunSummary {
+  summary?: Record<string, unknown>;
+  jobs: JobSummary[];
+  mergedEvents?: Array<JobEvent & { jobId: string; jobLabel?: string }>;
+  issueSummaries?: JobIssueSummary[];
+}
+
+export interface NewsContextArticle {
+  title: string;
+  link: string;
+  snippet?: string;
+  source: string;
+  pubDate: string;
 }
 
 export interface JobDetail extends JobSummary {
@@ -331,13 +382,17 @@ export interface JobDetail extends JobSummary {
   currentPhase?: string;
   currentMessage?: string;
   lastHeartbeatAt?: string;
-  executionTarget?: string;
+  executionTarget?: GenerationExecutionTarget;
   modelConfig?: JobModelConfig;
   tokenSummary?: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number; conceptCount?: number; totalDurationMs?: number };
   eventCount?: number;
   events?: JobEvent[];
+  siblingJobs?: JobSummary[];
+  issueSummaries?: JobIssueSummary[];
   attemptSummary?: JobAttemptSummary[];
   failureAnalysis?: JobFailureAnalysis;
+  sourceKind?: string;
+  newsContext?: NewsContextArticle[];
 }
 
 export interface CountrySummary {
@@ -482,6 +537,11 @@ export interface ArticleClassification {
 export interface GenerationJobRequest extends GenerationScopeFields {
   bundles: string[];
   count: number;
+  runId?: string;
+  runKind?: GenerationRunKind;
+  runJobIndex?: number;
+  runTotalJobs?: number;
+  runLabel?: string;
   lowLatencyMode?: boolean;
   description?: string;
   priority?: 'low' | 'normal' | 'high';
@@ -490,5 +550,5 @@ export interface GenerationJobRequest extends GenerationScopeFields {
   mode?: GenerationMode;
   newsContext?: NewsArticle[];
   modelConfig?: GenerationModelConfig;
-  executionTarget?: 'cloud_function' | 'n8n';
+  executionTarget?: 'cloud_function' | 'n8n' | 'local';
 }

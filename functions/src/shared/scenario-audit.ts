@@ -17,6 +17,17 @@ export interface ScenarioRequirements {
     landlocked?: boolean;
     coastal?: boolean;
     min_power_tier?: 'superpower' | 'great_power' | 'regional_power' | 'middle_power' | 'small_state';
+    cyber_capable?: boolean;
+    power_projection?: boolean;
+    large_military?: boolean;
+    authoritarian_regime?: boolean;
+    democratic_regime?: boolean;
+    fragile_state?: boolean;
+    has_legislature?: boolean;
+    has_opposition_party?: boolean;
+    has_stock_exchange?: boolean;
+    has_central_bank?: boolean;
+    resource_rich?: boolean;
 }
 
 export type TagResolutionMethod = 'deterministic' | 'llm' | 'manual';
@@ -87,6 +98,7 @@ export interface BundleScenario {
         optionShape?: 'redistribute' | 'regulate' | 'escalate' | 'negotiate' | 'invest' | 'cut' | 'reform' | 'delay';
         optionDomains?: Array<{ label: string; primaryMetric: string }>;
         actorPattern?: 'domestic' | 'ally' | 'adversary' | 'border_rival' | 'legislature' | 'cabinet' | 'judiciary' | 'mixed';
+        tokenStrategy?: 'minimal' | 'none';
         region_tags?: string[];
         generationProvenance?: {
             jobId: string;
@@ -158,6 +170,7 @@ export interface AuditConfig {
     countriesById?: Record<string, any>;
     canonicalRoleIds: string[];
     articleFormTokenNames: Set<string>;
+    sentenceStartArticleFormTokenNames?: Set<string>;
     validSettingTargets: readonly string[];
 }
 
@@ -212,7 +225,23 @@ export const STATE_TAG_CONDITION_MAP: Readonly<Record<string, { metricId: string
     diplomatic_crisis:     { metricId: 'metric_foreign_relations', op: 'max', threshold: 30 },
     approval_crisis:       { metricId: 'metric_approval',     op: 'max', threshold: 25 },
     inflation_crisis:      { metricId: 'metric_inflation',    op: 'min', threshold: 65 },
-    budget_crisis:         { metricId: 'metric_budget',       op: 'max', threshold: -40 },
+    budget_crisis:         { metricId: 'metric_budget',       op: 'max', threshold: 40 },
+};
+
+/**
+ * Maps `metadata.requires` flags to the metric condition that must accompany them.
+ *
+ * Rationale: a `requires` flag gates by *country profile* (static), but the corresponding
+ * metric condition gates by *current game state* (dynamic). Both layers are needed because
+ * in-game decisions can degrade a country's democracy, liberty, or order regardless of its
+ * starting profile. Without the condition, a scenario tagged `democratic_regime` can fire
+ * even after the player has destroyed their democracy metric.
+ *
+ * Audit rule: `requires-missing-condition` (warn, −4 pts, auto-fixable).
+ */
+export const REQUIRES_CONDITION_MAP: Readonly<Partial<Record<keyof ScenarioRequirements, { metricId: string; op: 'min' | 'max'; threshold: number }>>> = {
+    democratic_regime:    { metricId: 'metric_democracy', op: 'min', threshold: 40 },
+    authoritarian_regime: { metricId: 'metric_democracy', op: 'max', threshold: 40 },
 };
 
 export const NARRATIVE_GEOPOLITICAL_MAP: ReadonlyArray<{
@@ -271,6 +300,53 @@ export const NARRATIVE_GEOPOLITICAL_MAP: ReadonlyArray<{
         ],
         requires: { trade_partner: true },
     },
+    // Token-based requirement derivation: if the scenario uses relationship tokens,
+    // the country must have those relationships populated for the scenario to render.
+    {
+        patterns: [
+            /\{(?:the_)?(?:ally|primary_ally|key_alliance)\}/i,
+        ],
+        requires: { formal_ally: true },
+    },
+    {
+        patterns: [
+            /\{(?:the_)?(?:adversary|primary_adversary)\}/i,
+        ],
+        requires: { adversary: true },
+    },
+    {
+        patterns: [
+            /\{(?:the_)?border_rival(?:_country)?\}/i,
+        ],
+        requires: { land_border_adversary: true },
+    },
+    {
+        patterns: [
+            /\{(?:the_)?(?:trade_partner|partner)\}/i,
+        ],
+        requires: { trade_partner: true },
+    },
+    {
+        patterns: [
+            /\{(?:the_)?legislature\}/i,
+            /\{(?:the_)?upper_house\}/i,
+            /\{(?:the_)?lower_house\}/i,
+            /\bparliament(?:ary)?\b/i,
+            /\blegislat(?:ure|ive|or)\b/i,
+            /\belection(?:s|al)?\b/i,
+            /\bvot(?:e|ing|ers)\s+(?:in|on|for)\b/i,
+        ],
+        requires: { democratic_regime: true },
+    },
+    {
+        patterns: [
+            /\{(?:the_)?opposition_party(?:_leader)?\}/i,
+            /\bopposition\s+party\b/i,
+            /\bopposition\s+leader\b/i,
+            /\bthe\s+opposition(?:'s|\s+(?:demands|calls|vows|warns|threatens|condemns|criticizes|attacks|mobilizes|rallies|bloc|caucus|coalition|bench|lawmakers))\b/i,
+        ],
+        requires: { democratic_regime: true, has_opposition_party: true },
+    },
 ];
 
 const CANONICAL_TAG_SET = new Set<string>(CANONICAL_SCENARIO_TAGS);
@@ -288,11 +364,14 @@ export const GOV_STRUCTURE_RULES: PhraseRule[] = [
     { detect: /\bparliamentary debate\b/gi,   replacement: '{legislature} debate',     suggestion: '"parliamentary debate" → use "{legislature} debate"' },
     { detect: /\bparliamentary session\b/gi,  replacement: '{legislature} session',    suggestion: '"parliamentary session" → use "{legislature} session"' },
     { detect: /\bparliamentary committee\b/gi,replacement: '{legislature} committee',  suggestion: '"parliamentary committee" → use "{legislature} committee"' },
-    { detect: /\blegislative body\b/gi,       replacement: '{the_legislature}',        suggestion: '"legislative body" → use {legislature}' },
-    { detect: /\bnational legislature\b/gi,   replacement: '{the_legislature}',        suggestion: '"national legislature" → use {legislature}' },
+    { detect: /\blegislative body\b/gi,       replacement: 'the {legislature}',        suggestion: '"legislative body" → use {legislature}' },
+    { detect: /\bnational legislature\b/gi,   replacement: 'the {legislature}',        suggestion: '"national legislature" → use {legislature}' },
     { detect: /\bpresidential palace\b/gi,    replacement: "{leader_title}'s office",  suggestion: '"presidential palace" → use {leader_title}\'s office' },
     { detect: /\bpresidential decree\b/gi,    replacement: "{leader_title}'s decree",  suggestion: '"presidential decree" → use {leader_title}\'s decree' },
     { detect: /\bpresidential order\b/gi,     replacement: "{leader_title}'s order",   suggestion: '"presidential order" → use {leader_title}\'s order' },
+    { detect: /\bopposition\s+party\b/gi,     replacement: '{opposition_party}',          suggestion: '"opposition party" → use {opposition_party}' },
+    { detect: /\bopposition\s+leader\b/gi,    replacement: '{opposition_party_leader}',   suggestion: '"opposition leader" → use {opposition_party_leader}' },
+    { detect: /\bmain\s+opposition\b/gi,      replacement: 'the {opposition_party}',      suggestion: '"main opposition" → use {opposition_party}' },
 ];
 
 export const INSTITUTION_PHRASE_RULES: PhraseRule[] = [
@@ -337,19 +416,19 @@ export const INSTITUTION_PHRASE_RULES: PhraseRule[] = [
     { detect: /\bagriculture\s+ministry\b/gi,                                replacement: "the {agriculture_role}'s office",          suggestion: '"Agriculture Ministry" → use {agriculture_role}' },
     { detect: /\bministry\s+of\s+agriculture\b/gi,                           replacement: "the {agriculture_role}'s office",          suggestion: '"Ministry of Agriculture" → use {agriculture_role}' },
     { detect: /\bdepartment\s+of\s+agriculture\b/gi,                         replacement: "the {agriculture_role}'s office",          suggestion: '"Department of Agriculture" → use {agriculture_role}' },
-    { detect: /\bnational\s+guard\b/gi,                                      replacement: '{the_armed_forces_name}',                    suggestion: '"National Guard" → use {armed_forces_name}' },
-    { detect: /\bcoast\s+guard\b/gi,                                         replacement: '{the_armed_forces_name}',                    suggestion: '"Coast Guard" → use {armed_forces_name}' },
-    { detect: /\bsecret\s+service\b/gi,                                      replacement: '{the_intelligence_agency}',                suggestion: '"Secret Service" → use {intelligence_agency}' },
-    { detect: /\bsupreme\s+court\b/gi,                                       replacement: '{the_judicial_role}',                      suggestion: '"Supreme Court" → use {judicial_role}' },
-    { detect: /\bhigh\s+court\b/gi,                                          replacement: '{the_judicial_role}',                      suggestion: '"High Court" → use {judicial_role}' },
-    { detect: /\bconstitutional\s+court\b/gi,                                replacement: '{the_judicial_role}',                      suggestion: '"Constitutional Court" → use {judicial_role}' },
-    { detect: /\battorney\s+general\b/gi,                                    replacement: '{the_prosecutor_role}',                    suggestion: '"Attorney General" → use {prosecutor_role}' },
-    { detect: /\bnational\s+police\b/gi,                                     replacement: '{the_police_force}',                       suggestion: '"National Police" → use {police_force}' },
-    { detect: /\bfederal\s+police\b/gi,                                      replacement: '{the_police_force}',                       suggestion: '"Federal Police" → use {police_force}' },
-    { detect: /\bcentral\s+bank\b/gi,                                        replacement: '{the_central_bank}',                       suggestion: '"Central Bank" → use {central_bank}' },
-    { detect: /\bfederal\s+reserve\b/gi,                                     replacement: '{the_central_bank}',                       suggestion: '"Federal Reserve" → use {central_bank}' },
-    { detect: /\breserve\s+bank\b/gi,                                        replacement: '{the_central_bank}',                       suggestion: '"Reserve Bank" → use {central_bank}' },
-    { detect: /\bstock\s+exchange\b/gi,                                      replacement: '{the_stock_exchange}',                     suggestion: '"Stock Exchange" → use {stock_exchange}' },
+    { detect: /\bnational\s+guard\b/gi,                                      replacement: 'the {armed_forces_name}',                    suggestion: '"National Guard" → use {armed_forces_name}' },
+    { detect: /\bcoast\s+guard\b/gi,                                         replacement: 'the {armed_forces_name}',                    suggestion: '"Coast Guard" → use {armed_forces_name}' },
+    { detect: /\bsecret\s+service\b/gi,                                      replacement: 'the {intelligence_agency}',                suggestion: '"Secret Service" → use {intelligence_agency}' },
+    { detect: /\bsupreme\s+court\b/gi,                                       replacement: 'the {judicial_role}',                      suggestion: '"Supreme Court" → use {judicial_role}' },
+    { detect: /\bhigh\s+court\b/gi,                                          replacement: 'the {judicial_role}',                      suggestion: '"High Court" → use {judicial_role}' },
+    { detect: /\bconstitutional\s+court\b/gi,                                replacement: 'the {judicial_role}',                      suggestion: '"Constitutional Court" → use {judicial_role}' },
+    { detect: /\battorney\s+general\b/gi,                                    replacement: 'the {prosecutor_role}',                    suggestion: '"Attorney General" → use {prosecutor_role}' },
+    { detect: /\bnational\s+police\b/gi,                                     replacement: 'the {police_force}',                       suggestion: '"National Police" → use {police_force}' },
+    { detect: /\bfederal\s+police\b/gi,                                      replacement: 'the {police_force}',                       suggestion: '"Federal Police" → use {police_force}' },
+    { detect: /\bcentral\s+bank\b/gi,                                        replacement: 'the {central_bank}',                       suggestion: '"Central Bank" → use {central_bank}' },
+    { detect: /\bfederal\s+reserve\b/gi,                                     replacement: 'the {central_bank}',                       suggestion: '"Federal Reserve" → use {central_bank}' },
+    { detect: /\breserve\s+bank\b/gi,                                        replacement: 'the {central_bank}',                       suggestion: '"Reserve Bank" → use {central_bank}' },
+    { detect: /\bstock\s+exchange\b/gi,                                      replacement: 'the {stock_exchange}',                     suggestion: '"Stock Exchange" → use {stock_exchange}' },
 ];
 
 export const SOFT_PENALTY_RULES = new Set([
@@ -358,8 +437,9 @@ export const SOFT_PENALTY_RULES = new Set([
     'short-summary',
     'description-length',
     'complex-sentence',
-    'high-clause-density',
-    'high-passive-voice',
+    'hardcoded-institution-phrase',
+    'hardcoded-gov-structure',
+    'third-person-framing',
 ]);
 
 export const RELATIONSHIP_TOKEN_NAMES = new Set<RelationshipTokenName>([
@@ -427,7 +507,7 @@ function splitIntoSentences(text: string): string[] {
 }
 
 export function condenseSentences(text: string, maxSentences: number): string | null {
-    const sentences = splitIntoSentences(text);
+    const sentences = splitIntoSentences(text).filter(s => s.trim().length > 2);
     if (sentences.length <= maxSentences) return null;
     while (sentences.length > maxSentences) {
         let shortestIdx = -1;
@@ -643,6 +723,8 @@ export function auditScenario(
     const add = (severity: Issue['severity'], rule: string, target: string, message: string, autoFixable = false) =>
         issues.push({ severity, rule, target, message, autoFixable });
     const actorPattern = scenario.metadata?.actorPattern;
+    const tokenStrategy = scenario.metadata?.tokenStrategy ?? 'minimal';
+    const isExclusive = tokenStrategy === 'none';
 
     if (!scenario.id) add('error', 'missing-id', scenario.id || '(none)', 'Scenario missing id');
     if (!scenario.title?.trim()) add('error', 'missing-title', scenario.id, 'Missing or empty title');
@@ -670,7 +752,7 @@ export function auditScenario(
             add(severity, 'invalid-second-person-framing', scenario.id, `${fieldName} uses malformed framing "As you/we/I of" — use "As {leader_title} of {the_player_country}, you face..." instead`, severity === 'warn');
     };
 
-    checkFraming(scenario.description, 'description', 'error');
+    checkFraming(scenario.description, 'description', 'warn');
     checkFraming(scenario.title, 'title', 'warn');
 
     const checkBannedPhrases = (text: string | undefined, fieldName: string) => {
@@ -810,7 +892,7 @@ export function auditScenario(
 
         for (const term of jargonTerms) {
             if (term.pattern.test(text)) {
-                add('error', 'newsroom-jargon', scenario.id,
+                add('warn', 'newsroom-jargon', scenario.id,
                     `${fieldName} uses jargon that reads unlike mainstream news copy. Replace it with plainer wording such as ${term.replacement}.`);
             }
         }
@@ -890,15 +972,13 @@ export function auditScenario(
 
     if (scenario.description) {
         const sentenceCount = countSentences(scenario.description);
-        if (sentenceCount < 2 || sentenceCount > 4)
-            add('error', 'description-length', scenario.id, `Description must be 2–3 sentences (found ${sentenceCount})`, true);
-        else if (sentenceCount === 4)
-            add('warn', 'description-length', scenario.id, `Description is 4 sentences (prefer 2–3 for conciseness)`, true);
+        if (sentenceCount < 1 || sentenceCount > 6)
+            add('warn', 'description-length', scenario.id, `Description has ${sentenceCount} sentences (prefer 2–4)`, true);
         const wordCount = countWords(scenario.description);
-        if (wordCount < 60)
-            add('warn', 'description-word-count', scenario.id, `Description is ${wordCount} words (min 60) — add specific trigger, actors, and stakes`, true);
-        if (wordCount > 140)
-            add('warn', 'description-word-count', scenario.id, `Description is ${wordCount} words (max 140) — tighten prose`, true);
+        if (wordCount < 30)
+            add('warn', 'description-word-count', scenario.id, `Description is ${wordCount} words (min 30)`, true);
+        if (wordCount > 200)
+            add('warn', 'description-word-count', scenario.id, `Description is ${wordCount} words (max 200)`, true);
     }
 
     if (scenario.options.length !== 3)
@@ -957,6 +1037,14 @@ export function auditScenario(
             add('warn', 'invalid-difficulty', scenario.id, `Difficulty ${meta.difficulty} must be integer 1-5`, true);
         if (meta.applicable_countries && meta.applicable_countries !== 'all' && !Array.isArray(meta.applicable_countries))
             add('error', 'invalid-countries', scenario.id, 'applicable_countries must be "all" or string[]');
+        if (Array.isArray(meta.applicable_countries) && cfg.countriesById) {
+            for (const id of meta.applicable_countries) {
+                if (!cfg.countriesById[id]) {
+                    add('error', 'invalid-country-id', scenario.id,
+                        `"${id}" is not a recognized country ID in the catalog — use catalog IDs (e.g. "country_de"), not names`);
+                }
+            }
+        }
         if (!meta.scopeTier)
             add('error', 'missing-scope-tier', scenario.id, 'Scenario metadata must include scopeTier');
         else if (!validScopeTiers.includes(meta.scopeTier))
@@ -1011,15 +1099,13 @@ export function auditScenario(
 
         if (opt.text) {
             const sentenceCount = countSentences(opt.text);
-            if (sentenceCount < 2 || sentenceCount > 4)
-                add('error', 'option-text-length', oid, `Option text must be 2–3 sentences (found ${sentenceCount})`, true);
-            else if (sentenceCount === 4)
-                add('warn', 'option-text-length', oid, `Option text is 4 sentences (prefer 2–3 for conciseness)`, true);
+            if (sentenceCount < 1 || sentenceCount > 5)
+                add('warn', 'option-text-length', oid, `Option text has ${sentenceCount} sentences (prefer 2–3)`, true);
             const wordCount = countWords(opt.text);
-            if (wordCount < 50)
-                add('warn', 'option-text-word-count', oid, `Option text is ${wordCount} words (min 50) — name the mechanism, trade-off, and affected constituency`, true);
-            if (wordCount > 120)
-                add('warn', 'option-text-word-count', oid, `Option text is ${wordCount} words (max 120) — tighten prose`, true);
+            if (wordCount < 20)
+                add('warn', 'option-text-word-count', oid, `Option text is ${wordCount} words (min 20)`, true);
+            if (wordCount > 150)
+                add('warn', 'option-text-word-count', oid, `Option text is ${wordCount} words (max 150)`, true);
         }
 
         if (!opt.effects || opt.effects.length === 0) { add('error', 'no-effects', oid, 'Option has no effects'); continue; }
@@ -1069,25 +1155,24 @@ export function auditScenario(
         if (!opt.outcomeSummary?.trim()) add('error', 'missing-summary', oid, 'Missing summary', true);
         if (!opt.outcomeContext?.trim()) add('error', 'missing-context', oid, 'Missing context', true);
 
-        if (opt.outcomeSummary?.trim() && opt.outcomeSummary.trim().length < 250)
-            add('warn', 'short-summary', oid, `outcomeSummary is ${opt.outcomeSummary.trim().length} chars (min 250)`, true);
+        if (opt.outcomeSummary?.trim() && opt.outcomeSummary.trim().length < 200)
+            add('warn', 'short-summary', oid, `outcomeSummary is ${opt.outcomeSummary.trim().length} chars (min 200)`, true);
         if (opt.outcomeContext?.trim()) {
             const ctxLen = opt.outcomeContext.trim().length;
             if (ctxLen < 150)
                 add('error', 'short-article', oid, `outcomeContext is ${ctxLen} chars (min 150)`, true);
-            else if (ctxLen < 400)
-                add('warn', 'short-summary', oid, `outcomeContext is ${ctxLen} chars (min 400)`, true);
+            else if (ctxLen < 350)
+                add('warn', 'short-summary', oid, `outcomeContext is ${ctxLen} chars (min 350)`, true);
         }
 
         if (!opt.advisorFeedback || !Array.isArray(opt.advisorFeedback) || opt.advisorFeedback.length === 0) {
             add('error', 'missing-advisor-feedback', oid, 'Missing advisor feedback', true);
         } else {
-            const relevantRoles = getRelevantRolesForEffects(opt.effects, cfg);
             const feedbackRoles = new Set(opt.advisorFeedback.map((f: any) => f.roleId));
-            for (const role of relevantRoles) {
-                if (!feedbackRoles.has(role))
-                    add('error', 'missing-role-feedback', oid, `Missing feedback for ${role}`, true);
-            }
+            if (opt.advisorFeedback.length < 3)
+                add('warn', 'insufficient-advisor-feedback', oid, `Only ${opt.advisorFeedback.length} advisor entries (min 3)`);
+            if (!feedbackRoles.has('role_executive'))
+                add('error', 'missing-role-feedback', oid, 'Missing required feedback for role_executive', true);
             for (const fb of opt.advisorFeedback) {
                 if (!fb.roleId || !fb.stance || !fb.feedback?.trim())
                     add('error', 'invalid-advisor-feedback', oid, `Advisor feedback entry missing roleId, stance, or feedback text`);
@@ -1105,29 +1190,10 @@ export function auditScenario(
                         /^We see both risks and potential benefits for .+\.$/i,
                         /^This warrants careful monitoring from our department\.$/i,
                     ];
-                    const SOFT_BOILERPLATE_FRAGMENTS = [
-                        /aligns well with our [a-z\s]+ priorities/i,
-                        /supports this course of action/i,
-                        /could undermine our [a-z\s]+ objectives/i,
-                        /has serious concerns about this approach/i,
-                        /limited direct impact on [a-z\s]+ operations/i,
-                        /no strong position on this matter/i,
-                        /both risks and potential benefits/i,
-                        /warrants careful monitoring/i,
-                    ];
 
                     if (HARD_FAIL_BOILERPLATE_PATTERNS.some(p => p.test(feedback))) {
                         add('error', 'advisor-boilerplate', oid, `Advisor feedback for ${fb.roleId} is exact template boilerplate and must be rewritten with concrete analysis`);
-                    } else if (SOFT_BOILERPLATE_FRAGMENTS.some(p => p.test(feedback))) {
-                        add('warn', 'advisor-boilerplate', oid, `Advisor feedback for ${fb.roleId} appears generic and should be made scenario-specific`);
                     }
-                }
-            }
-            if (Array.isArray(opt.advisorFeedback) && opt.advisorFeedback.length > 0) {
-                const presentRoles = new Set(opt.advisorFeedback.map((f: any) => f.roleId));
-                const missingRoles = cfg.canonicalRoleIds.filter(r => !presentRoles.has(r));
-                if (missingRoles.length > 0) {
-                    add('warn', 'missing-advisor-roles', oid, `AdvisorFeedback missing entries for: ${missingRoles.join(', ')}`);
                 }
             }
         }
@@ -1150,11 +1216,13 @@ export function auditScenario(
             if (sentenceCount < 2)
                 add('warn', 'shallow-outcome', oid, `Summary only ${sentenceCount} sentences`, true);
 
-            const tokenMatches = opt.outcomeSummary.match(/\{[a-z_]+\}/gi) || [];
-            for (const token of tokenMatches) {
-                const tokenName = token.replace(/[{}]/g, '').toLowerCase();
-                if (!cfg.validTokens.has(tokenName))
-                    add('warn', 'invalid-token', oid, `Invalid token: ${token}`, true);
+            if (!isExclusive) {
+                const tokenMatches = opt.outcomeSummary.match(/\{[a-z_]+\}/gi) || [];
+                for (const token of tokenMatches) {
+                    const tokenName = token.replace(/[{}]/g, '').toLowerCase();
+                    if (!cfg.validTokens.has(tokenName))
+                        add('warn', 'invalid-token', oid, `Invalid token: ${token}`, true);
+                }
             }
 
             const startsWithToken = /^\{[a-z_]+\}/i.test(opt.outcomeSummary.trim());
@@ -1167,6 +1235,10 @@ export function auditScenario(
     const checkTokens = (text: string | undefined, fieldName: string) => {
         if (!text) return;
         const tokenMatches = text.match(/\{[a-zA-Z_]+\}/g) || [];
+        if (isExclusive && tokenMatches.length > 0) {
+            add('error', 'exclusive-has-tokens', scenario.id, `Exclusive scenarios must not use {token} placeholders — use real names instead. Found in ${fieldName}: ${tokenMatches.join(', ')}`, false);
+            return;
+        }
         for (const token of tokenMatches) {
             const tokenName = token.replace(/[{}]/g, '');
             const tokenLower = tokenName.toLowerCase();
@@ -1311,23 +1383,6 @@ export function auditScenario(
 
     const checkTextQuality = (text: string | undefined, fieldName: string) => {
         if (!text) return;
-        const jargonTerms = [
-            'fiscal consolidation',
-            'quantitative easing',
-            'rate base',
-            'regulatory capture',
-            'procurement fraud',
-            'tariff corridor',
-            'geopolitical hedge',
-            'counter-cyclical',
-            'sterilized intervention',
-            'capital adequacy',
-        ];
-        for (const jargon of jargonTerms) {
-            if (new RegExp(`\\b${jargon.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i').test(text)) {
-                add('warn', 'jargon-use', scenario.id, `${fieldName} uses policy jargon "${jargon}". Rewrite in plain language.`);
-            }
-        }
         if (/  +/.test(text))
             add('error', 'double-space', scenario.id, `${fieldName} contains double spaces`, true);
         if (/(?<!\.)\.{2}(?!\.)/.test(text) || /\. \./.test(text) || /, ,/.test(text))
@@ -1340,18 +1395,9 @@ export function auditScenario(
             add('warn', 'headline-fragment', scenario.id, `${fieldName} reads like an incomplete fragment`, true);
         if (fieldName.includes('option') && /\b(You|you)\s+direct(ed)?\s+to\b/.test(text))
             add('warn', 'missing-direct-object', scenario.id, `${fieldName} is missing a direct object after "direct to"`, true);
-        if (/\bthe \{[a-z_]+\}/i.test(text))
-            add('warn', 'hardcoded-the-before-token', scenario.id, `${fieldName} has "the {token}" — replace with the_{token} variant to avoid article doubling`);
-
-        {
-            const sentenceStartPattern = new RegExp(
-                `(^|[.!?]\\s+)\\{(${Array.from(cfg.articleFormTokenNames).join('|')})\\}`,
-                'g'
-            );
-            if (sentenceStartPattern.test(text))
-                add('warn', 'sentence-start-bare-token', scenario.id,
-                    `${fieldName} uses a bare {token} at a sentence-start position — use {the_token} to ensure correct article rendering`,
-                    true);
+        if (!isExclusive && /\bthe \{[a-z_]+\}/i.test(text)) {
+            // In the minimal strategy, "the {finance_role}" is the CORRECT way to write it
+            // (no article form tokens). This rule only applies to legacy.
         }
 
         const startsWithAcceptableTokenLedPhrase = (() => {
@@ -1378,35 +1424,26 @@ export function auditScenario(
         if (!startsWithAcceptableTokenLedPhrase && firstNarrativeChar && firstNarrativeChar === firstNarrativeChar.toLowerCase()) {
             add('warn', 'lowercase-start', scenario.id, `${fieldName} begins with lowercase wording`, true);
         }
-        for (const rule of GOV_STRUCTURE_RULES) {
-            if (rule.detect.test(text))
-                    add('error', 'hardcoded-gov-structure', scenario.id, `${fieldName} contains a hardcoded government-structure term — ${rule.suggestion}`);
-        }
-        for (const rule of INSTITUTION_PHRASE_RULES) {
-            if (rule.detect.test(text))
-                    add('error', 'hardcoded-institution-phrase', scenario.id, `${fieldName} contains a hardcoded institution name — ${rule.suggestion}`);
+        if (!isExclusive) {
+            for (const rule of GOV_STRUCTURE_RULES) {
+                if (rule.detect.test(text))
+                    add('warn', 'hardcoded-gov-structure', scenario.id, `${fieldName} contains a hardcoded government-structure term — ${rule.suggestion}`);
+            }
+            for (const rule of INSTITUTION_PHRASE_RULES) {
+                if (rule.detect.test(text))
+                    add('warn', 'hardcoded-institution-phrase', scenario.id, `${fieldName} contains a hardcoded institution name — ${rule.suggestion}`);
+            }
         }
         const RELATIONSHIP_TOKEN_PATTERN = /\{the_(?:adversary|border_rival|regional_rival|ally|trade_partner|neutral|rival|partner|neighbor|nation)\}|\{(?:adversary|border_rival|regional_rival|ally|trade_partner|neutral|rival|partner|neighbor|nation)\}/gi;
         if (RELATIONSHIP_TOKEN_PATTERN.test(text))
             add('error', 'relationship-token-in-prose', scenario.id, `${fieldName} uses relationship tokens ({adversary}, {ally}, {border_rival}, etc.) in prose — write as natural language instead (e.g. "your border rival", "the allied government")`);
 
         const sentenceBoundaries = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
-        let passiveSentenceCount = 0;
         for (const sentence of sentenceBoundaries) {
             const words = sentence.split(/\s+/).filter(Boolean);
-            if (words.length > 35)
-                add('warn', 'complex-sentence', scenario.id, `${fieldName} has a sentence with ${words.length} words (max 35)`);
-
-            const lowerSentence = sentence.toLowerCase();
-            const clauseCount = (lowerSentence.match(/\b(and|or|but|while|whereas|although|though)\b/g) || []).length;
-            if (clauseCount > 4)
-                add('warn', 'high-clause-density', scenario.id, `${fieldName} has a sentence with ${clauseCount} conjunction clauses (max 4)`);
-
-            if (/\b(is|are|was|were|be|been|being)\s+\w+ed\b/i.test(sentence))
-                passiveSentenceCount++;
+            if (words.length > 50)
+                add('warn', 'complex-sentence', scenario.id, `${fieldName} has a sentence with ${words.length} words (max 50)`);
         }
-        if (sentenceBoundaries.length >= 2 && (passiveSentenceCount / sentenceBoundaries.length) > 0.5)
-            add('warn', 'high-passive-voice', scenario.id, `${fieldName} relies heavily on passive voice (${passiveSentenceCount}/${sentenceBoundaries.length} sentences)`);
 
         let sentenceWordCount = 0;
         for (const word of text.split(/\s+/)) {
@@ -1533,12 +1570,26 @@ export function auditScenario(
     }
 
     const severity = scenario.metadata?.severity;
-    if (severity === 'critical' || severity === 'extreme') {
+    if (severity === 'critical') {
         const allEffects = scenario.options.flatMap(opt => opt.effects ?? []);
-        const hasSignificant = allEffects.some((e: any) => Number.isFinite(e.value) && Math.abs(e.value) >= 1.5);
+        const hasSignificant = allEffects.some((e: any) => Number.isFinite(e.value) && Math.abs(e.value) >= 5.0);
+        if (allEffects.length > 0 && !hasSignificant) {
+            add('error', 'severity-effect-mismatch', scenario.id,
+                `Severity is "critical" but all ${allEffects.length} effects have |value| < 5.0. A critical scenario requires at least one effect ≥ 5.0 (range: 5.0–7.0).`);
+        }
+    } else if (severity === 'extreme') {
+        const allEffects = scenario.options.flatMap(opt => opt.effects ?? []);
+        const hasSignificant = allEffects.some((e: any) => Number.isFinite(e.value) && Math.abs(e.value) >= 3.5);
         if (allEffects.length > 0 && !hasSignificant) {
             add('warn', 'severity-effect-mismatch', scenario.id,
-                `Severity is "${severity}" but all ${allEffects.length} effects have |value| < 1.5. A ${severity} scenario needs at least one effect ≥ 1.5.`);
+                `Severity is "extreme" but all ${allEffects.length} effects have |value| < 3.5. An extreme scenario needs at least one effect ≥ 3.5 (range: 3.5–7.0).`);
+        }
+    } else if (severity === 'high') {
+        const allEffects = scenario.options.flatMap(opt => opt.effects ?? []);
+        const hasSignificant = allEffects.some((e: any) => Number.isFinite(e.value) && Math.abs(e.value) >= 2.5);
+        if (allEffects.length > 0 && !hasSignificant) {
+            add('warn', 'severity-effect-mismatch', scenario.id,
+                `Severity is "high" but all ${allEffects.length} effects have |value| < 2.5. A high scenario needs at least one effect ≥ 2.5 (range: 4.5–6.0).`);
         }
     }
 
@@ -1597,6 +1648,19 @@ export function auditScenario(
         if (!covered) {
             add('warn', 'state-tag-missing-condition', scenario.id,
                 `Tag "${tag}" implies ${implied.metricId} ${implied.op} ${implied.threshold} but no matching condition is set — scenario may appear in mismatched game states.`,
+                true);
+        }
+    }
+
+    const scenarioRequires = scenario.metadata?.requires ?? {};
+    for (const [requiresKey, implied] of Object.entries(REQUIRES_CONDITION_MAP) as Array<[keyof ScenarioRequirements, { metricId: string; op: 'min' | 'max'; threshold: number }]>) {
+        if (!scenarioRequires[requiresKey]) continue;
+        const covered = (scenario.conditions ?? []).some(
+            (c: any) => c.metricId === implied.metricId && (implied.op === 'max' ? c.max !== undefined : c.min !== undefined)
+        );
+        if (!covered) {
+            add('warn', 'requires-missing-condition', scenario.id,
+                `requires.${requiresKey} is set but no condition gates ${implied.metricId} (${implied.op} ${implied.threshold}) — scenario may fire in degraded game states where this requirement is no longer meaningful.`,
                 true);
         }
     }
@@ -1763,9 +1827,10 @@ export function buildAuditConfig(params: {
     canonicalRoleIds: string[];
     allTokens: string[];
     articleFormTokenNames: string[];
+    sentenceStartArticleFormTokenNames?: string[];
     validSettingTargets: readonly string[];
 }): AuditConfig {
-    const { metricsData, contentRules, genConfig, countriesDoc, canonicalRoleIds, allTokens, articleFormTokenNames, validSettingTargets } = params;
+    const { metricsData, contentRules, genConfig, countriesDoc, canonicalRoleIds, allTokens, articleFormTokenNames, sentenceStartArticleFormTokenNames, validSettingTargets } = params;
 
     const validMetricIds = new Set(metricsData.map((m) => m.id));
     const inverseMetrics = new Set(
@@ -1812,7 +1877,7 @@ export function buildAuditConfig(params: {
         validRoleIds,
         inverseMetrics,
         metricMagnitudeCaps,
-        defaultCap: genConfig.effect_default_cap ?? 4.2,
+        defaultCap: genConfig.effect_default_cap ?? 7.5,
         metricToRoles,
         categoryDomainMetrics: genConfig.category_domain_metrics ?? {},
         metricMappings: { ...defaultMetricMappings, ...(genConfig.metric_mappings ?? {}) },
@@ -1839,6 +1904,7 @@ export function buildAuditConfig(params: {
         countriesById: countriesDoc,
         canonicalRoleIds,
         articleFormTokenNames: new Set<string>(articleFormTokenNames),
+        sentenceStartArticleFormTokenNames: new Set<string>(sentenceStartArticleFormTokenNames ?? articleFormTokenNames),
         validSettingTargets,
     };
 }

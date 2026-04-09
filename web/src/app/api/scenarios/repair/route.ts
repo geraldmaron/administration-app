@@ -2,15 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '@/lib/firebase-admin';
 import { requireAdminAuth } from '@/lib/auth';
-import { analyzeScenario, applyPatchesToScenario } from '@shared/scenario-repair';
+import { analyzeScenario, applyPatchesToScenario, applyRelationshipConditionRepair } from '@shared/scenario-repair';
 import type { ScenarioDetail, ApprovedRepair } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 const MAX_IDS = 50;
 
-function serializeTimestamp(ts: FirebaseFirestore.Timestamp | undefined): string | undefined {
-  return ts?.toDate?.()?.toISOString();
+function serializeTimestamp(ts: unknown): string | undefined {
+  if (!ts) return undefined;
+  if (typeof (ts as any).toDate === 'function') return (ts as any).toDate().toISOString();
+  if (ts instanceof Date) return ts.toISOString();
+  if (typeof ts === 'number') return new Date(ts).toISOString();
+  if (typeof ts === 'string') return ts;
+  return undefined;
 }
 
 function toDetail(id: string, data: FirebaseFirestore.DocumentData): ScenarioDetail {
@@ -19,8 +24,8 @@ function toDetail(id: string, data: FirebaseFirestore.DocumentData): ScenarioDet
     title: data.title ?? '',
     description: data.description ?? '',
     is_active: data.is_active ?? false,
-    createdAt: data.created_at?.toDate?.()?.toISOString() ?? new Date(0).toISOString(),
-    updatedAt: data.updated_at?.toDate?.()?.toISOString(),
+    createdAt: serializeTimestamp(data.created_at),
+    updatedAt: serializeTimestamp(data.updated_at),
     phase: data.phase,
     actIndex: data.actIndex,
     options: (data.options ?? []).map((opt: FirebaseFirestore.DocumentData) => ({
@@ -87,7 +92,17 @@ export async function POST(request: NextRequest) {
           };
         }
         const scenario = toDetail(snap.id, snap.data()!);
-        return analyzeScenario(scenario);
+        const analysis = analyzeScenario(scenario);
+        const { updated: relFixed, changed: relChanged } = applyRelationshipConditionRepair(scenario);
+        if (relChanged && relFixed.relationship_conditions) {
+          analysis.changes.push({
+            path: 'relationship_conditions',
+            before: JSON.stringify(scenario.relationship_conditions ?? []),
+            after: JSON.stringify(relFixed.relationship_conditions),
+          });
+          analysis.hasChanges = true;
+        }
+        return analysis;
       });
 
       return NextResponse.json({ results });
@@ -116,7 +131,10 @@ export async function POST(request: NextRequest) {
         if (!snap.exists) { skipped++; continue; }
 
         const scenario = toDetail(snap.id, snap.data()!);
-        const patched = applyPatchesToScenario(scenario, repair.patches);
+
+        const relConditionPatch = repair.patches.find(p => p.path === 'relationship_conditions');
+        const textPatches = repair.patches.filter(p => p.path !== 'relationship_conditions');
+        const patched = applyPatchesToScenario(scenario, textPatches);
 
         const prevRepairCount = snap.data()?.metadata?.repairMetadata?.repairCount ?? 0;
         const repairMetadata = {
@@ -125,9 +143,14 @@ export async function POST(request: NextRequest) {
         };
 
         const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = patched;
+        const extraFields: Record<string, unknown> = {};
+        if (relConditionPatch) {
+          try { extraFields.relationship_conditions = JSON.parse(relConditionPatch.value); } catch { /* ignore */ }
+        }
         await docRef.set(
           {
             ...rest,
+            ...extraFields,
             metadata: { ...rest.metadata, repairMetadata },
             updated_at: FieldValue.serverTimestamp(),
           },
