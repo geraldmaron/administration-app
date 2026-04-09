@@ -5,10 +5,57 @@ import { requireAdminAuth } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 import type { JobSummary } from '@/lib/types';
 
+function normalizeTerminalLifecycle(data: FirebaseFirestore.DocumentData): {
+  currentPhase?: string;
+  currentMessage?: string;
+} {
+  const status = data.status ?? 'pending';
+  const currentPhase = data.currentPhase;
+  const currentMessage = data.currentMessage;
+
+  if (!['failed', 'completed', 'cancelled'].includes(status)) {
+    return { currentPhase, currentMessage };
+  }
+
+  const staleStarting = currentPhase === 'starting' || currentMessage === 'n8n runner: starting bundle fan-out' || currentMessage === 'n8n orchestrator: starting bundle fan-out';
+  if (!staleStarting) {
+    return { currentPhase: currentPhase ?? status, currentMessage };
+  }
+
+  if (status === 'failed') {
+    return {
+      currentPhase: 'failed',
+      currentMessage: data.error ?? 'Job failed before the runner emitted progress events.',
+    };
+  }
+
+  if (status === 'cancelled') {
+    return {
+      currentPhase: 'cancelled',
+      currentMessage: currentMessage && currentMessage !== 'n8n runner: starting bundle fan-out' && currentMessage !== 'n8n orchestrator: starting bundle fan-out'
+        ? currentMessage
+        : 'Stop requested by operator',
+    };
+  }
+
+  return {
+    currentPhase: 'completed',
+    currentMessage: currentMessage && currentMessage !== 'n8n runner: starting bundle fan-out' && currentMessage !== 'n8n orchestrator: starting bundle fan-out'
+      ? currentMessage
+      : 'Job completed',
+  };
+}
+
 function toSummary(id: string, data: FirebaseFirestore.DocumentData): JobSummary {
+  const lifecycle = normalizeTerminalLifecycle(data);
   return {
     id,
     status: data.status ?? 'pending',
+    runId: data.runId,
+    runKind: data.runKind,
+    runJobIndex: data.runJobIndex,
+    runTotalJobs: data.runTotalJobs,
+    runLabel: data.runLabel,
     bundles: data.bundles ?? [],
     count: data.count ?? 0,
     requestedAt: data.requestedAt?.toDate?.()?.toISOString() ?? new Date(0).toISOString(),
@@ -22,8 +69,8 @@ function toSummary(id: string, data: FirebaseFirestore.DocumentData): JobSummary
     errors: (data.errors ?? []).slice(0, 5),
     auditSummary: data.auditSummary,
     currentBundle: data.currentBundle,
-    currentPhase: data.currentPhase,
-    currentMessage: data.currentMessage,
+    currentPhase: lifecycle.currentPhase,
+    currentMessage: lifecycle.currentMessage,
     lastHeartbeatAt: data.lastHeartbeatAt?.toDate?.()?.toISOString(),
     executionTarget: data.executionTarget,
     requestedBy: data.requestedBy,

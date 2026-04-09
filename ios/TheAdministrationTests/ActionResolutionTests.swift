@@ -77,7 +77,13 @@ final class ActionResolutionTests: XCTestCase {
             playerApproach: nil,
             targetMilitaryStrength: 70.0,
             targetCyberCapability: 50.0,
-            targetNuclearCapable: true
+            targetNuclearCapable: true,
+            targetGovernmentCategory: nil,
+            targetGeopoliticalTags: nil,
+            targetRegion: nil,
+            targetGdpTier: nil,
+            targetVulnerabilities: nil,
+            comparativePower: nil
         )
 
         let data = try JSONEncoder().encode(request)

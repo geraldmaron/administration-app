@@ -1,13 +1,13 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AuditScore from '@/components/AuditScore';
 import BundleBadge from '@/components/BundleBadge';
 import ScreenHeader from '@/components/ScreenHeader';
 import { formatRepairPath } from '@shared/scenario-repair';
-import type { RepairAnalysis, ApprovedRepair } from '@/lib/types';
+import type { RepairAnalysis, ApprovedRepair, CountrySummary, SimulationScenario } from '@/lib/types';
 
 type Phase = 'loading' | 'review' | 'applying' | 'error';
 
@@ -64,6 +64,84 @@ function DiffText({ segments }: { segments: DiffSegment[] }) {
   );
 }
 
+function RepairTokenPreview({
+  scenarioId,
+  preview,
+  loading,
+}: {
+  scenarioId: string;
+  preview: SimulationScenario | null;
+  loading: boolean;
+}) {
+  const unresolvedTokens = preview?.diagnostics?.unresolvedTokens ?? [];
+  const fallbackTokens = preview?.diagnostics?.fallbackTokens ?? [];
+
+  return (
+    <div className="border-t border-[var(--border)] bg-[var(--background-muted)]/40 px-4 py-3">
+      <div className="mb-2 text-[10px] font-mono uppercase tracking-wide text-[var(--foreground-subtle)]">
+        Token Resolution
+      </div>
+      {loading ? (
+        <div className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--warning)]">
+          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--warning)]" />
+          Resolving…
+        </div>
+      ) : !preview ? (
+        <p className="text-[11px] text-[var(--foreground-subtle)]">No preview available for {scenarioId}.</p>
+      ) : (
+        <div className="space-y-2">
+          {preview.title && (
+            <div>
+              <div className="mb-0.5 text-[9px] font-mono uppercase tracking-wide text-[var(--foreground-subtle)]">Title</div>
+              <p className="text-[12px] font-semibold text-foreground">{preview.title}</p>
+            </div>
+          )}
+          {preview.description && (
+            <div>
+              <div className="mb-0.5 text-[9px] font-mono uppercase tracking-wide text-[var(--foreground-subtle)]">Description</div>
+              <p className="text-[11px] leading-5 text-[var(--foreground-muted)]">{preview.description}</p>
+            </div>
+          )}
+          {(unresolvedTokens.length > 0 || fallbackTokens.length > 0) && (
+            <div className="mt-2 space-y-1.5">
+              {unresolvedTokens.length > 0 && (
+                <div className="border-l-2 border-l-[var(--error)] pl-2.5 py-1">
+                  <div className="mb-1 text-[9px] font-mono font-medium text-[var(--error)]">
+                    {unresolvedTokens.length} unresolved token{unresolvedTokens.length !== 1 ? 's' : ''}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {unresolvedTokens.map((t) => (
+                      <span key={t} className="text-[9px] font-mono text-[var(--error)]/70">{`{${t}}`}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {fallbackTokens.length > 0 && (
+                <div className="border-l-2 border-l-[var(--warning)] pl-2.5 py-1">
+                  <div className="mb-1 text-[9px] font-mono font-medium text-[var(--warning)]">
+                    {fallbackTokens.length} fallback token{fallbackTokens.length !== 1 ? 's' : ''}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {fallbackTokens.map((t) => (
+                      <span key={t} className="text-[9px] font-mono text-[var(--warning)]/70">{t}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {unresolvedTokens.length === 0 && fallbackTokens.length === 0 && (
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--success)]">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--success)]" />
+              All tokens resolved
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RepairPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -79,6 +157,14 @@ function RepairPageInner() {
   const [analyses, setAnalyses] = useState<RepairAnalysis[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Token preview state
+  const [countries, setCountries] = useState<CountrySummary[]>([]);
+  const [selectedCountryId, setSelectedCountryId] = useState(searchParams.get('countryId') ?? '');
+  const [previewCache, setPreviewCache] = useState<Record<string, SimulationScenario>>({});
+  const [previewLoading, setPreviewLoading] = useState<Set<string>>(new Set());
+  const [expandedPreviews, setExpandedPreviews] = useState<Set<string>>(new Set());
+  const inFlightPreviews = useRef<Set<string>>(new Set());
+
   // approvalState[id][path] = true (approved) | false (rejected)
   const [approvalState, setApprovalState] = useState<Record<string, Record<string, boolean>>>({});
   // editState[id][path] = edited string value
@@ -87,6 +173,60 @@ function RepairPageInner() {
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
   // skipped scenario IDs
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    fetch('/api/countries')
+      .then((r) => r.json())
+      .then((data: { countries: CountrySummary[] }) => setCountries(data.countries ?? []))
+      .catch(() => undefined);
+  }, []);
+
+  const fetchPreview = useCallback((scenarioId: string, countryId: string) => {
+    if (!countryId || inFlightPreviews.current.has(scenarioId)) return;
+    inFlightPreviews.current.add(scenarioId);
+    setPreviewLoading((prev) => new Set(prev).add(scenarioId));
+    fetch(`/api/scenarios/${scenarioId}/preview?countryId=${countryId}`)
+      .then((r) => r.json())
+      .then((data: { resolved?: SimulationScenario }) => {
+        if (data.resolved) {
+          setPreviewCache((prev) => ({ ...prev, [scenarioId]: data.resolved! }));
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        inFlightPreviews.current.delete(scenarioId);
+        setPreviewLoading((prev) => { const next = new Set(prev); next.delete(scenarioId); return next; });
+      });
+  }, []);
+
+  const togglePreview = useCallback((scenarioId: string) => {
+    setExpandedPreviews((prev) => {
+      const next = new Set(prev);
+      if (next.has(scenarioId)) {
+        next.delete(scenarioId);
+      } else {
+        next.add(scenarioId);
+        if (selectedCountryId) fetchPreview(scenarioId, selectedCountryId);
+      }
+      return next;
+    });
+  }, [selectedCountryId, fetchPreview]);
+
+  const handleCountryChange = useCallback((countryId: string) => {
+    setSelectedCountryId(countryId);
+    setPreviewCache({});
+    inFlightPreviews.current.clear();
+    setPreviewLoading(new Set());
+    const params = new URLSearchParams(searchParams.toString());
+    if (countryId) { params.set('countryId', countryId); } else { params.delete('countryId'); }
+    router.replace(`?${params.toString()}`, { scroll: false });
+    if (countryId) {
+      setExpandedPreviews((prev) => {
+        for (const id of prev) fetchPreview(id, countryId);
+        return prev;
+      });
+    }
+  }, [searchParams, router, fetchPreview]);
 
   useEffect(() => {
     if (ids.length === 0) { setPhase('error'); setErrorMessage('No scenario IDs provided.'); return; }
@@ -216,6 +356,28 @@ function RepairPageInner() {
 
   return (
     <>
+      {/* Country selector */}
+      <div className="command-panel mb-3 flex flex-wrap items-center gap-3 px-4 py-3">
+        <span className="text-[11px] font-mono text-[var(--foreground-muted)]">Token preview</span>
+        <select
+          value={selectedCountryId}
+          onChange={(e) => handleCountryChange(e.target.value)}
+          className="input-shell text-xs"
+          aria-label="Resolve tokens for country"
+        >
+          <option value="">Pick a country to resolve tokens…</option>
+          {countries.map((c) => (
+            <option key={c.id} value={c.id}>{c.name} · {c.region}</option>
+          ))}
+        </select>
+        {selectedCountryId && (
+          <span className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--success)]">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--success)]" />
+            {countries.find((c) => c.id === selectedCountryId)?.name ?? selectedCountryId}
+          </span>
+        )}
+      </div>
+
       {/* Summary banner */}
       <div className="command-panel mb-3 flex flex-wrap items-center gap-4 px-4 py-3">
         <div className="text-[12px] font-mono text-[var(--foreground-muted)]">
@@ -274,6 +436,15 @@ function RepairPageInner() {
                     <span className="text-[11px] font-mono text-[var(--foreground-subtle)]">
                       {isSkipped ? '0' : approvedCount}/{analysis.changes.length} approved
                     </span>
+                    {selectedCountryId && (
+                      <button
+                        type="button"
+                        onClick={() => togglePreview(analysis.id)}
+                        className={`btn btn-ghost text-[11px] ${expandedPreviews.has(analysis.id) ? 'text-[var(--accent-primary)]' : ''}`}
+                      >
+                        {expandedPreviews.has(analysis.id) ? 'Hide tokens' : 'Preview tokens'}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => toggleEditMode(analysis.id)}
@@ -346,6 +517,14 @@ function RepairPageInner() {
                   <div className="px-4 py-3 text-[12px] text-[var(--foreground-subtle)]">
                     Skipped — {analysis.changes.length} change{analysis.changes.length !== 1 ? 's' : ''} will not be applied.
                   </div>
+                )}
+
+                {expandedPreviews.has(analysis.id) && selectedCountryId && (
+                  <RepairTokenPreview
+                    scenarioId={analysis.id}
+                    preview={previewCache[analysis.id] ?? null}
+                    loading={previewLoading.has(analysis.id)}
+                  />
                 )}
               </div>
             );

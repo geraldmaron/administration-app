@@ -86,11 +86,11 @@ export function validateConfig(modelConfig?: RequestedModelConfig): ConfigValida
   }
 
   // Warnings for non-optimal configurations
-  if (architectModel !== 'gpt-4o-mini') {
-    warnings.push(`ARCHITECT_MODEL is ${architectModel} - recommended: gpt-4o-mini for cost efficiency`);
+  if (architectModel !== 'gpt-4.1-mini') {
+    warnings.push(`ARCHITECT_MODEL is ${architectModel} - recommended: gpt-4.1-mini for cost efficiency`);
   }
-  if (drafterModel !== 'gpt-4o-mini') {
-    warnings.push(`DRAFTER_MODEL is ${drafterModel} - recommended: gpt-4o-mini for low-cost operation`);
+  if (drafterModel !== 'gpt-4.1' && drafterModel !== 'gpt-4.1-mini') {
+    warnings.push(`DRAFTER_MODEL is ${drafterModel} - recommended: gpt-4.1 for quality or gpt-4.1-mini for cost efficiency`);
   }
   return {
     valid: errors.length === 0,

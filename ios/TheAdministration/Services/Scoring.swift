@@ -229,11 +229,15 @@ class ScoringEngine {
             let economyChange = primaryEffects[economyKey] ?? 0
             if abs(economyChange) > 2 {
                 let controlKey = findMetricKey(["order", "control", "public"]) ?? "metric_public_order"
+                let approvalKey = findMetricKey(["approval"]) ?? "metric_approval"
                 let controlJitter = (Double.random(in: 0...1) * 0.1) - 0.05
+                let approvalJitter = (Double.random(in: 0...1) * 0.12) - 0.06
                 if economyChange > 0 {
                     secondary[controlKey] = (secondary[controlKey] ?? 0) + economyChange * (0.08 + controlJitter * 0.1)
+                    secondary[approvalKey] = (secondary[approvalKey] ?? 0) + economyChange * (0.14 + approvalJitter * 0.1)
                 } else {
                     secondary[controlKey] = (secondary[controlKey] ?? 0) + economyChange * (0.12 + controlJitter * 0.1)
+                    secondary[approvalKey] = (secondary[approvalKey] ?? 0) + economyChange * (0.24 + approvalJitter * 0.1)
                 }
             }
         }
@@ -263,10 +267,17 @@ class ScoringEngine {
         newState.activeEffects = state.activeEffects
         newState.countries = state.countries
 
+        var primaryEffects: [String: Double] = [:]
+
         if !option.effects.isEmpty {
             for effect in option.effects {
                 let normalizedValue = normalizeEffectValue(targetMetricId: effect.targetMetricId, rawValue: effect.value, countryScaleFactor: scaleFactor)
                 if Double.random(in: 0...1) <= effect.probability {
+                    let targetId = effect.targetMetricId
+                    if !targetId.isEmpty {
+                        primaryEffects[targetId] = (primaryEffects[targetId] ?? 0) + normalizedValue
+                    }
+
                     let jitteredValue = applyJitter(normalizedValue)
                     let activeEffect = ActiveEffect(
                         baseEffect: Effect(
@@ -302,11 +313,10 @@ class ScoringEngine {
                 }
             }
         } else if let effectsMap = option.effectsMap {
-            var primaryEffects: [String: Double] = [:]
             for (metricId, value) in effectsMap {
                 let targetId = mapMetricNameToId(metricId)
                 let normalizedValue = normalizeEffectValue(targetMetricId: targetId, rawValue: value, countryScaleFactor: scaleFactor)
-                primaryEffects[targetId] = normalizedValue
+                primaryEffects[targetId] = (primaryEffects[targetId] ?? 0) + normalizedValue
                 let activeEffect = ActiveEffect(
                     baseEffect: Effect(targetMetricId: targetId, value: applyJitter(normalizedValue), duration: 1, probability: 1, delay: nil),
                     remainingDuration: 1
@@ -325,8 +335,16 @@ class ScoringEngine {
                         remainingDuration: 1
                     ))
                 }
+                if rawMag >= 5.0 {
+                    newState.activeEffects.append(ActiveEffect(
+                        baseEffect: Effect(targetMetricId: targetId, value: normalizedValue * 0.12, duration: 1, probability: 1.0, delay: 3),
+                        remainingDuration: 1
+                    ))
+                }
             }
+        }
 
+        if !primaryEffects.isEmpty {
             let secondary = deriveSecondaryImpacts(primaryEffects)
             for (metricId, value) in secondary {
                 let targetId = mapMetricNameToId(metricId)
@@ -355,7 +373,7 @@ class ScoringEngine {
         for effect in option.effects {
             guard let branchType = effect.targetBranchType, !branchType.isEmpty else { continue }
             guard Double.random(in: 0...1) <= effect.probability else { continue }
-            guard var milState = newState.countryMilitaryState else { continue }
+            guard let milState = newState.countryMilitaryState else { continue }
             let delta = Int((effect.value * 10).rounded())
             if let idx = milState.branches.firstIndex(where: { $0.canonicalType == branchType }) {
                 var mutableBranches = milState.branches
@@ -487,22 +505,21 @@ class ScoringEngine {
         let policyImplications = option.policyImplications ?? inferPolicyImplications(option: option)
         applyPolicyImplications(state: &newState, implications: policyImplications)
 
-        // Calculate metric deltas for history
-        var metricDeltas: [String: Double] = [:]
-        for (metricId, value) in newState.metrics {
-            let before = metricsBefore[metricId] ?? INITIAL_METRIC_VALUE
-            let delta = value - before
-            if abs(delta) > 0.01 {
-                metricDeltas[metricId] = delta
-            }
-        }
-        
-        // Record outcome and consequences
+        var resolvedState = advanceTurn(state: newState, lastScenario: state.currentScenario, lastOption: option)
+
         if let currentScenario = scenario {
-            recordOutcome(state: &newState, scenario: currentScenario, option: option, metricDeltas: metricDeltas)
+            var metricDeltas: [String: Double] = [:]
+            for (metricId, value) in resolvedState.metrics {
+                let before = metricsBefore[metricId] ?? INITIAL_METRIC_VALUE
+                let delta = value - before
+                if abs(delta) > 0.01 {
+                    metricDeltas[metricId] = delta
+                }
+            }
+            recordOutcome(state: &resolvedState, scenario: currentScenario, option: option, metricDeltas: metricDeltas, sourceTurn: state.turn)
         }
 
-        return advanceTurn(state: newState, lastScenario: state.currentScenario, lastOption: option)
+        return resolvedState
     }
 
     static func policyShiftLabel(for target: String) -> String {
@@ -606,13 +623,15 @@ class ScoringEngine {
         let contribution: String
     }
 
-    static func recordOutcome(state: inout GameState, scenario: Scenario, option: Option, metricDeltas: [String: Double]) {
+    static func recordOutcome(state: inout GameState, scenario: Scenario, option: Option, metricDeltas: [String: Double], sourceTurn: Int? = nil) {
         if state.outcomeHistory == nil {
             state.outcomeHistory = []
         }
+
+        let resolvedSourceTurn = sourceTurn ?? state.turn
         
         let record = OutcomeRecord(
-            turn: state.turn,
+            turn: resolvedSourceTurn,
             scenarioId: scenario.id,
             optionId: option.id,
             optionText: option.text,
@@ -633,8 +652,8 @@ class ScoringEngine {
             for cid in consequenceIds {
                 let pending = PendingConsequence(
                     scenarioId: cid,
-                    triggerTurn: state.turn + delayTurns,
-                    sourceTurn: state.turn,
+                    triggerTurn: resolvedSourceTurn + delayTurns,
+                    sourceTurn: resolvedSourceTurn,
                     sourceOptionId: option.id,
                     probability: 0.7
                 )
@@ -1224,8 +1243,8 @@ class ScoringEngine {
         let energyVal        = newState.metrics["metric_energy"]            ?? INITIAL_METRIC_VALUE
         let budget           = newState.metrics["metric_budget"]            ?? INITIAL_METRIC_VALUE
         let military         = newState.metrics["metric_military"]          ?? INITIAL_METRIC_VALUE
-        let employment       = newState.metrics["metric_employment"]        ?? INITIAL_METRIC_VALUE
-        let trade            = newState.metrics["metric_trade"]             ?? INITIAL_METRIC_VALUE
+        _ = newState.metrics["metric_employment"]        ?? INITIAL_METRIC_VALUE
+        _ = newState.metrics["metric_trade"]             ?? INITIAL_METRIC_VALUE
         let infra            = newState.metrics["metric_infrastructure"]    ?? INITIAL_METRIC_VALUE
 
         // ── UNREST ──────────────────────────────────────────────────────────────

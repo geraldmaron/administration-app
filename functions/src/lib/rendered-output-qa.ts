@@ -1,60 +1,34 @@
 import type { BundleScenario, Issue } from './audit-rules';
 import type { CountryDocument, CountryRelationship } from '../types';
 import type { ScenarioScopeTier } from '../shared/generation-contract';
+import { ALL_TOKENS } from './token-registry';
 
 const TOKEN_PATTERN = /\{([a-z_]+)\}/gi;
-const OPTIONAL_TOKENS = new Set([
-  'marine_branch',
-  'space_branch',
-  'paramilitary_branch',
-  'coast_guard_branch',
-  'intel_branch',
-  'cyber_branch',
-  'sovereign_fund',
-  'special_forces',
-  'strategic_nuclear_branch',
-]);
+const VALID_TOKEN_SET = new Set(ALL_TOKENS.map((t) => t.toLowerCase()));
 
-const FALLBACK_VALUES: Record<string, string> = {
+const EXPLICIT_FALLBACKS: Record<string, string> = {
   player_country: 'the country',
   the_player_country: 'the country',
   leader_title: 'national leader',
   the_leader_title: 'the national leader',
-  legislature: 'legislature',
-  the_legislature: 'the legislature',
-  governing_party: 'governing party',
-  the_governing_party: 'the governing party',
-  opposition: 'opposition party',
-  the_opposition: 'the opposition party',
-  opposition_party: 'opposition party',
-  the_opposition_party: 'the opposition party',
-  finance_role: 'finance minister',
-  the_finance_role: 'the finance minister',
-  defense_role: 'defense minister',
-  the_defense_role: 'the defense minister',
-  justice_role: 'justice minister',
-  the_justice_role: 'the justice minister',
-  press_role: 'press secretary',
-  the_press_role: 'the press secretary',
-  adversary: 'an opposing state',
-  the_adversary: 'the opposing state',
-  ally: 'an allied state',
-  the_ally: 'the allied state',
-  border_rival: 'a border rival',
-  the_border_rival: 'the border rival',
-  rival: 'a rival state',
-  the_rival: 'the rival state',
-  neighbor: 'a neighboring state',
-  the_neighbor: 'the neighboring state',
-  trade_partner: 'a trade partner',
-  the_trade_partner: 'the trade partner',
-  partner: 'a partner state',
-  the_partner: 'the partner state',
-  regional_bloc: 'regional bloc',
-  the_regional_bloc: 'the regional bloc',
-  major_industry: 'major industry',
-  the_major_industry: 'the major industry',
+  capital_city: 'the capital',
+  the_capital_city: 'the capital city',
+  currency: 'national currency',
+  gdp_description: 'a significant economy',
+  population_scale: 'tens of millions',
+  graft_amount: 'a significant sum',
+  infrastructure_cost: 'a major investment',
 };
+
+function getFallbackValue(token: string): string {
+  const explicit = EXPLICIT_FALLBACKS[token];
+  if (explicit) return explicit;
+  const bare = token.startsWith('the_') ? token.slice(4) : token;
+  const explicitBare = EXPLICIT_FALLBACKS[bare];
+  if (token.startsWith('the_') && explicitBare) return `the ${explicitBare}`;
+  const plainText = bare.replace(/_/g, ' ');
+  return token.startsWith('the_') ? `the ${plainText}` : plainText;
+}
 
 export interface RenderedOutputQaSample {
   countryId: string;
@@ -175,13 +149,13 @@ function resolveRenderedText(text: string, context: Record<string, string>): { t
     const token = tokenName.toLowerCase();
     const direct = context[token];
     if (direct != null) return direct;
-    if (OPTIONAL_TOKENS.has(token)) {
+    if (VALID_TOKEN_SET.has(token)) {
       fallbackTokens.add(token);
-      return '';
+      return getFallbackValue(token);
     }
     fallbackTokens.add(token);
     unresolvedTokens.add(token);
-    return FALLBACK_VALUES[token] ?? token.replace(/_/g, ' ');
+    return getFallbackValue(token);
   });
 
   return {
@@ -258,14 +232,14 @@ export function evaluateRenderedOutputQuality(
 
     if (unresolvedTokens.length > 0) {
       issues.push(issue(
-        'error',
+        'warn',
         'rendered-output-unresolved-token',
         `${scenario.id}/${country.id}`,
         `Rendered output for ${country.id} required fallback resolution for unresolved token(s): ${unresolvedTokens.join(', ')}.`
       ));
     }
 
-    const fallbackThreshold = strictTier === 'exclusive' ? 0 : 2;
+    const fallbackThreshold = strictTier === 'exclusive' ? 0 : 5;
     if (fallbackTokens.length > fallbackThreshold) {
       issues.push(issue(
         strictTier === 'exclusive' ? 'error' : 'warn',

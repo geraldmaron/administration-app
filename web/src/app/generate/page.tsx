@@ -20,6 +20,7 @@ type TargetMode = 'all' | 'regions' | 'country';
 type StoryMode = 'standalone' | 'two-part' | 'three-part';
 type Priority = 'low' | 'normal' | 'high';
 type ExecutionTarget = 'cloud_function' | 'n8n';
+type BlitzRunMode = 'blitz' | 'full_send';
 
 const EXCLUSIVITY_REASON_OPTIONS: Array<{ value: ScenarioExclusivityReason; label: string; description: string }> = [
   { value: 'constitution', label: 'Constitution', description: 'Use for constitutional rules, succession, or mandate structures.' },
@@ -196,7 +197,6 @@ export default function GeneratePage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [bundleCounts, setBundleCounts] = useState<Record<string, { total: number; active: number }>>({});
-  const [newsContextEnabled, setNewsContextEnabled] = useState(false);
 
   // — manual mode state
   const [selectedBundles, setSelectedBundles] = useState<Set<string>>(new Set(['economy']));
@@ -208,15 +208,27 @@ export default function GeneratePage() {
   const [countries, setCountries] = useState<CountrySummary[]>([]);
 
   // — news mode state
+  const classifyAbortRef = useRef<AbortController | null>(null);
   const [newsLoadCount, setNewsLoadCount] = useState(20);
-  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>(() => {
+    try { return JSON.parse(sessionStorage.getItem('gen_newsArticles') ?? 'null') ?? []; } catch { return []; }
+  });
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsError, setNewsError] = useState<string | null>(null);
-  const [selectedArticleIds, setSelectedArticleIds] = useState<Set<number>>(new Set());
+  const [selectedArticleIds, setSelectedArticleIds] = useState<Set<number>>(() => {
+    try { return new Set(JSON.parse(sessionStorage.getItem('gen_selectedArticleIds') ?? 'null') ?? []); } catch { return new Set(); }
+  });
   const [classifying, setClassifying] = useState(false);
   const [classifyError, setClassifyError] = useState<string | null>(null);
-  const [classifications, setClassifications] = useState<ArticleClassification[]>([]);
-  const [bundleOverrides, setBundleOverrides] = useState<Record<number, string>>({});
+  const [classifyProgress, setClassifyProgress] = useState<{ done: number; total: number; skipped: number } | null>(null);
+  const [classifyStartTime, setClassifyStartTime] = useState<number | null>(null);
+  const [classifyElapsed, setClassifyElapsed] = useState(0);
+  const [classifications, setClassifications] = useState<ArticleClassification[]>(() => {
+    try { return JSON.parse(sessionStorage.getItem('gen_classifications') ?? 'null') ?? []; } catch { return []; }
+  });
+  const [bundleOverrides, setBundleOverrides] = useState<Record<number, string>>(() => {
+    try { return JSON.parse(sessionStorage.getItem('gen_bundleOverrides') ?? 'null') ?? {}; } catch { return {}; }
+  });
   const [newsCount, setNewsCount] = useState(1);
   const [sortColumn, setSortColumn] = useState<'name' | 'total' | 'active'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -234,8 +246,14 @@ export default function GeneratePage() {
   const [blitzJobIds, setBlitzJobIds] = useState<string[]>([]);
   const [blitzGuidance, setBlitzGuidance] = useState('');
   const [blitzCountRaw, setBlitzCountRaw] = useState('24');
+  const [blitzRunMode, setBlitzRunMode] = useState<BlitzRunMode>('blitz');
+  const [fullSendLocalRatio, setFullSendLocalRatio] = useState(0.1); // 10% to local by default
   const blitzTotalScenarios = Math.min(200, Math.max(0, parseInt(blitzCountRaw, 10) || 0));
   const blitzCountValid = blitzTotalScenarios >= 1;
+
+  // Calculate full send distribution
+  const fullSendToLocal = Math.round(blitzTotalScenarios * fullSendLocalRatio);
+  const fullSendToOpenAI = blitzTotalScenarios - fullSendToLocal;
 
   useEffect(() => {
     fetch('/api/countries').then((r) => r.json())
@@ -261,6 +279,21 @@ export default function GeneratePage() {
       .catch(() => undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!classifyStartTime) { setClassifyElapsed(0); return; }
+    const timer = setInterval(() => setClassifyElapsed(Math.floor((Date.now() - classifyStartTime) / 1000)), 500);
+    return () => clearInterval(timer);
+  }, [classifyStartTime]);
+
+  // Persist news state to sessionStorage so navigation away and back restores context.
+  useEffect(() => { try { sessionStorage.setItem('gen_newsArticles', JSON.stringify(newsArticles)); } catch {} }, [newsArticles]);
+  useEffect(() => { try { sessionStorage.setItem('gen_selectedArticleIds', JSON.stringify(Array.from(selectedArticleIds))); } catch {} }, [selectedArticleIds]);
+  useEffect(() => { try { sessionStorage.setItem('gen_classifications', JSON.stringify(classifications)); } catch {} }, [classifications]);
+  useEffect(() => { try { sessionStorage.setItem('gen_bundleOverrides', JSON.stringify(bundleOverrides)); } catch {} }, [bundleOverrides]);
+
+  // Cancel any in-flight classify batches on unmount.
+  useEffect(() => () => { classifyAbortRef.current?.abort(); }, []);
 
   async function fetchBlitzPreview(totalOverride?: number) {
     const totalScenarios = totalOverride ?? blitzTotalScenarios;
@@ -292,10 +325,18 @@ export default function GeneratePage() {
     setSubmitError(null);
     setBlitzJobIds([]);
     try {
+      const payload = {
+        mode: blitzRunMode,
+        totalScenarios: blitzTotalScenarios,
+        executionTarget: activeExecutionTarget,
+        ...(blitzGuidance.trim() ? { description: blitzGuidance.trim() } : {}),
+        ...(activeModelConfig ? { modelConfig: activeModelConfig } : {}),
+        ...(blitzRunMode === 'full_send' ? { providerDistribution: { local: fullSendToLocal, openai: fullSendToOpenAI } } : {}),
+      };
       const res = await fetch('/api/blitz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ totalScenarios: blitzTotalScenarios, executionTarget: activeExecutionTarget, ...(blitzGuidance.trim() ? { description: blitzGuidance.trim() } : {}), ...(activeModelConfig ? { modelConfig: activeModelConfig } : {}) }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) { setSubmitError(data.error ?? 'Failed to execute blitz'); return; }
@@ -380,25 +421,16 @@ export default function GeneratePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [priority, description, stageForReview, activeExecutionTarget, activeModelConfig]);
 
-  const manualRequestsPlanned = useMemo(() => {
-    const newsEnrichment = newsContextEnabled && selectedArticleIds.size > 0
-      ? Array.from(selectedArticleIds).map(i => newsArticles[i]).filter(Boolean)
-      : [];
-
-    return buildManualGenerationRequests({
-      bundles: Array.from(selectedBundles),
-      count,
-      distributionConfig: STORY_MODE_DIST[storyMode],
-      targetMode,
-      selectedRegions: Array.from(selectedRegions),
-      selectedCountry,
-      exclusivityReason,
-      priority,
-    }).map((req) => newsEnrichment.length > 0
-      ? { ...req, mode: 'news' as const, newsContext: newsEnrichment }
-      : req
-    );
-  }, [selectedBundles, count, storyMode, targetMode, selectedRegions, selectedCountry, exclusivityReason, priority, newsContextEnabled, selectedArticleIds, newsArticles]);
+  const manualRequestsPlanned = useMemo(() => buildManualGenerationRequests({
+    bundles: Array.from(selectedBundles),
+    count,
+    distributionConfig: STORY_MODE_DIST[storyMode],
+    targetMode,
+    selectedRegions: Array.from(selectedRegions),
+    selectedCountry,
+    exclusivityReason,
+    priority,
+  }), [selectedBundles, count, storyMode, targetMode, selectedRegions, selectedCountry, exclusivityReason, priority]);
 
   const newsRequestsPlanned = useMemo(() => buildNewsGenerationRequests({
     count: newsCount,
@@ -412,12 +444,14 @@ export default function GeneratePage() {
 
   // — News mode helpers
   async function fetchNews() {
+    classifyAbortRef.current?.abort();
     setNewsLoading(true);
     setNewsError(null);
     setNewsArticles([]);
     setSelectedArticleIds(new Set());
     setClassifications([]);
     setBundleOverrides({});
+    try { ['gen_newsArticles', 'gen_selectedArticleIds', 'gen_classifications', 'gen_bundleOverrides'].forEach((k) => sessionStorage.removeItem(k)); } catch {}
     try {
       const res = await fetch(`/api/news?limit=${newsLoadCount}`);
       const data = await res.json();
@@ -432,31 +466,60 @@ export default function GeneratePage() {
 
   async function classifySelected() {
     if (selectedArticleIds.size === 0) return;
+    const BATCH_SIZE = 5;
+    const artIndices = Array.from(selectedArticleIds).sort((a, b) => a - b);
+    const batches: number[][] = [];
+    for (let i = 0; i < artIndices.length; i += BATCH_SIZE) {
+      batches.push(artIndices.slice(i, i + BATCH_SIZE));
+    }
+
+    classifyAbortRef.current?.abort();
+    const controller = new AbortController();
+    classifyAbortRef.current = controller;
+
     setClassifying(true);
     setClassifyError(null);
-    const selected = Array.from(selectedArticleIds).map((i) => newsArticles[i]);
+    setClassifications([]);
+    setBundleOverrides({});
+    setClassifyProgress({ done: 0, total: artIndices.length, skipped: 0 });
+    setClassifyStartTime(Date.now());
+
+    let allClassifications: ArticleClassification[] = [];
+    let totalSkipped = 0;
+
     try {
-      const res = await fetch('/api/news/classify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          articles: selected,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setClassifyError(data.error ?? 'Classification failed.'); return; }
-      // Re-index to original article positions
-      const artIndices = Array.from(selectedArticleIds).sort((a, b) => a - b);
-      const remapped = (data.classifications ?? []).map((c: ArticleClassification) => ({
-        ...c,
-        articleIndex: artIndices[c.articleIndex] ?? c.articleIndex,
-      }));
-      setClassifications(remapped);
-      setBundleOverrides({});
-    } catch {
-      setClassifyError('Network error during classification.');
+      for (const batch of batches) {
+        if (controller.signal.aborted) break;
+        const articles = batch.map((i) => newsArticles[i]);
+        const res = await fetch('/api/news/classify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            articles,
+            ...(activeModelConfig ? { modelConfig: activeModelConfig } : {}),
+          }),
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        if (!res.ok) { setClassifyError(data.error ?? 'Classification failed.'); return; }
+
+        const batchResults: ArticleClassification[] = (data.classifications ?? []).map((c: ArticleClassification) => ({
+          ...c,
+          articleIndex: batch[c.articleIndex] ?? c.articleIndex,
+        }));
+        const batchSkipped = batch.length - batchResults.length;
+        totalSkipped += batchSkipped;
+        allClassifications = [...allClassifications, ...batchResults];
+        setClassifications([...allClassifications]);
+        setClassifyProgress({ done: allClassifications.length + totalSkipped, total: artIndices.length, skipped: totalSkipped });
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        setClassifyError('Network error during classification.');
+      }
     } finally {
       setClassifying(false);
+      setClassifyStartTime(null);
     }
   }
 
@@ -478,10 +541,6 @@ export default function GeneratePage() {
       if (targetMode === 'country' && !selectedCountry) { setSubmitError('Select a country.'); setSubmitting(false); return; }
 
       try {
-        const newsEnrichment = newsContextEnabled && selectedArticleIds.size > 0
-          ? Array.from(selectedArticleIds).map(i => newsArticles[i]).filter(Boolean)
-          : [];
-
         const requests = buildManualGenerationRequests({
           bundles: Array.from(selectedBundles),
           count,
@@ -491,10 +550,7 @@ export default function GeneratePage() {
           selectedCountry,
           exclusivityReason,
           ...sharedRequestFields,
-        }).map((req) => newsEnrichment.length > 0
-          ? { ...req, mode: 'news' as const, newsContext: newsEnrichment }
-          : req
-        );
+        });
         if (requests.length === 0) { setSubmitError('No valid generation requests were created.'); return; }
 
         let firstJobId: string | null = null;
@@ -580,78 +636,178 @@ export default function GeneratePage() {
 
   const newsJobsExpected = newsRequestsPlanned.length;
   const newsScenariosExpected = countExpectedScenarios(newsRequestsPlanned);
+  const blitzCoveragePct = blitzSummary && blitzSummary.totalRequested > 0
+    ? Math.min(100, Math.round((blitzSummary.scenariosToGenerate / blitzSummary.totalRequested) * 100))
+    : 0;
+  const blitzTopDeficits = blitzDeficits.slice(0, 4);
+  const blitzIsFullSend = blitzRunMode === 'full_send';
 
   // — Shared panels
   const aiModelsPanel = (
-    <CommandPanel className="p-5 md:p-6">
+    <CommandPanel className={`p-5 md:p-6 ${generationMode === 'blitz' && blitzIsFullSend ? 'border-t-[3px] border-t-[var(--accent-secondary)]' : ''}`}>
       <div className="mb-5">
         <div className="section-kicker mb-2">Provider Routing</div>
-        <h2 className="text-xl font-semibold text-foreground">Model Source</h2>
+        <h2 className="text-xl font-semibold text-foreground">
+          {generationMode === 'blitz' && blitzIsFullSend ? 'Full Send Pipelines' : 'Model Source'}
+        </h2>
       </div>
 
-      <div className="flex items-center gap-3 mb-5">
-        {([
-          { value: 'cloud' as const, label: 'Cloud (OpenAI)' },
-          { value: 'local' as const, label: 'Corsair (Local)' },
-        ]).map(({ value, label }) => (
-          <button key={value} type="button"
-            onClick={() => setModelSource(value)}
-            disabled={value === 'local' && !ollamaConnected}
-            className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-              modelSource === value
-                ? 'border-[var(--accent-secondary)] bg-[rgba(212,170,44,0.12)] text-foreground'
-                : 'border-[var(--border)] text-[var(--foreground-muted)] hover:border-[var(--border-strong)] hover:text-foreground'
-            }`}>
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {modelSource === 'local' ? (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className={`h-2 w-2 rounded-full ${ollamaConnected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'}`} />
-            <span className="text-xs text-[var(--foreground-muted)]">
-              {ollamaConnected ? `${ollamaModels.length} models · routes via n8n` : 'Corsair not reachable'}
-            </span>
-          </div>
-          {ollamaModelConfig && (
-            <div className="rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3 space-y-1.5">
-              {([
-                ['Architect', ollamaModelConfig.architectModel],
-                ['Drafter', ollamaModelConfig.drafterModel],
-                ['Advisor', ollamaModelConfig.advisorModel],
-                ['Repair', ollamaModelConfig.repairModel],
-                ['Quality', ollamaModelConfig.contentQualityModel],
-                ['Review', ollamaModelConfig.narrativeReviewModel],
-              ] as const).map(([label, model]) => (
-                <div key={label} className="flex items-center justify-between text-xs">
-                  <span className="text-[var(--foreground-muted)]">{label}</span>
-                  <span className="font-mono text-foreground">{model?.replace('ollama:', '')}</span>
+      {generationMode === 'blitz' && blitzIsFullSend ? (
+        <div className="space-y-4">
+          <p className="text-xs text-[var(--foreground-muted)]">
+            Full Send fires two independent pipelines concurrently, then merges and deduplicates results by semantic similarity.
+          </p>
+          <div className="space-y-3">
+            <div className="rounded-[var(--radius-tight)] border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/5 px-4 py-3">
+              <div className="mb-2 flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full flex-shrink-0 ${ollamaConnected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'}`} />
+                <span className="text-xs font-semibold text-foreground">Pipeline A — Corsair (Local)</span>
+              </div>
+              {ollamaConnected && ollamaModelConfig ? (
+                <div className="space-y-1">
+                  {([
+                    ['Architect', ollamaModelConfig.architectModel],
+                    ['Drafter', ollamaModelConfig.drafterModel],
+                    ['Repair', ollamaModelConfig.repairModel],
+                  ] as const).map(([label, model]) => model ? (
+                    <div key={label} className="flex items-center justify-between text-[11px]">
+                      <span className="text-[var(--foreground-subtle)]">{label}</span>
+                      <span className="font-mono text-[var(--foreground-muted)]">{model.replace('ollama:', '')}</span>
+                    </div>
+                  ) : null)}
                 </div>
-              ))}
+              ) : (
+                <span className="text-[11px] text-[var(--error)]">Corsair not reachable — pipeline A will fail</span>
+              )}
             </div>
-          )}
+            <div className="rounded-[var(--radius-tight)] border border-[var(--accent-secondary)]/30 bg-[var(--accent-secondary)]/5 px-4 py-3">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full flex-shrink-0 bg-[var(--success)]" />
+                <span className="text-xs font-semibold text-foreground">Pipeline B — OpenAI (Cloud)</span>
+              </div>
+              <div className="space-y-1">
+                {([
+                  ['Architect', 'gpt-4.1-mini'],
+                  ['Drafter', 'gpt-4.1'],
+                  ['Repair', 'gpt-4.1-mini'],
+                ] as const).map(([label, model]) => (
+                  <div key={label} className="flex items-center justify-between text-[11px]">
+                    <span className="text-[var(--foreground-subtle)]">{label}</span>
+                    <span className="font-mono text-[var(--foreground-muted)]">{model}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-[var(--foreground-subtle)]">Deduplication</span>
+                <span className="font-mono text-[var(--foreground-muted)]">cosine ≥ 0.88</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-[var(--foreground-subtle)]">Merge priority</span>
+                <span className="font-mono text-[var(--foreground-muted)]">local first</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-[var(--foreground-subtle)]">OpenAI concurrency</span>
+                <span className="font-mono text-[var(--foreground-muted)]">6 bundles</span>
+              </div>
+            </div>
+
+            <div className="rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-4 py-4 mt-3">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-foreground mb-1">Job Distribution</div>
+                  <div className="text-[11px] text-[var(--foreground-muted)]">
+                    {fullSendToLocal} scenarios to Local, {fullSendToOpenAI} to OpenAI
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={fullSendLocalRatio}
+                    onChange={(e) => setFullSendLocalRatio(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-[var(--border)] rounded-full appearance-none cursor-pointer accent-[var(--accent-secondary)]"
+                  />
+                </div>
+                <div className="text-[11px] font-mono text-[var(--foreground-subtle)] w-12 text-right">
+                  {Math.round(fullSendLocalRatio * 100)}%
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
-        <div>
-          <p className="mb-4 text-xs text-[var(--foreground-muted)]">
-            Routes to OpenAI via Cloud Functions or n8n.
-          </p>
-          <div className="flex items-center gap-3">
-            {(['n8n', 'cloud_function'] as const).map((target) => (
-              <button key={target} type="button"
-                onClick={() => setExecutionTarget(target)}
-                className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
-                  executionTarget === target
+        <>
+          <div className="flex items-center gap-3 mb-5">
+            {([
+              { value: 'cloud' as const, label: 'Cloud (OpenAI)' },
+              { value: 'local' as const, label: 'Corsair (Local)' },
+            ]).map(({ value, label }) => (
+              <button key={value} type="button"
+                onClick={() => setModelSource(value)}
+                disabled={value === 'local' && !ollamaConnected}
+                className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  modelSource === value
                     ? 'border-[var(--accent-secondary)] bg-[rgba(212,170,44,0.12)] text-foreground'
                     : 'border-[var(--border)] text-[var(--foreground-muted)] hover:border-[var(--border-strong)] hover:text-foreground'
                 }`}>
-                {target === 'n8n' ? 'n8n' : 'Direct'}
+                {label}
               </button>
             ))}
           </div>
-        </div>
+
+          {modelSource === 'local' ? (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`h-2 w-2 rounded-full ${ollamaConnected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'}`} />
+                <span className="text-xs text-[var(--foreground-muted)]">
+                  {ollamaConnected ? `${ollamaModels.length} models · routes via n8n` : 'Corsair not reachable'}
+                </span>
+              </div>
+              {ollamaModelConfig && (
+                <div className="rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3 space-y-1.5">
+                  {([
+                    ['Architect', ollamaModelConfig.architectModel],
+                    ['Drafter', ollamaModelConfig.drafterModel],
+                    ['Advisor', ollamaModelConfig.advisorModel],
+                    ['Repair', ollamaModelConfig.repairModel],
+                    ['Quality', ollamaModelConfig.contentQualityModel],
+                    ['Review', ollamaModelConfig.narrativeReviewModel],
+                  ] as const).map(([label, model]) => (
+                    <div key={label} className="flex items-center justify-between text-xs">
+                      <span className="text-[var(--foreground-muted)]">{label}</span>
+                      <span className="font-mono text-foreground">{model?.replace('ollama:', '')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <p className="mb-4 text-xs text-[var(--foreground-muted)]">
+                Routes to OpenAI via Cloud Functions or n8n.
+              </p>
+              <div className="flex items-center gap-3">
+                {(['n8n', 'cloud_function'] as const).map((target) => (
+                  <button key={target} type="button"
+                    onClick={() => setExecutionTarget(target)}
+                    className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
+                      executionTarget === target
+                        ? 'border-[var(--accent-secondary)] bg-[rgba(212,170,44,0.12)] text-foreground'
+                        : 'border-[var(--border)] text-[var(--foreground-muted)] hover:border-[var(--border-strong)] hover:text-foreground'
+                    }`}>
+                    {target === 'n8n' ? 'n8n' : 'Direct'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </CommandPanel>
   );
@@ -661,7 +817,7 @@ export default function GeneratePage() {
       <ScreenHeader
         section="Content Operations"
         title="Scenario Generation"
-        subtitle="Generate scenarios manually or from live news headlines."
+        subtitle="Generate scenarios manually, from live headlines, or through compact coverage-balancing runs."
         eyebrow="Create"
         nav={<OperationsNav />}
         actions={
@@ -688,7 +844,7 @@ export default function GeneratePage() {
             ? 'Choose bundles and settings — the AI creates scenarios from scratch.'
             : generationMode === 'news'
             ? 'Pull live headlines, select articles, and let the AI generate scenarios grounded in real events.'
-            : 'Set a total scenario count, then let blitz analyse inventory gaps and distribute that budget across the weakest coverage.'}
+            : 'Set a target, inspect the gap map, then launch a compact Blitz pass or a Full Send dual-pipeline run.'}
         </p>
       </div>
 
@@ -698,60 +854,110 @@ export default function GeneratePage() {
         <div className="space-y-6 min-w-0">
           {generationMode === 'blitz' && (
             <div className="space-y-6">
-              <CommandPanel className="p-5 md:p-6">
-                <div className="mb-5 flex items-start justify-between gap-4">
-                  <div>
-                    <div className="section-kicker mb-2">Step 1 — Target</div>
-                    <h2 className="text-xl font-semibold text-foreground">Define Objective</h2>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button type="button"
-                      onClick={() => fetchBlitzPreview(blitzTotalScenarios)}
-                      disabled={blitzLoading || !blitzCountValid}
-                      className="filter-pill active">
-                      {blitzLoading ? 'Analysing...' : blitzAllocation ? 'Re-analyse' : 'Analyse Gaps'}
-                    </button>
+              <CommandPanel className="overflow-hidden p-0">
+                <div className="border-b border-[var(--border)] px-4 py-3 md:px-5">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="section-kicker mb-2">Blitz Control</div>
+                      <h2 className="text-lg font-semibold text-foreground">Coverage balancing</h2>
+                      <p className="mt-1 text-xs leading-5 text-[var(--foreground-muted)]">
+                        Keep the setup compact, inspect pressure points quickly, then launch either the standard planner or the dual-pipeline Full Send pass.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="inline-flex rounded-[10px] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-1">
+                        {([
+                          ['blitz', 'Blitz'],
+                          ['full_send', 'Full Send'],
+                        ] as const).map(([value, label]) => {
+                          const active = blitzRunMode === value;
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => setBlitzRunMode(value)}
+                              className={`rounded-[8px] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors ${
+                                active
+                                  ? 'bg-[var(--accent-muted)] text-foreground'
+                                  : 'text-[var(--foreground-muted)] hover:bg-[rgba(255,255,255,0.04)] hover:text-foreground'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button type="button"
+                        onClick={() => fetchBlitzPreview(blitzTotalScenarios)}
+                        disabled={blitzLoading || !blitzCountValid}
+                        className="btn btn-tactical px-3 py-2 text-[11px]">
+                        {blitzLoading ? 'Analysing…' : blitzAllocation ? 'Refresh Plan' : 'Analyse Gaps'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="space-y-5">
-                  <div>
-                    <label className="section-kicker mb-2 block">Target Scenario Count</label>
-                    <div className="flex flex-wrap items-center gap-3">
+
+                <div className="grid gap-4 px-4 py-4 md:px-5 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+                  <div className="space-y-3">
+                    <div className="control-surface px-3 py-3">
+                      <div className="label-micro mb-1">Target scenarios</div>
                       <input
                         type="number" min={1} max={200} value={blitzCountRaw} placeholder="24"
                         onChange={(e) => setBlitzCountRaw(e.target.value)}
-                        className="input-shell w-24 text-center font-mono text-base"
+                        className="input-shell h-11 w-full border-0 bg-transparent px-0 py-0 text-left font-mono text-lg"
                       />
-                      {blitzCountValid ? (
-                        <span className="text-sm text-[var(--foreground-muted)]">
-                          Will attempt to generate up to <strong>{blitzTotalScenarios}</strong> scenarios based on inventory gaps.
-                        </span>
-                      ) : (
-                        <span className="text-sm text-[var(--error)]">Must be between 1 and 200.</span>
-                      )}
+                      <div className={`mt-1 text-[11px] ${blitzCountValid ? 'text-[var(--foreground-muted)]' : 'text-[var(--error)]'}`}>
+                        {blitzCountValid ? 'Planner budget across weakest inventory lanes.' : 'Enter a value between 1 and 200.'}
+                      </div>
+                    </div>
+
+                    <div className={`control-surface px-3 py-3 ${blitzIsFullSend ? 'border-[rgba(78,205,196,0.35)] bg-[rgba(78,205,196,0.06)]' : ''}`}>
+                      <div className="label-micro mb-1">Run profile</div>
+                      <div className={`text-sm font-semibold ${blitzIsFullSend ? 'text-[var(--accent-secondary)]' : 'text-[var(--accent-primary)]'}`}>
+                        {blitzIsFullSend ? 'Full Send' : 'Standard Blitz'}
+                      </div>
+                      <div className="mt-1 text-[11px] leading-5 text-[var(--foreground-muted)]">
+                        {blitzIsFullSend
+                          ? 'Runs local and OpenAI pipelines together, then merges and deduplicates results.'
+                          : 'Uses the standard planner path to fill the highest-pressure gaps.'}
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label className="section-kicker mb-2 block">
-                      Thematic Guidance <span className="normal-case font-normal tracking-normal text-[var(--foreground-subtle)]">(Optional)</span>
-                    </label>
-                    <textarea
-                      value={blitzGuidance} onChange={(e) => setBlitzGuidance(e.target.value)}
-                      placeholder="e.g. Focus on economic instability. Avoid military conflict. Emphasise diplomatic options."
-                      rows={2} className="input-shell resize-y text-sm"
-                    />
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="section-kicker mb-2 block">
+                        Guidance <span className="normal-case font-normal tracking-normal text-[var(--foreground-subtle)]">(optional)</span>
+                      </label>
+                      <textarea
+                        value={blitzGuidance} onChange={(e) => setBlitzGuidance(e.target.value)}
+                        placeholder="Bias toward compact editorial direction: economic instability, coalition stress, low-military escalation, diplomacy-first options."
+                        rows={3} className="input-shell resize-y text-sm"
+                      />
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                      <DataStat size="compact" label="Budget" value={blitzTotalScenarios || '—'} accent="gold" />
+                      <DataStat size="compact" label="Planned Jobs" value={blitzSummary?.jobsToCreate ?? '—'} accent="blue" />
+                      <DataStat size="compact" label="Coverage" value={blitzSummary ? `${blitzCoveragePct}%` : '—'} accent={blitzCoveragePct >= 80 ? 'success' : blitzCoveragePct >= 50 ? 'warning' : 'error'} />
+                      <DataStat size="compact" label="Slots Free" value={blitzSummary?.availableSlots ?? '—'} accent="success" />
+                    </div>
                   </div>
                 </div>
               </CommandPanel>
 
               {blitzAllocation && (
-                <CommandPanel className="p-5 md:p-6">
-                  <div className="mb-5">
-                    <div className="section-kicker mb-2">Step 2 — Insights</div>
-                    <h2 className="text-xl font-semibold text-foreground">Current Inventory Gaps</h2>
+                <CommandPanel className="p-4 md:p-5">
+                  <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <div className="section-kicker mb-2">Gap Map</div>
+                      <h2 className="text-lg font-semibold text-foreground">Inventory pressure by scope</h2>
+                    </div>
+                    <div className="text-[11px] text-[var(--foreground-muted)]">
+                      {blitzSummary?.totalDeficit ?? 0} total missing across {blitzDeficits.length} flagged cells
+                    </div>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {([
                       { tier: 'universal' as const, label: 'Global Events', desc: 'Can happen anywhere' },
                       { tier: 'regional' as const, label: 'Regional Focus', desc: 'Geographic specific' },
@@ -764,27 +970,32 @@ export default function GeneratePage() {
                       const ratio = Math.round(SCOPE_TIER_RATIOS[tier] * 100);
                       const fillPct = totalGap > 0 ? Math.min(100, Math.round((allocated / totalGap) * 100)) : 100;
                       const isCovered = totalGap === 0;
+                      const jobCount = blitzPlannedJobs.filter((job) => job.scopeTier === tier).length;
                       
                       return (
-                        <div key={tier} className="flex flex-col gap-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-foreground">{label}</span>
-                              <span className="text-[10px] font-mono text-[var(--foreground-subtle)] bg-[rgba(255,255,255,0.05)] px-1.5 py-0.5 rounded">{ratio}% allocation</span>
+                        <div key={tier} className="rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
+                          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-foreground">{label}</span>
+                                <span className="rounded-full border border-[var(--border)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--foreground-subtle)]">{ratio}%</span>
+                                <span className="rounded-full border border-[var(--border)] px-1.5 py-0.5 text-[10px] font-mono text-[var(--foreground-subtle)]">{jobCount} job{jobCount === 1 ? '' : 's'}</span>
+                              </div>
+                              <div className="mt-1 text-[11px] text-[var(--foreground-muted)]">{desc}</div>
                             </div>
-                            <div className="text-right text-xs">
+                            <div className="text-[11px] text-[var(--foreground-muted)] md:text-right">
                               {isCovered ? (
                                 <span className="text-[var(--success)]">Healthy</span>
                               ) : (
                                 <span>
-                                  <span className="text-[var(--warning)]">{totalGap} missing</span>
-                                  <span className="text-[var(--foreground-muted)] mx-2">→</span>
-                                  <span className="text-foreground">Filling {allocated}</span>
+                                  <span className="text-[var(--warning)]">{totalGap} open</span>
+                                  <span className="mx-2 text-[var(--foreground-subtle)]">→</span>
+                                  <span className="text-foreground">{allocated} planned</span>
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="h-1.5 rounded-full bg-[var(--background-muted)] overflow-hidden">
+                          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--background-muted)]">
                             <div className="h-full rounded-full transition-all duration-500 ease-out" style={{
                               width: `${fillPct}%`,
                               background: isCovered ? 'var(--success)' : fillPct >= 50 ? 'var(--warning)' : 'var(--error)',
@@ -798,42 +1009,61 @@ export default function GeneratePage() {
               )}
 
               {blitzAllocation && blitzPlannedJobs.length > 0 && (
-                <CommandPanel className="p-5 md:p-6 border-t-[3px] border-t-[var(--accent-primary)]">
-                  <div className="mb-5 flex items-start justify-between gap-4">
+                <CommandPanel className={`p-4 md:p-5 ${blitzIsFullSend ? 'border-t-[3px] border-t-[var(--accent-secondary)]' : 'border-t-[3px] border-t-[var(--accent-primary)]'}`}>
+                  <div className="mb-4 flex items-start justify-between gap-4">
                     <div>
-                      <div className="section-kicker mb-2">Step 3 — Action Plan</div>
-                      <h2 className="text-xl font-semibold text-foreground">
-                        Ready to Generate
-                      </h2>
-                      <p className="mt-1 text-sm text-[var(--foreground-muted)]">
-                        Creating {blitzPlannedJobs.length} jobs to generate {blitzSummary?.scenariosToGenerate ?? 0} scenarios.
+                      <div className="section-kicker mb-2">Dispatch Plan</div>
+                      <h2 className="text-lg font-semibold text-foreground">Ready to generate</h2>
+                      <p className="mt-1 text-xs text-[var(--foreground-muted)]">
+                        {blitzPlannedJobs.length} queued job{blitzPlannedJobs.length === 1 ? '' : 's'} generating up to {blitzSummary?.scenariosToGenerate ?? 0} scenarios.
                       </p>
+                    </div>
+                    <div className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] ${
+                      blitzIsFullSend
+                        ? 'border-[rgba(78,205,196,0.35)] bg-[rgba(78,205,196,0.08)] text-[var(--accent-secondary)]'
+                        : 'border-[rgba(196,148,40,0.35)] bg-[rgba(196,148,40,0.08)] text-[var(--accent-primary)]'
+                    }`}>
+                      {blitzIsFullSend ? 'Full Send' : 'Blitz'}
                     </div>
                   </div>
                   
-                  <div className="mb-6 space-y-4 max-h-[300px] overflow-y-auto pr-2 subtle-scroll">
+                  <div className="mb-4 grid gap-2 lg:grid-cols-2">
+                    {blitzTopDeficits.map((deficit) => (
+                      <div key={`${deficit.bundle}-${deficit.scopeKey}`} className="rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-3 py-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-[11px] font-medium text-foreground">{formatScopeLabel(deficit.scopeKey)}</span>
+                          <span className="text-[10px] font-mono text-[var(--foreground-subtle)]">{deficit.deficit} gap</span>
+                        </div>
+                        <div className="mt-1 text-[10px] uppercase tracking-[0.08em] text-[var(--foreground-subtle)]">{deficit.bundle} · {deficit.scopeTier}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2 subtle-scroll">
                     {(['universal', 'regional', 'cluster', 'exclusive'] as const).map((tier) => {
                       const jobs = blitzPlannedJobs.filter((j) => j.scopeTier === tier);
                       if (jobs.length === 0) return null;
                       
                       return (
                         <div key={tier} className="space-y-2">
-                          <div className="text-[11px] font-semibold text-[var(--foreground-subtle)]">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--foreground-subtle)]">
                             {tier}
                           </div>
                           <div className="grid gap-2">
                             {jobs.map((job, i) => (
-                              <div key={i} className="flex items-center justify-between rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.01)] px-3 py-2.5">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  {tier !== 'universal' && (
-                                    <span className="text-xs font-medium text-foreground truncate max-w-[120px]">{formatScopeLabel(job.scopeKey)}</span>
-                                  )}
+                              <div key={i} className="flex items-center justify-between gap-3 rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.01)] px-3 py-2.5">
+                                <div className="min-w-0">
+                                  <div className="mb-1 flex items-center gap-2">
+                                    <span className="text-xs font-medium text-foreground">{formatScopeLabel(job.scopeKey)}</span>
+                                    <span className="text-[10px] uppercase tracking-[0.08em] text-[var(--foreground-subtle)]">{job.bundles.length} bundles</span>
+                                  </div>
                                   <div className="flex flex-wrap gap-1.5">
                                     {job.bundles.map((b) => <BundleBadge key={b} bundle={b} />)}
                                   </div>
                                 </div>
-                                <div className="text-xs text-[var(--foreground-muted)] shrink-0 ml-3">
-                                  <span className="font-mono text-[10px]">&times;</span>{job.bundles.length * job.count}
+                                <div className="shrink-0 text-right">
+                                  <div className="text-sm font-semibold text-foreground">{job.bundles.length * job.count}</div>
+                                  <div className="text-[10px] uppercase tracking-[0.08em] text-[var(--foreground-subtle)]">scenarios</div>
                                 </div>
                               </div>
                             ))}
@@ -843,18 +1073,6 @@ export default function GeneratePage() {
                     })}
                   </div>
                   
-                  <div className="flex flex-col gap-3">
-                    <button type="button" onClick={handleBlitzExecute}
-                      disabled={submitting || blitzPlannedJobs.length === 0}
-                      className="btn btn-command w-full py-3.5 text-sm font-bold tracking-widest shadow-md">
-                      {submitting ? 'Initiating Blitz...' : `Launch Blitz Sequence`}
-                    </button>
-                    {blitzJobIds.length > 0 && (
-                      <Link href={`/jobs/${blitzJobIds[0]}`} className="btn btn-tactical w-full justify-center py-2">
-                        View Active Blitz Job
-                      </Link>
-                    )}
-                  </div>
                 </CommandPanel>
               )}
 
@@ -879,95 +1097,68 @@ export default function GeneratePage() {
           {generationMode === 'manual' && (
             <form onSubmit={handleSubmit} className="space-y-6">
               <CommandPanel className="p-5 md:p-6">
-                <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="mb-4 flex items-center justify-between gap-4">
                   <div>
-                    <div className="section-kicker mb-2">Bundles</div>
-                    <h2 className="text-xl font-semibold text-foreground">Content Lanes</h2>
+                    <div className="section-kicker mb-1">Bundles</div>
+                    <h2 className="text-lg font-semibold text-foreground">Content Lanes</h2>
                   </div>
                   <div className="flex items-center gap-3">
                     <button type="button"
-                      onClick={() => setNewsContextEnabled(!newsContextEnabled)}
-                      className={`btn ${newsContextEnabled ? 'btn-tactical' : 'btn-ghost px-2.5 py-1 text-[10px]'}`}>
-                      {newsContextEnabled ? 'News On' : 'News'}
-                    </button>
-                    <button type="button"
-                      onClick={() => {
-                        if (selectedBundles.size === ALL_BUNDLES.length) {
-                          setSelectedBundles(new Set());
-                        } else {
-                          setSelectedBundles(new Set(ALL_BUNDLES.map(b => b.id)));
-                        }
-                      }}
-                      className="btn btn-ghost px-2.5 py-1 text-[10px]">
-                      {selectedBundles.size === ALL_BUNDLES.length ? 'Clear All' : 'Select All'}
+                      onClick={() => setSelectedBundles(selectedBundles.size === ALL_BUNDLES.length ? new Set() : new Set(ALL_BUNDLES.map(b => b.id)))}
+                      className="btn btn-ghost px-2.5 py-1 text-[11px]">
+                      {selectedBundles.size === ALL_BUNDLES.length ? 'Clear all' : 'Select all'}
                     </button>
                     <span className="text-xs text-[var(--foreground-muted)]">
                       {selectedBundles.size > 0 ? `${selectedBundles.size} selected` : 'Pick one or more'}
                     </span>
-                    
                   </div>
                 </div>
-                {/* Sortable bundle table */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[var(--border)]">
-                        <th className="w-5 pb-2.5 pl-1" />
-                        <th className="pb-2.5 pr-4 text-left">
+                        <th className="w-5 pb-2 pl-1" />
+                        <th className="pb-2 pr-4 text-left">
                           <button type="button" onClick={() => handleSortColumn('name')}
-                            className="flex items-center gap-1 text-xs font-medium text-[var(--foreground-subtle)] hover:text-foreground transition-colors">
+                            className="flex items-center gap-1 text-[11px] font-medium text-[var(--foreground-subtle)] hover:text-foreground transition-colors">
                             Bundle <span>{sortColumn === 'name' ? (sortDirection === 'asc' ? '↑' : '↓') : <span className="opacity-30">↕</span>}</span>
                           </button>
                         </th>
-                        <th className="pb-2.5 pr-6 text-right">
+                        <th className="pb-2 pr-6 text-right">
                           <button type="button" onClick={() => handleSortColumn('total')}
-                            className="flex w-full items-center justify-end gap-1 text-xs font-medium text-[var(--foreground-subtle)] hover:text-foreground transition-colors">
+                            className="flex w-full items-center justify-end gap-1 text-[11px] font-medium text-[var(--foreground-subtle)] hover:text-foreground transition-colors">
                             Total <span>{sortColumn === 'total' ? (sortDirection === 'asc' ? '↑' : '↓') : <span className="opacity-30">↕</span>}</span>
                           </button>
                         </th>
-                        <th className="pb-2.5 pr-2 text-right">
+                        <th className="pb-2 pr-2 text-right">
                           <button type="button" onClick={() => handleSortColumn('active')}
-                            className="flex w-full items-center justify-end gap-1 text-xs font-medium text-[var(--foreground-subtle)] hover:text-foreground transition-colors">
+                            className="flex w-full items-center justify-end gap-1 text-[11px] font-medium text-[var(--foreground-subtle)] hover:text-foreground transition-colors">
                             Active <span>{sortColumn === 'active' ? (sortDirection === 'asc' ? '↑' : '↓') : <span className="opacity-30">↕</span>}</span>
                           </button>
                         </th>
-                        {Object.keys(newsCountByBundle).length > 0 && (
-                          <th className="pb-2.5 pr-1 text-right">
-                            <span className="text-xs font-medium text-[var(--foreground-subtle)]">News</span>
-                          </th>
-                        )}
                       </tr>
                     </thead>
                     <tbody>
                       {sortedBundles.map((bundle) => {
                         const isActive = selectedBundles.has(bundle.id);
                         const counts = bundleCounts[bundle.id];
-                        const nCount = newsCountByBundle[bundle.id] ?? 0;
                         return (
                           <tr key={bundle.id}
                             onClick={() => toggleBundle(bundle.id)}
                             style={{ boxShadow: isActive ? `inset 3px 0 0 ${BUNDLE_ACCENT_COLORS[bundle.id]}` : undefined }}
                             className={`cursor-pointer border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[rgba(255,255,255,0.025)] ${isActive ? 'bg-[var(--accent-muted)]' : ''}`}>
-                            <td className="w-5 py-3.5 pl-1">
+                            <td className="w-5 py-2 pl-1">
                               <span className={`block h-2 w-2 rounded-full ${isActive ? 'bg-[var(--accent-secondary)]' : 'border border-[var(--border-strong)]'}`} />
                             </td>
-                            <td className="py-3.5 pr-4">
-                              <div className="font-semibold text-foreground leading-5">{bundle.label}</div>
-                              <div className="mt-0.5 text-[11px] leading-4 text-[var(--foreground-muted)]">{bundle.description}</div>
+                            <td className="py-2 pr-4">
+                              <span className={`text-[13px] font-medium ${isActive ? 'text-foreground' : 'text-[var(--foreground-muted)]'}`}>{bundle.label}</span>
                             </td>
-                            <td className="py-3.5 pr-6 text-right font-mono text-[13px] tabular-nums text-[var(--foreground-muted)]">
+                            <td className="py-2 pr-6 text-right font-mono text-[12px] tabular-nums text-[var(--foreground-subtle)]">
                               {counts ? counts.total : '—'}
                             </td>
-                            <td className="py-3.5 pr-2 text-right font-mono text-[13px] tabular-nums text-[var(--foreground-muted)]">
+                            <td className="py-2 pr-2 text-right font-mono text-[12px] tabular-nums text-[var(--foreground-subtle)]">
                               {counts ? counts.active : '—'}
                             </td>
-                            {Object.keys(newsCountByBundle).length > 0 && (
-                              <td className="py-3.5 pr-1 text-right">
-                                {nCount > 0
-                                  ? <span className="inline-flex items-center justify-center rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-[11px] font-mono text-[var(--accent-primary)]">{nCount}</span>
-                                  : <span className="text-[11px] text-[var(--foreground-subtle)]">—</span>}
-                              </td>
-                            )}
                           </tr>
                         );
                       })}
@@ -1044,36 +1235,6 @@ export default function GeneratePage() {
                 </CommandPanel>
               </div>
 
-              {newsContextEnabled && (
-                <CommandPanel className="p-5 md:p-6 border border-[var(--accent-secondary)]">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <div className="section-kicker mb-1 text-[var(--accent-secondary)]">News Context</div>
-                      <h2 className="text-sm font-semibold text-foreground">Active Articles</h2>
-                    </div>
-                    <div className="text-xs text-[var(--foreground-muted)]">
-                      {selectedArticleIds.size} article{selectedArticleIds.size !== 1 ? 's' : ''} selected
-                    </div>
-                  </div>
-                  {selectedArticleIds.size === 0 ? (
-                    <div className="text-xs text-[var(--foreground-muted)]">No articles selected. Switch to 'From News' mode to select articles first.</div>
-                  ) : (
-                    <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2 subtle-scroll">
-                      {Array.from(selectedArticleIds).map((idx) => {
-                        const article = newsArticles[idx];
-                        if (!article) return null;
-                        return (
-                          <div key={idx} className="text-xs border-l-2 border-[var(--border-strong)] pl-3 py-1">
-                            <div className="font-medium text-foreground leading-5">{article.title}</div>
-                            <div className="text-[var(--foreground-muted)] mt-0.5">{article.source}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </CommandPanel>
-              )}
-
               {submitError && <CommandPanel tone="danger" className="p-4 text-sm text-[var(--error)]">{submitError}</CommandPanel>}
               
             </form>
@@ -1082,151 +1243,37 @@ export default function GeneratePage() {
           {generationMode === 'news' && (
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Bundle filter — selecting bundles filters article list post-classification */}
-              <CommandPanel className="p-5 md:p-6">
-                <div className="mb-5 flex items-start justify-between gap-4">
-                  <div>
-                    <div className="section-kicker mb-2">Bundles</div>
-                    <h2 className="text-xl font-semibold text-foreground">Filter by Content Lane</h2>
-                  </div>
-                  <span className="text-xs text-[var(--foreground-muted)]">
-                    {selectedBundles.size > 0 ? `${selectedBundles.size} selected` : 'All bundles'}
-                  </span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-[var(--border)]">
-                        <th className="w-5 pb-2.5 pl-1" />
-                        <th className="pb-2.5 pr-4 text-left">
-                          <button type="button" onClick={() => handleSortColumn('name')}
-                            className="flex items-center gap-1 text-xs font-medium text-[var(--foreground-subtle)] hover:text-foreground transition-colors">
-                            Bundle <span>{sortColumn === 'name' ? (sortDirection === 'asc' ? '↑' : '↓') : <span className="opacity-30">↕</span>}</span>
-                          </button>
-                        </th>
-                        <th className="pb-2.5 pr-6 text-right">
-                          <button type="button" onClick={() => handleSortColumn('total')}
-                            className="flex w-full items-center justify-end gap-1 text-xs font-medium text-[var(--foreground-subtle)] hover:text-foreground transition-colors">
-                            Total <span>{sortColumn === 'total' ? (sortDirection === 'asc' ? '↑' : '↓') : <span className="opacity-30">↕</span>}</span>
-                          </button>
-                        </th>
-                        {Object.keys(newsCountByBundle).length > 0 && (
-                          <th className="pb-2.5 pr-1 text-right">
-                            <span className="text-xs font-medium text-[var(--foreground-subtle)]">Articles</span>
-                          </th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedBundles.map((bundle) => {
-                        const isActive = selectedBundles.has(bundle.id);
-                        const counts = bundleCounts[bundle.id];
-                        const nCount = newsCountByBundle[bundle.id] ?? 0;
-                        return (
-                          <tr key={bundle.id}
-                            onClick={() => toggleBundle(bundle.id)}
-                            style={{ boxShadow: isActive ? `inset 3px 0 0 ${BUNDLE_ACCENT_COLORS[bundle.id]}` : undefined }}
-                            className={`cursor-pointer border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[rgba(255,255,255,0.025)] ${isActive ? 'bg-[var(--accent-muted)]' : ''}`}>
-                            <td className="w-5 py-3 pl-1">
-                              <span className={`block h-2 w-2 rounded-full ${isActive ? 'bg-[var(--accent-secondary)]' : 'border border-[var(--border-strong)]'}`} />
-                            </td>
-                            <td className="py-3 pr-4">
-                              <div className="font-semibold text-foreground leading-5">{bundle.label}</div>
-                            </td>
-                            <td className="py-3 pr-6 text-right font-mono text-[13px] tabular-nums text-[var(--foreground-muted)]">
-                              {counts ? counts.total : '—'}
-                            </td>
-                            {Object.keys(newsCountByBundle).length > 0 && (
-                              <td className="py-3 pr-1 text-right">
-                                {nCount > 0
-                                  ? <span className="inline-flex items-center justify-center rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-[11px] font-mono text-[var(--accent-primary)]">{nCount}</span>
-                                  : <span className="text-[11px] text-[var(--foreground-subtle)]">—</span>}
-                              </td>
-                            )}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                {classifications.length > 0 && selectedBundles.size > 0 && (
-                  <p className="mt-3 text-xs text-[var(--foreground-muted)]">
-                    Showing articles classified to {selectedBundles.size} selected bundle{selectedBundles.size === 1 ? '' : 's'}. Deselect all to see all articles.
-                  </p>
-                )}
-              </CommandPanel>
-
-              {/* Step 1 — Fetch Headlines */}
-              <CommandPanel className="p-5 md:p-6">
-                <div className="mb-5">
-                  <div className="section-kicker mb-2">Step 1 — Source</div>
-                  <h2 className="text-xl font-semibold text-foreground">Fetch Headlines</h2>
-                </div>
-                <div className="flex flex-wrap items-center gap-4">
-                  <div>
-                    <label className="section-kicker mb-1 block">Number of headlines</label>
-                    <select value={newsLoadCount} onChange={(e) => setNewsLoadCount(Number(e.target.value))} className="input-shell w-auto">
-                      {[10, 20, 30, 50].map((n) => <option key={n} value={n}>{n} headlines</option>)}
-                    </select>
-                  </div>
-                  <button type="button" onClick={fetchNews} disabled={newsLoading}
-                    className="btn btn-tactical self-end">
-                    {newsLoading ? 'Fetching…' : newsArticles.length > 0 ? 'Refresh Headlines' : 'Load Headlines'}
-                  </button>
-                </div>
-                <p className="mt-3 text-xs text-[var(--foreground-muted)]">
-                  Pulls from BBC World, Al Jazeera, NPR World, Deutsche Welle, and Reuters — sorted by recency.
-                </p>
-                {newsError && <div className="mt-3 text-xs text-[var(--error)]">{newsError}</div>}
-              </CommandPanel>
-
-              {/* Step 2 — Select Articles */}
-              {newsArticles.length > 0 && (
-                <CommandPanel className="p-5 md:p-6">
-                  <div className="mb-5 flex items-start justify-between gap-4">
-                    <div>
-                      <div className="section-kicker mb-2">Step 2 — Selection</div>
-                      <h2 className="text-xl font-semibold text-foreground">Choose Articles</h2>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-[var(--foreground-muted)]">{selectedArticleIds.size} selected</span>
-                      <button type="button" className="btn btn-ghost"
-                        onClick={() => setSelectedArticleIds(selectedArticleIds.size === newsArticles.length ? new Set() : new Set(newsArticles.map((_, i) => i)))}>
-                        {selectedArticleIds.size === newsArticles.length ? 'Deselect all' : 'Select all'}
-                      </button>
+              {classifications.length > 0 && (
+                <CommandPanel className="p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <span className="section-kicker">Filter by bundle</span>
+                    <div className="flex items-center gap-2">
+                      {selectedBundles.size > 0 && (
+                        <button type="button" onClick={() => setSelectedBundles(new Set())}
+                          className="text-[11px] text-[var(--foreground-muted)] hover:text-foreground transition-colors">
+                          Clear
+                        </button>
+                      )}
+                      <span className="text-[11px] text-[var(--foreground-subtle)]">
+                        {selectedBundles.size > 0 ? `${selectedBundles.size} active` : 'All'}
+                      </span>
                     </div>
                   </div>
-                  <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
-                    {newsArticles.map((article, idx) => {
-                      if (visibleArticleIndices !== null && !visibleArticleIndices.has(idx)) return null;
-                      const selected = selectedArticleIds.has(idx);
-                      const classification = classifications.find((c) => c.articleIndex === idx);
-                      const bundle = effectiveBundle(idx);
+                  <div className="flex flex-wrap gap-1.5">
+                    {ALL_BUNDLES.map((bundle) => {
+                      const isActive = selectedBundles.has(bundle.id);
+                      const nCount = newsCountByBundle[bundle.id] ?? 0;
+                      if (nCount === 0) return null;
                       return (
-                        <button key={idx} type="button" onClick={() => toggleArticle(idx)}
-                          className={`w-full rounded-[var(--radius-tight)] border p-4 text-left transition-colors ${
-                            selected ? 'border-[var(--accent-primary)] bg-[var(--accent-muted)]' : 'border-[var(--border)] bg-[rgba(255,255,255,0.02)] hover:border-[var(--border-strong)] hover:bg-[rgba(255,255,255,0.03)]'
+                        <button key={bundle.id} type="button" onClick={() => toggleBundle(bundle.id)}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                            isActive
+                              ? 'border-[var(--accent-secondary)] bg-[rgba(212,170,44,0.1)] text-foreground'
+                              : 'border-[var(--border)] text-[var(--foreground-muted)] hover:border-[var(--border-strong)] hover:text-foreground'
                           }`}>
-                          <div className="flex items-start gap-3">
-                            <span className={`mt-0.5 h-4 w-4 shrink-0 rounded border ${selected ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)]' : 'border-[var(--border)]'} flex items-center justify-center`}>
-                              {selected && <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2 mb-1">
-                                <span className="text-[11px] font-mono text-[var(--foreground-subtle)]">{article.source}</span>
-                                {article.pubDate && <span className="text-[10px] text-[var(--foreground-subtle)]">{formatPubDate(article.pubDate)}</span>}
-                                {classification && bundle && (
-                                  <span className="rounded px-1.5 py-0.5 text-[11px] font-medium"
-                                    style={{ background: `${BUNDLE_ACCENT_COLORS[bundle]}22`, color: BUNDLE_ACCENT_COLORS[bundle] }}>
-                                    {bundle}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-sm font-medium text-foreground leading-5">{article.title}</div>
-                              {article.snippet && (
-                                <div className="mt-1 text-xs leading-5 text-[var(--foreground-muted)] line-clamp-2">{article.snippet}</div>
-                              )}
-                            </div>
-                          </div>
+                          <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: BUNDLE_ACCENT_COLORS[bundle.id] }} />
+                          {bundle.label}
+                          <span className="font-mono text-[10px] opacity-70">{nCount}</span>
                         </button>
                       );
                     })}
@@ -1234,230 +1281,275 @@ export default function GeneratePage() {
                 </CommandPanel>
               )}
 
-              {/* Step 3 — Classify */}
-              {selectedArticleIds.size > 0 && (
-                <CommandPanel className="p-5 md:p-6">
-                  <div className="mb-5">
-                    <div className="section-kicker mb-2">Step 3 — AI Analysis</div>
-                    <h2 className="text-xl font-semibold text-foreground">Recommend Bundles</h2>
-                  </div>
-                  <p className="mb-4 text-sm text-[var(--foreground-muted)]">
-                    The AI reads each selected article and recommends the most fitting game bundle and geographic scope. You can override any recommendation before submitting.
-                  </p>
-                  <button type="button" onClick={classifySelected} disabled={classifying}
-                    className="btn btn-tactical">
-                    {classifying ? 'Analysing…' : classifications.length > 0 ? 'Re-analyse Selection' : `Analyse ${selectedArticleIds.size} Article${selectedArticleIds.size === 1 ? '' : 's'}`}
+              {/* Fetch row */}
+              <CommandPanel className="p-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <select value={newsLoadCount} onChange={(e) => setNewsLoadCount(Number(e.target.value))}
+                    className="input-shell w-auto py-1.5 text-sm">
+                    {[10, 20, 30, 50].map((n) => <option key={n} value={n}>{n} headlines</option>)}
+                  </select>
+                  <button type="button" onClick={fetchNews} disabled={newsLoading} className="btn btn-tactical py-1.5 text-sm">
+                    {newsLoading ? 'Fetching…' : newsArticles.length > 0 ? 'Refresh' : 'Load Headlines'}
                   </button>
-                  {classifyError && <div className="mt-3 text-xs text-[var(--error)]">{classifyError}</div>}
-                </CommandPanel>
-              )}
+                  <span className="text-[11px] text-[var(--foreground-subtle)]">BBC · Al Jazeera · NPR · DW · Reuters</span>
+                  {newsError && <span className="text-[11px] text-[var(--error)]">{newsError}</span>}
+                </div>
+              </CommandPanel>
 
-              {/* Step 4 — Review Recommendations */}
-              {classifications.length > 0 && (
-                <CommandPanel className="p-5 md:p-6">
-                  <div className="mb-5">
-                    <div className="section-kicker mb-2">Step 4 — Review</div>
-                    <h2 className="text-xl font-semibold text-foreground">Bundle Recommendations</h2>
-                  </div>
-                  <div className="space-y-3">
-                    {classifications
-                      .filter((c) => selectedArticleIds.has(c.articleIndex))
-                      .map((c) => {
-                        const article = newsArticles[c.articleIndex];
-                        const bundle = effectiveBundle(c.articleIndex);
-                        return (
-                          <div key={c.articleIndex} className="rounded-[var(--radius-tight)] border border-[var(--border)] p-4">
-                            <div className="mb-2 text-sm font-medium text-foreground leading-5 line-clamp-2">{article?.title}</div>
-                            <div className="flex flex-wrap items-center gap-3">
-                              <div className="flex items-center gap-2">
-                                <label className="section-kicker">Bundle</label>
-                                <select
-                                  value={bundle}
-                                  onChange={(e) => setBundleOverrides((prev) => ({ ...prev, [c.articleIndex]: e.target.value }))}
-                                  className="input-shell py-1 text-xs"
-                                  style={{ borderColor: BUNDLE_ACCENT_COLORS[bundle] ?? undefined }}>
-                                  {ALL_BUNDLES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
-                                </select>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs text-[var(--foreground-muted)]">
-                                <span className="font-mono">{c.scope}</span>
-                                {c.region && <span>· {c.region}</span>}
-                                <span className="ml-2 tabular-nums" title="Relevance score">
-                                  <span className={c.relevance_score >= 8 ? 'text-[var(--success)]' : c.relevance_score >= 6 ? 'text-[var(--warning)]' : 'text-[var(--foreground-subtle)]'}>
-                                    {c.relevance_score}/10
-                                  </span>
-                                </span>
-                              </div>
-                            </div>
-                            {c.rationale && (
-                              <p className="mt-2 text-xs leading-5 text-[var(--foreground-subtle)] italic">{c.rationale}</p>
-                            )}
-                          </div>
-                        );
-                      })}
+              {/* Articles + classify in one panel */}
+              {newsArticles.length > 0 && (
+                <CommandPanel className="overflow-hidden p-0">
+                  {/* Toolbar */}
+                  <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-2.5">
+                    <button type="button"
+                      onClick={() => setSelectedArticleIds(
+                        selectedArticleIds.size === (visibleArticleIndices?.size ?? newsArticles.length)
+                          ? new Set()
+                          : visibleArticleIndices !== null
+                            ? new Set(Array.from(visibleArticleIndices))
+                            : new Set(newsArticles.map((_, i) => i))
+                      )}
+                      className="btn btn-ghost px-2 py-1 text-[11px]">
+                      {selectedArticleIds.size > 0 && selectedArticleIds.size === (visibleArticleIndices?.size ?? newsArticles.length)
+                        ? 'Deselect all'
+                        : `Select all (${visibleArticleIndices?.size ?? newsArticles.length})`}
+                    </button>
+                    <span className="text-[11px] text-[var(--foreground-subtle)]">
+                      {selectedArticleIds.size} selected
+                    </span>
+                    <div className="ml-auto flex items-center gap-2">
+                      {selectedArticleIds.size > 0 && (
+                        <button type="button" onClick={classifySelected} disabled={classifying}
+                          className="btn btn-tactical px-3 py-1.5 text-[11px]">
+                          {classifying
+                            ? `Analysing… ${classifyElapsed > 0 ? `${classifyElapsed}s` : ''}`
+                            : classifications.length > 0
+                              ? 'Re-analyse'
+                              : `Analyse ${selectedArticleIds.size}`}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  {newsClassifiedBundles.size > 0 && (
-                    <div className="mt-4 rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
-                      <div className="section-kicker mb-2">Job Plan</div>
-                      <div className="space-y-1 text-xs text-[var(--foreground-muted)]">
-                        {Array.from(newsClassifiedBundles.entries()).map(([bundle, count]) => (
-                          <div key={bundle} className="flex items-center justify-between gap-3">
-                            <span className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full" style={{ background: BUNDLE_ACCENT_COLORS[bundle] }} />
-                              {bundle}
-                            </span>
-                            <span>{count} article{count === 1 ? '' : 's'} → {newsCount} scenario{newsCount === 1 ? '' : 's'}</span>
-                          </div>
-                        ))}
-                        <div className="mt-2 pt-2 border-t border-[var(--border)] font-medium text-foreground">
-                          {newsClassifiedBundles.size} job{newsClassifiedBundles.size === 1 ? '' : 's'} · {newsScenariosExpected} scenario{newsScenariosExpected === 1 ? '' : 's'} total
-                        </div>
+                  {/* Progress bar + verbose status during classification */}
+                  {(classifying || (classifyProgress && classifyProgress.done > 0)) && (
+                    <div className="border-b border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-4 py-2.5">
+                      <div className="mb-1.5 flex items-center justify-between text-[11px]">
+                        <span className="text-[var(--foreground-muted)]">
+                          {classifying
+                            ? `Batch ${Math.ceil((classifyProgress?.done ?? 0) / 5) + 1} of ${Math.ceil(selectedArticleIds.size / 5)} · ${classifyProgress?.done ?? 0}/${classifyProgress?.total ?? selectedArticleIds.size} processed`
+                            : `${classifyProgress?.done ?? 0} processed · ${classifyProgress?.skipped ?? 0} skipped`}
+                        </span>
+                        <span className="font-mono text-[var(--foreground-subtle)]">
+                          {classifyElapsed > 0 && classifying ? `${classifyElapsed}s` : ''}
+                        </span>
+                      </div>
+                      <div className="h-1 rounded-full bg-[var(--background-muted)] overflow-hidden">
+                        <div className="h-full rounded-full bg-[var(--accent-primary)] transition-all duration-300"
+                          style={{ width: classifyProgress ? `${Math.round((classifyProgress.done / classifyProgress.total) * 100)}%` : '0%' }} />
                       </div>
                     </div>
                   )}
+
+                  {classifyError && (
+                    <div className="border-b border-[var(--border)] px-4 py-2 text-[11px] text-[var(--error)]">{classifyError}</div>
+                  )}
+
+                  {/* Article rows */}
+                  <div className="max-h-[480px] overflow-y-auto subtle-scroll">
+                    {newsArticles.map((article, idx) => {
+                      if (visibleArticleIndices !== null && !visibleArticleIndices.has(idx)) return null;
+                      const selected = selectedArticleIds.has(idx);
+                      const classification = classifications.find((c) => c.articleIndex === idx);
+                      const bundle = effectiveBundle(idx);
+                      const isClassifying = classifying && selected && !classification;
+                      return (
+                        <div key={idx} className={`group flex w-full items-start gap-0 border-b border-[var(--border)] last:border-b-0 transition-colors ${selected ? 'bg-[var(--accent-muted)]' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}>
+                          <button type="button" onClick={() => toggleArticle(idx)}
+                            className="flex flex-1 items-center gap-3 px-4 py-2 text-left">
+                            <span className={`h-3.5 w-3.5 shrink-0 rounded border transition-colors ${
+                              selected ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)]' : 'border-[var(--border-strong)] group-hover:border-[var(--foreground-muted)]'
+                            } flex items-center justify-center`}>
+                              {selected && <svg className="h-2 w-2 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                            </span>
+                            <span className="w-[52px] shrink-0 truncate text-[10px] font-mono text-[var(--foreground-subtle)]">{article.source}</span>
+                            {article.pubDate && <span className="w-[28px] shrink-0 text-[10px] text-[var(--foreground-subtle)]">{formatPubDate(article.pubDate)}</span>}
+                            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">{article.title}</span>
+                            {isClassifying && (
+                              <span className="shrink-0 text-[10px] text-[var(--foreground-subtle)] animate-pulse">analysing…</span>
+                            )}
+                            {classification && bundle && (
+                              <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                                style={{ background: `${BUNDLE_ACCENT_COLORS[bundle]}22`, color: BUNDLE_ACCENT_COLORS[bundle] }}>
+                                {bundle}
+                              </span>
+                            )}
+                          </button>
+                          {/* Inline classification detail on classified rows */}
+                          {classification && (
+                            <div className="flex shrink-0 items-center gap-2 border-l border-[var(--border)] px-3 py-2">
+                              <select
+                                value={effectiveBundle(idx)}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => setBundleOverrides((prev) => ({ ...prev, [idx]: e.target.value }))}
+                                className="h-6 rounded border border-[var(--border)] bg-transparent px-1.5 text-[10px] text-[var(--foreground-muted)] focus:outline-none"
+                                style={{ borderColor: BUNDLE_ACCENT_COLORS[effectiveBundle(idx)] ?? undefined }}>
+                                {ALL_BUNDLES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
+                              </select>
+                              <span className={`text-[10px] font-mono tabular-nums ${classification.relevance_score >= 8 ? 'text-[var(--success)]' : classification.relevance_score >= 6 ? 'text-[var(--warning)]' : 'text-[var(--foreground-subtle)]'}`}>
+                                {classification.relevance_score}/10
+                              </span>
+                              <span className="text-[10px] text-[var(--foreground-subtle)]">{classification.scope}</span>
+                              {classification.region && <span className="text-[10px] text-[var(--foreground-subtle)]">· {classification.region}</span>}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </CommandPanel>
               )}
 
-              {/* Step 5 — Volume + Format + Priority */}
+              {/* Config strip — shown after classification */}
               {classifications.length > 0 && (
-                <div className="grid gap-6 lg:grid-cols-3">
-                  <CommandPanel className="p-5 md:p-6">
-                    <div className="mb-4">
-                      <div className="section-kicker mb-2">Volume</div>
-                      <h2 className="text-lg font-semibold text-foreground">Per Bundle</h2>
+                <CommandPanel className="p-4">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="section-kicker shrink-0">Per bundle</span>
+                      <input type="number" min={1} max={10} value={newsCount}
+                        onChange={(e) => setNewsCount(Number(e.target.value))}
+                        className="input-shell w-16 py-1 text-center text-sm" />
                     </div>
-                    <label className="section-kicker mb-1 block">Scenarios per bundle</label>
-                    <input type="number" min={1} max={10} value={newsCount}
-                      onChange={(e) => setNewsCount(Number(e.target.value))} className="input-shell" />
-                    <p className="mt-2 text-xs text-[var(--foreground-muted)]">1–10 per bundle. Each job is seeded by that bundle's articles.</p>
-                  </CommandPanel>
-
-                  <CommandPanel className="p-5 md:p-6">
-                    <div className="mb-4">
-                      <div className="section-kicker mb-2">Story Format</div>
-                      <h2 className="text-lg font-semibold text-foreground">Structure</h2>
-                    </div>
-                    <div className="space-y-2">
+                    <div className="h-4 w-px bg-[var(--border)]" />
+                    <div className="flex items-center gap-1.5">
+                      <span className="section-kicker shrink-0">Format</span>
                       {(['standalone', 'two-part', 'three-part'] as StoryMode[]).map((mode) => (
                         <button key={mode} type="button" onClick={() => setStoryMode(mode)}
-                          className={`w-full rounded-[var(--radius-tight)] border px-3 py-2 text-left text-xs transition-colors ${
+                          className={`rounded border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                             storyMode === mode ? 'border-[var(--accent-primary)] bg-[var(--accent-muted)] text-foreground' : 'border-[var(--border)] text-[var(--foreground-muted)] hover:text-foreground'
                           }`}>
-                          <span className="font-medium">{STORY_MODE_LABELS[mode]}</span>
+                          {STORY_MODE_LABELS[mode]}
                         </button>
                       ))}
                     </div>
-                  </CommandPanel>
-
-                  <CommandPanel className="p-5 md:p-6">
-                    <div className="mb-4">
-                      <div className="section-kicker mb-2">Priority</div>
-                      <h2 className="text-lg font-semibold text-foreground">Queue</h2>
+                    <div className="h-4 w-px bg-[var(--border)]" />
+                    <div className="flex items-center gap-1.5">
+                      <span className="section-kicker shrink-0">Priority</span>
+                      <SegmentedControl value={priority} onChange={setPriority}
+                        options={[{ value: 'low', label: 'Low' }, { value: 'normal', label: 'Normal' }, { value: 'high', label: 'High' }]} />
                     </div>
-                    <SegmentedControl value={priority} onChange={setPriority}
-                      options={[{ value: 'low', label: 'Low' }, { value: 'normal', label: 'Norm' }, { value: 'high', label: 'High' }]} />
-                    <p className="mt-2 text-xs text-[var(--foreground-muted)]">{PRIORITY_DESCRIPTIONS[priority]}</p>
-                  </CommandPanel>
-                </div>
+                  </div>
+                </CommandPanel>
               )}
-
-              {/* Step 6 — AI Models */}
-              {classifications.length > 0 && aiModelsPanel}
 
               {submitError && <CommandPanel tone="danger" className="p-4 text-sm text-[var(--error)]">{submitError}</CommandPanel>}
 
               
             </form>
           )}
-          
+
           {generationMode !== 'blitz' && (
-            <CommandPanel className="p-5 md:p-6">
-              <div className="mb-4">
-                <div className="section-kicker mb-2">Instruction Overlay</div>
-                <h2 className="text-xl font-semibold text-foreground">Prompt Guidance</h2>
-              </div>
+            <CommandPanel className="p-4">
+              <div className="section-kicker mb-2">Prompt Guidance</div>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional: editorial focus, current event framing, excluded topics, or pacing instructions."
-                rows={3} className="input-shell resize-y" />
+                placeholder="Editorial focus, excluded topics, pacing…"
+                rows={2} className="input-shell resize-y text-sm" />
             </CommandPanel>
           )}
         </div>
 
         {/* RIGHT COLUMN: Persistent Summary/CTA Rail */}
         <div className="space-y-6 sticky top-6">
-          
-          {generationMode === 'manual' && (
-            <CommandPanel className="p-5 md:p-6">
-                <div className="mb-5">
-                  <div className="section-kicker mb-2">Summary</div>
-                  <h2 className="text-xl font-semibold text-foreground">Current Configuration</h2>
-                </div>
-                <div className="mb-5 flex flex-wrap gap-2">
-                  {selectedBundleData.length > 0
-                    ? selectedBundleData.map((b) => <BundleBadge key={b.id} bundle={b.id} />)
-                    : <span className="text-sm text-[var(--foreground-muted)]">No bundles selected.</span>}
-                </div>
-                <div className="space-y-3 text-sm text-[var(--foreground-muted)]">
+          {generationMode === 'blitz' && (
+            <>
+              <CommandPanel className="p-4">
+                <div className="section-kicker mb-3">Run Summary</div>
+                <div className="space-y-2 text-xs text-[var(--foreground-muted)]">
                   {[
-                    ['Scenarios', `${expectedManualCount} total`],
-                    ['Scope', targetSummary],
-                    ['Format', STORY_MODE_LABELS[storyMode]],
-                    ['Priority', priority],
-                    ['Provider', modelSource === 'local' ? 'Corsair (Local)' : 'Cloud (OpenAI)'],
-                    ['Review gate', stageForReview ? 'Staged' : 'Auto-save'],
-                  ].map(([label, val], i, arr) => (
-                    <div key={label} className={`flex items-center justify-between gap-3 ${i < arr.length - 1 ? 'border-b border-[var(--border)] pb-3' : ''}`}>
+                    ['Profile', blitzIsFullSend ? 'Full Send' : 'Blitz'],
+                    ['Budget', blitzCountValid ? `${blitzTotalScenarios} scenarios` : 'invalid'],
+                    ['Jobs', blitzSummary?.jobsToCreate ?? '—'],
+                    ['Coverage', blitzSummary ? `${blitzCoveragePct}% of target` : '—'],
+                    ['Provider', blitzIsFullSend ? 'Local + OpenAI' : modelSource === 'local' ? 'Corsair' : 'OpenAI'],
+                    ['Queue slots', blitzSummary?.availableSlots ?? '—'],
+                  ].map(([label, val]) => (
+                    <div key={label as string} className="flex items-center justify-between gap-3">
                       <span>{label}</span>
-                      <span className="data-value text-foreground capitalize">{val}</span>
+                      <span className="font-medium text-foreground">{val}</span>
                     </div>
                   ))}
                 </div>
-                {description && (
-                  <div className="mt-5 rounded-[var(--radius-tight)] border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-4 py-3 text-xs leading-6 text-[var(--foreground-muted)]">
-                    {description}
+                {blitzGuidance && (
+                  <div className="mt-3 border-t border-[var(--border)] pt-3 text-[11px] leading-5 text-[var(--foreground-subtle)] italic">
+                    {blitzGuidance}
                   </div>
                 )}
               </CommandPanel>
+            </>
+          )}
+          
+          {generationMode === 'manual' && (
+            <CommandPanel className="p-4">
+              <div className="section-kicker mb-3">Configuration</div>
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {selectedBundleData.length > 0
+                  ? selectedBundleData.map((b) => <BundleBadge key={b.id} bundle={b.id} />)
+                  : <span className="text-xs text-[var(--foreground-muted)]">No bundles selected.</span>}
+              </div>
+              <div className="space-y-2 text-xs text-[var(--foreground-muted)]">
+                {[
+                  ['Scenarios', `${expectedManualCount} total`],
+                  ['Scope', targetSummary],
+                  ['Format', STORY_MODE_LABELS[storyMode]],
+                  ['Priority', priority],
+                  ['Provider', modelSource === 'local' ? 'Corsair' : 'OpenAI'],
+                  ['Review gate', stageForReview ? 'Staged' : 'Auto-save'],
+                ].map(([label, val]) => (
+                  <div key={label} className="flex items-center justify-between gap-3">
+                    <span>{label}</span>
+                    <span className="font-medium text-foreground capitalize">{val}</span>
+                  </div>
+                ))}
+              </div>
+              {description && (
+                <div className="mt-3 border-t border-[var(--border)] pt-3 text-[11px] leading-5 text-[var(--foreground-subtle)] italic">{description}</div>
+              )}
+            </CommandPanel>
           )}
 
           {generationMode === 'news' && (
-            <CommandPanel className="p-5 md:p-6">
-                <div className="mb-5">
-                  <div className="section-kicker mb-2">Summary</div>
-                  <h2 className="text-xl font-semibold text-foreground">News Generation Plan</h2>
+            <CommandPanel className="p-4">
+              <div className="section-kicker mb-3">Generation Plan</div>
+              <div className="space-y-2 text-xs text-[var(--foreground-muted)]">
+                {[
+                  ['Loaded', newsArticles.length || '—'],
+                  ['Selected', selectedArticleIds.size || '—'],
+                  ['Classified', classifications.filter(c => selectedArticleIds.has(c.articleIndex)).length || '—'],
+                  ['Bundles', newsClassifiedBundles.size > 0 ? Array.from(newsClassifiedBundles.keys()).join(', ') : '—'],
+                  ['Format', STORY_MODE_LABELS[storyMode]],
+                  ['Provider', modelSource === 'local' ? 'Corsair' : 'OpenAI'],
+                  ['Scenarios', newsScenariosExpected || '—'],
+                ].map(([label, val]) => (
+                  <div key={label as string} className="flex items-center justify-between gap-3">
+                    <span>{label}</span>
+                    <span className="font-medium text-foreground">{val}</span>
+                  </div>
+                ))}
+              </div>
+              {newsClassifiedBundles.size > 0 && (
+                <div className="mt-3 space-y-1 border-t border-[var(--border)] pt-3">
+                  {Array.from(newsClassifiedBundles.entries()).map(([bundle, count]) => (
+                    <div key={bundle} className="flex items-center justify-between text-[11px] text-[var(--foreground-subtle)]">
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: BUNDLE_ACCENT_COLORS[bundle] }} />
+                        {bundle}
+                      </span>
+                      <span>{count} art · {newsCount} scen</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-3 text-sm text-[var(--foreground-muted)]">
-                  <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
-                    <span>Articles loaded</span>
-                    <span className="data-value text-foreground">{newsArticles.length || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
-                    <span>Selected</span>
-                    <span className="data-value text-foreground">{selectedArticleIds.size || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
-                    <span>Bundles</span>
-                    <span className="data-value text-foreground">
-                      {newsClassifiedBundles.size > 0
-                        ? Array.from(newsClassifiedBundles.keys()).join(', ')
-                        : '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
-                    <span>Format</span>
-                    <span className="data-value text-foreground">{STORY_MODE_LABELS[storyMode]}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
-                    <span>Provider</span>
-                    <span className="data-value text-foreground">{modelSource === 'local' ? 'Corsair (Local)' : 'Cloud (OpenAI)'}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Total scenarios</span>
-                    <span className="data-value text-foreground">{newsScenariosExpected || '—'}</span>
-                  </div>
-                </div>
-              </CommandPanel>
+              )}
+            </CommandPanel>
           )}
 
           {aiModelsPanel}
@@ -1478,6 +1570,33 @@ export default function GeneratePage() {
                   }`}>
                   {stageForReview ? 'On' : 'Off'}
                 </button>
+              </div>
+            </CommandPanel>
+          )}
+
+          {generationMode === 'blitz' && (
+            <CommandPanel className={`p-5 md:p-6 ${blitzIsFullSend ? 'border-t-[3px] border-t-[var(--accent-secondary)]' : 'border-t-[3px] border-t-[var(--accent-primary)]'}`}>
+              <div className="flex flex-col gap-3">
+                {submitError && <div className="rounded-[var(--radius-tight)] border border-[var(--error)] bg-[rgba(239,68,68,0.1)] p-3 text-xs text-[var(--error)]">{submitError}</div>}
+                <div>
+                  <div className="section-kicker mb-2">Dispatch</div>
+                  <h2 className="text-lg font-semibold text-foreground">{blitzIsFullSend ? 'Launch Full Send' : 'Launch Blitz'}</h2>
+                  <p className="mt-1 text-xs text-[var(--foreground-muted)]">
+                    {blitzIsFullSend
+                      ? 'Fire local and OpenAI generation together, then merge the strongest unique results.'
+                      : 'Submit the planned coverage jobs through the standard Blitz planner path.'}
+                  </p>
+                </div>
+                <button type="button" onClick={handleBlitzExecute}
+                  disabled={submitting || blitzPlannedJobs.length === 0}
+                  className="btn btn-command w-full justify-center py-2.5 text-sm">
+                  {submitting ? 'Submitting…' : blitzIsFullSend ? 'Launch Full Send' : 'Launch Blitz'}
+                </button>
+                {blitzJobIds.length > 0 && (
+                  <Link href={`/jobs/${blitzJobIds[0]}`} className="btn btn-tactical w-full justify-center py-2 text-sm">
+                    View Active {blitzJobIds.length > 1 ? 'Jobs' : 'Job'}
+                  </Link>
+                )}
               </div>
             </CommandPanel>
           )}

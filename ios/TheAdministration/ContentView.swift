@@ -132,7 +132,7 @@ struct CustomTabBar: View {
     var body: some View {
         VStack(spacing: 0) {
             Rectangle()
-                .fill(AppColors.border)
+                .fill(AppColors.accentPrimary.opacity(0.2))
                 .frame(height: 1)
 
             HStack(spacing: 0) {
@@ -143,7 +143,7 @@ struct CustomTabBar: View {
             .padding(.horizontal, 4)
             .padding(.top, 8)
             .padding(.bottom, max(safeAreaBottom, 12))
-            .background(AppColors.background)
+            .background(AppColors.backgroundElevated)
         }
     }
 
@@ -157,17 +157,28 @@ struct CustomTabBar: View {
                 withAnimation(AppMotion.quickSnap) { selectedTab = tab.id }
             }
         }) {
-            VStack(spacing: 3) {
+            VStack(spacing: 4) {
+                if isActive {
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(AppColors.accentPrimary)
+                        .frame(width: 16, height: 2)
+                } else {
+                    Color.clear.frame(width: 16, height: 2)
+                }
+
                 Image(systemName: isActive ? tab.activeIcon : tab.icon)
-                    .font(.system(size: 17, weight: isActive ? .semibold : .regular))
+                    .font(.system(size: 16, weight: isActive ? .semibold : .regular))
                     .foregroundColor(isActive ? AppColors.accentPrimary : AppColors.foregroundSubtle)
+                    .shadow(color: isActive ? AppColors.accentPrimary.opacity(0.3) : .clear, radius: 4)
 
                 Text(tab.label)
-                    .font(.system(size: 10, weight: .regular))
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(0.3)
+                    .textCase(.uppercase)
                     .foregroundColor(isActive ? AppColors.accentPrimary : AppColors.foregroundSubtle)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 4)
+            .padding(.vertical, 2)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(tab.label)

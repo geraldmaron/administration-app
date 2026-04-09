@@ -8,6 +8,7 @@ import admin from 'firebase-admin';
 import {
   ARTICLE_FORM_TOKEN_NAMES,
   CONCEPT_TO_TOKEN_MAP,
+  SENTENCE_START_ARTICLE_FORM_TOKEN_NAMES,
   TOKEN_ALIAS_MAP,
   TOKEN_CATEGORIES,
 } from '../functions/src/lib/token-registry';
@@ -55,7 +56,10 @@ function buildTokenRegistryDocument(): TokenRegistryDocument {
         name: tokenName,
         category: categoryKey as TokenCategory,
         enabled: true,
-        articleForm: { enabled: ARTICLE_FORM_TOKEN_NAMES.has(tokenName) },
+        articleForm: {
+          enabled: ARTICLE_FORM_TOKEN_NAMES.has(tokenName),
+          sentenceStartSafe: SENTENCE_START_ARTICLE_FORM_TOKEN_NAMES.has(tokenName),
+        },
       };
     }
   }

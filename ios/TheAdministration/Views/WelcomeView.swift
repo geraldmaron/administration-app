@@ -4,7 +4,6 @@ struct WelcomeView: View {
     @ObservedObject var gameStore: GameStore
     @Binding var showWelcome: Bool
 
-    @State private var gridVisible = false
     @State private var titleVisible = false
     @State private var subtitleVisible = false
     @State private var ctasVisible = false
@@ -23,37 +22,6 @@ struct WelcomeView: View {
                 .ignoresSafeArea()
                 .opacity(0.5)
 
-            Canvas { context, size in
-                var rng = SystemRandomNumberGenerator()
-                let count = Int(size.width * size.height / 800)
-                for _ in 0..<count {
-                    let x = CGFloat.random(in: 0..<size.width, using: &rng)
-                    let y = CGFloat.random(in: 0..<size.height, using: &rng)
-                    let opacity = Double.random(in: 0.015...0.06, using: &rng)
-                    let radius = CGFloat.random(in: 0.3...1.0, using: &rng)
-                    context.fill(
-                        Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
-                        with: .color(.white.opacity(opacity))
-                    )
-                }
-            }
-            .ignoresSafeArea()
-
-            Canvas { context, size in
-                let spacing: CGFloat = 80
-                var y: CGFloat = 0
-                while y < size.height {
-                    var path = Path()
-                    path.move(to: CGPoint(x: 0, y: y))
-                    path.addLine(to: CGPoint(x: size.width, y: y))
-                    context.stroke(path, with: .color(.white.opacity(0.03)), lineWidth: 1)
-                    y += spacing
-                }
-            }
-            .ignoresSafeArea()
-            .opacity(gridVisible ? 1 : 0)
-            .animation(.easeIn(duration: 0.5), value: gridVisible)
-
             GeometryReader { geo in
                 RadialGradient(
                     colors: [.clear, .black.opacity(0.55)],
@@ -66,15 +34,30 @@ struct WelcomeView: View {
 
             VStack {
                 HStack {
+                    Text("SCI // TK // NOFORN")
+                        .font(.system(size: 8, weight: .medium))
+                        .tracking(1.5)
+                        .foregroundColor(AppColors.accentPrimary.opacity(0.22))
+                        .padding(.leading, 24)
+                        .padding(.top, 16)
                     Spacer()
                     Text("CLEARANCE LEVEL ALPHA")
                         .font(.system(size: 9, weight: .medium))
                         .tracking(2)
-                        .foregroundColor(AppColors.foregroundSubtle.opacity(0.4))
+                        .foregroundColor(AppColors.accentPrimary.opacity(0.3))
                         .padding(.trailing, 24)
                         .padding(.top, 16)
                 }
                 Spacer()
+                HStack {
+                    Spacer()
+                    Text("SECURE CHANNEL ESTABLISHED")
+                        .font(.system(size: 8, weight: .regular))
+                        .tracking(1.5)
+                        .foregroundColor(AppColors.foregroundSubtle.opacity(0.25))
+                        .padding(.trailing, 24)
+                        .padding(.bottom, 12)
+                }
             }
 
             VStack(spacing: 0) {
@@ -94,9 +77,9 @@ struct WelcomeView: View {
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [
-                                        Color(white: 0.60),
-                                        Color(white: 0.90),
-                                        Color(white: 0.75)
+                                        AppColors.accentSecondary,
+                                        AppColors.accentPrimary,
+                                        AppColors.accentTertiary
                                     ],
                                     startPoint: .leading,
                                     endPoint: .trailing
@@ -116,7 +99,7 @@ struct WelcomeView: View {
                 VStack(spacing: 0) {
                     GeometryReader { geometry in
                         Rectangle()
-                            .fill(AppColors.border)
+                            .fill(AppColors.accentPrimary.opacity(0.4))
                             .frame(width: subtitleVisible ? geometry.size.width : 0, height: 1)
                             .animation(.easeOut(duration: 0.5), value: subtitleVisible)
                     }
@@ -127,7 +110,7 @@ struct WelcomeView: View {
                     Text("POLITICAL STRATEGY SIMULATION")
                         .font(.system(size: 11, weight: .medium))
                         .tracking(4)
-                        .foregroundColor(AppColors.foregroundSubtle)
+                        .foregroundColor(AppColors.accentPrimary.opacity(0.5))
                 }
                 .opacity(subtitleVisible ? 1 : 0)
                 .animation(.easeOut(duration: 0.4), value: subtitleVisible)
@@ -135,6 +118,11 @@ struct WelcomeView: View {
                 Spacer()
 
                 VStack(spacing: 12) {
+                    Rectangle()
+                        .fill(AppColors.accentPrimary.opacity(0.25))
+                        .frame(height: 1)
+                        .padding(.bottom, 8)
+
                     Button(action: {
                         HapticEngine.shared.medium()
                         gameStore.resetGame()
@@ -204,7 +192,6 @@ struct WelcomeView: View {
             }
         }
         .onAppear {
-            gridVisible = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { titleVisible = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { subtitleVisible = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) { ctasVisible = true }

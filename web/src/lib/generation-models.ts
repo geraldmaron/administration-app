@@ -33,12 +33,12 @@ export function hasRequestedOllamaModel(modelConfig?: GenerationModelConfig): bo
 type GenerationPhase = 'architect' | 'drafter' | 'advisor' | 'repair' | 'contentQuality' | 'narrativeReview';
 
 const OLLAMA_PHASE_PREFERENCE: Record<GenerationPhase, string[]> = {
-  architect: ['ai-reasoning', 'ai-general', 'deepseek-r1:32b', 'qwen3:30b', 'gemma3:12b', 'phi4:14b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
-  drafter: ['ai-coding', 'ai-general', 'qwen3-coder:30b', 'qwen3:30b', 'phi4:14b', 'gemma3:12b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
-  advisor: ['ai-fast', 'qwen3:8b', 'ai-general', 'gemma3:12b'],
-  repair: ['ai-coding', 'ai-general', 'ai-fast', 'qwen3:8b', 'gemma3:12b'],
-  contentQuality: ['ai-general', 'ai-reasoning', 'gemma3:12b', 'ai-fast', 'qwen3:8b'],
-  narrativeReview: ['ai-general', 'ai-reasoning', 'gemma3:12b', 'ai-fast', 'qwen3:8b'],
+  architect:       ['ai-general', 'qwen3.5:35b', 'qwen3:30b', 'ai-coding', 'qwen3-coder:30b', 'phi4:14b', 'gemma3:12b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
+  drafter:         ['ai-coding', 'devstral-small-2', 'qwen3-coder:30b', 'ai-general', 'qwen3.5:35b', 'qwen3:30b', 'phi4:14b', 'gemma3:12b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
+  advisor:         ['ai-fast', 'qwen3:8b', 'ai-general', 'qwen3.5:35b', 'gemma3:12b'],
+  repair:          ['ai-coding', 'devstral-small-2', 'qwen3-coder:30b', 'ai-general', 'qwen3.5:35b', 'ai-fast', 'qwen3:8b', 'gemma3:12b'],
+  contentQuality:  ['ai-general', 'qwen3.5:35b', 'qwen3:30b', 'gemma3:12b', 'ai-fast', 'qwen3:8b'],
+  narrativeReview: ['ai-general', 'qwen3.5:35b', 'qwen3:30b', 'phi4:14b', 'gemma3:12b', 'ai-fast', 'qwen3:8b'],
 };
 
 function resolveOllamaPhaseModel(phase: GenerationPhase, availableModels: string[]): string {

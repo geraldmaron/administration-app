@@ -6,74 +6,80 @@
 
 ---
 
-## Self-Audit Checklist
+## Self-Audit: 3-Pass Review
 
-Before outputting your scenario JSON, verify every item below. Fix anything that fails before submitting.
+Run all three passes before outputting JSON. Fix anything that fails.
 
-### Structure
+---
+
+### Pass 1 — Structural Validity (binary checks)
+
+Fail any of these → rewrite before submitting.
+
 - [ ] Exactly 3 options
-- [ ] description = 2–3 sentences **and 60–140 words** — count words; under 60 is a hard fail
-- [ ] Each option text = 2–3 sentences **and 50–80 words** — count words; under 50 is too thin; over 80, consolidate sentences
-- [ ] outcomeHeadline: 3–15 words
-- [ ] outcomeSummary: ≥250 characters, 2–3 sentences
-- [ ] outcomeContext: ≥400 characters, 4–6 sentences; names specific institution/group, mechanism, reaction, implication
-- [ ] title: 4–8 words, no tokens
+- [ ] `description`: 2–3 sentences, 50–150 words
+- [ ] Each `options[].text`: 2–3 sentences, 40–90 words
+- [ ] Each option has 2–4 effects with `probability: 1.0`, `duration: 1–20`, values using specific decimals (no whole numbers)
+- [ ] `outcomeHeadline`: 3–15 words, no "you"/"your"
+- [ ] `outcomeSummary`: ≥200 characters, 2–3 sentences, third-person
+- [ ] `outcomeContext`: ≥350 characters, 4–6 sentences, third-person
+- [ ] `title`: 4–8 words, no tokens, newspaper headline style
+- [ ] 5–9 `advisorFeedback` entries per option, including `role_executive`
+- [ ] All `roleId` values are from the canonical 13 (not metrics, not aliases)
 
-### Word Count Self-Check (run before submitting)
-Count every word in `description`. If fewer than 60: do not submit — rewrite with:
-  - Named trigger event or condition (drought index, bond yield, protest incident, border incident)
-  - Named actor or institution (ministry, party faction, opposition party, central bank)
-  - Concrete stakes (which population, which sector, which metric at risk, and by what mechanism)
+### Effect Sign Check (critical — #1 failure cause)
 
-Count every word in each option `text`. If fewer than 50: do not submit — rewrite with:
-  - Named policy mechanism (emergency subsidy, Section 12 injunction, bilateral framework, rapid-deployment taskforce)
-  - Named trade-off (who benefits, who bears the cost, what risk is accepted)
-  - Named affected constituency (farmers in drought-affected regions, public-sector workers, coastal communities)
+For each effect, verify:
+- `metric_corruption`: negative = anti-corruption (good), positive = more corruption (bad)
+- `metric_crime`: negative = less crime (good), positive = more crime (bad)
+- `metric_inflation`: negative = prices stabilizing (good), positive = inflation rising (bad)
+- `metric_bureaucracy`: negative = streamlined (good), positive = more red tape (bad)
+- All other metrics: positive = improvement, negative = worsening
 
-### Bundle Alignment
-- [ ] Each option has ≥1 effect targeting a metric in the scenario's bundle domain
-- [ ] If bundle = `dick_mode`: options reflect authoritarian/morally dark statecraft with realistic consequences; formal strategic language only (no slurs, dehumanizing language, or graphic violence)
+If any sign is wrong, flip it now.
 
-### Tokens
-- [ ] Player country: use `{the_player_country}` in subject/object positions; `{player_country}'s` for possessives only
-- [ ] Role/institution tokens at sentence start: use `{the_*}` form (`{the_finance_role}`, `{the_legislature}`, `{the_opposition_party}`)
-- [ ] All token names lowercase; no invented tokens (rewrite the sentence if unsure)
-- [ ] No hard-coded country names, capitals, currencies, or abbreviations (USA, UK, EU, NATO)
-- [ ] No relationship token placeholders in prose (`{the_ally}`, `{adversary}`, `{border_rival}`, etc.) — write foreign actors as natural language only ("your border rival", "the allied government", "a neighboring state")
-- [ ] Domestic institution tokens used where appropriate:
-  - `{opposition_party}` / `{the_opposition_party}` (not a specific party name)
-  - `{governing_party}` / `{the_governing_party}` (not a specific party name)
-  - `{regional_bloc}` / `{the_regional_bloc}` (not EU/ASEAN/NATO etc.)
-  - `{major_industry}` / `{the_major_industry}` (not oil/tech/banking etc.)
-  - Apply `{the_*}` form at sentence start or subject position; bare form for possessives only
+---
 
-### Voice
-- [ ] description, option text, advisorFeedback → second person: "You face...", "Your administration..."
-- [ ] outcomeHeadline, outcomeSummary, outcomeContext → third-person journalistic, NO "you"/"your"
-- [ ] outcomeHeadline and outcomeSummary open with a capitalized narrative word — never a `{token}` placeholder
+### Pass 2 — Quality Scoring (1–5 scale per dimension)
 
-### Content Quality
-- [ ] No policy jargon or think-tank wording; avoid words like "bloc" or "gambit" in player-facing text unless they are part of an official proper name or direct quote
-- [ ] Every sentence ≤25 words; ≤3 conjunction clauses; active voice preferred
-- [ ] description ends with stakes/urgency — no option previews
-- [ ] Each option has a distinct, named trade-off (who gains, who loses, what risk is accepted)
-- [ ] Scenarios name the concrete trigger, affected institution, and mechanism — not generic policy moves
-- [ ] No vague references: every mention of {major_industry}, {opposition_party}, {regional_bloc} is surrounded by sector-specific or role-specific detail (supply chains, workforce, policy positions) — never "an industry is struggling" or "a party objects"
-- [ ] Stakes are concrete: named trigger event (not "recent developments"), named mechanism (not "economic pressure"), named affected group (not "workers" — which workers?)
-- [ ] If scopeTier=universal: verify NO references to foreign countries, neighbors, allies, adversaries, rival nations, or bilateral disputes — not even as generic phrases like "a neighboring country". Universal scenarios must be entirely domestic.
+Score yourself honestly. If any dimension scores below 3, rewrite that aspect.
 
-### Conditions
-- [ ] conditions: if the scenario describes a metric in crisis (recession, crime wave, unrest, inflation spike), include the matching canonical condition. If neutral/universal governance or diplomacy, output `"conditions": []` or omit. Maximum 2 conditions. Never use metric IDs in prose.
+**Specificity (1–5):**
+Does the description name a concrete trigger event, a specific institution, and a mechanism?
+- 5 = Every sentence has a concrete noun (institution, number, population, mechanism)
+- 1 = Generic policy language ("economic challenges require a response")
 
-### Effects
-- [ ] probability = 1.0; duration 1–20; values ±4.5 range; specific decimals
-- [ ] Inverse metrics (corruption, crime, inflation, bureaucracy): NEGATIVE values to improve
+**Option Distinctiveness (1–5):**
+Are the 3 options different in approach and instrument, not just in degree?
+- 5 = Three genuinely different strategies
+- 1 = Same approach at different intensities
 
-### Advisor Feedback
-- [ ] Every option has advisorFeedback[] with **ALL 13 canonical roles** — not only effect-relevant roles. Required: `role_executive`, `role_diplomacy`, `role_defense`, `role_economy`, `role_justice`, `role_health`, `role_commerce`, `role_labor`, `role_interior`, `role_energy`, `role_environment`, `role_transport`, `role_education`. Each missing role deducts 4 points from the audit score and will cause rejection.
-- [ ] Each feedback names the SPECIFIC policy, affected constituency, and causal impact — not generic boilerplate
-- [ ] No forbidden phrases: "aligns with our", "our department", "course of action", "careful monitoring", "no strong position"
+**Token Compliance (1–5):**
+- For minimal strategy: only approved tokens used, no invented tokens, no article form tokens
+- For exclusive (none) strategy: no tokens at all, real names used correctly
+- 5 = Perfect compliance with the token strategy
+- 1 = Invented tokens, wrong strategy usage
 
-### Labels
-- [ ] Short direct actions; no "if"/"unless"/colons/parentheses
-If any check fails, correct the scenario before outputting.
+**Voice Compliance (1–5):**
+- 5 = Perfect: second person in briefing fields, third-person journalism in outcome fields
+- 1 = Consistent voice violations
+
+---
+
+### Pass 3 — Fix or Flag
+
+For each dimension scoring below 3:
+- Rewrite the failing fields inline before outputting
+- If the scenario references a legislature or elections: confirm `requires.democratic_regime: true` is set AND `conditions` contains `{ "metricId": "metric_democracy", "min": 40 }`
+- If the scenario references an opposition party or opposition leader: confirm both `requires.democratic_regime: true` AND `requires.has_opposition_party: true` are set, and the text uses `{opposition_party}` / `{opposition_party_leader}` tokens (not plain text), AND `conditions` contains `{ "metricId": "metric_democracy", "min": 40 }`
+- If the scenario sets `requires.authoritarian_regime: true`: confirm `conditions` contains `{ "metricId": "metric_democracy", "max": 40 }`
+- If the scenario references foreign actors: confirm appropriate `requires` flags are set
+- If `scopeTier` is `universal`: confirm zero foreign references of any kind
+- If `scopeTier` is `universal`, `regional`, or `cluster`: confirm no hardcoded government vocabulary appears in any field — "Trade Ministry", "Health Ministry", "Parliament", "Federal Reserve", "Supreme Court", etc. must all be replaced with their token equivalents. Rewrite any failing fields.
+
+**Requires → Condition checklist (fail = audit warns, −4 pts each):**
+- [ ] `requires.democratic_regime: true` → `conditions` has `metric_democracy min 40`
+- [ ] `requires.authoritarian_regime: true` → `conditions` has `metric_democracy max 40`
+- [ ] `requires.has_legislature: true` (if set) → also set `requires.democratic_regime: true` + `metric_democracy min 40` condition
+
+Output a brief `_selfAuditNotes` field (will be stripped before storage) summarizing what you checked, the requires→condition pairs you verified, and any fixes applied.

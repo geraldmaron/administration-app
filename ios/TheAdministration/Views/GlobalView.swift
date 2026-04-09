@@ -70,9 +70,9 @@ struct GlobalView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(AppColors.accentPrimary.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(AppColors.accentPrimary.opacity(0.2), lineWidth: 1)
             )
         }
@@ -100,7 +100,7 @@ struct GlobalView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(AppColors.backgroundElevated)
                 )
 
@@ -164,7 +164,7 @@ struct GlobalView: View {
         }
         .padding(12)
         .background(AppColors.backgroundElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
     private func legislatureCompositionRow(_ bloc: LegislativeBloc) -> some View {
@@ -234,7 +234,7 @@ struct GlobalView: View {
         }
         .padding(12)
         .background(AppColors.backgroundElevated)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
 
@@ -356,7 +356,7 @@ struct CountryCard: View {
                                 Rectangle().fill(AppColors.border)
                                 Rectangle()
                                     .fill(relationshipColor)
-                                    .frame(width: geo.size.width * CGFloat(country.diplomacy.relationship / 100))
+                                    .frame(width: geo.size.width * CGFloat(min(1, max(0, country.diplomacy.relationship / 100))))
                             }
                         }
                         .frame(height: 2)
@@ -378,10 +378,10 @@ struct CountryCard: View {
                 .padding(12)
             }
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(AppColors.backgroundElevated)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(.plain)
         .contextMenu {
@@ -698,7 +698,7 @@ struct CountryDetailView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
     }
@@ -795,7 +795,7 @@ struct CountryDetailView: View {
                     .foregroundColor(AppColors.foregroundSubtle)
             }
             .padding(12)
-            .background(AppColors.backgroundMuted, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(AppColors.backgroundMuted, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -831,7 +831,7 @@ struct CountryDetailView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
     }

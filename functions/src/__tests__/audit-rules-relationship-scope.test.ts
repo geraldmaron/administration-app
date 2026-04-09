@@ -1,6 +1,6 @@
-import { ALL_TOKENS, ARTICLE_FORM_TOKEN_NAMES, CANONICAL_ROLE_IDS } from '../lib/token-registry';
+import { ALL_TOKENS, CANONICAL_ROLE_IDS } from '../lib/token-registry';
 import { VALID_SETTING_TARGETS } from '../types';
-import { auditScenario, setAuditConfigForTests } from '../lib/audit-rules';
+import { auditScenario, deterministicFix, setAuditConfigForTests } from '../lib/audit-rules';
 import type { AuditConfig, BundleScenario } from '../lib/audit-rules';
 
 function makeAuditConfig(): AuditConfig {
@@ -22,7 +22,7 @@ function makeAuditConfig(): AuditConfig {
             probability: { required: 1 },
         },
         canonicalRoleIds: [...CANONICAL_ROLE_IDS],
-        articleFormTokenNames: new Set<string>(ARTICLE_FORM_TOKEN_NAMES),
+        articleFormTokenNames: new Set<string>(),
         validSettingTargets: VALID_SETTING_TARGETS as unknown as readonly string[],
         govTypesByCountryId: {
             us: 'Presidential',
@@ -126,6 +126,7 @@ function makeScenario(overrides: Partial<BundleScenario> = {}): BundleScenario {
             actorPattern: 'mixed',
         },
         phase: 'root',
+        ...overrides,
     };
 }
 
@@ -142,6 +143,35 @@ describe('auditScenario relationship scope validation', () => {
         const issues = auditScenario(makeScenario(), 'bundle_economy');
 
         expect(issues.some((issue) => issue.rule === 'universal-relationship-token')).toBe(true);
+    });
+
+    test('scrubs fragile political tokens from universal-scope prose', () => {
+        const scenario = makeScenario({
+            description: '{governing_party} leaders pressure {legislature} to approve cuts while {opposition_party} lawmakers threaten hearings.',
+            options: [
+                {
+                    id: 'option_a',
+                    text: 'You ask {legislature} to fast-track the bill with {governing_party} backing.',
+                    effects: [{ targetMetricId: 'economy', value: 1, duration: 3, probability: 1 }],
+                    outcomeHeadline: 'Lawmakers advance the bill',
+                    outcomeSummary: '{opposition_party} figures denounce the shortcut.',
+                    outcomeContext: '{state_media} amplifies the argument across the country.',
+                    advisorFeedback: [{ roleId: 'role_executive', stance: 'support', feedback: '{governing_party} discipline may hold for one vote.' }],
+                },
+                ...makeScenario().options.slice(1),
+            ],
+        });
+
+        const result = deterministicFix(scenario);
+
+        expect(result.fixed).toBe(true);
+        expect(scenario.description).toContain('the governing coalition');
+        expect(scenario.description).toContain('lawmakers');
+        expect(scenario.description).toContain('the opposition');
+        expect(scenario.description).not.toContain('{governing_party}');
+        expect(scenario.description).not.toContain('{legislature}');
+        expect(scenario.options[0].outcomeContext).toContain('state broadcasters');
+        expect(scenario.options[0].advisorFeedback?.[0]?.feedback).toContain('the governing coalition');
     });
 
     test('rejects targeted scenarios whose countries cannot resolve required relationship tokens', () => {

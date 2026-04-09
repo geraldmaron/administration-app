@@ -114,53 +114,90 @@ export default function ScenarioOps({ scenarioId }: ScenarioOpsProps) {
   }
 
   return (
-    <CommandPanel className="mb-4 px-5 py-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <button
-          onClick={runAudit}
-          disabled={auditLoading || repairLoading}
-          className="btn border-[var(--accent-primary)]/30 text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10"
-        >
-          {auditLoading ? 'Auditing…' : 'Force Audit'}
-        </button>
-        <button
-          onClick={runRepair}
-          disabled={auditLoading || repairLoading}
-          className="btn border-[var(--accent-secondary)]/30 text-[var(--accent-secondary)] hover:bg-[var(--accent-secondary)]/10"
-        >
-          {repairLoading ? 'Repairing…' : 'Force Repair'}
-        </button>
+    <CommandPanel tone="muted" className="p-4 md:p-5">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <div className="mb-1.5 flex items-center gap-2">
+              <span className="status-dot" />
+              <span className="section-kicker">Maintenance</span>
+            </div>
+            <h2 className="text-sm font-semibold text-foreground">Scenario operations</h2>
+            <p className="mt-1 max-w-2xl text-[12px] leading-5 text-foreground-muted">
+              Run audit and repair utilities when this record needs verification or cleanup outside the normal reading flow.
+            </p>
+          </div>
+
+          {(auditResult || repairResult) && !error && (
+            <div className="flex flex-wrap gap-2 text-[10px] font-mono text-foreground-subtle">
+              {auditResult && (
+                <span className="rounded-[2px] border border-[var(--border)] px-2 py-0.5">
+                  audit {auditResult.score}
+                  {auditResult.issues.length > 0 && ` · ${auditResult.issues.length} issue${auditResult.issues.length !== 1 ? 's' : ''}`}
+                </span>
+              )}
+              {repairResult && (
+                <span className="rounded-[2px] border border-[var(--border)] px-2 py-0.5">
+                  {repairResult.applied > 0 ? `${repairResult.applied} repair${repairResult.applied !== 1 ? 's' : ''} applied` : 'no repairs needed'}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
 
         {error && (
-          <span className="text-xs text-[var(--error)]">{error}</span>
+          <div className="rounded-[10px] border border-[var(--error)]/25 bg-[var(--error)]/6 px-3 py-2 text-xs text-[var(--error)]">
+            {error}
+          </div>
         )}
 
-        {auditResult && !error && (
-          <span className="text-xs font-mono text-foreground-muted">
-            Audit complete · score {auditResult.score}
-            {auditResult.issues.length > 0 && ` · ${auditResult.issues.length} issue${auditResult.issues.length !== 1 ? 's' : ''}`}
-          </span>
-        )}
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="control-surface p-4">
+            <div className="section-kicker-sm mb-1">Audit</div>
+            <p className="mb-3 text-[11px] leading-5 text-foreground-subtle">
+              Re-run scenario validation and refresh the stored audit result for this record.
+            </p>
+            <button
+              onClick={runAudit}
+              disabled={auditLoading || repairLoading}
+              className="btn border-[var(--accent-primary)]/30 text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10"
+            >
+              {auditLoading ? 'Auditing…' : 'Force Audit'}
+            </button>
+          </div>
 
-        {repairResult && !error && (
-          <span className="text-xs font-mono text-foreground-muted">
-            {repairResult.applied > 0
-              ? `Repaired · ${repairResult.applied} applied`
-              : 'No repairs needed'}
-          </span>
-        )}
+          <div className="control-surface p-4">
+            <div className="section-kicker-sm mb-1">Repair</div>
+            <p className="mb-3 text-[11px] leading-5 text-foreground-subtle">
+              Analyze the scenario for repairable issues and apply generated patches when changes are available.
+            </p>
+            <button
+              onClick={runRepair}
+              disabled={auditLoading || repairLoading}
+              className="btn border-[var(--accent-secondary)]/30 text-[var(--accent-secondary)] hover:bg-[var(--accent-secondary)]/10"
+            >
+              {repairLoading ? 'Repairing…' : 'Force Repair'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {auditResult && auditResult.issues.length > 0 && (
-        <div className="mt-3 space-y-1">
-          {auditResult.issues.map((issue, i) => (
-            <div key={i} className="text-[10px] font-mono">
-              <span className={issue.severity === 'error' ? 'text-[var(--error)]' : 'text-[var(--warning)]'}>
-                {issue.severity.toUpperCase()}
-              </span>{' '}
-              <span className="text-foreground-muted">{issue.message}</span>
-            </div>
-          ))}
+        <div className="mt-4 border-t border-[var(--border)] pt-4">
+          <div className="section-kicker-sm mb-2">Audit Issues</div>
+          <div className="space-y-2">
+            {auditResult.issues.map((issue, i) => (
+              <div key={`${issue.rule}-${i}`} className="control-surface px-3 py-2 text-[10px] font-mono">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={issue.severity === 'error' ? 'text-[var(--error)]' : 'text-[var(--warning)]'}>
+                    {issue.severity.toUpperCase()}
+                  </span>
+                  <span className="text-foreground-subtle">{issue.rule}</span>
+                </div>
+                <div className="mt-1 text-foreground-muted">{issue.message}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </CommandPanel>

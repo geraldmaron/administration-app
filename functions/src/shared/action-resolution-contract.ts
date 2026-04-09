@@ -52,6 +52,24 @@ export interface MetricDelta {
   delta: number;
 }
 
+export interface TurnResolutionState {
+  turn: number;
+  maxTurns: number;
+  metrics: Record<string, number>;
+  metricHistory: Record<string, number[]>;
+  activeEffects: Array<{
+    baseEffect: {
+      targetMetricId: string;
+      value: number;
+      duration: number;
+      probability: number;
+      delay?: number;
+    };
+    remainingDuration: number;
+  }>;
+  hiddenMetrics?: Record<string, number>;
+}
+
 export interface ActionResolutionResponse {
   headline: string;
   summary: string;
@@ -63,6 +81,7 @@ export interface ActionResolutionResponse {
   newsCategory: string;
   newsTags: string[];
   isAtrocity?: boolean;
+  resolvedState?: TurnResolutionState;
 }
 
 export interface ActionResolutionResult {

@@ -369,6 +369,48 @@ describe('resolveScenarioTags — requiresToInject', () => {
         expect(Object.keys(result.requiresToInject)).toHaveLength(0);
     });
 
+    it('infers has_opposition_party and democratic_regime from opposition party token', async () => {
+        const result = await resolveScenarioTags({
+            title: 'Opposition Censure Motion',
+            description: 'The {opposition_party} has tabled a censure motion against your administration.',
+            options: [
+                { text: 'Rally {governing_party} support to defeat the motion' },
+                { text: 'Negotiate concessions to defuse the challenge' },
+            ],
+            metadata: { bundle: 'politics', tags: ['politics'] },
+        });
+        expect(result.requiresToInject).toHaveProperty('democratic_regime', true);
+        expect(result.requiresToInject).toHaveProperty('has_opposition_party', true);
+    });
+
+    it('infers has_opposition_party from plain-text "opposition party" language', async () => {
+        const result = await resolveScenarioTags({
+            title: 'Budget Standoff',
+            description: 'The opposition party has blocked your budget proposal in the legislature.',
+            options: [
+                { text: 'Bypass the legislature with executive authority' },
+                { text: 'Open cross-party negotiations' },
+            ],
+            metadata: { bundle: 'economy', tags: ['economy'] },
+        });
+        expect(result.requiresToInject).toHaveProperty('democratic_regime', true);
+        expect(result.requiresToInject).toHaveProperty('has_opposition_party', true);
+    });
+
+    it('does not re-infer has_opposition_party when already set', async () => {
+        const result = await resolveScenarioTags({
+            title: 'Opposition Censure Motion',
+            description: 'The {opposition_party} has tabled a censure motion.',
+            options: [{ text: 'Defeat the motion' }],
+            metadata: {
+                bundle: 'politics',
+                tags: ['politics'],
+                requires: { democratic_regime: true, has_opposition_party: true } as any,
+            },
+        });
+        expect(Object.keys(result.requiresToInject)).toHaveLength(0);
+    });
+
     it('returns empty requiresToInject for a domestic scenario with no geo language', async () => {
         const result = await resolveScenarioTags({
             title: 'Education Budget Reform',

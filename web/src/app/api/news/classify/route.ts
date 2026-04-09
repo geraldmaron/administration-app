@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/auth';
+import { db } from '@/lib/firebase-admin';
+import { getRequestedOllamaModels, stripOllamaPrefix } from '@/lib/generation-models';
+import type { GenerationJobRequest, NewsArticle } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,26 +89,20 @@ function parseJsonResponse(text: string): any {
   }
 }
 
-export async function POST(request: NextRequest) {
-  const authError = requireAdminAuth(request);
-  if (authError) return authError;
+type GenerationModelConfig = GenerationJobRequest['modelConfig'];
 
-  let body: any;
+async function getOllamaBaseUrl(): Promise<string> {
+  if (process.env.OLLAMA_BASE_URL) return process.env.OLLAMA_BASE_URL;
+  if (process.env.OLLAMA_REMOTE_BASE_URL) return process.env.OLLAMA_REMOTE_BASE_URL;
   try {
-    body = await request.json();
+    const configSnap = await db.doc('world_state/generation_config').get();
+    return (configSnap.data()?.ollama_base_url as string | undefined) || '';
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return '';
   }
+}
 
-  const { articles } = body;
-
-  if (!Array.isArray(articles) || articles.length === 0) {
-    return NextResponse.json({ error: 'articles array is required' }, { status: 400 });
-  }
-
-  const userPrompt = buildUserPrompt(articles);
-  let rawData: any;
-
+async function classifyWithOpenAI(userPrompt: string): Promise<Response> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -114,9 +111,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let res: Response;
   try {
-    res = await fetch('https://api.openai.com/v1/chat/completions', {
+    return await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
@@ -131,13 +127,80 @@ export async function POST(request: NextRequest) {
       }),
       signal: AbortSignal.timeout(30000),
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: `OpenAI unreachable: ${err.message}` }, { status: 502 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `OpenAI unreachable: ${message}` }, { status: 502 });
   }
+}
+
+async function classifyWithOllama(userPrompt: string, modelConfig?: GenerationModelConfig): Promise<Response> {
+  const requestedModels = getRequestedOllamaModels(modelConfig);
+  const model = stripOllamaPrefix(requestedModels[0] ?? 'ai-general');
+  const baseUrl = await getOllamaBaseUrl();
+
+  if (!baseUrl) {
+    return NextResponse.json(
+      { error: 'Corsair is not configured. Set ollama_base_url in generation_config.' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    return await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ollama',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
+          { role: 'user', content: `${userPrompt}\n\nReturn only valid JSON.` },
+        ],
+        response_format: { type: 'json_object' },
+        max_tokens: 3000,
+        temperature: 0.2,
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Corsair unreachable: ${message}` }, { status: 502 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
+  let body: { articles?: NewsArticle[]; modelConfig?: GenerationModelConfig };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const { articles, modelConfig } = body;
+
+  if (!Array.isArray(articles) || articles.length === 0) {
+    return NextResponse.json({ error: 'articles array is required' }, { status: 400 });
+  }
+
+  const userPrompt = buildUserPrompt(articles);
+  let rawData: any;
+  const res = getRequestedOllamaModels(modelConfig).length > 0
+    ? await classifyWithOllama(userPrompt, modelConfig)
+    : await classifyWithOpenAI(userPrompt);
 
   if (!res.ok) {
     const errText = await res.text();
-    return NextResponse.json({ error: `OpenAI error ${res.status}: ${errText.slice(0, 300)}` }, { status: 502 });
+    try {
+      const parsed = JSON.parse(errText) as { error?: string };
+      return NextResponse.json({ error: parsed.error ?? `Classification error ${res.status}` }, { status: res.status >= 500 ? 502 : res.status });
+    } catch {
+      return NextResponse.json({ error: `Classification error ${res.status}: ${errText.slice(0, 300)}` }, { status: 502 });
+    }
   }
 
   const json = await res.json();
@@ -145,7 +208,7 @@ export async function POST(request: NextRequest) {
   try {
     rawData = parseJsonResponse(text);
   } catch {
-    return NextResponse.json({ error: 'Failed to parse OpenAI response as JSON' }, { status: 502 });
+    return NextResponse.json({ error: 'Failed to parse classification response as JSON' }, { status: 502 });
   }
 
   const rawItems: any[] = rawData?.classifications ?? [];

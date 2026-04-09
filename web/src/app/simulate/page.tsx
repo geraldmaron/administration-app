@@ -50,6 +50,10 @@ function uniqueTokenUsages(usages: SimulationTokenUsage[]): SimulationTokenUsage
   });
 }
 
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.filter((value) => value.trim().length > 0))];
+}
+
 function ValidationRow({ check }: { check: SimulationValidationCheck }) {
   return (
     <div className="flex items-start gap-2 text-xs">
@@ -572,6 +576,30 @@ export default function SimulatePage() {
     return 'text-[var(--foreground-muted)]';
   };
 
+  const contextEntries = result
+    ? Object.entries(result.context)
+        .filter(([, value]) => value.trim().length > 0)
+        .sort(([left], [right]) => left.localeCompare(right))
+    : [];
+
+  const aggregateFallbackTokens = result
+    ? uniqueStrings([
+        ...result.eligible.flatMap((scenario) => scenario.diagnostics.fallbackTokens),
+        ...(result.filtered ?? []).flatMap((item) => item.diagnostics.fallbackTokens),
+      ])
+    : [];
+
+  const aggregateUnresolvedTokens = result
+    ? uniqueStrings([
+        ...result.eligible.flatMap((scenario) => scenario.diagnostics.unresolvedTokens),
+        ...(result.filtered ?? []).flatMap((item) => item.diagnostics.unresolvedTokens),
+      ])
+    : [];
+
+  const aggregateTokenUsages = result
+    ? uniqueTokenUsages(result.eligible.flatMap((scenario) => scenario.diagnostics.tokenUsages)).slice(0, 24)
+    : [];
+
   return (
     <div className="mx-auto max-w-[1600px]">
       <ScreenHeader
@@ -681,6 +709,87 @@ export default function SimulatePage() {
                 <DataStat size="compact" label="Total" value={result.totalScenarios} />
                 <DataStat size="compact" label="Eligible" value={result.eligibleCount} accent="blue" />
                 <DataStat size="compact" label="Filtered" value={result.filteredCount} accent={result.filteredCount > 0 ? 'warning' : undefined} />
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <CommandPanel className="p-4">
+                  <div className="section-kicker mb-2">Token Context</div>
+                  {contextEntries.length === 0 ? (
+                    <div className="text-sm text-[var(--foreground-muted)]">No token context available for this country.</div>
+                  ) : (
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {contextEntries.map(([key, value]) => (
+                        <div key={key} className="rounded border border-[var(--border)] px-3 py-2 text-xs">
+                          <div className="font-mono text-[10px] text-[var(--foreground-subtle)]">{key}</div>
+                          <div className="mt-1 break-words text-[var(--foreground-muted)]">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CommandPanel>
+
+                <CommandPanel className="p-4">
+                  <div className="section-kicker mb-2">Resolution Diagnostics</div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded border border-[var(--border)] px-3 py-2">
+                      <div className="text-[10px] font-mono text-[var(--foreground-subtle)]">fallback tokens</div>
+                      <div className={`mt-1 text-sm ${aggregateFallbackTokens.length > 0 ? 'text-[var(--warning)]' : 'text-foreground'}`}>{aggregateFallbackTokens.length}</div>
+                    </div>
+                    <div className="rounded border border-[var(--border)] px-3 py-2">
+                      <div className="text-[10px] font-mono text-[var(--foreground-subtle)]">unresolved tokens</div>
+                      <div className={`mt-1 text-sm ${aggregateUnresolvedTokens.length > 0 ? 'text-[var(--error)]' : 'text-foreground'}`}>{aggregateUnresolvedTokens.length}</div>
+                    </div>
+                    <div className="rounded border border-[var(--border)] px-3 py-2">
+                      <div className="text-[10px] font-mono text-[var(--foreground-subtle)]">token usages</div>
+                      <div className="mt-1 text-sm text-foreground">{aggregateTokenUsages.length}</div>
+                    </div>
+                  </div>
+
+                  {aggregateFallbackTokens.length > 0 ? (
+                    <div className="mt-4">
+                      <div className="mb-2 text-xs font-medium text-[var(--warning)]">Fallback Tokens</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {aggregateFallbackTokens.map((token) => (
+                          <span key={token} className="rounded border border-[var(--warning)]/30 px-2 py-0.5 text-[10px] font-mono text-[var(--warning)]">
+                            {token}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {aggregateUnresolvedTokens.length > 0 ? (
+                    <div className="mt-4">
+                      <div className="mb-2 text-xs font-medium text-[var(--error)]">Unresolved Tokens</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {aggregateUnresolvedTokens.map((token) => (
+                          <span key={token} className="rounded border border-[var(--error)]/30 px-2 py-0.5 text-[10px] font-mono text-[var(--error)]">
+                            {token}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {aggregateTokenUsages.length > 0 ? (
+                    <div className="mt-4">
+                      <div className="mb-2 text-xs font-medium text-[var(--foreground-subtle)]">Token Resolutions</div>
+                      <div className="grid gap-2 lg:grid-cols-2">
+                        {aggregateTokenUsages.map((usage) => (
+                          <div key={`${usage.token}:${usage.value}:${usage.source}`} className="rounded border border-[var(--border)] px-3 py-2 text-xs">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-mono text-[10px] text-[var(--foreground-subtle)]">{usage.raw}</span>
+                              <span className={usage.source === 'context' ? 'text-[var(--success)]' : usage.source === 'fallback' ? 'text-[var(--warning)]' : 'text-[var(--foreground-subtle)]'}>
+                                {usage.source}
+                              </span>
+                            </div>
+                            <div className="mt-1 break-words text-[var(--foreground-muted)]">{usage.value || '(empty)'}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </CommandPanel>
               </div>
 
               {/* Tab bar */}

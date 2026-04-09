@@ -1,0 +1,1 @@
+self.__NEXT_FONT_MANIFEST="{\"pages\":{},\"app\":{\"/Users/gerald/Git/admin-app/web/src/app/layout\":[\"static/media/558ca1a6aa3cb55e-s.p.woff2\",\"static/media/36966cca54120369-s.p.woff2\"]},\"appUsingSizeAdjust\":true,\"pagesUsingSizeAdjust\":false}"

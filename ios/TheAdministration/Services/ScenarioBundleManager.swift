@@ -1,16 +1,14 @@
 /// ScenarioBundleManager
-/// Replaces full Firestore collection scans with versioned JSON bundles served
-/// from Firebase Storage. Reduces scenario loading from 20k reads + 67 round
-/// trips + ~60 MB to: 1 Firestore read (manifest) + at most 14 Storage GETs
-/// (~2–4 MB each, cached on disk after first download).
+/// Downloads versioned JSON chunk files from Firebase Storage.
+/// Each bundle is split into 250-scenario chunks stored at:
+///   scenario-bundles/{bundleId}/chunk-{0000}.json
 ///
 /// Flow per app launch:
-///   1. Fetch world_state/scenario_manifest  (1 Firestore read, ~1 KB)
-///   2. For each bundle where manifest.version > local cache version:
-///        download scenario-bundles/{bundleId}.json via Storage REST API
-///   3. Write each bundle JSON to Application Support/scenario-bundles/
-///   4. Decode all local bundle files → return merged [Scenario] array
-///   5. On subsequent launches: steps 1 + 2 are skipped if nothing changed
+///   1. Fetch world_state/scenario_manifest  (1 Firestore read)
+///   2. For each chunk where manifest chunk version > local cache version:
+///        download chunk file via Storage REST API
+///   3. Write each chunk to Application Support/scenario-bundles/{bundleId}/
+///   4. Decode all local chunk files in parallel → return merged [Scenario] array
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
@@ -24,34 +22,31 @@ actor ScenarioBundleManager {
     private let bucket = "the-administration-3a072.firebasestorage.app"
     private let bundlePrefix = "scenario-bundles"
     private let manifestPath = "world_state/scenario_manifest"
-    private let versionsKey = "scenario_bundle_versions_v2"
+    private let versionsKey = "scenario_bundle_versions_v3"
 
-    // In-memory pool — populated once and reused within a session.
     private var pool: [Scenario] = []
     private var loaded = false
 
     // MARK: - Public API
 
-    /// Returns all scenarios. Downloads only changed bundles; serves from disk
-    /// otherwise. Call once at app launch then re-use the result.
     func scenarios(forceRefresh: Bool = false) async throws -> [Scenario] {
         if loaded && !forceRefresh { return pool }
 
         let manifest = try await fetchManifest()
-        let updatedBundles = try await syncChangedBundles(manifest: manifest, force: forceRefresh)
-        let all = try decodeFromDisk()
+        let updatedChunks = await syncChangedChunks(manifest: manifest, force: forceRefresh)
+        let all = try await decodeFromDisk()
         pool = all
         loaded = true
 
-        let total = all.count
-        AppLogger.info("[ScenarioBundleManager] \(total) scenarios ready (\(updatedBundles) bundle(s) refreshed)")
+        AppLogger.info("[ScenarioBundleManager] \(all.count) scenarios ready (\(updatedChunks) chunk(s) refreshed)")
         return all
     }
 
-    /// Force a full re-download on the next call to `scenarios()`.
     func invalidate() {
         loaded = false
         pool = []
+        try? FileManager.default.removeItem(at: cacheDir)
+        UserDefaults.standard.removeObject(forKey: versionsKey)
     }
 
     // MARK: - Manifest
@@ -60,9 +55,14 @@ actor ScenarioBundleManager {
         let manifestVersion: Int
         let bundles: [String: BundleEntry]
 
+        struct ChunkEntry {
+            let idx: Int
+            let version: Int
+        }
+
         struct BundleEntry {
             let version: Int
-            let count: Int
+            let chunks: [ChunkEntry]
         }
 
         init(data: [String: Any]) {
@@ -70,9 +70,17 @@ actor ScenarioBundleManager {
             var b: [String: BundleEntry] = [:]
             if let raw = data["bundles"] as? [String: [String: Any]] {
                 for (id, entry) in raw {
+                    let rawChunks = entry["chunks"] as? [[String: Any]] ?? []
+                    let chunks = rawChunks.compactMap { c -> ChunkEntry? in
+                        guard let idx = c["idx"] as? Int else { return nil }
+                        return ChunkEntry(
+                            idx: idx,
+                            version: c["version"] as? Int ?? 0
+                        )
+                    }
                     b[id] = BundleEntry(
                         version: entry["version"] as? Int ?? 0,
-                        count: entry["count"] as? Int ?? 0
+                        chunks: chunks
                     )
                 }
             }
@@ -94,31 +102,66 @@ actor ScenarioBundleManager {
     // MARK: - Sync
 
     @discardableResult
-    private func syncChangedBundles(manifest: Manifest, force: Bool) async throws -> Int {
+    private func syncChangedChunks(manifest: Manifest, force: Bool) async -> Int {
         let localVersions = loadLocalVersions()
         var updatedCount = 0
 
-        // Collect bundles that need downloading.
-        let stale = manifest.bundles.filter { id, entry in
-            force || (localVersions[id] ?? -1) < entry.version
+        struct StaleChunk {
+            let bundleId: String
+            let chunkIdx: Int
+            let versionKey: String
+        }
+
+        var stale: [StaleChunk] = []
+        for (bundleId, entry) in manifest.bundles {
+            for chunk in entry.chunks {
+                let key = versionKey(bundleId: bundleId, chunkIdx: chunk.idx)
+                if force || (localVersions[key] ?? -1) < chunk.version {
+                    stale.append(StaleChunk(
+                        bundleId: bundleId,
+                        chunkIdx: chunk.idx,
+                        versionKey: key
+                    ))
+                }
+            }
         }
 
         guard !stale.isEmpty else { return 0 }
 
-        // Download in parallel (up to all 14 bundles).
-        try await withThrowingTaskGroup(of: String.self) { group in
-            for (bundleId, entry) in stale {
+        var succeededKeys: Set<String> = []
+
+        await withTaskGroup(of: (String, Int?, Bool).self) { group in
+            for item in stale {
                 group.addTask {
-                    try await self.downloadBundle(id: bundleId, expectedCount: entry.count)
-                    return bundleId
+                    do {
+                        try await self.downloadChunk(
+                            bundleId: item.bundleId,
+                            chunkIdx: item.chunkIdx
+                        )
+                        return (item.versionKey, nil, true)
+                    } catch {
+                        AppLogger.warning("[ScenarioBundleManager] Failed to download \(item.bundleId)/chunk-\(item.chunkIdx): \(error.localizedDescription)")
+                        return (item.versionKey, nil, false)
+                    }
                 }
             }
-            for try await _ in group { updatedCount += 1 }
+            for await (key, _, success) in group {
+                if success {
+                    updatedCount += 1
+                    succeededKeys.insert(key)
+                }
+            }
         }
 
-        // Persist the new versions for all bundles in the manifest.
         var updated = localVersions
-        for (id, entry) in manifest.bundles { updated[id] = entry.version }
+        for (bundleId, entry) in manifest.bundles {
+            for chunk in entry.chunks {
+                let key = versionKey(bundleId: bundleId, chunkIdx: chunk.idx)
+                if succeededKeys.contains(key) {
+                    updated[key] = chunk.version
+                }
+            }
+        }
         saveLocalVersions(updated)
 
         return updatedCount
@@ -126,12 +169,13 @@ actor ScenarioBundleManager {
 
     // MARK: - Download
 
-    private func downloadBundle(id: String, expectedCount: Int) async throws {
+    private func downloadChunk(bundleId: String, chunkIdx: Int) async throws {
         guard let token = try await authToken() else {
             throw BundleError.authRequired
         }
 
-        let encodedPath = "\(bundlePrefix)%2F\(id).json"
+        let filename = String(format: "chunk-%04d.json", chunkIdx)
+        let encodedPath = "\(bundlePrefix)%2F\(bundleId)%2F\(filename)"
         let urlStr = "https://firebasestorage.googleapis.com/v0/b/\(bucket)/o/\(encodedPath)?alt=media"
         guard let url = URL(string: urlStr) else { throw BundleError.badURL(urlStr) }
 
@@ -140,10 +184,10 @@ actor ScenarioBundleManager {
 
         let (data, response) = try await URLSession.shared.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? -1
-        guard status == 200 else { throw BundleError.httpError(bundleId: id, code: status) }
+        guard status == 200 else { throw BundleError.httpError(bundleId: bundleId, chunkIdx: chunkIdx, code: status) }
 
-        try writeToDisk(bundleId: id, data: data)
-        AppLogger.info("[ScenarioBundleManager] Downloaded '\(id)': \(data.count / 1024) KB, ~\(expectedCount) scenarios")
+        try writeChunkToDisk(bundleId: bundleId, chunkIdx: chunkIdx, data: data)
+        AppLogger.info("[ScenarioBundleManager] Downloaded '\(bundleId)/\(filename)': \(data.count / 1024) KB")
     }
 
     private func authToken() async throws -> String? {
@@ -158,32 +202,87 @@ actor ScenarioBundleManager {
         return appSupport.appendingPathComponent("scenario-bundles", isDirectory: true)
     }
 
-    private func writeToDisk(bundleId: String, data: Data) throws {
-        try FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
-        try data.write(to: cacheDir.appendingPathComponent("\(bundleId).json"), options: .atomic)
+    private func bundleCacheDir(for bundleId: String) -> URL {
+        cacheDir.appendingPathComponent(bundleId, isDirectory: true)
     }
 
-    private func decodeFromDisk() throws -> [Scenario] {
+    private func writeChunkToDisk(bundleId: String, chunkIdx: Int, data: Data) throws {
+        let dir = bundleCacheDir(for: bundleId)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let filename = String(format: "chunk-%04d.json", chunkIdx)
+        try data.write(to: dir.appendingPathComponent(filename), options: .atomic)
+    }
+
+    private func decodeFromDisk() async throws -> [Scenario] {
         guard FileManager.default.fileExists(atPath: cacheDir.path) else { return [] }
-        let files = try FileManager.default.contentsOfDirectory(
+
+        let bundleDirs = try FileManager.default.contentsOfDirectory(
             at: cacheDir,
-            includingPropertiesForKeys: nil
-        ).filter { $0.pathExtension == "json" }
+            includingPropertiesForKeys: [.isDirectoryKey]
+        ).filter { url in
+            (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        }
+
+        guard !bundleDirs.isEmpty else { return [] }
 
         let decoder = JSONDecoder()
-        var all: [Scenario] = []
-        for file in files {
-            let data = try Data(contentsOf: file)
-            if let scenarios = try? decoder.decode([Scenario].self, from: data) {
-                all.append(contentsOf: scenarios)
-            } else {
-                AppLogger.warning("[ScenarioBundleManager] Failed to decode \(file.lastPathComponent) — skipping")
+        var allScenarios: [Scenario] = []
+
+        await withTaskGroup(of: [Scenario].self) { group in
+            for bundleDir in bundleDirs {
+                group.addTask {
+                    guard let chunkFiles = try? FileManager.default.contentsOfDirectory(
+                        at: bundleDir,
+                        includingPropertiesForKeys: nil
+                    ).filter({ $0.pathExtension == "json" }).sorted(by: { $0.lastPathComponent < $1.lastPathComponent })
+                    else { return [] }
+
+                    var bundleScenarios: [Scenario] = []
+                    for file in chunkFiles {
+                        guard let data = try? Data(contentsOf: file) else { continue }
+                        if let decoded = try? decoder.decode([Scenario].self, from: data) {
+                            bundleScenarios.append(contentsOf: decoded)
+                        } else {
+                            bundleScenarios.append(contentsOf: self.decodeScenariosFallback(from: data, file: file, decoder: decoder))
+                        }
+                    }
+                    return bundleScenarios
+                }
+            }
+            for await scenarios in group {
+                allScenarios.append(contentsOf: scenarios)
             }
         }
-        return all
+
+        return allScenarios
     }
 
-    // MARK: - Version Persistence (UserDefaults)
+    nonisolated private func decodeScenariosFallback(from data: Data, file: URL, decoder: JSONDecoder) -> [Scenario] {
+        guard let rawArray = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            AppLogger.warning("[ScenarioBundleManager] Failed to decode \(file.lastPathComponent) — skipping")
+            return []
+        }
+        var decoded: [Scenario] = []
+        var failCount = 0
+        for element in rawArray {
+            guard let elementData = try? JSONSerialization.data(withJSONObject: element),
+                  let scenario = try? decoder.decode(Scenario.self, from: elementData) else {
+                failCount += 1
+                continue
+            }
+            decoded.append(scenario)
+        }
+        if failCount > 0 {
+            AppLogger.warning("[ScenarioBundleManager] \(file.lastPathComponent): decoded \(decoded.count)/\(rawArray.count), skipped \(failCount)")
+        }
+        return decoded
+    }
+
+    // MARK: - Version Persistence
+
+    private func versionKey(bundleId: String, chunkIdx: Int) -> String {
+        "\(bundleId):\(chunkIdx)"
+    }
 
     private func loadLocalVersions() -> [String: Int] {
         UserDefaults.standard.dictionary(forKey: versionsKey) as? [String: Int] ?? [:]
@@ -201,7 +300,7 @@ private enum BundleError: LocalizedError {
     case manifestMissing
     case authRequired
     case badURL(String)
-    case httpError(bundleId: String, code: Int)
+    case httpError(bundleId: String, chunkIdx: Int, code: Int)
 
     var errorDescription: String? {
         switch self {
@@ -209,8 +308,8 @@ private enum BundleError: LocalizedError {
         case .manifestMissing: return "world_state/scenario_manifest not found in Firestore"
         case .authRequired:    return "Firebase Auth token required to download scenario bundles"
         case .badURL(let u):   return "Invalid Storage URL: \(u)"
-        case .httpError(let id, let code):
-            return "Bundle '\(id)' HTTP \(code) — bundle may not be exported yet"
+        case .httpError(let id, let idx, let code):
+            return "Bundle '\(id)' chunk \(idx) HTTP \(code)"
         }
     }
 }

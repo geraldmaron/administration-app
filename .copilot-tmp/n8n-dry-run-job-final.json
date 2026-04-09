@@ -1,0 +1,56 @@
+{
+  "bundles": [
+    "tech",
+    "social"
+  ],
+  "count": 3,
+  "mode": "manual",
+  "distributionConfig": {
+    "mode": "auto"
+  },
+  "scopeTier": "universal",
+  "scopeKey": "universal",
+  "sourceKind": "evergreen",
+  "requestedBy": "n8n:scenario-loop-runner",
+  "requestedAt": {
+    "_seconds": 1774932701,
+    "_nanoseconds": 284000000
+  },
+  "priority": "normal",
+  "description": "Copilot verification dry-run",
+  "dryRun": true,
+  "executionTarget": "n8n",
+  "lastHeartbeatAt": {
+    "_seconds": 1774932701,
+    "_nanoseconds": 284000000
+  },
+  "eventCount": 0,
+  "createdScenarioIds": [],
+  "startedAt": {
+    "_seconds": 1774932703,
+    "_nanoseconds": 689000000
+  },
+  "totalCount": 6,
+  "currentBundle": "tech",
+  "failedCount": 0,
+  "savedScenarioIds": [
+    "gen_social_mne543sr_act1",
+    "gen_social_mne55dy0_act1",
+    "gen_social_mne56qeo_act1",
+    "gen_tech_mne545wu_act1",
+    "gen_tech_mne55iq5_act1",
+    "gen_tech_mne57du6_act1"
+  ],
+  "completedCount": 6,
+  "completedAt": {
+    "_seconds": 1774932928,
+    "_nanoseconds": 458000000
+  },
+  "currentPhase": "complete",
+  "currentMessage": "n8n orchestrator: 6 saved, 0 failed",
+  "status": "completed",
+  "updatedAt": {
+    "_seconds": 1774932928,
+    "_nanoseconds": 458000000
+  }
+}

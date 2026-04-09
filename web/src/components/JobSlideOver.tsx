@@ -13,6 +13,7 @@ function summarizeProvider(job: Pick<JobDetail, 'executionTarget' | 'modelConfig
   const drafter = job.modelConfig?.drafterModel;
   if (drafter?.startsWith('ollama:')) return drafter.replace('ollama:', '');
   if (job.executionTarget === 'n8n') return 'n8n';
+  if (job.executionTarget === 'local') return 'local';
   return 'cloud';
 }
 
@@ -207,6 +208,27 @@ export default function JobSlideOver({ jobId, onClose, onRefresh, onDeleted }: J
                 <div className="rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2 text-[12px] text-[var(--foreground-muted)]">
                   <div className="section-kicker mb-1">Current Activity</div>
                   <div>{[job.currentBundle, job.currentPhase, job.currentMessage].filter(Boolean).join(' · ')}</div>
+                </div>
+              )}
+
+              {job.runId && (
+                <div className="rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2 text-[12px] text-[var(--foreground-muted)]">
+                  <div className="section-kicker mb-1">Run Context</div>
+                  <div>
+                    {job.runKind === 'blitz' ? 'Blitz run' : 'Run'} · job {job.runJobIndex ?? 1}/{job.runTotalJobs ?? 1}
+                  </div>
+                  <Link href={`/runs/${job.runId}`} className="mt-1 inline-block text-[11px] font-mono text-[var(--accent-primary)] hover:underline">
+                    Open run →
+                  </Link>
+                  {job.siblingJobs && job.siblingJobs.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {job.siblingJobs.slice(0, 4).map((sibling) => (
+                        <Link key={sibling.id} href={`/jobs/${sibling.id}`} className="block text-[11px] font-mono text-[var(--accent-primary)] hover:underline">
+                          {sibling.runJobIndex ?? '?'} · {sibling.id}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

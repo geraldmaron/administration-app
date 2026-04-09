@@ -2,11 +2,12 @@ import { onCall, onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import { type CreateJobOptions, createGenerationJob, getJobStatus } from "./background-jobs";
+import { getRecentWorldEvents } from "./storage";
 import { isValidBundleId, type BundleId } from "./data/schemas/bundleIds";
 import { validateConfig, logConfigStatus } from "./lib/config-validator";
 import { hasMeaningfulModelConfig, fetchOllamaModels, buildOllamaModelConfig, normalizeModelConfig } from "./lib/generation-models";
 
-export { onScenarioJobCreated, recoverZombieJobs } from "./background-jobs";
+export { onScenarioJobCreated, recoverZombieJobs, worldSimulationTick } from "./background-jobs";
 export { dailyNewsToScenarios } from "./news-to-scenarios";
 export { processGenerationBundle, updateJobProgress } from "./generation-services";
 export { resolveAction } from "./action-resolution";
@@ -27,6 +28,11 @@ interface CallableRequestLike {
 interface GenerationRequestBody {
     bundles?: string[];
     count?: number;
+    runId?: string;
+    runKind?: CreateJobOptions["mode"];
+    runJobIndex?: number;
+    runTotalJobs?: number;
+    runLabel?: string;
     lowLatencyMode?: boolean;
     distributionConfig?: CreateJobOptions["distributionConfig"];
     region?: string;
@@ -43,7 +49,7 @@ interface GenerationRequestBody {
     dryRun?: boolean;
     newsContext?: CreateJobOptions["newsContext"];
     mode?: "manual" | "news";
-    executionTarget?: "cloud_function" | "n8n";
+    executionTarget?: "cloud_function" | "n8n" | "local";
 }
 
 const db = admin.firestore();
@@ -146,12 +152,25 @@ function toCreateJobOptions(body: GenerationRequestBody, requestedBy: string): C
     return {
         bundles: body.bundles as BundleId[],
         count,
+        ...(body.runId ? { runId: body.runId } : {}),
+        ...(body.runKind ? { runKind: body.runKind === 'blitz' ? 'blitz' : 'manual' } : {}),
+        ...(typeof body.runJobIndex === 'number' ? { runJobIndex: body.runJobIndex } : {}),
+        ...(typeof body.runTotalJobs === 'number' ? { runTotalJobs: body.runTotalJobs } : {}),
+        ...(body.runLabel ? { runLabel: body.runLabel } : {}),
         mode: body.mode === "news" ? "news" : "manual",
         requestedBy,
         priority: body.priority ?? "normal",
-        executionTarget: body.executionTarget === "n8n" ? "n8n" : "cloud_function",
+        executionTarget: body.executionTarget === "n8n"
+            ? "n8n"
+            : body.executionTarget === "local"
+                ? "local"
+                : "cloud_function",
         currentPhase: "queued",
-        currentMessage: body.executionTarget === "n8n" ? "Queued for n8n orchestration" : "Queued for background processing",
+        currentMessage: body.executionTarget === "n8n"
+            ? "Queued for n8n orchestration"
+            : body.executionTarget === "local"
+                ? "Queued for local generation"
+                : "Queued for background processing",
         ...(body.lowLatencyMode !== undefined ? { lowLatencyMode: body.lowLatencyMode } : {}),
         ...(body.distributionConfig !== undefined ? { distributionConfig: body.distributionConfig } : {}),
         ...(body.dryRun !== undefined ? { dryRun: body.dryRun } : {}),
@@ -418,3 +437,13 @@ export const resolveTagsBatch = onCall({
     };
 });
 
+export const getWorldEvents = onCall({
+    cors: true,
+    timeoutSeconds: 15,
+    memory: '128MiB',
+}, async (request) => {
+    const sinceTimestamp = (request.data as { sinceTimestamp?: string })?.sinceTimestamp
+        ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const events = await getRecentWorldEvents(sinceTimestamp, 20);
+    return { success: true, events };
+});

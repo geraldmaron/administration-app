@@ -486,6 +486,8 @@ struct ScenarioRequirements: Codable {
     let authoritarianRegime: Bool?
     let democraticRegime: Bool?
     let fragileState: Bool?
+    let hasLegislature: Bool?
+    let hasOppositionParty: Bool?
 
     enum CodingKeys: String, CodingKey {
         case landBorderAdversary = "land_border_adversary"
@@ -503,6 +505,8 @@ struct ScenarioRequirements: Codable {
         case authoritarianRegime = "authoritarian_regime"
         case democraticRegime = "democratic_regime"
         case fragileState = "fragile_state"
+        case hasLegislature = "has_legislature"
+        case hasOppositionParty = "has_opposition_party"
     }
 }
 
@@ -577,7 +581,7 @@ struct ScenarioMetadata: Codable {
         case requires
         case primaryMetrics = "primary_metrics"
         case secondaryMetrics = "secondary_metrics"
-        case actorPattern = "actor_pattern"
+        case actorPattern
     }
 }
 
@@ -881,8 +885,8 @@ struct City: Codable, Hashable {
 
 struct CountryFacts: Codable, Hashable {
     struct Demographics: Codable, Hashable {
-        let populationTotal: Int
-        let sourceYear: Int
+        let populationTotal: Int?
+        let sourceYear: Int?
 
         enum CodingKeys: String, CodingKey {
             case populationTotal = "population_total"
@@ -891,8 +895,8 @@ struct CountryFacts: Codable, Hashable {
     }
 
     struct Economy: Codable, Hashable {
-        let gdpNominalUsd: Double
-        let sourceYear: Int
+        let gdpNominalUsd: Double?
+        let sourceYear: Int?
         let currencyName: String?
         let currencyCode: String?
         let centralBank: String?
@@ -1002,10 +1006,10 @@ struct CountryFacts: Codable, Hashable {
         }
     }
 
-    let schemaVersion: Int
-    let baselineId: String
-    let demographics: Demographics
-    let economy: Economy
+    let schemaVersion: Int?
+    let baselineId: String?
+    let demographics: Demographics?
+    let economy: Economy?
     let institutions: Institutions?
     let geography: Geography?
 
@@ -1260,7 +1264,7 @@ struct Country: Identifiable, Codable, Hashable {
 
 extension Country {
     var resolvedGdpBillions: Double? {
-        if let facts { return facts.economy.gdpNominalUsd / 1_000_000_000 }
+        if let gdp = facts?.economy?.gdpNominalUsd, gdp > 0 { return gdp / 1_000_000_000 }
         if let b = gdpBillions, b > 0 { return b }
         if attributes.gdp > 0 { return Double(attributes.gdp) / 1_000_000_000 }
         if let s = gdp, !s.isEmpty { return Country.parseGdpString(s) }
@@ -1269,7 +1273,7 @@ extension Country {
 
     var resolvedPopulation: Int {
         if let currentPopulation, currentPopulation > 0 { return currentPopulation }
-        if let facts { return facts.demographics.populationTotal }
+        if let pop = facts?.demographics?.populationTotal, pop > 0 { return pop }
         return attributes.population
     }
 
@@ -2628,6 +2632,7 @@ struct LegislatureState: Codable {
     var lastElectionTurn: Int
     var nextElectionTurn: Int
     var gridlockLevel: Int        // 0-100
+    var coalitionFragility: Int   // 0-100
     var notableMembers: [LegislativeMember]
 
     enum CodingKeys: String, CodingKey {
@@ -2636,7 +2641,37 @@ struct LegislatureState: Codable {
         case lastElectionTurn = "last_election_turn"
         case nextElectionTurn = "next_election_turn"
         case gridlockLevel = "gridlock_level"
+        case coalitionFragility = "coalition_fragility"
         case notableMembers = "notable_members"
+    }
+
+    init(
+        composition: [LegislativeBloc],
+        approvalOfPlayer: Int,
+        lastElectionTurn: Int,
+        nextElectionTurn: Int,
+        gridlockLevel: Int,
+        coalitionFragility: Int = 0,
+        notableMembers: [LegislativeMember]
+    ) {
+        self.composition = composition
+        self.approvalOfPlayer = approvalOfPlayer
+        self.lastElectionTurn = lastElectionTurn
+        self.nextElectionTurn = nextElectionTurn
+        self.gridlockLevel = gridlockLevel
+        self.coalitionFragility = coalitionFragility
+        self.notableMembers = notableMembers
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        composition = try c.decode([LegislativeBloc].self, forKey: .composition)
+        approvalOfPlayer = try c.decode(Int.self, forKey: .approvalOfPlayer)
+        lastElectionTurn = try c.decode(Int.self, forKey: .lastElectionTurn)
+        nextElectionTurn = try c.decode(Int.self, forKey: .nextElectionTurn)
+        gridlockLevel = try c.decode(Int.self, forKey: .gridlockLevel)
+        coalitionFragility = (try? c.decodeIfPresent(Int.self, forKey: .coalitionFragility)) ?? 0
+        notableMembers = (try? c.decode([LegislativeMember].self, forKey: .notableMembers)) ?? []
     }
 }
 

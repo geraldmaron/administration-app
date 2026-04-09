@@ -6,11 +6,11 @@
  * coherence, and cross-option consistency. Scenarios scoring below threshold
  * are flagged for partial regeneration rather than halting the pipeline.
  *
- * Model: gpt-4o-mini (fast, low-cost, sufficient for editorial evaluation)
+ * Model: gpt-4.1-mini (fast, low-cost, sufficient for editorial evaluation)
  * Threshold: any dimension < 3 = FAIL; average < 3.5 = WARN
  */
 
-import { callModelProvider } from './model-providers';
+import { callModelProvider, getPhaseModels } from './model-providers';
 import type { BundleScenario } from './audit-rules';
 
 // ---------------------------------------------------------------------------
@@ -165,14 +165,12 @@ export async function evaluateContentQuality(
 ): Promise<ContentQualityResult> {
     const prompt = buildQualityPrompt(scenario);
 
-    const defaultModel = process.env.OLLAMA_BASE_URL
-        ? (process.env.CONTENT_QUALITY_MODEL || 'ollama:ai-fast:latest')
-        : 'gpt-4o-mini';
+    const model = modelOverride || getPhaseModels().contentQuality;
     const result = await callModelProvider<QualityLLMResponse>(
         { maxTokens: 2048, temperature: 0.2 },
         prompt,
         QUALITY_SCHEMA,
-        modelOverride || defaultModel
+        model
     );
 
     if (!result.data) {

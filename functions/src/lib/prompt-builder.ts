@@ -91,7 +91,7 @@ Outcome summary: "${option.outcomeSummary ?? ''}"
 Scenario context: "${scenario.description}"
 
 Write a 4–6 sentence news article body (outcomeContext) in THIRD PERSON only:
-- Use: "{leader_title}" or "{the_leader_title}" (e.g., "President", "Prime Minister") when referring to the head of government; avoid generic phrases like "The administration" or "the government"
+- Use: "{leader_title}" (e.g., "President", "Prime Minister") when referring to the head of government; write "the {leader_title}" naturally — avoid generic phrases like "The administration" or "the government"
 - NEVER use "you", "your", "Your administration" — this is a news report, NOT addressed to the player
 - Describe the immediate aftermath and downstream effects: economic signals, public reaction, international response
 - Use {token} placeholders for country-specific references from the APPROVED TOKEN WHITELIST above
@@ -115,7 +115,7 @@ The head of government chose: "${option.text}"
 Outcome headline: "${option.outcomeHeadline ?? ''}"
 
 Write a 2–3 sentence outcomeSummary (news lead) in THIRD PERSON only:
-- Use: "{leader_title} ordered...", "{the_leader_title} said...", "Authorities in {player_country}..." — do not use generic phrasing like "The administration announced..."
+- Use: "{leader_title} ordered...", "the {leader_title} said...", "Authorities in {player_country}..." — do not use generic phrasing like "The administration announced..."
 - NEVER use "you", "your", "Your administration" — this is a news report, NOT addressed to the player
 - Summarize the immediate consequence of the decision
 - Use {token} placeholders from the APPROVED TOKEN WHITELIST above
@@ -138,7 +138,7 @@ The head of government chose: "${option.text}"
 Outcome summary: "${option.outcomeSummary ?? ''}"
 
 Write a single outcomeHeadline in THIRD PERSON only:
-- AP/Reuters headline style: refer to the head of government (e.g., "{leader_title} imposes..." or "{the_leader_title} orders...") rather than generic "Administration" phrasing
+- AP/Reuters headline style: refer to the head of government (e.g., "{leader_title} imposes..." or "the {leader_title} orders...") rather than generic "Administration" phrasing
 - NEVER use "you", "your", "Your administration"
 - Concise, factual, 6–12 words
 - May use {token} placeholders from the APPROVED TOKEN WHITELIST above

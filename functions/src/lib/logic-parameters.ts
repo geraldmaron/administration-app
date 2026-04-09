@@ -44,9 +44,9 @@ import type { CompiledTokenRegistry } from '../shared/token-registry-contract';
 
 export const LOGIC_PARAMETERS = {
   effectRanges: {
-    minor: { min: 0.3, max: 1.1 },
-    moderate: { min: 1.2, max: 2.6 },
-    major: { min: 2.7, max: 4.2 }
+    minor: { min: 0.3, max: 1.8 },
+    moderate: { min: 1.5, max: 4.5 },
+    major: { min: 3.5, max: 7.0 }
   },
   duration: {
     min: 1,
@@ -132,11 +132,13 @@ export function getLogicParametersPrompt(severity: 'low' | 'medium' | 'high' | '
       magnitudeGuidance = `moderate effects (values between ${LOGIC_PARAMETERS.effectRanges.moderate.min} and ${LOGIC_PARAMETERS.effectRanges.moderate.max})`;
       break;
     case 'high':
+      magnitudeGuidance = `major effects (values between ${LOGIC_PARAMETERS.effectRanges.moderate.max} and ${LOGIC_PARAMETERS.effectRanges.major.min + 2.5})`;
+      break;
     case 'extreme':
       magnitudeGuidance = `major effects (values between ${LOGIC_PARAMETERS.effectRanges.major.min} and ${LOGIC_PARAMETERS.effectRanges.major.max})`;
       break;
     case 'critical':
-      magnitudeGuidance = `major effects at the high end (values between ${LOGIC_PARAMETERS.effectRanges.major.min + 1} and ${LOGIC_PARAMETERS.effectRanges.major.max})`;
+      magnitudeGuidance = `major effects at the high end (values between ${LOGIC_PARAMETERS.effectRanges.major.min + 1.5} and ${LOGIC_PARAMETERS.effectRanges.major.max})`;
       break;
   }
 
@@ -159,22 +161,29 @@ export function getLogicParametersPrompt(severity: 'low' | 'medium' | 'high' | '
    - Economic: {${Array.from(cats['economic'] ?? TOKEN_CATEGORIES.economic).join('}, {')}}
    - Local: {${Array.from(cats['local'] ?? TOKEN_CATEGORIES.local).join('}, {')}}
    - Media: {${Array.from(cats['media'] ?? TOKEN_CATEGORIES.media).join('}, {')}}
-   - Country reference — {the_player_country} as subject/object, {player_country}'s for possessive, {regional_bloc} for regional bodies:
-     ✅ "{the_player_country} faces..." / "{player_country}'s economy collapsed"
+   - Country reference — {player_country} for the player's country, {regional_bloc} for regional bodies:
+     ✅ "the {player_country} faces..." / "your {player_country}'s economy collapsed"
      ✅ "{regional_bloc} imposed new trade rules" (for EU, ASEAN, African Union, etc.)
      ❌ NEVER hardcode foreign country names — use natural language: "your border rival", "the allied nation", "a neighboring adversary"
-   - Article forms ({the_*}) for roles and institutions — use when a role title is a sentence subject or follows a preposition:
-     {${Array.from(cats['article_forms'] ?? TOKEN_CATEGORIES.article_forms).join('}, {')}}
-     e.g. "{the_legislature} passed a bill" / "a motion by {the_finance_role}"
-   - Example: "{the_player_country} faces pressure from {the_legislature} over {central_bank} policy"
+   - Write "the {finance_role}" or "your {defense_role}" naturally — NO {the_*} prefix tokens
+   - Example: "your {player_country} faces pressure from the {legislature} over {central_bank} policy"
 
    **CONCEPT → TOKEN** (never hardcode — always use the right token for the concept):
 ${concepts.map(({ concept, token }) => `   - ${concept} → ${token}`).join('\n')}
 
+   **INTERNATIONAL FINANCIAL BODIES — no token exists, write as plain language:**
+   - IMF / International Monetary Fund → "the IMF"
+   - World Bank / development bank → "the World Bank"
+   - International creditors / lenders / bondholders → "international creditors", "foreign bondholders"
+   - Bond markets / sovereign debt markets → "bond markets", "sovereign debt markets"
+   - Credit rating agencies / rating agencies → "a credit rating agency"
+   - International monitors / oversight bodies → "an international monitor", "the oversight committee"
+   NEVER create {international_lender}, {international_investor}, {imf}, {world_bank}, {bond_market}, or similar invented tokens for these concepts.
+
 3. **Effect Values**: ${magnitudeGuidance}
-   - Minor: ${LOGIC_PARAMETERS.effectRanges.minor.min}–${LOGIC_PARAMETERS.effectRanges.minor.max} (e.g. 0.4, 0.6, 0.9)
-   - Moderate: ${LOGIC_PARAMETERS.effectRanges.moderate.min}–${LOGIC_PARAMETERS.effectRanges.moderate.max} (e.g. 1.3, 1.8, 2.2)
-   - Major: ${LOGIC_PARAMETERS.effectRanges.major.min}–${LOGIC_PARAMETERS.effectRanges.major.max} (e.g. 2.9, 3.4, 3.8)
+   - Minor: ${LOGIC_PARAMETERS.effectRanges.minor.min}–${LOGIC_PARAMETERS.effectRanges.minor.max} (e.g. 0.4, 0.9, 1.5)
+   - Moderate: ${LOGIC_PARAMETERS.effectRanges.moderate.min}–${LOGIC_PARAMETERS.effectRanges.moderate.max} (e.g. 2.1, 3.2, 4.0)
+   - Major: ${LOGIC_PARAMETERS.effectRanges.major.min}–${LOGIC_PARAMETERS.effectRanges.major.max} (e.g. 4.2, 5.5, 6.8)
    Use specific decimal values. Whole numbers like 1, 2, or 3 are invalid output.
 
 4. **Effect Probability**: MUST be ${LOGIC_PARAMETERS.probability.required} (deterministic)
@@ -188,6 +197,30 @@ ${concepts.map(({ concept, token }) => `   - ${concept} → ${token}`).join('\n'
    - Inverse metrics (lower is better): 0-100, critical above 80
    - Budget: -100 to 100, baseline 0
    - Approval: 0-100, catastrophic below 15
+
+7a. **GAME STATE BASELINE** (CRITICAL for writing realistic conditions):
+    Metrics at the START of a new game (turn 1). Use these as your reference when deciding
+    whether a condition is realistic to apply to an early-game scenario:
+    - Core metrics (economy, health, public_order, military, education, etc.): **50–55**
+    - Inverse metrics (corruption, inflation, crime, bureaucracy): **25–30** (low = good)
+    - Hidden metrics (unrest, economic_bubble, foreign_influence): **12–18** (low = good)
+    - metric_approval: **50**
+    - metric_budget: **50**
+
+    WHAT THIS MEANS FOR CONDITIONS:
+    - A condition of \`metric_economy max 38\` is NEVER met at game start (economy = 53).
+      Only add it when the scenario truly requires an economic crisis to make narrative sense.
+    - A condition of \`metric_approval max 30\` is NEVER met at game start (approval = 50).
+      Only add it for scenarios that require near-collapse of public trust.
+    - A condition of \`metric_corruption min 55\` is NEVER met at game start (corruption = 28).
+      Only add it for scenarios where systemic corruption is already entrenched.
+    - Scenarios about routine governance (transport costs, broadcaster disputes, regulatory
+      reviews, budget tradeoffs) should have NO conditions — they occur in any game state.
+
+    GAME PHASE CONDITION GUIDELINES:
+    - **Early game (turns 1–10)**: Loose or NO conditions. Core ≥ 42, inverse ≤ 50.
+    - **Mid game (turns 10–25)**: Moderate conditions. Core ≥ 32, inverse ≤ 60, approval ≤ 42.
+    - **Late game (turn 25+)**: Crisis conditions valid. Core ≥ 22, inverse ≤ 75, approval ≤ 30.
 
 8. **Options per Scenario**: EXACTLY ${LOGIC_PARAMETERS.scenarioMetadata.optionCount.required} options required
 
@@ -214,25 +247,35 @@ ${NARRATIVE_TO_METRIC_ALIGNMENT.map(({ concepts, metricIds, note }) => `    - ${
     Omit \`conditions\` for general governance challenges that can occur at any metric level.
 
     Canonical thresholds — use these exact values when a state is required:
-    | Metric state                        | metricId                 | operator | value |
-    |-------------------------------------|--------------------------|----------|-------|
-    | Economic recession / crisis         | metric_economy           | max      | 38    |
-    | High unemployment                   | metric_employment        | max      | 35    |
-    | Inflation crisis                    | metric_inflation         | min      | 65    |
-    | Severe budget deficit               | metric_budget            | max      | -40   |
-    | Public disorder / street unrest     | metric_public_order      | max      | 35    |
-    | Crime wave / lawlessness            | metric_crime             | min      | 65    |
-    | Serious corruption / scandal        | metric_corruption        | min      | 60    |
-    | Military weakness / unreadiness     | metric_military          | max      | 30    |
-    | Diplomatic crisis / isolation       | metric_foreign_relations | max      | 30    |
-    | Approval collapse                   | metric_approval          | max      | 25    |
-    | Authoritarian drift / low liberty   | metric_liberty           | max      | 30    |
-    | Environmental crisis                | metric_environment       | max      | 30    |
+    | Metric state                           | metricId                 | operator | value | Reachable at game start? |
+    |----------------------------------------|--------------------------|----------|-------|--------------------------|
+    | Economic slowdown / mild recession     | metric_economy           | max      | 55    | YES — use for early game |
+    | Economic crisis / deep recession       | metric_economy           | max      | 42    | No — mid/late game only  |
+    | High unemployment                      | metric_employment        | max      | 45    | No — mid game            |
+    | Inflation rising / cost-of-living surge| metric_inflation         | min      | 40    | No — inflation starts ~28|
+    | Inflation crisis                       | metric_inflation         | min      | 58    | No — late game           |
+    | Budget pressure                        | metric_budget            | max      | 40    | No — budget starts ~50   |
+    | Public tension / protests possible     | metric_public_order      | max      | 50    | YES — loose early gate   |
+    | Public disorder                        | metric_public_order      | max      | 45    | No — mid game            |
+    | Crime elevated                         | metric_crime             | min      | 45    | No — crime starts ~28    |
+    | Crime wave                             | metric_crime             | min      | 55    | No — mid/late game       |
+    | Corruption elevated                    | metric_corruption        | min      | 45    | No — corruption starts ~28|
+    | Corruption crisis / scandal            | metric_corruption        | min      | 55    | No — mid/late game       |
+    | Military underfunded                   | metric_military          | max      | 48    | No — military starts ~53 |
+    | Diplomatic tension                     | metric_foreign_relations | max      | 48    | No — starts ~53          |
+    | Diplomatic crisis                      | metric_foreign_relations | max      | 35    | No — late game           |
+    | Approval slipping                      | metric_approval          | max      | 45    | YES — loose early gate   |
+    | Approval collapse                      | metric_approval          | max      | 30    | No — mid/late game only  |
+    | Authoritarian drift / low liberty      | metric_liberty           | max      | 40    | No                       |
+    | Environmental stress                   | metric_environment       | max      | 40    | No                       |
 
     Examples:
-    - Austerity response scenario → \`[{ "metricId": "metric_economy", "max": 38 }]\`
-    - Crime wave policing scenario → \`[{ "metricId": "metric_crime", "min": 65 }]\`
-    - Dual-condition scenario (collapsed economy AND approval) → \`[{ "metricId": "metric_economy", "max": 38 }, { "metricId": "metric_approval", "max": 40 }]\`
+    - Broadcaster dispute (no crisis needed) → \`[]\` (omit conditions entirely)
+    - Transport cost surge (no crisis needed) → \`[]\`
+    - Budget debate scenario → \`[{ "metricId": "metric_budget", "max": 40 }]\`
+    - Crime wave policing scenario → \`[{ "metricId": "metric_crime", "min": 55 }]\`
+    - Corruption probe (entrenched corruption) → \`[{ "metricId": "metric_corruption", "min": 45 }]\`
+    - Post-riot emergency powers → \`[{ "metricId": "metric_public_order", "max": 45 }, { "metricId": "metric_approval", "max": 45 }]\`
 
 15. **Descriptive and Monetary Token Semantics** (CRITICAL — prevents unrealistic monetary references):
     CONTEXT tokens (describe the country at a qualitative level, never use as line-item amounts):
@@ -263,6 +306,25 @@ ${NARRATIVE_TO_METRIC_ALIGNMENT.map(({ concepts, metricIds, note }) => `    - ${
     ✅ DO: "officials siphoned {graft_amount}" / "threatens {gdp_description}"
     ❌ NEVER: "siphoned {gdp_description}" / "stole a portion of {gdp_description}"
     ❌ NEVER: invent hard-coded dollar amounts like "$500 million" — always use scaled tokens.
+
+16. **Option Distinctiveness** (CRITICAL):
+    The three options MUST represent genuinely different policy directions. Each option must have at least one effect targeting a **different primary metric domain** from the other two.
+    - A quality failure: all three options modify only metric_economy, metric_approval, and metric_public_order.
+    - A passing set: Option A targets metric_economy; Option B targets metric_military; Option C targets metric_foreign_relations.
+    Useful test: if you swapped the labels and option texts, would a player notice a meaningful difference in consequences? If not, redesign the options.
+    Archetypes that work:
+    - Option A: economic intervention; Option B: security/order response; Option C: diplomatic/institutional path
+    - Option A: short-term relief; Option B: structural reform; Option C: deliberate inaction/delay
+    - Option A: favors one constituency at another's expense; Option B: compromise; Option C: coercive/confrontational
+
+17. **Relationship Effects** (for foreign-actor scenarios):
+    When the scenario involves a foreign actor (ally, adversary, border rival, trade partner), at least one option MUST include \`relationshipEffects\`.
+    Format: \`{ "relationshipId": "ally"|"adversary"|"border_rival"|"trade_partner", "delta": <number>, "probability": <number> }\`
+    - delta: −15 to +15. Negative delta worsens the relationship; positive improves it.
+    - probability: 0.7–1.0. Use 1.0 for certain diplomatic consequences.
+    - Aggressive options → negative delta for allies, positive for adversaries (relationship worsens).
+    - Conciliatory options → positive delta for allies, negative for adversaries (relationship improves).
+    - At least one option in a foreign-actor scenario should have a relationship delta ≥ |5|.
 `.trim();
 }
 
@@ -279,4 +341,3 @@ export function isValidMetric(metricId: string): boolean {
 export function isInverseMetric(metricId: string): boolean {
   return isInverseMetricSource(metricId);
 }
-

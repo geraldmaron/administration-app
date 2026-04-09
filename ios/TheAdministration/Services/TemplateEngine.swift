@@ -7,8 +7,8 @@ import Foundation
 class TemplateEngine {
     static let shared = TemplateEngine()
 
-    private static let placeholderPattern = #"\{\{?([a-zA-Z_]+)\}?\}"#
-    private static let unresolvedPlaceholderPattern = #"\{\{?[a-zA-Z_]+\}?\}"#
+    private static let placeholderPattern = #"\{+([a-zA-Z_]+)\}+"#
+    private static let unresolvedPlaceholderPattern = #"\{+[a-zA-Z_]+\}+"#
     private static let optionalBranchTokens: Set<String> = [
         "marine_branch", "space_branch", "paramilitary_branch",
         "coast_guard_branch", "intel_branch", "cyber_branch",

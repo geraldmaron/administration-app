@@ -1,4 +1,5 @@
-import { isEmulatorMode } from '@/lib/firebase-admin';
+import { isEmulatorMode, db } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { hasRequestedOllamaModel } from '@/lib/generation-models';
 import type { GenerationJobRequest } from '@/lib/types';
 
@@ -235,7 +236,37 @@ export function resolveSubmissionMethod(executionTarget?: string): 'n8n' | 'clou
   return n8nWebhookUrl ? 'n8n' : 'cloud_function';
 }
 
+async function markJobFailed(jobId: string, error: string): Promise<void> {
+  try {
+    await db.collection('generation_jobs').doc(jobId).update({
+      status: 'failed',
+      error,
+      currentPhase: 'failed',
+      currentMessage: error,
+      completedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  } catch (cleanupErr) {
+    console.error(`Failed to mark job ${jobId} as failed after dispatch error:`, cleanupErr);
+  }
+}
+
 export async function submitJob(payload: GenerationJobRequest, executionTarget?: string): Promise<string> {
+  if (hasRequestedOllamaModel(payload.modelConfig)) {
+    const jobId = await submitQueuedGenerationJob({
+      ...payload,
+      executionTarget: 'local',
+    });
+
+    try {
+      await dispatchQueuedGenerationJobLocally(jobId, payload);
+    } catch (dispatchErr) {
+      await markJobFailed(jobId, `Local dispatch failed: ${dispatchErr instanceof Error ? dispatchErr.message : String(dispatchErr)}`);
+      throw dispatchErr;
+    }
+    return jobId;
+  }
+
   const method = resolveSubmissionMethod(executionTarget);
   if (method !== 'n8n') {
     return submitQueuedGenerationJob(payload);
@@ -246,6 +277,11 @@ export async function submitJob(payload: GenerationJobRequest, executionTarget?:
     executionTarget: 'n8n',
   });
 
-  await dispatchQueuedGenerationJobViaN8n(jobId, payload);
+  try {
+    await dispatchQueuedGenerationJobViaN8n(jobId, payload);
+  } catch (dispatchErr) {
+    await markJobFailed(jobId, `n8n dispatch failed: ${dispatchErr instanceof Error ? dispatchErr.message : String(dispatchErr)}`);
+    throw dispatchErr;
+  }
   return jobId;
 }

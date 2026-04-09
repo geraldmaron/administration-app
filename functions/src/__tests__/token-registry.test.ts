@@ -1,4 +1,9 @@
-import { normalizeTokenAliases } from '../lib/token-registry';
+import {
+    normalizeTokenAliases,
+    deriveTokenStrategy,
+    buildMinimalTokenPromptSection,
+    MINIMAL_ALL_TOKENS,
+} from '../lib/token-registry';
 
 describe('normalizeTokenAliases', () => {
     test('normalizes hallucinated ministry and culture tokens to valid role tokens', () => {
@@ -13,7 +18,7 @@ describe('normalizeTokenAliases', () => {
 
     test('rewrites unsupported legislature speaker placeholders to supported narrative text', () => {
         const text = '{the_legislature_speaker} warned that {legislature_speaker} could delay the vote.';
-        expect(normalizeTokenAliases(text)).toBe('the speaker of {the_legislature} warned that speaker of {the_legislature} could delay the vote.');
+        expect(normalizeTokenAliases(text)).toBe('the speaker of the {legislature} warned that speaker of the {legislature} could delay the vote.');
     });
 
     test('rewrites metric placeholders in narrative text to plain language labels', () => {
@@ -23,7 +28,7 @@ describe('normalizeTokenAliases', () => {
 
     test('normalizes {the_opposition} and {opposition} to opposition_party tokens', () => {
         const text = '{the_opposition} challenged the vote while {opposition} lawmakers staged a walkout.';
-        expect(normalizeTokenAliases(text)).toBe('{the_opposition_party} challenged the vote while {opposition_party} lawmakers staged a walkout.');
+        expect(normalizeTokenAliases(text)).toBe('{opposition_party} challenged the vote while {opposition_party} lawmakers staged a walkout.');
     });
 
     test('fuzzy-resolves _minister suffix tokens to _role equivalents via normalizeTokenAliases', () => {
@@ -44,5 +49,32 @@ describe('normalizeTokenAliases', () => {
     test('normalizes security and police aliases', () => {
         const text = '{police} deployed while {security_forces} secured the area.';
         expect(normalizeTokenAliases(text)).toBe('{police_force} deployed while {police_force} secured the area.');
+    });
+
+});
+
+describe('minimal token strategy', () => {
+    test('deriveTokenStrategy returns none for exclusive, minimal for others', () => {
+        expect(deriveTokenStrategy('exclusive')).toBe('none');
+        expect(deriveTokenStrategy('universal')).toBe('minimal');
+        expect(deriveTokenStrategy('regional')).toBe('minimal');
+        expect(deriveTokenStrategy('cluster')).toBe('minimal');
+    });
+
+    test('MINIMAL_ALL_TOKENS includes core, role, institutional, and political tokens', () => {
+        expect(MINIMAL_ALL_TOKENS).toContain('leader_title');
+        expect(MINIMAL_ALL_TOKENS).toContain('finance_role');
+        expect(MINIMAL_ALL_TOKENS).toContain('central_bank');
+        expect(MINIMAL_ALL_TOKENS).toContain('legislature');
+        expect(MINIMAL_ALL_TOKENS).not.toContain('the_finance_role');
+        expect(MINIMAL_ALL_TOKENS).not.toContain('the_player_country');
+    });
+
+    test('buildMinimalTokenPromptSection returns compact token list', () => {
+        const section = buildMinimalTokenPromptSection();
+        expect(section).toContain('{finance_role}');
+        expect(section).toContain('{leader_title}');
+        expect(section).toContain('NO special');
+        expect(section).not.toContain('{the_finance_role}');
     });
 });

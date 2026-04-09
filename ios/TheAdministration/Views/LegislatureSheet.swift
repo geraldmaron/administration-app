@@ -27,6 +27,11 @@ struct LegislatureSheet: View {
             }
             .navigationTitle("Legislature")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                if !gameStore.countryParties.isEmpty {
+                    gameStore.reconcileLegislatureWithCountryParties()
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
@@ -78,7 +83,7 @@ struct LegislatureSheet: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
         .accessibilityElement(children: .combine)
@@ -333,7 +338,7 @@ struct LegislatureSheet: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
     }

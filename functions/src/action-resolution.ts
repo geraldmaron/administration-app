@@ -1,6 +1,8 @@
 import { onRequest } from 'firebase-functions/v2/https';
 import * as logger from 'firebase-functions/logger';
 import { callModelProvider, getPhaseModels, PHASE_CONFIGS } from './lib/model-providers';
+import { isValidMetricId } from './data/schemas/metricIds';
+import { applyMetricDeltasAsDecision, createInitialBackendState } from './lib/scoring-engine';
 import type {
     ActionResolutionRequest,
     ActionResolutionResponse,
@@ -18,6 +20,7 @@ import {
 import { getAuth } from 'firebase-admin/auth';
 import * as fs from 'fs';
 import * as path from 'path';
+import { resolveActionTemplate } from './lib/action-templates';
 
 function getIntakeSecret(): string | undefined {
     return process.env.GENERATION_INTAKE_SECRET || process.env.ADMIN_SECRET;
@@ -63,28 +66,19 @@ export function clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
 }
 
-const VALID_METRIC_IDS = new Set([
-    'metric_approval', 'metric_economy', 'metric_foreign_relations', 'metric_public_order',
-    'metric_military', 'metric_health', 'metric_education', 'metric_environment',
-    'metric_technology', 'metric_corruption', 'metric_inflation', 'metric_crime',
-    'metric_employment', 'metric_inequality', 'metric_energy', 'metric_infrastructure',
-    'metric_media_freedom', 'metric_civil_liberties', 'metric_food_security',
-    'metric_housing', 'metric_digital_infrastructure',
-]);
-
 export function clampMetricDeltas(
     deltas: MetricDelta[],
     bounds: { min: number; max: number },
 ): MetricDelta[] {
     return deltas
-        .filter((d) => VALID_METRIC_IDS.has(d.metricId))
+        .filter((d) => isValidMetricId(d.metricId))
         .map((d) => ({
             metricId: d.metricId,
             delta: clamp(d.delta, bounds.min, bounds.max),
         }));
 }
 
-function getSeverityMultiplier(severity?: SeverityLevel): number {
+export function getSeverityMultiplier(severity?: SeverityLevel): number {
     if (severity === 'high') return 2.0;
     if (severity === 'low') return 0.5;
     return 1.0;
@@ -237,6 +231,11 @@ export function sanitizeResponse(
         );
     }
 
+    const resolvedState = applyMetricDeltasAsDecision(
+        createInitialBackendState(req.metrics, req.turn, req.maxTurns),
+        metricDeltas,
+    );
+
     return {
         headline: typeof raw.headline === 'string' ? raw.headline.slice(0, 200) : 'Action Executed',
         summary: typeof raw.summary === 'string' ? raw.summary.slice(0, 1000) : '',
@@ -248,6 +247,7 @@ export function sanitizeResponse(
         newsCategory: typeof raw.newsCategory === 'string' ? raw.newsCategory : (category === 'trust_your_gut' ? 'executive' : category),
         newsTags: Array.isArray(raw.newsTags) ? raw.newsTags.filter((t): t is string => typeof t === 'string').slice(0, 5) : [],
         isAtrocity,
+        resolvedState,
     };
 }
 
@@ -284,6 +284,16 @@ export const resolveAction = onRequest({
     if (validationError) {
         response.status(400).json({ success: false, error: validationError } satisfies ActionResolutionResult);
         return;
+    }
+
+    if (body.actionCategory !== 'trust_your_gut') {
+        const templateResult = resolveActionTemplate(body);
+        if (templateResult) {
+            const sanitized = sanitizeResponse(templateResult, body);
+            logger.info(`[ActionResolution] Template: ${body.actionType} → "${sanitized.headline}"`);
+            response.status(200).json({ success: true, result: sanitized } satisfies ActionResolutionResult);
+            return;
+        }
     }
 
     try {

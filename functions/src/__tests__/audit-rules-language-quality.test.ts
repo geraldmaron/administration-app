@@ -1,4 +1,4 @@
-import { ALL_TOKENS, ARTICLE_FORM_TOKEN_NAMES, CANONICAL_ROLE_IDS } from '../lib/token-registry';
+import { ALL_TOKENS, CANONICAL_ROLE_IDS } from '../lib/token-registry';
 import { VALID_SETTING_TARGETS } from '../types';
 import { auditScenario, deterministicFix, setAuditConfigForTests } from '../lib/audit-rules';
 import type { AuditConfig, BundleScenario } from '../lib/audit-rules';
@@ -24,7 +24,8 @@ function makeAuditConfig(): AuditConfig {
         govTypesByCountryId: {},
         countriesById: {},
         canonicalRoleIds: [...CANONICAL_ROLE_IDS],
-        articleFormTokenNames: new Set<string>(ARTICLE_FORM_TOKEN_NAMES),
+        articleFormTokenNames: new Set<string>(),
+        sentenceStartArticleFormTokenNames: new Set<string>(),
         validSettingTargets: VALID_SETTING_TARGETS as unknown as readonly string[],
     };
 }
@@ -156,6 +157,20 @@ describe('auditScenario newsroom language validation', () => {
         expect(issues.some((i) => i.rule === 'lowercase-start' && i.message.includes('option_a') && i.message.includes('lowercase'))).toBe(false);
     });
 
+    test('does not warn on sentence-start bare token for article-unsafe institution tokens', () => {
+        const scenario = makeScenario();
+        scenario.description = '{legislature} opens an emergency inquiry after new procurement records surface. Ministers now have to decide whether to cooperate fully or limit the scope of testimony.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'sentence-start-bare-token')).toBe(false);
+    });
+
+    test('no longer warns on sentence-start bare token (article forms eliminated)', () => {
+        const scenario = makeScenario();
+        scenario.description = '{finance_role} announces emergency liquidity support before markets open. Exporters welcome the intervention, but critics warn that the balance sheet risk could widen.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((i) => i.rule === 'sentence-start-bare-token')).toBe(false);
+    });
+
     test('still fires lowercase-start on non-token lowercase text', () => {
         const scenario = makeScenario();
         scenario.title = 'warns of credit downgrade';
@@ -231,5 +246,16 @@ describe('deterministicFix sentence condensing', () => {
         const result = deterministicFix(scenario);
         expect(result.fixes.some(f => f.includes('condensed description'))).toBe(false);
         expect(scenario.description).toBe(original);
+    });
+
+    test('no longer rewrites sentence-start bare tokens to article forms (article forms eliminated)', () => {
+        const scenario = makeScenario();
+        scenario.description = '{player_country} faces a sudden bond selloff after overnight rumors shake investor confidence.';
+        scenario.options[0].text = 'The {finance_role} opens emergency hearings on the fiscal package while ministers prepare new testimony. The review delays implementation, but it may calm accusations of executive overreach.';
+
+        deterministicFix(scenario);
+
+        expect(scenario.description).toContain('{player_country} faces a sudden bond selloff');
+        expect(scenario.options[0].text).toContain('{finance_role}');
     });
 });

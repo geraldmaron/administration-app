@@ -218,6 +218,7 @@ export interface JobResult {
   countryCount?: number | null;
   requires?: Record<string, boolean | string>;
   tags?: string[];
+  fullSendProvider?: 'openai' | 'local';
 }
 
 export interface JobError {
@@ -330,7 +331,7 @@ export interface JobIssueSummary {
 
 export interface GenerationRunSummary {
   id: string;
-  kind: 'blitz' | 'manual';
+  kind: 'blitz' | 'manual' | 'full_send';
   status: string;
   requestedAt?: string;
   submittedAt?: string;

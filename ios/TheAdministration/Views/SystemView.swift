@@ -149,7 +149,7 @@ struct SystemView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(AppColors.accentPrimary)
                 )
             }
@@ -163,7 +163,7 @@ struct SystemView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(AppColors.success.opacity(0.1))
                             .frame(width: 36, height: 36)
                         
@@ -207,7 +207,7 @@ struct SystemView: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(AppColors.success.opacity(0.1))
                 )
             }
@@ -245,7 +245,7 @@ struct StatCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
     }
@@ -264,7 +264,7 @@ struct SectionCard<Content: View>: View {
             Button(action: toggle) {
                 HStack(spacing: 14) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(AppColors.success.opacity(0.1))
                             .frame(width: 36, height: 36)
                         
@@ -301,7 +301,7 @@ struct SectionCard<Content: View>: View {
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
     }
@@ -383,7 +383,7 @@ struct MetricEditorRow: View {
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
         .onChange(of: value) { _, newValue in
@@ -445,7 +445,7 @@ struct GameStateView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(AppColors.backgroundMuted)
                     )
                 }
@@ -464,7 +464,7 @@ struct GameStateView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(AppColors.error.opacity(0.1))
                     )
                 }
@@ -688,7 +688,7 @@ struct SaveSlotsView: View {
         }
         .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(isActive ? AppColors.accentPrimary.opacity(0.05) : AppColors.backgroundElevated)
         )
     }
@@ -763,7 +763,7 @@ struct SaveSlotsView: View {
         }
         .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
     }
@@ -895,7 +895,7 @@ struct NewsEditorView: View {
             .foregroundColor(AppColors.background)
             .padding(.horizontal, 14).padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(headline.isEmpty ? AppColors.border : AppColors.accentPrimary)
             )
             .accessibilityLabel("Inject news article")

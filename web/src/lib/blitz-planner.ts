@@ -4,10 +4,10 @@ import type { GenerationModelConfig } from './generation-contract';
 export type BlitzPriority = 'high' | 'medium' | 'low';
 
 export const SCOPE_TIER_RATIOS: Record<ScenarioScopeTier, number> = {
-  universal: 0.40,
+  universal: 0.20,
   regional: 0.25,
-  cluster: 0.25,
-  exclusive: 0.10,
+  cluster: 0.30,
+  exclusive: 0.25,
 };
 
 const SCOPE_TIERS: ScenarioScopeTier[] = ['universal', 'regional', 'cluster', 'exclusive'];
@@ -67,6 +67,53 @@ export interface BlitzPlanningOptions {
   modelConfig?: GenerationModelConfig;
 }
 
+function emptyAllocation(): TierAllocation {
+  return { universal: 0, regional: 0, cluster: 0, exclusive: 0 };
+}
+
+function getPlannableTiers(regions: string[], countries: CountryEntry[]): ScenarioScopeTier[] {
+  const tiers: ScenarioScopeTier[] = ['universal'];
+  if (regions.length > 0) {
+    tiers.push('regional');
+  }
+  if (countries.length > 0) {
+    tiers.push('exclusive');
+  }
+  return tiers;
+}
+
+function allocateAcrossPlannableTiers(total: number, tiers: ScenarioScopeTier[]): TierAllocation {
+  if (total <= 0 || tiers.length === 0) {
+    return emptyAllocation();
+  }
+
+  const allocation = emptyAllocation();
+  const totalWeight = tiers.reduce((sum, tier) => sum + SCOPE_TIER_RATIOS[tier], 0);
+  if (totalWeight <= 0) {
+    return allocation;
+  }
+
+  let assigned = 0;
+  const remainders = tiers
+    .map((tier) => {
+      const raw = total * (SCOPE_TIER_RATIOS[tier] / totalWeight);
+      const rounded = Math.floor(raw);
+      allocation[tier] = rounded;
+      assigned += rounded;
+      return { tier, remainder: raw - rounded };
+    })
+    .sort((a, b) => b.remainder - a.remainder);
+
+  let remaining = total - assigned;
+  for (const entry of remainders) {
+    if (remaining <= 0) break;
+    allocation[entry.tier] += 1;
+    remaining -= 1;
+  }
+
+  return allocation;
+}
+
 function formatBlitzJobDescription(
   scopeTier: ScenarioScopeTier,
   scopeKey: string,
@@ -118,7 +165,7 @@ export function calculateDeficits(
   inventory: InventoryCell[],
   totalPerBundle: number,
 ): DeficitCell[] {
-  const allocation = allocateByRatio(totalPerBundle);
+  const allocation = allocateAcrossPlannableTiers(totalPerBundle, getPlannableTiers(regions, countries));
 
   const lookup = new Map<string, number>();
   for (const cell of inventory) {
@@ -340,7 +387,7 @@ export function buildBlitzPlan(
   maxJobsPerBlitz: number,
   options?: BlitzPlanningOptions,
 ): BlitzPreview {
-  const allocation = allocateByRatio(totalScenarios);
+  const allocation = allocateAcrossPlannableTiers(totalScenarios, getPlannableTiers(regions, countries));
   const deficits = calculateDeficits(bundles, regions, countries, inventory, analysisTargetPerBundle);
   const candidateJobs = groupDeficitsIntoJobs(deficits, availableSlots, maxJobsPerBlitz, options);
   const plannedJobs = fitJobsToScenarioBudget(candidateJobs, totalScenarios);

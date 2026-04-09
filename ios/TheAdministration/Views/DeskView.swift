@@ -255,8 +255,11 @@ struct DeskView: View {
             .accessibilityLabel("Metric info")
         }
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(Color.white.opacity(0.08))
+        )
+        .overlay(
+            HUDCornerBrackets()
         )
         .opacity(contentAppeared ? 1 : 0)
     }
@@ -317,7 +320,7 @@ struct DeskView: View {
                     .padding(12)
                     .frame(maxWidth: .infinity)
                     .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(isCritical ? color.opacity(0.10) : Color.white.opacity(0.08))
                     )
                     .contentShape(Rectangle())
@@ -404,14 +407,23 @@ struct DeskView: View {
                     }
             }
 
-            if let scenario = gameStore.currentScenario {
+            if gameStore.isLoading {
+                Text("Situation Room")
+                    .font(AppTypography.headline)
+                    .foregroundColor(AppColors.foreground)
+
+                Text("Compiling briefing materials. Secure channel active.")
+                    .font(AppTypography.bodySmall)
+                    .foregroundColor(AppColors.foregroundMuted)
+                    .shimmerLoading()
+            } else if let scenario = gameStore.currentScenario {
                 Text(scenario.title)
                     .font(AppTypography.headline)
                     .foregroundColor(AppColors.foreground)
 
                 Text(displayDescription(for: scenario))
                     .font(AppTypography.bodySmall)
-                    .foregroundColor(AppColors.foregroundMuted)
+                    .foregroundColor(AppColors.foreground)
                     .italic()
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -432,7 +444,7 @@ struct DeskView: View {
                     }
                 }
             } else {
-                Text("System Initialization")
+                Text("Situation Room")
                     .font(AppTypography.headline)
                     .foregroundColor(AppColors.foreground)
 
@@ -444,9 +456,15 @@ struct DeskView: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(Color.white.opacity(0.16))
         )
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(AppColors.accentPrimary)
+                .frame(width: 2)
+                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 6, bottomLeadingRadius: 6))
+        }
     }
 
     // MARK: - Outcome Overlay
@@ -647,7 +665,7 @@ struct DeskView: View {
                     }
                 }
                 .background(AppColors.backgroundElevated)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .padding(.horizontal, 16)
                 .padding(.top, 40)
                 .padding(.bottom, AppSpacing.tabBarClearance + 20)
@@ -975,7 +993,7 @@ struct AnimatedCircularGraphView: View {
                     .trim(from: 0, to: CGFloat(max(0, min(0.75, (animatedValue / 100) * 0.75))))
                     .stroke(
                         LinearGradient(
-                            colors: [gaugeColor.opacity(0.4), gaugeColor],
+                            colors: [AppColors.accentPrimary.opacity(0.45), AppColors.accentPrimary],
                             startPoint: .leading,
                             endPoint: .trailing
                         ),
@@ -987,7 +1005,7 @@ struct AnimatedCircularGraphView: View {
                     if format == .letter {
                         Text(MetricFormatting.metricDisplayValue(value: animatedValue, format: .letter, metricId: metricId))
                             .font(.system(size: 56, weight: .bold, design: .monospaced))
-                            .foregroundColor(gaugeColor)
+                            .foregroundColor(AppColors.accentPrimary)
                             .contentTransition(.numericText())
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)
@@ -996,7 +1014,7 @@ struct AnimatedCircularGraphView: View {
                             HStack(alignment: .firstTextBaseline, spacing: 2) {
                                 Text(String(format: "%.1f", animatedValue))
                                     .font(.system(size: 44, weight: .bold, design: .monospaced))
-                                    .foregroundColor(gaugeColor)
+                                    .foregroundColor(AppColors.accentPrimary)
                                     .monospacedDigit()
                                     .contentTransition(.numericText())
                                     .lineLimit(1)
@@ -1070,7 +1088,7 @@ struct CrisisDetailSheet: View {
                     }
                     .padding(12)
                     .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.backgroundElevated)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous).fill(AppColors.backgroundElevated)
                     )
                 }
                 .padding(20)

@@ -972,7 +972,7 @@ Its job is **not** to excuse an invalid scenario premise. A border-war scenario 
 
 **Executive**: `{leader_title}`, `{vice_leader}`
 
-**Legislative**: `{legislature}`, `{upper_house}`, `{lower_house}`, `{governing_party}`
+**Legislative / partisan**: `{legislature}`, `{upper_house}`, `{lower_house}`, `{governing_party}`, `{opposition_party}`
 
 **Judicial**: `{judicial_role}`, `{chief_justice_role}`, `{prosecutor_role}`
 
@@ -996,6 +996,13 @@ These values should be scaled to country GDP and narrative context. They exist t
 
 Optional tokens may resolve to nil or empty values when the institution does not exist for a given country, including `{sovereign_fund}`, `{marine_branch}`, `{space_branch}`, and `{paramilitary_branch}`.
 
+Current-runtime note:
+
+1. Structural political tokens are **not equally safe across all scope tiers**.
+2. In current generation, `universal` scenarios should prefer core cross-country tokens (`{leader_title}`, cabinet roles, `{currency}`, `{central_bank}`, `{armed_forces_name}`, `{capital_city}`) and plain-English institutional phrasing.
+3. `universal` scenarios should avoid regime-specific or party-specific tokens such as `{legislature}`, `{upper_house}`, `{lower_house}`, `{governing_party}`, `{opposition_party}`, and `{state_media}` unless the scenario is narrowed enough that the runtime can resolve them reliably.
+4. When those unstable tokens leak into universal prose, deterministic normalization may rewrite them to plain English before acceptance.
+
 ### 13.5 Realism Gates Around Tokens
 
 The rebuild contract requires token-aware realism validation:
@@ -1015,8 +1022,9 @@ Rules:
 1. All stored scenarios remain tokenized, including `exclusive` scenarios.
 2. `exclusive` means narrow eligibility, not hardcoded prose.
 3. Country names, party names, minister names, titles, and institutions continue to resolve at runtime.
-4. Scope tiers control scenario targeting and prompt overlays, not token resolution behavior.
-5. A scenario may be highly country-specific in premise while still requiring tokenized output fields.
+4. Scope tiers control scenario targeting **and which token families are considered safe to emit**.
+5. `universal` scope is intentionally conservative: transferability outranks institutional specificity, so regime-specific actors should usually be written in plain English instead of tokenized.
+6. A scenario may be highly country-specific in premise while still requiring tokenized output fields.
 
 ### 13.7 Relationship Token Resolution
 
@@ -1669,6 +1677,7 @@ Current implementation note:
 
 1. Scope metadata is written into accepted scenarios during enrichment.
 2. Scope-aware prompt overlays exist, but the wider scope-aware planning, retrieval, and runtime-selection model is still incomplete.
+3. Universal-scope prompting is stricter than the raw token registry: some valid runtime tokens are still treated as too fragile for universal generation and are rewritten or discouraged accordingly.
 
 ### 23.11 Current Implementation Notes
 

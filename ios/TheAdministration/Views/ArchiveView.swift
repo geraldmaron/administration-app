@@ -57,7 +57,7 @@ struct ArchiveView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
         .padding(.horizontal, 16)

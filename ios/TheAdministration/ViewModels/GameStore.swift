@@ -62,6 +62,7 @@ class GameStore: ObservableObject {
     @Published var showOutcome: Bool = false
     @Published var outcomeBriefingReady: Bool = false
     @Published var requestedTab: Int? = nil
+    @Published var scenarioLoadError: String? = nil
     @Published var endGameReview: ScoringEngine.EndGameReview?
     @Published var isLoading: Bool = false
     @Published var countryParties: [PoliticalParty] = []
@@ -127,12 +128,22 @@ class GameStore: ObservableObject {
     private func loadScenarios() {
         // Load scenarios, countries, and app config from Firebase
         Task {
+            await AuthService.shared.ensureAuthenticated()
+
             if FirebaseDataService.shared.isFirebaseAvailable() {
                 await ScenarioNavigator.shared.loadScenarios()
                 let count = await ScenarioNavigator.shared.getScenarioCount()
                 print("✓ Loaded \(count) scenarios from Firebase")
+                if count == 0 {
+                    await MainActor.run {
+                        self.scenarioLoadError = "No scenarios available. Check your connection."
+                    }
+                }
             } else {
                 print("⚠️  Firebase not available - scenarios won't load")
+                await MainActor.run {
+                    self.scenarioLoadError = "Firebase not available"
+                }
             }
 
             async let countriesFetch = FirebaseDataService.shared.getCountries()
@@ -945,7 +956,7 @@ class GameStore: ObservableObject {
         var nextScenario: Scenario?
         
         // 1. Try to find a matching scenario from Firebase pool
-        // Load scenarios from Firebase via ScenarioNavigator
+        await AuthService.shared.ensureAuthenticated()
         await ScenarioNavigator.shared.loadScenarios()
         let scenarioCount = await ScenarioNavigator.shared.getScenarioCount()
         print("🎯 [GameStore] Firebase scenario count: \(scenarioCount)")
@@ -997,6 +1008,9 @@ class GameStore: ObservableObject {
                             $0.sharedBorder && ["rival", "adversary", "conflict"].contains($0.type)
                         }
                         if !hasBorderAdversary { return false }
+                    }
+                    if let req = scenario.metadata?.requires {
+                        if !scenarioMeetsRequirements(req, country: country, gameState: state) { return false }
                     }
                     if let currentCountry,
                        !TemplateEngine.shared.canResolveScenarioWithoutFallback(scenario, country: currentCountry, gameState: state) {
@@ -1064,6 +1078,10 @@ class GameStore: ObservableObject {
                 }
                 if !hasBorderAdversary { return false }
             }
+            // Structural requirements gate: enforce metadata.requires flags against current country state
+            if let req = scenario.metadata?.requires, let country = currentCountry {
+                if !scenarioMeetsRequirements(req, country: country, gameState: state) { return false }
+            }
             if let currentCountry,
                !TemplateEngine.shared.canResolveScenarioWithoutFallback(scenario, country: currentCountry, gameState: state) {
                 return false
@@ -1080,6 +1098,23 @@ class GameStore: ObservableObject {
             } else if !normal.isEmpty {
                 pool = normal
             }
+        }
+
+        // If metric conditions filtered everything out but Firebase has scenarios, relax conditions
+        // so that unconditional or loosely-conditioned Firebase content always has a chance to appear.
+        if pool.isEmpty && !allScenarios.isEmpty {
+            pool = allScenarios.filter { scenario in
+                guard scenario.options.count >= 3 else { return false }
+                let isDick = scenario.tags?.contains(where: { t in t.lowercased().contains("dick") || t.lowercased() == "dic" }) ?? false
+                if isDick && !isDickMode { return false }
+                if state.playedScenarioIds.contains(scenario.id) { return false }
+                if let ac = scenario.metadata?.applicableCountries, !ac.isEmpty {
+                    guard let countryId = state.countryId else { return false }
+                    if !ac.contains(where: { $0.lowercased() == countryId.lowercased() }) { return false }
+                }
+                return true
+            }
+            print("🎯 [GameStore] Condition-relaxed pool size: \(pool.count)")
         }
 
         // De-prioritise recently seen scenarios
@@ -1154,22 +1189,41 @@ class GameStore: ObservableObject {
     }
     
     private func createFallbackScenario() -> Scenario {
+        let fallbacks: [(title: String, description: String, opts: [(String, String)])] = [
+            (
+                "Discretionary Appropriations Review",
+                "The Office of Management and Budget has flagged a discretionary spending item for executive review. Your signature is required before the fiscal window closes.",
+                [("Authorize", "metric_approval"), ("Request Audit", "metric_corruption"), ("Defer to Cabinet", "metric_approval")]
+            ),
+            (
+                "Inter-Agency Protocol Dispute",
+                "Two cabinet departments have escalated a jurisdictional conflict requiring executive arbitration. A ruling is needed to unblock pending operations.",
+                [("Rule for lead agency", "metric_approval"), ("Establish joint task force", "metric_approval"), ("Remand for further review", "metric_approval")]
+            ),
+            (
+                "Emergency Regulatory Waiver",
+                "An emergency waiver request has reached your desk. Industry stakeholders and agency counsel are split. The clock is running.",
+                [("Grant the waiver", "metric_economy"), ("Deny and uphold regulation", "metric_approval"), ("Grant partial waiver", "metric_economy")]
+            ),
+            (
+                "Executive Order — Signature Pending",
+                "Counsel has completed review of a prepared executive order. It is ready for your signature or revision before the press briefing window.",
+                [("Sign as written", "metric_approval"), ("Request minor revisions", "metric_approval"), ("Withhold pending review", "metric_approval")]
+            ),
+        ]
+        let pick = fallbacks[state.turn % fallbacks.count]
         return Scenario(
             id: "scenario_fallback_\(Int(Date().timeIntervalSince1970))",
-            title: "Administrative Decision",
-            description: "A routine administrative matter requires your attention on turn \(state.turn).",
+            title: pick.title,
+            description: pick.description,
             conditions: nil,
             phase: nil,
-            severity: nil,
+            severity: .low,
             chainId: nil,
-            options: [
-                Option(id: "opt_1", text: "Approve",
-                       effects: [Effect(targetMetricId: "metric_approval", value: 1.0, duration: 1, probability: 0.9)]),
-                Option(id: "opt_2", text: "Review Further",
-                       effects: [Effect(targetMetricId: "metric_approval", value: 0.5, duration: 1, probability: 0.8)]),
-                Option(id: "opt_3", text: "Delay and Gather More Input",
-                       effects: [])
-            ],
+            options: pick.opts.enumerated().map { idx, opt in
+                Option(id: "opt_\(idx + 1)", text: opt.0,
+                       effects: [Effect(targetMetricId: opt.1, value: 1.0, duration: 1, probability: 0.85)])
+            },
             chainsTo: nil
         )
     }
@@ -1483,7 +1537,61 @@ class GameStore: ObservableObject {
         updated.approvalOfPlayer = totalSeats > 0
             ? Int(updated.composition.reduce(0.0) { $0 + Double($1.approvalOfPlayer) * $1.seatShare } / totalSeats)
             : 50
+        updated.coalitionFragility = computeCoalitionFragility(updated)
         return updated
+    }
+
+    private func inferStance(from metricDeltas: [String: Double], category: String) -> Double {
+        let milDelta = metricDeltas["metric_military"] ?? 0.0
+        let frDelta  = metricDeltas["metric_foreign_relations"] ?? 0.0
+        guard abs(milDelta) > 0.5 || abs(frDelta) > 0.5 else { return 0.0 }
+        let raw = (milDelta / 15.0) * 0.6 + (-frDelta / 20.0) * 0.4
+        return max(-1.0, min(1.0, raw))
+    }
+
+    private func computeCoalitionFragility(_ legislature: LegislatureState) -> Int {
+        let ruling = legislature.composition.filter { $0.isRulingCoalition }
+        let rulingShare = ruling.reduce(0.0) { $0 + $1.seatShare }
+        let seatFragility = max(0.0, min(1.0, (0.20 - (rulingShare - 0.50)) / 0.20))
+        let totalRulingSeats = ruling.reduce(0.0) { $0 + $1.seatShare }
+        let avgRulingApproval: Double = totalRulingSeats > 0
+            ? ruling.reduce(0.0) { $0 + Double($1.approvalOfPlayer) * $1.seatShare } / totalRulingSeats
+            : 50.0
+        let approvalFragility = max(0.0, min(1.0, (60.0 - avgRulingApproval) / 60.0))
+        return Int(((seatFragility * 0.5 + approvalFragility * 0.5) * 100).rounded())
+    }
+
+    private func applyLegislativeStanceEffect(stance: Double, category: String) {
+        guard abs(stance) > 0.05 else { return }
+        guard var legislature = state.legislatureState else { return }
+
+        let baseWeight: Double
+        switch category {
+        case "military":   baseWeight = 1.0
+        case "diplomatic": baseWeight = 0.6
+        default:           baseWeight = 0.4
+        }
+
+        for i in legislature.composition.indices {
+            let bloc = legislature.composition[i]
+            let blocBias = (Double(bloc.ideologicalPosition) - 5.5) / 4.5
+            let alignment = stance * blocBias
+            let loyaltyBonus = bloc.isRulingCoalition ? stance * 0.25 : 0.0
+            let rawDelta = (alignment + loyaltyBonus) * baseWeight
+            let blocDelta = max(-8.0, min(8.0, rawDelta * 8.0))
+            legislature.composition[i].approvalOfPlayer = max(0, min(100,
+                bloc.approvalOfPlayer + Int(blocDelta.rounded())
+            ))
+        }
+
+        let totalSeats = legislature.composition.reduce(0.0) { $0 + $1.seatShare }
+        legislature.approvalOfPlayer = totalSeats > 0
+            ? Int(legislature.composition.reduce(0.0) {
+                $0 + Double($1.approvalOfPlayer) * $1.seatShare
+              } / totalSeats)
+            : 50
+        legislature.coalitionFragility = computeCoalitionFragility(legislature)
+        state.legislatureState = legislature
     }
 
     // MARK: - Scenario Scheduling Helpers
@@ -1502,6 +1610,71 @@ class GameStore: ObservableObject {
         if !state.playedScenarioIds.contains(scenario.id) {
             state.playedScenarioIds.append(scenario.id)
         }
+    }
+
+    private func scenarioMeetsRequirements(_ req: ScenarioRequirements, country: Country, gameState: GameState) -> Bool {
+        guard let geo = country.geopoliticalProfile else { return true }
+
+        // Relationship / geopolitical structure
+        if req.landBorderAdversary == true {
+            let ok = geo.neighbors.contains { $0.sharedBorder && ["rival", "adversary", "conflict"].contains($0.type) }
+            if !ok { return false }
+        }
+        if req.formalAlly == true {
+            if !geo.allies.contains(where: { $0.type == "formal_ally" }) { return false }
+        }
+        if req.adversary == true {
+            if geo.adversaries.isEmpty { return false }
+        }
+        if req.tradePartner == true {
+            if !geo.allies.contains(where: { $0.type == "strategic_partner" }) { return false }
+        }
+
+        // Geography
+        if req.islandNation == true && !geo.tags.contains("island_nation") { return false }
+        if req.landlocked == true && !geo.tags.contains("landlocked") { return false }
+        if req.coastal == true && !geo.tags.contains("coastal") { return false }
+
+        // Military capabilities
+        if req.nuclearState == true && country.militaryProfile?.nuclear == nil { return false }
+        if req.cyberCapable == true {
+            let hasCyber = country.militaryProfile?.cyber != nil
+                || geo.tags.contains("cyber_power") || geo.tags.contains("cyber_capable")
+            if !hasCyber { return false }
+        }
+        if req.powerProjection == true {
+            let hasPP = country.militaryProfile?.doctrine == .powerProjection
+                || geo.tags.contains("power_projection") || geo.tags.contains("naval_power")
+            if !hasPP { return false }
+        }
+        if req.largeMilitary == true {
+            let readiness = country.militaryProfile?.overallReadiness ?? 0
+            if readiness < 65 && !geo.tags.contains("large_military") { return false }
+        }
+
+        // Regime type
+        let democraticCategories: Set<GovernmentCategory> = [.liberalDemocracy, .illiberalDemocracy, .constitutionalMonarchy]
+        let authoritarianCategories: Set<GovernmentCategory> = [.authoritarian, .totalitarian, .theocracy, .absoluteMonarchy]
+        if req.democraticRegime == true && !democraticCategories.contains(geo.governmentCategory) { return false }
+        if req.authoritarianRegime == true && !authoritarianCategories.contains(geo.governmentCategory) { return false }
+        if req.fragileState == true && geo.regimeStability >= 40 { return false }
+
+        // Dynamic game state: legislature and opposition exist as live institutions
+        if req.hasLegislature == true && gameState.legislatureState == nil { return false }
+        if req.hasOppositionParty == true {
+            let hasOpposition = gameState.legislatureState?.composition.contains { !$0.isRulingCoalition } ?? false
+            if !hasOpposition { return false }
+        }
+
+        // Power tier minimum
+        if let minTier = req.minPowerTier {
+            let tierRank: [String: Int] = ["superpower": 5, "great_power": 4, "regional_power": 3, "middle_power": 2, "small_state": 1]
+            let required = tierRank[minTier] ?? 0
+            let current = tierRank.keys.first { geo.tags.contains($0) }.flatMap { tierRank[$0] } ?? 0
+            if current < required { return false }
+        }
+
+        return true
     }
 
     private func areScenariosToSimilar(_ a: Scenario, _ b: Scenario) -> Bool {
@@ -2314,6 +2487,8 @@ class GameStore: ObservableObject {
             cabinetFeedback: [],
             timestamp: ISO8601DateFormatter().string(from: Date())
         )
+        let diplomaticStance = inferStance(from: changedMetrics, category: "diplomatic")
+        applyLegislativeStanceEffect(stance: diplomaticStance, category: "diplomatic")
         saveGame()
         var recent = state.recentActions ?? []
         recent.insert("diplomatic:\(type)", at: 0)
@@ -2553,6 +2728,8 @@ class GameStore: ObservableObject {
             cabinetFeedback: [],
             timestamp: ISO8601DateFormatter().string(from: Date())
         )
+        let militaryStance = inferStance(from: changedMetrics, category: "military")
+        applyLegislativeStanceEffect(stance: militaryStance, category: "military")
         saveGame()
         var recent = state.recentActions ?? []
         recent.insert("military:\(type)", at: 0)
@@ -3094,6 +3271,7 @@ class GameStore: ObservableObject {
 
         isLoading = true
         state.trustYourGutUsed += 1
+        let tygMetricsBefore = state.metrics
 
         var headline: String
         var summary: String
@@ -3171,6 +3349,12 @@ class GameStore: ObservableObject {
         )
         addNewsArticle(article)
         isLoading = false
+        let tygDeltas = Dictionary(uniqueKeysWithValues: state.metrics.compactMap { (k, v) in
+            let d = v - (tygMetricsBefore[k] ?? 50.0)
+            return abs(d) > 0.01 ? (k, d) : nil
+        })
+        let tygStance = inferStance(from: tygDeltas, category: "trust_your_gut")
+        applyLegislativeStanceEffect(stance: tygStance, category: "trust_your_gut")
         saveGame()
     }
 

@@ -29,11 +29,11 @@ struct CardStyleModifier: ViewModifier {
         content
             .padding(padding)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(background)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(borderColor, lineWidth: borderLineWidth)
             )
     }
@@ -99,7 +99,8 @@ struct AccentGlowModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .shadow(color: color.opacity(0.2), radius: min(radius, 6), x: 0, y: 0)
+            .shadow(color: color.opacity(0.35), radius: radius, x: 0, y: 0)
+            .shadow(color: color.opacity(0.15), radius: radius * 2.0, x: 0, y: 0)
     }
 }
 
@@ -141,8 +142,9 @@ struct StaggerEntranceModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : offset)
             .onAppear {
-                withAnimation(AppMotion.standard) {
+                withAnimation(AppMotion.standard.delay(Double(index) * 0.07)) {
                     appeared = true
                 }
             }
@@ -174,5 +176,40 @@ extension View {
 
     func staggerEntrance(index: Int, offset: CGFloat = 20) -> some View {
         modifier(StaggerEntranceModifier(index: index, offset: offset))
+    }
+}
+
+// MARK: - HUD Corner Brackets
+
+struct HUDCornerBrackets: View {
+    var color: Color = AppColors.accentPrimary
+    var length: CGFloat = 12
+    var lineWidth: CGFloat = 1
+    var opacity: Double = 0.75
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            Path { p in
+                p.move(to: CGPoint(x: 0, y: length))
+                p.addLine(to: CGPoint(x: 0, y: 0))
+                p.addLine(to: CGPoint(x: length, y: 0))
+
+                p.move(to: CGPoint(x: w - length, y: 0))
+                p.addLine(to: CGPoint(x: w, y: 0))
+                p.addLine(to: CGPoint(x: w, y: length))
+
+                p.move(to: CGPoint(x: w, y: h - length))
+                p.addLine(to: CGPoint(x: w, y: h))
+                p.addLine(to: CGPoint(x: w - length, y: h))
+
+                p.move(to: CGPoint(x: length, y: h))
+                p.addLine(to: CGPoint(x: 0, y: h))
+                p.addLine(to: CGPoint(x: 0, y: h - length))
+            }
+            .stroke(color.opacity(opacity), lineWidth: lineWidth)
+        }
+        .allowsHitTesting(false)
     }
 }

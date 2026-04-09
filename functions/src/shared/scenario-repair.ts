@@ -6,6 +6,8 @@
  * Pure TypeScript — no Firebase or external dependencies.
  */
 
+import { INSTITUTION_PHRASE_RULES, GOV_STRUCTURE_RULES, type PhraseRule } from './scenario-audit';
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface FieldChange {
@@ -109,6 +111,106 @@ export const ARTICLE_FORM_TOKENS: Record<string, string> = {
   regional_governor: 'the_regional_governor',
 };
 
+// ── Sentence utilities ─────────────────────────────────────────────────────
+
+function splitIntoSentences(text: string): string[] {
+  const stripped = text.replace(/\{[a-z_]+\}/g, 'TOKEN');
+  const parts: string[] = [];
+  let current = '';
+  for (let i = 0; i < stripped.length; i++) {
+    current += text[i];
+    if (/[.!?]/.test(stripped[i])) {
+      let j = i + 1;
+      while (j < stripped.length && /[.!?'"\u201D)\]]/.test(stripped[j])) {
+        current += text[j];
+        j++;
+      }
+      parts.push(current.trim());
+      current = '';
+      i = j - 1;
+    }
+  }
+  if (current.trim()) parts.push(current.trim());
+  return parts.filter((s) => s.length > 0);
+}
+
+export function condenseSentences(text: string, maxSentences: number): string | null {
+  const sentences = splitIntoSentences(text).filter((s) => s.trim().length > 2);
+  if (sentences.length <= maxSentences) return null;
+  while (sentences.length > maxSentences) {
+    let shortestIdx = -1;
+    let shortestLen = Infinity;
+    for (let i = 1; i < sentences.length; i++) {
+      if (sentences[i].length < shortestLen) {
+        shortestLen = sentences[i].length;
+        shortestIdx = i;
+      }
+    }
+    if (shortestIdx <= 0) shortestIdx = sentences.length - 1;
+    const mergeTarget = shortestIdx > 0 ? shortestIdx - 1 : 0;
+    const a = sentences[mergeTarget].replace(/[.!?]+$/, '');
+    const b = sentences[shortestIdx];
+    const bLower = b.charAt(0).toLowerCase() + b.slice(1);
+    sentences[mergeTarget] = `${a}, and ${bLower}`;
+    sentences.splice(shortestIdx, 1);
+  }
+  return sentences.join(' ');
+}
+
+function capitalizeFirstNarrativeLetter(text: string): string {
+  let inToken = false;
+  let seenToken = false;
+  let prevType: 'boundary' | 'other' = 'boundary';
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '{') { inToken = true; continue; }
+    if (ch === '}') { inToken = false; seenToken = true; continue; }
+    if (inToken) continue;
+    if (seenToken) return text;
+    if (/\s/.test(ch)) { prevType = 'boundary'; continue; }
+    if (/[A-Za-z]/.test(ch)) {
+      if (prevType === 'boundary' && /[a-z]/.test(ch)) {
+        return text.slice(0, i) + ch.toUpperCase() + text.slice(i + 1);
+      }
+      return text;
+    }
+    prevType = 'other';
+  }
+  return text;
+}
+
+function capitalizeSentenceBoundaries(text: string): string {
+  const chars = text.split('');
+  let inToken = false;
+  let capitalizeNext = false;
+  let tokenClosedWhilePending = false;
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    if (ch === '{') { inToken = true; continue; }
+    if (ch === '}') {
+      inToken = false;
+      if (capitalizeNext) tokenClosedWhilePending = true;
+      continue;
+    }
+    if (inToken) continue;
+    if (capitalizeNext) {
+      if (/[A-Za-z]/.test(ch)) {
+        if (!tokenClosedWhilePending && /[a-z]/.test(ch)) chars[i] = ch.toUpperCase();
+        capitalizeNext = false;
+        tokenClosedWhilePending = false;
+        continue;
+      }
+      if (/\s|["(\[]/.test(ch)) continue;
+      if (tokenClosedWhilePending && ch === '\'') { capitalizeNext = false; tokenClosedWhilePending = false; continue; }
+      if (/[)}\]"\u201D]/.test(ch)) continue;
+      capitalizeNext = false;
+      tokenClosedWhilePending = false;
+    }
+    if (/[.!?]/.test(ch)) { capitalizeNext = true; tokenClosedWhilePending = false; }
+  }
+  return chars.join('');
+}
+
 // ── Fix functions ──────────────────────────────────────────────────────────
 
 export function applyHardcodedTheFixes(text: string | undefined): { result: string | undefined; changed: boolean } {
@@ -155,6 +257,12 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
 ): { updated: T; changed: boolean } {
   let changed = false;
 
+  const applyPhraseRules = (text: string, rules: PhraseRule[]): string => {
+    let result = text;
+    for (const rule of rules) result = result.replace(rule.detect, rule.replacement);
+    return result;
+  };
+
   const fix = (text: string | undefined): string | undefined => {
     if (!text) return text;
     let updated = text;
@@ -171,6 +279,9 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
       changed = true;
     }
 
+    const afterInstitution = applyPhraseRules(applyPhraseRules(updated, INSTITUTION_PHRASE_RULES), GOV_STRUCTURE_RULES);
+    if (afterInstitution !== updated) { updated = afterInstitution; changed = true; }
+
     // Article form fixes removed — LLM writes "the {token}" naturally, no conversion to {the_token}.
 
     const { result: wsFixed, changed: wsChanged } = applyWhitespaceFixes(updated);
@@ -180,14 +291,41 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
   };
 
   const clone: T = JSON.parse(JSON.stringify(scenario));
+
+  // Condense description before capitalization so the merged text is properly cased.
+  const condensedDesc = condenseSentences(clone.description ?? '', 3);
+  if (condensedDesc) { clone.description = condensedDesc; changed = true; }
+
   clone.title = fix(clone.title) || clone.title;
   clone.description = fix(clone.description) || clone.description;
+
+  // Capitalize after condensing and whitespace fixes.
+  const capTitle = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(clone.title));
+  if (capTitle !== clone.title) { clone.title = capTitle; changed = true; }
+  const capDesc = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(clone.description ?? ''));
+  if (capDesc !== clone.description) { clone.description = capDesc; changed = true; }
+
   clone.options = clone.options.map((opt) => {
     const next = { ...opt };
+
+    const condensedText = condenseSentences(next.text ?? '', 3);
+    if (condensedText) { next.text = condensedText; changed = true; }
+
     next.text = fix(next.text) || next.text;
+    const capText = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(next.text ?? ''));
+    if (capText !== next.text) { next.text = capText; changed = true; }
+
     if (next.outcomeHeadline) next.outcomeHeadline = fix(next.outcomeHeadline) || next.outcomeHeadline;
-    if (next.outcomeSummary) next.outcomeSummary = fix(next.outcomeSummary) || next.outcomeSummary;
-    if (next.outcomeContext) next.outcomeContext = fix(next.outcomeContext) || next.outcomeContext;
+    if (next.outcomeSummary) {
+      next.outcomeSummary = fix(next.outcomeSummary) || next.outcomeSummary;
+      const capSum = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(next.outcomeSummary));
+      if (capSum !== next.outcomeSummary) { next.outcomeSummary = capSum; changed = true; }
+    }
+    if (next.outcomeContext) {
+      next.outcomeContext = fix(next.outcomeContext) || next.outcomeContext;
+      const capCtx = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(next.outcomeContext));
+      if (capCtx !== next.outcomeContext) { next.outcomeContext = capCtx; changed = true; }
+    }
     if (Array.isArray(next.advisorFeedback)) {
       next.advisorFeedback = (next.advisorFeedback as { feedback?: string }[]).map((fb) => ({
         ...fb,

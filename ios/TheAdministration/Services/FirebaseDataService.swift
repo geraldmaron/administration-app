@@ -73,6 +73,8 @@ struct AppConfig {
 class FirebaseDataService {
     static let shared = FirebaseDataService()
 
+    var config: AppConfig?
+
     static func decodeCountryProfiles(from data: [String: Any]) -> (
         geopoliticalProfile: GeopoliticalProfile?,
         gameplayProfile: CountryGameplayProfile?
@@ -128,7 +130,7 @@ class FirebaseDataService {
 
         do {
             let snapshot = try await db.collection("countries").getDocuments()
-            var countries: [Country] = snapshot.documents.compactMap { doc in
+            let countries: [Country] = snapshot.documents.compactMap { doc in
                 mapCountry(from: doc.data(), id: doc.documentID)
             }
 
@@ -182,7 +184,11 @@ class FirebaseDataService {
                 .whereField("is_active", isEqualTo: true)
                 .limit(to: 500)
                 .getDocuments()
-            let scenarios = snapshot.documents.compactMap { mapScenario(from: $0.data()) }
+            let scenarios = snapshot.documents.compactMap { doc -> Scenario? in
+                var data = doc.data()
+                if data["id"] == nil { data["id"] = doc.documentID }
+                return mapScenario(from: data)
+            }
             AppLogger.info("[FirebaseDataService] Fallback: loaded \(scenarios.count) scenarios from Firestore")
             cacheQueue.sync { _cache["all_scenarios"] = scenarios }
             return scenarios
@@ -197,7 +203,7 @@ class FirebaseDataService {
     /// Clears the in-memory scenario cache and forces the bundle manager to
     /// re-check the manifest on the next call. Does NOT delete disk cache.
     func invalidateScenarioCache() {
-        cacheQueue.sync { _cache.removeValue(forKey: "all_scenarios") }
+        _ = cacheQueue.sync { _cache.removeValue(forKey: "all_scenarios") }
         Task { await ScenarioBundleManager.shared.invalidate() }
     }
 
@@ -366,6 +372,7 @@ class FirebaseDataService {
         }
 
         AppLogger.info("[FirebaseDataService] AppConfig loaded: \(config.namePoolsByRegion.count) name regions, \(config.traitPool.count) traits, \(config.allUniversities.count) universities")
+        self.config = config
         return config
         #else
         return AppConfig()
@@ -483,11 +490,14 @@ class FirebaseDataService {
         // Extract tokens
         var tokens: [String: String]?
         if let tokensData = data["tokens"] as? [String: String] {
-            tokens = tokensData
+            tokens = tokensData.isEmpty ? nil : tokensData
+        } else if let tokensData = data["tokens"] as? [String: Any] {
+            let compactTokens = tokensData.compactMapValues { $0 as? String }
+            tokens = compactTokens.isEmpty ? nil : compactTokens
         }
 
-        let population = facts?.demographics.populationTotal ?? 0
-        let gdp = facts.map { Int($0.economy.gdpNominalUsd.rounded()) } ?? 0
+        let population = facts?.demographics?.populationTotal ?? 0
+        let gdp = facts.map { Int(($0.economy?.gdpNominalUsd ?? 0).rounded()) } ?? 0
         let attributes = CountryAttributes(population: population, gdp: gdp)
 
         let militaryData = data["military"] as? [String: Any]
@@ -516,8 +526,10 @@ class FirebaseDataService {
             return try? JSONDecoder().decode([CountryTrait].self, from: traitsData)
         }()
 
-        let populationMillions = facts.map { Double($0.demographics.populationTotal) / 1_000_000 }
-        let gdpBillions = facts.map { $0.economy.gdpNominalUsd / 1_000_000_000 }
+        let populationMillions = facts.flatMap { $0.demographics?.populationTotal }.map { Double($0) / 1_000_000 }
+        let rawEconomy = (data["facts"] as? [String: Any])?["economy"] as? [String: Any]
+        let gdpBillions = facts.flatMap { $0.economy?.gdpNominalUsd.map { $0 / 1_000_000_000 } }
+            ?? (rawEconomy?["gdp_nominal_usd"] as? Double).map { $0 / 1_000_000_000 }
 
         let diplomacyData = data["diplomacy"] as? [String: Any]
         let diplomacy = DiplomaticStats(
@@ -544,7 +556,7 @@ class FirebaseDataService {
             leader: nil,
             difficulty: data["difficulty"] as? String,
             termLengthYears: data["termLengthYears"] as? Int,
-            currentPopulation: facts?.demographics.populationTotal,
+            currentPopulation: facts?.demographics?.populationTotal,
             population: nil,
             gdp: nil,
             description: data["description"] as? String,
@@ -592,12 +604,12 @@ class FirebaseDataService {
 
         let conditions: [ScenarioCondition]? = (data["conditions"] as? [[String: Any]])?.compactMap { cond in
             guard let metricId = cond["metricId"] as? String else { return nil }
-            return ScenarioCondition(metricId: metricId, min: cond["min"] as? Double, max: cond["max"] as? Double)
+            return ScenarioCondition(metricId: metricId, min: (cond["min"] as? NSNumber)?.doubleValue, max: (cond["max"] as? NSNumber)?.doubleValue)
         }
 
         let relationshipConditions: [RelationshipCondition]? = (data["relationship_conditions"] as? [[String: Any]])?.compactMap { cond in
             guard let relationshipId = cond["relationshipId"] as? String else { return nil }
-            return RelationshipCondition(relationshipId: relationshipId, min: cond["min"] as? Double, max: cond["max"] as? Double)
+            return RelationshipCondition(relationshipId: relationshipId, min: (cond["min"] as? NSNumber)?.doubleValue, max: (cond["max"] as? NSNumber)?.doubleValue)
         }
 
         var metadata: ScenarioMetadata?
@@ -610,14 +622,20 @@ class FirebaseDataService {
                 excludedGeopoliticalTags: meta["excludedGeopoliticalTags"] as? [String],
                 requiredGovernmentCategories: meta["requiredGovernmentCategories"] as? [String],
                 excludedGovernmentCategories: meta["excludedGovernmentCategories"] as? [String],
-                regionalBoost: meta["regionalBoost"] as? [String: Double],
+                regionalBoost: (meta["regionalBoost"] as? [String: Any])?.compactMapValues { ($0 as? NSNumber)?.doubleValue },
                 isNeighborEvent: meta["isNeighborEvent"] as? Bool,
                 involvedCountries: meta["involvedCountries"] as? [String],
                 regionTags: meta["region_tags"] as? [String],
                 theme: meta["theme"] as? String,
                 scopeTier: meta["scopeTier"] as? String,
                 scopeKey: meta["scopeKey"] as? String,
-                sourceKind: meta["sourceKind"] as? String
+                sourceKind: meta["sourceKind"] as? String,
+                requires: {
+                    guard let req = meta["requires"] as? [String: Any],
+                          let reqData = try? JSONSerialization.data(withJSONObject: req) else { return nil }
+                    return try? JSONDecoder().decode(ScenarioRequirements.self, from: reqData)
+                }(),
+                primaryMetrics: meta["primary_metrics"] as? [String]
             )
         }
 
@@ -633,8 +651,8 @@ class FirebaseDataService {
                 stateTriggers: (dp["state_triggers"] as? [[String: Any]])?.compactMap { st in
                     guard let metricId = st["metric_id"] as? String,
                           let condition = st["condition"] as? String,
-                          let threshold = st["threshold"] as? Double,
-                          let weightBoost = st["weight_boost"] as? Double else { return nil }
+                          let threshold = (st["threshold"] as? NSNumber)?.doubleValue,
+                          let weightBoost = (st["weight_boost"] as? NSNumber)?.doubleValue else { return nil }
                     return StateTrigger(metricId: metricId, condition: condition, threshold: threshold, weightBoost: weightBoost)
                 },
                 actorPattern: dp["actor_pattern"] as? String,
@@ -661,7 +679,7 @@ class FirebaseDataService {
             actor: data["actor"] as? String,
             tags: data["tags"] as? [String],
             cooldown: data["cooldown"] as? Int,
-            weight: data["weight"] as? Double,
+            weight: (data["weight"] as? NSNumber)?.doubleValue,
             tier: data["tier"] as? String,
             category: data["category"] as? String,
             oncePerGame: data["once_per_game"] as? Bool,
@@ -699,17 +717,17 @@ class FirebaseDataService {
                 return AdvisorFeedback(roleId: roleId, stance: stance, feedback: feedback)
             },
             effects: effects,
-            effectsMap: data["effects"] as? [String: Double],
+            effectsMap: (data["effects"] as? [String: Any])?.compactMapValues { ($0 as? NSNumber)?.doubleValue },
             nextScenarioId: data["nextScenarioId"] as? String ?? data["next_scenario_id"] as? String,
             impactText: nil,
-            impactMap: data["impact"] as? [String: Double],
-            relationshipImpact: data["relationship_impact"] as? [String: Double],
+            impactMap: (data["impact"] as? [String: Any])?.compactMapValues { ($0 as? NSNumber)?.doubleValue },
+            relationshipImpact: (data["relationship_impact"] as? [String: Any])?.compactMapValues { ($0 as? NSNumber)?.doubleValue },
             relationshipEffects: {
                 let raw = data["relationshipEffects"] as? [[String: Any]] ?? data["relationship_effects"] as? [[String: Any]]
                 return raw?.compactMap { d -> RelationshipEffect? in
                     guard let roleId = d["relationshipId"] as? String,
-                          let delta = d["delta"] as? Double else { return nil }
-                    return RelationshipEffect(relationshipId: roleId, delta: delta, probability: d["probability"] as? Double)
+                          let delta = (d["delta"] as? NSNumber)?.doubleValue else { return nil }
+                    return RelationshipEffect(relationshipId: roleId, delta: delta, probability: (d["probability"] as? NSNumber)?.doubleValue)
                 }
             }(),
             populationImpact: nil, // TODO: Map if needed
@@ -726,7 +744,7 @@ class FirebaseDataService {
             outcomeSummary: data["outcomeSummary"] as? String ?? data["outcome_summary"] as? String,
             outcomeContext: data["outcomeContext"] as? String ?? data["outcome_context"] as? String,
             isAuthoritarian: data["is_authoritarian"] as? Bool,
-            moralWeight: data["moral_weight"] as? Double,
+            moralWeight: (data["moral_weight"] as? NSNumber)?.doubleValue,
             consequenceScenarioIds: data["consequence_scenario_ids"] as? [String],
             consequenceDelay: data["consequence_delay"] as? Int
         )
@@ -735,7 +753,7 @@ class FirebaseDataService {
     /// Map Firestore effect data to Effect model
     private func mapEffect(from data: [String: Any]) -> Effect? {
         guard let targetMetricId = data["target_metric_id"] as? String ?? data["targetMetricId"] as? String,
-              let value = data["value"] as? Double else {
+              let value = (data["value"] as? NSNumber)?.doubleValue else {
             return nil
         }
 
@@ -743,7 +761,7 @@ class FirebaseDataService {
             targetMetricId: targetMetricId,
             value: value,
             duration: data["duration"] as? Int ?? 1,
-            probability: data["probability"] as? Double ?? 1.0,
+            probability: (data["probability"] as? NSNumber)?.doubleValue ?? 1.0,
             delay: data["delay"] as? Int,
             type: data["type"] as? String
         )

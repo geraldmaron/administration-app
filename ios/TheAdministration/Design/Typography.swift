@@ -23,6 +23,7 @@ struct AppTypography {
 
     static let brand = Font.system(size: 52, weight: .black, design: .default)
     static let brandSmall = Font.system(size: 36, weight: .black, design: .default)
-    static let screenTitle = Font.system(size: 22, weight: .heavy, design: .default)
+    static let screenTitle = Font.system(size: 22, weight: .black, design: .default)
+    static let protocolLabel = Font.system(size: 9, weight: .bold, design: .monospaced)
 }
 

@@ -70,7 +70,7 @@ struct MilitarySheet: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
         .accessibilityElement(children: .combine)
@@ -257,7 +257,7 @@ struct MilitarySheet: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
     }

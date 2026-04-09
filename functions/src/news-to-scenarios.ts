@@ -321,7 +321,7 @@ ${headlineList}`;
         { maxTokens: 4096, temperature: 0.2 },
         fullPrompt,
         classificationSchema,
-        'gpt-4o-mini'
+        'gpt-4.1-mini'
     );
 
     if (!result.data) {

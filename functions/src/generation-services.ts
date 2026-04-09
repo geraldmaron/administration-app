@@ -93,6 +93,121 @@ export interface BundleResult {
     tokenSummary?: { inputTokens: number; outputTokens: number; costUsd: number; callCount: number; conceptCount?: number; totalDurationMs?: number };
 }
 
+interface JobEventInput {
+    level: 'info' | 'warning' | 'error' | 'success';
+    code: string;
+    message: string;
+    bundle?: string;
+    phase?: string;
+    scenarioId?: string;
+    data?: Record<string, unknown>;
+}
+
+export interface UpdateJobProgressBody {
+    jobId: string;
+    status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'pending_review';
+    currentBundle?: string;
+    currentPhase?: string;
+    currentMessage?: string;
+    completedCount?: number;
+    failedCount?: number;
+    totalCount?: number;
+}
+
+async function appendJobEvent(
+    jobRef: admin.firestore.DocumentReference,
+    event: JobEventInput,
+    heartbeat?: { currentBundle?: string; currentPhase?: string; currentMessage?: string }
+): Promise<void> {
+    const timestamp = admin.firestore.FieldValue.serverTimestamp();
+    await Promise.all([
+        jobRef.collection('events').add({
+            timestamp,
+            level: event.level,
+            code: event.code,
+            message: event.message,
+            ...(event.bundle ? { bundle: event.bundle } : {}),
+            ...(event.phase ? { phase: event.phase } : {}),
+            ...(event.scenarioId ? { scenarioId: event.scenarioId } : {}),
+            ...(event.data ? { data: event.data } : {}),
+        }),
+        jobRef.set({
+            lastHeartbeatAt: timestamp,
+            updatedAt: timestamp,
+            eventCount: admin.firestore.FieldValue.increment(1),
+            ...(heartbeat?.currentBundle !== undefined ? { currentBundle: heartbeat.currentBundle } : {}),
+            ...(heartbeat?.currentPhase !== undefined ? { currentPhase: heartbeat.currentPhase } : {}),
+            ...(heartbeat?.currentMessage !== undefined ? { currentMessage: heartbeat.currentMessage } : {}),
+        }, { merge: true }),
+    ]);
+}
+
+export function buildJobProgressEvent(body: UpdateJobProgressBody): JobEventInput | undefined {
+    const completedCount = body.completedCount ?? 0;
+    const failedCount = body.failedCount ?? 0;
+
+    if (body.status === 'running') {
+        if (body.currentPhase === 'starting') {
+            return {
+                level: 'info',
+                code: 'job_started',
+                message: body.currentMessage ?? 'n8n runner started the job.',
+                phase: body.currentPhase,
+                data: {
+                    ...(body.totalCount !== undefined ? { totalCount: body.totalCount } : {}),
+                },
+            };
+        }
+
+        if (body.currentBundle && body.currentPhase) {
+            return {
+                level: 'info',
+                code: 'job_progress',
+                message: body.currentMessage ?? `Processing ${body.currentBundle}`,
+                bundle: body.currentBundle,
+                phase: body.currentPhase,
+                data: {
+                    ...(body.totalCount !== undefined ? { totalCount: body.totalCount } : {}),
+                    ...(body.completedCount !== undefined ? { completedCount } : {}),
+                    ...(body.failedCount !== undefined ? { failedCount } : {}),
+                },
+            };
+        }
+    }
+
+    if (body.status === 'completed' || body.status === 'pending_review') {
+        return {
+            level: 'success',
+            code: body.status === 'pending_review' ? 'job_pending_review' : 'job_completed',
+            message: body.currentMessage ?? `Job ${body.status}: ${completedCount} saved, ${failedCount} failed`,
+            phase: body.status,
+            data: { completedCount, failedCount },
+        };
+    }
+
+    if (body.status === 'failed') {
+        return {
+            level: 'error',
+            code: 'job_failed',
+            message: body.currentMessage ?? `Job failed after ${completedCount} saved, ${failedCount} failed`,
+            phase: 'failed',
+            data: { completedCount, failedCount },
+        };
+    }
+
+    if (body.status === 'cancelled') {
+        return {
+            level: 'warning',
+            code: 'job_cancelled',
+            message: body.currentMessage ?? 'Job cancelled.',
+            phase: 'cancelled',
+            data: { completedCount, failedCount },
+        };
+    }
+
+    return undefined;
+}
+
 function validateBundleBody(body: ProcessBundleBody): { ok: true } | { ok: false; error: string } {
     if (!body.jobId || typeof body.jobId !== 'string') return { ok: false, error: 'jobId is required.' };
     if (!isValidBundleId(body.bundle)) return { ok: false, error: `Invalid bundle: ${body.bundle}` };
@@ -133,6 +248,18 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
     const maxActive = genConfig.max_active_scenarios_per_bundle ?? 500;
     if (activeCount >= maxActive) {
         logger.info(`[processGenerationBundle] Ceiling reached for ${bundle}: ${activeCount}/${maxActive}`);
+        await appendJobEvent(jobRef, {
+            level: 'warning',
+            code: 'bundle_skipped_ceiling',
+            message: `Skipped ${bundle}; active scenario ceiling reached (${activeCount}/${maxActive}).`,
+            bundle,
+            phase: 'generate',
+            data: { activeCount, maxActive },
+        }, {
+            currentBundle: bundle,
+            currentPhase: 'generate',
+            currentMessage: `Skipped ${bundle}; active scenario ceiling reached`,
+        });
         return {
             completedCount: 0,
             failedCount: count,
@@ -143,11 +270,17 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
         };
     }
 
-    await jobRef.update({
+    await appendJobEvent(jobRef, {
+        level: 'info',
+        code: 'bundle_started',
+        message: `Started processing ${bundle}.`,
+        bundle,
+        phase: 'generate',
+        data: { count },
+    }, {
         currentBundle: bundle,
         currentPhase: 'generate',
         currentMessage: `Generating ${bundle}`,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     const completedScenarioIds: string[] = [];
@@ -172,12 +305,20 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
     const eventsRef = jobRef.collection('events');
     const pendingEventWrites: Promise<unknown>[] = [];
     const THROTTLED_CODES = new Set(['llm_request', 'llm_response']);
+    const HEARTBEAT_ONLY_CODES = new Set(['llm_progress']);
     let lastThrottledWriteMs = 0;
     const THROTTLE_INTERVAL_MS = 3000;
     let failedEventWrites = 0;
 
     const bundleEventHandler = (event: import('./lib/model-providers').ModelEvent) => {
         const now = Date.now();
+        if (HEARTBEAT_ONLY_CODES.has(event.code)) {
+            jobRef.set({
+                lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
+                currentMessage: event.message,
+            }, { merge: true }).catch(() => {});
+            return;
+        }
         if (THROTTLED_CODES.has(event.code) && now - lastThrottledWriteMs < THROTTLE_INTERVAL_MS) return;
         if (THROTTLED_CODES.has(event.code)) lastThrottledWriteMs = now;
         const write = eventsRef.add({
@@ -206,12 +347,21 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
     addEngineEventHandler(bundleEventHandler);
 
     const HEARTBEAT_INTERVAL_MS = 30_000;
-    const heartbeatTimer = setInterval(() => {
-        jobRef.set({
-            lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true }).catch((err) => {
-            logger.warn(`[processGenerationBundle] Heartbeat write failed: ${err?.message ?? err}`);
-        });
+    const heartbeatTimer = setInterval(async () => {
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                await jobRef.set({
+                    lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
+                }, { merge: true });
+                break;
+            } catch (err) {
+                if (attempt === 2) {
+                    logger.error(`[processGenerationBundle] Heartbeat write failed after 3 attempts for ${jobId}: ${(err as Error)?.message ?? err}`);
+                } else {
+                    await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+                }
+            }
+        }
     }, HEARTBEAT_INTERVAL_MS);
 
     const savedByCallback = new Set<string>();
@@ -253,10 +403,11 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
 
     const JOB_TIMEOUT_MS = 500_000;
     const abortController = new AbortController();
-    const abortTimer = setTimeout(() => {
+    const isCloudFunctionTarget = (jobSnap.data()?.executionTarget ?? 'cloud_function') === 'cloud_function';
+    const abortTimer = isCloudFunctionTarget ? setTimeout(() => {
         logger.warn(`[processGenerationBundle] Job timeout (${JOB_TIMEOUT_MS / 1000}s) reached for ${bundle} — aborting gracefully`);
         abortController.abort();
-    }, JOB_TIMEOUT_MS);
+    }, JOB_TIMEOUT_MS) : null;
 
     try {
         const genResult = await generateScenarios({
@@ -335,6 +486,22 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
             } : {}),
             ...(failedEventWrites > 0 ? { failedEventWrites } : {}),
         });
+        await appendJobEvent(jobRef, {
+            level: failedCount > 0 && completedCount === 0 ? 'warning' : 'success',
+            code: 'bundle_completed',
+            message: `Finished ${bundle}: ${completedCount} saved, ${failedCount} failed.`,
+            bundle,
+            phase: 'done',
+            data: {
+                completedCount,
+                failedCount,
+                ...(failedEventWrites > 0 ? { failedEventWrites } : {}),
+            },
+        }, {
+            currentBundle: bundle,
+            currentPhase: 'done',
+            currentMessage: `${bundle}: ${completedCount} saved, ${failedCount} failed`,
+        });
 
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
@@ -347,8 +514,19 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             failedCount: admin.firestore.FieldValue.increment(count),
         });
+        await appendJobEvent(jobRef, {
+            level: 'error',
+            code: 'bundle_failed',
+            message: `Failed ${bundle}: ${message}`,
+            bundle,
+            phase: 'generate',
+        }, {
+            currentBundle: bundle,
+            currentPhase: 'generate',
+            currentMessage: `Failed ${bundle}: ${message}`,
+        });
     } finally {
-        clearTimeout(abortTimer);
+        if (abortTimer !== null) clearTimeout(abortTimer);
         clearInterval(heartbeatTimer);
         removeEngineEventHandler(bundleEventHandler);
         await Promise.allSettled(pendingEventWrites);
@@ -406,17 +584,6 @@ export const processGenerationBundle = onRequest({
 // updateJobProgress
 // ---------------------------------------------------------------------------
 
-interface UpdateJobProgressBody {
-    jobId: string;
-    status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'pending_review';
-    currentBundle?: string;
-    currentPhase?: string;
-    currentMessage?: string;
-    completedCount?: number;
-    failedCount?: number;
-    totalCount?: number;
-}
-
 /**
  * Heartbeat / status-update endpoint called by n8n throughout the generation run.
  * Keeps the Firestore job record current so the admin UI can track live progress.
@@ -473,7 +640,17 @@ export const updateJobProgress = onRequest({
         update.currentMessage = `Job ${status}: ${completedCount ?? 0} saved, ${failedCount ?? 0} failed`;
     }
 
-    await admin.firestore().collection('generation_jobs').doc(jobId).update(update);
+    const jobRef = admin.firestore().collection('generation_jobs').doc(jobId);
+    await jobRef.update(update);
+
+    const event = buildJobProgressEvent(body);
+    if (event) {
+        await appendJobEvent(jobRef, event, {
+            ...(currentBundle !== undefined ? { currentBundle } : {}),
+            ...(currentPhase !== undefined ? { currentPhase } : {}),
+            ...(currentMessage !== undefined ? { currentMessage } : {}),
+        });
+    }
 
     response.status(200).json({ ok: true, jobId });
 });

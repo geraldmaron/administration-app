@@ -92,6 +92,7 @@ export type FailureCategory =
   | 'framing-violation'
   | 'gdp-as-amount-violation'
   | 'token-article-form-violation'
+  | 'title-violation'
   | 'option-differentiation-violation'
   | 'editorial-review-required'
   | 'parsing-error'
@@ -269,6 +270,9 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   }
   if (warningCodes.some(code => code === 'hardcoded-the-before-token' || code === 'label-has-token' || code === 'sentence-start-bare-token')) {
     return 'token-article-form-violation';
+  }
+  if (errorCodes.includes('title-too-short') || errorCodes.includes('title-too-long') || warningCodes.includes('title-too-short') || warningCodes.includes('title-too-long')) {
+    return 'title-violation';
   }
 
   return 'other';
@@ -480,4 +484,34 @@ export async function getPromptVersionSuccessRate(
     totalAttempts,
     avgScore: totalAttempts > 0 ? totalScoreSum / totalAttempts : 0,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Pipeline Stage Metrics
+// ---------------------------------------------------------------------------
+
+export interface PipelineStageMetricInput {
+  scenarioId: string;
+  jobId: string;
+  bundle: string;
+  stages: {
+    architect: { passed: boolean; issueCount: number; issues: string[] };
+    drafter: { passed: boolean; issueCount: number; issues: string[] };
+    tokenResolve: { passed: boolean; unresolvedCount: number; fallbackCount: number };
+    audit: { score: number; issueCount: number; issueTypes: string[] };
+    repair: { attempted: boolean; repairCount: number; failedRepairs: string[] };
+  };
+  overallPassed: boolean;
+}
+
+export async function logPipelineStageMetric(metric: PipelineStageMetricInput): Promise<void> {
+  try {
+    const db = getFirestore();
+    await db.collection('pipeline_stage_metrics').add({
+      ...metric,
+      createdAt: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error('Failed to log pipeline stage metric:', error);
+  }
 }

@@ -19,19 +19,19 @@ const LANGUAGE_MODEL_KEYS = [
 const ALL_MODEL_KEYS = [...LANGUAGE_MODEL_KEYS, 'embeddingModel'] as const;
 
 function getDefaultArchitectModel(): string {
-  return process.env.ARCHITECT_MODEL || process.env.CONCEPT_MODEL || 'gpt-4o-mini';
+  return process.env.ARCHITECT_MODEL || process.env.CONCEPT_MODEL || 'gpt-4.1-mini';
 }
 
 function getDefaultDrafterModel(): string {
-  return process.env.DRAFTER_MODEL || 'gpt-4o-mini';
+  return process.env.DRAFTER_MODEL || 'gpt-4.1';
 }
 
 function getDefaultRepairModel(): string {
-  return process.env.REPAIR_MODEL || 'gpt-4o-mini';
+  return process.env.REPAIR_MODEL || 'gpt-4.1-mini';
 }
 
 function getDefaultNarrativeReviewModel(): string {
-  return process.env.NARRATIVE_REVIEW_MODEL || 'gpt-4o-mini';
+  return process.env.NARRATIVE_REVIEW_MODEL || 'gpt-4.1-mini';
 }
 
 function getDefaultEmbeddingModel(): string {
@@ -94,16 +94,26 @@ export function exceedsBundleLimitForModel(bundleCount: number, modelConfig?: Ge
  * as they are purpose-mapped on the Corsair server. Falls back to raw model names
  * for servers without the aliased setup.
  *
- * architect/drafter use 30B reasoning/coding models for quality.
- * advisor/repair/contentQuality/narrativeReview use 8B fast models to minimise latency.
+ * Phase strategy:
+ * - architect: needs creative/general intelligence, NOT reasoning (DeepSeek-R1 burns 200s+ on thinking tokens)
+ * - drafter: needs structured JSON output fidelity — coding-tuned models excel here
+ * - advisor: speed matters most; 8B is sufficient for feedback synthesis
+ * - repair: coding model for structured fix generation
+ * - contentQuality/narrativeReview: general intelligence, medium speed
+ *
+ * Model tier on Corsair (64GB VRAM):
+ *   ai-general   = qwen3.5:35b (preferred) or qwen3:30b MoE — 62 tok/s, creative/general
+ *   ai-coding    = qwen3-coder:30b MoE — 63 tok/s, structured output
+ *   ai-fast      = qwen3:8b — 38 tok/s, low latency
+ *   ai-reasoning = deepseek-r1:32b — 11 tok/s (avoid for non-math phases)
  */
 const OLLAMA_PHASE_PREFERENCE: Record<GenerationPhase, string[]> = {
-  architect: ['ai-reasoning', 'ai-general', 'deepseek-r1:32b', 'qwen3:30b', 'gemma3:12b', 'phi4:14b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
-  drafter:   ['ai-coding', 'ai-general', 'qwen3-coder:30b', 'qwen3:30b', 'phi4:14b', 'gemma3:12b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
-  advisor:   ['ai-fast', 'qwen3:8b', 'ai-general', 'gemma3:12b'],
-  repair:    ['ai-coding', 'ai-general', 'ai-fast', 'qwen3:8b', 'gemma3:12b'],
-  contentQuality:  ['ai-general', 'ai-reasoning', 'gemma3:12b', 'ai-fast', 'qwen3:8b'],
-  narrativeReview: ['ai-general', 'ai-reasoning', 'gemma3:12b', 'ai-fast', 'qwen3:8b'],
+  architect:       ['ai-general', 'qwen3.5:35b', 'qwen3:30b', 'ai-coding', 'qwen3-coder:30b', 'phi4:14b', 'gemma3:12b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
+  drafter:         ['ai-coding', 'devstral-small-2', 'qwen3-coder:30b', 'ai-general', 'qwen3.5:35b', 'qwen3:30b', 'phi4:14b', 'gemma3:12b', 'mistral-small:24b', 'ai-fast', 'qwen3:8b'],
+  advisor:         ['ai-fast', 'qwen3:8b', 'ai-general', 'qwen3.5:35b', 'gemma3:12b'],
+  repair:          ['ai-coding', 'devstral-small-2', 'qwen3-coder:30b', 'ai-general', 'qwen3.5:35b', 'ai-fast', 'qwen3:8b', 'gemma3:12b'],
+  contentQuality:  ['ai-general', 'qwen3.5:35b', 'qwen3:30b', 'gemma3:12b', 'ai-fast', 'qwen3:8b'],
+  narrativeReview: ['ai-general', 'qwen3.5:35b', 'qwen3:30b', 'phi4:14b', 'gemma3:12b', 'ai-fast', 'qwen3:8b'],
 };
 
 export function resolveOllamaPhaseModel(phase: GenerationPhase, availableModels: string[]): string | undefined {
@@ -198,14 +208,26 @@ export function resolvePhaseModel(
     case 'drafter':
       return modelConfig?.drafterModel || getDefaultDrafterModel();
     case 'advisor':
-      return modelConfig?.advisorModel || (isOllama ? ollamaFallback() : 'gpt-4o-mini');
+      return modelConfig?.advisorModel || (isOllama ? ollamaFallback() : 'gpt-4.1-mini');
     case 'repair':
       return modelConfig?.repairModel || (isOllama ? ollamaFallback() : getDefaultRepairModel());
     case 'contentQuality':
-      return modelConfig?.contentQualityModel || (isOllama ? ollamaFallback() : 'gpt-4o-mini');
+      return modelConfig?.contentQualityModel || (isOllama ? ollamaFallback() : 'gpt-4.1-mini');
     case 'narrativeReview':
       return modelConfig?.narrativeReviewModel || (isOllama ? ollamaFallback() : getDefaultNarrativeReviewModel());
   }
+}
+
+export function buildOpenAIFullSendModelConfig(): GenerationModelConfig {
+  return {
+    architectModel: process.env.FULL_SEND_ARCHITECT_MODEL || 'gpt-4.1-mini',
+    drafterModel: process.env.FULL_SEND_DRAFTER_MODEL || 'gpt-4.1',
+    advisorModel: process.env.FULL_SEND_ADVISOR_MODEL || 'gpt-4.1-mini',
+    repairModel: process.env.FULL_SEND_REPAIR_MODEL || 'gpt-4.1-mini',
+    contentQualityModel: process.env.FULL_SEND_CONTENT_QUALITY_MODEL || 'gpt-4.1-mini',
+    narrativeReviewModel: process.env.FULL_SEND_NARRATIVE_REVIEW_MODEL || 'gpt-4.1-mini',
+    embeddingModel: process.env.FULL_SEND_EMBEDDING_MODEL || 'text-embedding-3-small',
+  };
 }
 
 export function getResolvedGenerationModels(modelConfig?: GenerationModelConfig): {

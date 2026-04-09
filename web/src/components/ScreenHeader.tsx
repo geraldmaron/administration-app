@@ -22,14 +22,13 @@ export default function ScreenHeader({
       <div className="command-panel px-4 py-3 md:px-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0 flex-1">
-            <div className="mb-1.5 flex items-center gap-3">
-              <span className="h-2 w-2 rounded-full bg-[var(--accent-secondary)]" />
+            <div className="mb-2 flex items-center gap-3">
               <span className="section-kicker">{section}</span>
               {eyebrow ? <span className="section-kicker text-[var(--accent-primary)]">{eyebrow}</span> : null}
             </div>
             <h1 className="screen-title text-foreground">{title}</h1>
             {subtitle ? (
-              <p className="mt-1.5 text-[13px] leading-5 text-[var(--foreground-muted)]">
+              <p className="mt-1.5 text-[12px] leading-5 text-[var(--foreground-muted)]">
                 {subtitle}
               </p>
             ) : null}

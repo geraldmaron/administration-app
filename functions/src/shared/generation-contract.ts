@@ -9,7 +9,7 @@ export type ScenarioExclusivityReason =
   | 'unique_institution'
   | 'unique_military_doctrine';
 
-export type GenerationMode = 'manual' | 'news' | 'blitz';
+export type GenerationMode = 'manual' | 'news' | 'blitz' | 'full_send';
 
 export interface GenerationDistributionConfig {
   mode: 'fixed' | 'auto';

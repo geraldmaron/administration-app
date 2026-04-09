@@ -10,6 +10,7 @@
 export type TokenCategory =
   | 'executive'
   | 'legislative'
+  | 'political'
   | 'judicial'
   | 'ministers'
   | 'security'
@@ -30,7 +31,10 @@ export interface TokenDefinition {
   description?: string;
   enabled: boolean;
   dynamic?: boolean;
-  articleForm?: { enabled: boolean };
+  articleForm?: {
+    enabled: boolean;
+    sentenceStartSafe?: boolean;
+  };
 }
 
 export type TokenAliasSource = 'migration' | 'manual' | 'rejection';
@@ -67,8 +71,32 @@ export interface CompiledTokenRegistry {
   tokensByCategory: Record<TokenCategory | 'article_forms', readonly string[]>;
   allTokens: readonly string[];
   articleFormTokenNames: ReadonlySet<string>;
+  sentenceStartArticleFormTokenNames: ReadonlySet<string>;
   aliasMap: Readonly<Record<string, string>>;
   conceptToTokenMap: ReadonlyArray<{ concept: string; token: string }>;
+}
+
+export function isTokenSentenceStartArticleSafe(tokenName: string, category: TokenCategory): boolean {
+  switch (category) {
+    case 'executive':
+    case 'judicial':
+    case 'ministers':
+    case 'security':
+    case 'military':
+    case 'economic':
+      return true;
+    case 'relationships':
+      return tokenName === 'player_country';
+    case 'legislative':
+    case 'political':
+    case 'local':
+    case 'media':
+    case 'geography':
+    case 'amounts':
+    case 'context':
+    default:
+      return false;
+  }
 }
 
 // ── Firestore Collection: token_rejections/{tokenName} ────────────────────
@@ -131,6 +159,7 @@ export function compileTokenRegistry(doc: TokenRegistryDocument): CompiledTokenR
   const tokensByCategory: Record<string, string[]> = {};
   const allTokens: string[] = [];
   const articleFormBaseNames: string[] = [];
+  const sentenceStartArticleFormBaseNames: string[] = [];
   const articleFormTokens: string[] = [];
 
   for (const category of Object.keys(doc.tokensByName).reduce((cats, name) => {
@@ -152,6 +181,9 @@ export function compileTokenRegistry(doc: TokenRegistryDocument): CompiledTokenR
       const articleName = `the_${name}`;
       articleFormTokens.push(articleName);
       articleFormBaseNames.push(name);
+      if ((def.articleForm.sentenceStartSafe ?? isTokenSentenceStartArticleSafe(name, cat)) === true) {
+        sentenceStartArticleFormBaseNames.push(name);
+      }
     }
   }
 
@@ -173,6 +205,7 @@ export function compileTokenRegistry(doc: TokenRegistryDocument): CompiledTokenR
     tokensByCategory: tokensByCategory as Record<TokenCategory | 'article_forms', readonly string[]>,
     allTokens,
     articleFormTokenNames: new Set(articleFormBaseNames),
+    sentenceStartArticleFormTokenNames: new Set(sentenceStartArticleFormBaseNames),
     aliasMap,
     conceptToTokenMap,
   };

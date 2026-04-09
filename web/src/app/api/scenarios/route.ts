@@ -6,10 +6,19 @@ export const dynamic = 'force-dynamic';
 import type { ScenarioSummary } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 
+function coerceTimestamp(value: unknown): string | undefined {
+  if (!value) return undefined;
+  if (typeof (value as any).toDate === 'function') return (value as any).toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'number') return new Date(value).toISOString();
+  if (typeof value === 'string') return value;
+  return undefined;
+}
+
 function toSummary(id: string, data: FirebaseFirestore.DocumentData): ScenarioSummary {
   const auditScore = data.metadata?.auditMetadata?.score ?? null;
-  const createdAt = data.created_at?.toDate?.()?.toISOString() ?? new Date(0).toISOString();
-  const updatedAt = data.updated_at?.toDate?.()?.toISOString() ?? null;
+  const createdAt = coerceTimestamp(data.created_at);
+  const updatedAt = coerceTimestamp(data.updated_at) ?? null;
   const tags: string[] = data.metadata?.tags ?? [];
   const applicableCountries = data.metadata?.applicable_countries;
   const region = Array.isArray(applicableCountries)

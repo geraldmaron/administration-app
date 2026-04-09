@@ -1,0 +1,118 @@
+{
+  "jobId": "z4oPJBqIhoPcdtqiaIuQ",
+  "job": {
+    "bundles": [
+      "culture",
+      "infrastructure",
+      "resources",
+      "dick_mode",
+      "tech"
+    ],
+    "count": 6,
+    "mode": "manual",
+    "distributionConfig": {
+      "mode": "auto"
+    },
+    "scopeTier": "universal",
+    "scopeKey": "universal",
+    "sourceKind": "evergreen",
+    "requestedBy": "n8n:scenario-loop-runner",
+    "requestedAt": {
+      "_seconds": 1774933355,
+      "_nanoseconds": 951000000
+    },
+    "priority": "normal",
+    "description": "Blitz: universal universal [culture, infrastructure, resources, dick_mode, tech]",
+    "executionTarget": "n8n",
+    "lastHeartbeatAt": {
+      "_seconds": 1774933355,
+      "_nanoseconds": 951000000
+    },
+    "eventCount": 0,
+    "createdScenarioIds": [],
+    "savedScenarioIds": [],
+    "startedAt": {
+      "_seconds": 1774933356,
+      "_nanoseconds": 407000000
+    },
+    "totalCount": 30,
+    "status": "running",
+    "currentPhase": "generate",
+    "currentMessage": "Generating resources",
+    "currentBundle": "resources",
+    "updatedAt": {
+      "_seconds": 1774933356,
+      "_nanoseconds": 820000000
+    }
+  },
+  "savedScenarios": [],
+  "recentMetrics": [
+    {
+      "id": "culture_act1_1774933505389_6ovac5",
+      "bundle": "culture",
+      "phase": "details",
+      "success": true,
+      "auditScore": 92,
+      "timestamp": "2026-03-31T05:10:02.490Z"
+    },
+    {
+      "id": "dick_mode_act1_1774933502864_eh46o9",
+      "bundle": "dick_mode",
+      "phase": "details",
+      "success": true,
+      "auditScore": 84,
+      "timestamp": "2026-03-31T05:09:55.152Z"
+    },
+    {
+      "id": "infrastructure_act1_1774933500422_1jg4xl",
+      "bundle": "infrastructure",
+      "phase": "details",
+      "success": true,
+      "auditScore": 88,
+      "timestamp": "2026-03-31T05:09:41.647Z"
+    },
+    {
+      "id": "tech_act1_1774933497718_uu3kq9",
+      "bundle": "tech",
+      "phase": "details",
+      "success": true,
+      "auditScore": 92,
+      "timestamp": "2026-03-31T05:09:33.089Z"
+    },
+    {
+      "id": "resources_blueprint_1774933494609_qey9t3",
+      "bundle": "resources",
+      "phase": "blueprint",
+      "success": true,
+      "timestamp": "2026-03-31T05:05:06.901Z"
+    },
+    {
+      "id": "culture_blueprint_1774933465164_y50m6e",
+      "bundle": "culture",
+      "phase": "blueprint",
+      "success": true,
+      "timestamp": "2026-03-31T05:05:05.330Z"
+    },
+    {
+      "id": "dick_mode_blueprint_1774933431683_vyfr06",
+      "bundle": "dick_mode",
+      "phase": "blueprint",
+      "success": true,
+      "timestamp": "2026-03-31T05:05:02.801Z"
+    },
+    {
+      "id": "infrastructure_blueprint_1774933408677_0b52yp",
+      "bundle": "infrastructure",
+      "phase": "blueprint",
+      "success": true,
+      "timestamp": "2026-03-31T05:05:00.355Z"
+    },
+    {
+      "id": "tech_blueprint_1774933381694_lvmrmy",
+      "bundle": "tech",
+      "phase": "blueprint",
+      "success": true,
+      "timestamp": "2026-03-31T05:04:57.602Z"
+    }
+  ]
+}

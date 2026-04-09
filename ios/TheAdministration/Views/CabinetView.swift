@@ -236,6 +236,10 @@ struct CabinetCard: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(color.opacity(0.25), lineWidth: 1)
+                    )
                 }
             }
 
@@ -310,12 +314,20 @@ struct CabinetCard: View {
         .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(Color.white.opacity(isFilled ? 0.05 : 0.03))
         )
+        .overlay(alignment: .leading) {
+            if isFilled {
+                Rectangle()
+                    .fill(AppColors.accentPrimary)
+                    .frame(width: 2)
+                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: 6, bottomLeadingRadius: 6))
+            }
+        }
         .overlay {
             if !isFilled {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
                     .foregroundColor(AppColors.border)
             }
@@ -378,9 +390,14 @@ struct MiniStatBars: View {
                     }
                     .frame(height: 20)
 
-                    Text(pair.label)
-                        .font(AppTypography.micro)
-                        .foregroundColor(AppColors.foregroundSubtle)
+                    HStack(spacing: 2) {
+                        Text("\(Int(pair.value))")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundColor(AppColors.metricColor(for: pair.value))
+                        Text(pair.label)
+                            .font(AppTypography.micro)
+                            .foregroundColor(AppColors.foregroundSubtle)
+                    }
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -564,9 +581,9 @@ struct CandidateRow: View {
             }
         }
         .padding(16)
-        .background(AppColors.backgroundElevated, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(AppColors.backgroundElevated, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         .overlay(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .strokeBorder(AppColors.border, lineWidth: 1)
         }
         .overlay(alignment: .leading) {
@@ -665,11 +682,11 @@ struct PlayerLeaderCard: View {
         .padding(AppSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.accentPrimary.opacity(0.06))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .strokeBorder(AppColors.accentPrimary.opacity(0.2), lineWidth: 1)
         )
     }

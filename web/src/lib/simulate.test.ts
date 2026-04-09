@@ -44,6 +44,19 @@ describe('buildSimulationTokenContext', () => {
     expect(context.rival).toBe('Russia');
     expect(context.the_rival).toBe('Russia');
   });
+
+  it('does not synthesize definite articles for proper-noun institution and place tokens', () => {
+    const context = buildSimulationTokenContext({
+      ...unitedStates,
+      tokens: {
+        ...unitedStates.tokens,
+        capital_city: 'Washington D.C.',
+      },
+    }, countriesById);
+
+    expect(context.the_legislature).toBe('Congress');
+    expect(context.the_capital_city).toBe('Washington D.C.');
+  });
 });
 
 describe('simulateScenarioLibrary', () => {
@@ -148,6 +161,22 @@ describe('simulateScenarioLibrary', () => {
     expect(eligibleScenario.diagnostics.conditionChecks[0].passed).toBe(true);
     expect(eligibleScenario.diagnostics.validationChecks.some((check) => check.kind === 'required-tags' && check.passed)).toBe(true);
     expect(eligibleScenario.diagnostics.tokenUsages.some((usage) => usage.token === 'the_adversary')).toBe(true);
+  });
+
+  it('renders article-unsafe tokens without synthetic the-prefixes', () => {
+    const context = buildSimulationTokenContext({
+      ...unitedStates,
+      tokens: {
+        ...unitedStates.tokens,
+        capital_city: 'Washington D.C.',
+      },
+    }, countriesById);
+
+    const result = resolveSimulationText('{the_legislature} convened in {the_capital_city}.', context);
+
+    expect(result.text).toContain('Congress convened in Washington D.C.');
+    expect(result.text).not.toContain('the Congress');
+    expect(result.text).not.toContain('the Washington D.C.');
   });
 
   it('filters scenarios when a referenced border-rival token cannot be resolved', () => {

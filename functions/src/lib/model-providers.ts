@@ -48,20 +48,21 @@ function describeError(err: unknown): string {
 // Model configuration per phase - also lazy to support runtime config
 export function getPhaseModels() {
   return {
-    concept: process.env.CONCEPT_MODEL || 'gpt-4o-mini',
-    blueprint: process.env.BLUEPRINT_MODEL || 'gpt-4o-mini',
-    drafter: process.env.DRAFTER_MODEL || 'gpt-4o-mini',
+    concept: process.env.CONCEPT_MODEL || 'gpt-4.1-mini',
+    blueprint: process.env.BLUEPRINT_MODEL || 'gpt-4.1-mini',
+    drafter: process.env.DRAFTER_MODEL || 'gpt-4.1-mini',
     embedding: process.env.EMBEDDING_MODEL || 'text-embedding-3-small',
-    repair: process.env.REPAIR_MODEL || 'gpt-4o-mini',
-    narrativeReview: process.env.NARRATIVE_REVIEW_MODEL || 'gpt-4o-mini',
-    actionResolution: process.env.ACTION_RESOLUTION_MODEL || 'gpt-4o-mini',
+    repair: process.env.REPAIR_MODEL || 'gpt-4.1-mini',
+    contentQuality: process.env.CONTENT_QUALITY_MODEL || 'gpt-4.1-mini',
+    narrativeReview: process.env.NARRATIVE_REVIEW_MODEL || 'gpt-4.1-mini',
+    actionResolution: process.env.ACTION_RESOLUTION_MODEL || 'gpt-4.1-mini',
   };
 }
 
 export const PHASE_MODELS = {
-  get concept() { return process.env.CONCEPT_MODEL || 'gpt-4o-mini'; },
-  get blueprint() { return process.env.BLUEPRINT_MODEL || 'gpt-4o-mini'; },
-  get drafter() { return process.env.DRAFTER_MODEL || 'gpt-4o-mini'; },
+  get concept() { return process.env.CONCEPT_MODEL || 'gpt-4.1-mini'; },
+  get blueprint() { return process.env.BLUEPRINT_MODEL || 'gpt-4.1-mini'; },
+  get drafter() { return process.env.DRAFTER_MODEL || 'gpt-4.1-mini'; },
   get embedding() { return process.env.EMBEDDING_MODEL || 'text-embedding-3-small'; },
 };
 
@@ -294,7 +295,7 @@ async function callOpenAI<T>(
   schema: object,
   modelOverride?: string
 ): Promise<CallResult<T>> {
-  const modelToUse = modelOverride || 'gpt-4o-mini';
+  const modelToUse = modelOverride || 'gpt-4.1-mini';
   const timeout = config.timeoutMs ?? getModelTimeout(modelToUse);
   const maxRetries = config.maxRetries ?? parseInt(process.env.OPENAI_MAX_RETRIES || (process.env.K_SERVICE ? '2' : '3'), 10);
   const baseDelay = 2000;

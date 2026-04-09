@@ -93,6 +93,7 @@ export interface SimScenarioDoc {
   dynamic_profile?: { actorPattern?: string };
   phase?: string;
   actIndex?: number;
+  token_map?: Record<string, string>;
 }
 
 interface ResolveTextResult {
@@ -121,7 +122,7 @@ export function normalizeCountryDoc(country: CountryDoc): CountryDoc {
   };
 }
 
-const PLACEHOLDER_PATTERN = /\{\{?([a-zA-Z_]+)\}?\}/g;
+const PLACEHOLDER_PATTERN = /\{\{?([a-zA-Z_]+)\}?\}(?:'s|'s)?/g;
 const OPTIONAL_BRANCH_TOKENS = new Set([
   'marine_branch',
   'space_branch',
@@ -162,6 +163,12 @@ const FALLBACK_TOKEN_VALUES: Record<string, string> = {
   the_legislature: 'the legislature',
   governing_party: 'governing party',
   the_governing_party: 'the governing party',
+  opposition_party: 'the opposition',
+  the_opposition_party: 'the opposition',
+  opposition_party_leader: 'the opposition leader',
+  the_opposition_party_leader: 'the opposition leader',
+  coalition_party: 'the coalition',
+  the_coalition_party: 'the coalition',
 };
 
 function titleCaseToken(token: string): string {
@@ -207,6 +214,22 @@ function buildArticleForm(value: string): string {
   return trimmed.toLowerCase().startsWith('the ') ? trimmed : `the ${trimmed}`;
 }
 
+const NON_PREFIXING_ARTICLE_FORM_TOKENS = new Set([
+  'legislature',
+  'upper_house',
+  'lower_house',
+  'governing_party',
+  'opposition_party',
+  'capital_city',
+  'regional_bloc',
+]);
+
+function resolveArticleFormValue(token: string, value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  return NON_PREFIXING_ARTICLE_FORM_TOKENS.has(token) ? trimmed : buildArticleForm(trimmed);
+}
+
 function resolveRelationshipNames(
   relationship: CountryRelationship | undefined,
   countriesById: Record<string, CountryDoc>
@@ -233,13 +256,19 @@ function fallbackValueForToken(tokenLower: string, context: Record<string, strin
   if (tokenLower.startsWith('the_')) {
     const bare = tokenLower.slice(4);
     const fromContext = context[bare]?.trim();
-    if (fromContext) return buildArticleForm(fromContext);
+    if (fromContext) return resolveArticleFormValue(bare, fromContext);
     const exactBare = FALLBACK_TOKEN_VALUES[bare];
-    if (exactBare) return exactBare.startsWith('the ') ? exactBare : `the ${exactBare}`;
+    if (exactBare) {
+      return NON_PREFIXING_ARTICLE_FORM_TOKENS.has(bare)
+        ? exactBare
+        : (exactBare.startsWith('the ') ? exactBare : `the ${exactBare}`);
+    }
     if (bare.endsWith('_role')) {
       return `the ${titleCaseToken(bare.replace(/_role$/, '')).toLowerCase()} minister`;
     }
-    return `the ${titleCaseToken(bare).toLowerCase()}`;
+    return NON_PREFIXING_ARTICLE_FORM_TOKENS.has(bare)
+      ? titleCaseToken(bare).toLowerCase()
+      : `the ${titleCaseToken(bare).toLowerCase()}`;
   }
 
   if (tokenLower.endsWith('_role')) {
@@ -388,7 +417,7 @@ export function buildSimulationTokenContext(
   if (country.leader) context.leader = country.leader;
   if (country.leaderTitle) {
     context.leader_title = country.leaderTitle;
-    setIfMissing(context, 'the_leader_title', buildArticleForm(country.leaderTitle));
+    setIfMissing(context, 'the_leader_title', resolveArticleFormValue('leader_title', country.leaderTitle));
   }
 
   if (geopoliticalProfile) {
@@ -445,7 +474,7 @@ export function buildSimulationTokenContext(
 
   for (const [key, value] of Object.entries({ ...context })) {
     if (!value || key.startsWith('the_')) continue;
-    setIfMissing(context, `the_${key}`, buildArticleForm(value));
+    setIfMissing(context, `the_${key}`, resolveArticleFormValue(key, value));
   }
 
   return context;
@@ -458,10 +487,18 @@ export function resolveSimulationText(text: string, context: Record<string, stri
 
   const replaced = text.replace(PLACEHOLDER_PATTERN, (raw, tokenName: string) => {
     const tokenLower = tokenName.toLowerCase();
-    const directValue = context[tokenName] ?? context[tokenLower];
+    const hasPossessive = raw.endsWith("'s") || raw.endsWith('\u2019s');
+    const articleKey = `the_${tokenLower}`;
+    const useArticleForm = hasPossessive && !tokenLower.startsWith('the_') && (context[articleKey] != null);
+
+    const resolveKey = useArticleForm ? articleKey : tokenLower;
+    const directValue = useArticleForm
+      ? context[articleKey]
+      : (context[tokenName] ?? context[tokenLower]);
     if (directValue != null) {
-      tokenUsages.push({ token: tokenLower, raw, value: directValue, source: 'context' });
-      return directValue;
+      const resolved = hasPossessive ? `${directValue}'s` : directValue;
+      tokenUsages.push({ token: resolveKey, raw, value: resolved, source: 'context' });
+      return resolved;
     }
 
     if (OPTIONAL_BRANCH_TOKENS.has(tokenLower)) {
@@ -471,10 +508,14 @@ export function resolveSimulationText(text: string, context: Record<string, stri
     }
 
     const fallback = fallbackValueForToken(tokenLower, context);
-    tokenUsages.push({ token: tokenLower, raw, value: fallback, source: 'fallback' });
+    const resolvedFallback = hasPossessive ? `${fallback}'s` : fallback;
+    tokenUsages.push({ token: tokenLower, raw, value: resolvedFallback, source: 'fallback' });
     fallbackTokens.add(tokenLower);
-    unresolvedTokens.add(tokenLower);
-    return fallback;
+    const bareToken = tokenLower.startsWith('the_') ? tokenLower.slice(4) : tokenLower;
+    if (!(tokenLower in FALLBACK_TOKEN_VALUES) && !(bareToken in FALLBACK_TOKEN_VALUES)) {
+      unresolvedTokens.add(tokenLower);
+    }
+    return resolvedFallback;
   });
 
   return {

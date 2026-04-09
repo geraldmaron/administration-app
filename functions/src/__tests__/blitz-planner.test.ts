@@ -13,7 +13,7 @@ const TARGET_PER_BUNDLE = 20;
 describe('functions blitz planner', () => {
   test('allocates by canonical ratio', () => {
     const allocation = allocateByRatio(100);
-    expect(allocation).toEqual({ universal: 40, regional: 25, cluster: 25, exclusive: 10 });
+    expect(allocation).toEqual({ universal: 20, regional: 25, cluster: 30, exclusive: 25 });
   });
 
   test('calculates deficits for empty inventory', () => {
@@ -54,6 +54,14 @@ describe('functions blitz planner', () => {
     expect(plan.summary.totalRequested).toBe(24);
     expect(plan.plannedJobs.length).toBeGreaterThan(0);
     expect(plan.summary.scenariosToGenerate).toBeLessThanOrEqual(24);
+  });
+
+  test('reallocates unsupported cluster share so requested output remains fully plannable', () => {
+    const inventory: InventoryCell[] = [];
+    const plan = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, inventory, TARGET_PER_BUNDLE, 20, 10, 8);
+    expect(plan.allocation.cluster).toBe(0);
+    expect(plan.allocation.universal + plan.allocation.regional + plan.allocation.cluster + plan.allocation.exclusive).toBe(20);
+    expect(plan.summary.scenariosToGenerate).toBe(20);
   });
 
   test('builds more smaller jobs for ollama runs', () => {

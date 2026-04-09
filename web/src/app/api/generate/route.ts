@@ -117,17 +117,27 @@ export async function POST(request: NextRequest) {
     const scope = normalizedScope.value;
     const normalizedModelConfig = hasMeaningfulModelConfig(modelConfig) ? modelConfig : undefined;
 
-    const [pendingSnap, configSnap] = await Promise.all([
+    const [pendingSnap, runningSnap, configSnap] = await Promise.all([
       db.collection('generation_jobs').where('status', '==', 'pending').count().get(),
+      db.collection('generation_jobs').where('status', '==', 'running').count().get(),
       db.doc('world_state/generation_config').get(),
     ]);
 
     const requestedLowLatencyMode = lowLatencyMode ?? false;
 
+    const normalizedMode =
+      mode === 'news'
+        ? 'news'
+        : mode === 'blitz'
+        ? 'blitz'
+        : mode === 'full_send'
+        ? 'full_send'
+        : 'manual';
+
     const requestPayload: GenerationJobRequest = {
       bundles,
       count,
-      mode: mode === 'news' ? 'news' : mode === 'blitz' ? 'blitz' : 'manual',
+      mode: normalizedMode,
       ...(requestedLowLatencyMode ? { lowLatencyMode: true } : {}),
       distributionConfig: body.distributionConfig ?? { mode: 'auto' },
       ...(description ? { description } : {}),
@@ -145,11 +155,11 @@ export async function POST(request: NextRequest) {
       ...(executionTarget ? { executionTarget } : {}),
     };
 
-    const pendingCount = pendingSnap.data().count;
+    const pendingCount = pendingSnap.data().count + runningSnap.data().count;
     const maxPending = configSnap.data()?.max_pending_jobs ?? 10;
     if (pendingCount >= maxPending) {
       return NextResponse.json(
-        { error: `Too many pending jobs (${pendingCount}/${maxPending}). Wait for existing jobs to complete.` },
+        { error: `Too many active jobs (${pendingCount}/${maxPending}). Wait for existing jobs to complete.` },
         { status: 429 }
       );
     }

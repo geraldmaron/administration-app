@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
 import { requireAdminAuth } from '@/lib/auth';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 import type { ScenarioDetail } from '@/lib/types';
 
-function serializeTimestamp(ts: FirebaseFirestore.Timestamp | undefined): string | undefined {
-  return ts?.toDate?.()?.toISOString();
+function serializeTimestamp(ts: unknown): string | undefined {
+  if (!ts) return undefined;
+  if (typeof (ts as any).toDate === 'function') return (ts as any).toDate().toISOString();
+  if (ts instanceof Date) return ts.toISOString();
+  if (typeof ts === 'number') return new Date(ts).toISOString();
+  if (typeof ts === 'string') return ts;
+  return undefined;
 }
 
 function toDetail(id: string, data: FirebaseFirestore.DocumentData): ScenarioDetail {
@@ -15,8 +21,8 @@ function toDetail(id: string, data: FirebaseFirestore.DocumentData): ScenarioDet
     title: data.title ?? '',
     description: data.description ?? '',
     is_active: data.is_active ?? false,
-    createdAt: data.created_at?.toDate?.()?.toISOString() ?? new Date(0).toISOString(),
-    updatedAt: data.updated_at?.toDate?.()?.toISOString(),
+    createdAt: serializeTimestamp(data.created_at),
+    updatedAt: serializeTimestamp(data.updated_at),
     phase: data.phase,
     actIndex: data.actIndex,
     options: (data.options ?? []).map((opt: FirebaseFirestore.DocumentData) => ({
@@ -139,7 +145,7 @@ export async function PATCH(
     if (!existingDoc.exists) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    update.updated_at = new Date();
+    update.updated_at = FieldValue.serverTimestamp();
     await docRef.update(update);
     return NextResponse.json({ success: true });
   } catch (err) {

@@ -1,39 +1,23 @@
 import SwiftUI
-import MapKit
 
 struct GlobeTarget: Equatable {
     let latitude: Double
     let longitude: Double
 
     static let zero = GlobeTarget(latitude: 0, longitude: 0)
-
-    var coordinate: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-    }
 }
 
 struct GlobeBackgroundView: View {
     var target: GlobeTarget? = nil
     var showPulse: Bool = false
 
-    static let zoomedDistance: Double = 4_500_000
-
     var body: some View {
         ZStack {
-            if let t = target {
-                TargetedGlobeMap(target: t)
-            } else {
-                IdleGlobeMap()
-            }
+            WireframeGlobeView(target: target, showPulse: showPulse)
 
-            Color.black.opacity(0.8)
+            AppColors.accentPrimary.opacity(0.035)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
-
-            if showPulse && target != nil {
-                RadarPulseOverlay()
-                    .allowsHitTesting(false)
-            }
         }
     }
 
@@ -93,135 +77,168 @@ struct GlobeBackgroundView: View {
     ]
 }
 
-// MARK: - Targeted Globe (locked on a country)
+// MARK: - Wireframe Globe View
 
-private struct TargetedGlobeMap: View {
-    let target: GlobeTarget
+private struct WireframeGlobeView: View {
+    let target: GlobeTarget?
+    let showPulse: Bool
 
-    private static let approachDistance: Double = 12_000_000
+    @State private var displayLon: Double = 10.0
 
-    @State private var position: MapCameraPosition = .automatic
+    private let idleTimer = Timer.publish(every: 1.0 / 15.0, on: .main, in: .common).autoconnect()
 
-    var body: some View {
-        Map(position: $position, interactionModes: []) {}
-            .mapStyle(.imagery(elevation: .flat))
-            .allowsHitTesting(false)
-            .saturation(0)
-            .onAppear {
-                position = .camera(MapCamera(
-                    centerCoordinate: target.coordinate,
-                    distance: Self.approachDistance
-                ))
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation(.easeInOut(duration: 2.0)) {
-                        position = .camera(MapCamera(
-                            centerCoordinate: target.coordinate,
-                            distance: GlobeBackgroundView.zoomedDistance
-                        ))
-                    }
-                }
-            }
-            .onChange(of: target) { _, newTarget in
-                withAnimation(.easeOut(duration: 1.0)) {
-                    position = .camera(MapCamera(
-                        centerCoordinate: newTarget.coordinate,
-                        distance: Self.approachDistance
-                    ))
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    withAnimation(.easeInOut(duration: 2.0)) {
-                        position = .camera(MapCamera(
-                            centerCoordinate: newTarget.coordinate,
-                            distance: GlobeBackgroundView.zoomedDistance
-                        ))
-                    }
-                }
-            }
-    }
-}
-
-// MARK: - Idle Globe (slow rotation, no target)
-
-private struct IdleGlobeMap: View {
-    @State private var position: MapCameraPosition = .camera(
-        MapCamera(centerCoordinate: CLLocationCoordinate2D(latitude: 20, longitude: 0), distance: 28_000_000)
-    )
-    @State private var longitude: Double = 0
-
-    var body: some View {
-        Map(position: $position, interactionModes: []) {}
-            .mapStyle(.imagery(elevation: .flat))
-            .allowsHitTesting(false)
-            .saturation(0)
-            .onReceive(
-                Foundation.Timer.publish(every: 1.0 / 15.0, on: .main, in: .common).autoconnect()
-            ) { _ in
-                longitude += 0.15
-                if longitude > 180 { longitude -= 360 }
-                position = .camera(MapCamera(
-                    centerCoordinate: CLLocationCoordinate2D(latitude: 20, longitude: longitude),
-                    distance: 28_000_000
-                ))
-            }
-    }
-}
-
-// MARK: - Radar Pulse Overlay (CoD heartbeat sensor style)
-
-private struct RadarPulseOverlay: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            let elapsed = timeline.date.timeIntervalSinceReferenceDate
             Canvas { context, size in
-                let cx = size.width * 0.5
-                let cy = size.height * 0.5
-                let elapsed = timeline.date.timeIntervalSinceReferenceDate
-                let accent = AppColors.accentPrimary
-
-                let pulseCount = 3
-                let cycleDuration = 2.5
-                let pulseFraction = elapsed.truncatingRemainder(dividingBy: cycleDuration) / cycleDuration
-                let maxPulseRadius = min(size.width, size.height) * 0.3
-
-                for i in 0..<pulseCount {
-                    let offset = Double(i) / Double(pulseCount)
-                    let t = (pulseFraction + offset).truncatingRemainder(dividingBy: 1.0)
-                    let pulseR = CGFloat(t) * maxPulseRadius
-                    let alpha = (1.0 - t) * 0.5
-
-                    var ring = Path()
-                    ring.addEllipse(in: CGRect(
-                        x: cx - pulseR, y: cy - pulseR,
-                        width: pulseR * 2, height: pulseR * 2
-                    ))
-                    context.stroke(ring, with: .color(accent.opacity(alpha)), lineWidth: 1.5)
-
-                    if t < 0.25 {
-                        context.fill(ring, with: .color(accent.opacity(alpha * 0.06)))
-                    }
-                }
-
-                let pipR: CGFloat = 5.0
-                context.fill(
-                    Path(ellipseIn: CGRect(x: cx - pipR * 2.5, y: cy - pipR * 2.5, width: pipR * 5, height: pipR * 5)),
-                    with: .color(accent.opacity(0.15))
-                )
-                context.fill(
-                    Path(ellipseIn: CGRect(x: cx - pipR, y: cy - pipR, width: pipR * 2, height: pipR * 2)),
-                    with: .color(accent.opacity(0.85))
-                )
-
-                let crossLen: CGFloat = 10
-                var cross = Path()
-                cross.move(to: CGPoint(x: cx - crossLen, y: cy))
-                cross.addLine(to: CGPoint(x: cx - pipR - 2, y: cy))
-                cross.move(to: CGPoint(x: cx + pipR + 2, y: cy))
-                cross.addLine(to: CGPoint(x: cx + crossLen, y: cy))
-                cross.move(to: CGPoint(x: cx, y: cy - crossLen))
-                cross.addLine(to: CGPoint(x: cx, y: cy - pipR - 2))
-                cross.move(to: CGPoint(x: cx, y: cy + pipR + 2))
-                cross.addLine(to: CGPoint(x: cx, y: cy + crossLen))
-                context.stroke(cross, with: .color(accent.opacity(0.5)), lineWidth: 0.8)
+                renderGlobe(ctx: context, size: size, elapsed: elapsed)
             }
         }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .onReceive(idleTimer) { _ in
+            guard target == nil else { return }
+            displayLon += 0.20
+            if displayLon > 180 { displayLon -= 360 }
+        }
+        .onAppear {
+            if let t = target { displayLon = t.longitude }
+        }
+        .onChange(of: target) { _, newTarget in
+            if let t = newTarget {
+                withAnimation(.easeInOut(duration: 1.8)) { displayLon = t.longitude }
+            }
+        }
+    }
+
+    // MARK: - Globe Rendering
+
+    private func renderGlobe(ctx: GraphicsContext, size: CGSize, elapsed: Double) {
+        let accent = AppColors.accentPrimary
+        let cx = size.width * 0.5
+        let cy = size.height * 0.44
+        let R = min(size.width, size.height) * 0.50
+
+        let elevDeg = 22.0
+        let elevRad = elevDeg * .pi / 180.0
+        let cosE = cos(elevRad)
+        let sinE = sin(elevRad)
+        let centerLon = displayLon
+
+        // Orthographic projection with elevation tilt.
+        // Viewing from elevation angle above equatorial plane.
+        // right axis = (0,1,0), up axis = (-sinE,0,cosE)
+        // P = (cos(φ)cos(λ), cos(φ)sin(λ), sin(φ))
+        // screen_x = R * cos(φ) * sin(λ)
+        // screen_y = R * (sinE*cos(φ)*cos(λ) − cosE*sin(φ))
+        // visible  = cosE*cos(φ)*cos(λ) + sinE*sin(φ) > 0
+        func project(lat: Double, lon: Double) -> (CGPoint, Bool) {
+            let phi = lat * .pi / 180.0
+            let lam = (lon - centerLon) * .pi / 180.0
+            let cosPhi = cos(phi), sinPhi = sin(phi)
+            let cosLam = cos(lam), sinLam = sin(lam)
+            let sx = R * cosPhi * sinLam
+            let sy = R * (sinE * cosPhi * cosLam - cosE * sinPhi)
+            let visible = cosE * cosPhi * cosLam + sinE * sinPhi > 0
+            return (CGPoint(x: cx + sx, y: cy + sy), visible)
+        }
+
+        // Globe outline
+        var outline = Path()
+        outline.addEllipse(in: CGRect(x: cx - R, y: cy - R, width: R * 2, height: R * 2))
+        ctx.stroke(outline, with: .color(accent.opacity(0.18)), lineWidth: 0.75)
+
+        // Latitude parallels — sample lon from center−90° to center+90° (visible hemisphere)
+        let latitudes: [(Double, Double)] = [
+            (-60, 0.055), (-30, 0.065), (0, 0.105), (30, 0.065), (60, 0.055)
+        ]
+        for (lat, opacity) in latitudes {
+            var path = Path()
+            var started = false
+            for step in 0...180 {
+                let lon = centerLon - 90.0 + Double(step)
+                let (pt, visible) = project(lat: lat, lon: lon)
+                if visible {
+                    if !started { path.move(to: pt); started = true }
+                    else { path.addLine(to: pt) }
+                } else {
+                    started = false
+                }
+            }
+            ctx.stroke(path, with: .color(accent.opacity(opacity)), lineWidth: 0.5)
+        }
+
+        // Longitude meridians
+        for lonOffset in stride(from: -150.0, through: 180.0, by: 30.0) {
+            let lon = centerLon + lonOffset
+            var path = Path()
+            var started = false
+            let opacity: Double = abs(lonOffset) < 1.0 ? 0.11 : 0.06
+            for step in 0...170 {
+                let lat = -85.0 + Double(step)
+                let (pt, visible) = project(lat: lat, lon: lon)
+                if visible {
+                    if !started { path.move(to: pt); started = true }
+                    else { path.addLine(to: pt) }
+                } else {
+                    started = false
+                }
+            }
+            ctx.stroke(path, with: .color(accent.opacity(opacity)), lineWidth: 0.5)
+        }
+
+        // Capital city pips
+        for cap in GlobeBackgroundView.capitalCoordinates.values {
+            let (pt, visible) = project(lat: cap.latitude, lon: cap.longitude)
+            guard visible else { continue }
+            let dotR: CGFloat = 1.4
+            ctx.fill(
+                Path(ellipseIn: CGRect(x: pt.x - dotR, y: pt.y - dotR, width: dotR * 2, height: dotR * 2)),
+                with: .color(accent.opacity(0.22))
+            )
+        }
+
+        // Target acquisition indicator — replaces the generic radar pulse
+        guard showPulse, let t = target else { return }
+        let (tPt, tVisible) = project(lat: t.latitude, lon: t.longitude)
+        guard tVisible else { return }
+
+        // Single slow expanding ring tied to the actual country position
+        let phase = CGFloat(elapsed.truncatingRemainder(dividingBy: 3.2) / 3.2)
+        let ringR = phase * 32.0
+        let ringAlpha = (1.0 - phase) * 0.5
+        if ringR > 1 {
+            var ring = Path()
+            ring.addEllipse(in: CGRect(x: tPt.x - ringR, y: tPt.y - ringR, width: ringR * 2, height: ringR * 2))
+            ctx.stroke(ring, with: .color(accent.opacity(ringAlpha)), lineWidth: 0.9)
+        }
+
+        // Crosshair arms with gap
+        let reticleR: CGFloat = 7.0
+        let gap: CGFloat = 3.5
+        let arm: CGFloat = 11.0
+
+        var crosshair = Path()
+        crosshair.move(to: CGPoint(x: tPt.x - reticleR - arm, y: tPt.y))
+        crosshair.addLine(to: CGPoint(x: tPt.x - reticleR - gap, y: tPt.y))
+        crosshair.move(to: CGPoint(x: tPt.x + reticleR + gap, y: tPt.y))
+        crosshair.addLine(to: CGPoint(x: tPt.x + reticleR + arm, y: tPt.y))
+        crosshair.move(to: CGPoint(x: tPt.x, y: tPt.y - reticleR - arm))
+        crosshair.addLine(to: CGPoint(x: tPt.x, y: tPt.y - reticleR - gap))
+        crosshair.move(to: CGPoint(x: tPt.x, y: tPt.y + reticleR + gap))
+        crosshair.addLine(to: CGPoint(x: tPt.x, y: tPt.y + reticleR + arm))
+        ctx.stroke(crosshair, with: .color(accent.opacity(0.72)), lineWidth: 0.8)
+
+        // Reticle circle
+        var reticle = Path()
+        reticle.addEllipse(in: CGRect(x: tPt.x - reticleR, y: tPt.y - reticleR, width: reticleR * 2, height: reticleR * 2))
+        ctx.stroke(reticle, with: .color(accent.opacity(0.5)), lineWidth: 0.8)
+
+        // Center pip
+        let pipR: CGFloat = 2.0
+        ctx.fill(
+            Path(ellipseIn: CGRect(x: tPt.x - pipR, y: tPt.y - pipR, width: pipR * 2, height: pipR * 2)),
+            with: .color(accent.opacity(0.9))
+        )
     }
 }

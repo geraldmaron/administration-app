@@ -15,12 +15,14 @@ import * as admin from 'firebase-admin';
 import * as logger from "firebase-functions/logger";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { saveScenario, getActiveBundleCount } from './storage';
+import { saveScenario, getActiveBundleCount, saveWorldEvent } from './storage';
+import { generateWorldTick } from './lib/world-simulation';
+import type { CountryDocument } from './types';
 import { ALL_BUNDLE_IDS, isValidBundleId, STANDARD_BUNDLE_IDS, type BundleId } from './data/schemas/bundleIds';
 import type { ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind } from './types';
 import { validateConfig, logConfigStatus } from './lib/config-validator';
 import { normalizeGenerationScopeInput } from './lib/generation-scope';
-import { exceedsBundleLimitForModel, getMaxBundlesPerJob } from './lib/generation-models';
+import { exceedsBundleLimitForModel, getMaxBundlesPerJob, isOllamaGeneration } from './lib/generation-models';
 import { getProviderRetryTelemetry, resetProviderRetryTelemetry } from './lib/model-providers';
 import { buildGenerationJobRecord, estimateExpectedScenarios, type GenerationJobRecord } from './shared/generation-job';
 
@@ -57,7 +59,7 @@ export const GENERATION_JOB_TRIGGER_CONCURRENCY = 1;
 // ---------------------------------------------------------------------------
 
 export interface GenerationJobData extends GenerationJobRecord<admin.firestore.Timestamp, BundleId> {
-    results?: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; countrySource?: string; policyVersion?: string; scopeTier?: ScenarioScopeTier; scopeKey?: string; sourceKind?: ScenarioSourceKind }[];
+    results?: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; countrySource?: string; policyVersion?: string; scopeTier?: ScenarioScopeTier; scopeKey?: string; sourceKind?: ScenarioSourceKind; fullSendProvider?: 'openai' | 'local' }[];
     errors?: { id?: string; bundle?: string; error: string }[];
     error?: string;
 }
@@ -65,8 +67,13 @@ export interface GenerationJobData extends GenerationJobRecord<admin.firestore.T
 export interface CreateJobOptions {
     bundles: BundleId[] | 'all' | 'standard';
     count: number;
+    runId?: string;
+    runKind?: GenerationJobData['runKind'];
+    runJobIndex?: number;
+    runTotalJobs?: number;
+    runLabel?: string;
     lowLatencyMode?: boolean;
-    mode?: 'news' | 'manual' | 'blitz';
+    mode?: 'news' | 'manual' | 'blitz' | 'full_send';
     distributionConfig?: GenerationJobData['distributionConfig'];
     dryRun?: boolean;
     newsContext?: GenerationJobData['newsContext'];
@@ -82,7 +89,7 @@ export interface CreateJobOptions {
     requestedBy?: string;
     priority?: 'low' | 'normal' | 'high';
     description?: string;
-    executionTarget?: string;
+    executionTarget?: GenerationJobData['executionTarget'];
     currentPhase?: string;
     currentMessage?: string;
 }
@@ -118,12 +125,18 @@ export function resolveBundles(bundleSpec: BundleId[] | 'all' | 'standard'): Bun
  * Check if we've exceeded the pending job limit
  */
 async function checkPendingJobLimit(db: admin.firestore.Firestore, maxPendingJobs: number = MAX_PENDING_JOBS): Promise<{ allowed: boolean; currentCount: number }> {
-    const pendingJobs = await db.collection('generation_jobs')
-        .where('status', '==', 'pending')
-        .count()
-        .get();
+    const [pendingJobs, runningJobs] = await Promise.all([
+        db.collection('generation_jobs')
+            .where('status', '==', 'pending')
+            .count()
+            .get(),
+        db.collection('generation_jobs')
+            .where('status', '==', 'running')
+            .count()
+            .get(),
+    ]);
 
-    const currentCount = pendingJobs.data().count;
+    const currentCount = pendingJobs.data().count + runningJobs.data().count;
     return {
         allowed: currentCount < maxPendingJobs,
         currentCount
@@ -195,13 +208,31 @@ export const onScenarioJobCreated = onDocumentCreated({
         const freshSnap = await txn.get(jobRef);
         const freshData = freshSnap.data();
         if (!freshData || freshData.status !== 'pending') return false;
-        if (freshData.executionTarget === 'n8n') return false;
+        if (freshData.executionTarget === 'n8n' || freshData.executionTarget === 'local') return false;
         txn.update(jobRef, { status: 'claimed', claimedAt: admin.firestore.FieldValue.serverTimestamp() });
         return true;
     });
 
     if (!claimed) {
         logger.info(`Job ${jobId} skipped - not claimable (status: ${jobData.status}, target: ${jobData.executionTarget ?? 'cloud_function'})`);
+        return;
+    }
+
+    if (isOllamaGeneration(jobData.modelConfig)) {
+        const ollamaError = 'Ollama models require local execution. Route through local-gen-server instead of Cloud Functions.';
+        logger.error(`Job ${jobId} failed - ${ollamaError}`);
+        await snapshot.ref.update({
+            status: 'failed',
+            error: ollamaError,
+            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+            currentPhase: 'failed',
+            currentMessage: ollamaError,
+        });
+        await appendJobEvent(jobRef, {
+            level: 'error',
+            code: 'job_invalid_execution_target',
+            message: ollamaError,
+        }, { currentPhase: 'failed', currentMessage: ollamaError });
         return;
     }
 
@@ -312,7 +343,7 @@ export const onScenarioJobCreated = onDocumentCreated({
         let totalCompleted = 0;
         let totalFailed = 0;
         const jobTokenSummary = { inputTokens: 0, outputTokens: 0, costUsd: 0, callCount: 0, conceptCount: 0, totalDurationMs: 0 };
-        const allResults: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; auditScore?: number; autoFixed?: boolean; countrySource?: string; policyVersion?: string; scopeTier?: ScenarioScopeTier; scopeKey?: string; sourceKind?: ScenarioSourceKind }[] = [];
+        const allResults: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; auditScore?: number; autoFixed?: boolean; countrySource?: string; policyVersion?: string; scopeTier?: ScenarioScopeTier; scopeKey?: string; sourceKind?: ScenarioSourceKind; fullSendProvider?: 'openai' | 'local' }[] = [];
         const allErrors: { id?: string; bundle?: string; error: string }[] = [];
         const savedScenarioIds: string[] = [];
 
@@ -339,12 +370,134 @@ export const onScenarioJobCreated = onDocumentCreated({
         };
 
         resetProviderRetryTelemetry();
-        logger.info(`Processing ${validBundles.length} bundles with adaptive batching (API concurrency capped at ${process.env.OPENAI_MAX_CONCURRENT || '3'} requests, max instances ${GENERATION_JOB_MAX_INSTANCES}, trigger concurrency ${GENERATION_JOB_TRIGGER_CONCURRENCY})`);
 
         // Adaptive batching configuration
         let maxBundleConcurrency = Math.min(genConfig.max_bundle_concurrency ?? 3, 5);
         let adaptiveBundleConcurrency = maxBundleConcurrency;
         let consecutiveCleanBatches = 0;
+
+        if (mode === 'full_send') {
+            const { runFullSendCoordinator } = await import('./lib/full-send-coordinator');
+            await appendJobEvent(jobRef, {
+                level: 'info',
+                code: 'full_send_started',
+                message: `Full Send: firing local + OpenAI pipelines in parallel for ${validBundles.length} bundle${validBundles.length === 1 ? '' : 's'}.`,
+                data: { bundles: validBundles },
+            }, { currentPhase: 'full_send', currentMessage: 'Running dual-pipeline generation' });
+
+            const fsResult = await runFullSendCoordinator({
+                jobId,
+                jobRef: jobRef as any,
+                validBundles,
+                count,
+                scope,
+                distributionConfig,
+                localModelConfig: jobData.modelConfig,
+                newsContext: jobData.newsContext,
+                maxBundleConcurrency,
+                dryRun: jobData.dryRun,
+                onAttemptFailed: ({ bundle, attempt, maxAttempts, score, topIssues }) => {
+                    const msg = `score ${score} — ${topIssues.slice(0, 3).join('; ')}`;
+                    allErrors.push({ bundle, error: `attempt ${attempt}/${maxAttempts} failed: ${msg}` });
+                    void appendJobEvent(jobRef, {
+                        level: 'warning',
+                        code: 'generation_attempt_failed',
+                        message: `Attempt ${attempt}/${maxAttempts} failed for ${bundle}: ${msg}`,
+                        bundle,
+                        phase: 'audit',
+                        data: { attempt, maxAttempts, score, topIssues },
+                    }, { currentBundle: bundle, currentPhase: 'audit', currentMessage: `Repairing ${bundle} attempt ${attempt}/${maxAttempts}` });
+                    void updateProgress();
+                },
+            });
+
+            jobTokenSummary.inputTokens += fsResult.localTokenSummary.inputTokens + fsResult.openaiTokenSummary.inputTokens;
+            jobTokenSummary.outputTokens += fsResult.localTokenSummary.outputTokens + fsResult.openaiTokenSummary.outputTokens;
+            jobTokenSummary.costUsd += fsResult.localTokenSummary.costUsd + fsResult.openaiTokenSummary.costUsd;
+            jobTokenSummary.callCount += fsResult.localTokenSummary.callCount + fsResult.openaiTokenSummary.callCount;
+
+            await appendJobEvent(jobRef, {
+                level: 'info',
+                code: 'full_send_merged',
+                message: `Full Send merged: ${fsResult.localScenarios.length} local + ${fsResult.openaiScenarios.length} OpenAI → ${fsResult.mergedScenarios.length} unique.`,
+                data: {
+                    localCount: fsResult.localScenarios.length,
+                    openaiCount: fsResult.openaiScenarios.length,
+                    mergedCount: fsResult.mergedScenarios.length,
+                    localFailed: fsResult.localFailed,
+                    openaiFailed: fsResult.openaiFailed,
+                },
+            }, { currentPhase: 'save', currentMessage: `Saving ${fsResult.mergedScenarios.length} merged scenarios` });
+
+            const provenance = {
+                jobId,
+                executionTarget: 'full_send',
+                modelUsed: 'dual-pipeline',
+                generatedAt: new Date().toISOString(),
+            };
+
+            for (const s of fsResult.mergedScenarios) {
+                (s as any).metadata = { ...s.metadata, generationProvenance: provenance };
+                const bundle = (s.metadata?.bundle ?? s.id.split(':')[0] ?? 'unknown') as BundleId;
+                try {
+                    if (forceCancelled) break;
+
+                    if (jobData.dryRun) {
+                        await db.collection('generation_jobs').doc(jobId)
+                            .collection('pending_scenarios').doc(s.id).set(s);
+                        const auditMeta = s.metadata?.auditMetadata;
+                        allResults.push({
+                            id: s.id,
+                            title: s.title,
+                            bundle,
+                            difficulty: s.metadata?.difficulty,
+                            actCount: s.acts?.length || 1,
+                            isRoot: s.isRootScenario !== false,
+                            auditScore: auditMeta?.score,
+                            autoFixed: auditMeta?.autoFixed ?? false,
+                            scopeTier: s.metadata?.scopeTier,
+                            scopeKey: s.metadata?.scopeKey,
+                            sourceKind: s.metadata?.sourceKind,
+                            fullSendProvider: (s.metadata as any)?.fullSendProvider,
+                        });
+                        savedScenarioIds.push(s.id);
+                        totalCompleted++;
+                    } else {
+                        const savedResult = await saveScenario(s);
+                        if (savedResult.saved) {
+                            const actCount = s.acts?.length || 1;
+                            const auditMeta = s.metadata?.auditMetadata;
+                            const acceptanceMeta = (s.metadata as any)?.acceptanceMetadata;
+                            allResults.push({
+                                id: s.id,
+                                title: s.title,
+                                bundle,
+                                difficulty: s.metadata?.difficulty,
+                                actCount,
+                                isRoot: s.isRootScenario !== false,
+                                auditScore: auditMeta?.score,
+                                autoFixed: auditMeta?.autoFixed ?? false,
+                                countrySource: acceptanceMeta?.countrySource?.kind,
+                                policyVersion: acceptanceMeta?.policyVersion,
+                                scopeTier: s.metadata?.scopeTier,
+                                scopeKey: s.metadata?.scopeKey,
+                                sourceKind: s.metadata?.sourceKind,
+                                fullSendProvider: (s.metadata as any)?.fullSendProvider,
+                            });
+                            savedScenarioIds.push(s.id);
+                            totalCompleted++;
+                        } else {
+                            allErrors.push({ id: s.id, bundle, error: savedResult.reason || 'Save rejected' });
+                            totalFailed++;
+                        }
+                    }
+                } catch (saveErr: any) {
+                    allErrors.push({ id: s.id, bundle, error: saveErr.message });
+                    totalFailed++;
+                }
+                await updateProgress();
+            }
+        } else {
 
         // Process bundles in adaptive parallel batches — each bundle internally runs concept_concurrency
         // parallel LLM calls, so total concurrent API calls ≈ adaptiveBundleConcurrency × concept_concurrency.
@@ -620,6 +773,8 @@ export const onScenarioJobCreated = onDocumentCreated({
             }
         }
 
+        } // end else (non-full_send)
+
         clearInterval(cancellationPoll);
         const finalTelemetry = getProviderRetryTelemetry();
         if (finalTelemetry.rateLimitRetries > 0) {
@@ -704,13 +859,13 @@ export const onScenarioJobCreated = onDocumentCreated({
 
         logger.info(`Job ${jobId} ${finalStatus}: ${totalCompleted} saved, ${totalFailed} failed`);
 
-        // Export updated bundles to Firebase Storage so clients get incremental updates.
-        // Runs async — does not block the job completion response.
         if (finalStatus === 'completed' && validBundles.length > 0 && !jobData.dryRun) {
             const { exportBundle } = await import('./bundle-exporter');
-            Promise.all(validBundles.map(b => exportBundle(b))).catch(err =>
-                logger.error('[BundleExporter] Post-job export failed:', err)
-            );
+            try {
+                await Promise.all(validBundles.map((bundleId) => exportBundle(bundleId)));
+            } catch (error) {
+                logger.error('[BundleExporter] Post-job export failed:', error);
+            }
         }
 
     } catch (error: any) {
@@ -751,10 +906,9 @@ export async function createGenerationJob(
     const { getGenerationConfig } = await import('./scenario-engine');
     const genConfig = await getGenerationConfig();
 
-    // Check pending job limit
     const { allowed, currentCount } = await checkPendingJobLimit(db, genConfig.max_pending_jobs);
     if (!allowed) {
-        throw new Error(`Too many pending jobs (${currentCount}/${genConfig.max_pending_jobs}). Wait for existing jobs to complete.`);
+        throw new Error(`Too many active jobs (${currentCount}/${genConfig.max_pending_jobs}). Wait for existing jobs to complete.`);
     }
 
     // Resolve and validate bundles
@@ -782,6 +936,11 @@ export async function createGenerationJob(
     const jobData: GenerationJobData = buildGenerationJobRecord<admin.firestore.Timestamp, BundleId>({
         bundles,
         count,
+        runId: options.runId,
+        runKind: options.runKind,
+        runJobIndex: options.runJobIndex,
+        runTotalJobs: options.runTotalJobs,
+        runLabel: options.runLabel,
         mode: options.mode || 'manual',
         lowLatencyMode: options.lowLatencyMode,
         distributionConfig: options.distributionConfig || { mode: 'auto' },
@@ -888,52 +1047,18 @@ function toMillis(ts?: admin.firestore.Timestamp): number | null {
     return ts.toDate().getTime();
 }
 
-export function shouldFinalizeHardCappedJob(params: {
-    startedAtMs?: number | null;
-    updatedAtMs?: number | null;
-    lastHeartbeatAtMs?: number | null;
-    hardCapMinutes: number;
-    nowMs?: number;
-    executionTarget?: string;
-}): boolean {
-    const {
-        startedAtMs,
-        updatedAtMs,
-        lastHeartbeatAtMs,
-        hardCapMinutes,
-        nowMs = Date.now(),
-        executionTarget,
-    } = params;
-
-    if (!startedAtMs || hardCapMinutes <= 0) {
-        return false;
-    }
-
-    const hardCapWindowMs = hardCapMinutes * 60 * 1000;
-    const startedExceeded = startedAtMs <= (nowMs - hardCapWindowMs);
-    if (!startedExceeded) {
-        return false;
-    }
-
-    const lastActivityMs = Math.max(startedAtMs ?? 0, updatedAtMs ?? 0, lastHeartbeatAtMs ?? 0);
-    if (!lastActivityMs) {
-        return true;
-    }
-
-    if (executionTarget === 'n8n' && lastActivityMs > (nowMs - hardCapWindowMs)) {
-        return false;
-    }
-
-    return true;
-}
 
 /**
- * Detects generation jobs stuck in 'running' state and marks them as failed.
- * Runs every 5 minutes. Two sweeps per invocation:
+ * Detects generation jobs stuck in abnormal states and marks them as failed.
+ * Runs every 5 minutes. Four sweeps per invocation:
+ *
+ * 0. Stale-pending sweep — catches jobs stuck in 'pending' or 'claimed' whose
+ *    dispatch failed or whose Firestore trigger never fired. Jobs older than
+ *    `pending_staleness_minutes` (default 10) are failed.
  *
  * 1. Stale-heartbeat sweep — catches crashed workers (Cloud Function killed,
  *    n8n workflow stopped). Jobs whose updatedAt hasn't moved in
- *    `zombie_staleness_minutes` (default 15) are finalized.
+ *    `zombie_staleness_minutes` (default 5, configurable via world_state/generation_config) are finalized.
  *
  * 2. Loop-failure sweep — catches n8n jobs alive but spinning on failures.
  *    Jobs running > `loop_failure_min_runtime_minutes` with failure rate above
@@ -954,10 +1079,52 @@ export const recoverZombieJobs = onSchedule({
         // --- Read configurable thresholds ---
         const configSnap = await db.doc('world_state/generation_config').get();
         const configData = configSnap.data() ?? {};
-        const zombieStalenessMinutes: number = configData.zombie_staleness_minutes ?? 15;
+        const zombieStalenessMinutes: number = configData.zombie_staleness_minutes ?? 5;
         const loopFailureMinRuntimeMinutes: number = configData.loop_failure_min_runtime_minutes ?? 15;
         const loopFailureMinAttempts: number = configData.loop_failure_min_attempts ?? 15;
         const loopFailureRateThreshold: number = configData.loop_failure_rate_threshold ?? 0.90;
+        const pendingStalenessMinutes: number = configData.pending_staleness_minutes ?? 10;
+
+        // -------------------------------------------------------------------------
+        // Sweep 0: Stale pending/claimed jobs (dispatch failed, trigger didn't fire,
+        // or claim transaction stalled). These jobs never reached 'running' so the
+        // other sweeps (which query status == 'running') cannot catch them.
+        // -------------------------------------------------------------------------
+        const pendingCutoff = new Date(Date.now() - pendingStalenessMinutes * 60 * 1000);
+        const pendingCutoffTs = admin.firestore.Timestamp.fromDate(pendingCutoff);
+
+        const stalePending = await db.collection('generation_jobs')
+            .where('status', 'in', ['pending', 'claimed'])
+            .where('requestedAt', '<', pendingCutoffTs)
+            .get();
+
+        if (stalePending.docs.length > 0) {
+            logger.warn(`[ZombieRecovery] Sweep 0: Found ${stalePending.docs.length} stale pending/claimed job(s) — failing`);
+            const pendingBatch = db.batch();
+            for (const doc of stalePending.docs) {
+                const data = doc.data() as GenerationJobData;
+                const target = data.executionTarget ?? 'cloud_function';
+                const statusLabel = data.status ?? 'pending';
+                const hint = target === 'n8n'
+                    ? 'The n8n runner was never dispatched or failed to start. Check n8n connectivity and retry.'
+                    : target === 'local'
+                        ? 'The local generation server was never dispatched or failed to start. Check the local-gen-server and retry.'
+                        : 'The Cloud Function trigger did not fire or failed to claim the job. Retry the job.';
+                logger.warn(`[ZombieRecovery] Sweep 0: Failing stale ${statusLabel} job ${doc.id} (target=${target}, requestedAt=${data.requestedAt?.toDate?.()?.toISOString()})`);
+                pendingBatch.update(doc.ref, {
+                    status: 'failed',
+                    currentPhase: 'failed',
+                    currentMessage: `Job stuck in '${statusLabel}' for over ${pendingStalenessMinutes} minutes without being processed.`,
+                    error: `Job stuck in '${statusLabel}' for over ${pendingStalenessMinutes} minutes. ${hint}`,
+                    completedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+            }
+            await pendingBatch.commit();
+            logger.info(`[ZombieRecovery] Sweep 0: Failed ${stalePending.docs.length} stale pending/claimed job(s)`);
+        } else {
+            logger.info('[ZombieRecovery] Sweep 0: No stale pending/claimed jobs found');
+        }
 
         // -------------------------------------------------------------------------
         // Sweep 1: Stale-heartbeat (orphaned / crashed worker)
@@ -1005,6 +1172,8 @@ export const recoverZombieJobs = onSchedule({
                         progress: normalizedProgress,
                         completedCount,
                         failedCount: normalizedFailedCount,
+                        currentPhase: 'completed',
+                        currentMessage: `Job timed out after partial completion: ${completedCount}/${total || completedCount} scenarios finished before the worker exceeded its execution window.`,
                         error: `Job timed out after partial completion: ${completedCount}/${total || completedCount} scenarios finished before the worker exceeded its execution window.`,
                         completedAt: admin.firestore.FieldValue.serverTimestamp(),
                         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1013,12 +1182,16 @@ export const recoverZombieJobs = onSchedule({
                     logger.warn(`[ZombieRecovery] Marking job ${doc.id} as failed (stuck since ${data.startedAt?.toDate?.()?.toISOString()})`);
                     const timeoutHint = data.executionTarget === 'n8n'
                         ? 'The n8n workflow likely exceeded its execution time limit or lost connectivity. Retry the job.'
+                        : data.executionTarget === 'local'
+                            ? 'The local generation server likely stopped heartbeating or was restarted while work was in progress. Restart the local generator and retry the job.'
                         : 'The Cloud Function likely exceeded its 540s execution limit. Retry the job.';
                     batch.update(doc.ref, {
                         status: 'failed',
                         progress: normalizedProgress,
                         completedCount,
                         failedCount: normalizedFailedCount,
+                        currentPhase: 'failed',
+                        currentMessage: `Job timed out: no completion signal received within ${zombieStalenessMinutes} minutes.`,
                         error: `Job timed out: no completion signal received within ${zombieStalenessMinutes} minutes. ${timeoutHint}`,
                         completedAt: admin.firestore.FieldValue.serverTimestamp(),
                         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1064,6 +1237,8 @@ export const recoverZombieJobs = onSchedule({
                 logger.warn(`[ZombieRecovery] Sweep 2: Terminating loop-failure job ${doc.id}: ${failed}/${total} attempts failed (${rate}%)`);
                 loopBatch.update(doc.ref, {
                     status: 'failed',
+                    currentPhase: 'failed',
+                    currentMessage: `Job terminated due to excessive failure rate (${rate}% failed attempts).`,
                     error: `Job terminated: excessive failure rate — ${failed}/${total} generation attempts failed (${rate}%) after ${loopFailureMinRuntimeMinutes}+ minutes with ${completed === 0 ? 'no' : 'few'} successful scenarios. Check model config and retry.`,
                     completedAt: admin.firestore.FieldValue.serverTimestamp(),
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1076,53 +1251,96 @@ export const recoverZombieJobs = onSchedule({
         }
 
         // -------------------------------------------------------------------------
-        // Sweep 3: Hard runtime cap (catches all edge cases — stuck n8n loops,
-        // Cloud Functions killed without cleanup, orphaned local-gen-server jobs)
+        // Sweep 3: Health-check sweep — catches jobs that have lost their heartbeat
+        // signal but were missed by Sweep 1 (e.g., job started recently but
+        // immediately went silent). Uses a separate, shorter staleness window so
+        // newly-started dead jobs are caught quickly without a hard runtime cap
+        // that would prematurely kill healthy long-running jobs.
+        //
+        // A job is terminated here only if ALL activity signals (updatedAt,
+        // lastHeartbeatAt) have been silent for health_check_stale_minutes. Jobs
+        // that are actively heartbeating — regardless of how long they have been
+        // running — are never touched.
         // -------------------------------------------------------------------------
-        const HARD_CAP_MINUTES = 20;
-        const hardCapCutoff = new Date(Date.now() - HARD_CAP_MINUTES * 60 * 1000);
-        const hardCapTs = admin.firestore.Timestamp.fromDate(hardCapCutoff);
+        const healthCheckStaleMinutes: number = configData.health_check_stale_minutes ?? zombieStalenessMinutes;
+        const healthCutoff = new Date(Date.now() - healthCheckStaleMinutes * 60 * 1000);
+        const healthCutoffTs = admin.firestore.Timestamp.fromDate(healthCutoff);
 
-        const longRunning = await db.collection('generation_jobs')
+        const healthSnap = await db.collection('generation_jobs')
             .where('status', '==', 'running')
-            .where('startedAt', '<', hardCapTs)
+            .where('startedAt', '<', healthCutoffTs)
             .get();
 
-        const hardCapCandidates = longRunning.docs.filter((doc) => {
+        const healthCheckFailed = healthSnap.docs.filter((doc) => {
             if (candidates.some(c => c.id === doc.id) || loopCandidates.some(c => c.id === doc.id)) {
                 return false;
             }
-
             const data = doc.data() as GenerationJobData;
-            return shouldFinalizeHardCappedJob({
-                startedAtMs: toMillis(data.startedAt),
-                updatedAtMs: toMillis(data.updatedAt),
-                lastHeartbeatAtMs: toMillis(data.lastHeartbeatAt),
-                hardCapMinutes: HARD_CAP_MINUTES,
-                executionTarget: data.executionTarget,
-            });
+            const startedAtMs = toMillis(data.startedAt) ?? 0;
+            const updatedAtMs = toMillis(data.updatedAt) ?? 0;
+            const lastHeartbeatAtMs = toMillis(data.lastHeartbeatAt) ?? 0;
+            const lastActivityMs = Math.max(startedAtMs, updatedAtMs, lastHeartbeatAtMs);
+            return lastActivityMs > 0 && lastActivityMs < healthCutoff.getTime();
         });
 
-        if (hardCapCandidates.length > 0) {
-            logger.warn(`[ZombieRecovery] Sweep 3: Found ${hardCapCandidates.length} job(s) exceeding ${HARD_CAP_MINUTES}m hard cap — finalizing`);
-            const capBatch = db.batch();
-            for (const doc of hardCapCandidates) {
+        if (healthCheckFailed.length > 0) {
+            logger.warn(`[ZombieRecovery] Sweep 3: Found ${healthCheckFailed.length} job(s) failing health checks (no activity for ${healthCheckStaleMinutes}m) — finalizing`);
+            const healthBatch = db.batch();
+            for (const doc of healthCheckFailed) {
                 const data = doc.data() as GenerationJobData;
                 const completed = Math.max(0, Number(data.completedCount ?? 0));
                 const hasPartial = completed > 0;
-                capBatch.update(doc.ref, {
+                healthBatch.update(doc.ref, {
                     status: hasPartial ? 'completed' : 'failed',
-                    error: `Job exceeded ${HARD_CAP_MINUTES}-minute hard runtime cap. ${completed > 0 ? `${completed} scenario(s) saved before cutoff.` : 'No scenarios were saved.'} Retry with fewer bundles or check provider connectivity.`,
+                    currentPhase: hasPartial ? 'completed' : 'failed',
+                    currentMessage: `Job terminated: no health signal received for ${healthCheckStaleMinutes} minutes.`,
+                    error: `Job terminated: no heartbeat or progress update for ${healthCheckStaleMinutes} minutes. ${completed > 0 ? `${completed} scenario(s) saved before cutoff.` : 'No scenarios were saved.'} Check provider connectivity and retry.`,
                     completedAt: admin.firestore.FieldValue.serverTimestamp(),
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 });
             }
-            await capBatch.commit();
-            logger.info(`[ZombieRecovery] Sweep 3: Finalized ${hardCapCandidates.length} hard-cap job(s)`);
+            await healthBatch.commit();
+            logger.info(`[ZombieRecovery] Sweep 3: Finalized ${healthCheckFailed.length} health-check failed job(s)`);
         } else {
-            logger.info('[ZombieRecovery] Sweep 3: No hard-cap violations found');
+            logger.info('[ZombieRecovery] Sweep 3: All running jobs are healthy');
         }
     } catch (err) {
         logger.error('[ZombieRecovery] Uncaught error in scheduler handler:', err);
+    }
+});
+
+// ---------------------------------------------------------------------------
+// World Simulation Tick
+// ---------------------------------------------------------------------------
+
+export const worldSimulationTick = onSchedule({
+    schedule: 'every 6 hours',
+    timeoutSeconds: 120,
+    memory: '256MiB',
+}, async () => {
+    try {
+        logger.info('[WorldSim] Starting world simulation tick');
+
+        const db = admin.firestore();
+        const snap = await db.collection('countries').limit(60).get();
+        if (snap.empty) {
+            logger.warn('[WorldSim] No countries found in Firestore — skipping tick');
+            return;
+        }
+
+        const countries = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as CountryDocument));
+        const events = generateWorldTick(countries, 1, Date.now());
+
+        if (events.length === 0) {
+            logger.info('[WorldSim] No events generated this tick');
+            return;
+        }
+
+        await Promise.all(events.map((event) => saveWorldEvent(event)));
+
+        const breakingCount = events.filter((e) => e.isBreakingNews).length;
+        logger.info(`[WorldSim] Saved ${events.length} world events (${breakingCount} breaking)`);
+    } catch (err) {
+        logger.error('[WorldSim] Uncaught error in world simulation tick:', err);
     }
 });

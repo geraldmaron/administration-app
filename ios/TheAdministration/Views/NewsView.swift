@@ -37,7 +37,7 @@ struct NewsTickerView: View {
     private var tickerLabel: (text: String, color: Color) {
         let first = gameStore.state.newsHistory.first
         if first?.isAlert == true { return ("BREAKING", AppColors.error) }
-        if first?.isBackgroundEvent == true { return ("BACKGROUND", AppColors.warning) }
+        if first?.isBackgroundEvent == true { return ("BACKGROUND", AppColors.accentPrimary) }
         return ("LIVE", AppColors.accentPrimary)
     }
 

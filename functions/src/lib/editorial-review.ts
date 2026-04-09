@@ -14,7 +14,7 @@ export interface EditorialReviewResult {
 
 export interface EditorialReviewSkipDecisionInput {
   lowLatencyMode: boolean;
-  mode: 'manual' | 'news' | 'blitz';
+  mode: 'manual' | 'news' | 'blitz' | 'full_send';
   useStandardPath: boolean;
   conditionalEditorialReviewEnabled: boolean;
   qualityCriticalManualRun: boolean;

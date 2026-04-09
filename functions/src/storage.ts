@@ -5,6 +5,7 @@
  */
 import * as admin from 'firebase-admin';
 import { Scenario } from './types';
+import type { WorldEvent } from './lib/world-simulation';
 import * as crypto from 'crypto';
 import { type BundleId } from './data/schemas/bundleIds';
 import type { NormalizedGenerationScope, ScenarioScopeTier, ScenarioSourceKind } from './shared/generation-contract';
@@ -14,6 +15,7 @@ import {
     saveEmbedding,
     isSemanticDedupEnabled
 } from './lib/semantic-dedup';
+import { buildBestEffortScenarioConditions } from './lib/scenario-conditions';
 
 // Ensure Firebase Admin is initialized
 if (!admin.apps.length) {
@@ -26,25 +28,20 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const storage = admin.storage();
 
-/** Keywords that indicate bailout/fiscal-crisis scenarios; only show when budget/economy are strained. */
-const FISCAL_BAILOUT_KEYWORDS = /\b(bailout|austerity|sovereign debt|fiscal crisis|imf|budget crisis|debt crisis|emergency loan|default on debt)\b/i;
+function stripUndefined<T>(obj: T): T {
+    return JSON.parse(JSON.stringify(obj));
+}
 
-/**
- * Apply theme-based visibility conditions before save. Bailout/fiscal-crisis scenarios
- * get metric conditions so they only appear when budget and economy are low.
- */
 function applyThemeConditions(scenario: Scenario): Scenario {
-    if (scenario.conditions && scenario.conditions.length > 0) return scenario;
-    const text = [scenario.title, scenario.description, ...(scenario.metadata?.tags ?? [])].join(' ').toLowerCase();
-    if (!FISCAL_BAILOUT_KEYWORDS.test(text)) return scenario;
     return {
         ...scenario,
-        conditions: [
-            { metricId: 'metric_budget', max: 45 },
-            { metricId: 'metric_economy', max: 50 },
-        ],
+        conditions: buildBestEffortScenarioConditions({
+            existingConditions: scenario.conditions,
+            title: scenario.title,
+            description: scenario.description,
+            tags: scenario.metadata?.tags,
+        }),
     };
 }
 
@@ -462,47 +459,19 @@ export async function saveScenario(
     // Apply theme-based conditions (e.g. bailout/fiscal only when metrics are strained)
     const scenarioToSave = applyThemeConditions(scenario);
 
-    // Explicitly use the correct project bucket
-    const bucket = storage.bucket('the-administration-3a072.firebasestorage.app');
-
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-
-    // 3. Save Full JSON to Cloud Storage (High volume, low cost)
-    // Path: scenarios/2024/05/news_20240514_example.json
-    const storagePath = bucket ? `scenarios/${year}/${month}/${scenarioToSave.id}.json` : undefined;
-    const file = bucket && storagePath ? bucket.file(storagePath) : null;
-
-    if (file && storagePath) {
-        try {
-            await file.save(JSON.stringify(scenarioToSave, null, 2), {
-                contentType: 'application/json',
-                metadata: {
-                    created: new Date().toISOString(),
-                    scenarioId: scenarioToSave.id,
-                    severity: scenarioToSave.metadata?.severity || 'medium',
-                    sourceKind: scenarioToSave.metadata?.sourceKind || 'manual'
-                }
-            });
-            console.log(`[Storage] Saved JSON backup to ${storagePath}`);
-        } catch (err: any) {
-            console.warn(`[Storage] Failed to save file ${storagePath}:`, err.message);
-        }
-    }
-
-    // 4. Atomically check existence and write to Firestore via transaction.
+    // 3. Atomically check existence and write to Firestore via transaction.
     // Closes the race condition where two parallel saves of the same scenario ID
     // could both pass the pre-check above and then both commit.
     const firestoreData = {
-        ...scenarioToSave,
-        ...(storagePath ? { storage_path: storagePath } : {}),
-        metadata: {
-            ...(scenarioToSave.metadata || {}),
-        },
+        ...stripUndefined({
+            ...scenarioToSave,
+            metadata: {
+                ...(scenarioToSave.metadata || {}),
+            },
+            type: 'generated',
+            is_active: true,
+        }),
         created_at: admin.firestore.FieldValue.serverTimestamp(),
-        type: 'generated',
-        is_active: true
     };
 
     const docRef = db.collection('scenarios').doc(scenario.id);
@@ -549,7 +518,7 @@ export async function saveScenario(
     // Invalidate cache for this bundle to ensure fresh data on next similarity check
     invalidateBundleCache(bundle);
 
-    console.log(`Saved scenario ${scenario.id} to Firestore${storagePath ? ` and Storage (${storagePath})` : ''} [source: ${scenario.metadata?.sourceKind || 'manual'}].`);
+    console.log(`Saved scenario ${scenario.id} to Firestore [source: ${scenario.metadata?.sourceKind || 'manual'}].`);
     return { saved: true };
 }
 
@@ -576,7 +545,7 @@ export async function fetchScenarios(hideNewsScenarios: boolean = false, limit: 
     snapshot.forEach(doc => {
         const data = doc.data();
         // Remove Firestore-specific fields
-        const { created_at, storage_path, type, is_active, source, ...scenarioData } = data;
+        const { created_at, type, is_active, source, ...scenarioData } = data;
         scenarios.push(scenarioData as Scenario);
     });
 
@@ -594,4 +563,19 @@ export async function getActiveBundleCount(
         .count()
         .get();
     return snap.data().count;
+}
+
+export async function saveWorldEvent(event: WorldEvent): Promise<void> {
+    await db.collection('world_events').doc(event.id).set(stripUndefined(event));
+}
+
+export async function getRecentWorldEvents(sinceTimestamp: string, limit = 20): Promise<WorldEvent[]> {
+    const snap = await db
+        .collection('world_events')
+        .where('timestamp', '>', sinceTimestamp)
+        .orderBy('timestamp', 'desc')
+        .limit(limit)
+        .get();
+
+    return snap.docs.map((doc) => doc.data() as WorldEvent);
 }

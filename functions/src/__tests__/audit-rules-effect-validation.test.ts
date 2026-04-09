@@ -1,4 +1,4 @@
-import { ALL_TOKENS, ARTICLE_FORM_TOKEN_NAMES, CANONICAL_ROLE_IDS } from '../lib/token-registry';
+import { ALL_TOKENS, CANONICAL_ROLE_IDS } from '../lib/token-registry';
 import { VALID_SETTING_TARGETS } from '../types';
 import { auditScenario, deterministicFix, heuristicFix, setAuditConfigForTests } from '../lib/audit-rules';
 import type { AuditConfig, BundleScenario } from '../lib/audit-rules';
@@ -8,8 +8,8 @@ function makeAuditConfig(): AuditConfig {
         validMetricIds: new Set(['economy', 'approval']),
         validRoleIds: new Set(CANONICAL_ROLE_IDS),
         inverseMetrics: new Set(),
-        metricMagnitudeCaps: { economy: 4.2, approval: 3.5 },
-        defaultCap: 4.2,
+        metricMagnitudeCaps: { economy: 7.5, approval: 7.5 },
+        defaultCap: 7.5,
         metricToRoles: {
             economy: ['role_executive'],
             approval: ['role_executive'],
@@ -27,7 +27,7 @@ function makeAuditConfig(): AuditConfig {
         govTypesByCountryId: {},
         countriesById: {},
         canonicalRoleIds: [...CANONICAL_ROLE_IDS],
-        articleFormTokenNames: new Set<string>(ARTICLE_FORM_TOKEN_NAMES),
+        articleFormTokenNames: new Set<string>(),
         validSettingTargets: VALID_SETTING_TARGETS as unknown as readonly string[],
     };
 }
@@ -186,7 +186,7 @@ describe('auditScenario effect cap validation', () => {
         const fixed = deterministicFix(scenario);
 
         expect(fixed.fixed).toBe(true);
-        expect(scenario.options[0]?.effects[0]?.value).toBe(4.2);
+        expect(scenario.options[0]?.effects[0]?.value).toBe(7.5);
 
         const afterIssues = auditScenario(scenario, 'bundle_economy');
         expect(afterIssues.some((issue) => issue.rule === 'effect-cap-exceeded')).toBe(false);
@@ -198,12 +198,11 @@ describe('auditScenario effect cap validation', () => {
         expect(issues.some((issue) => issue.rule === 'effect-cap-exceeded')).toBe(false);
     });
 
-    test('deterministicFix removes universal relationship token dependencies and article-form token artifacts', () => {
+    test('deterministicFix removes universal relationship token dependencies', () => {
         const scenario = makeUniversalRelationshipScenario();
         const beforeIssues = auditScenario(scenario, 'bundle_economy');
 
         expect(beforeIssues.some((issue) => issue.rule === 'universal-relationship-token')).toBe(true);
-        expect(beforeIssues.some((issue) => issue.rule === 'hardcoded-the-before-token')).toBe(true);
 
         const fixed = deterministicFix(scenario);
 
@@ -211,7 +210,6 @@ describe('auditScenario effect cap validation', () => {
 
         const afterIssues = auditScenario(scenario, 'bundle_economy');
         expect(afterIssues.some((issue) => issue.rule === 'universal-relationship-token')).toBe(false);
-        expect(afterIssues.some((issue) => issue.rule === 'hardcoded-the-before-token')).toBe(false);
     });
 
     test('heuristicFix injects option-domain primary metric effects when missing', () => {

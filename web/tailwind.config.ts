@@ -7,6 +7,7 @@ const config: Config = {
       colors: {
         background: 'var(--background)',
         'background-elevated': 'var(--background-elevated)',
+        'background-panel': 'var(--background-panel)',
         'background-muted': 'var(--background-muted)',
         'background-surface': 'var(--background-surface)',
         foreground: 'var(--foreground)',
@@ -23,10 +24,12 @@ const config: Config = {
       },
       borderRadius: {
         DEFAULT: 'var(--radius)',
+        tight: 'var(--radius-tight)',
+        loose: 'var(--radius-loose)',
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Inter', 'Roboto', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        sans: ['var(--font-sans)', 'Space Grotesk', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
     },
   },

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { db } from '@/lib/firebase-admin';
 import { requireAdminAuth } from '@/lib/auth';
 import { ALL_BUNDLES, ALL_REGIONS } from '@/lib/constants';
@@ -10,7 +11,7 @@ import {
   type CountryEntry,
   type InventoryCell,
 } from '@/lib/blitz-planner';
-import type { GenerationModelConfig } from '@shared/generation-contract';
+import type { GenerationMode, GenerationModelConfig } from '@shared/generation-contract';
 import {
   hasMeaningfulModelConfig,
   fetchOllamaModels,
@@ -25,6 +26,10 @@ const REGION_IDS = ALL_REGIONS.map((r) => r.id);
 const DEFAULT_ANALYSIS_TARGET_PER_BUNDLE = 24;
 const DEFAULT_TOTAL_SCENARIOS = 24;
 const DEFAULT_MAX_JOBS_PER_BLITZ = 8;
+
+function countPlannedScenarios(jobs: Array<{ bundles: string[]; count: number }>): number {
+  return jobs.reduce((sum, job) => sum + (job.bundles.length * job.count), 0);
+}
 
 async function fetchCountries(): Promise<CountryEntry[]> {
   const snap = await db.collection('countries').get();
@@ -86,11 +91,12 @@ async function fetchInventory(countries: CountryEntry[]): Promise<InventoryCell[
 }
 
 async function fetchAvailableSlots(): Promise<{ available: number; pending: number; max: number }> {
-  const [pendingSnap, configSnap] = await Promise.all([
+  const [pendingSnap, runningSnap, configSnap] = await Promise.all([
     db.collection('generation_jobs').where('status', '==', 'pending').count().get(),
+    db.collection('generation_jobs').where('status', '==', 'running').count().get(),
     db.doc('world_state/generation_config').get(),
   ]);
-  const pending = pendingSnap.data().count;
+  const pending = pendingSnap.data().count + runningSnap.data().count;
   const max = configSnap.data()?.max_pending_jobs ?? 10;
   return { available: Math.max(0, max - pending), pending, max };
 }
@@ -171,9 +177,11 @@ export async function POST(request: NextRequest) {
     const totalScenarios = parseTotalScenarios(body?.totalScenarios);
     const analysisTargetPerBundle = parseAnalysisTargetPerBundle(body?.analysisTargetPerBundle);
     const maxJobs = parseMaxJobs(body?.maxJobs);
+    const requestedMode: Extract<GenerationMode, 'blitz' | 'full_send'> = body?.mode === 'full_send' ? 'full_send' : 'blitz';
     const executionTarget = body?.executionTarget as string | undefined;
     const modelConfig = (body?.modelConfig ?? undefined) as GenerationModelConfig | undefined;
     const userDescription = typeof body?.description === 'string' && body.description.trim() ? body.description.trim() : undefined;
+    const providerDistribution = (body?.providerDistribution ?? undefined) as { local?: number; openai?: number } | undefined;
 
     const [countries, slots] = await Promise.all([
       fetchCountries(),
@@ -209,27 +217,101 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ jobIds: [], message: 'No deficits found — inventory meets the target ratio.' });
     }
 
+    // Calculate provider distribution for full_send mode
+    let localScenariosTarget = 0;
+    if (requestedMode === 'full_send' && providerDistribution) {
+      localScenariosTarget = Math.max(0, Math.min(totalScenarios, providerDistribution.local ?? 0));
+    }
+
+    const runId = randomUUID();
+    await db.collection('generation_runs').doc(runId).set({
+      id: runId,
+      kind: requestedMode === 'full_send' ? 'full_send' : 'blitz',
+      status: 'queued',
+      requestedAt: new Date().toISOString(),
+      requestedBy: 'admin-web',
+      totalJobs: plan.plannedJobs.length,
+      summary: plan.summary,
+      jobIds: [],
+      executionTarget: executionTarget ?? (effectiveModelConfig ? 'local' : 'cloud_function'),
+      description: userDescription ?? (requestedMode === 'full_send' ? 'Full Send generation run' : 'Blitz generation run'),
+      mode: requestedMode,
+      ...(requestedMode === 'full_send' && providerDistribution ? { providerDistribution } : {}),
+    });
+    // Build job descriptors before submitting, distributing providers based on scenario targets
+    let localScenariosUsed = 0;
+    const jobDescriptors = plan.plannedJobs.map((plannedJob, i) => {
+      const jobScenarioCount = plannedJob.bundles.length * plannedJob.count;
+      let jobExecutionTarget = executionTarget;
+      let jobModelConfig = effectiveModelConfig;
+
+      if (requestedMode === 'full_send' && providerDistribution && localScenariosTarget > 0) {
+        if (localScenariosUsed < localScenariosTarget) {
+          // This job goes to local (n8n + Ollama)
+          jobExecutionTarget = 'n8n';
+          jobModelConfig = effectiveModelConfig;
+        } else {
+          // This job goes to cloud (cloud_function, no Ollama)
+          jobExecutionTarget = 'cloud_function';
+          jobModelConfig = undefined;
+        }
+        localScenariosUsed += jobScenarioCount;
+      }
+
+      const job = {
+        ...plannedJob,
+        mode: requestedMode,
+        runId,
+        runKind: requestedMode === 'full_send' ? 'full_send' as const : 'blitz' as const,
+        runJobIndex: i + 1,
+        runTotalJobs: plan.plannedJobs.length,
+        runLabel: plannedJob.description ?? `${requestedMode === 'full_send' ? 'Full Send' : 'Blitz'} job ${i + 1}`,
+        ...(jobModelConfig ? { modelConfig: jobModelConfig } : {}),
+        ...(userDescription ? { description: `${userDescription}\n${plannedJob.description ?? ''}`.trim() } : {}),
+      };
+
+      return { job, jobExecutionTarget, plannedJob, index: i };
+    });
+
+    // Submit all jobs in parallel so local and cloud pipelines start concurrently
+    const results = await Promise.allSettled(
+      jobDescriptors.map(({ job, jobExecutionTarget }) => submitJob(job, jobExecutionTarget))
+    );
+
     const jobIds: string[] = [];
+    const submittedJobs: typeof plan.plannedJobs = [];
     const errors: Array<{ index: number; error: string }> = [];
 
-    for (let i = 0; i < plan.plannedJobs.length; i++) {
-      try {
-        const job = {
-          ...plan.plannedJobs[i],
-          ...(effectiveModelConfig ? { modelConfig: effectiveModelConfig } : {}),
-          ...(userDescription ? { description: `${userDescription}\n${plan.plannedJobs[i].description ?? ''}`.trim() } : {}),
-        };
-        const jobId = await submitJob(job, executionTarget);
-        jobIds.push(jobId);
-      } catch (err) {
-        errors.push({ index: i, error: err instanceof Error ? err.message : String(err) });
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      if (result.status === 'fulfilled') {
+        jobIds.push(result.value);
+        submittedJobs.push(jobDescriptors[i].plannedJob);
+      } else {
+        errors.push({ index: i, error: result.reason instanceof Error ? result.reason.message : String(result.reason) });
       }
     }
 
+    const submittedSummary = {
+      ...plan.summary,
+      jobsToCreate: submittedJobs.length,
+      scenariosToGenerate: countPlannedScenarios(submittedJobs),
+    };
+
+    await db.collection('generation_runs').doc(runId).set({
+      jobIds,
+      totalJobs: submittedJobs.length,
+      status: errors.length > 0 && jobIds.length === 0 ? 'failed' : 'submitted',
+      submittedAt: new Date().toISOString(),
+      failedJobCount: errors.length,
+      summary: submittedSummary,
+    }, { merge: true });
+
     return NextResponse.json({
+      runId,
       jobIds,
       errors: errors.length > 0 ? errors : undefined,
-      summary: plan.summary,
+      summary: submittedSummary,
     });
   } catch (err) {
     console.error('POST /api/blitz error:', err);

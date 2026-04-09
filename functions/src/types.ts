@@ -9,6 +9,8 @@ import type { LegislatureProfile, LegislatureState, PersonGender } from './data/
 
 export type ScenarioScopeTier = 'universal' | 'regional' | 'cluster' | 'exclusive';
 
+export type TokenStrategy = 'minimal' | 'none';
+
 export type ScenarioSourceKind = 'evergreen' | 'news' | 'neighbor' | 'consequence';
 
 export type ScenarioExclusivityReason =
@@ -113,6 +115,7 @@ export interface ScenarioMetadata {
     // Explicit structural preconditions (preferred over implicit token-graph analysis)
     requires?: ScenarioRequirements;
     tagResolution?: TagResolutionMetadata;
+    tokenStrategy?: TokenStrategy;
 }
 
 export type TagResolutionMethod = 'deterministic' | 'llm' | 'manual';
@@ -172,6 +175,11 @@ export interface ScenarioRequirements {
     authoritarian_regime?: boolean; // geopolitical.governmentCategory in ['authoritarian','totalitarian','absolute_monarchy']
     democratic_regime?: boolean;    // geopolitical.governmentCategory in ['liberal_democracy','constitutional_monarchy']
     fragile_state?: boolean;        // geopolitical.regimeStability < 35
+    has_legislature?: boolean;      // country has a functioning legislature (may be dissolved by player)
+    has_opposition_party?: boolean; // country has legal political opposition (may be banned by player)
+    has_stock_exchange?: boolean;
+    has_central_bank?: boolean;
+    resource_rich?: boolean;
 }
 
 export interface Scenario {

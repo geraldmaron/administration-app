@@ -21,6 +21,7 @@ export const STRUCTURAL_BLOCKING_AUDIT_RULE_IDS = new Set([
     'invalid-urgency',
     'invalid-phase',
     'invalid-countries',
+    'invalid-country-id',
     'missing-scope-tier',
     'invalid-scope-tier',
     'missing-scope-key',
@@ -40,12 +41,11 @@ export const BLOCKING_AUDIT_RULE_IDS = new Set([
     'gdp-as-amount',
     'invalid-token',
     'token-casing-error',
-    'no-tokens',
     'outcome-second-person',
     'option-preview-in-description',
-    'advisor-boilerplate',
     'hardcoded-gov-structure',
     'hardcoded-institution-phrase',
+    'advisor-boilerplate',
 ]);
 
 export interface EvaluatorDecisionInput<TResult> {

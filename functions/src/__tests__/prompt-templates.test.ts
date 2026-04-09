@@ -1,5 +1,13 @@
 import { ALL_BUNDLE_IDS } from '../data/schemas/bundleIds';
-import { buildArchitectPrompt, buildDrafterPrompt, getBundlePromptOverlay, getBundlesWithPromptOverlays, getCompactDrafterPromptBase } from '../lib/prompt-templates';
+import {
+    buildArchitectPrompt,
+    buildDrafterPrompt,
+    getBundlePromptOverlay,
+    getBundlesWithPromptOverlays,
+    getCompactDrafterPromptBase,
+    getOllamaEffectsPrompt,
+    getOllamaSkeletonPrompt,
+} from '../lib/prompt-templates';
 
 describe('bundle prompt overlays', () => {
     test('covers every canonical bundle id', () => {
@@ -81,7 +89,58 @@ describe('bundle prompt overlays', () => {
 
     test('compact drafter prompt encodes relationship-token and option-domain policy', () => {
         const prompt = getCompactDrafterPromptBase();
-        expect(prompt).toContain('Never use relationship tokens in prose');
+        expect(prompt).toContain('never as tokens');
         expect(prompt).toContain('If concept context provides optionDomains');
+        expect(prompt).toContain('no special {the_*} prefix tokens');
+    });
+
+    test('compact drafter prompt encodes core token and voice rules', () => {
+        const prompt = getCompactDrafterPromptBase();
+
+        expect(prompt).toContain('second person');
+        expect(prompt).toContain('third-person news style');
+        expect(prompt).toContain('active voice');
+    });
+
+    test('economy overlay includes universal-scope anti-anchoring guidance', () => {
+        const overlay = getBundlePromptOverlay('economy');
+
+        expect(overlay.architect).toContain('UNIVERSAL SCOPE EXCEPTION');
+        expect(overlay.drafter).toContain('Do not write Congress');
+        expect(overlay.drafter).toContain('Do not use absolute money figures');
+    });
+
+    test('universal skeleton prompt explicitly bans hard-coded money and real institutions', () => {
+        const prompt = getOllamaSkeletonPrompt({
+            concept: 'Budget backlash after subsidy cuts',
+            bundle: 'economy',
+            scopeTier: 'universal',
+            scopeNote: 'Scope tier: universal. Scope key: universal.',
+            countryNote: '',
+            countryContextBlock: '',
+            bundleGuidance: 'bundle guidance',
+            scopeGuidance: 'scope guidance',
+            tokenContext: 'token context',
+        });
+
+        expect(prompt).toContain('Never write absolute money figures');
+        expect(prompt).toContain('UNIVERSAL SCOPE: favor reusable domestic actors');
+    });
+
+    test('effects prompt bans hard-coded money and institution names in outcomes', () => {
+        const prompt = getOllamaEffectsPrompt({
+            skeleton: {
+                title: 'Auditors Flag Budget Hole',
+                description: 'A domestic budget fight is escalating.',
+                options: [{ id: 'opt_a', text: 'You order a temporary spending freeze.', label: 'Freeze' }],
+            },
+            bundle: 'economy',
+            validMetricIds: ['metric_economy', 'metric_budget'],
+            inverseMetrics: ['metric_inflation'],
+            scopeTier: 'universal',
+        });
+
+        expect(prompt).toContain('NEVER use absolute money figures');
+        expect(prompt).toContain('NEVER hardcode country names');
     });
 });

@@ -212,6 +212,79 @@ final class ScoringParityTests: XCTestCase {
         XCTAssertGreaterThan(approvalHits, 50, "Economy should cascade to approval often")
     }
 
+    func testApplyDecision_structuredEffectsAlsoDeriveSecondaryImpacts() throws {
+        let state = makeBaseState(metricOverrides: ["metric_approval": 50, "metric_economy": 50])
+        let optionJSON = """
+        {
+            "id": "opt_structured_secondary",
+            "text": "Escalate military action",
+            "effects": [
+                {"targetMetricId": "metric_military", "value": 4.0, "duration": 1, "probability": 1}
+            ]
+        }
+        """.data(using: .utf8)!
+        let option = try JSONDecoder().decode(Option.self, from: optionJSON)
+
+        var economyChanged = false
+        var relationsChanged = false
+        for _ in 0..<80 {
+            let newState = ScoringEngine.applyDecision(state: state, option: option)
+            let economyAfter = newState.metrics["metric_economy"] ?? 50
+            let relationsAfter = newState.metrics["metric_foreign_relations"] ?? 50
+            if abs(economyAfter - 50) > 0.01 { economyChanged = true }
+            if abs(relationsAfter - 50) > 0.01 { relationsChanged = true }
+            if economyChanged && relationsChanged { break }
+        }
+
+        XCTAssertTrue(economyChanged, "Structured effects should derive economy spillover from military changes")
+        XCTAssertTrue(relationsChanged, "Structured effects should derive relations spillover from military changes")
+    }
+
+    func testApplyDecision_effectsMapLargeMagnitudeAddsThirdTail() throws {
+        let state = makeBaseState()
+        let option = Option(
+            id: "opt_effects_map_tail",
+            text: "Legacy map option",
+            effects: [],
+            effectsMap: ["economy": 5.5]
+        )
+
+        let newState = ScoringEngine.applyDecision(state: state, option: option)
+        let economyEffects = newState.activeEffects.filter { $0.baseEffect.targetMetricId == "metric_economy" }
+        let delayedThree = economyEffects.contains { $0.baseEffect.delay == 3 }
+
+        XCTAssertTrue(delayedThree, "Legacy effectsMap path should add the same third delayed tail as structured effects")
+    }
+
+    func testApplyDecision_recordsResolvedMetricDeltasOnSourceTurn() throws {
+        let state = makeBaseState(turn: 7, maxTurns: 60)
+        let optionJSON = """
+        {
+            "id": "opt_record_outcome",
+            "text": "Stimulus package",
+            "effects": [
+                {"targetMetricId": "metric_economy", "value": 3.0, "duration": 1, "probability": 1}
+            ]
+        }
+        """.data(using: .utf8)!
+        let option = try JSONDecoder().decode(Option.self, from: optionJSON)
+        let scenario = Scenario(
+            id: "scenario_record_outcome",
+            title: "Economic slowdown",
+            description: "Markets wobble.",
+            options: [option]
+        )
+        var seededState = state
+        seededState.currentScenario = scenario
+
+        let newState = ScoringEngine.applyDecision(state: seededState, option: option)
+        let record = try XCTUnwrap(newState.outcomeHistory?.last)
+
+        XCTAssertEqual(record.turn, 7, "Outcome history should be attributed to the decision turn, not the incremented turn")
+        XCTAssertFalse(record.metricDeltas.isEmpty, "Outcome history should capture resolved post-advanceTurn metric deltas")
+        XCTAssertNotNil(record.metricDeltas["metric_economy"], "Resolved metric deltas should include the processed economy change")
+    }
+
     // MARK: - Calculate Approval
 
     func testCalculateApproval_baselineAllFifty() {

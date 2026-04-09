@@ -15,12 +15,12 @@ struct AppTheme: Identifiable, Equatable {
 
     static let monochrome = AppTheme(
         id: "monochrome",
-        displayName: "Monochrome",
-        subtitle: "White on black",
-        accentPrimary: Color(white: 0.90),
-        accentSecondary: Color(white: 0.60),
-        accentTertiary: Color(white: 0.75),
-        accentMuted: Color(white: 0.90).opacity(0.15)
+        displayName: "Executive",
+        subtitle: "Presidential gold",
+        accentPrimary: Color(red: 0.77, green: 0.58, blue: 0.16),
+        accentSecondary: Color(red: 0.50, green: 0.44, blue: 0.35),
+        accentTertiary: Color(red: 0.83, green: 0.69, blue: 0.42),
+        accentMuted: Color(red: 0.77, green: 0.58, blue: 0.16).opacity(0.12)
     )
 
     static let all: [AppTheme] = [.monochrome]

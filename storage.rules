@@ -6,9 +6,10 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Aggregated bundle files downloaded by the iOS app.
-    // Auth required so anonymous sign-in gates access; no unauthenticated reads.
-    match /scenario-bundles/{file} {
+    // Aggregated bundle chunk files downloaded by the iOS app.
+    // Path: scenario-bundles/{bundleId}/chunk-{idx}.json
+    // Auth required; no unauthenticated reads.
+    match /scenario-bundles/{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if false;
     }

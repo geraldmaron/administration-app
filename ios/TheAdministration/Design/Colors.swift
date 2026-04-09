@@ -2,55 +2,44 @@ import SwiftUI
 
 struct AppColors {
     // MARK: - Base Colors
-    
-    /// Primary background - pure black
-    static let background = Color(red: 0, green: 0, blue: 0)
-    
-    /// Slightly elevated background for cards and panels
-    static let backgroundElevated = Color(red: 0.06, green: 0.06, blue: 0.06)
-    
-    /// Muted background for secondary surfaces
-    static let backgroundMuted = Color(red: 0.10, green: 0.10, blue: 0.10)
-    
-    // MARK: - Foreground Colors
-    
-    /// Pure white for primary text
-    static let foreground = Color.white
-    
-    /// Muted foreground for secondary text
-    static let foregroundMuted = Color(white: 0.70)
-    
-    /// Subtle foreground for tertiary text
-    static let foregroundSubtle = Color(white: 0.50)
-    
-    // MARK: - Borders
-    
-    /// Standard border color
-    static let border = Color(white: 1.0).opacity(0.12)
-    
-    /// Strong border color
-    static let borderStrong = Color(white: 1.0).opacity(0.18)
-    
-    // MARK: - Accent Colors (fixed grayscale)
 
-    static let accentPrimary = Color(white: 0.90)
-    static let accentSecondary = Color(white: 0.60)
-    static let accentTertiary = Color(white: 0.75)
-    static let accentMuted = Color(white: 0.90).opacity(0.15)
-    
+    static let background = Color(red: 0, green: 0, blue: 0)
+    static let backgroundElevated = Color(red: 0.047, green: 0.055, blue: 0.078)
+    static let backgroundMuted = Color(red: 0.078, green: 0.086, blue: 0.11)
+    static let backgroundPanel = Color(red: 0.092, green: 0.100, blue: 0.130)
+    static let backgroundSurface = Color(red: 0.120, green: 0.130, blue: 0.168)
+
+    // MARK: - Foreground Colors
+
+    static let foreground = Color(white: 0.92)
+    static let foregroundMuted = Color(white: 0.56)
+    static let foregroundSubtle = Color(white: 0.36)
+
+    // MARK: - Borders
+
+    static let border = Color(white: 1.0).opacity(0.10)
+    static let borderStrong = Color(white: 1.0).opacity(0.16)
+
+    // MARK: - Accent Colors — Presidential Gold
+
+    static let accentPrimary = Color(red: 0.77, green: 0.58, blue: 0.16)
+    static let accentSecondary = Color(red: 0.50, green: 0.44, blue: 0.35)
+    static let accentTertiary = Color(red: 0.83, green: 0.69, blue: 0.42)
+    static let accentMuted = Color(red: 0.77, green: 0.58, blue: 0.16).opacity(0.12)
+
     // MARK: - Semantic Status Colors
 
-    static let success = Color(red: 0.35, green: 0.78, blue: 0.48)
-    static let warning = Color(red: 0.85, green: 0.72, blue: 0.40)
-    static let error = Color(red: 0.85, green: 0.45, blue: 0.40)
-    static let info = Color(red: 0.45, green: 0.65, blue: 0.82)
+    static let success = Color(red: 0.24, green: 0.63, blue: 0.54)
+    static let warning = Color(red: 0.78, green: 0.50, blue: 0.25)
+    static let error = Color(red: 0.75, green: 0.25, blue: 0.25)
+    static let info = Color(red: 0.30, green: 0.54, blue: 0.72)
 
     // MARK: - Metric Status Colors
 
     static let metricCritical = error
     static let metricLow = warning
-    static let metricHealthy = success
-    static let metricHigh = Color(red: 0.42, green: 0.90, blue: 0.55)
+    static let metricHealthy = info
+    static let metricHigh = accentPrimary
 
     // MARK: - Helper Methods
 
@@ -126,7 +115,6 @@ struct AppColors {
         }
     }
 
-    /// Primary accent gradient derived from the active theme.
     static var accentGradient: LinearGradient {
         LinearGradient(
             colors: [accentPrimary, accentTertiary, accentSecondary],
@@ -134,23 +122,17 @@ struct AppColors {
             endPoint: .trailing
         )
     }
-    
-    /// Returns text color with appropriate contrast for given background
-    /// - Parameters:
-    ///   - background: The background color
-    /// - Returns: Foreground color with good contrast
+
     static func contrastText(for background: Color) -> Color {
-        // For all backgrounds in this design system, white/light text works
         return foreground
     }
 
     // MARK: - Glow and Gradient Helpers
 
-    /// Subtle accent glow — near-invisible, used only for key interactive surfaces.
     static var accentGlow: LinearGradient {
         LinearGradient(
             colors: [
-                accentPrimary.opacity(0.12),
+                accentPrimary.opacity(0.15),
                 accentPrimary.opacity(0.0)
             ],
             startPoint: .topLeading,
@@ -158,8 +140,6 @@ struct AppColors {
         )
     }
 
-    /// Returns a gradient representing scenario severity.
-    /// - Parameter severity: 0 (low) to 1 (critical)
     static func severityGradient(for severity: Double) -> LinearGradient {
         let clamped = max(0, min(1, severity))
         let start: Color
@@ -167,11 +147,11 @@ struct AppColors {
 
         switch clamped {
         case 0..<0.33:
-            start = success
+            start = info
             end = accentTertiary
         case 0.33..<0.66:
             start = warning
-            end = success
+            end = info
         default:
             start = error
             end = warning
@@ -184,7 +164,6 @@ struct AppColors {
         )
     }
 
-    /// Returns a shadow array that produces a subtle glow for the given color.
     static func cardGlow(color: Color) -> [Shadow] {
         [
             Shadow(color: color.opacity(0.4), radius: 18, x: 0, y: 0),
@@ -196,10 +175,11 @@ struct AppColors {
 // MARK: - SwiftUI Color Extension
 
 extension Color {
-    /// Access design system colors through Color extension
     static let appBackground = AppColors.background
     static let appBackgroundElevated = AppColors.backgroundElevated
     static let appBackgroundMuted = AppColors.backgroundMuted
+    static let appBackgroundPanel = AppColors.backgroundPanel
+    static let appBackgroundSurface = AppColors.backgroundSurface
     static let appForeground = AppColors.foreground
     static let appForegroundMuted = AppColors.foregroundMuted
     static let appForegroundSubtle = AppColors.foregroundSubtle
@@ -214,11 +194,9 @@ extension Color {
     static let appInfo = AppColors.info
 }
 
-/// Simple value type to describe a shadow, so we can return arrays from AppColors.
 struct Shadow {
     let color: Color
     let radius: CGFloat
     let x: CGFloat
     let y: CGFloat
 }
-

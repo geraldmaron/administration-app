@@ -5,7 +5,6 @@ import {
   groupDeficitsIntoJobs,
   fitJobsToScenarioBudget,
   buildBlitzPlan,
-  SCOPE_TIER_RATIOS,
   type CountryEntry,
   type InventoryCell,
 } from './blitz-planner';
@@ -23,10 +22,10 @@ const TARGET_PER_BUNDLE = 20;
 describe('allocateByRatio', () => {
   it('distributes according to canonical scope tier ratios', () => {
     const alloc = allocateByRatio(100);
-    expect(alloc.universal).toBe(40);
+    expect(alloc.universal).toBe(20);
     expect(alloc.regional).toBe(25);
-    expect(alloc.cluster).toBe(25);
-    expect(alloc.exclusive).toBe(10);
+    expect(alloc.cluster).toBe(30);
+    expect(alloc.exclusive).toBe(25);
   });
 
   it('sums to the requested total', () => {
@@ -44,18 +43,18 @@ describe('allocateByRatio', () => {
 
   it('uses largest-remainder for fractional allocation', () => {
     const alloc = allocateByRatio(10);
-    expect(alloc.universal).toBe(4);
-    expect(alloc.regional + alloc.cluster).toBe(5);
-    expect(alloc.exclusive).toBe(1);
+    expect(alloc.universal).toBe(2);
+    expect(alloc.regional + alloc.cluster).toBeGreaterThanOrEqual(5);
+    expect(alloc.exclusive).toBeGreaterThanOrEqual(2);
     expect(alloc.universal + alloc.regional + alloc.cluster + alloc.exclusive).toBe(10);
   });
 
-  it('preserves the 40/25/25/10 ratio for large totals', () => {
+  it('preserves the 20/25/30/25 ratio for large totals', () => {
     const alloc = allocateByRatio(1000);
-    expect(alloc.universal).toBe(400);
+    expect(alloc.universal).toBe(200);
     expect(alloc.regional).toBe(250);
-    expect(alloc.cluster).toBe(250);
-    expect(alloc.exclusive).toBe(100);
+    expect(alloc.cluster).toBe(300);
+    expect(alloc.exclusive).toBe(250);
   });
 });
 
@@ -66,21 +65,21 @@ describe('calculateDeficits', () => {
 
     const universalDeficits = deficits.filter((d) => d.scopeTier === 'universal');
     expect(universalDeficits).toHaveLength(3);
-    const alloc = allocateByRatio(TARGET_PER_BUNDLE);
+    const plan = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, [], TARGET_PER_BUNDLE, TARGET_PER_BUNDLE, 10, 8);
     for (const d of universalDeficits) {
       expect(d.current).toBe(0);
-      expect(d.target).toBe(alloc.universal);
-      expect(d.deficit).toBe(alloc.universal);
+      expect(d.target).toBe(plan.allocation.universal);
+      expect(d.deficit).toBe(plan.allocation.universal);
     }
   });
 
   it('returns no deficits when inventory meets ratio targets', () => {
-    const alloc = allocateByRatio(TARGET_PER_BUNDLE);
+    const plan = buildBlitzPlan(BUNDLES, REGIONS, [], [], TARGET_PER_BUNDLE, TARGET_PER_BUNDLE, 10, 8);
     const inventory: InventoryCell[] = [];
     for (const bundle of BUNDLES) {
-      inventory.push({ bundle, scopeTier: 'universal', scopeKey: 'universal', count: alloc.universal });
+      inventory.push({ bundle, scopeTier: 'universal', scopeKey: 'universal', count: plan.allocation.universal });
       for (const region of REGIONS) {
-        inventory.push({ bundle, scopeTier: 'regional', scopeKey: `region:${region}`, count: Math.ceil(alloc.regional / REGIONS.length) });
+        inventory.push({ bundle, scopeTier: 'regional', scopeKey: `region:${region}`, count: Math.ceil(plan.allocation.regional / REGIONS.length) });
       }
     }
 
@@ -126,9 +125,9 @@ describe('calculateDeficits', () => {
   it('regional targets distribute evenly across regions', () => {
     const deficits = calculateDeficits(['economy'], REGIONS, [], [], TARGET_PER_BUNDLE);
     const regionalDeficits = deficits.filter((d) => d.scopeTier === 'regional');
-    const alloc = allocateByRatio(TARGET_PER_BUNDLE);
+    const plan = buildBlitzPlan(['economy'], REGIONS, [], [], TARGET_PER_BUNDLE, TARGET_PER_BUNDLE, 10, 8);
     const totalRegionalTarget = regionalDeficits.reduce((s, d) => s + d.target, 0);
-    expect(totalRegionalTarget).toBe(alloc.regional);
+    expect(totalRegionalTarget).toBe(plan.allocation.regional);
   });
 });
 
@@ -225,13 +224,22 @@ describe('buildBlitzPlan', () => {
     expect(plan.summary.scenariosToGenerate).toBeLessThanOrEqual(requestedTotal);
   });
 
+  it('reallocates unsupported cluster share so requested output remains fully plannable', () => {
+    const requestedTotal = 20;
+    const plan = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, [], TARGET_PER_BUNDLE, requestedTotal, 10, 8);
+
+    expect(plan.allocation.cluster).toBe(0);
+    expect(plan.allocation.universal + plan.allocation.regional + plan.allocation.cluster + plan.allocation.exclusive).toBe(requestedTotal);
+    expect(plan.summary.scenariosToGenerate).toBe(requestedTotal);
+  });
+
   it('returns empty jobs when inventory is full', () => {
-    const alloc = allocateByRatio(TARGET_PER_BUNDLE);
+    const allocation = buildBlitzPlan(BUNDLES, REGIONS, COUNTRIES, [], TARGET_PER_BUNDLE, TARGET_PER_BUNDLE, 10, 8).allocation;
     const inventory: InventoryCell[] = [];
     for (const bundle of BUNDLES) {
-      inventory.push({ bundle, scopeTier: 'universal', scopeKey: 'universal', count: alloc.universal });
+      inventory.push({ bundle, scopeTier: 'universal', scopeKey: 'universal', count: allocation.universal });
       for (const region of REGIONS) {
-        inventory.push({ bundle, scopeTier: 'regional', scopeKey: `region:${region}`, count: alloc.regional });
+        inventory.push({ bundle, scopeTier: 'regional', scopeKey: `region:${region}`, count: Math.ceil(allocation.regional / REGIONS.length) });
       }
       for (const country of COUNTRIES) {
         inventory.push({ bundle, scopeTier: 'exclusive', scopeKey: `country:${country.id}`, count: 100 });

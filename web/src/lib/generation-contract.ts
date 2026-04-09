@@ -9,7 +9,11 @@ export type ScenarioExclusivityReason =
   | 'unique_institution'
   | 'unique_military_doctrine';
 
-export type GenerationMode = 'manual' | 'news' | 'blitz';
+export type GenerationMode = 'manual' | 'news' | 'blitz' | 'full_send';
+
+export type GenerationExecutionTarget = 'cloud_function' | 'n8n' | 'local';
+
+export type GenerationRunKind = 'blitz' | 'manual' | 'full_send';
 
 export interface GenerationDistributionConfig {
   mode: 'fixed' | 'auto';

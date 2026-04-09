@@ -115,7 +115,7 @@ async function regenerateField(
                 { maxTokens: 2048, temperature: 0.6 },
                 prompt,
                 { type: 'object', properties: { advisorFeedback: { type: 'array', items: { type: 'object' } } } },
-                'gpt-4o-mini'
+                'gpt-4.1-mini'
             );
             if (result.data) {
                 // Handle various JSON wrapper formats the model may return
@@ -145,7 +145,7 @@ async function regenerateField(
                 { maxTokens: 1024, temperature: 0.7 },
                 prompt,
                 { type: 'object', properties: { outcomeContext: { type: 'string' } } },
-                'gpt-4o-mini'
+                'gpt-4.1-mini'
             );
             if (result.data?.outcomeContext?.trim()) {
                 opt.outcomeContext = result.data.outcomeContext;
@@ -159,7 +159,7 @@ async function regenerateField(
                 { maxTokens: 512, temperature: 0.7 },
                 prompt,
                 { type: 'object', properties: { outcomeSummary: { type: 'string' } } },
-                'gpt-4o-mini'
+                'gpt-4.1-mini'
             );
             if (result.data?.outcomeSummary?.trim()) {
                 opt.outcomeSummary = result.data.outcomeSummary;
@@ -172,7 +172,7 @@ async function regenerateField(
                 { maxTokens: 256, temperature: 0.7 },
                 prompt,
                 { type: 'object', properties: { outcomeHeadline: { type: 'string' } } },
-                'gpt-4o-mini'
+                'gpt-4.1-mini'
             );
             if (result.data?.outcomeHeadline?.trim()) {
                 opt.outcomeHeadline = result.data.outcomeHeadline;

@@ -1,14 +1,13 @@
-import { NewsItem } from './types';
+import { NewsItem, ScenarioRequirements } from './types';
 import { getLogicParametersPrompt, METRIC_IDS } from './lib/logic-parameters';
 import { ALL_METRIC_IDS } from './data/schemas/metricIds';
-import { normalizeTokenAliases, isValidToken, CONCEPT_TO_TOKEN_MAP, buildBundleScopedTokenPrompt, preResolveTokenContext, loadCompiledTokenRegistry } from './lib/token-registry';
+import { normalizeTokenAliases, isValidToken, CONCEPT_TO_TOKEN_MAP, loadCompiledTokenRegistry, retokenizeText, deriveTokenStrategy, buildMinimalTokenPromptSection, buildExclusivePromptSection } from './lib/token-registry';
 import type { CompiledTokenRegistry } from './shared/token-registry-contract';
 import { TokenRejectionBuffer } from './lib/token-rejection-tracker';
 import { getRegionForCountry } from './data/schemas/regions';
 import {
   auditScenario,
   deterministicFix,
-  heuristicFix,
   scoreScenario,
   BundleScenario,
   getAuditRulesPrompt,
@@ -21,9 +20,9 @@ import {
   STATE_TAG_CONDITION_MAP,
   CANONICAL_SCENARIO_TAGS,
   sanitizeInventedTokens,
+  heuristicFix,
 } from './lib/audit-rules';
 import { classifyIssueRemediation, classifyRepairActions, type RepairAction } from './lib/issue-classification';
-import { agenticRepair } from './lib/agentic-repair';
 import {
   assertRequestedCountryIdsAvailable,
   loadCountryCatalog,
@@ -36,7 +35,8 @@ import {
   logFailure,
   categorizeFailure,
   updateDailySummary,
-  generateAttemptId
+  generateAttemptId,
+  logPipelineStageMetric,
 } from './lib/prompt-performance';
 import {
   buildArchitectPrompt,
@@ -51,6 +51,7 @@ import {
   getOllamaSkeletonPrompt,
   getOllamaEffectsPrompt,
 } from './lib/prompt-templates';
+import { buildBestEffortScenarioConditions } from './lib/scenario-conditions';
 import { Timestamp } from 'firebase-admin/firestore';
 import { callModelProvider, setModelEventHandler, aggregateCosts, type ModelConfig, type ModelEvent, type TokenUsage } from './lib/model-providers';
 import { getRecentScenarioSummaries, getThemeDistribution } from './storage';
@@ -85,7 +86,6 @@ function emitEngineEvent(event: ModelEvent): void {
   _engineEventHandlers.forEach(h => { try { h(event); } catch { /* never throw */ } });
 }
 import { evaluateContentQuality } from './lib/content-quality';
-import { contextRepair } from './lib/context-repair';
 import { validateSkeleton, validateEffects } from './lib/phase-validation';
 import { combineEditorialReview, shouldSkipEditorialReview } from './lib/editorial-review';
 import { evaluateNarrativeQuality } from './lib/narrative-review';
@@ -147,7 +147,7 @@ export type GeneratedConcept = {
 // ------------------------------------------------------------------
 // Model configurations for generation phases
 // Token limits increased from 8K to accommodate complex scenarios with detailed outcomes
-const ARCHITECT_CONFIG: ModelConfig = { maxTokens: 4096, temperature: 0.6 };
+const ARCHITECT_CONFIG: ModelConfig = { maxTokens: 8192, temperature: 0.6, noThink: true };
 // Drafter uses ~14K input + 3K output tokens; under Tier 1 rate limits concurrent
 // calls regularly take 60-120s and can exceed 120s when throttled. 300s keeps the
 // call alive while staying well within the Cloud Function's 540s budget.
@@ -173,13 +173,13 @@ function buildActorTokenRequirement(actorPattern?: GeneratedConcept['actorPatter
   if (scopeTier === 'universal') return '';
   switch (actorPattern) {
     case 'ally':
-      return '- Because actorPattern=ally, write the allied actor as natural language ("the allied government", "your formal ally", "the allied nation"). Never use relationship token placeholders like {the_ally} in prose. Set metadata.requires.formal_ally=true. If the option outcome affects the relationship, add a relationshipEffects entry with relationshipId="ally".';
+      return '- Because actorPattern=ally, write the allied actor as natural language ("the allied government", "your formal ally", "the allied nation"). Never use relationship tokens. Set metadata.requires.formal_ally=true. If the option outcome affects the relationship, add a relationshipEffects entry with relationshipId="ally".';
     case 'adversary':
-      return '- Because actorPattern=adversary, write the adversarial actor as natural language ("your main adversary", "the hostile power", "your adversary"). Never use relationship token placeholders like {the_adversary} in prose. Set metadata.requires.adversary=true. If the option outcome affects the relationship, add a relationshipEffects entry with relationshipId="adversary".';
+      return '- Because actorPattern=adversary, write the adversarial actor as natural language ("your main adversary", "the hostile power", "your adversary"). Never use relationship tokens. Set metadata.requires.adversary=true. If the option outcome affects the relationship, add a relationshipEffects entry with relationshipId="adversary".';
     case 'border_rival':
-      return '- Because actorPattern=border_rival, write the border actor as natural language ("your border rival", "the neighboring rival", "the bordering rival state"). Never use relationship token placeholders like {the_border_rival} in prose. Set metadata.requires.land_border_adversary=true. If the option outcome affects the relationship, add a relationshipEffects entry with relationshipId="border_rival".';
+      return '- Because actorPattern=border_rival, write the border actor as natural language ("your border rival", "the neighboring rival", "the bordering rival state"). Never use relationship tokens. Set metadata.requires.land_border_adversary=true. If the option outcome affects the relationship, add a relationshipEffects entry with relationshipId="border_rival".';
     case 'mixed':
-      return '- Because actorPattern=mixed, write all foreign actors as natural language ("your border rival", "the allied government", "your adversary", "your trade partner"). Never use relationship token placeholders in prose. Set the appropriate metadata.requires flags (e.g., adversary=true, formal_ally=true). Add relationshipEffects entries on options that would realistically affect those relationships.';
+      return '- Because actorPattern=mixed, write all foreign actors as natural language ("your border rival", "the allied government", "your adversary", "your trade partner"). Never use relationship tokens. Set the appropriate metadata.requires flags (e.g., adversary=true, formal_ally=true). Add relationshipEffects entries on options that would realistically affect those relationships.';
     default:
       return '';
   }
@@ -516,14 +516,14 @@ ${lowSensLine}
 ${proportionalGuidance}
 
 CRITICAL GEOPOLITICAL RULES:
-- Use tokens for country/leader/institution names (e.g. {player_country}, {leader_title}, {legislature}, {governing_party}). Write relationship actors as natural language ("your adversary", "the allied government", "your border rival") — never use {the_adversary}, {the_ally}, etc.
+- Use tokens for country/leader/institution names (e.g. {player_country}, {leader_title}, {legislature}, {governing_party}). Write "the {token}" naturally — no {the_X} prefix tokens. Write relationship actors as natural language ("your adversary", "the allied government", "your border rival") — never use relationship tokens.
 - High-sensitivity metrics (listed above) have amplified political impact for this country — scenarios touching these metrics should reflect that volatility (higher stakes, faster consequences, more extreme public reactions).
 - Low-sensitivity metrics (listed above) are structurally muted for this country — avoid framing decisions around these as if they are pivotal or career-defining.
 - If any target country has an authoritarian or totalitarian governmentCategory, do NOT generate standard democratic election or coalition-politics scenarios for them.
 - If any target country has tags like 'oil_exporter' or 'resources', preferentially include energy/resources-related stakes and effects.
 - If any target country has tags like 'nuclear_state', use nuclear deterrence/escalation themes sparingly and realistically — no instant apocalypse.
 - If any target country has tags like 'conflict_zone' or 'post_conflict', border tension, refugee flows, and security dilemmas are appropriate.
-- When writing about {major_industry} or {the_major_industry}, use the geopolitical tag context above to write sector-specific language. For example, if tags include 'oil_exporter', don't write "Your {major_industry} faces pressure" — write "Your {major_industry} faces a sustained drop in export demand as buyer nations accelerate energy transition". The token stays generic; the surrounding narrative must be specific.
+- When writing about {major_industry}, use the geopolitical tag context above to write sector-specific language. For example, if tags include 'oil_exporter', don't write "Your {major_industry} faces pressure" — write "Your {major_industry} faces a sustained drop in export demand as buyer nations accelerate energy transition". The token stays generic; the surrounding narrative must be specific.
 
 Use the tokens {economic_scale}, {gdp_description}, {population_scale}, {geography_type}, {climate_risk} so the narrative adapts to the player's country at runtime. Do NOT use actual country names in scenario text — they are substituted by tokens at runtime.`;
 }
@@ -921,8 +921,17 @@ const ADVISOR_FEEDBACK_SCHEMA = {
   required: ['advisorsByOption']
 };
 
-function buildAdvisorFeedbackPrompt(coreScenario: { title: string; description: string; options: Array<{ id: string; text: string; label: string }> }): string {
+function buildAdvisorFeedbackPrompt(
+  coreScenario: { title: string; description: string; options: Array<{ id: string; text: string; label: string }> },
+  scopeTier: ScenarioScopeTier,
+): string {
   const optionsSummary = coreScenario.options.map(o => `- Option "${o.id}" (${o.label}): ${o.text}`).join('\n');
+  const universalScopeRules = scopeTier === 'universal'
+    ? `
+- UNIVERSAL SCOPE: keep feedback domestically transferable. Do NOT write real institution names like Congress, the Treasury, the Federal Reserve, Parliament, or named ministries.
+- UNIVERSAL SCOPE: avoid brittle regime-specific tokens such as {legislature}, {governing_party}, and {opposition_party} unless the scenario already requires them structurally. Prefer plain-language actors like lawmakers, budget officials, judges, regulators, auditors, or central-bank officials.
+- UNIVERSAL SCOPE: do NOT mention absolute money figures or named currencies such as "$200 billion", "€5 billion", or pesos. Use relative language instead.`
+    : '';
   return `Generate JSON only for advisor feedback.
 
 SCENARIO: "${coreScenario.title}"
@@ -931,9 +940,9 @@ ${coreScenario.description}
 OPTIONS:
 ${optionsSummary}
 
-Generate advisor feedback for ALL 13 advisors for EACH option.
+Generate advisor feedback for exactly 7 advisors for EACH option. Choose the 7 advisors most relevant to THIS scenario's domain — omit advisors whose domains are not meaningfully affected.
 
-ADVISORS (use these roleId values exactly):
+ALL AVAILABLE ADVISORS (pick 7, use these roleId values exactly):
 - role_executive: Chief political advisor — feasibility, authority, coalition impact
 - role_diplomacy: Foreign affairs advisor — international relations, treaties, diplomacy
 - role_defense: Defense advisor — military readiness, national security, armed forces
@@ -948,16 +957,22 @@ ADVISORS (use these roleId values exactly):
 - role_transport: Infrastructure advisor — logistics, roads, ports, transit systems
 - role_education: Education advisor — schools, universities, workforce readiness
 
+Select the same 7 advisors for every option (consistency). Prefer advisors directly impacted by the scenario's primary metrics.
+
 RULES:
-- Each feedback: 1 sentence, 15-30 words, specific to THIS scenario
-- Use {token} placeholders for institutions (e.g., {legislature}, {central_bank}). NEVER hardcode institution names.
-- Use only token spellings that already appear in the token system for this run. Do NOT invent article-form tokens like {the_press_role} unless they are explicitly listed.
+- Each feedback: 1-2 sentences, 30-50 words, specific to THIS scenario's mechanism and this advisor's domain
+- Name the specific policy mechanism, affected constituency, and causal chain — not generic boilerplate
+- Use {token} placeholders for institutions (e.g., the {legislature}, the {central_bank}). NEVER hardcode institution names.
+- Use only token spellings that already appear in the token system for this run. Do NOT invent tokens.
 - Stances must vary across options — at least 4 advisors should change stance between options
-- NEVER write these boilerplate patterns:
+- Avoid generic civics phrases like "the government", "the administration", or "officials said". Address the player's decision directly and name the concrete domestic actor affected.
+- NEVER write these boilerplate patterns (automatic rejection):
   "aligns well with our priorities", "supports this course of action", "could undermine our objectives",
   "has serious concerns about this approach", "limited direct impact on operations",
-  "no strong position on this matter", "both risks and potential benefits", "warrants careful monitoring"
-- Instead, name the specific mechanism, tradeoff, or risk this advisor cares about
+  "no strong position on this matter", "both risks and potential benefits", "warrants careful monitoring",
+  "aligns with our", "our department", "course of action", "careful monitoring"
+- INVALID TOKENS in feedback: {international_lender}, {international_investor}, {international_monitor}, {imf}, {world_bank}, {public_order}, {governing_party_leader} — use plain language instead
+${universalScopeRules}
 
 Return JSON: { advisorsByOption: [{ optionId, advisorFeedback: [{ roleId, stance, feedback }] }] }`;
 }
@@ -967,7 +982,7 @@ Return JSON: { advisorsByOption: [{ optionId, advisorFeedback: [{ roleId, stance
 // ------------------------------------------------------------------
 
 export interface GenerationRequest {
-  mode: 'news' | 'manual' | 'blitz';
+  mode: 'news' | 'manual' | 'blitz' | 'full_send';
   bundle: BundleId;
   count: number;
   newsContext?: NewsItem[];
@@ -1363,12 +1378,12 @@ CRITICAL: Return the COMPLETE expanded text for each field, not just the added p
 The returned text must be LONGER than the original — never truncate.`,
 
   'token-fix': `Fix token usage errors:
-- "the {X}" where X is an institution token → use the article-form token instead (e.g. "the {finance_role}" → "{the_finance_role}", "the {legislature}" → "{the_legislature}").
-- Replace {the_opposition} or {opposition} in prose → use {the_opposition_party} or {opposition_party}.
+- Use only tokens from the approved minimal set. Write "the {finance_role}" or "your {defense_role}" naturally — no {the_X} prefix tokens.
+- Replace {opposition} in prose → use {opposition_party}.
 - Replace {president} or {prime_minister} → use {leader_title}.
-- Replace {country} or {country_name} → use {the_player_country}.
+- Replace {country} or {country_name} → use {player_country}.
 - Replace hardcoded currency names with {currency} token.
-- Replace any relationship token placeholders in prose ({the_adversary}, {adversary}, {the_ally}, {ally}, {the_border_rival}, {border_rival}, {the_trade_partner}, {trade_partner}, {the_neighbor}, {neighbor}, {the_rival}, {rival}, {the_partner}, {partner}, {the_neutral}, {neutral}, {the_nation}, {nation}) with natural language ("your adversary", "the allied government", "your border rival", "a neighboring state").`,
+- Replace any relationship token placeholders in prose with natural language ("your adversary", "the allied government", "your border rival", "a neighboring state").`,
 
   'advisor-regen': `Rewrite the flagged advisor feedback entries.
 Each entry must: name the specific policy mechanism, the constituency affected, and the causal chain.
@@ -1582,6 +1597,18 @@ async function executeRepairActions(
         }
 
         const candidate = applyRepairPatch(currentScenario, repairResult.data);
+        const repairTokenStrategy = deriveTokenStrategy((scenario.metadata as any)?.scopeTier ?? 'universal');
+        if (repairTokenStrategy !== 'none') {
+          normalizeTokenAliases(candidate.title) && (candidate.title = normalizeTokenAliases(candidate.title));
+          candidate.description = normalizeTokenAliases(candidate.description);
+          for (const opt of candidate.options) {
+            opt.text = normalizeTokenAliases(opt.text);
+            if (opt.outcomeHeadline) opt.outcomeHeadline = normalizeTokenAliases(opt.outcomeHeadline);
+            if (opt.outcomeSummary) opt.outcomeSummary = normalizeTokenAliases(opt.outcomeSummary);
+            if (opt.outcomeContext) opt.outcomeContext = normalizeTokenAliases(opt.outcomeContext);
+          }
+        }
+        deterministicFix(candidate);
         const reauditIssues = auditScenario(candidate, bundle, isNews);
         const reauditScore = scoreScenario(reauditIssues);
         logIssueSummary(`[Repair] after ${action.type}`, reauditIssues, reauditScore);
@@ -1641,18 +1668,8 @@ async function auditAndRepair(
   const PRE_EDITORIAL_BLOCKING_RULE_IDS = new Set([
     'invalid-token',
     'token-casing-error',
-    'no-tokens',
-    'description-word-count',
-    'option-text-word-count',
-    'description-length',
-    'option-text-length',
-    'complex-sentence',
-    'high-clause-density',
-    'high-passive-voice',
-    'jargon-use',
     'missing-advisor-feedback',
     'missing-role-feedback',
-    'advisor-boilerplate',
     'missing-headline',
     'missing-summary',
     'missing-context',
@@ -1672,23 +1689,59 @@ async function auditAndRepair(
   });
   console.log(`[Draft] ─────────────────────────────────────────────────────────────────`);
 
-  // Normalize hallucinated tokens to valid equivalents before audit
-  scenario.title = normalizeTokenAliases(scenario.title);
-  scenario.description = normalizeTokenAliases(scenario.description);
-  for (const opt of scenario.options) {
-    opt.text = normalizeTokenAliases(opt.text);
-    if (opt.label) opt.label = normalizeTokenAliases(opt.label);
-    if (opt.outcomeHeadline) opt.outcomeHeadline = normalizeTokenAliases(opt.outcomeHeadline);
-    if (opt.outcomeSummary) opt.outcomeSummary = normalizeTokenAliases(opt.outcomeSummary);
-    if (opt.outcomeContext) opt.outcomeContext = normalizeTokenAliases(opt.outcomeContext);
-    if ((opt as any).advisorFeedback) {
-      for (const fb of (opt as any).advisorFeedback) {
-        if (fb.feedback) fb.feedback = normalizeTokenAliases(fb.feedback);
+  const sampleTokenMaps: Array<Record<string, string>> = [];
+  const countryKeys = Object.keys(countries);
+  const sampleKeys = countryKeys.length <= 3 ? countryKeys : countryKeys.slice(0, 3);
+  for (const key of sampleKeys) {
+    const tokens = countries[key]?.tokens;
+    if (tokens && typeof tokens === 'object') {
+      sampleTokenMaps.push(tokens as Record<string, string>);
+    }
+  }
+
+  const scenarioTokenStrategy = deriveTokenStrategy((scenario.metadata as any)?.scopeTier ?? 'universal');
+
+  if (scenarioTokenStrategy !== 'none') {
+    scenario.title = normalizeTokenAliases(scenario.title);
+    scenario.description = normalizeTokenAliases(scenario.description);
+    for (const opt of scenario.options) {
+      opt.text = normalizeTokenAliases(opt.text);
+      if (opt.label) opt.label = normalizeTokenAliases(opt.label);
+      if (opt.outcomeHeadline) opt.outcomeHeadline = normalizeTokenAliases(opt.outcomeHeadline);
+      if (opt.outcomeSummary) opt.outcomeSummary = normalizeTokenAliases(opt.outcomeSummary);
+      if (opt.outcomeContext) opt.outcomeContext = normalizeTokenAliases(opt.outcomeContext);
+      if ((opt as any).advisorFeedback) {
+        for (const fb of (opt as any).advisorFeedback) {
+          if (fb.feedback) fb.feedback = normalizeTokenAliases(fb.feedback);
+        }
+      }
+    }
+
+    if (sampleTokenMaps.length > 0) {
+      scenario.title = retokenizeText(scenario.title, sampleTokenMaps);
+      scenario.description = retokenizeText(scenario.description, sampleTokenMaps);
+      for (const opt of scenario.options) {
+        opt.text = retokenizeText(opt.text, sampleTokenMaps);
+        if (opt.label) opt.label = retokenizeText(opt.label, sampleTokenMaps);
+        if (opt.outcomeHeadline) opt.outcomeHeadline = retokenizeText(opt.outcomeHeadline, sampleTokenMaps);
+        if (opt.outcomeSummary) opt.outcomeSummary = retokenizeText(opt.outcomeSummary, sampleTokenMaps);
+        if (opt.outcomeContext) opt.outcomeContext = retokenizeText(opt.outcomeContext, sampleTokenMaps);
+        if ((opt as any).advisorFeedback) {
+          for (const fb of (opt as any).advisorFeedback) {
+            if (fb.feedback) fb.feedback = retokenizeText(fb.feedback, sampleTokenMaps);
+          }
+        }
       }
     }
   }
 
   normalizeScenarioTextFields(scenario);
+
+  const earlyTokenValidator = (t: string) => (validTokenSet ? validTokenSet.has(t) : isValidToken(t));
+  deterministicFix(scenario);
+  if (scenarioTokenStrategy !== 'none') {
+    sanitizeInventedTokens(scenario, earlyTokenValidator);
+  }
 
   let issues = auditScenario(scenario, bundle, isNews);
 
@@ -1704,15 +1757,6 @@ async function auditAndRepair(
     } else {
       console.log(`[Audit] ── initial audit: score=${initialScore}  ✓ no issues ─────────────────────────`);
     }
-  }
-
-  // 1. Initial Quality Check & Token Enforcement
-  const fieldsToCheck = [scenario.description, ...scenario.options.map(o => o.text), ...scenario.options.map(o => o.outcomeSummary)];
-  const hasTokens = fieldsToCheck.some(text => text && text.includes('{') && text.includes('}'));
-
-  if (!hasTokens) {
-    console.warn(`[ScenarioEngine] Scenario ${scenario.id} rejected: no tokens found in content.`);
-    return { scenario: null, score: 0, issues: [{ severity: 'error', rule: 'no-tokens', target: scenario.id, message: 'No tokens found in content', autoFixable: false }] };
   }
 
   // Token whitelist hard gate — reject invented tokens before any further processing
@@ -1797,38 +1841,12 @@ async function auditAndRepair(
     issues = auditScenario(scenario, bundle, isNews);
   }
 
-  // 3a. Context-aware repair — resolves invalid metric IDs and invented tokens
-  //     that deterministic mapping couldn't handle by using a model call with
-  //     the full scenario context. Runs before heuristic fixes so downstream
-  //     passes see semantically correct content.
-  {
-    const contextIssues = issues.filter(i => i.rule === 'invalid-metric-id' || i.rule === 'invalid-token');
-    if (contextIssues.length > 0) {
-      const cfg = getAuditConfig();
-      try {
-        const ctxResult = await contextRepair(scenario, contextIssues, cfg.validMetricIds, tokenValidator, modelConfig);
-        if (ctxResult.applied) {
-          console.log(`[ScenarioEngine] Context repair applied: ${ctxResult.log.join('; ')}`);
-          deterministicFix(scenario);
-          issues = auditScenario(scenario, bundle, isNews);
-        } else if (ctxResult.log.length > 0) {
-          console.log(`[ScenarioEngine] Context repair: ${ctxResult.log.join('; ')}`);
-        }
-      } catch (err: unknown) {
-        console.warn(`[ScenarioEngine] Context repair failed for ${scenario.id}:`, err instanceof Error ? err.message : err);
-      }
-    }
+  const heuResult = heuristicFix(scenario, issues, bundle);
+  if (heuResult.fixed) {
+    issues = auditScenario(scenario, bundle, isNews);
   }
 
-  // 3b. Apply Heuristic Fixes
-  if (issues.length > 0) {
-    const heurResult = heuristicFix(scenario, issues, bundle);
-    if (heurResult.fixed) {
-      issues = auditScenario(scenario, bundle, isNews);
-    }
-  }
-
-  // 4. Grounded Effects Repair (heuristic)
+  // 3a. Grounded Effects Repair
   try {
     let fixedAny = false;
     for (const option of scenario.options) {
@@ -1848,86 +1866,64 @@ async function auditAndRepair(
     }
     if (fixedAny) {
       issues = auditScenario(scenario, bundle, isNews);
-      // Re-apply heuristic fixes since new effects may require new advisor roles
-      if (issues.length > 0) {
-        const heurResult2 = heuristicFix(scenario, issues, bundle);
-        if (heurResult2.fixed) {
-          console.log(`[ScenarioEngine] Applied post-effects heuristic fixes: ${heurResult2.fixes.join(', ')}`);
-          issues = auditScenario(scenario, bundle, isNews);
-        }
-      }
     }
   } catch (error: any) {
     console.warn(`[ScenarioEngine] Grounded effects repair failed:`, error.message);
   }
 
-  const { llm_repair_enabled, audit_pass_threshold: repairThreshold, max_llm_repair_attempts, agentic_repair_enabled } = await getGenerationConfig();
+  const { llm_repair_enabled, audit_pass_threshold: repairThreshold } = await getGenerationConfig();
   const preRepairCurrentScore = scoreScenario(issues);
   const scoreGap = repairThreshold - preRepairCurrentScore;
 
-  if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold && scoreGap <= 40) {
+  if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold && scoreGap <= 20) {
     let repaired: BundleScenario | null = null;
-    const allowLlmRepair = scoreGap < 25;
 
-    if (allowLlmRepair && agentic_repair_enabled) {
-      try {
-        const agenticResult = await agenticRepair(scenario, issues, bundle, isNews, repairThreshold, modelConfig, compiledRegistry);
-        if (agenticResult.improved) {
-          repaired = agenticResult.scenario;
-          emitEngineEvent({ level: 'success', code: 'agentic_repair', message: `Agentic repair: ${preRepairCurrentScore} → ${agenticResult.finalScore} in ${agenticResult.steps.length} steps`, data: { scenarioId: scenario.id, before: preRepairCurrentScore, after: agenticResult.finalScore, steps: agenticResult.steps.length } });
-        }
-      } catch (err: unknown) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        console.warn(`[ScenarioEngine] Agentic repair failed for ${scenario.id}, falling back to sequential repair: ${errMsg}`);
-        emitEngineEvent({ level: 'warning', code: 'agentic_repair_fallback', message: `Agentic repair failed, using sequential: ${errMsg}`, data: { scenarioId: scenario.id } });
-      }
-    }
+    repaired = await executeRepairActions(scenario, issues, bundle, isNews, repairThreshold, modelConfig, 1, compiledRegistry);
 
-    if (!repaired && allowLlmRepair) {
-      repaired = await executeRepairActions(scenario, issues, bundle, isNews, repairThreshold, modelConfig, max_llm_repair_attempts, compiledRegistry);
-    } else if (!repaired && !allowLlmRepair) {
-      console.log(`[ScenarioEngine] Scenario ${scenario.id}: score gap ${scoreGap} (25-40) — deterministic-only repair, skipping LLM calls`);
-      emitEngineEvent({ level: 'info', code: 'repair_budget_limited', message: `Score gap ${scoreGap} too large for LLM repair — deterministic only`, data: { scenarioId: scenario.id, score: preRepairCurrentScore, gap: scoreGap } });
-    }
     if (repaired) {
       scenario.title = repaired.title;
       scenario.description = repaired.description;
       scenario.options = repaired.options;
-      scenario.title = normalizeTokenAliases(scenario.title);
-      scenario.description = normalizeTokenAliases(scenario.description);
-      for (const opt of scenario.options) {
-        opt.text = normalizeTokenAliases(opt.text);
-        if (opt.outcomeHeadline) opt.outcomeHeadline = normalizeTokenAliases(opt.outcomeHeadline);
-        if (opt.outcomeSummary) opt.outcomeSummary = normalizeTokenAliases(opt.outcomeSummary);
-        if (opt.outcomeContext) opt.outcomeContext = normalizeTokenAliases(opt.outcomeContext);
-        if ((opt as any).advisorFeedback) {
-          for (const fb of (opt as any).advisorFeedback) {
-            if (fb.feedback) fb.feedback = normalizeTokenAliases(fb.feedback);
+      if (scenarioTokenStrategy !== 'none') {
+        scenario.title = normalizeTokenAliases(scenario.title);
+        scenario.description = normalizeTokenAliases(scenario.description);
+        for (const opt of scenario.options) {
+          opt.text = normalizeTokenAliases(opt.text);
+          if (opt.outcomeHeadline) opt.outcomeHeadline = normalizeTokenAliases(opt.outcomeHeadline);
+          if (opt.outcomeSummary) opt.outcomeSummary = normalizeTokenAliases(opt.outcomeSummary);
+          if (opt.outcomeContext) opt.outcomeContext = normalizeTokenAliases(opt.outcomeContext);
+          if ((opt as any).advisorFeedback) {
+            for (const fb of (opt as any).advisorFeedback) {
+              if (fb.feedback) fb.feedback = normalizeTokenAliases(fb.feedback);
+            }
+          }
+        }
+        if (sampleTokenMaps.length > 0) {
+          scenario.title = retokenizeText(scenario.title, sampleTokenMaps);
+          scenario.description = retokenizeText(scenario.description, sampleTokenMaps);
+          for (const opt of scenario.options) {
+            opt.text = retokenizeText(opt.text, sampleTokenMaps);
+            if (opt.outcomeHeadline) opt.outcomeHeadline = retokenizeText(opt.outcomeHeadline, sampleTokenMaps);
+            if (opt.outcomeSummary) opt.outcomeSummary = retokenizeText(opt.outcomeSummary, sampleTokenMaps);
+            if (opt.outcomeContext) opt.outcomeContext = retokenizeText(opt.outcomeContext, sampleTokenMaps);
+            if ((opt as any).advisorFeedback) {
+              for (const fb of (opt as any).advisorFeedback) {
+                if (fb.feedback) fb.feedback = retokenizeText(fb.feedback, sampleTokenMaps);
+              }
+            }
           }
         }
       }
       normalizeScenarioTextFields(scenario);
       deterministicFix(scenario);
-      sanitizeInventedTokens(scenario, tokenValidator);
-      for (const option of scenario.options) {
-        const narrativeText = [
-          option.outcomeHeadline,
-          option.outcomeSummary,
-          option.outcomeContext,
-        ].filter(Boolean).join(' ');
-        option.effects = suggestEffectCorrections(narrativeText, option.effects || []);
+      if (scenarioTokenStrategy !== 'none') {
+        sanitizeInventedTokens(scenario, tokenValidator);
       }
       issues = auditScenario(scenario, bundle, isNews);
-      if (issues.length > 0) {
-        const heurResultAfterRepair = heuristicFix(scenario, issues, bundle);
-        if (heurResultAfterRepair.fixed) {
-          issues = auditScenario(scenario, bundle, isNews);
-        }
-      }
     }
-  } else if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold && scoreGap > 40) {
-    console.log(`[ScenarioEngine] Scenario ${scenario.id}: score gap ${scoreGap} (>40) — skipping all repair, scenario unsalvageable`);
-    emitEngineEvent({ level: 'warning', code: 'repair_skipped_hopeless', message: `Score ${preRepairCurrentScore} (gap ${scoreGap}) too far from threshold — no repair attempted`, data: { scenarioId: scenario.id, score: preRepairCurrentScore, gap: scoreGap, threshold: repairThreshold } });
+  } else if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold && scoreGap > 20) {
+    console.log(`[ScenarioEngine] Scenario ${scenario.id}: score gap ${scoreGap} (>20) — skipping LLM repair, re-draft recommended`);
+    emitEngineEvent({ level: 'warning', code: 'repair_skipped_hopeless', message: `Score ${preRepairCurrentScore} (gap ${scoreGap}) too far from threshold — re-draft recommended`, data: { scenarioId: scenario.id, score: preRepairCurrentScore, gap: scoreGap, threshold: repairThreshold } });
   }
 
   try {
@@ -1960,10 +1956,31 @@ async function auditAndRepair(
 
   const isOllamaJob = isOllamaGeneration(modelConfig);
 
-  const renderedOutputResult = evaluateRenderedOutputQuality(scenario, countries, {
-    strictScopeTier: scenario.metadata?.scopeTier,
-  });
-  if (scenario.metadata) {
+  // Derive requires metadata from token usage — ensures the iOS client only shows
+  // scenarios to countries that can resolve all relationship tokens.
+  const requiresCorpus = [
+    scenario.title, scenario.description,
+    ...scenario.options.map((o) => o.text),
+    ...scenario.options.map((o) => o.outcomeSummary).filter(Boolean),
+    ...scenario.options.map((o) => o.outcomeContext).filter(Boolean),
+  ].join(' ');
+  const derivedRequires = inferRequirementsFromNarrative(
+    requiresCorpus,
+    scenario.metadata?.requires as ScenarioRequirements | undefined,
+  );
+  if (Object.keys(derivedRequires).length > 0) {
+    if (!scenario.metadata) scenario.metadata = {};
+    scenario.metadata.requires = {
+      ...(scenario.metadata.requires as ScenarioRequirements | undefined),
+      ...derivedRequires,
+    };
+  }
+
+  const hasCountries = Object.keys(countries).length > 0;
+  const renderedOutputResult = hasCountries
+    ? evaluateRenderedOutputQuality(scenario, countries, { strictScopeTier: scenario.metadata?.scopeTier })
+    : null;
+  if (renderedOutputResult && scenario.metadata) {
     (scenario.metadata as any).renderedOutputQA = {
       pass: renderedOutputResult.pass,
       sampleCount: renderedOutputResult.sampleCount,
@@ -1973,15 +1990,15 @@ async function auditAndRepair(
   }
 
   const renderedOutputGate = {
-    enabled: true,
-    usable: true,
+    enabled: hasCountries,
+    usable: renderedOutputResult !== null,
     result: renderedOutputResult,
     error: undefined as string | undefined,
   };
 
   const hasPreEditorialBlockingIssues =
     score < audit_pass_threshold ||
-    !renderedOutputResult.pass ||
+    (hasCountries && renderedOutputResult !== null && !renderedOutputResult.pass) ||
     issues.some((issue) => PRE_EDITORIAL_BLOCKING_RULE_IDS.has(issue.rule));
 
   const effectiveContentQualityEnabled =
@@ -2231,7 +2248,23 @@ async function generateConceptSeeds(request: GenerationRequest): Promise<any[]> 
   })();
 
   const prompt = `
-    You are 'The Architect'. Generate ${request.count} unique scenario concepts for the '${request.bundle}' bundle.
+    Generate ${request.count} unique governance scenario concepts for the '${request.bundle}' bundle of a political simulation game called The Administration. Output valid JSON only.
+
+    CONCEPT QUALITY RULES:
+    - Each concept MUST be 2-3 sentences with: (1) a concrete trigger event with a named actor using {tokens}, (2) the dilemma stakes, and (3) the implicit policy tension.
+    - NOT acceptable: "Balancing AI Innovation with Privacy Concerns" (topic label, no trigger event, no actor, no dilemma)
+    - NOT acceptable: "Managing Cybersecurity Risks" (label-style, no concrete situation)
+    - ACCEPTABLE: "The tech regulator has approved a surveillance AI system that logs all public communications. Civil liberties groups are mobilizing nationally while the {defense_role} argues the system is essential for threat detection. You must decide whether to deploy, restrict, or ban it before the {legislature} forces the issue."
+    - Concepts must present a genuine dilemma — the best response must not be obvious.
+
+    TOKEN RULES FOR CONCEPTS:
+    - Use {token} placeholders for all country names, institutions, currencies, and named roles.
+    - NEVER write region names or country names in plain text (e.g. "asia", "europe", "south america", "brazil"). Use "the region", "the country", or a token instead.
+    - Use tokens semantically correctly:
+      - {central_bank}: monetary authority ONLY — interest rates, currency reserves, banking regulation. NOT for general regulators, AI oversight, or non-monetary policy.
+      - {legislature}: legislative chamber — NOT executive action or regulatory agencies.
+      - {finance_role}: fiscal/budget minister — NOT general policy minister.
+      - When a concept involves regulatory oversight outside these domains, use plain language ("regulators", "auditors") rather than forcing a wrong token.
 
     DIFFICULTY RATING (1-5):
     - 1 = Routine decision, low stakes, clear best option
@@ -2275,8 +2308,8 @@ async function generateConceptSeeds(request: GenerationRequest): Promise<any[]> 
     RICH CONCEPT FIELDS — include these in every concept object:
     - primaryMetrics: array of 1–3 metric IDs most directly affected (from canonical list above)
     - secondaryMetrics: array of 0–3 metric IDs secondarily affected (optional but encouraged)
-    - actorPattern: ${resolvedScope.scopeTier === 'universal'
-        ? "one of 'domestic' | 'legislature' | 'cabinet' | 'judiciary' — universal scope ONLY. Do NOT use 'ally', 'adversary', 'border_rival', or 'mixed'; relationship tokens are prohibited in universal scenarios.\n      - domestic: internal actor (protest group, industry, regional faction)\n      - legislature: {legislature} is the central actor blocking or pushing action\n      - cabinet: a cabinet minister or internal faction is the central actor\n      - judiciary: courts or rule-of-law tensions are the central actor"
+      - actorPattern: ${resolvedScope.scopeTier === 'universal'
+        ? "one of 'domestic' | 'cabinet' | 'judiciary' — universal scope ONLY. Do NOT use 'legislature', 'ally', 'adversary', 'border_rival', or 'mixed'; relationship tokens and country-specific constitutional setups are prohibited in universal scenarios.\n      - domestic: internal actor (protest group, industry, regional faction)\n      - cabinet: a cabinet minister or internal faction is the central actor\n      - judiciary: courts or rule-of-law tensions are the central actor"
         : "one of 'domestic' | 'ally' | 'adversary' | 'border_rival' | 'legislature' | 'cabinet' | 'judiciary' | 'mixed'\n      - domestic: internal actor (protest group, industry, regional faction)\n      - ally: a friendly foreign power is the central actor\n      - adversary: a hostile foreign power is the central actor\n      - border_rival: a neighboring rival country is the central actor\n      - legislature: {legislature} is the central actor blocking or pushing action\n      - cabinet: a cabinet minister or internal faction is the central actor\n      - judiciary: courts or rule-of-law tensions are the central actor\n      - mixed: multiple actor types are equally central"
       }
     - optionShape: one of 'redistribute' | 'regulate' | 'escalate' | 'negotiate' | 'invest' | 'cut' | 'reform' | 'delay'
@@ -2434,7 +2467,7 @@ async function expandConceptToLoop(
   const [promptVersions, goldenExamples, drafterPromptBase, reflectionPrompt, architectPromptBase, countryContextBlock, countryNote] = await Promise.all([
     getCurrentPromptVersions(),
     getGoldenExamples(bundle, scopeTier, scopeKey, 2),
-    isOllamaRun ? Promise.resolve(getCompactDrafterPromptBase()) : getDrafterPromptBase(request?.compiledRegistry),
+    isOllamaRun ? Promise.resolve(getCompactDrafterPromptBase(deriveTokenStrategy(scopeTier))) : getDrafterPromptBase(request?.compiledRegistry, deriveTokenStrategy(scopeTier)),
     getReflectionPrompt(),
     getArchitectPromptBase(),
     getCountryContextBlock(request?.applicable_countries),
@@ -2528,6 +2561,20 @@ async function expandConceptToLoop(
     : Math.max(1, (await getGenerationConfig()).max_llm_repair_attempts);
   const allExpectedIds = blueprint.acts.map((a: any) => `${baseId}_act${a.actIndex}`);
 
+  let resolvedDrafterPromptBase = drafterPromptBase;
+  if (drafterPromptBase.includes('{{TOKEN_CONTEXT}}')) {
+    const { countries: allCountries } = await loadCountriesData();
+    let primaryCountryData: Record<string, any> | undefined;
+    if (request?.applicable_countries?.length) {
+      primaryCountryData = allCountries[request.applicable_countries[0]];
+    }
+    const tokenStrategy = deriveTokenStrategy(scopeTier);
+    const tokenContext = tokenStrategy === 'none' && primaryCountryData
+      ? buildExclusivePromptSection(primaryCountryData)
+      : buildMinimalTokenPromptSection();
+    resolvedDrafterPromptBase = drafterPromptBase.replace('{{TOKEN_CONTEXT}}', tokenContext);
+  }
+
   // 2. Draft All Acts in Parallel (Drafter)
   // allSettled so a single failing act doesn't discard in-flight sibling API calls
   const actSettled = await Promise.allSettled(blueprint.acts.map(async (actPlan: any) => {
@@ -2578,24 +2625,25 @@ async function expandConceptToLoop(
         - urgency: one of 'low', 'medium', 'high', 'immediate'
         - difficulty: integer 1-5 matching concept difficulty (${concept.difficulty || 3})
         - tags: 2-4 relevant tags
-        - conditions: maximum 2 entries, [] when not needed
+        - conditions: follow canonical rules from prompt. DIRECTION: degraded/declining/underfunded premise → max bound. Strong/elevated/opportunity premise → min bound. Maximum 2 entries, [] when not needed.
         - requires: declare structural preconditions when foreign relationship actors are involved (e.g., { "adversary": true }, { "land_border_adversary": true }, { "formal_ally": true }). Omit for domestic scenarios.
         - relationship_conditions: omit for domestic/internal scenarios
         - relationshipEffects on options: add when an option outcome would realistically change a relationship score (e.g., { "relationshipId": "adversary", "delta": -15 })
 
-        ${drafterPromptBase}
+        ${resolvedDrafterPromptBase}
         `;
       } else {
         drafterPrompt = `
         **MANDATORY: USE TOKEN PLACEHOLDERS FOR INSTITUTIONS — NATURAL LANGUAGE FOR RELATIONSHIPS:**
         BAD: "The Finance Ministry announced new tariffs on Brazilian imports, drawing criticism from the opposition party."
-        GOOD: "{finance_role} announced new tariffs on imports from your trade partner, drawing criticism from {the_opposition_party}."
+        GOOD: "the {finance_role} announced new tariffs on imports from your trade partner, drawing criticism from the {opposition_party}."
 
         BAD: "The president ordered the military to secure the border with Russia."
         GOOD: "{leader_title} ordered {armed_forces_name} to secure the border with your border rival."
 
-        GOVERNMENT ROLES → MUST use tokens: {finance_role}, {defense_role}, {foreign_affairs_role}, {leader_title}, {legislature}, {governing_party}, {judiciary_body}, {armed_forces_name}, etc.
-        RELATIONSHIP ACTORS → Write as natural language: "your border rival", "the allied government", "your main adversary", "your trade partner", "a neighboring rival". NEVER use {the_adversary}, {the_ally}, {the_border_rival}, etc.
+        GOVERNMENT ROLES → MUST use tokens: {finance_role}, {defense_role}, {foreign_affairs_role}, {leader_title}, {legislature}, {governing_party}, {armed_forces_name}, {central_bank}, {intelligence_agency}, {police_force}, {judicial_role}, {prosecutor_role}, etc.
+        Write "the {finance_role}" or "your {defense_role}" naturally — NO {the_X} prefix tokens.
+        RELATIONSHIP ACTORS → Write as natural language: "your border rival", "the allied government", "your main adversary", "your trade partner", "a neighboring rival". NEVER use relationship tokens.
         COUNTRY NAMES → Never hardcode. Use {player_country} for the player's country only.
         OPTION DOMAIN CONTRACT → if OPTION DOMAIN REQUIREMENTS are present, each option must include at least one effect on its assigned primary metric.
 
@@ -2627,12 +2675,12 @@ async function expandConceptToLoop(
         - urgency: must be one of 'low', 'medium', 'high', 'immediate'
         - difficulty: integer 1-5 matching concept difficulty (${concept.difficulty || 3})
         - tags: 2-4 relevant tags for this scenario
-        - conditions: follow canonical rules from prompt (economic crisis → metric_economy max 38, etc.). Output [] for neutral governance scenarios. Maximum 2 entries. Key must be "conditions".
+        - conditions: follow canonical rules from prompt. DIRECTION: degraded/declining/underfunded premise → max bound. Strong/elevated/opportunity premise → min bound. (e.g. military readiness declining → metric_military max 45, NOT min). Maximum 2 entries.
         - requires: if the scenario involves a foreign relationship actor, declare the structural precondition. Examples: { "adversary": true }, { "land_border_adversary": true }, { "formal_ally": true }, { "trade_partner": true }, { "nuclear_state": true }. Omit for purely domestic/internal scenarios.
         - relationship_conditions: (optional numeric gating) only include when a specific relationship strength threshold is required for the scenario to make sense (e.g. a peace deal requiring strength > 20). Maximum 3 entries.
         - relationshipEffects on options: for each option whose outcome would realistically improve or worsen a relationship, add a relationshipEffects array. Use role IDs matching the requires block. Example: { "relationshipId": "border_rival", "delta": -20 } for a military confrontation. Omit for domestic/economic options.
 
-        ${drafterPromptBase}
+        ${resolvedDrafterPromptBase}
 
         # ⚠️ CRITICAL FINAL REMINDER ⚠️
 
@@ -2647,7 +2695,7 @@ async function expandConceptToLoop(
 
         **ACTIVE VOICE (>50% PASSIVE IN ANY MULTI-SENTENCE FIELD = REJECTED)**:
         Scan every field before submitting. Rewrite passive to active:
-        ❌ "The plan was passed by {the_legislature}" → ✅ "{the_legislature} passed the plan"
+        ❌ "The plan was passed by the {legislature}" → ✅ "the {legislature} passed the plan"
         ❌ "Protests were fueled by the cuts" → ✅ "The cuts fueled protests"
         ❌ "fiscal discipline is restored" (advisor feedback) → ✅ "austerity restores fiscal discipline"
         ❌ "concerns were raised" → ✅ "opposition lawmakers raised concerns"
@@ -2674,7 +2722,7 @@ async function expandConceptToLoop(
           drafterPrompt += `\nFix these exact issues and return only valid JSON:\n${retryIssues}\n`;
           const retryRuleSet = new Set(lastAuditResult.issues.map((issue: any) => issue.rule));
           if (retryRuleSet.has('token-grammar-issue')) {
-            drafterPrompt += `\nTOKEN GRAMMAR RULE: if an outcome field starts with a {token}, the next narrative word must be lowercase (example: "{the_player_country} signed...").\n`;
+            drafterPrompt += `\nTOKEN GRAMMAR RULE: if an outcome field starts with a {token}, the next narrative word must be lowercase (example: "the {player_country} signed...").\n`;
           }
           if (retryRuleSet.has('complex-sentence')) {
             drafterPrompt += `\nREADABILITY RULE: split long sentences. Keep each sentence under 30 words, use active voice, and avoid chained clauses.\n`;
@@ -2686,21 +2734,17 @@ async function expandConceptToLoop(
             drafterPrompt += `\nMETRIC RULE: every effect targetMetricId must come from the approved metric list exactly as written. Do not invent variants like "metric_interest_rates", "metric_supply_chain", or "metric_price_controls". If a concept suggests those ideas, map them to existing canonical metrics such as metric_economy, metric_trade, metric_budget, metric_inflation, metric_public_order, or other listed metrics.\n`;
           }
           if (retryRuleSet.has('rendered-output-unresolved-token') || retryRuleSet.has('rendered-output-token-leak') || retryRuleSet.has('rendered-output-fallback-heavy')) {
-            drafterPrompt += `\nRENDERED OUTPUT RULE: the scenario must render cleanly for real countries. Use only approved tokens already listed in the token system. Prefer core domestic tokens that are widely available ({leader_title}, {finance_role}, {legislature}, {governing_party}, {player_country}, {the_player_country}, {central_bank}). Avoid niche or article-form tokens unless they are explicitly listed. Do not leave raw tokens in titles.\n`;
+            drafterPrompt += `\nRENDERED OUTPUT RULE: the scenario must render cleanly for real countries. Use only approved tokens from the minimal set ({leader_title}, {finance_role}, {legislature}, {governing_party}, {player_country}, {central_bank}). Write "the {token}" naturally — no {the_X} prefix tokens. Do not leave raw tokens in titles.\n`;
           }
         } else if (failureCategory === 'token-violation') {
           const hasNoTokens = lastAuditResult.issues.some((i: any) => i.rule === 'no-tokens');
           if (hasNoTokens) {
-            drafterPrompt += `\n**CRITICAL: YOUR SCENARIO HAD NO TOKENS AT ALL**. Every scenario MUST use tokens for government roles and institutions. Replace hardcoded names with approved token placeholders:\n  - Leader → {leader_title}\n  - Minister → {finance_role}, {defense_role}, {foreign_affairs_role}, {interior_role}, etc.\n  - Institutions → {legislature}, {governing_party}, {judiciary_body}, {armed_forces_name}\n  - Country name → {player_country}\nNOTE: For foreign/relationship actors (adversary, ally, border rival), use natural language ("your adversary", "the allied government") — do NOT use relationship tokens.\nAt minimum, every description and every option text MUST contain at least one {token}.\n`;
+            drafterPrompt += `\n**CRITICAL: YOUR SCENARIO HAD NO TOKENS AT ALL**. Every scenario MUST use tokens for government roles and institutions. Replace hardcoded names with approved token placeholders:\n  - Leader → {leader_title}\n  - Minister → {finance_role}, {defense_role}, {foreign_affairs_role}, {interior_role}, etc.\n  - Institutions → {legislature}, {governing_party}, {armed_forces_name}, {central_bank}\n  - Country name → {player_country}\n  Write "the {finance_role}" or "your {defense_role}" naturally — no {the_X} prefix tokens.\nNOTE: For foreign/relationship actors (adversary, ally, border rival), use natural language ("your adversary", "the allied government") — do NOT use relationship tokens.\nAt minimum, every description and every option text MUST contain at least one {token}.\n`;
           } else {
             const inventedIssues = lastAuditResult.issues.filter((i: any) => i.rule === 'invalid-token' && i.message?.includes('Invented token'));
           const inventedList = inventedIssues.map((i: any) => { const m = i.message?.match(/\{([a-z_]+)\}/); return m ? `{${m[1]}}` : null; }).filter(Boolean) as string[];
           if (inventedList.length > 0) {
-            drafterPrompt += `\n**TOKEN VIOLATION**: You invented these INVALID tokens: ${inventedList.join(', ')}. They are NOT in the approved whitelist.\n`;
-            for (const t of inventedList) {
-              const m = t.match(/^\{the_(\w+)\}$/);
-              if (m) drafterPrompt += `- \`${t}\` does not exist. Use \`{${m[1]}}\` (bare form) or the correct article-form token.\n`;
-            }
+            drafterPrompt += `\n**TOKEN VIOLATION**: You invented these INVALID tokens: ${inventedList.join(', ')}. They are NOT in the approved whitelist. Only use tokens from the approved minimal set.\n`;
           } else {
             drafterPrompt += `\n**TOKEN VIOLATION**: You used incorrect tokens or casing. Use only allowed tokens and ensure they are ALL LOWERCASE (e.g., {finance_role}).\n`;
           }
@@ -2710,7 +2754,7 @@ async function expandConceptToLoop(
 - Replace policy jargon with simple words.
 - Keep every sentence at 25 words or fewer.
 - Keep each sentence to at most 3 conjunction clauses.
-- Active voice is required. Rewrite passive constructions: "was passed" → "{legislature} passed", "was announced" → "{leader_title} announced", "was rejected" → "you rejected", "were imposed" → "you imposed", "has been implemented" → "{leader_title} implemented". If more than half the sentences in any field are passive, the scenario fails automatically.
+- Active voice is required. Rewrite passive constructions: "was passed" → "the {legislature} passed", "was announced" → "{leader_title} announced", "was rejected" → "you rejected", "were imposed" → "you imposed", "has been implemented" → "{leader_title} implemented". If more than half the sentences in any field are passive, the scenario fails automatically.
 - Make labels short direct actions (no "if", "unless", colons, or parentheses).\n`;
         } else if (failureCategory === 'adjacency-token-violation') {
           drafterPrompt += `\n**GEOGRAPHIC LANGUAGE ERROR**: You used border/neighbor language ("bordering", "neighboring", "border closure", "shared border") with a foreign actor. Ensure the scenario has metadata.requires.land_border_adversary=true if the scenario involves a bordering rival. Write the border actor as "your border rival" — never use relationship token placeholders.\n`;
@@ -2759,14 +2803,9 @@ Write as if you are a real cabinet minister briefing the head of government on T
             .map(({ concept, token }: { concept: string; token: string }) => `  - ${concept} → ${token}`)
             .join('\n');
           drafterPrompt += `\n\nNEVER write: "ruling coalition", "governing coalition", "coalition government", "parliamentary majority/minority/support". Use {governing_party} and {legislature} tokens instead.\n`;
-          drafterPrompt += `\nALSO: Never write hardcoded institution names. Use role tokens:\n- "Finance Ministry" / "Treasury Department" → {finance_role}\n- "Justice Ministry" / "Dept of Justice" → {justice_role}\n- "Foreign Ministry" / "State Department" → {foreign_affairs_role}\n- "Defense Ministry" / "Dept of Defense" → {defense_role}\n- "Interior Ministry" / "Home Office" → {interior_role}\n- "Health Ministry" / "Dept of Health" → {health_role}\n- "Education Ministry" / "Dept of Education" → {education_role}\n`;
-        } else if (failureCategory === 'token-article-form-violation') {
-          drafterPrompt += `\n**TOKEN ARTICLE FORM ERROR**: You wrote "the {token}" which produces broken output at runtime. RULES:
-1. NEVER write "the {something}" — either use {the_player_country} (the only pre-built article-form token) or rewrite without the article.
-   ❌ "the {legislature}" → ✅ "{legislature}" or rewrite as "your legislature"
-   ❌ "the {finance_role}" → ✅ "{finance_role}"
-   Note: Relationship actors (adversary, ally, border rival) must use natural language — not tokens at all.
-2. Option LABELS must be plain text — NO tokens. "Fund {legislature}" → "Fund the Legislature"\n`;
+          drafterPrompt += `\nALSO: Never write hardcoded institution names. Use role tokens (write "the {token}" naturally):\n- "Finance Ministry" / "Treasury Department" → the {finance_role}\n- "Justice Ministry" / "Dept of Justice" → the {justice_role}\n- "Foreign Ministry" / "State Department" → the {foreign_affairs_role}\n- "Defense Ministry" / "Dept of Defense" → the {defense_role}\n- "Interior Ministry" / "Home Office" → the {interior_role}\n- "Health Ministry" / "Dept of Health" → the {health_role}\n- "Education Ministry" / "Dept of Education" → the {education_role}\n`;
+        } else if (failureCategory === 'title-violation') {
+          drafterPrompt += `\n**TITLE LENGTH ERROR**: Your title must be 4–8 words. Three-word titles are rejected. Use "Verb + Agent + Outcome" pattern. Examples: "Parliament Blocks Emergency Spending Bill", "Auditors Raid Central Bank After Leak".\n`;
         } else if (failureCategory === 'gdp-as-amount-violation') {
           drafterPrompt += `\n**GDP DESCRIPTION MISUSE**: You used {gdp_description} as if it were a specific stolen or siphoned amount. {gdp_description} resolves to the ENTIRE national GDP — it is a scale descriptor, not a stealable sum. Replace any reference to stealing/siphoning/diverting {gdp_description} with the token {graft_amount}, which auto-scales to a realistic corruption amount for this country's economy.\n`;
         } else if (failureCategory === 'outcome-voice-violation' || failureCategory === 'framing-violation') {
@@ -2809,14 +2848,36 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
           const ollamaTemp = attempt === 0 ? 0.5 : 0.3;
 
           // Phase A: Skeleton — title, description, 3 option texts
-          // Pre-resolve tokens for the target country when available (M4)
-          let tokenContext = buildBundleScopedTokenPrompt(bundle, request?.compiledRegistry);
-          if (request?.applicable_countries?.length) {
-            const { countries: countriesData } = await loadCountriesData();
-            const primaryCountryId = request.applicable_countries[0];
-            const primaryCountry = countriesData[primaryCountryId];
-            if (primaryCountry) {
-              tokenContext = preResolveTokenContext(primaryCountry, scopeTier, request?.compiledRegistry);
+          const { countries: ollamaCountriesData } = await loadCountriesData();
+          const ollamaPrimaryCountry = request?.applicable_countries?.length
+            ? ollamaCountriesData[request.applicable_countries[0]]
+            : undefined;
+          const ollamaTokenStrategy = deriveTokenStrategy(scopeTier);
+          const tokenContext = ollamaTokenStrategy === 'none' && ollamaPrimaryCountry
+            ? buildExclusivePromptSection(ollamaPrimaryCountry)
+            : buildMinimalTokenPromptSection();
+
+          const SKELETON_ISSUE_RULES = new Set([
+            'title-length', 'title-format', 'banned-phrase', 'hardcoded-institution-phrase',
+            'hardcoded-gov-structure', 'third-person-framing', 'sentence-start-bare-token',
+            'token-casing-error', 'invalid-token', 'option-preview-in-description',
+          ]);
+          const EFFECTS_ISSUE_RULES = new Set([
+            'outcome-second-person', 'third-person-framing', 'inverse-metric-sign',
+            'invalid-metric-id', 'option-metric-overlap', 'option-domain-missing-primary',
+            'missing-headline', 'missing-summary', 'missing-context', 'short-summary', 'short-article',
+            'hard-coded-currency',
+          ]);
+          let skeletonRetryFeedback: string | undefined;
+          let effectsRetryFeedback: string | undefined;
+          if (attempt > 0 && lastAuditResult && lastAuditResult.issues.length > 0) {
+            const skelIssues = lastAuditResult.issues.filter((i: any) => SKELETON_ISSUE_RULES.has(i.rule));
+            const effIssues = lastAuditResult.issues.filter((i: any) => EFFECTS_ISSUE_RULES.has(i.rule) || !SKELETON_ISSUE_RULES.has(i.rule));
+            if (skelIssues.length > 0) {
+              skeletonRetryFeedback = skelIssues.slice(0, 5).map((i: any) => `- [${i.rule}] ${i.message}`).join('\n');
+            }
+            if (effIssues.length > 0) {
+              effectsRetryFeedback = effIssues.slice(0, 5).map((i: any) => `- [${i.rule}] ${i.message}`).join('\n');
             }
           }
 
@@ -2830,6 +2891,7 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
             bundleGuidance: bundleOverlay.drafter,
             scopeGuidance: scopeOverlay.drafter,
             tokenContext,
+            retryFeedback: skeletonRetryFeedback,
           });
           emitEngineEvent({ level: 'info', code: 'phase_skeleton', message: `Phase A: skeleton (${skeletonPrompt.length} chars)`, data: { promptPreview: skeletonPrompt.slice(0, 500), promptLength: skeletonPrompt.length } });
 
@@ -2876,6 +2938,7 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
                 inverseMetrics: Array.from(auditCfg.inverseMetrics),
                 scopeTier,
                 optionDomains: concept.optionDomains,
+                retryFeedback: effectsRetryFeedback,
               });
               emitEngineEvent({ level: 'info', code: 'phase_effects', message: `Phase B: effects & outcomes (${effectsPrompt.length} chars)`, data: { promptPreview: effectsPrompt.slice(0, 500), promptLength: effectsPrompt.length } });
 
@@ -2938,7 +3001,12 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
                   description: skeleton.description,
                   options: mergedOptions,
                   metadata,
-                  conditions: [],
+                  conditions: buildBestEffortScenarioConditions({
+                    architectConditions: concept.triggerConditions,
+                    title: skeleton.title,
+                    description: skeleton.description,
+                    tags: metadata.tags,
+                  }),
                   relationship_conditions: [],
                 };
 
@@ -2958,6 +3026,7 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
                     theme: concept.theme,
                     scopeTier,
                     scopeKey,
+                    tokenStrategy: deriveTokenStrategy(scopeTier),
                     ...(request?.clusterId ? { clusterId: request.clusterId } : {}),
                     ...(request?.exclusivityReason ? { exclusivityReason: request.exclusivityReason } : {}),
                     ...(request?.sourceKind ? { sourceKind: request.sourceKind } : {}),
@@ -2966,8 +3035,26 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
                   },
                 };
 
+                const preAdvisorTokenStrategy = deriveTokenStrategy(scopeTier);
+                if (preAdvisorTokenStrategy !== 'none') {
+                  preAdvisorScenario.title = normalizeTokenAliases(preAdvisorScenario.title);
+                  preAdvisorScenario.description = normalizeTokenAliases(preAdvisorScenario.description);
+                  for (const opt of preAdvisorScenario.options) {
+                    opt.text = normalizeTokenAliases(opt.text);
+                    if (opt.outcomeHeadline) opt.outcomeHeadline = normalizeTokenAliases(opt.outcomeHeadline);
+                    if (opt.outcomeSummary) opt.outcomeSummary = normalizeTokenAliases(opt.outcomeSummary);
+                    if (opt.outcomeContext) opt.outcomeContext = normalizeTokenAliases(opt.outcomeContext);
+                  }
+                  sanitizeInventedTokens(preAdvisorScenario, (t: string) => isValidToken(t));
+                }
+
+                // Phase C.5: Pre-advisor render check — only meaningful for exclusive/cluster/regional scope
+                // where specific country token data is expected to be populated. For universal scope, any
+                // remaining {token} patterns are valid tokens that resolve correctly at runtime per-country;
+                // sanitizeInventedTokens above has already removed all invalid token syntax.
                 const renderCountries = request?.countries ?? {};
-                const shouldRunPreAdvisorRenderCheck = Object.keys(renderCountries).length > 0;
+                const isCountrySpecificScope = scopeTier === 'exclusive' || scopeTier === 'cluster' || scopeTier === 'regional';
+                const shouldRunPreAdvisorRenderCheck = isCountrySpecificScope && Object.keys(renderCountries).length > 0;
                 let preAdvisorRenderBlocked = false;
                 if (shouldRunPreAdvisorRenderCheck) {
                   const preAdvisorRenderedOutput = evaluateRenderedOutputQuality(
@@ -3006,14 +3093,14 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
                     title: coreData.title,
                     description: coreData.description,
                     options: mergedOptions.map((o: any) => ({ id: o.id, text: o.text, label: o.label })),
-                  });
+                  }, scopeTier);
                   const advisorModel = resolvePhaseModel(request?.modelConfig, 'advisor');
-                  emitEngineEvent({ level: 'info', code: 'phase_advisor', message: `Phase D: advisor feedback (model=${advisorModel})` });
+                  emitEngineEvent({ level: 'info', code: 'phase_advisor', message: `Phase C: advisor feedback (model=${advisorModel})` });
 
                   const advStartMs = Date.now();
                   const advisorResult = await callModel(OLLAMA_ADVISOR_CONFIG, advisorPrompt, ADVISOR_FEEDBACK_SCHEMA, advisorModel);
                   const advDurationMs = Date.now() - advStartMs;
-                  emitEngineEvent({ level: advisorResult?.data ? 'success' : 'error', code: 'phase_advisor_result', message: `Phase D result: ${advisorResult?.data ? 'OK' : advisorResult?.error ?? 'null'} (${advDurationMs}ms)`, data: { error: advisorResult?.error, durationMs: advDurationMs } });
+                  emitEngineEvent({ level: advisorResult?.data ? 'success' : 'error', code: 'phase_advisor_result', message: `Phase C result: ${advisorResult?.data ? 'OK' : advisorResult?.error ?? 'null'} (${advDurationMs}ms)`, data: { error: advisorResult?.error, durationMs: advDurationMs } });
                   if (!advisorResult?.data) {
                     drafterError = advisorResult?.error ?? 'Advisor phase returned null';
                   } else {
@@ -3075,6 +3162,13 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
           id: `${baseId}_act${actPlan.actIndex}`,
           phase: 'mid',
           actIndex: actPlan.actIndex,
+          conditions: buildBestEffortScenarioConditions({
+            existingConditions: Array.isArray(actDetails.conditions) ? actDetails.conditions : undefined,
+            architectConditions: concept.triggerConditions,
+            title: actDetails.title,
+            description: actDetails.description,
+            tags: actDetails.metadata?.tags,
+          }),
           metadata: {
             ...actDetails.metadata,
             source: mode as any,
@@ -3086,6 +3180,7 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
             theme: concept.theme,
             scopeTier,
             scopeKey,
+            tokenStrategy: deriveTokenStrategy(scopeTier),
             ...(request?.clusterId ? { clusterId: request.clusterId } : {}),
             ...(request?.exclusivityReason ? { exclusivityReason: request.exclusivityReason } : {}),
             ...(request?.sourceKind ? { sourceKind: request.sourceKind } : {}),
@@ -3095,7 +3190,7 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
         };
 
         const isQualityCriticalManualRun = mode === 'manual' && !Boolean(request?.lowLatencyMode);
-        const skipEditorial = shouldSkipEditorialReview({
+        const skipEditorial = isOllamaRun || shouldSkipEditorialReview({
           lowLatencyMode: Boolean(request?.lowLatencyMode),
           mode,
           useStandardPath,
@@ -3162,6 +3257,28 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
             retryCount: attempt,
           });
 
+          await logPipelineStageMetric({
+            scenarioId: act.id,
+            jobId: request?.jobId ?? attemptId,
+            bundle,
+            stages: {
+              architect: { passed: true, issueCount: 0, issues: [] },
+              drafter: { passed: true, issueCount: 0, issues: [] },
+              tokenResolve: { passed: true, unresolvedCount: 0, fallbackCount: 0 },
+              audit: {
+                score: lastAuditResult.score,
+                issueCount: lastAuditResult.issues.length,
+                issueTypes: [...new Set(lastAuditResult.issues.map((i: any) => i.rule as string))],
+              },
+              repair: {
+                attempted: wasAutoFixed,
+                repairCount: wasAutoFixed ? lastAuditResult.issues.length : 0,
+                failedRepairs: [],
+              },
+            },
+            overallPassed: true,
+          });
+
           break; // Success, exit retry loop
         } else {
           // Audit failed, log and retry
@@ -3226,6 +3343,24 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
             auditScore: lastAuditResult.score,
             failureReasons: lastAuditResult.issues.map(i => i.rule),
             retryCount: attempt,
+          });
+
+          await logPipelineStageMetric({
+            scenarioId: act.id,
+            jobId: request?.jobId ?? attemptId,
+            bundle,
+            stages: {
+              architect: { passed: true, issueCount: 0, issues: [] },
+              drafter: { passed: false, issueCount: lastAuditResult.issues.length, issues: topRules },
+              tokenResolve: { passed: true, unresolvedCount: 0, fallbackCount: 0 },
+              audit: {
+                score: lastAuditResult.score,
+                issueCount: lastAuditResult.issues.length,
+                issueTypes: topRules,
+              },
+              repair: { attempted: false, repairCount: 0, failedRepairs: topRules },
+            },
+            overallPassed: false,
           });
 
           console.warn(`[ScenarioEngine] Act ${actPlan.actIndex} attempt ${attempt + 1}/${MAX_RETRIES} failed (score: ${lastAuditResult.score}). Issues:`, JSON.stringify(lastAuditResult.issues, null, 2));

@@ -99,6 +99,27 @@ describe('clampMetricDeltas', () => {
         expect(result[0].metricId).toBe('metric_economy');
     });
 
+    test('accepts current canonical metric IDs', () => {
+        const deltas = [
+            { metricId: 'metric_democracy', delta: 4.0 },
+            { metricId: 'metric_sovereignty', delta: -3.5 },
+            { metricId: 'metric_unrest', delta: 6.5 },
+            { metricId: 'metric_foreign_influence', delta: -2.5 },
+        ];
+        const result = clampMetricDeltas(deltas, { min: -10, max: 10 });
+        expect(result).toEqual(deltas);
+    });
+
+    test('rejects legacy aliases that are not canonical metric IDs', () => {
+        const deltas = [
+            { metricId: 'metric_inequality', delta: 2.0 },
+            { metricId: 'metric_civil_liberties', delta: -1.5 },
+            { metricId: 'metric_equality', delta: 1.25 },
+        ];
+        const result = clampMetricDeltas(deltas, { min: -10, max: 10 });
+        expect(result).toEqual([{ metricId: 'metric_equality', delta: 1.25 }]);
+    });
+
     test('clamps deltas to bounds', () => {
         const deltas = [
             { metricId: 'metric_approval', delta: 20.0 },
@@ -109,7 +130,6 @@ describe('clampMetricDeltas', () => {
         expect(result[1].delta).toBe(-10);
     });
 });
-
 describe('validateRequest', () => {
     test('accepts valid diplomatic request', () => {
         expect(validateRequest(makeDiplomaticRequest())).toBeNull();
@@ -155,6 +175,19 @@ describe('validateRequest', () => {
 });
 
 describe('sanitizeResponse', () => {
+    test('includes resolved backend turn state', () => {
+        const req = makeDiplomaticRequest({ metrics: { metric_approval: 50, metric_economy: 45, metric_foreign_relations: 50 } });
+        const raw = makeRawResponse({
+            metricDeltas: [{ metricId: 'metric_economy', delta: 4 }],
+        });
+        const result = sanitizeResponse(raw, req);
+
+        expect(result.resolvedState).toBeDefined();
+        expect(result.resolvedState?.turn).toBe(req.turn + 1);
+        expect(result.resolvedState?.metrics.metric_economy).toBeGreaterThan(45);
+        expect(result.resolvedState?.metricHistory.metric_economy.length).toBeGreaterThan(1);
+    });
+
     test('passes through valid diplomatic response within bounds', () => {
         const req = makeDiplomaticRequest();
         const raw = makeRawResponse();

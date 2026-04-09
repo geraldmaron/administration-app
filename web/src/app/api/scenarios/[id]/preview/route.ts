@@ -52,6 +52,11 @@ export async function GET(
     }
 
     const context = buildSimulationTokenContext(country, countriesById);
+    if (scenario.token_map) {
+      for (const [k, v] of Object.entries(scenario.token_map)) {
+        if (!context[k]) context[k] = v;
+      }
+    }
     const resolved = resolveSimulationScenario(scenario, country, metrics, context);
 
     return NextResponse.json({

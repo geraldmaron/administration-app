@@ -69,11 +69,11 @@ describe('generation-models', () => {
   it('resolves default models when no overrides are provided', () => {
     expect(getResolvedGenerationModels()).toEqual({
       architect: 'gpt-4o-mini',
-      advisor: 'gpt-4o-mini',
+      advisor: 'gpt-4.1-mini',
       blueprint: 'gpt-4o-mini',
       drafter: 'gpt-4o-mini',
       repair: 'gpt-4o-mini',
-      contentQuality: 'gpt-4o-mini',
+      contentQuality: 'gpt-4.1-mini',
       narrativeReview: 'gpt-4o-mini',
       embedding: 'text-embedding-3-small',
     });

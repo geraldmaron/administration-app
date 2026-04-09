@@ -6,6 +6,7 @@ import {
   CONCEPT_TO_TOKEN_MAP,
   ALL_TOKENS,
   ARTICLE_FORM_TOKEN_NAMES,
+  SENTENCE_START_ARTICLE_FORM_TOKEN_NAMES,
 } from '../lib/token-registry';
 import {
   TokenRegistryDocument,
@@ -97,7 +98,9 @@ function buildRegistryDocument(): TokenRegistryDocument {
         category,
         enabled: true,
         ...(DYNAMIC_TOKENS.has(name) ? { dynamic: true } : {}),
-        ...(articleFormBaseNames.has(name) ? { articleForm: { enabled: true } } : {}),
+        ...(articleFormBaseNames.has(name)
+          ? { articleForm: { enabled: true, sentenceStartSafe: SENTENCE_START_ARTICLE_FORM_TOKEN_NAMES.has(name) } }
+          : {}),
       };
     }
   }

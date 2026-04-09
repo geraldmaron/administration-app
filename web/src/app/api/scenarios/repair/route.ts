@@ -5,6 +5,44 @@ import { requireAdminAuth } from '@/lib/auth';
 import { analyzeScenario, applyPatchesToScenario, applyRelationshipConditionRepair } from '@shared/scenario-repair';
 import type { ScenarioDetail, ApprovedRepair } from '@/lib/types';
 
+let _countryNameToId: Map<string, string> | null = null;
+let _knownCountryIds: Set<string> | null = null;
+
+async function loadCountryLookup(): Promise<{ nameToId: Map<string, string>; knownIds: Set<string> }> {
+  if (_countryNameToId && _knownCountryIds) {
+    return { nameToId: _countryNameToId, knownIds: _knownCountryIds };
+  }
+  const snap = await db.collection('countries').get();
+  const nameToId = new Map<string, string>();
+  const knownIds = new Set<string>();
+  snap.forEach((doc) => {
+    knownIds.add(doc.id);
+    const data = doc.data();
+    const name: unknown = data.name;
+    if (typeof name === 'string') nameToId.set(name.toLowerCase(), doc.id);
+  });
+  _countryNameToId = nameToId;
+  _knownCountryIds = knownIds;
+  return { nameToId, knownIds };
+}
+
+function repairApplicableCountries(
+  ids: unknown,
+  nameToId: Map<string, string>,
+  knownIds: Set<string>
+): string[] | null {
+  if (!Array.isArray(ids)) return null;
+  let changed = false;
+  const fixed = (ids as unknown[]).map((entry) => {
+    if (typeof entry !== 'string') return entry;
+    if (knownIds.has(entry)) return entry;
+    const mapped = nameToId.get(entry.toLowerCase());
+    if (mapped) { changed = true; return mapped; }
+    return entry;
+  });
+  return changed ? (fixed as string[]) : null;
+}
+
 export const dynamic = 'force-dynamic';
 
 const MAX_IDS = 50;
@@ -77,7 +115,10 @@ export async function POST(request: NextRequest) {
       }
 
       const ids = body.ids as string[];
-      const snaps = await Promise.all(ids.map((id) => db.collection('scenarios').doc(id).get()));
+      const [snaps, { nameToId, knownIds }] = await Promise.all([
+        Promise.all(ids.map((id) => db.collection('scenarios').doc(id).get())),
+        loadCountryLookup(),
+      ]);
 
       const results = snaps.map((snap) => {
         if (!snap.exists) {
@@ -99,6 +140,19 @@ export async function POST(request: NextRequest) {
             path: 'relationship_conditions',
             before: JSON.stringify(scenario.relationship_conditions ?? []),
             after: JSON.stringify(relFixed.relationship_conditions),
+          });
+          analysis.hasChanges = true;
+        }
+        const fixedCountries = repairApplicableCountries(
+          scenario.metadata?.applicable_countries,
+          nameToId,
+          knownIds
+        );
+        if (fixedCountries) {
+          analysis.changes.push({
+            path: 'metadata.applicable_countries',
+            before: JSON.stringify(scenario.metadata?.applicable_countries),
+            after: JSON.stringify(fixedCountries),
           });
           analysis.hasChanges = true;
         }
@@ -133,7 +187,10 @@ export async function POST(request: NextRequest) {
         const scenario = toDetail(snap.id, snap.data()!);
 
         const relConditionPatch = repair.patches.find(p => p.path === 'relationship_conditions');
-        const textPatches = repair.patches.filter(p => p.path !== 'relationship_conditions');
+        const countriesPatch = repair.patches.find(p => p.path === 'metadata.applicable_countries');
+        const textPatches = repair.patches.filter(
+          p => p.path !== 'relationship_conditions' && p.path !== 'metadata.applicable_countries'
+        );
         const patched = applyPatchesToScenario(scenario, textPatches);
 
         const prevRepairCount = snap.data()?.metadata?.repairMetadata?.repairCount ?? 0;
@@ -147,11 +204,22 @@ export async function POST(request: NextRequest) {
         if (relConditionPatch) {
           try { extraFields.relationship_conditions = JSON.parse(relConditionPatch.value); } catch { /* ignore */ }
         }
+        let fixedApplicableCountries: string[] | undefined;
+        if (countriesPatch) {
+          try {
+            const parsed: unknown = JSON.parse(countriesPatch.value);
+            if (Array.isArray(parsed)) fixedApplicableCountries = parsed as string[];
+          } catch { /* ignore */ }
+        }
         await docRef.set(
           {
             ...rest,
             ...extraFields,
-            metadata: { ...rest.metadata, repairMetadata },
+            metadata: {
+              ...rest.metadata,
+              ...(fixedApplicableCountries !== undefined ? { applicable_countries: fixedApplicableCountries } : {}),
+              repairMetadata,
+            },
             updated_at: FieldValue.serverTimestamp(),
           },
           { merge: true }

@@ -19,7 +19,7 @@ class ScenarioNavigator {
 
         AppLogger.info("[ScenarioNavigator] Loading scenarios from Firebase...")
         scenarios = await FirebaseDataService.shared.getAllScenarios()
-        isLoaded = true
+        isLoaded = !scenarios.isEmpty
         AppLogger.info("[ScenarioNavigator] Loaded \(scenarios.count) scenarios")
     }
 
@@ -481,11 +481,11 @@ extension ScenarioNavigator {
             if countryIndex < minIndex { return false }
         }
         if let needed = req.cyberCapable {
-            let offensiveCyber = country?.militaryProfile?.cyber?.offensive ?? 0
+            let offensiveCyber = country?.militaryProfile?.cyber.offensive ?? 0
             if (offensiveCyber > 50) != needed { return false }
         }
         if let needed = req.powerProjection {
-            let doctrine = country?.militaryProfile?.doctrine ?? ""
+            let doctrine = country?.militaryProfile?.doctrine.rawValue ?? ""
             if (doctrine == "power_projection") != needed { return false }
         }
         if let needed = req.largeMilitary {
@@ -495,12 +495,12 @@ extension ScenarioNavigator {
         }
         if let needed = req.authoritarianRegime {
             let authCategories: Set<String> = ["authoritarian", "totalitarian", "absolute_monarchy"]
-            let govCat = country?.geopoliticalProfile?.governmentCategory ?? ""
+            let govCat = country?.geopoliticalProfile?.governmentCategory.rawValue ?? ""
             if authCategories.contains(govCat) != needed { return false }
         }
         if let needed = req.democraticRegime {
             let demoCategories: Set<String> = ["liberal_democracy", "constitutional_monarchy"]
-            let govCat = country?.geopoliticalProfile?.governmentCategory ?? ""
+            let govCat = country?.geopoliticalProfile?.governmentCategory.rawValue ?? ""
             if demoCategories.contains(govCat) != needed { return false }
         }
         if let needed = req.fragileState {

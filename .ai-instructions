@@ -1,49 +1,20 @@
 # AI Assistant Instructions
 
-## Core Principles
-1. Validate everything - no assumptions
-2. Test all changes
-3. Follow existing patterns
-4. Be concise and direct
+See `CLAUDE.md` for the full development guide — project structure, conventions, agent roles, code review checklist, and key contracts.
 
-## Comments Policy
-- ❌ NO point-in-time comments ("Added on X date", "Bug fix #123")
-- ✅ File-level block comment summarizing purpose
-- ✅ Single-line section comments explaining what sections do
-- 🗑️ Remove outdated/redundant comments when encountered
-- Focus on WHY, not WHAT
+## Platform Quick-Reference
 
-## Documentation
-- Never create documentation files unless explicitly requested
-- No unsolicited README updates, markdown files, or change summaries
-- If "document this" is ambiguous, ask for clarification first
+### TypeScript / Next.js
+- App router and server components
+- Strict mode; no `any` without justification
+- async/await; no raw promise chains
 
-## Planning Workflow
-1. **Always search for `plan.md`** before starting work
-2. If found:
-   - Read and understand current/planned work
-   - Validate accuracy and relevance
-   - Only update if explicitly requested
-3. Check for related issues, TODOs, or planning docs
+### Firebase
+- Handle quota limits and rate limiting explicitly
+- All writes that require validation go through the function layer, never direct from client
+- Security rules must be updated alongside any data model change
 
-## Validation & Testing
-- Validate all assumptions before implementing
-- Test changes immediately after implementation
-- Use existing test suites when available
-- Check for compilation/runtime errors after edits
-- Verify dependencies are installed
-
-## Code Quality
-- Follow codebase conventions and patterns
-- TypeScript: strict mode, proper types, no `any` unless justified
-- Keep functions focused and small
-- Handle errors explicitly
-- Use modern syntax (ES6+, async/await)
-- Prefer immutability and functional patterns
-
-## Project Context
-This is a multi-platform game project:
-- **iOS**: Swift + SwiftUI
-- **Backend**: Firebase Functions + Cloud Run
-
-Follow platform-specific best practices for each.
+### Swift / iOS
+- Swift naming conventions
+- Modern concurrency: async/await, actors
+- SwiftUI best practices; no UIKit bridging unless unavoidable

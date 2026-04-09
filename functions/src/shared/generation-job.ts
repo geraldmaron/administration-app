@@ -8,9 +8,18 @@ import type {
 
 export type GenerationJobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'pending_review';
 
+export type GenerationExecutionTarget = 'cloud_function' | 'n8n' | 'local';
+
+export type GenerationRunKind = 'blitz' | 'manual' | 'full_send';
+
 export interface GenerationJobRecord<TTimestamp = unknown, TBundle extends string = string> extends GenerationScopeFields {
   bundles: TBundle[];
   count: number;
+  runId?: string;
+  runKind?: GenerationRunKind;
+  runJobIndex?: number;
+  runTotalJobs?: number;
+  runLabel?: string;
   mode?: GenerationMode;
   lowLatencyMode?: boolean;
   distributionConfig?: GenerationDistributionConfig;
@@ -30,7 +39,7 @@ export interface GenerationJobRecord<TTimestamp = unknown, TBundle extends strin
   totalCount?: number;
   completedCount?: number;
   failedCount?: number;
-  executionTarget?: string;
+  executionTarget?: GenerationExecutionTarget;
   tokenSummary?: {
     inputTokens: number;
     outputTokens: number;

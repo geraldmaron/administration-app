@@ -39,6 +39,7 @@ function ScenariosInner() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deletingBulk, setDeletingBulk] = useState(false);
   const [bulkUpdating, setBulkUpdating] = useState<'activate' | 'deactivate' | null>(null);
+  const [rebuildingBundles, setRebuildingBundles] = useState(false);
   const [tagFilter, setTagFilter] = useState<string>('all');
   const [tagResolutionFilter, setTagResolutionFilter] = useState<string>('all');
 
@@ -67,7 +68,7 @@ function ScenariosInner() {
     const params = new URLSearchParams({ bundle, active, pageSize: String(pageSize) });
     if (cursor) params.set('startAfter', cursor);
     fetch(`/api/scenarios?${params.toString()}`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d: ScenariosResponse) => {
         if (!cancelled) {
           setData(d);
@@ -143,6 +144,20 @@ function ScenariosInner() {
       }
     } finally {
       setDeletingBulk(false);
+    }
+  }
+
+  async function rebuildBundles() {
+    setRebuildingBundles(true);
+    try {
+      const res = await fetch('/api/bundles/rebuild', { method: 'POST' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { total } = await res.json();
+      alert(`Bundles rebuilt successfully. ${total} active scenarios exported.`);
+    } catch (err) {
+      alert(`Bundle rebuild failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setRebuildingBundles(false);
     }
   }
 
@@ -304,7 +319,19 @@ function ScenariosInner() {
       <PageHeader
         section="Library"
         title="Scenario Management"
-        actions={<Link href="/generate" className="btn btn-tactical">+ Generate</Link>}
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={rebuildBundles}
+              disabled={rebuildingBundles}
+              className="btn btn-ghost disabled:opacity-50"
+              title="Re-export all scenario bundles to Firebase Storage so the iOS app picks up new scenarios"
+            >
+              {rebuildingBundles ? 'Rebuilding…' : 'Rebuild Bundles'}
+            </button>
+            <Link href="/generate" className="btn btn-tactical">+ Generate</Link>
+          </div>
+        }
         filterBar={filterBar}
       />
 
@@ -424,7 +451,7 @@ function ScenariosInner() {
               {filteredScenarios.map((scenario) => (
                 <tr
                   key={scenario.id}
-                  className="group cursor-pointer hover:bg-[var(--background-overlay)]"
+                  className={`group cursor-pointer hover:bg-[var(--surface-fill)] transition-colors ${scenario.isActive ? 'status-bar-active' : 'status-bar-inactive'}`}
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest('input,button,a')) return;
                     router.push(`/scenarios/${scenario.id}`);
@@ -505,7 +532,7 @@ function ScenariosInner() {
                       className="text-[10px] font-mono text-[var(--foreground-subtle)]"
                       title={scenario.createdAt ? new Date(scenario.createdAt).toLocaleString() : undefined}
                     >
-                      {formatShortDate(scenario.createdAt)}
+                      {scenario.createdAt ? formatShortDate(scenario.createdAt) : '—'}
                     </span>
                   </td>
 

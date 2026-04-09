@@ -12,10 +12,12 @@ import SortHeader, { useSort } from '@/components/SortHeader';
 import { formatDuration, formatRelativeTime } from '@/lib/constants';
 import type { JobDetail, JobSummary } from '@/lib/types';
 
-function summarizeProvider(job: Pick<JobSummary, 'executionTarget' | 'modelConfig'>): string {
+function summarizeProvider(job: Pick<JobSummary, 'executionTarget' | 'modelConfig' | 'runKind'>): string {
+  if (job.executionTarget === 'full_send' as string || job.runKind === 'full_send') return 'full send';
   const drafter = job.modelConfig?.drafterModel;
   if (drafter?.startsWith('ollama:')) return drafter.replace('ollama:', '');
   if (job.executionTarget === 'n8n') return 'n8n';
+  if (job.executionTarget === 'local') return 'local';
   return 'cloud';
 }
 
@@ -56,6 +58,7 @@ export default function JobsPage() {
   const [slideOverJobId, setSlideOverJobId] = useState<string | null>(null);
   const [jobPage, setJobPage] = useState(1);
   const [jobPageSize, setJobPageSize] = useState(25);
+  const [restarting, setRestarting] = useState(false);
 
   function refreshJobs() {
     fetch('/api/jobs?limit=200')
@@ -88,6 +91,22 @@ export default function JobsPage() {
       refreshJobs();
     } finally {
       setBulkDeleting(false);
+    }
+  }
+
+  async function handleRestartLocalRunner() {
+    if (!confirm('Restart local runner? All queued_local jobs will be marked failed and must be resubmitted.')) return;
+    setRestarting(true);
+    try {
+      const res = await fetch('/api/local-gen/restart', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error ?? 'Restart failed');
+        return;
+      }
+      refreshJobs();
+    } finally {
+      setRestarting(false);
     }
   }
 
@@ -150,6 +169,15 @@ export default function JobsPage() {
     });
   }, [filter, jobs, search, sortField, sortDir]);
 
+  const runSiblingCount = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const job of jobs) {
+      if (!job.runId) continue;
+      counts.set(job.runId, (counts.get(job.runId) ?? 0) + 1);
+    }
+    return counts;
+  }, [jobs]);
+
   useEffect(() => { setJobPage(1); }, [filter, search]);
 
   const totalJobPages = Math.max(1, Math.ceil(filteredJobs.length / jobPageSize));
@@ -187,7 +215,17 @@ export default function JobsPage() {
       {(runningJobs.length > 0 || pendingJobs.length > 0) && (
         <div className="mb-3 grid gap-3 lg:grid-cols-2">
           <div className="command-panel p-4">
-            <div className="mb-3 text-xs font-medium text-[var(--foreground-subtle)]">Active Now</div>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="text-xs font-medium text-[var(--foreground-subtle)]">Active Now</div>
+              <button
+                type="button"
+                onClick={() => void handleRestartLocalRunner()}
+                disabled={restarting}
+                className="text-[10px] font-medium text-[var(--danger)] hover:underline disabled:opacity-50"
+              >
+                {restarting ? 'Restarting…' : 'Restart local runner'}
+              </button>
+            </div>
             <div className="space-y-2">
               {runningJobs.length === 0 ? (
                 <div className="text-xs text-[var(--foreground-muted)]">No running jobs.</div>
@@ -199,7 +237,11 @@ export default function JobsPage() {
                       <div className="text-[11px] text-[var(--foreground-muted)]">{job.currentBundle ?? 'bundle pending'}{job.currentPhase ? ` → ${job.currentPhase}` : ''}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] font-mono text-[var(--accent-primary)]">{summarizeProvider(job)}</div>
+                      {(() => {
+                        const lbl = summarizeProvider(job);
+                        const isFS = lbl === 'full send';
+                        return <div className={`text-[10px] font-mono ${isFS ? 'text-[var(--accent-secondary)] font-semibold' : 'text-[var(--accent-primary)]'}`}>{isFS ? '⚡ full send' : lbl}</div>;
+                      })()}
                       <div className="text-[10px] text-[var(--foreground-subtle)]">{job.lastHeartbeatAt ? formatRelativeTime(job.lastHeartbeatAt) : 'no heartbeat'}</div>
                     </div>
                   </div>
@@ -221,7 +263,7 @@ export default function JobsPage() {
                       <div className="text-[11px] text-[var(--foreground-muted)]">{job.description || job.bundles.join(', ')}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] font-mono text-[var(--accent-secondary)]">{summarizeProvider(job)}</div>
+                      {(() => { const lbl = summarizeProvider(job); const isFS = lbl === 'full send'; return <div className={`text-[10px] font-mono ${isFS ? 'text-[var(--accent-secondary)] font-semibold' : 'text-[var(--accent-secondary)]'}`}>{isFS ? '⚡ full send' : lbl}</div>; })()}
                       <div className="text-[10px] text-[var(--foreground-subtle)]">{formatRelativeTime(job.requestedAt)}</div>
                     </div>
                   </div>
@@ -360,6 +402,11 @@ export default function JobsPage() {
                       {job.description && (
                         <div className="text-[11px] text-[var(--foreground-subtle)] truncate max-w-[220px]">{job.description}</div>
                       )}
+                      {job.runId && (
+                        <div className="text-[10px] font-mono text-[var(--foreground-subtle)] truncate max-w-[220px]">
+                          {job.runKind === 'blitz' ? 'blitz run' : 'run'} {job.runJobIndex ?? 1}/{job.runTotalJobs ?? runSiblingCount.get(job.runId) ?? 1}
+                        </div>
+                      )}
                     </td>
 
                     {/* Status */}
@@ -402,9 +449,15 @@ export default function JobsPage() {
                     </td>
 
                     <td>
-                      <span className="text-[11px] font-mono text-[var(--foreground-muted)]">
-                        {summarizeProvider(job)}
-                      </span>
+                      {(() => {
+                        const label = summarizeProvider(job);
+                        const isFullSend = label === 'full send';
+                        return (
+                          <span className={`text-[11px] font-mono ${isFullSend ? 'text-[var(--accent-secondary)] font-semibold' : 'text-[var(--foreground-muted)]'}`}>
+                            {isFullSend ? '⚡ full send' : label}
+                          </span>
+                        );
+                      })()}
                     </td>
 
                     <td>
@@ -446,6 +499,14 @@ export default function JobsPage() {
                         >
                           Inspect
                         </Link>
+                        {job.runId && (
+                          <Link
+                            href={`/runs/${job.runId}`}
+                            className="text-xs font-medium text-foreground-subtle hover:text-foreground"
+                          >
+                            Run
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>

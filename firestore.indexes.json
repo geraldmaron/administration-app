@@ -197,6 +197,14 @@
       ]
     },
     {
+      "collectionGroup": "generation_jobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "requestedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "scenario_embeddings",
       "queryScope": "COLLECTION",
       "fields": [

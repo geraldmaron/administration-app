@@ -1,6 +1,6 @@
 # Plan: N8N-First Scenario Loop Rebuild
 
-Status: phases 1–3 complete as of 2026-03-28. e2e validation in progress.
+Status: **all phases complete as of 2026-04-08.** Generation pipeline operational; admin portal updated.
 
 ## Target State
 
@@ -112,6 +112,25 @@ Status: phases 1–3 complete as of 2026-03-28. e2e validation in progress.
 
 ---
 
+## Phase 6. Portal Hardening & Pipeline Robustness — COMPLETE (2026-04-08)
+
+**Objective:** Harden the generation loop, repair classification, and token normalization; update the admin portal to match production quality standards.
+
+**Deliverables shipped:**
+- `functions/src/lib/agentic-repair.ts` — hardened repair classification and token normalization
+- `functions/src/lib/audit-rules.ts` — tightened audit rule coverage with inverse metric awareness
+- `functions/src/lib/scenario-conditions.ts` — new scoring-aligned eligibility condition engine
+- `functions/src/lib/scoring-engine.ts` — deterministic metric scoring with jitter and active effects
+- `web/src/app/scenarios/[id]/page.tsx` — scenario detail page redesign: real scenario description in header, audit card state-aware tones, improved eligibility display
+- `web/src/app/scenarios/[id]/TokenPreview.tsx` — decision paths redesign: structured option headers with effect count, correct inverse metric color logic (corruption/inflation/crime/bureaucracy +value now renders as danger), "Pick a country" onboarding hint
+
+**Scoring/audit alignment fixes:**
+- Inverse metrics (`metric_corruption`, `metric_inflation`, `metric_crime`, `metric_bureaucracy`) now render with correct semantic color in the effects bar: positive delta = bad (red), negative delta = good (green)
+- The `↕` marker on inverse metric chips signals the inversion to reviewers
+- Eligibility condition display changed from tag chips to structured key-value rows for better precision readability
+
+---
+
 ## Done Definition
 
 This reset is complete when:
@@ -121,3 +140,4 @@ This reset is complete when:
 3. N8N is the intended orchestration layer. ✅
 4. Functions expose deterministic, game-logic-aligned services. ✅
 5. Web and CLI submission surfaces are thin wrappers over the same contract. ✅
+6. Admin portal reflects production-quality design aligned to game logic. ✅

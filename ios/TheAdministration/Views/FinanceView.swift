@@ -382,7 +382,7 @@ struct FiscalSliderCard: View {
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
         .accessibilityElement(children: .combine)
@@ -453,7 +453,7 @@ struct BudgetSliderCard: View {
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
         .accessibilityElement(children: .combine)
@@ -536,7 +536,7 @@ struct ForecastCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(AppColors.backgroundElevated)
         )
         .onAppear {

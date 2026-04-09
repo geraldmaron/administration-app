@@ -50,7 +50,7 @@ interface PatchOption {
 
 const REPAIR_GUIDANCE: Record<RepairActionType, string> = {
   'text-expansion': `Expand flagged fields to meet minimum length requirements. SPECIFIC THRESHOLDS: outcomeContext must be 400+ characters AND 4+ sentences (70–100 words) — structure: institution/actor, mechanism, reaction (opposition/market/public), broader implication; outcomeSummary must be 250+ characters AND 2+ sentences; description must be 60+ words; options[].text must be 50+ words. Add mechanism details, affected groups, institutional reactions, or market impacts. Return COMPLETE expanded text, never truncate. Do NOT introduce new token placeholders unless you have verified them with check_tokens first. NEVER use curly-brace placeholders {like_this} unless they exactly match the approved whitelist — write all institution names, roles, and country references as plain English.`,
-  'token-fix': `Fix token usage errors: "the {X}" where X is institution token → rewrite without article using the {the_X} form instead (e.g. "the {finance_role}" → "{the_finance_role}"). Replace {the_opposition} with {the_opposition_party}. Replace {president} or {prime_minister} with {leader_title}. Replace {country} or {country_name} with {the_player_country}. Replace hardcoded currency with {currency}. Replace relationship token placeholders in prose ({the_ally}, {the_adversary}, {the_border_rival}, {ally}, {adversary}, {border_rival}, {the_opposition}, {opposition}, etc.) with natural-language actors (e.g. "your border rival", "the allied government"). Use check_tokens to verify any uncertain token before patching.`,
+  'token-fix': `Fix token usage errors: write "the {finance_role}" or "your {defense_role}" naturally — NO {the_*} prefix tokens. Never use {the_finance_role}, {the_central_bank}, {the_player_country}, etc. Replace {president} or {prime_minister} with {leader_title}. Replace {country} or {country_name} with {player_country}. Replace hardcoded currency with {currency}. Replace any relationship token placeholders in prose with natural-language actors (e.g. "your border rival", "the allied government"). Use check_tokens to verify any uncertain token before patching.`,
   'advisor-regen': `Rewrite advisor feedback: name specific policy mechanism, constituency affected, causal chain. 1-2 sentences, 30-50 words. FORBIDDEN: "aligns with our", "our department", "course of action", "careful monitoring".`,
   'title-fix': `Fix title: 4-8 words, newspaper headline style with verb and named agent. No tokens. No duplicate words. BANNED: noun-stack endings, gerund openers.`,
   'label-fix': `Fix labels: MAX 3 words, prefer 1-2. No {token} placeholders. Keep tight for mobile badge.`,
@@ -71,7 +71,7 @@ const TOOL_DESCRIPTIONS = `Available tools:
    Args: { tokens: ["token_name_1", "token_name_2"] }
 
 4. get_repair_guidance — Get specific instructions for a repair action type.
-   Args: { action_type: "text-expansion" | "token-fix" | "advisor-regen" | "title-fix" | "label-fix" | "voice-fix" | "tone-fix" }
+   Args: { action_type: "text-expansion" | "token-fix" | "advisor-regen" | "title-fix" | "label-fix" | "voice-fix" | "tone-fix" | "option-differentiation-fix" }
 
 5. done — Signal that repair is complete. Use when score meets threshold or no further improvements possible.
    Args: none`;

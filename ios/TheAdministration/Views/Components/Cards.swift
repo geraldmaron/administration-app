@@ -36,8 +36,12 @@ struct CommandCard<Content: View>: View {
         }
         .padding(AppSpacing.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.10))
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(AppColors.backgroundPanel)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .strokeBorder(AppColors.borderStrong, lineWidth: 1)
         )
     }
 }
@@ -105,6 +109,19 @@ struct MetricCard: View {
                 )
             }
             .buttonStyle(.plain)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(AppColors.accentPrimary.opacity(isActive ? 0.55 : 0), lineWidth: 1)
+            )
+            .shadow(color: color.opacity(isActive ? 0.28 : 0), radius: 10, x: 0, y: 0)
+            .overlay(alignment: .bottom) {
+                if isActive {
+                    Rectangle()
+                        .fill(AppColors.accentPrimary)
+                        .frame(height: 2)
+                        .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 8, bottomTrailingRadius: 8))
+                }
+            }
 
             if let onInfo = onInfo {
                 Button(action: { HapticEngine.shared.light(); onInfo() }) {
@@ -144,7 +161,7 @@ struct InteractiveCard<Content: View>: View {
         }
         .buttonStyle(.plain)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(isHighlighted ? Color.white.opacity(0.15) : Color.white.opacity(0.10))
         )
     }
@@ -187,8 +204,21 @@ struct DossierCard<Content: View>: View {
         }
         .padding(AppSpacing.md)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(AppColors.backgroundElevated)
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(AppColors.backgroundPanel)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(AppColors.border, lineWidth: 1)
+                Rectangle()
+                    .fill(AppColors.accentPrimary.opacity(0.55))
+                    .frame(width: 2)
+                    .clipShape(UnevenRoundedRectangle(
+                        topLeadingRadius: 6,
+                        bottomLeadingRadius: 6,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: 0
+                    ))
+            }
         )
     }
 }
@@ -224,7 +254,7 @@ struct ScenarioOptionCard: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(isSelected ? .white : AppColors.accentPrimary)
                         .frame(width: 22, height: 22)
-                        .background(isSelected ? AppColors.accentPrimary : AppColors.accentPrimary.opacity(0.12), in: Circle())
+                        .background(isSelected ? AppColors.accentPrimary : AppColors.accentPrimary.opacity(0.12), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text(option.text)
@@ -248,7 +278,7 @@ struct ScenarioOptionCard: View {
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(
                             isSelected ? Color.white.opacity(0.26) :
                             isDimmed ? Color.white.opacity(0.08) : Color.white.opacity(0.18)
