@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
 import { requireAdminAuth } from '@/lib/auth';
 import { FieldValue } from 'firebase-admin/firestore';
+import { exportScenarioBundles } from '@/lib/scenario-bundle-export';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const isAccept = body.action === 'accept' || body.action === 'accept_all';
   let accepted = 0;
   let rejected = 0;
+  const acceptedBundleIds = new Set<string>();
 
   // Process in batches of 20 (docs can be large)
   for (let i = 0; i < targetIds.length; i += 20) {
@@ -86,14 +88,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       for (const doc of docs) {
         if (!doc.exists) continue;
         const data = doc.data()!;
+        const bundleId = typeof data.metadata?.bundle === 'string' ? data.metadata.bundle : null;
         const scenarioRef = db.collection('scenarios').doc(doc.id);
         batch.set(scenarioRef, {
           ...data,
           is_active: true,
-          createdAt: FieldValue.serverTimestamp(),
+          created_at: FieldValue.serverTimestamp(),
           acceptedFromDryRun: jobId,
         });
         batch.delete(pendingRef.doc(doc.id));
+        if (bundleId) {
+          acceptedBundleIds.add(bundleId);
+        }
         accepted++;
       }
     } else {
@@ -117,5 +123,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     });
   }
 
-  return NextResponse.json({ accepted, rejected, remaining: remainingCount });
+  let rebuiltBundles: Record<string, number> = {};
+  if (acceptedBundleIds.size > 0) {
+    rebuiltBundles = await exportScenarioBundles(acceptedBundleIds);
+  }
+
+  return NextResponse.json({ accepted, rejected, remaining: remainingCount, rebuiltBundles });
 }
