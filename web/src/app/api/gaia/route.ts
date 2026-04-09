@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
 import { requireAdminAuth } from '@/lib/auth';
-import type { GaiaRun } from '@/lib/gaia-types';
+
+interface GaiaRun {
+  id: string;
+  triggeredAt: string | null;
+  reviewedAt: string | null;
+  [key: string]: unknown;
+}
 
 export async function GET() {
   const snap = await db.collection('gaia_runs')
