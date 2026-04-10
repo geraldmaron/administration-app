@@ -411,6 +411,8 @@ export const ROLE_ALIAS_MAP: Readonly<Record<string, string>> = {
   'role_immigration':     'role_interior',
   'role_military':        'role_defense',
   'role_foreign_relations': 'role_diplomacy',
+  'role_public_order':      'role_interior',
+  'role_approval':          'role_executive',
 };
 
 // ---------------------------------------------------------------------------

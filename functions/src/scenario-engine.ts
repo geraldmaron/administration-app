@@ -1394,10 +1394,12 @@ FORBIDDEN: "aligns with our", "our department", "course of action", "careful mon
 
   'title-fix': `Fix the scenario title:
 - Minimum 4 words, maximum 8 words
-- Write like a newspaper headline with a verb and named agent
+- Write like a newspaper headline: subject + active verb + object (e.g. "Parliament Blocks Emergency Bill", "Workers Strike Over Wage Cuts")
 - No tokens allowed in titles
 - Remove duplicate words
-- BANNED: noun-stack endings ("Crisis Response"), gerund openers ("Managing X")`,
+- BANNED endings: Crisis, Crises, Response, Options, Management, Debate, Decision, Dilemma, Challenge, Conflict
+- BANNED openers: Managing, Balancing, Handling, Navigating
+- The title MUST contain a conjugated verb — "Blocks", "Strikes", "Faces", "Approves", "Rejects", "Demands"`,
 
   'label-fix': `Fix option labels:
 - MAX 3 words, prefer 1–2 words
