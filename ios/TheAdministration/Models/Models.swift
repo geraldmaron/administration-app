@@ -2961,3 +2961,21 @@ struct CountryWorldState: Identifiable, Codable {
         case countryId, currentMetrics, relationships, lastTickAt, generation, recentScenarioIds
     }
 }
+
+// MARK: - Shared formatting utilities
+
+enum GameFormat {
+    static func money(_ value: Double) -> String {
+        if value >= 1_000_000_000_000 { return String(format: "$%.2fT", value / 1_000_000_000_000) }
+        if value >= 1_000_000_000     { return String(format: "$%.1fB", value / 1_000_000_000) }
+        if value >= 1_000_000         { return String(format: "$%.0fM", value / 1_000_000) }
+        return String(format: "$%.0fK", value / 1_000)
+    }
+
+    static func population(_ pop: Double) -> String {
+        if pop >= 1_000_000_000 { return String(format: "%.2fB", pop / 1_000_000_000) }
+        if pop >= 1_000_000     { return String(format: "%.1fM", pop / 1_000_000) }
+        if pop >= 1_000         { return String(format: "%.0fK", pop / 1_000) }
+        return "\(Int(pop))"
+    }
+}

@@ -503,7 +503,7 @@ class FirebaseDataService {
         let militaryData = data["military"] as? [String: Any]
         let military = MilitaryStats(
             strength: militaryData?["strength"] as? Double ?? 50.0,
-            nuclearCapable: militaryData?["nuclearCapable"] as? Bool ?? false,
+            nuclearCapable: militaryData?["nuclearCapabilities"] as? Bool ?? militaryData?["nuclearCapable"] as? Bool ?? false,
             posture: militaryData?["posture"] as? String,
             navyPower: militaryData?["navyPower"] as? Double ?? 50.0,
             cyberCapability: militaryData?["cyberCapability"] as? Double ?? 50.0,

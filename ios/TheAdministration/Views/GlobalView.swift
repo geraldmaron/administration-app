@@ -615,11 +615,11 @@ struct CountryDetailView: View {
         sectionBlock(title: "Economic Profile") {
             VStack(spacing: 10) {
                 if let gdp = country.resolvedGdpBillions {
-                    statRow(label: "Economic Output", value: "\(formatMoney(gdp * 1_000_000_000)) (\(economicScale(gdp)))")
+                    statRow(label: "Economic Output", value: "\(GameFormat.money(gdp * 1_000_000_000)) (\(economicScale(gdp)))")
                 } else {
                     statRow(label: "Economic Scale", value: economicScale(country.resolvedGdpBillions))
                 }
-                statRow(label: "Population", value: formatPop(Double(country.resolvedPopulation)))
+                statRow(label: "Population", value: GameFormat.population(Double(country.resolvedPopulation)))
                 if let economy = country.economy {
                     statRow(label: "Economic System", value: economy.system.capitalized)
                     statRow(label: "Primary Export", value: economy.primaryExport)
@@ -939,19 +939,6 @@ struct CountryDetailView: View {
         }
     }
 
-    private func formatMoney(_ value: Double) -> String {
-        if value >= 1_000_000_000_000 { return String(format: "$%.2fT", value / 1_000_000_000_000) }
-        if value >= 1_000_000_000     { return String(format: "$%.1fB", value / 1_000_000_000) }
-        if value >= 1_000_000         { return String(format: "$%.0fM", value / 1_000_000) }
-        return String(format: "$%.0fK", value / 1_000)
-    }
-
-    private func formatPop(_ pop: Double) -> String {
-        if pop >= 1_000_000_000 { return String(format: "%.2fB", pop / 1_000_000_000) }
-        if pop >= 1_000_000     { return String(format: "%.1fM", pop / 1_000_000) }
-        if pop >= 1_000         { return String(format: "%.0fK", pop / 1_000) }
-        return "\(Int(pop))"
-    }
 }
 
 // MARK: - SortButton (kept for any remaining usages)
