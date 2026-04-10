@@ -16,6 +16,7 @@ export interface RecommendationItem {
   reviewedBy?: string;
   reviewedAt?: string;
   reviewNote?: string;
+  promptPatchApplied?: boolean;
 }
 
 export interface GaiaRunPromptRecommendations {
@@ -84,6 +85,7 @@ export interface GaiaRun {
   status: 'queued' | 'running' | 'complete' | 'failed' | 'cancelled';
   progress?: GaiaProgress | null;
   error?: string;
+  promotedExemplarCount?: number;
 }
 
 export type PipelineStage = 'architect' | 'drafter' | 'tokenResolve' | 'audit' | 'repair';

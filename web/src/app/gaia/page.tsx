@@ -407,12 +407,13 @@ function RecommendationCard({
   async function act(status: 'approved' | 'rejected') {
     setBusy(true);
     try {
-      await fetch(`/api/gaia/${runId}/recommendations/${rec.id}`, {
+      const res = await fetch(`/api/gaia/${runId}/recommendations/${rec.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, reviewNote: note || undefined }),
       });
-      onUpdate({ ...rec, status, reviewNote: note || undefined });
+      const json = res.ok ? await res.json() as { ok: boolean; promptPatchApplied?: boolean } : null;
+      onUpdate({ ...rec, status, reviewNote: note || undefined, ...(json?.promptPatchApplied != null ? { promptPatchApplied: json.promptPatchApplied } : {}) });
     } finally {
       setBusy(false);
     }
@@ -431,6 +432,11 @@ function RecommendationCard({
           {rec.pipelineStage} · {rec.targetSection}
         </span>
         <RecStatusBadge status={rec.status} />
+        {rec.promptPatchApplied && (
+          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ color: 'var(--success)', background: 'color-mix(in srgb, var(--success) 15%, transparent)' }}>
+            ✓ Patched
+          </span>
+        )}
         <div className="ml-auto flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="h-1 w-16 rounded-full bg-[var(--border)]">
@@ -609,6 +615,9 @@ function RunDetail({ run, onRunChange }: { run: GaiaRun; onRunChange: (r: GaiaRu
               <span><span className="text-[var(--foreground-subtle)]">unresolved </span><span className="font-semibold">{run.tokenResolutionSummary.unresolvedCount}</span></span>
               <span><span className="text-[var(--foreground-subtle)]">verbiage </span><span className="font-semibold">{run.verbiageFindings.length}</span></span>
               <span><span className="text-[var(--foreground-subtle)]">recs </span><span className="font-semibold">{totalRecs}</span></span>
+              {(run.promotedExemplarCount ?? 0) > 0 && (
+                <span><span className="text-[var(--foreground-subtle)]">exemplars </span><span className="font-semibold text-[var(--accent)]">{run.promotedExemplarCount}</span></span>
+              )}
             </div>
             <button
               type="button"

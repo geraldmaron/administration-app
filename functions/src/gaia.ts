@@ -28,6 +28,7 @@ import { createGenerationJob } from './background-jobs';
 import type { GenerationModelConfig } from './shared/generation-contract';
 import type { CompiledTokenRegistry } from './shared/token-registry-contract';
 import { derivePlayerPartyTokens, type RawCountryRecord } from './lib/country-token-derivation';
+import { getPromptTemplate } from './lib/prompt-templates';
 
 // ---------------------------------------------------------------------------
 // Shared types — exported for use in web API routes and tests
@@ -92,6 +93,7 @@ export interface RecommendationItem {
   reviewedBy?: string;
   reviewedAt?: Timestamp;
   reviewNote?: string;
+  promptPatchApplied?: boolean;
 }
 
 export interface GaiaRunPromptRecommendations {
@@ -156,6 +158,7 @@ export interface GaiaRun {
   verbiageFindings: string[];
   promptRecommendations: GaiaRunPromptRecommendations;
   scenarioResults: ScenarioResult[];
+  promotedExemplarCount?: number;
   status: 'queued' | 'running' | 'complete' | 'failed' | 'cancelled';
   progress?: GaiaProgress;
   error?: string;
@@ -416,8 +419,12 @@ async function generatePromptRecommendations(
   stageMetrics: Record<PipelineStage, { passRate: number; sampleSize: number; topIssues: string[]; ruleFrequencies: Array<{ ruleId: string; frequency: number }> }>,
   modelConfig?: GenerationModelConfig,
 ): Promise<GaiaRunPromptRecommendations> {
-  const architectPrompt = readPromptFile('architect.prompt.md');
-  const drafterPrompt = readPromptFile('drafter.prompt.md');
+  const [architectTemplate, drafterTemplate] = await Promise.all([
+    getPromptTemplate('architect_drafter'),
+    getPromptTemplate('drafter_details'),
+  ]);
+  const architectPrompt = architectTemplate?.sections.constraints ?? readPromptFile('architect.prompt.md');
+  const drafterPrompt = drafterTemplate?.sections.constraints ?? readPromptFile('drafter.prompt.md');
 
   const metricSummary = Object.entries(stageMetrics)
     .map(([stage, m]) => {
@@ -861,6 +868,31 @@ async function runGaia(
 
     runRecord.scenarioResults = [...scenarioResults];
 
+    // Promote clean scenarios to training_scenarios as golden exemplars.
+    // Qualifying criteria: score ≥ 95, no audit issues, no unresolved tokens, not repaired, not verbiage-flagged.
+    const qualifyingIds = new Set(
+      scenarioResults
+        .filter((r) => r.auditScore >= 95 && r.issueCount === 0 && r.unresolvedTokens === 0 && !r.repaired && !r.verbiageFlagged)
+        .map((r) => r.id),
+    );
+    let promotedExemplarCount = 0;
+    if (qualifyingIds.size > 0) {
+      const qualifying = repairedScenarios.filter((s) => qualifyingIds.has(s.id));
+      const promotedAt = Timestamp.now();
+      await Promise.all(qualifying.map(async (scenario) => {
+        await db.collection('training_scenarios').doc(scenario.id).set({
+          ...scenario,
+          isGolden: true,
+          auditScore: scenarioResults.find((r) => r.id === scenario.id)?.auditScore ?? 100,
+          promotedAt,
+          gaiaRunId: runId,
+        }, { merge: true }).catch(() => undefined);
+        promotedExemplarCount++;
+      }));
+      addLog('info', `Promoted ${promotedExemplarCount} exemplar${promotedExemplarCount !== 1 ? 's' : ''} to training_scenarios`);
+    }
+    runRecord.promotedExemplarCount = promotedExemplarCount;
+
     await runRef.update({
       sampledScenarioIds: runRecord.sampledScenarioIds,
       generatedScenarioIds: runRecord.generatedScenarioIds,
@@ -870,6 +902,7 @@ async function runGaia(
       verbiageFindings: runRecord.verbiageFindings,
       promptRecommendations: runRecord.promptRecommendations,
       scenarioResults: runRecord.scenarioResults,
+      promotedExemplarCount: runRecord.promotedExemplarCount ?? 0,
       status: 'complete',
       progress: null,
     });
