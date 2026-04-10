@@ -62,12 +62,6 @@ struct MainTabView: View {
     @State private var tabBarVisible = true
     @State private var showMenu = false
 
-    private var safeAreaBottom: CGFloat {
-        (UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first?.windows.first?.safeAreaInsets.bottom) ?? 0
-    }
-
     private let tabs: [TabItem] = [
         TabItem(id: 0, label: "Desk",    icon: "rectangle.grid.2x2.fill",     activeIcon: "rectangle.grid.2x2.fill"),
         TabItem(id: 1, label: "World",   icon: "globe",                        activeIcon: "globe.americas.fill"),
@@ -95,22 +89,22 @@ struct MainTabView: View {
             .ignoresSafeArea(edges: .bottom)
 
             CustomTabBar(tabs: tabs, selectedTab: $selectedTab)
-
-            Button {
-                HapticEngine.shared.light()
-                showMenu = true
-            } label: {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(AppColors.foregroundMuted)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(AppColors.backgroundMuted.opacity(0.9))
-                    .clipShape(Capsule())
-            }
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.trailing, 16)
-            .padding(.bottom, max(safeAreaBottom, 12) + 60)
+                .overlay(alignment: .topTrailing) {
+                    Button {
+                        HapticEngine.shared.light()
+                        showMenu = true
+                    } label: {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(AppColors.foregroundMuted)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(AppColors.backgroundMuted.opacity(0.9))
+                            .clipShape(Capsule())
+                    }
+                    .padding(.trailing, 16)
+                    .offset(y: -40)
+                }
         }
         .onChange(of: gameStore.requestedTab) { _, newTab in
             if let tab = newTab {
