@@ -1021,7 +1021,7 @@ struct AnimatedCircularGraphView: View {
                                     .minimumScaleFactor(0.6)
                                 Text("%")
                                     .font(.system(size: 18, weight: .medium))
-                                    .foregroundColor(AppColors.foregroundMuted)
+                                    .foregroundColor(AppColors.accentPrimary)
                             }
                         }
                     }

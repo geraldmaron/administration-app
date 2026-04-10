@@ -496,7 +496,17 @@ class FirebaseDataService {
             tokens = compactTokens.isEmpty ? nil : compactTokens
         }
 
-        let population = facts?.demographics?.populationTotal ?? 0
+        // Read population directly from raw Firestore dict as primary source to avoid
+        // JSONSerialization failures with Firestore's Int64 types swallowing via try?
+        let rawFactsData = data["facts"] as? [String: Any]
+        let rawDemographics = rawFactsData?["demographics"] as? [String: Any]
+        let rawPopulation: Int? = {
+            if let v = rawDemographics?["population_total"] as? Int { return v }
+            if let v = rawDemographics?["population_total"] as? Int64 { return Int(v) }
+            if let v = rawDemographics?["population_total"] as? Double { return Int(v) }
+            return nil
+        }()
+        let population = rawPopulation ?? facts?.demographics?.populationTotal ?? 0
         let gdp = facts.map { Int(($0.economy?.gdpNominalUsd ?? 0).rounded()) } ?? 0
         let attributes = CountryAttributes(population: population, gdp: gdp)
 
@@ -526,7 +536,8 @@ class FirebaseDataService {
             return try? JSONDecoder().decode([CountryTrait].self, from: traitsData)
         }()
 
-        let populationMillions = facts.flatMap { $0.demographics?.populationTotal }.map { Double($0) / 1_000_000 }
+        let populationMillions = rawPopulation.map { Double($0) / 1_000_000 }
+            ?? facts.flatMap { $0.demographics?.populationTotal }.map { Double($0) / 1_000_000 }
         let rawEconomy = (data["facts"] as? [String: Any])?["economy"] as? [String: Any]
         let gdpBillions = facts.flatMap { $0.economy?.gdpNominalUsd.map { $0 / 1_000_000_000 } }
             ?? (rawEconomy?["gdp_nominal_usd"] as? Double).map { $0 / 1_000_000_000 }
@@ -556,7 +567,7 @@ class FirebaseDataService {
             leader: nil,
             difficulty: data["difficulty"] as? String,
             termLengthYears: data["termLengthYears"] as? Int,
-            currentPopulation: facts?.demographics?.populationTotal,
+            currentPopulation: rawPopulation ?? facts?.demographics?.populationTotal,
             population: nil,
             gdp: nil,
             description: data["description"] as? String,

@@ -464,6 +464,11 @@ struct CountryDetailView: View {
         GlobeBackgroundView.capitalCoordinates[country.id]
     }
 
+    private var isGameActive: Bool {
+        guard let gs = gameStore else { return false }
+        return gs.state.turn > 0
+    }
+
     var body: some View {
         ZStack {
             AppColors.background.ignoresSafeArea()
@@ -478,11 +483,13 @@ struct CountryDetailView: View {
                     if let desc = country.description, !desc.isEmpty {
                         descriptionBlock(desc)
                     }
-                    diplomaticSection
-                    severityPicker
-                    actionSection
-                    if country.diplomacy.relationship < 60 {
-                        militaryActionsSection
+                    if isGameActive {
+                        diplomaticSection
+                        severityPicker
+                        actionSection
+                        if country.diplomacy.relationship < 60 {
+                            militaryActionsSection
+                        }
                     }
                     economicSection
                     militarySection
