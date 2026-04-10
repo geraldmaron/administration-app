@@ -151,7 +151,7 @@ const ARCHITECT_CONFIG: ModelConfig = { maxTokens: 8192, temperature: 0.6, noThi
 // Drafter uses ~14K input + 3K output tokens; under Tier 1 rate limits concurrent
 // calls regularly take 60-120s and can exceed 120s when throttled. 300s keeps the
 // call alive while staying well within the Cloud Function's 540s budget.
-const DRAFTER_CONFIG: ModelConfig = { maxTokens: 10240, temperature: 0.4, timeoutMs: 300000 };
+const DRAFTER_CONFIG: ModelConfig = { maxTokens: 16000, temperature: 0.4, timeoutMs: 300000 };
 // Split-phase configs for Ollama — no artificial output caps.
 // Core phase generates title + description + 3 full options with outcomes.
 // Advisor phase generates 39 advisor feedback entries.

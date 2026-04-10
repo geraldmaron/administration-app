@@ -201,7 +201,15 @@ async function sampleActiveScenarios(
     .get();
 
   const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() } as BundleScenario));
-  const shuffled = docs.sort(() => Math.random() - 0.5);
+  const complete = docs.filter((s) => {
+    const opts: Array<{ text?: string }> = ((s as unknown) as Record<string, unknown>).options as Array<{ text?: string }> ?? [];
+    return opts.every((o) => {
+      const t = o.text ?? '';
+      return t.length >= 40 && /[.!?'"]$/.test(t.trimEnd());
+    });
+  });
+  const pool = complete.length >= count ? complete : docs;
+  const shuffled = pool.sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 }
 
@@ -330,8 +338,8 @@ async function evaluateVerbiage(
 ): Promise<string[]> {
   const validTokenList = validTokens.map((t) => `{${t}}`).join(', ');
   const optionSample = (scenario.options ?? [])
-    .slice(0, 2)
-    .map((o, i) => `Option ${i + 1}: ${o.text?.slice(0, 200) ?? ''}`)
+    .slice(0, 3)
+    .map((o, i) => `Option ${i + 1}: ${o.text ?? ''}`)
     .join('\n');
 
   const prompt = `You are a quality evaluator for a geopolitical simulation game.
@@ -347,7 +355,7 @@ Evaluate the scenario below. Flag ONLY:
 - Generation artifacts (e.g. incomplete sentences, template bleed-through)
 
 Scenario title: ${scenario.title}
-Description: ${scenario.description?.slice(0, 600) ?? ''}
+Description: ${scenario.description ?? ''}
 ${optionSample ? `\n${optionSample}` : ''}
 
 Return a JSON array of short issue strings. If no issues, return [].`;
