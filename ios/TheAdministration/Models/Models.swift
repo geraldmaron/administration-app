@@ -2911,3 +2911,53 @@ struct CountryMilitaryState: Codable {
         case lastUpdatedTurn = "last_updated_turn"
     }
 }
+
+// MARK: - World Simulation
+
+struct FirebaseWorldEvent: Identifiable, Codable {
+    let id: String
+    let timestamp: String
+    let actorCountryId: String
+    let actorCountryName: String
+    let targetCountryId: String
+    let targetCountryName: String
+    let actionType: String
+    let actionCategory: String
+    let severity: String
+    let headline: String
+    let summary: String
+    let context: String
+    let newsCategory: String
+    let newsTags: [String]
+    let globalMetricDeltas: [MetricDelta]
+    let regionId: String?
+    let isBreakingNews: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, timestamp, headline, summary, context, severity, regionId
+        case actorCountryId, actorCountryName, targetCountryId, targetCountryName
+        case actionType, actionCategory, newsCategory, newsTags
+        case globalMetricDeltas, isBreakingNews
+    }
+}
+
+struct CountryWorldStateRelationship: Codable {
+    let countryId: String
+    let type: String
+    let strength: Double
+    let sharedBorder: Bool
+}
+
+struct CountryWorldState: Identifiable, Codable {
+    var id: String { countryId }
+    let countryId: String
+    let currentMetrics: [String: Double]
+    let relationships: [CountryWorldStateRelationship]
+    let lastTickAt: String
+    let generation: Int
+    let recentScenarioIds: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case countryId, currentMetrics, relationships, lastTickAt, generation, recentScenarioIds
+    }
+}

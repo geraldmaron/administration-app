@@ -6,6 +6,7 @@ import type { CanonicalBranchType } from './data/schemas/canonicalBranchTypes';
 import type { CapabilityId } from './data/schemas/capabilityIds';
 import type { CountryTrait, PersonTrait } from './data/schemas/traitTypes';
 import type { LegislatureProfile, LegislatureState, PersonGender } from './data/schemas/legislatureTypes';
+import type { CountryArchetype } from './data/schemas/country-archetypes';
 
 export type ScenarioScopeTier = 'universal' | 'regional' | 'cluster' | 'exclusive';
 
@@ -85,7 +86,6 @@ export interface ScenarioMetadata {
     exclusivityReason?: ScenarioExclusivityReason;
     sourceKind?: ScenarioSourceKind;
     region_tags?: RegionId[] | string[];
-    applicable_countries?: string[] | string;
     source_news?: {
         headline: string;
         url: string;
@@ -112,8 +112,6 @@ export interface ScenarioMetadata {
     regionalBoost?: Partial<Record<RegionId, number>>;
     isNeighborEvent?: boolean;
     involvedCountries?: string[];
-    // Explicit structural preconditions (preferred over implicit token-graph analysis)
-    requires?: ScenarioRequirements;
     tagResolution?: TagResolutionMetadata;
     tokenStrategy?: TokenStrategy;
 }
@@ -130,10 +128,67 @@ export interface TagResolutionMetadata {
     confidence?: number;
 }
 
-export interface ScenarioCondition {
+// ── Applicability (unified scenario gating) ──────────────────────────────────
+
+/** A metric bound applied during iOS scenario selection (replaces ScenarioCondition). */
+export interface MetricGate {
     metricId: string;
     min?: number;
     max?: number;
+}
+
+export type RelationshipGateKind =
+    | 'ally'
+    | 'rival'
+    | 'neighbor'
+    | 'trade_partner'
+    | 'occupied_by'
+    | 'occupies';
+
+export interface RelationshipGate {
+    kind: RelationshipGateKind;
+    countryId?: string;
+    state?: 'friendly' | 'hostile' | 'tense' | 'neutral';
+}
+
+/** All structural flags that gate a scenario to countries with specific institutions. */
+export type RequiresFlag =
+    | 'has_legislature'
+    | 'has_opposition_party'
+    | 'has_party_system'
+    | 'has_central_bank'
+    | 'has_stock_exchange'
+    | 'has_supreme_court'
+    | 'has_written_constitution'
+    | 'has_monarch'
+    | 'land_border_adversary'
+    | 'formal_ally'
+    | 'adversary'
+    | 'trade_partner'
+    | 'nuclear_state'
+    | 'island_nation'
+    | 'landlocked'
+    | 'coastal'
+    | 'cyber_capable'
+    | 'power_projection'
+    | 'large_military'
+    | 'authoritarian_regime'
+    | 'democratic_regime'
+    | 'fragile_state'
+    | 'resource_rich';
+
+/** Single source of truth for when a scenario can apply to a country. */
+export interface ScenarioApplicability {
+    /** OR-match: scenario applies if ANY archetype is present on the country. */
+    archetypes?: CountryArchetype[];
+    /** Structural flags that must be satisfied. Only `true` values are stored. */
+    requires: Partial<Record<RequiresFlag, true>>;
+    /** Metric bounds evaluated at selection time (iOS ScenarioNavigator). */
+    metricGates: MetricGate[];
+    /** Optional geopolitical relationship gates. */
+    relationshipGates?: RelationshipGate[];
+    /** Optional explicit allow-list of country IDs. */
+    applicableCountryIds?: string[];
 }
 
 // Role identifiers used for relationship targeting (eligibility, effects, conditions)
@@ -190,11 +245,7 @@ export interface Scenario {
     phase?: 'root' | 'mid' | 'final';
     actIndex?: number;
     metadata?: ScenarioMetadata;
-    conditions?: ScenarioCondition[];
-    legislature_requirement?: {
-        min_approval: number;
-        chamber?: 'upper' | 'lower' | 'both';
-    };
+    applicability: ScenarioApplicability;
 }
 
 export interface AdvisorFeedback {
@@ -450,6 +501,8 @@ export interface CountryDocument {
     legislature: LegislatureProfile;
     legislature_initial_state: LegislatureState;
     tokens: Record<string, string | null>; // all ~80 tokens; optional = null
+    archetypes: CountryArchetype[];
+    flags: Partial<Record<RequiresFlag, boolean>>; // structural facts derived from country state
     gameplay: {
         starting_metrics: Partial<Record<MetricId, number>>;
         metric_equilibria: Partial<Record<MetricId, number>>;
@@ -505,6 +558,17 @@ export interface PersonProfile {
     cost?: number;
 }
 
+// ── Country World State ───────────────────────────────────────────────────────
+
+export interface CountryWorldState {
+    countryId: string;
+    currentMetrics: Partial<Record<MetricId, number>>;
+    relationships: CountryRelationship[];
+    lastTickAt: string; // ISO timestamp
+    generation: number;
+    recentScenarioIds: string[];
+}
+
 // ── Political Parties ─────────────────────────────────────────────────────────
 
 export interface PoliticalParty {
@@ -547,6 +611,7 @@ export interface University {
 
 // ── Re-exports ────────────────────────────────────────────────────────────────
 
+export type { CountryArchetype } from './data/schemas/country-archetypes';
 export type { CountryTrait, PersonTrait } from './data/schemas/traitTypes';
 export type { LegislatureProfile, LegislatureState, LegislativeBloc, LegislativeMember, PersonGender } from './data/schemas/legislatureTypes';
 export type { CapabilityId } from './data/schemas/capabilityIds';

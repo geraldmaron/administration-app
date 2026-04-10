@@ -817,6 +817,66 @@ class FirebaseDataService {
         return SeverityLevel(rawValue: string)
     }
 
+    // MARK: - World Events
+
+    func fetchRecentWorldEvents(since: Date? = nil, limit: Int = 20) async -> [FirebaseWorldEvent] {
+        #if canImport(FirebaseFirestore)
+        guard let db = db else { return [] }
+        do {
+            var query: Query = db.collection("world_events")
+                .order(by: "timestamp", descending: true)
+                .limit(to: limit)
+            if let since = since {
+                let iso = ISO8601DateFormatter().string(from: since)
+                query = db.collection("world_events")
+                    .whereField("timestamp", isGreaterThan: iso)
+                    .order(by: "timestamp", descending: true)
+                    .limit(to: limit)
+            }
+            let snap = try await query.getDocuments()
+            return snap.documents.compactMap { doc -> FirebaseWorldEvent? in
+                let data = doc.data()
+                guard let jsonData = try? JSONSerialization.data(withJSONObject: data) else { return nil }
+                return try? JSONDecoder().decode(FirebaseWorldEvent.self, from: jsonData)
+            }
+        } catch {
+            AppLogger.warning("[FirebaseDataService] fetchRecentWorldEvents failed: \(error)")
+            return []
+        }
+        #else
+        return []
+        #endif
+    }
+
+    func fetchCountryWorldStates(countryIds: [String]) async -> [String: CountryWorldState] {
+        #if canImport(FirebaseFirestore)
+        guard let db = db, !countryIds.isEmpty else { return [:] }
+        var result: [String: CountryWorldState] = [:]
+        let chunks = stride(from: 0, to: countryIds.count, by: 30).map {
+            Array(countryIds[$0..<min($0 + 30, countryIds.count)])
+        }
+        for chunk in chunks {
+            do {
+                let snap = try await db.collection("country_world_state")
+                    .whereField(FieldPath.documentID(), in: chunk)
+                    .getDocuments()
+                for doc in snap.documents {
+                    let data = doc.data()
+                    if let jsonData = try? JSONSerialization.data(withJSONObject: data),
+                       let state = try? JSONDecoder().decode(CountryWorldState.self, from: jsonData) {
+                        result[state.countryId] = state
+                    }
+                }
+            } catch {
+                AppLogger.warning("[FirebaseDataService] fetchCountryWorldStates chunk failed: \(error)")
+            }
+        }
+        return result
+        #else
+        return [:]
+        #endif
+    }
+
     // MARK: - Firebase Availability
 
     /// Check if Firebase is available and initialized

@@ -290,9 +290,10 @@ struct ScenarioOptionCard: View {
             if let onAdvisor = onAdvisor {
                 Button(action: onAdvisor) {
                     Image(systemName: "person.text.rectangle")
-                        .font(.system(size: 13))
-                        .foregroundColor(AppColors.foregroundSubtle)
-                        .padding(8)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppColors.accentPrimary)
+                        .frame(width: 28, height: 28)
+                        .background(AppColors.accentPrimary.opacity(0.15), in: Circle())
                 }
                 .accessibilityLabel("View cabinet briefing for this option")
             }
@@ -322,9 +323,10 @@ struct ScenarioOptionCard: View {
                         .foregroundColor(AppColors.error)
                 }
             }
-            Text("cabinet")
-                .font(.system(size: 9))
-                .foregroundColor(AppColors.foregroundSubtle)
+            Text("BRIEFING")
+                .font(.system(size: 9, weight: .semibold))
+                .tracking(0.8)
+                .foregroundColor(AppColors.foregroundMuted)
         }
 
         if let onAdvisor = onAdvisor {

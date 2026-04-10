@@ -5,6 +5,7 @@ struct TrustYourGutSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var command = ""
     @State private var isSubmitting = false
+    @State private var showDegradedBanner = false
 
     private var remaining: Int { gameStore.getRemainingTrustYourGutUses() }
     private var max: Int { gameStore.getMaxTrustYourGutUses() }
@@ -24,6 +25,20 @@ struct TrustYourGutSheet: View {
             }
             .navigationTitle("Trust Your Gut")
             .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .top) {
+                if showDegradedBanner {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 11))
+                        Text("Command executed — intel channel degraded.")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundColor(AppColors.background)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(AppColors.error)
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
@@ -103,8 +118,15 @@ struct TrustYourGutSheet: View {
                 isSubmitting = true
                 let cmd = command
                 Task {
-                    await gameStore.trustYourGut(command: cmd)
-                    dismiss()
+                    let usedAI = await gameStore.trustYourGut(command: cmd)
+                    isSubmitting = false
+                    if usedAI {
+                        dismiss()
+                    } else {
+                        showDegradedBanner = true
+                        try? await Task.sleep(nanoseconds: 2_500_000_000)
+                        dismiss()
+                    }
                 }
             } label: {
                 HStack {

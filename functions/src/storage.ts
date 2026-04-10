@@ -5,6 +5,7 @@
  */
 import * as admin from 'firebase-admin';
 import { Scenario } from './types';
+import type { CountryWorldState } from './types';
 import type { WorldEvent } from './lib/world-simulation';
 import * as crypto from 'crypto';
 import { type BundleId } from './data/schemas/bundleIds';
@@ -15,7 +16,7 @@ import {
     saveEmbedding,
     isSemanticDedupEnabled
 } from './lib/semantic-dedup';
-import { buildBestEffortScenarioConditions } from './lib/scenario-conditions';
+import { buildBestEffortMetricGates } from './lib/scenario-conditions';
 
 // Ensure Firebase Admin is initialized
 if (!admin.apps.length) {
@@ -34,14 +35,19 @@ function stripUndefined<T>(obj: T): T {
 }
 
 function applyThemeConditions(scenario: Scenario): Scenario {
+    const metricGates = buildBestEffortMetricGates({
+        existingConditions: scenario.applicability?.metricGates,
+        title: scenario.title,
+        description: scenario.description,
+        tags: scenario.metadata?.tags,
+        requires: scenario.applicability?.requires,
+    });
     return {
         ...scenario,
-        conditions: buildBestEffortScenarioConditions({
-            existingConditions: scenario.conditions,
-            title: scenario.title,
-            description: scenario.description,
-            tags: scenario.metadata?.tags,
-        }),
+        applicability: {
+            ...scenario.applicability,
+            metricGates,
+        },
     };
 }
 
@@ -432,8 +438,8 @@ export async function saveScenario(
             console.warn(`[Storage] Scenario ${scenario.id} is missing exclusivityReason for exclusive scope. Rejecting save.`);
             return { saved: false, reason: 'missing_exclusivity_reason' };
         }
-        if (!Array.isArray(scenario.metadata?.applicable_countries) || scenario.metadata.applicable_countries.length === 0) {
-            console.warn(`[Storage] Scenario ${scenario.id} is missing applicable_countries for exclusive scope. Rejecting save.`);
+        if (!Array.isArray(scenario.applicability?.applicableCountryIds) || scenario.applicability.applicableCountryIds.length === 0) {
+            console.warn(`[Storage] Scenario ${scenario.id} is missing applicability.applicableCountryIds for exclusive scope. Rejecting save.`);
             return { saved: false, reason: 'missing_applicable_countries' };
         }
     }
@@ -462,12 +468,14 @@ export async function saveScenario(
     // 3. Atomically check existence and write to Firestore via transaction.
     // Closes the race condition where two parallel saves of the same scenario ID
     // could both pass the pre-check above and then both commit.
+    // Strip legacy fields that have been unified into applicability
+    const { conditions: _legacyConditions, relationship_conditions: _legacyRelConds, ...scenarioWithoutLegacy } = scenarioToSave as any;
+    const { requires: _metaRequires, applicable_countries: _metaApplicableCountries, ...cleanMetadata } = (scenarioToSave.metadata || {}) as any;
+
     const firestoreData = {
         ...stripUndefined({
-            ...scenarioToSave,
-            metadata: {
-                ...(scenarioToSave.metadata || {}),
-            },
+            ...scenarioWithoutLegacy,
+            metadata: cleanMetadata,
             type: 'generated',
             is_active: true,
         }),
@@ -578,4 +586,31 @@ export async function getRecentWorldEvents(sinceTimestamp: string, limit = 20): 
         .get();
 
     return snap.docs.map((doc) => doc.data() as WorldEvent);
+}
+
+export async function saveCountryWorldState(
+    state: CountryWorldState,
+    firestore: admin.firestore.Firestore = db,
+): Promise<void> {
+    await firestore.collection('country_world_state').doc(state.countryId).set(stripUndefined(state));
+}
+
+export async function loadCountryWorldStates(
+    countryIds: string[],
+    firestore: admin.firestore.Firestore = db,
+): Promise<Map<string, CountryWorldState>> {
+    if (countryIds.length === 0) return new Map();
+    const chunks: string[][] = [];
+    for (let i = 0; i < countryIds.length; i += 30) {
+        chunks.push(countryIds.slice(i, i + 30));
+    }
+    const results = new Map<string, CountryWorldState>();
+    await Promise.all(chunks.map(async chunk => {
+        const snap = await firestore
+            .collection('country_world_state')
+            .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
+            .get();
+        snap.docs.forEach(doc => results.set(doc.id, doc.data() as CountryWorldState));
+    }));
+    return results;
 }

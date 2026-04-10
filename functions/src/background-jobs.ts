@@ -15,11 +15,12 @@ import * as admin from 'firebase-admin';
 import * as logger from "firebase-functions/logger";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { saveScenario, getActiveBundleCount, saveWorldEvent } from './storage';
-import { generateWorldTick } from './lib/world-simulation';
+import { saveScenario, getActiveBundleCount, saveWorldEvent, saveCountryWorldState, loadCountryWorldStates } from './storage';
+import { generateWorldTick, buildUpdatedWorldState } from './lib/world-simulation';
+import type { CountryWorldState } from './types';
 import type { CountryDocument } from './types';
 import { ALL_BUNDLE_IDS, isValidBundleId, STANDARD_BUNDLE_IDS, type BundleId } from './data/schemas/bundleIds';
-import type { ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind } from './types';
+import type { Scenario, ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind } from './types';
 import { validateConfig, logConfigStatus } from './lib/config-validator';
 import { normalizeGenerationScopeInput } from './lib/generation-scope';
 import { exceedsBundleLimitForModel, getMaxBundlesPerJob, isOllamaGeneration } from './lib/generation-models';
@@ -463,7 +464,7 @@ export const onScenarioJobCreated = onDocumentCreated({
                         savedScenarioIds.push(s.id);
                         totalCompleted++;
                     } else {
-                        const savedResult = await saveScenario(s);
+                        const savedResult = await saveScenario(s as unknown as Scenario);
                         if (savedResult.saved) {
                             const actCount = s.acts?.length || 1;
                             const auditMeta = s.metadata?.auditMetadata;
@@ -681,7 +682,7 @@ export const onScenarioJobCreated = onDocumentCreated({
                                 scenarioId: s.id,
                             }, { currentBundle: bundle, currentPhase: 'save', currentMessage: `Staged ${s.id}` });
                         } else {
-                            const savedResult = await saveScenario(s);
+                            const savedResult = await saveScenario(s as unknown as Scenario);
                             if (savedResult.saved) {
                                 const actCount = s.acts?.length || 1;
                                 const isRoot = s.isRootScenario !== false;
@@ -1076,6 +1077,11 @@ export const recoverZombieJobs = onSchedule({
     try {
         const db = admin.firestore();
 
+        await db.doc('world_state/zombie_sweeper_health').set({
+            lastRunStarted: admin.firestore.FieldValue.serverTimestamp(),
+            status: 'running',
+        }, { merge: true });
+
         // --- Read configurable thresholds ---
         const configSnap = await db.doc('world_state/generation_config').get();
         const configData = configSnap.data() ?? {};
@@ -1304,6 +1310,13 @@ export const recoverZombieJobs = onSchedule({
         } else {
             logger.info('[ZombieRecovery] Sweep 3: All running jobs are healthy');
         }
+
+        const recovered = candidates.length + loopCandidates.length + healthCheckFailed.length;
+        await db.doc('world_state/zombie_sweeper_health').set({
+            lastRunCompleted: admin.firestore.FieldValue.serverTimestamp(),
+            status: 'ok',
+            jobsRecovered: recovered,
+        }, { merge: true });
     } catch (err) {
         logger.error('[ZombieRecovery] Uncaught error in scheduler handler:', err);
     }
@@ -1329,17 +1342,39 @@ export const worldSimulationTick = onSchedule({
         }
 
         const countries = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as CountryDocument));
-        const events = generateWorldTick(countries, 1, Date.now());
+        const seed = Date.now();
+        const events = generateWorldTick(countries, 1, seed);
 
-        if (events.length === 0) {
-            logger.info('[WorldSim] No events generated this tick');
-            return;
+        // Build a map of relationship deltas from world events so country world states can reflect them
+        const relDeltasByCountry = new Map<string, Array<{ countryId: string; delta: number }>>();
+        const REL_DELTA_BY_SEVERITY: Record<string, number> = { low: -2, medium: -5, high: -12 };
+        for (const event of events) {
+            const delta = event.actionCategory === 'military'
+                ? -(REL_DELTA_BY_SEVERITY[event.severity] ?? 5)
+                : event.severity === 'high' ? -3 : 1;
+            const actorDeltas = relDeltasByCountry.get(event.actorCountryId) ?? [];
+            actorDeltas.push({ countryId: event.targetCountryId, delta });
+            relDeltasByCountry.set(event.actorCountryId, actorDeltas);
+            const targetDeltas = relDeltasByCountry.get(event.targetCountryId) ?? [];
+            targetDeltas.push({ countryId: event.actorCountryId, delta });
+            relDeltasByCountry.set(event.targetCountryId, targetDeltas);
         }
 
-        await Promise.all(events.map((event) => saveWorldEvent(event)));
+        // Load existing world states, apply drift, and save
+        const existingStates = await loadCountryWorldStates(countries.map(c => c.id), db);
+        const updatedStates: CountryWorldState[] = countries.map(country => {
+            const existing = existingStates.get(country.id) ?? null;
+            const relDeltas = relDeltasByCountry.get(country.id) ?? [];
+            return buildUpdatedWorldState(country, existing, relDeltas);
+        });
+
+        await Promise.all([
+            ...events.map((event) => saveWorldEvent(event)),
+            ...updatedStates.map((state) => saveCountryWorldState(state, db)),
+        ]);
 
         const breakingCount = events.filter((e) => e.isBreakingNews).length;
-        logger.info(`[WorldSim] Saved ${events.length} world events (${breakingCount} breaking)`);
+        logger.info(`[WorldSim] Saved ${events.length} world events (${breakingCount} breaking), updated ${updatedStates.length} country world states`);
     } catch (err) {
         logger.error('[WorldSim] Uncaught error in world simulation tick:', err);
     }

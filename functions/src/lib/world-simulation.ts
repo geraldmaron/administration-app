@@ -1,4 +1,4 @@
-import type { CountryDocument, CountryRelationship } from '../types';
+import type { CountryDocument, CountryRelationship, CountryWorldState } from '../types';
 import type { ActionResolutionRequest, MetricDelta } from '../shared/action-resolution-contract';
 import { resolveActionTemplate } from './action-templates';
 
@@ -271,6 +271,153 @@ function computeGlobalDeltas(event: WorldEvent): MetricDelta[] {
         ];
     }
     return [];
+}
+
+// ---------------------------------------------------------------------------
+// NPC country metric drift (mirrors logic.md §7 coupling rules)
+// ---------------------------------------------------------------------------
+
+function clamp(v: number, min = 0, max = 100): number {
+    return Math.max(min, Math.min(max, v));
+}
+
+export function applyNPCMetricDrift(metrics: Partial<Record<string, number>>): Partial<Record<string, number>> {
+    const m = { ...metrics };
+    const get = (k: string) => m[k] ?? 50;
+    const deltas: Record<string, number> = {};
+
+    const add = (k: string, d: number) => { deltas[k] = (deltas[k] ?? 0) + d; };
+
+    const pub = get('metric_public_order');
+    const inf = get('metric_inflation');
+    const eco = get('metric_economy');
+    const hous = get('metric_housing');
+    const eq = get('metric_equality');
+    const unr = get('metric_unrest');
+    const corr = get('metric_corruption');
+    const lib = get('metric_liberty');
+    const dem = get('metric_democracy');
+    const frel = get('metric_foreign_relations');
+    const innov = get('metric_innovation');
+    const mil = get('metric_military');
+    const bud = get('metric_budget');
+    const infra = get('metric_infrastructure');
+    const crime = get('metric_crime');
+    const energy = get('metric_energy');
+
+    // Unrest drivers
+    if (pub < 40) add('metric_unrest', 1.5);
+    if (inf > 70) add('metric_unrest', 0.75);
+    if (eco < 35) add('metric_unrest', 0.5);
+    if (hous < 40) add('metric_unrest', (40 - hous) * 0.015);
+    if (eq < 40) add('metric_unrest', (40 - eq) * 0.010);
+    if (pub >= 40 && inf <= 70 && eco >= 35 && hous >= 40 && eq >= 40) add('metric_unrest', -0.75);
+
+    // Liberty / democracy / corruption loop
+    if (corr > 60) add('metric_liberty', -1.0);
+    if (lib < 35) add('metric_democracy', -(35 - lib) * 0.015);
+    if (dem < 35) add('metric_corruption', (35 - dem) * 0.015);
+
+    // Economy couplings
+    if (frel < 35) add('metric_economy', -(35 - frel) * 0.02);
+    if (corr > 55) add('metric_economy', -(corr - 55) * 0.025);
+    if (pub < 35) add('metric_economy', -(35 - pub) * 0.02);
+    if (inf > 75) add('metric_economy', -(inf - 75) * 0.02);
+    if (innov > 65) add('metric_economy', (innov - 65) * 0.003);
+
+    // Inflation
+    if (eco > 65) add('metric_inflation', (eco - 65) * 0.025);
+    if (eco < 35) add('metric_inflation', -(35 - eco) * 0.008);
+    if (energy < 35) add('metric_inflation', (35 - energy) * 0.015);
+
+    // Public order
+    if (unr > 50) add('metric_public_order', -(unr - 50) * 0.025);
+    if (crime > 65) add('metric_public_order', -(crime - 65) * 0.025);
+
+    // Crime / housing / equality
+    if (eq < 45) add('metric_crime', (45 - eq) * 0.015);
+    if (hous < 40) add('metric_crime', (40 - hous) * 0.012);
+    if (hous < 40) add('metric_equality', -(40 - hous) * 0.015);
+    if (eco < 45) add('metric_housing', -(45 - eco) * 0.012);
+
+    // Foreign relations / sovereignty
+    if (corr > 60) add('metric_foreign_relations', -(corr - 60) * 0.02);
+    if (unr > 65) add('metric_foreign_relations', -(unr - 65) * 0.02);
+
+    // Health / employment / budget
+    if (eco > 65) add('metric_health', (eco - 65) * 0.005);
+    if (eco < 35) add('metric_health', -(35 - eco) * 0.010);
+    if (eco > 60) add('metric_employment', (eco - 60) * 0.012);
+    if (eco < 40) add('metric_employment', -(40 - eco) * 0.018);
+    if (eco > 60) add('metric_budget', (eco - 60) * 0.010);
+    if (eco < 40) add('metric_budget', -(40 - eco) * 0.015);
+    if (mil > 70) add('metric_budget', -(mil - 70) * 0.008);
+
+    // Infrastructure
+    if (bud < 40) add('metric_infrastructure', -(40 - bud) * 0.010);
+    if (eco < 35) add('metric_infrastructure', -(35 - eco) * 0.008);
+    if (infra < 35) add('metric_infrastructure', -0.3);
+
+    // Education
+    if (bud < 35) add('metric_education', -(35 - bud) * 0.008);
+    if (eco > 65) add('metric_education', (eco - 65) * 0.003);
+
+    // Trade
+    if (frel < 35) add('metric_trade', -(35 - frel) * 0.015);
+    if (frel > 65) add('metric_trade', (frel - 65) * 0.008);
+    if (eco < 35) add('metric_trade', -(35 - eco) * 0.010);
+
+    // Environment
+    if (eco > 70) add('metric_environment', -(eco - 70) * 0.008);
+    if (energy < 40) add('metric_environment', -(40 - energy) * 0.006);
+    if (innov > 70) add('metric_environment', (innov - 70) * 0.004);
+
+    // Apply deltas and clamp
+    for (const [key, delta] of Object.entries(deltas)) {
+        const inverse = ['metric_corruption', 'metric_inflation', 'metric_crime', 'metric_bureaucracy', 'metric_unrest', 'metric_economic_bubble', 'metric_foreign_influence'];
+        const current = get(key);
+        m[key] = clamp(current + delta);
+        // Equilibrium pull (6% toward equilibrium at 50 for standard, 28 for inverse)
+        const equilibrium = inverse.includes(key) ? 28 : 50;
+        const pullDelta = (equilibrium - (m[key] ?? equilibrium)) * 0.06;
+        m[key] = clamp((m[key] ?? equilibrium) + pullDelta);
+    }
+
+    return m;
+}
+
+export function buildUpdatedWorldState(
+    country: CountryDocument,
+    existing: CountryWorldState | null,
+    eventRelationshipDeltas: Array<{ countryId: string; delta: number }>,
+): CountryWorldState {
+    const baseMetrics = existing?.currentMetrics ?? country.gameplay.starting_metrics;
+    const updatedMetrics = applyNPCMetricDrift(baseMetrics);
+
+    const baseRelationships: CountryRelationship[] = existing?.relationships?.length
+        ? existing.relationships
+        : [...(country.geopolitical.neighbors ?? []), ...(country.geopolitical.allies ?? []), ...(country.geopolitical.adversaries ?? [])];
+
+    const updatedRelationships = baseRelationships.map(rel => {
+        const delta = eventRelationshipDeltas.find(d => d.countryId === rel.countryId);
+        if (!delta) return rel;
+        const newStrength = clamp(rel.strength + delta.delta, -100, 100);
+        let newType = rel.type;
+        if (newStrength >= 70 && rel.type === 'neutral') newType = 'strategic_partner';
+        if (newStrength <= -70 && rel.type === 'neutral') newType = 'rival';
+        if (newStrength <= -85 && (rel.type === 'rival' || rel.type === 'adversary')) newType = 'conflict';
+        if (newStrength >= 85 && rel.type === 'strategic_partner') newType = 'formal_ally';
+        return { ...rel, strength: newStrength, type: newType };
+    });
+
+    return {
+        countryId: country.id,
+        currentMetrics: updatedMetrics,
+        relationships: updatedRelationships,
+        lastTickAt: new Date().toISOString(),
+        generation: (existing?.generation ?? 0) + 1,
+        recentScenarioIds: existing?.recentScenarioIds ?? [],
+    };
 }
 
 export function generateWorldTick(
