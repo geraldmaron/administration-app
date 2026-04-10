@@ -18,12 +18,20 @@ function summarizeProvider(job: Pick<JobSummary, 'executionTarget' | 'modelConfi
   if (drafter?.startsWith('ollama:')) return drafter.replace('ollama:', '');
   if (job.executionTarget === 'n8n') return 'n8n';
   if (job.executionTarget === 'local') return 'local';
+  if (job.executionTarget === 'cloud_function') return 'gpt';
   return 'cloud';
 }
 
 type JobSortField = 'id' | 'status' | 'completedCount' | 'requestedAt';
 
-type FilterValue = 'all' | 'running' | 'pending' | 'completed' | 'failed' | 'cancelled';
+type FilterValue = 'all' | 'running' | 'zombie' | 'pending' | 'completed' | 'failed' | 'cancelled';
+
+const ZOMBIE_THRESHOLD_MS = 5 * 60 * 1000;
+
+function isStaleHeartbeat(lastHeartbeatAt?: string): boolean {
+  if (!lastHeartbeatAt) return false;
+  return Date.now() - new Date(lastHeartbeatAt).getTime() > ZOMBIE_THRESHOLD_MS;
+}
 
 function categorizeErrors(errors: { error: string; bundle?: string }[]) {
   return {
@@ -33,8 +41,9 @@ function categorizeErrors(errors: { error: string; bundle?: string }[]) {
   };
 }
 
-function deriveDisplayStatus(job: Pick<JobDetail, 'status' | 'completedCount' | 'failedCount' | 'errors'>): string {
-  if (job.status === 'running') return 'running';
+function deriveDisplayStatus(job: Pick<JobDetail, 'status' | 'completedCount' | 'failedCount' | 'errors' | 'lastHeartbeatAt'>): string {
+  if (job.status === 'running' && isStaleHeartbeat(job.lastHeartbeatAt)) return 'zombie';
+  if (job.status === 'running' || (job.status as string) === 'claimed') return 'running';
   if (job.status === 'pending') return 'pending';
   if (job.status === 'failed') return 'failed';
   if (job.status === 'cancelled') return 'cancelled';
@@ -146,7 +155,7 @@ export default function JobsPage() {
 
   const { sortField, sortDir, handleSort, compare } = useSort<JobSortField>('requestedAt', 'desc');
 
-  const STATUS_ORDER: Record<string, number> = { running: 0, pending: 1, completed: 2, remediated: 2, partial: 3, failed: 4, cancelled: 5 };
+  const STATUS_ORDER: Record<string, number> = { running: 0, zombie: 0.5, pending: 1, completed: 2, remediated: 2, partial: 3, failed: 4, cancelled: 5 };
 
   const filteredJobs = useMemo(() => {
     const base = jobs.filter((job) => {
@@ -183,9 +192,10 @@ export default function JobsPage() {
   const totalJobPages = Math.max(1, Math.ceil(filteredJobs.length / jobPageSize));
   const paginatedJobs = filteredJobs.slice((jobPage - 1) * jobPageSize, jobPage * jobPageSize);
 
-  const runningCount = jobs.filter((j) => j.status === 'running').length;
-  const pendingCount = jobs.filter((j) => j.status === 'pending').length;
-  const runningJobs = jobs.filter((j) => j.status === 'running').slice(0, 5);
+  const runningCount = jobs.filter((j) => deriveDisplayStatus(j as JobDetail) === 'running').length;
+  const zombieCount = jobs.filter((j) => deriveDisplayStatus(j as JobDetail) === 'zombie').length;
+  const pendingCount = jobs.filter((j) => deriveDisplayStatus(j as JobDetail) === 'pending').length;
+  const runningJobs = jobs.filter((j) => j.status === 'running' || (j.status as string) === 'claimed').slice(0, 5);
   const pendingJobs = jobs.filter((j) => j.status === 'pending').slice(0, 5);
   const completedCount = jobs.filter((j) => deriveDisplayStatus(j as JobDetail) === 'completed').length;
   const failureCount = jobs.filter((j) => {
@@ -207,6 +217,7 @@ export default function JobsPage() {
       {/* KPI strip */}
       <div className="mb-3 flex items-center gap-3">
         <DataStat size="compact" label="Running" value={runningCount} accent={runningCount > 0 ? 'blue' : undefined} />
+        <DataStat size="compact" label="Zombies" value={zombieCount} accent={zombieCount > 0 ? 'warning' : undefined} />
         <DataStat size="compact" label="Pending" value={pendingCount} accent={pendingCount > 0 ? 'gold' : undefined} />
         <DataStat size="compact" label="Completed" value={completedCount} accent={completedCount > 0 ? 'success' : undefined} />
         <DataStat size="compact" label="Failures" value={failureCount} accent={failureCount > 0 ? 'warning' : undefined} />
@@ -229,24 +240,29 @@ export default function JobsPage() {
             <div className="space-y-2">
               {runningJobs.length === 0 ? (
                 <div className="text-xs text-[var(--foreground-muted)]">No running jobs.</div>
-              ) : runningJobs.map((job) => (
-                <button key={job.id} type="button" onClick={() => setSlideOverJobId(job.id)} className="w-full rounded-[var(--radius-tight)] border border-[var(--border)] px-3 py-2 text-left hover:bg-[rgba(255,255,255,0.03)]">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="font-mono text-[11px] text-foreground">{job.id.slice(0, 12)}…</div>
-                      <div className="text-[11px] text-[var(--foreground-muted)]">{job.currentBundle ?? 'bundle pending'}{job.currentPhase ? ` → ${job.currentPhase}` : ''}</div>
+              ) : runningJobs.map((job) => {
+                const isZombie = isStaleHeartbeat(job.lastHeartbeatAt);
+                return (
+                  <button key={job.id} type="button" onClick={() => setSlideOverJobId(job.id)} className={`w-full rounded-[var(--radius-tight)] border px-3 py-2 text-left hover:bg-[rgba(255,255,255,0.03)] ${isZombie ? 'border-[var(--warning,#f59e0b)] bg-[rgba(245,158,11,0.05)]' : 'border-[var(--border)]'}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="font-mono text-[11px] text-foreground">{job.id.slice(0, 12)}…</div>
+                        <div className="text-[11px] text-[var(--foreground-muted)]">{job.currentBundle ?? 'bundle pending'}{job.currentPhase ? ` → ${job.currentPhase}` : ''}</div>
+                      </div>
+                      <div className="text-right">
+                        {isZombie ? (
+                          <div className="text-[10px] font-mono font-semibold text-[var(--warning,#f59e0b)]">zombie</div>
+                        ) : (() => {
+                          const lbl = summarizeProvider(job);
+                          const isFS = lbl === 'full send';
+                          return <div className={`text-[10px] font-mono ${isFS ? 'text-[var(--accent-secondary)] font-semibold' : 'text-[var(--accent-primary)]'}`}>{isFS ? '⚡ full send' : lbl}</div>;
+                        })()}
+                        <div className={`text-[10px] ${isZombie ? 'text-[var(--warning,#f59e0b)]' : 'text-[var(--foreground-subtle)]'}`}>{job.lastHeartbeatAt ? formatRelativeTime(job.lastHeartbeatAt) : 'no heartbeat'}</div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      {(() => {
-                        const lbl = summarizeProvider(job);
-                        const isFS = lbl === 'full send';
-                        return <div className={`text-[10px] font-mono ${isFS ? 'text-[var(--accent-secondary)] font-semibold' : 'text-[var(--accent-primary)]'}`}>{isFS ? '⚡ full send' : lbl}</div>;
-                      })()}
-                      <div className="text-[10px] text-[var(--foreground-subtle)]">{job.lastHeartbeatAt ? formatRelativeTime(job.lastHeartbeatAt) : 'no heartbeat'}</div>
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -284,7 +300,7 @@ export default function JobsPage() {
           className="input-shell max-w-[220px]"
           style={{ width: 'auto' }}
         />
-        {(['all', 'running', 'pending', 'completed', 'failed', 'cancelled'] as const).map((v) => (
+        {(['all', 'running', 'zombie', 'pending', 'completed', 'failed', 'cancelled'] as const).map((v) => (
           <button
             key={v}
             type="button"
@@ -374,13 +390,14 @@ export default function JobsPage() {
                 const total = job.total ?? job.count * job.bundles.length;
                 const done = (job.completedCount ?? 0) + (job.failedCount ?? 0);
                 const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
-                const isRunning = job.status === 'running';
+                const isRunning = job.status === 'running' || (job.status as string) === 'claimed';
+                const isZombie = displayStatus === 'zombie';
                 const checked = checkedIds.has(job.id);
 
                 return (
                   <tr
                     key={job.id}
-                    className={`group cursor-pointer ${isRunning ? 'bg-[var(--accent-muted)]' : ''} hover:bg-[rgba(255,255,255,0.03)]`}
+                    className={`group cursor-pointer ${isZombie ? 'bg-[rgba(245,158,11,0.05)]' : isRunning ? 'bg-[var(--accent-muted)]' : ''} hover:bg-[rgba(255,255,255,0.03)]`}
                     onClick={() => setSlideOverJobId(job.id)}
                   >
                     {/* Checkbox */}
@@ -411,7 +428,7 @@ export default function JobsPage() {
 
                     {/* Status */}
                     <td>
-                      <StatusBadge status={displayStatus} pulse={job.status === 'running' || job.status === 'pending'} />
+                      <StatusBadge status={displayStatus} pulse={isRunning && !isZombie || job.status === 'pending'} />
                     </td>
 
                     {/* Bundles */}

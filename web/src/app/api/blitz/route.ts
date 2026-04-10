@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
 
     const effectiveModelConfig = hasMeaningfulModelConfig(modelConfig)
       ? modelConfig
-      : await resolveDefaultModelConfig();
+      : (executionTarget === 'cloud_function' ? undefined : await resolveDefaultModelConfig());
 
     const inventory = await fetchInventory(countries);
 

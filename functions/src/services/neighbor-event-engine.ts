@@ -23,7 +23,7 @@ export interface NeighborPickResult {
 /**
  * Filter a pool of scenarios down to those that:
  * - Are explicitly marked as neighbor events (metadata.isNeighborEvent === true)
- * - Optionally restrict to the player's country via metadata.applicable_countries
+ * - Optionally restrict to the player's country via applicability.applicableCountryIds
  */
 export function filterNeighborEventScenarios(
   playerCountryId: string,
@@ -31,12 +31,9 @@ export function filterNeighborEventScenarios(
 ): Scenario[] {
   return scenarios.filter(s => {
     if (!s.metadata || s.metadata.isNeighborEvent !== true) return false;
-    const ac = s.metadata.applicable_countries;
-    if (!ac || ac === 'all') return true;
-    if (Array.isArray(ac) && ac.length > 0) {
-      return ac.some(id => id.toLowerCase() === playerCountryId.toLowerCase());
-    }
-    return false;
+    const ac = s.applicability?.applicableCountryIds;
+    if (!ac || ac.length === 0) return true;
+    return ac.some(id => id.toLowerCase() === playerCountryId.toLowerCase());
   });
 }
 

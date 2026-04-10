@@ -6,6 +6,7 @@ import CommandPanel from '@/components/CommandPanel';
 import SeverityBadge from '@/components/SeverityBadge';
 import { METRIC_DISPLAY } from '@/lib/constants';
 import { db } from '@/lib/firebase-admin';
+import { toScenarioDetail } from '@/lib/scenario-normalization';
 import {
   type CountryDoc,
   normalizeCountryDoc,
@@ -20,56 +21,6 @@ import ScenarioOps from './ScenarioOps';
 import TagEditor from './TagEditor';
 import TokenPreview from './TokenPreview';
 
-function serializeTimestamp(ts: unknown): string | undefined {
-  if (!ts) return undefined;
-  if (typeof (ts as { toDate?: () => Date }).toDate === 'function') return (ts as { toDate: () => Date }).toDate().toISOString();
-  if (ts instanceof Date) return ts.toISOString();
-  if (typeof ts === 'number') return new Date(ts).toISOString();
-  if (typeof ts === 'string') return ts;
-  return undefined;
-}
-
-function toScenarioDetail(id: string, data: FirebaseFirestore.DocumentData): ScenarioDetail {
-  return {
-    id,
-    title: data.title ?? '',
-    description: data.description ?? '',
-    is_active: data.is_active ?? false,
-    createdAt: serializeTimestamp(data.created_at),
-    updatedAt: serializeTimestamp(data.updated_at),
-    phase: data.phase,
-    actIndex: data.actIndex,
-    options: (data.options ?? []).map((opt: FirebaseFirestore.DocumentData) => ({
-      id: opt.id ?? '',
-      text: opt.text ?? '',
-      label: opt.label,
-      effects: opt.effects ?? [],
-      relationshipEffects: opt.relationshipEffects,
-      advisorFeedback: opt.advisorFeedback ?? [],
-      outcomeHeadline: opt.outcomeHeadline,
-      outcomeSummary: opt.outcomeSummary,
-      outcomeContext: opt.outcomeContext,
-    })),
-    metadata: data.metadata
-      ? {
-          ...data.metadata,
-          auditMetadata: data.metadata.auditMetadata
-            ? {
-                ...data.metadata.auditMetadata,
-                lastAudited: serializeTimestamp(data.metadata.auditMetadata.lastAudited) ?? data.metadata.auditMetadata.lastAudited,
-              }
-            : undefined,
-        }
-      : undefined,
-    conditions: data.conditions,
-    relationship_conditions: data.relationship_conditions,
-    chain_id: data.chain_id,
-    token_map: data.token_map,
-    legislature_requirement: data.legislature_requirement,
-    generationProvenance: data.metadata?.generationProvenance,
-  };
-}
-
 async function fetchScenario(id: string): Promise<ScenarioDetail | null> {
   const [doc, trainingDoc] = await Promise.all([
     db.collection('scenarios').doc(id).get(),
@@ -78,6 +29,38 @@ async function fetchScenario(id: string): Promise<ScenarioDetail | null> {
   if (!doc.exists) return null;
   const detail = toScenarioDetail(doc.id, doc.data()!);
   return { ...detail, isGolden: trainingDoc.exists && trainingDoc.data()?.isGolden === true };
+}
+
+async function fetchScenarioNeighbors(
+  id: string,
+  bundle?: string
+): Promise<{
+  previous: { id: string; title: string } | null;
+  next: { id: string; title: string } | null;
+}> {
+  const currentDoc = await db.collection('scenarios').doc(id).get();
+  if (!currentDoc.exists) {
+    return { previous: null, next: null };
+  }
+
+  let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = db.collection('scenarios');
+  if (bundle) {
+    query = query.where('metadata.bundle', '==', bundle);
+  }
+  query = query.orderBy('created_at', 'desc');
+
+  const [previousSnap, nextSnap] = await Promise.all([
+    query.endBefore(currentDoc).limitToLast(1).get(),
+    query.startAfter(currentDoc).limit(1).get(),
+  ]);
+
+  const previousDoc = previousSnap.docs[0];
+  const nextDoc = nextSnap.docs[0];
+
+  return {
+    previous: previousDoc ? { id: previousDoc.id, title: previousDoc.data().title ?? previousDoc.id } : null,
+    next: nextDoc ? { id: nextDoc.id, title: nextDoc.data().title ?? nextDoc.id } : null,
+  };
 }
 
 async function fetchResolvedDescription(
@@ -222,6 +205,9 @@ export default async function ScenarioDetailPage({
     notFound();
   }
 
+  const neighbors = await fetchScenarioNeighbors(scenario.id, scenario.metadata?.bundle);
+  const neighborQuery = searchParams.countryId ? `?countryId=${encodeURIComponent(searchParams.countryId)}` : '';
+
   const displayTitle = resolved?.title ?? scenario.title;
   const displayDescription = resolved?.description ?? scenario.description;
 
@@ -235,7 +221,8 @@ export default async function ScenarioDetailPage({
   const auditIssueCount = scenario.metadata?.auditMetadata?.issues.length ?? 0;
   const metricConditionCount = scenario.conditions?.length ?? 0;
   const relationshipConditionCount = scenario.relationship_conditions?.length ?? 0;
-  const totalEligibilityGates = metricConditionCount + relationshipConditionCount + (scenario.legislature_requirement ? 1 : 0);
+  const requiresCount = scenario.metadata?.requires ? Object.keys(scenario.metadata.requires).length : 0;
+  const totalEligibilityGates = metricConditionCount + relationshipConditionCount + requiresCount + (scenario.legislature_requirement ? 1 : 0);
   const tagCount = scenario.metadata?.tags?.length ?? 0;
 
   return (
@@ -297,12 +284,32 @@ export default async function ScenarioDetailPage({
           </div>
 
           <div className="shrink-0">
-            <ScenarioActions
-              id={scenario.id}
-              isActive={scenario.is_active}
-              isGolden={scenario.isGolden ?? false}
-              bundle={scenario.metadata?.bundle}
-            />
+            <div className="flex flex-col items-stretch gap-2">
+              <div className="flex items-center justify-end gap-2">
+                <Link
+                  href={neighbors.previous ? `/scenarios/${neighbors.previous.id}${neighborQuery}` : '#'}
+                  aria-disabled={!neighbors.previous}
+                  className={`btn btn-ghost ${neighbors.previous ? '' : 'pointer-events-none opacity-40'}`}
+                  title={neighbors.previous?.title ?? 'No previous scenario'}
+                >
+                  Previous
+                </Link>
+                <Link
+                  href={neighbors.next ? `/scenarios/${neighbors.next.id}${neighborQuery}` : '#'}
+                  aria-disabled={!neighbors.next}
+                  className={`btn btn-ghost ${neighbors.next ? '' : 'pointer-events-none opacity-40'}`}
+                  title={neighbors.next?.title ?? 'No next scenario'}
+                >
+                  Next
+                </Link>
+              </div>
+              <ScenarioActions
+                id={scenario.id}
+                isActive={scenario.is_active}
+                isGolden={scenario.isGolden ?? false}
+                bundle={scenario.metadata?.bundle}
+              />
+            </div>
           </div>
         </div>
 
@@ -444,74 +451,46 @@ export default async function ScenarioDetailPage({
               title="Activation Rules"
               detail={totalEligibilityGates ? `${totalEligibilityGates} gate${totalEligibilityGates !== 1 ? 's' : ''}` : 'Open'}
             />
-            <div className="space-y-3">
-              <div>
-                <div className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-foreground-subtle">Requirements</div>
-                {scenario.metadata?.requires && Object.keys(scenario.metadata.requires).length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {Object.entries(scenario.metadata.requires).map(([key, value]) => (
-                      <span
-                        key={key}
-                        className="inline-flex items-center rounded-full border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/8 px-2.5 py-1 text-[10px] font-mono text-[var(--accent-primary)]"
-                      >
-                        {key.replace(/_/g, ' ')}
-                        {typeof value === 'string' ? `: ${value}` : ''}
-                      </span>
-                    ))}
+            {totalEligibilityGates > 0 ? (
+              <div className="space-y-1">
+                {Object.entries(scenario.metadata?.requires ?? {}).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between py-1 text-[10px] font-mono border-b border-[var(--border)] last:border-0">
+                    <span className="text-foreground-muted">{key.replace(/_/g, ' ')}</span>
+                    <span className="inline-flex items-center rounded-full border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/8 px-2 py-0.5 text-[9px] font-mono text-[var(--accent-primary)]">
+                      {typeof value === 'string' ? value : 'required'}
+                    </span>
                   </div>
-                ) : (
-                  <div className="text-[11px] font-mono text-foreground-subtle">None</div>
-                )}
+                ))}
+                {scenario.conditions?.map((condition, index) => (
+                  <div key={`cond-${index}`} className="flex items-center justify-between py-1 text-[10px] font-mono border-b border-[var(--border)] last:border-0">
+                    <span className="text-foreground-muted">{METRIC_DISPLAY[condition.metricId] ?? condition.metricId}</span>
+                    <span className="text-foreground-subtle">
+                      {condition.min !== undefined ? `≥ ${condition.min}` : ''}
+                      {condition.min !== undefined && condition.max !== undefined ? ' ' : ''}
+                      {condition.max !== undefined ? `≤ ${condition.max}` : ''}
+                    </span>
+                  </div>
+                ))}
+                {scenario.relationship_conditions?.map((condition, index) => (
+                  <div key={`rel-${index}`} className="flex items-center justify-between py-1 text-[10px] font-mono border-b border-[var(--border)] last:border-0">
+                    <span className="text-foreground-muted">{condition.relationshipId.replace(/_/g, ' ')}</span>
+                    <span className="text-foreground-subtle">
+                      {condition.min !== undefined ? `≥ ${condition.min}` : ''}
+                      {condition.min !== undefined && condition.max !== undefined ? ' ' : ''}
+                      {condition.max !== undefined ? `≤ ${condition.max}` : ''}
+                    </span>
+                  </div>
+                ))}
+                {scenario.legislature_requirement ? (
+                  <div className="flex items-center justify-between py-1 text-[10px] font-mono border-b border-[var(--border)] last:border-0">
+                    <span className="text-foreground-muted">legislature approval</span>
+                    <span className="text-foreground-subtle">≥ {scenario.legislature_requirement.min_approval}%{scenario.legislature_requirement.chamber ? ` (${scenario.legislature_requirement.chamber})` : ''}</span>
+                  </div>
+                ) : null}
               </div>
-
-              <div>
-                <div className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-foreground-subtle">Metric Conditions</div>
-                {metricConditionCount > 0 ? (
-                  <div className="space-y-1">
-                    {scenario.conditions?.map((condition, index) => (
-                      <div key={index} className="flex items-center justify-between py-1 text-[10px] font-mono border-b border-[var(--border)] last:border-0">
-                        <span className="text-foreground-muted">{METRIC_DISPLAY[condition.metricId] ?? condition.metricId}</span>
-                        <span className="text-foreground-subtle">
-                          {condition.min !== undefined ? `≥ ${condition.min}` : ''}
-                          {condition.min !== undefined && condition.max !== undefined ? ' ' : ''}
-                          {condition.max !== undefined ? `≤ ${condition.max}` : ''}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-[11px] font-mono text-foreground-subtle">Any state</div>
-                )}
-              </div>
-
-              {relationshipConditionCount > 0 ? (
-                <div>
-                  <div className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-foreground-subtle">Relationships</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {scenario.relationship_conditions?.map((condition, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[10px] font-mono text-foreground-muted"
-                      >
-                        {condition.relationshipId}
-                        {condition.min !== undefined ? ` ≥ ${condition.min}` : ''}
-                        {condition.max !== undefined ? ` ≤ ${condition.max}` : ''}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {scenario.legislature_requirement ? (
-                <div>
-                  <div className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-foreground-subtle">Legislature</div>
-                  <div className="text-[11px] font-mono text-foreground-muted">
-                    approval ≥ {scenario.legislature_requirement.min_approval}%
-                    {scenario.legislature_requirement.chamber ? ` (${scenario.legislature_requirement.chamber})` : ''}
-                  </div>
-                </div>
-              ) : null}
-            </div>
+            ) : (
+              <div className="text-[11px] font-mono text-foreground-subtle">Open — fires for all eligible countries</div>
+            )}
           </CommandPanel>
 
           <CommandPanel id="scenario-tags" className="scroll-mt-24 p-4">

@@ -14,6 +14,7 @@ import {
   isTokenSentenceStartArticleSafe,
 } from '../shared/token-registry-contract';
 import type { TokenStrategy, ScenarioScopeTier } from '../types';
+import { REQUIRES_FLAG_REGISTRY, TOKEN_REQUIRES_MAP } from '../shared/scenario-audit';
 
 // ---------------------------------------------------------------------------
 // 1. TOKEN_CATEGORIES — Categorized token definitions
@@ -101,7 +102,6 @@ export const TOKEN_CATEGORIES = {
   context: [] as unknown as readonly string[],
 
   article_forms: [
-    'the_player_country',
     'the_leader_title',
     'the_vice_leader',
     'the_finance_role',
@@ -133,21 +133,31 @@ export const TOKEN_CATEGORIES = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// 1b. CONDITION_GATED_TOKENS — Tokens that require game-state prerequisites.
-//     These are only injected into prompts when the scenario declares
-//     matching requires flags or conditions.
+// 1b. CONDITION_GATED_TOKENS — Tokens that require country-profile prerequisites.
+//     Derived from REQUIRES_FLAG_REGISTRY via TOKEN_REQUIRES_MAP so that adding
+//     a new flag + token to the registry is the only change needed.
 // ---------------------------------------------------------------------------
 
 export const CONDITION_GATED_TOKENS: ReadonlyArray<{
   token: string;
-  requiresFlag?: string;
+  requiresFlag: string;
   conditionMetric?: string;
   conditionMin?: number;
-}> = [
-  { token: 'legislature', requiresFlag: 'democratic_regime', conditionMetric: 'metric_democracy', conditionMin: 40 },
-  { token: 'upper_house', requiresFlag: 'democratic_regime', conditionMetric: 'metric_democracy', conditionMin: 40 },
-  { token: 'lower_house', requiresFlag: 'democratic_regime', conditionMetric: 'metric_democracy', conditionMin: 40 },
-];
+  conditionMax?: number;
+}> = (Object.entries(TOKEN_REQUIRES_MAP) as Array<[string, keyof typeof REQUIRES_FLAG_REGISTRY]>).map(
+  ([tokenName, flagKey]) => {
+    const def = REQUIRES_FLAG_REGISTRY[flagKey];
+    return {
+      token: tokenName,
+      requiresFlag: flagKey,
+      ...(def?.condition?.op === 'min'
+        ? { conditionMetric: def.condition.metricId, conditionMin: def.condition.threshold }
+        : def?.condition?.op === 'max'
+        ? { conditionMetric: def.condition.metricId, conditionMax: def.condition.threshold }
+        : {}),
+    };
+  }
+);
 
 export const CONDITION_GATED_TOKEN_SET = new Set(CONDITION_GATED_TOKENS.map(t => t.token));
 
@@ -377,6 +387,7 @@ export const TOKEN_ALIAS_MAP: Readonly<Record<string, string>> = {
   'culture_ministry':    'interior_role',
   'ministry_of_interior':'interior_role',
   'opposition':          'opposition_party',
+  'the_player_country':  'player_country',
   'the_opposition_party':'opposition_party',
   'the_legislature':     'legislature',
   'lawmakers':           'legislature',
@@ -404,15 +415,30 @@ export const ROLE_ALIAS_MAP: Readonly<Record<string, string>> = {
   'role_social':          'role_labor',
   'role_public_health':   'role_health',
   'role_police':          'role_interior',
-  'role_intelligence':    'role_interior',
-  'role_cyber':           'role_defense',
-  'role_budget':          'role_economy',
-  'role_housing':         'role_labor',
-  'role_immigration':     'role_interior',
-  'role_military':        'role_defense',
-  'role_foreign_relations': 'role_diplomacy',
-  'role_public_order':      'role_interior',
-  'role_approval':          'role_executive',
+  'role_intelligence':         'role_interior',
+  'role_intelligence_agency':  'role_interior',
+  'role_spy':                  'role_interior',
+  'role_cyber':                'role_defense',
+  'role_budget':               'role_economy',
+  'role_housing':              'role_labor',
+  'role_immigration':          'role_interior',
+  'role_military':             'role_defense',
+  'role_foreign_relations':    'role_diplomacy',
+  'role_public_order':         'role_interior',
+  'role_approval':             'role_executive',
+  'role_press':                'role_executive',
+  'role_communications':       'role_executive',
+  'role_media':                'role_executive',
+  'role_propaganda':           'role_executive',
+  'role_agriculture':          'role_commerce',
+  'role_trade':                'role_commerce',
+  'role_industry':             'role_commerce',
+  'role_culture':              'role_education',
+  'role_sports':               'role_education',
+  'role_religion':             'role_interior',
+  'role_justice_ministry':     'role_justice',
+  'role_judiciary':            'role_justice',
+  'role_attorney_general':     'role_justice',
 };
 
 // ---------------------------------------------------------------------------
@@ -647,24 +673,54 @@ export function buildMinimalTokenPromptSection(): string {
   const instList = MINIMAL_INSTITUTIONAL_TOKENS.map(t => `\`{${t}}\``).join(', ');
   const polList = MINIMAL_POLITICAL_TOKENS.map(t => `\`{${t}}\``).join(', ');
 
+  // Build the gated-token prerequisites table from the registry so the LLM
+  // knows exactly which requires flag each conditional token commits to.
+  const gatedTokensByFlag = new Map<string, string[]>();
+  for (const { token, requiresFlag } of CONDITION_GATED_TOKENS) {
+    const list = gatedTokensByFlag.get(requiresFlag) ?? [];
+    list.push(`\`{${token}}\``);
+    gatedTokensByFlag.set(requiresFlag, list);
+  }
+  const gatedTable = Array.from(gatedTokensByFlag.entries())
+    .map(([flag, tokens]) => {
+      const def = REQUIRES_FLAG_REGISTRY[flag as keyof typeof REQUIRES_FLAG_REGISTRY];
+      return `- ${tokens.join(', ')} → ONLY if \`requires.${flag}: true\` (${def?.label ?? flag})`;
+    })
+    .join('\n');
+
   return `## Token System
 
-Use \`{token}\` placeholders for country-specific facts. These resolve at runtime per country.
-If you need something not listed below, write it in plain English.
+Use \`{token}\` placeholders for ALL country-specific government roles and institutions. Tokens resolve to country-correct vocabulary at render time — a token like \`{finance_role}\` becomes "Secretary of the Treasury" for the US, "Chancellor of the Exchequer" for the UK, "Minister of Finance" elsewhere. Using hardcoded names breaks this and will fail audit.
 
 ### Available Tokens
 - **Core**: ${coreList}
-- **Government roles**: ${roleList}
-  These resolve to country-appropriate titles (Minister, Secretary, etc.)
-- **Institutions**: ${instList}
-- **Political** (ONLY if scenario sets \`requires.democratic_regime: true\`): ${polList}
-  These tokens require a democratic regime and must be gated with \`requires.democratic_regime: true\`. Never use in universal scope unless the scenario is explicitly about democratic governance.
+- **Government roles** (MANDATORY — never write these as plain text): ${roleList}
+- **Institutions** (MANDATORY — never write these as plain text): ${instList}
+- **Political/conditional**: ${polList}
+
+### Conditional Tokens — requires flag prerequisite
+Using any of these tokens COMMITS the scenario to the matching \`metadata.requires\` flag. Set the flag or do not use the token.
+${gatedTable}
 
 ### Rules
 - Write \`the {finance_role}\` or \`your {defense_role}\` naturally — NO special \`{the_*}\` prefix tokens
 - NEVER invent tokens not listed above
-- Foreign actors, international bodies, and relationship references → plain English (never tokens)
-- If unsure a token exists, write it in plain English
+- Foreign actors and international bodies → plain English (never tokens)
+- If a role or institution is not in this list, rephrase to avoid naming it — NEVER write a hardcoded institution name
+
+### BANNED plain-text government vocabulary (use the token equivalent instead)
+Ministry of Finance · Finance Ministry · Treasury Department · Department of the Treasury → \`{finance_role}\`
+Ministry of Defense · Defense Ministry · Department of Defense → \`{defense_role}\`
+Trade Ministry · Commerce Ministry · Ministry of Commerce → \`{commerce_role}\`
+Health Ministry · Ministry of Health → \`{health_role}\`
+Ministry of Foreign Affairs · Foreign Ministry · State Department · Department of State → \`{foreign_affairs_role}\`
+Interior Ministry · Ministry of Interior → \`{interior_role}\`
+Justice Ministry · Ministry of Justice → \`{justice_role}\`
+Education Ministry · Ministry of Education → \`{education_role}\`
+Parliament · Congress · National Assembly · Bundestag · Diet → \`{legislature}\`
+Federal Reserve · Central Bank · Reserve Bank → \`{central_bank}\`
+Supreme Court · High Court · Constitutional Court → \`{judicial_role}\`
+National Guard · Armed Forces · Military · Army → \`{armed_forces_name}\`
 
 ### Valid Advisor Roles (5–9 per option, always include role_executive)
 ${canonicalRolesList}`;
@@ -704,6 +760,7 @@ ${profileLines.join('\n')}
 ### Rules
 - Use real institution names, real titles, real currency — NO \`{token}\` placeholders
 - Write as if the player IS the leader of ${name}
+- Use the exact vocabulary of this country's government — never substitute a generic equivalent (e.g. "Secretary of the Treasury" not "Finance Minister" for the US; "Congress" not "Parliament" for the US)
 - All advisor feedback should reference real institutions where appropriate
 
 ### Valid Advisor Roles (5–9 per option, always include role_executive)
@@ -891,10 +948,6 @@ export function retokenizeText(
 
     const countryName = tokenMap['player_country'];
     if (countryName && countryName.length >= MIN_RETOKENIZE_LENGTH) {
-      const theCountry = tokenMap['the_player_country'] ?? countryName;
-      if (theCountry !== countryName) {
-        replacements.push({ resolved: theCountry, token: '{the_player_country}', articleForm: true });
-      }
       replacements.push({ resolved: countryName, token: '{player_country}', articleForm: false });
     }
 

@@ -5,7 +5,7 @@ import { useState } from 'react';
 const CANONICAL_TAGS = [
   'economy', 'politics', 'military', 'tech', 'environment', 'social',
   'health', 'diplomacy', 'justice', 'corruption', 'culture',
-  'infrastructure', 'resources', 'dick_mode',
+  'infrastructure', 'resources', 'authoritarian',
   'governance', 'elections', 'reform', 'constitutional_crisis', 'coup',
   'judicial_independence', 'civil_rights', 'censorship',
   'taxation', 'austerity', 'debt', 'trade', 'sanctions', 'privatization',

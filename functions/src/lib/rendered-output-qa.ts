@@ -175,7 +175,7 @@ function selectSampleCountries(
   limit = 3
 ): CountryDocument[] {
   const metadata = scenario.metadata;
-  const explicitIds = Array.isArray(metadata?.applicable_countries) ? metadata.applicable_countries : [];
+  const explicitIds = Array.isArray(scenario.applicability?.applicableCountryIds) ? scenario.applicability!.applicableCountryIds! : [];
   const regionTags = Array.isArray(metadata?.region_tags) ? metadata.region_tags.map((item) => String(item)) : [];
 
   const byExplicit = explicitIds

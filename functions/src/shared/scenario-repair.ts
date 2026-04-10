@@ -6,7 +6,7 @@
  * Pure TypeScript — no Firebase or external dependencies.
  */
 
-import { INSTITUTION_PHRASE_RULES, GOV_STRUCTURE_RULES, type PhraseRule } from './scenario-audit';
+import { INSTITUTION_PHRASE_RULES, GOV_STRUCTURE_RULES, type PhraseRule, type ScenarioRequirements } from './scenario-audit';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -55,6 +55,7 @@ export interface RepairableScenario {
   metadata?: {
     bundle?: string;
     actorPattern?: string;
+    requires?: Partial<ScenarioRequirements>;
     auditMetadata?: {
       score?: number;
       issues?: string[];
@@ -348,17 +349,38 @@ const ACTOR_PATTERN_DEFAULT_CONDITIONS: Record<string, RelationshipCondition> = 
   ally: { relationshipId: 'ally', min: 40, max: 100 },
 };
 
+// Maps actorPattern values to the requires flag they imply on the country profile.
+const ACTOR_PATTERN_REQUIRES_FLAG: Record<string, keyof ScenarioRequirements> = {
+  adversary: 'adversary',
+  border_rival: 'land_border_adversary',
+  rival: 'adversary',
+  regional_rival: 'adversary',
+  ally: 'formal_ally',
+};
+
 export function applyRelationshipConditionRepair<T extends RepairableScenario>(
   scenario: T
 ): { updated: T; changed: boolean } {
   const actorPattern = scenario.metadata?.actorPattern;
   if (!actorPattern) return { updated: scenario, changed: false };
+
   const defaultCondition = ACTOR_PATTERN_DEFAULT_CONDITIONS[actorPattern];
-  if (!defaultCondition) return { updated: scenario, changed: false };
-  const hasConditions = Array.isArray(scenario.relationship_conditions) && scenario.relationship_conditions.length > 0;
-  if (hasConditions) return { updated: scenario, changed: false };
+  const requiresFlag = ACTOR_PATTERN_REQUIRES_FLAG[actorPattern];
+  if (!defaultCondition && !requiresFlag) return { updated: scenario, changed: false };
+
+  const hasRelConditions = Array.isArray(scenario.relationship_conditions) && scenario.relationship_conditions.length > 0;
+  const hasRequiresFlag = requiresFlag ? !!scenario.metadata?.requires?.[requiresFlag] : true;
+
+  if (hasRelConditions && hasRequiresFlag) return { updated: scenario, changed: false };
+
   const clone: T = JSON.parse(JSON.stringify(scenario));
-  clone.relationship_conditions = [defaultCondition];
+  if (!hasRelConditions && defaultCondition) {
+    clone.relationship_conditions = [defaultCondition];
+  }
+  if (!hasRequiresFlag && requiresFlag) {
+    clone.metadata = clone.metadata ?? {};
+    clone.metadata.requires = { ...clone.metadata.requires, [requiresFlag]: true };
+  }
   return { updated: clone, changed: true };
 }
 

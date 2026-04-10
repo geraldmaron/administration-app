@@ -201,7 +201,7 @@ async function main() {
     console.log(`[generate-bundle] Saving ${results.length} scenarios to Firestore…`);
     let savedCount = 0;
     for (const scenario of results) {
-        const result = await storage.saveScenario(scenario);
+        const result = await storage.saveScenario(scenario as any);
         if (result.saved) savedCount++;
         else console.warn(`  ⚠ Skipped ${scenario.id}: ${result.reason}`);
     }

@@ -21,6 +21,7 @@ import type {
     GenerationScopeFields,
     GenerationMode,
 } from './shared/generation-contract';
+import type { Scenario } from './types';
 
 // ---------------------------------------------------------------------------
 // Auth helpers (same contract as index.ts)
@@ -444,7 +445,7 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
                 completedCount++;
                 logger.info(`[processGenerationBundle] Staged for review (fallback): ${scenario.id}`);
             } else {
-                const saved = await saveScenario(scenario);
+                const saved = await saveScenario(scenario as unknown as Scenario);
                 if (saved.saved) {
                     completedScenarioIds.push(scenario.id);
                     completedCount++;

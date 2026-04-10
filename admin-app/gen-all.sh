@@ -16,7 +16,7 @@ BUNDLES=(
   bundle_culture
   bundle_infrastructure
   bundle_resources
-  bundle_dick_mode
+  bundle_authoritarian
 )
 
 FAILURES=()

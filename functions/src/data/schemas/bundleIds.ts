@@ -21,7 +21,7 @@ export const BUNDLE_IDS = {
     CULTURE: 'culture',
     INFRASTRUCTURE: 'infrastructure',
     RESOURCES: 'resources',
-    DICK_MODE: 'dick_mode',
+    AUTHORITARIAN: 'authoritarian',
 } as const;
 
 export type BundleId = (typeof BUNDLE_IDS)[keyof typeof BUNDLE_IDS];
@@ -48,20 +48,20 @@ export const BUNDLE_DESCRIPTIONS: Record<BundleId, string> = {
     [BUNDLE_IDS.CULTURE]: 'Cultural conflicts, media, censorship',
     [BUNDLE_IDS.INFRASTRUCTURE]: 'Transportation, utilities, communications',
     [BUNDLE_IDS.RESOURCES]: 'Energy crises, water scarcity, mining',
-    [BUNDLE_IDS.DICK_MODE]: 'Authoritarian and morally dark options',
+    [BUNDLE_IDS.AUTHORITARIAN]: 'Authoritarian and morally dark options',
 };
 
 /**
- * Bundles that are available in standard gameplay (excluding dick_mode)
+ * Bundles that are available in standard gameplay (excluding authoritarian)
  */
 export const STANDARD_BUNDLE_IDS: readonly BundleId[] = ALL_BUNDLE_IDS.filter(
-    id => id !== BUNDLE_IDS.DICK_MODE
+    id => id !== BUNDLE_IDS.AUTHORITARIAN
 );
 
 /**
  * Bundles requiring special mode activation
  */
-export const SPECIAL_BUNDLE_IDS: readonly BundleId[] = [BUNDLE_IDS.DICK_MODE];
+export const SPECIAL_BUNDLE_IDS: readonly BundleId[] = [BUNDLE_IDS.AUTHORITARIAN];
 
 /**
  * Check if a string is a valid bundle ID
@@ -85,9 +85,9 @@ export function normalizeBundleId(bundleName: string): BundleId | null {
     const aliasMap: Record<string, BundleId> = {
         'technology': BUNDLE_IDS.TECH,
         'science': BUNDLE_IDS.TECH,
-        'dickmode': BUNDLE_IDS.DICK_MODE,
-        'dick-mode': BUNDLE_IDS.DICK_MODE,
-        'authoritarian': BUNDLE_IDS.DICK_MODE,
+        'dickmode': BUNDLE_IDS.AUTHORITARIAN,
+        'dick-mode': BUNDLE_IDS.AUTHORITARIAN,
+        'dick_mode': BUNDLE_IDS.AUTHORITARIAN,
     };
     
     return aliasMap[normalized] || null;

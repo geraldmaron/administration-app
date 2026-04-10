@@ -3,6 +3,7 @@ import type { MetricDelta } from '../shared/action-resolution-contract';
 
 export const INITIAL_METRIC_VALUE = 50.0;
 export const MAX_METRIC_CHANGE_BASE = 4.5;
+export const REFERENCE_GAME_LENGTH = 60;
 
 export interface ScoringEffect {
     targetMetricId: string;
@@ -322,7 +323,7 @@ export function advanceTurn(state: BackendGameState, random: RandomSource = defa
     }
     appendMetricHistory(nextState, METRIC_IDS.APPROVAL);
 
-    applyOrganicDrift(nextState);
+    applyOrganicDrift(nextState, nextState.maxTurns);
 
     const shock = nextState.hiddenMetrics?.diplomaticShock;
     if (typeof shock === 'number' && Math.abs(shock) > 0.1) {
@@ -339,7 +340,9 @@ export function advanceTurn(state: BackendGameState, random: RandomSource = defa
     return nextState;
 }
 
-function applyOrganicDrift(state: BackendGameState): void {
+function applyOrganicDrift(state: BackendGameState, maxTurns: number = REFERENCE_GAME_LENGTH): void {
+    const ds = REFERENCE_GAME_LENGTH / Math.max(1, maxTurns);
+
     const economy = state.metrics[METRIC_IDS.ECONOMY] ?? INITIAL_METRIC_VALUE;
     const inflation = state.metrics[METRIC_IDS.INFLATION] ?? INITIAL_METRIC_VALUE;
     const publicOrder = state.metrics[METRIC_IDS.PUBLIC_ORDER] ?? INITIAL_METRIC_VALUE;
@@ -359,118 +362,118 @@ function applyOrganicDrift(state: BackendGameState): void {
     const infra = state.metrics[METRIC_IDS.INFRASTRUCTURE] ?? INITIAL_METRIC_VALUE;
 
     let unrestDrift = 0;
-    if (publicOrder < 40) unrestDrift += 1.5;
-    if (inflation > 70) unrestDrift += 0.75;
-    if (economy < 35) unrestDrift += 0.5;
-    if (housing < 40) unrestDrift += (40 - housing) * 0.015;
-    if (equality < 40) unrestDrift += (40 - equality) * 0.01;
-    if (unrestDrift === 0) unrestDrift = -0.75;
+    if (publicOrder < 40) unrestDrift += 1.5 * ds;
+    if (inflation > 70) unrestDrift += 0.75 * ds;
+    if (economy < 35) unrestDrift += 0.5 * ds;
+    if (housing < 40) unrestDrift += (40 - housing) * 0.015 * ds;
+    if (equality < 40) unrestDrift += (40 - equality) * 0.01 * ds;
+    if (unrestDrift === 0) unrestDrift = -0.75 * ds;
     state.metrics[METRIC_IDS.UNREST] = clampMetric(unrest + unrestDrift);
 
     if (corruption > 60) {
-        state.metrics[METRIC_IDS.LIBERTY] = clampMetric((state.metrics[METRIC_IDS.LIBERTY] ?? INITIAL_METRIC_VALUE) - 1);
+        state.metrics[METRIC_IDS.LIBERTY] = clampMetric((state.metrics[METRIC_IDS.LIBERTY] ?? INITIAL_METRIC_VALUE) - 1 * ds);
     }
     if (liberty < 35) {
-        state.metrics[METRIC_IDS.DEMOCRACY] = clampMetric((state.metrics[METRIC_IDS.DEMOCRACY] ?? INITIAL_METRIC_VALUE) - (35 - liberty) * 0.015);
+        state.metrics[METRIC_IDS.DEMOCRACY] = clampMetric((state.metrics[METRIC_IDS.DEMOCRACY] ?? INITIAL_METRIC_VALUE) - (35 - liberty) * 0.015 * ds);
     }
     let corruptionDrift = 0;
-    if (democracy < 35) corruptionDrift += (35 - democracy) * 0.015;
-    if (publicOrder < 40) corruptionDrift += (40 - publicOrder) * 0.010;
-    if (economy < 35) corruptionDrift += (35 - economy) * 0.008;
-    if (unrest > 65) corruptionDrift += (unrest - 65) * 0.008;
-    if (corruptionDrift === 0 && corruption > 50) corruptionDrift = -0.25;
+    if (democracy < 35) corruptionDrift += (35 - democracy) * 0.015 * ds;
+    if (publicOrder < 40) corruptionDrift += (40 - publicOrder) * 0.010 * ds;
+    if (economy < 35) corruptionDrift += (35 - economy) * 0.008 * ds;
+    if (unrest > 65) corruptionDrift += (unrest - 65) * 0.008 * ds;
+    if (corruptionDrift === 0 && corruption > 50) corruptionDrift = -0.25 * ds;
     if (corruptionDrift !== 0) state.metrics[METRIC_IDS.CORRUPTION] = clampMetric(corruption + corruptionDrift);
 
     let ecoDrift = 0;
-    if (foreignRelations < 35) ecoDrift -= (35 - foreignRelations) * 0.02;
-    if (corruption > 55) ecoDrift -= (corruption - 55) * 0.025;
-    if (publicOrder < 35) ecoDrift -= (35 - publicOrder) * 0.02;
-    if (inflation > 75) ecoDrift -= (inflation - 75) * 0.02;
-    if (innovation > 65) ecoDrift += (innovation - 65) * 0.003;
+    if (foreignRelations < 35) ecoDrift -= (35 - foreignRelations) * 0.02 * ds;
+    if (corruption > 55) ecoDrift -= (corruption - 55) * 0.025 * ds;
+    if (publicOrder < 35) ecoDrift -= (35 - publicOrder) * 0.02 * ds;
+    if (inflation > 75) ecoDrift -= (inflation - 75) * 0.02 * ds;
+    if (innovation > 65) ecoDrift += (innovation - 65) * 0.003 * ds;
     if (ecoDrift !== 0) state.metrics[METRIC_IDS.ECONOMY] = clampMetric(economy + ecoDrift);
 
     let inflationDrift = 0;
-    if (economy > 65) inflationDrift += (economy - 65) * 0.012;
-    if (economy < 35) inflationDrift -= (35 - economy) * 0.008;
-    if (energy < 35) inflationDrift += (35 - energy) * 0.015;
-    if (inflation > 70) inflationDrift -= (inflation - 70) * 0.010;
+    if (economy > 65) inflationDrift += (economy - 65) * 0.012 * ds;
+    if (economy < 35) inflationDrift -= (35 - economy) * 0.008 * ds;
+    if (energy < 35) inflationDrift += (35 - energy) * 0.015 * ds;
+    if (inflation > 70) inflationDrift -= (inflation - 70) * 0.010 * ds;
     if (inflationDrift !== 0) state.metrics[METRIC_IDS.INFLATION] = clampMetric(inflation + inflationDrift);
 
     let bubbleDrift = 0;
-    if (economy > 70) bubbleDrift += (economy - 70) * 0.04;
-    if (inflation > 55) bubbleDrift += (inflation - 55) * 0.025;
-    if (economy < 55 && inflation < 55) bubbleDrift -= 0.4;
+    if (economy > 70) bubbleDrift += (economy - 70) * 0.04 * ds;
+    if (inflation > 55) bubbleDrift += (inflation - 55) * 0.025 * ds;
+    if (economy < 55 && inflation < 55) bubbleDrift -= 0.4 * ds;
     if (bubbleDrift !== 0) state.metrics[METRIC_IDS.ECONOMIC_BUBBLE] = clampMetric((state.metrics[METRIC_IDS.ECONOMIC_BUBBLE] ?? INITIAL_METRIC_VALUE) + bubbleDrift);
 
     let orderDrift = 0;
-    if (unrest > 50) orderDrift -= (unrest - 50) * 0.025;
-    if (crime > 65) orderDrift -= (crime - 65) * 0.025;
+    if (unrest > 50) orderDrift -= (unrest - 50) * 0.025 * ds;
+    if (crime > 65) orderDrift -= (crime - 65) * 0.025 * ds;
     if (orderDrift !== 0) state.metrics[METRIC_IDS.PUBLIC_ORDER] = clampMetric(publicOrder + orderDrift);
 
-    if (economy < 45) state.metrics[METRIC_IDS.HOUSING] = clampMetric(housing - (45 - economy) * 0.012);
+    if (economy < 45) state.metrics[METRIC_IDS.HOUSING] = clampMetric(housing - (45 - economy) * 0.012 * ds);
 
     let crimeDrift = 0;
-    if (equality < 45) crimeDrift += (45 - equality) * 0.015;
-    if (housing < 40) crimeDrift += (40 - housing) * 0.012;
+    if (equality < 45) crimeDrift += (45 - equality) * 0.015 * ds;
+    if (housing < 40) crimeDrift += (40 - housing) * 0.012 * ds;
     if (crimeDrift !== 0) state.metrics[METRIC_IDS.CRIME] = clampMetric(crime + crimeDrift);
 
-    if (housing < 40) state.metrics[METRIC_IDS.EQUALITY] = clampMetric(equality - (40 - housing) * 0.015);
+    if (housing < 40) state.metrics[METRIC_IDS.EQUALITY] = clampMetric(equality - (40 - housing) * 0.015 * ds);
 
     let foreignRelationsDrift = 0;
-    if (corruption > 60) foreignRelationsDrift -= (corruption - 60) * 0.02;
-    if (unrest > 65) foreignRelationsDrift -= (unrest - 65) * 0.02;
+    if (corruption > 60) foreignRelationsDrift -= (corruption - 60) * 0.02 * ds;
+    if (unrest > 65) foreignRelationsDrift -= (unrest - 65) * 0.02 * ds;
     if (foreignRelationsDrift !== 0) state.metrics[METRIC_IDS.FOREIGN_RELATIONS] = clampMetric(foreignRelations + foreignRelationsDrift);
 
-    if (foreignInfluence > 60) state.metrics[METRIC_IDS.SOVEREIGNTY] = clampMetric((state.metrics[METRIC_IDS.SOVEREIGNTY] ?? INITIAL_METRIC_VALUE) - (foreignInfluence - 60) * 0.02);
+    if (foreignInfluence > 60) state.metrics[METRIC_IDS.SOVEREIGNTY] = clampMetric((state.metrics[METRIC_IDS.SOVEREIGNTY] ?? INITIAL_METRIC_VALUE) - (foreignInfluence - 60) * 0.02 * ds);
 
     const currentHealth = state.metrics[METRIC_IDS.HEALTH] ?? INITIAL_METRIC_VALUE;
-    if (economy > 65) state.metrics[METRIC_IDS.HEALTH] = clampMetric(currentHealth + (economy - 65) * 0.005);
-    else if (economy < 35) state.metrics[METRIC_IDS.HEALTH] = clampMetric(currentHealth - (35 - economy) * 0.01);
+    if (economy > 65) state.metrics[METRIC_IDS.HEALTH] = clampMetric(currentHealth + (economy - 65) * 0.005 * ds);
+    else if (economy < 35) state.metrics[METRIC_IDS.HEALTH] = clampMetric(currentHealth - (35 - economy) * 0.01 * ds);
 
     let employmentDrift = 0;
-    if (economy > 60) employmentDrift += (economy - 60) * 0.012;
-    if (economy < 40) employmentDrift -= (40 - economy) * 0.018;
-    if (innovation > 70) employmentDrift -= (innovation - 70) * 0.005;
+    if (economy > 60) employmentDrift += (economy - 60) * 0.012 * ds;
+    if (economy < 40) employmentDrift -= (40 - economy) * 0.018 * ds;
+    if (innovation > 70) employmentDrift -= (innovation - 70) * 0.005 * ds;
     if (employmentDrift !== 0) state.metrics[METRIC_IDS.EMPLOYMENT] = clampMetric((state.metrics[METRIC_IDS.EMPLOYMENT] ?? INITIAL_METRIC_VALUE) + employmentDrift);
 
     let budgetDrift = 0;
-    if (economy > 60) budgetDrift += (economy - 60) * 0.01;
-    if (economy < 40) budgetDrift -= (40 - economy) * 0.015;
-    if (military > 70) budgetDrift -= (military - 70) * 0.008;
+    if (economy > 60) budgetDrift += (economy - 60) * 0.01 * ds;
+    if (economy < 40) budgetDrift -= (40 - economy) * 0.015 * ds;
+    if (military > 70) budgetDrift -= (military - 70) * 0.008 * ds;
     if (budgetDrift !== 0) state.metrics[METRIC_IDS.BUDGET] = clampMetric(budget + budgetDrift);
 
     const trade = state.metrics[METRIC_IDS.TRADE] ?? INITIAL_METRIC_VALUE;
     let tradeDrift = 0;
-    if (foreignRelations < 35) tradeDrift -= (35 - foreignRelations) * 0.015;
-    if (foreignRelations > 65) tradeDrift += (foreignRelations - 65) * 0.008;
-    if (economy < 35) tradeDrift -= (35 - economy) * 0.01;
+    if (foreignRelations < 35) tradeDrift -= (35 - foreignRelations) * 0.015 * ds;
+    if (foreignRelations > 65) tradeDrift += (foreignRelations - 65) * 0.008 * ds;
+    if (economy < 35) tradeDrift -= (35 - economy) * 0.01 * ds;
     if (tradeDrift !== 0) state.metrics[METRIC_IDS.TRADE] = clampMetric(trade + tradeDrift);
 
     let infraDrift = 0;
-    if (budget < 40) infraDrift -= (40 - budget) * 0.01;
-    if (economy < 35) infraDrift -= (35 - economy) * 0.008;
-    if (infra < 35) infraDrift -= 0.3;
+    if (budget < 40) infraDrift -= (40 - budget) * 0.01 * ds;
+    if (economy < 35) infraDrift -= (35 - economy) * 0.008 * ds;
+    if (infra < 35) infraDrift -= 0.3 * ds;
     if (infraDrift !== 0) state.metrics[METRIC_IDS.INFRASTRUCTURE] = clampMetric(infra + infraDrift);
 
     const education = state.metrics[METRIC_IDS.EDUCATION] ?? INITIAL_METRIC_VALUE;
     let educationDrift = 0;
-    if (budget < 35) educationDrift -= (35 - budget) * 0.008;
-    if (economy > 65) educationDrift += (economy - 65) * 0.003;
+    if (budget < 35) educationDrift -= (35 - budget) * 0.008 * ds;
+    if (economy > 65) educationDrift += (economy - 65) * 0.003 * ds;
     if (educationDrift !== 0) state.metrics[METRIC_IDS.EDUCATION] = clampMetric(education + educationDrift);
 
     const immigration = state.metrics[METRIC_IDS.IMMIGRATION] ?? INITIAL_METRIC_VALUE;
     let immigrationDrift = 0;
-    if (economy > 65) immigrationDrift += (economy - 65) * 0.006;
-    if (economy < 35) immigrationDrift -= (35 - economy) * 0.008;
-    if (liberty > 65) immigrationDrift += (liberty - 65) * 0.004;
-    if (unrest > 55) immigrationDrift -= (unrest - 55) * 0.008;
+    if (economy > 65) immigrationDrift += (economy - 65) * 0.006 * ds;
+    if (economy < 35) immigrationDrift -= (35 - economy) * 0.008 * ds;
+    if (liberty > 65) immigrationDrift += (liberty - 65) * 0.004 * ds;
+    if (unrest > 55) immigrationDrift -= (unrest - 55) * 0.008 * ds;
     if (immigrationDrift !== 0) state.metrics[METRIC_IDS.IMMIGRATION] = clampMetric(immigration + immigrationDrift);
 
     const environment = state.metrics[METRIC_IDS.ENVIRONMENT] ?? INITIAL_METRIC_VALUE;
     let environmentDrift = 0;
-    if (economy > 70) environmentDrift -= (economy - 70) * 0.008;
-    if (energy < 40) environmentDrift -= (40 - energy) * 0.006;
-    if (innovation > 70) environmentDrift += (innovation - 70) * 0.004;
+    if (economy > 70) environmentDrift -= (economy - 70) * 0.008 * ds;
+    if (energy < 40) environmentDrift -= (40 - energy) * 0.006 * ds;
+    if (innovation > 70) environmentDrift += (innovation - 70) * 0.004 * ds;
     if (environmentDrift !== 0) state.metrics[METRIC_IDS.ENVIRONMENT] = clampMetric(environment + environmentDrift);
 }
 

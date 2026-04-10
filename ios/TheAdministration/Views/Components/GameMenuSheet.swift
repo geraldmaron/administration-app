@@ -26,10 +26,9 @@ struct GameMenuSheet: View {
 
     private var statusLine: String {
         let turn = gameStore.state.turn
-        let maxTurns = gameStore.state.maxTurns
         let phase = gameStore.state.phase
         let status = gameStore.state.status
-        return "Turn \(turn) of \(maxTurns) · \(phaseDisplay(phase)) · \(statusDisplay(status))"
+        return "Turn \(turn) · \(phaseDisplay(phase)) · \(statusDisplay(status))"
     }
 
     private func phaseDisplay(_ phase: GamePhase) -> String {

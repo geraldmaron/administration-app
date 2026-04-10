@@ -12,7 +12,7 @@ export const ALL_BUNDLES = [
   { id: 'culture', label: 'Culture', description: 'Cultural conflicts, media, censorship', color: 'fuchsia' },
   { id: 'infrastructure', label: 'Infrastructure', description: 'Transportation, utilities, communications', color: 'slate' },
   { id: 'resources', label: 'Resources', description: 'Energy crises, water scarcity, mining', color: 'lime' },
-  { id: 'dick_mode', label: 'Dick Mode', description: 'Authoritarian and morally dark options', color: 'rose' },
+  { id: 'authoritarian', label: 'Authoritarian', description: 'Authoritarian and morally dark options', color: 'rose' },
 ] as const;
 
 export const ALL_REGIONS = [
@@ -74,7 +74,7 @@ export const BUNDLE_THEMES: Record<string, string> = {
   health: 'welfare',
   social: 'society',
   culture: 'society',
-  dick_mode: 'society',
+  authoritarian: 'society',
 };
 
 const THEME_COLORS: Record<string, { hex: string; bg: string; text: string }> = {

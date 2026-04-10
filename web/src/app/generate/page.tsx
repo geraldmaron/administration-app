@@ -236,6 +236,7 @@ export default function GeneratePage() {
   const [modelSource, setModelSource] = useState<'local' | 'cloud'>('local');
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [ollamaConnected, setOllamaConnected] = useState(false);
+  const [ollamaChecking, setOllamaChecking] = useState(true);
 
   // — blitz mode state
   const [blitzLoading, setBlitzLoading] = useState(false);
@@ -276,7 +277,8 @@ export default function GeneratePage() {
         setOllamaConnected(d.connected);
         setOllamaModels(d.models);
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setOllamaChecking(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -410,7 +412,7 @@ export default function GeneratePage() {
   }, [ollamaModels]);
 
   const activeModelConfig = modelSource === 'local' && ollamaConnected ? ollamaModelConfig : undefined;
-  const activeExecutionTarget: ExecutionTarget = modelSource === 'local' ? 'n8n' : executionTarget;
+  const activeExecutionTarget: ExecutionTarget = modelSource === 'local' ? 'n8n' : 'cloud_function';
 
   const sharedRequestFields = useMemo(() => ({
     priority,
@@ -660,7 +662,7 @@ export default function GeneratePage() {
           <div className="space-y-3">
             <div className="rounded-[var(--radius-tight)] border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/5 px-4 py-3">
               <div className="mb-2 flex items-center gap-2">
-                <span className={`h-2 w-2 rounded-full flex-shrink-0 ${ollamaConnected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'}`} />
+                <span className={`h-2 w-2 rounded-full flex-shrink-0 ${ollamaChecking ? 'bg-[var(--foreground-subtle)] animate-pulse' : ollamaConnected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'}`} />
                 <span className="text-xs font-semibold text-foreground">Pipeline A — Corsair (Local)</span>
               </div>
               {ollamaConnected && ollamaModelConfig ? (
@@ -677,7 +679,7 @@ export default function GeneratePage() {
                   ) : null)}
                 </div>
               ) : (
-                <span className="text-[11px] text-[var(--error)]">Corsair not reachable — pipeline A will fail</span>
+                <span className="text-[11px] text-[var(--error)]">{ollamaChecking ? 'Checking connection…' : 'Corsair not reachable — pipeline A will fail'}</span>
               )}
             </div>
             <div className="rounded-[var(--radius-tight)] border border-[var(--accent-secondary)]/30 bg-[var(--accent-secondary)]/5 px-4 py-3">
@@ -750,7 +752,7 @@ export default function GeneratePage() {
             ]).map(({ value, label }) => (
               <button key={value} type="button"
                 onClick={() => setModelSource(value)}
-                disabled={value === 'local' && !ollamaConnected}
+                disabled={value === 'local' && !ollamaChecking && !ollamaConnected}
                 className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   modelSource === value
                     ? 'border-[var(--accent-secondary)] bg-[rgba(212,170,44,0.12)] text-foreground'
@@ -764,9 +766,9 @@ export default function GeneratePage() {
           {modelSource === 'local' ? (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span className={`h-2 w-2 rounded-full ${ollamaConnected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'}`} />
+                <span className={`h-2 w-2 rounded-full ${ollamaChecking ? 'bg-[var(--foreground-subtle)] animate-pulse' : ollamaConnected ? 'bg-[var(--success)]' : 'bg-[var(--error)]'}`} />
                 <span className="text-xs text-[var(--foreground-muted)]">
-                  {ollamaConnected ? `${ollamaModels.length} models · routes via n8n` : 'Corsair not reachable'}
+                  {ollamaChecking ? 'Checking connection…' : ollamaConnected ? `${ollamaModels.length} models · routes via n8n` : 'Corsair not reachable'}
                 </span>
               </div>
               {ollamaModelConfig && (
@@ -789,22 +791,9 @@ export default function GeneratePage() {
             </div>
           ) : (
             <div>
-              <p className="mb-4 text-xs text-[var(--foreground-muted)]">
-                Routes to OpenAI via Cloud Functions or n8n.
+              <p className="text-xs text-[var(--foreground-muted)]">
+                Routes to OpenAI via Cloud Functions.
               </p>
-              <div className="flex items-center gap-3">
-                {(['n8n', 'cloud_function'] as const).map((target) => (
-                  <button key={target} type="button"
-                    onClick={() => setExecutionTarget(target)}
-                    className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
-                      executionTarget === target
-                        ? 'border-[var(--accent-secondary)] bg-[rgba(212,170,44,0.12)] text-foreground'
-                        : 'border-[var(--border)] text-[var(--foreground-muted)] hover:border-[var(--border-strong)] hover:text-foreground'
-                    }`}>
-                    {target === 'n8n' ? 'n8n' : 'Direct'}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
         </>

@@ -1,18 +1,12 @@
 /**
- * Prompt Templates — Firebase-first versioning system.
+ * Prompt Templates — Firestore-only versioning system.
  *
  * Prompt content lives in the `prompt_templates` Firestore collection.
- * When a template is unavailable (missing or Firestore error), the system
- * falls back to local .prompt.md files in functions/src/prompts/.
- * This ensures generation can proceed even during cold-start or seed-script outages.
+ * Firestore is the single source of truth — there are no local fallback files.
  */
 
 import { Timestamp } from 'firebase-admin/firestore';
-import * as fs from 'fs';
-import * as path from 'path';
 import { BundleScenario } from './audit-rules';
-import { buildMinimalTokenPromptSection, buildExclusivePromptSection } from './token-registry';
-import type { CompiledTokenRegistry } from '../shared/token-registry-contract';
 import { ALL_BUNDLE_IDS, type BundleId } from '../data/schemas/bundleIds';
 import { ALL_METRIC_IDS } from '../data/schemas/metricIds';
 import type { ScenarioScopeTier, TokenStrategy } from '../types';
@@ -98,11 +92,11 @@ interface DrafterPromptSection {
 const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
   economy: {
     architect: 'Center the blueprint on fiscal tradeoffs, inflation pressure, jobs, market confidence, and knock-on budget consequences. Include sovereign debt stress, IMF conditionality negotiations, debt restructuring, and structural adjustment tradeoffs as valid arc types — especially scenarios where austerity measures trigger social unrest or where defaulting on obligations forces hard political choices. When a concept involves the IMF, World Bank, or international creditors, frame them as plain-language actors in the concept description — do not create token placeholders for them. UNIVERSAL SCOPE EXCEPTION: if scopeTier is universal, keep the premise fully domestic and transferable. Do not anchor the concept to Congress, the Treasury, the Federal Reserve, the IMF, foreign bondholders, or any single country\'s named institutions. Use reusable domestic pressures like a budget vote, inflation spike, subsidy rollback, central-bank warning, debt-service squeeze, or layoffs. CONDITIONS: Aim for at least 40% of economy scenarios to have no conditions or loose conditions (metric_economy max 55 or no gate at all). Transport cost surges, subsidy debates, central-bank warnings, and labor market shifts occur in healthy economies — omit conditions for these. Reserve strict crisis conditions (metric_economy max 42, metric_budget max 35) only for scenarios where a deep recession or fiscal collapse is an explicit narrative prerequisite.',
-    drafter: 'Favor concrete economic levers such as taxes, subsidies, debt issuance, price controls, labor support, trade exposure, and central-bank tension. Also include sovereign default risk, IMF loan conditions, debt restructuring negotiations, and the tradeoffs of structural adjustment programs. Make option tradeoffs legible for budget, employment, inflation, and approval. When an option raises or lowers taxes, changes spending allocations, or shifts trade policy, include policyImplications targeting the relevant fiscal/policy settings (e.g. fiscal.taxIncome, fiscal.spendingSocial, policy.tradeOpenness). CRITICAL — international financial bodies have NO token equivalents: write "the IMF", "international creditors", "foreign bondholders", "bond markets", "a credit rating agency" as plain language. NEVER use {international_lender}, {international_investor}, {international_monitor}, {imf}, {world_bank}, {bond_market}, or any invented international-body token. UNIVERSAL SCOPE EXCEPTION: if the scenario is universal, keep it fully domestic and regime-agnostic. Do not write Congress, the Treasury, the Federal Reserve, named currencies, or any real country\'s institution names. Do not use absolute money figures like "$200 billion" or "€5 billion". Use approved tokens ({central_bank}, {currency}) only when necessary, and otherwise use relative phrasing such as "a large stimulus package", "major spending cuts", or "a costly subsidy program".',
+    drafter: 'Favor concrete economic levers such as taxes, subsidies, debt issuance, price controls, labor support, trade exposure, and central-bank tension. Also include sovereign default risk, IMF loan conditions, debt restructuring negotiations, and the tradeoffs of structural adjustment programs. Make option tradeoffs legible for budget, employment, inflation, and approval. When an option raises or lowers taxes, changes spending allocations, or shifts trade policy, include policyImplications targeting the relevant fiscal/policy settings (e.g. fiscal.taxIncome, fiscal.spendingSocial, policy.tradeOpenness). CRITICAL — international financial bodies have NO token equivalents: write "the IMF", "international creditors", "foreign bondholders", "bond markets", "a credit rating agency" as plain language. NEVER use {international_lender}, {international_investor}, {international_monitor}, {imf}, {world_bank}, {bond_market}, or any invented international-body token. UNIVERSAL SCOPE EXCEPTION: if the scenario is universal, keep it fully domestic and regime-agnostic. Do not write Congress, the Treasury, the Federal Reserve, named currencies, or any real country\'s institution names. Do not use absolute money figures like "$200 billion" or "€5 billion". At universal scope do NOT use {central_bank}, {currency}, {stock_exchange}, {legislature}, or phrases like "central bank", "monetary policy", "interest rate", "financial markets" — these all gate on country traits. Frame fiscal pressure via the {finance_role}, budget votes inside cabinet, tax changes, subsidy rollbacks, debt issuance, labor support programs, and layoffs. Use relative phrasing such as "a large stimulus package", "major spending cuts", or "a costly subsidy program".',
   },
   politics: {
-    architect: 'Frame the arc around legitimacy, coalition pressure, scandals, constitutional stress, electoral fallout, and elite factional conflict. Include disinformation campaigns, foreign election interference, and state-sponsored media manipulation as valid arc types — situations where the information environment itself becomes a governance threat requiring a policy response. CONDITIONS: Political events — leaks, judicial disputes, media manipulation, regional autonomy demands, and electoral pressure — can happen at any approval level. Aim for 50%+ of politics scenarios to have no conditions or loose conditions (metric_approval max 45). Reserve deep-crisis conditions (metric_approval max 30, metric_public_order max 45) only for scenarios that require a ruling coalition on the brink of collapse or an explicit state of political emergency.',
-    drafter: 'Favor political maneuvering, legitimacy management, party discipline, institutional brinkmanship, and public narrative control. Also include disinformation crises, foreign interference in electoral processes, and state media capture. Options should create visible tradeoffs between stability, democracy, liberty, and approval.',
+    architect: 'Frame the arc around legitimacy, coalition pressure, scandals, constitutional stress, electoral fallout, and elite factional conflict. Include disinformation campaigns, foreign election interference, and state-sponsored media manipulation as valid arc types — situations where the information environment itself becomes a governance threat requiring a policy response. UNIVERSAL SCOPE EXCEPTION: at universal scope do NOT frame around legislatures, parliaments, governing parties, opposition parties, or elections (these gate on country traits). Instead frame around cabinet splits, scandal leaks, civic protest, {judicial_role} investigations, media narrative battles, and loyalty tests inside the executive branch. CONDITIONS: Political events — leaks, judicial disputes, media manipulation, regional autonomy demands, and electoral pressure — can happen at any approval level. Aim for 50%+ of politics scenarios to have no conditions or loose conditions (metric_approval max 45). Reserve deep-crisis conditions (metric_approval max 30, metric_public_order max 45) only for scenarios that require a ruling coalition on the brink of collapse or an explicit state of political emergency.',
+    drafter: 'Favor political maneuvering, legitimacy management, party discipline, institutional brinkmanship, and public narrative control. Also include disinformation crises, foreign interference in electoral processes, and state media capture. Options should create visible tradeoffs between stability, democracy, liberty, and approval. UNIVERSAL SCOPE: do NOT write "legislature", "parliament", "election", "opposition party", "governing party" or use the matching tokens — they gate on country-trait requires flags. Reframe around cabinet factions, scandal leaks, the {judicial_role}, civic protest, the {interior_role}, and loyalty tests inside the executive.',
   },
   military: {
     architect: 'Frame the conflict around escalation risk, deterrence credibility, readiness, civilian costs, alliance signaling, and strategic uncertainty. CONDITIONS: Military procurement debates, readiness reviews, and force posture decisions happen in peacetime. Aim for 40%+ of military scenarios to have no conditions or loose conditions (metric_military max 55). Reserve strict weakness conditions (metric_military max 40) for scenarios where critical capability failure is an explicit plot premise.',
@@ -125,8 +119,8 @@ const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
     drafter: 'Favor outbreaks, hospital overload, medicine shortages, vaccine politics, mental health strain, and emergency public-health measures. Keep tradeoffs clear between health, liberty, budget, public order, and approval.',
   },
   diplomacy: {
-    architect: 'Center the blueprint on alliances, sanctions, trade leverage, crisis signaling, regional credibility, and diplomatic blowback. Include cross-border refugee flows and migration diplomacy as valid arc types: burden-sharing negotiations with neighbors, bilateral agreements over displaced populations, and situations where refugee flows become a coercive diplomatic instrument. UNIVERSAL SCOPE EXCEPTION: when scopeTier is universal, foreign-counterpart interactions are forbidden — center instead on the domestic political economy of foreign policy: trade pact ratification fights in the legislature, sanctions coalition politics within cabinet, foreign aid appropriation battles, treaty withdrawal crises, and asylum system design debates. The scenario must be entirely domestic even though the subject matter is foreign policy. CONDITIONS: Diplomatic friction — trade negotiations, refugee burden-sharing, alliance maintenance, and foreign aid debates — occurs in stable governments. Most diplomacy scenarios should have no conditions. Avoid requiring metric_public_order or metric_approval conditions; foreign policy decisions are made regardless of domestic poll numbers.',
-    drafter: 'Favor sanctions, summit diplomacy, hostage crises, treaty leverage, recognition disputes, tariffs, aid, and alliance bargaining. Also include refugee burden-sharing negotiations, migration diplomacy with origin and transit countries, and scenarios where a neighbor uses refugee flows as political leverage. Make every option expose tradeoffs in foreign relations, trade, sovereignty, military posture, and approval. UNIVERSAL SCOPE: if the scenario is universal, use only domestic political actors — legislature ratifying or blocking a treaty, cabinet factions splitting over a sanctions vote, a foreign aid budget debate. Do not introduce foreign counterparts or relationship tokens.',
+    architect: 'Center the blueprint on alliances, sanctions, trade leverage, crisis signaling, regional credibility, and diplomatic blowback. Include cross-border refugee flows and migration diplomacy as valid arc types: burden-sharing negotiations with neighbors, bilateral agreements over displaced populations, and situations where refugee flows become a coercive diplomatic instrument. UNIVERSAL SCOPE EXCEPTION: when scopeTier is universal, foreign-counterpart interactions are forbidden AND legislative/opposition-party framings are forbidden — center instead on the domestic political economy of foreign policy through cabinet factions splitting over a sanctions decision, foreign-aid appropriation battles inside cabinet, treaty-withdrawal debates driven by the {foreign_affairs_role}, asylum system redesign led by the {interior_role}, and tariff adjustments driven by the {finance_role}. Do not write "legislature", "parliament", "ratification", "opposition party", or "governing party". The scenario must be entirely domestic and regime-agnostic even though the subject matter is foreign policy. CONDITIONS: Diplomatic friction — trade negotiations, refugee burden-sharing, alliance maintenance, and foreign aid debates — occurs in stable governments. Most diplomacy scenarios should have no conditions. Avoid requiring metric_public_order or metric_approval conditions; foreign policy decisions are made regardless of domestic poll numbers.',
+    drafter: 'Favor sanctions, summit diplomacy, hostage crises, treaty leverage, recognition disputes, tariffs, aid, and alliance bargaining. Also include refugee burden-sharing negotiations, migration diplomacy with origin and transit countries, and scenarios where a neighbor uses refugee flows as political leverage. Make every option expose tradeoffs in foreign relations, trade, sovereignty, military posture, and approval. UNIVERSAL SCOPE: if the scenario is universal, use ONLY domestic cabinet-level actors — the {foreign_affairs_role}, the {finance_role}, the {defense_role}, the {interior_role}, the {leader_title}, and the {judicial_role}. Do NOT write "legislature", "parliament", "ratification vote", "opposition party", or "governing party" — these gate on country-trait requires flags. Frame dilemmas as cabinet splits over a sanctions decision, a foreign-aid appropriation fight inside cabinet, a treaty-withdrawal debate, or an asylum-system overhaul. Do not introduce foreign counterparts or relationship tokens.',
   },
   justice: {
     architect: 'Frame the arc around judicial legitimacy, policing strain, civil liberties, sentencing choices, and the state’s response to disorder. CONDITIONS: Most justice scenarios — court reform debates, prosecutorial policy changes, sentencing reviews, civil-liberties bills — should have no conditions or only loose gates (metric_crime max 60 or metric_public_order max 55). Reserve strict crime or order conditions (metric_crime min 60, metric_public_order max 40) only for scenarios whose narrative premise explicitly requires a crime wave or breakdown of public order already underway.',
@@ -148,28 +142,28 @@ const BUNDLE_PROMPT_OVERLAYS: Record<BundleId, BundlePromptOverlay> = {
     architect: 'Frame the arc around extraction, scarcity, energy security, water stress, export leverage, and local backlash from resource decisions. CONDITIONS: Resource policy — mining permits, water-allocation disputes, energy mix debates, commodity export controls — applies in all economic conditions. Aim for at least 50% of resources scenarios to have no conditions. Reserve energy or environment crisis conditions (metric_energy max 42, metric_environment max 40) only for scenarios whose premise explicitly requires an active shortage or ecological collapse as the narrative trigger.',
     drafter: 'Favor mining, drilling, water allocation, food or fuel scarcity, export controls, and commodity dependence. Make the tradeoffs legible across energy, trade, environment, sovereignty, and public order.',
   },
-  dick_mode: {
-    architect: 'Frame the arc around coercion, repression, fear-based control, moral compromise, and strategic cruelty while keeping the scenario politically grounded. CONDITIONS: Authoritarian temptation surfaces regardless of state health — emergency-power grabs, media crackdowns, and patronage extraction happen in stable and crisis states alike. Aim for at least 40% of dick_mode scenarios to have no conditions. Add approval or order conditions (metric_approval max 45, metric_public_order max 50) only when the premise explicitly requires a leader under political pressure or facing unrest that motivates the repressive action.',
-    drafter: 'Favor authoritarian, censorial, and morally dark options, but keep them plausible state actions rather than cartoon villainy. Make the costs explicit in liberty, equality, democracy, foreign relations, unrest, and approval.',
+  authoritarian: {
+    architect: 'Frame the arc around coercion, repression, fear-based control, moral compromise, and strategic cruelty while keeping the scenario politically grounded. In this bundle, the Direct Action option should default to an authoritarian framing — power consolidation, bypassing institutional checks, coercive enforcement. The Institutional/Coalition option may involve co-opting institutions rather than delegating to them. The Strategic Patience option may involve surveillance, infiltration, or quiet consolidation rather than open deferral. CONDITIONS: Authoritarian temptation surfaces regardless of state health — emergency-power grabs, media crackdowns, and patronage extraction happen in stable and crisis states alike. Aim for at least 40% of authoritarian scenarios to have no conditions. Add approval or order conditions (metric_approval max 45, metric_public_order max 50) only when the premise explicitly requires a leader under political pressure or facing unrest that motivates the repressive action.',
+    drafter: 'In this bundle, all three governance modes take on an authoritarian character. Direct Action: overt coercion, decree, crackdown. Institutional/Coalition: co-opting courts, stacking commissions, manufacturing legislative consent. Strategic Patience: surveillance, infiltration, quiet purges, building a loyalty network before acting. Keep them plausible state actions rather than cartoon villainy. Make the costs explicit in liberty, equality, democracy, foreign relations, unrest, and approval.',
   },
 };
 
 const SCOPE_PROMPT_OVERLAYS: Record<ScenarioScopeTier, ScopePromptOverlay> = {
   universal: {
-    architect: 'Optimize for transferability. Avoid country-unique constitutional assumptions. Use only domestic, cabinet, or judiciary for actorPattern — never legislature, ally, adversary, border_rival, or mixed. Universal scenarios must be entirely domestic and regime-agnostic. Do not generate concepts involving foreign countries or bilateral disputes. Do not set metadata.requires. Do not anchor concepts to real institution names or absolute money figures.',
-    drafter: 'Write broadly reusable governance dilemmas grounded in domestic institutions. Use regime-agnostic domestic actors via role tokens ({finance_role}, {defense_role}, etc.), {judicial_role}, {central_bank}. Write "the {finance_role}" or "your {defense_role}" naturally — no special article form syntax. Do not reference foreign actors, neighbors, allies, or adversaries in any form. Omit metadata.requires and relationshipEffects entirely. Avoid legislature/party tokens unless the concept is explicitly gated with requires.democratic_regime. Do not write real institution names, named currencies, or absolute money figures.',
+    architect: 'Optimize for transferability. Avoid country-unique constitutional assumptions. Use only domestic, cabinet, or judiciary for actorPattern — never legislature, ally, adversary, border_rival, or mixed. Universal scenarios must be entirely domestic and regime-agnostic. Do not generate concepts involving foreign countries or bilateral disputes. Do not set applicability.requires — universal scenarios must apply to every country without gating. Do not anchor concepts to real institution names or absolute money figures. FORBIDDEN INSTITUTIONAL ASSUMPTIONS (these gate on country traits and are incompatible with universal scope): do not build concepts around a legislature/parliament, opposition parties, governing parties, elections, a central bank, monetary policy, interest rates, stock exchanges or financial markets, a monarchy, a supreme/constitutional court, or nuclear weapons. Frame fiscal dilemmas around the {finance_role}, taxes, subsidies, and spending choices — not around monetary policy. Frame political dilemmas around cabinet factions, bureaucracy, {judicial_role}, and public protest — not legislative votes or opposition parties.',
+    drafter: 'Write broadly reusable governance dilemmas grounded in domestic institutions. Use only regime-agnostic domestic role tokens: {finance_role}, {defense_role}, {foreign_affairs_role}, {interior_role}, {justice_role}, {health_role}, {education_role}, {environment_role}, {energy_role}, {leader_title}, {judicial_role}, {prosecutor_role}, {police_force}, {armed_forces_name}, {intelligence_agency}. Write "the {finance_role}" or "your {defense_role}" naturally — no special article form syntax. **HARD FORBIDDEN at universal scope — do NOT use in any form (token OR plain text), because each gates on a country-trait requires flag that universal scope cannot set**: {legislature}, {upper_house}, {lower_house}, {governing_party}*, {opposition_party}*, {central_bank}, {stock_exchange}, {monarch}, {ally}, {adversary}, {border_rival}, {trade_partner}. Also forbidden as plain text: "legislature", "parliament", "parliamentary", "election", "vote in/on", "opposition party", "governing party", "central bank", "monetary policy", "interest rate", "base rate", "money supply", "stock exchange", "stock market", "financial markets", "equity market", "monarch", "kingdom", "royal decree", "neighboring rival", "allied government", "trade partner", "border rival", "nuclear arsenal", "nuclear deterrent". Do not reference foreign actors, neighbors, allies, or adversaries in any form. Omit applicability.requires and relationshipEffects entirely. Do not write real institution names, named currencies, or absolute money figures. The three governance modes apply: Institutional/Coalition options should use domestic institutions ({judicial_role}, advisory commissions, expert panels, regulatory agencies, the {finance_role} working with cabinet). Strategic Patience options should use domestic pilot programs, monitoring, and phased rollouts.',
   },
   regional: {
-    architect: 'Optimize for regional realism. Use geography, regional alliances, migration routes, weather systems, and cross-border knock-on effects that make causal sense within the target region. Use metadata.requires tags for geographic and geopolitical eligibility (e.g., coastal, land_border_adversary, trade_partner). When referencing foreign actors, use generalized language: "neighboring states", "regional trade partners", "a border rival". Set appropriate requires flags.',
-    drafter: 'Inject region-relevant causal chains and pressure sources. Use role tokens ({finance_role}, {defense_role}, etc.) for government officials. For foreign actors, use generalized language and set metadata.requires accordingly: requires.formal_ally for ally scenarios, requires.adversary for adversary scenarios, requires.land_border_adversary for border disputes, requires.trade_partner for trade scenarios. Write "your {finance_role}" naturally. Favor regional trade, border, climate, and alliance dynamics that transfer within the same region.',
+    architect: 'Optimize for regional realism. Use geography, regional alliances, migration routes, weather systems, and cross-border knock-on effects that make causal sense within the target region. Use applicability.requires tags for geographic and geopolitical eligibility (e.g., coastal, land_border_adversary, trade_partner). When referencing foreign actors, use generalized language: "neighboring states", "regional trade partners", "a border rival". Set appropriate requires flags.',
+    drafter: 'Inject region-relevant causal chains and pressure sources. Use role tokens ({finance_role}, {defense_role}, etc.) for government officials. For foreign actors, use generalized language and set applicability.requires accordingly: requires.formal_ally for ally scenarios, requires.adversary for adversary scenarios, requires.land_border_adversary for border disputes, requires.trade_partner for trade scenarios. Write "your {finance_role}" naturally. Favor regional trade, border, climate, and alliance dynamics that transfer within the same region.',
   },
   cluster: {
     architect: 'Optimize for shared-structure realism. The concept should fit multiple countries in the same cluster and be stronger than a universal prompt without becoming country-exclusive.',
     drafter: 'Use the cluster brief to produce scenarios that feel institutionally specific yet still portable across the cluster. Use role tokens for government officials. Reject single-country assumptions unless justified by the cluster itself.',
   },
   exclusive: {
-    architect: 'Write for the specific target country provided in the country profile. Use real institution names, real leader titles, real currency — NO token placeholders. The concept must justify why it cannot be generalized. Set metadata.requires to declare any geopolitical preconditions. If the scenario involves a foreign relationship actor, write them as natural language and add relationshipEffects.',
-    drafter: 'This scenario targets a specific country — use real institution names, real titles, and real currency from the country profile. Do NOT use any {token} placeholders. Write foreign relationship actors as natural language ("a neighboring rival", "the allied government"). Set metadata.requires for any geopolitical preconditions and add relationshipEffects on options whose outcomes would realistically change a relationship score.',
+    architect: 'Write for the specific target country provided in the country profile. Use real institution names, real leader titles, real currency — NO token placeholders. The concept must justify why it cannot be generalized. Set applicability.requires to declare any geopolitical preconditions. If the scenario involves a foreign relationship actor, write them as natural language and add relationshipEffects.',
+    drafter: 'This scenario targets a specific country — use real institution names, real titles, and real currency from the country profile. Do NOT use any {token} placeholders. Write foreign relationship actors as natural language ("a neighboring rival", "the allied government"). Set applicability.requires for any geopolitical preconditions and add relationshipEffects on options whose outcomes would realistically change a relationship score.',
   },
 };
 
@@ -196,37 +190,6 @@ function getFirestore(): FirebaseFirestore.Firestore {
 
 const _templateCache = new Map<string, { data: PromptTemplate; fetchedAt: number }>();
 const TEMPLATE_CACHE_TTL_MS = 5 * 60 * 1000;
-
-// ---------------------------------------------------------------------------
-// Local file fallback
-// ---------------------------------------------------------------------------
-
-const LOCAL_PROMPT_MAP: Record<string, string> = {
-  drafter_details: 'drafter.prompt.md',
-  architect_drafter: 'architect.prompt.md',
-  reflection: 'reflection.prompt.md',
-};
-
-function getLocalFallbackPrompt(templateName: string): string | null {
-  const fileName = LOCAL_PROMPT_MAP[templateName];
-  if (!fileName) return null;
-  const candidatePaths = [
-    path.join(__dirname, '..', 'prompts', fileName),
-    path.join(__dirname, '..', '..', 'src', 'prompts', fileName),
-  ];
-
-  for (const filePath of candidatePaths) {
-    try {
-      if (fs.existsSync(filePath)) {
-        return fs.readFileSync(filePath, 'utf8');
-      }
-    } catch (err) {
-      console.warn(`[PromptTemplates] Could not read local fallback at ${filePath}:`, err);
-    }
-  }
-
-  return null;
-}
 
 // ---------------------------------------------------------------------------
 // Fetch helpers
@@ -274,34 +237,16 @@ export async function getCurrentPromptVersions(): Promise<PromptVersion> {
 // ---------------------------------------------------------------------------
 
 /**
- * Load the active drafter prompt base from Firestore, with local file fallback.
- * Token section is determined by tokenStrategy:
- *   'minimal' → compact role token list (no article forms)
- *   'none'    → country profile with real names (no tokens)
+ * Load the active drafter prompt base from Firestore.
+ * Token placeholders ({{TOKEN_SYSTEM}}, {{TOKEN_CONTEXT}}) are resolved in
+ * scenario-engine.ts after country data is available — do not replace them here.
  */
-export async function getDrafterPromptBase(
-  registry?: CompiledTokenRegistry,
-  tokenStrategy?: TokenStrategy,
-  countryProfile?: Record<string, any>,
-): Promise<string> {
-  const tokenSection = tokenStrategy === 'none' && countryProfile
-    ? buildExclusivePromptSection(countryProfile)
-    : buildMinimalTokenPromptSection();
-  const applyReplacements = (text: string) =>
-    text.replace('{{TOKEN_SYSTEM}}', tokenSection)
-      .replace('{{BANNED_PHRASE_GUIDANCE}}', '')
-      .replace('{{TOKEN_CONTEXT}}', '{{TOKEN_CONTEXT}}');
+export async function getDrafterPromptBase(): Promise<string> {
   const template = await getPromptTemplate('drafter_details');
-  if (template) return applyReplacements(template.sections.constraints);
-  const local = getLocalFallbackPrompt('drafter_details');
-  if (local) {
-    console.warn('[PromptTemplates] Using local fallback for drafter_details — seed or activate a Firestore template for production.');
-    return applyReplacements(local);
+  if (template) {
+    return template.sections.constraints.replace('{{BANNED_PHRASE_GUIDANCE}}', '');
   }
-  throw new Error(
-    '[PromptTemplates] No active "drafter_details" prompt template found in Firestore and no local fallback available. ' +
-    'Run the seed script or activate a Firestore template for production.'
-  );
+  throw new Error('[PromptTemplates] No active "drafter_details" prompt template found in Firestore.');
 }
 
 export function getCompactDrafterPromptBase(tokenStrategy?: TokenStrategy): string {
@@ -345,7 +290,8 @@ ${tokenRules}
 - outcomeContext: 4-6 sentences, 70-100 words, at least 350 characters.
 - Outcome fields must stay grounded in the listed effects.
 - Every option must include 5-9 advisorFeedback entries. Always include role_executive + 2-3 domain-relevant roles + at least 1 opposing voice.
-- If the scenario references a legislature, opposition party, or elections: set requires.democratic_regime: true.
+- Never invent advisor role IDs. "role_legislature" is invalid; use "role_executive" for parliamentary strategy/political management and "role_justice" for courts/constitutional oversight.
+- If the scenario references a legislature, opposition party, elections, or a central bank: set applicability.requires with the exact institution flags needed, not just democratic_regime.
 - Use active voice and plain language.
 
 ## Canonical advisor roles (include 5-9 per option)
@@ -596,37 +542,21 @@ Return JSON with { options: [{ id, effects, outcomeHeadline, outcomeSummary, out
 }
 
 /**
- * Load the active reflection prompt from Firestore, with local file fallback.
+ * Load the active reflection prompt from Firestore.
  */
 export async function getReflectionPrompt(): Promise<string> {
   const template = await getPromptTemplate('reflection');
   if (template) return template.sections.constraints;
-  const local = getLocalFallbackPrompt('reflection');
-  if (local) {
-    console.warn('[PromptTemplates] Using local fallback for reflection — seed or activate a Firestore template for production.');
-    return local;
-  }
-  throw new Error(
-    '[PromptTemplates] No active "reflection" prompt template found in Firestore and no local fallback available. ' +
-    'Run the seed script or activate a Firestore template for production.'
-  );
+  throw new Error('[PromptTemplates] No active "reflection" prompt template found in Firestore.');
 }
 
 /**
- * Load the active architect prompt from Firestore, with local file fallback.
+ * Load the active architect prompt from Firestore.
  */
 export async function getArchitectPromptBase(): Promise<string> {
   const template = await getPromptTemplate('architect_drafter');
   if (template) return template.sections.constraints;
-  const local = getLocalFallbackPrompt('architect_drafter');
-  if (local) {
-    console.warn('[PromptTemplates] Using local fallback for architect_drafter — seed or activate a Firestore template for production.');
-    return local;
-  }
-  throw new Error(
-    '[PromptTemplates] No active "architect_drafter" prompt template found in Firestore and no local fallback available. ' +
-    'Run the seed script or activate a Firestore template for production.'
-  );
+  throw new Error('[PromptTemplates] No active "architect_drafter" prompt template found in Firestore.');
 }
 
 export function getBundlePromptOverlay(bundle: BundleId): BundlePromptOverlay {

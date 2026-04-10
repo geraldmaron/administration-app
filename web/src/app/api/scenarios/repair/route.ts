@@ -3,6 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '@/lib/firebase-admin';
 import { requireAdminAuth } from '@/lib/auth';
 import { analyzeScenario, applyPatchesToScenario, applyRelationshipConditionRepair } from '@shared/scenario-repair';
+import { toScenarioDetail } from '@/lib/scenario-normalization';
 import type { ScenarioDetail, ApprovedRepair } from '@/lib/types';
 
 let _countryNameToId: Map<string, string> | null = null;
@@ -47,58 +48,6 @@ export const dynamic = 'force-dynamic';
 
 const MAX_IDS = 50;
 
-function serializeTimestamp(ts: unknown): string | undefined {
-  if (!ts) return undefined;
-  if (typeof (ts as any).toDate === 'function') return (ts as any).toDate().toISOString();
-  if (ts instanceof Date) return ts.toISOString();
-  if (typeof ts === 'number') return new Date(ts).toISOString();
-  if (typeof ts === 'string') return ts;
-  return undefined;
-}
-
-function toDetail(id: string, data: FirebaseFirestore.DocumentData): ScenarioDetail {
-  return {
-    id,
-    title: data.title ?? '',
-    description: data.description ?? '',
-    is_active: data.is_active ?? false,
-    createdAt: serializeTimestamp(data.created_at),
-    updatedAt: serializeTimestamp(data.updated_at),
-    phase: data.phase,
-    actIndex: data.actIndex,
-    options: (data.options ?? []).map((opt: FirebaseFirestore.DocumentData) => ({
-      id: opt.id ?? '',
-      text: opt.text ?? '',
-      label: opt.label,
-      effects: opt.effects ?? [],
-      relationshipEffects: opt.relationshipEffects,
-      advisorFeedback: opt.advisorFeedback ?? [],
-      outcomeHeadline: opt.outcomeHeadline,
-      outcomeSummary: opt.outcomeSummary,
-      outcomeContext: opt.outcomeContext,
-    })),
-    metadata: data.metadata
-      ? {
-          ...data.metadata,
-          auditMetadata: data.metadata.auditMetadata
-            ? {
-                ...data.metadata.auditMetadata,
-                lastAudited:
-                  serializeTimestamp(data.metadata.auditMetadata.lastAudited) ??
-                  data.metadata.auditMetadata.lastAudited,
-              }
-            : undefined,
-        }
-      : undefined,
-    conditions: data.conditions,
-    relationship_conditions: data.relationship_conditions,
-    chain_id: data.chain_id,
-    token_map: data.token_map,
-    legislature_requirement: data.legislature_requirement,
-    generationProvenance: data.metadata?.generationProvenance,
-  };
-}
-
 export async function POST(request: NextRequest) {
   const authError = requireAdminAuth(request);
   if (authError) return authError;
@@ -132,7 +81,7 @@ export async function POST(request: NextRequest) {
             hasChanges: false,
           };
         }
-        const scenario = toDetail(snap.id, snap.data()!);
+        const scenario = toScenarioDetail(snap.id, snap.data()!);
         const analysis = analyzeScenario(scenario);
         const { updated: relFixed, changed: relChanged } = applyRelationshipConditionRepair(scenario);
         if (relChanged && relFixed.relationship_conditions) {
@@ -184,7 +133,7 @@ export async function POST(request: NextRequest) {
         const snap = await docRef.get();
         if (!snap.exists) { skipped++; continue; }
 
-        const scenario = toDetail(snap.id, snap.data()!);
+        const scenario = toScenarioDetail(snap.id, snap.data()!);
 
         const relConditionPatch = repair.patches.find(p => p.path === 'relationship_conditions');
         const countriesPatch = repair.patches.find(p => p.path === 'metadata.applicable_countries');

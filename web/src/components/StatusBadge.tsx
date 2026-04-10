@@ -12,6 +12,7 @@ const STATUS_MAP: Record<string, { label: string; dot: string; text: string }> =
   partial_failure: { label: 'Partial Failure', dot: 'bg-[var(--warning)]', text: 'text-[var(--warning)]' },
   failed: { label: 'Failed', dot: 'bg-[var(--error)]', text: 'text-[var(--error)]' },
   cancelled: { label: 'Cancelled', dot: 'bg-[var(--foreground-subtle)]', text: 'text-[var(--foreground-subtle)]' },
+  zombie: { label: 'Zombie', dot: 'bg-[var(--warning)]', text: 'text-[var(--warning)]' },
 };
 
 export default function StatusBadge({ status, pulse = false }: StatusBadgeProps) {

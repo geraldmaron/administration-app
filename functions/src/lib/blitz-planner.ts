@@ -12,6 +12,39 @@ export const SCOPE_TIER_RATIOS: Record<ScenarioScopeTier, number> = {
   exclusive: 0.25,
 };
 
+/**
+ * Relative generation weight per scenario bundle domain.
+ *
+ * Values are multipliers against the base `totalPerBundle` target (1.0 = baseline).
+ * Weights are calibrated to reflect the approximate frequency with which real heads
+ * of state face decisions in each domain, based on political science research on
+ * government priority allocation and cabinet meeting agendas:
+ *
+ * - Economy dominates leadership time (~30% of a leader's week)
+ * - Politics/governance and social policy are near-constant
+ * - Military and diplomacy are significant but episodic
+ * - Culture, authoritarian, and tech scenarios should be sparse to avoid tonal fatigue
+ *
+ * Bundles absent from this map default to 1.0. The planner normalises nothing —
+ * absolute inventory targets per bundle will differ proportionally.
+ */
+export const BUNDLE_DOMAIN_WEIGHTS: Record<string, number> = {
+  economy:       1.8,  // Budget, trade, inflation, recession — the dominant leadership domain
+  politics:      1.5,  // Elections, constitutional crises, legislative conflict
+  social:        1.3,  // Inequality, welfare, education, housing
+  diplomacy:     1.2,  // Alliances, sanctions, summits, foreign crises
+  military:      1.1,  // Defence policy, deployments, arms, coups
+  health:        1.0,  // Healthcare reform, pandemics, system collapse
+  environment:   0.9,  // Climate, pollution, natural disasters
+  infrastructure:0.9,  // Roads, energy grid, utilities, comms
+  justice:       0.85, // Rule of law, judicial appointments, crime
+  corruption:    0.8,  // Scandals, graft, institutional capture
+  resources:     0.75, // Oil, water, minerals, energy exports
+  tech:          0.7,  // AI, cybersecurity, digital policy
+  culture:       0.5,  // Media, identity politics, cultural conflicts — episodic
+  authoritarian: 0.4,  // Edge-case/dark options — intentionally sparse
+};
+
 const SCOPE_TIERS: ScenarioScopeTier[] = ['universal', 'regional', 'cluster', 'exclusive'];
 
 const PRIORITY_WEIGHTS: Record<BlitzPriority, number> = {
@@ -190,18 +223,20 @@ export function calculateDeficits(
     mediumCountries.length * PRIORITY_WEIGHTS.medium +
     lowCountries.length * PRIORITY_WEIGHTS.low;
 
-  function exclusiveTargetForCountry(priority: BlitzPriority): number {
+  function exclusiveTargetForCountry(priority: BlitzPriority, bundleWeight: number): number {
     if (totalPriorityWeight === 0 || allocation.exclusive === 0) return 0;
     const share = PRIORITY_WEIGHTS[priority] / totalPriorityWeight;
     const countForTier = priority === 'high' ? highCountries.length : priority === 'medium' ? mediumCountries.length : lowCountries.length;
     if (countForTier === 0) return 0;
-    const tierTotal = Math.round(allocation.exclusive * share * countForTier);
+    const tierTotal = Math.round(allocation.exclusive * share * countForTier * bundleWeight);
     return Math.max(1, Math.round(tierTotal / countForTier));
   }
 
   for (const bundle of bundles) {
+    const bundleWeight = BUNDLE_DOMAIN_WEIGHTS[bundle] ?? 1.0;
+
     const universalCurrent = current(bundle, 'universal', 'universal');
-    const universalTarget = allocation.universal;
+    const universalTarget = Math.max(1, Math.round(allocation.universal * bundleWeight));
     const universalDeficit = Math.max(0, universalTarget - universalCurrent);
     if (universalDeficit > 0) {
       const urgency = universalCurrent < universalTarget * 0.5 ? 2 : 1;
@@ -211,7 +246,7 @@ export function calculateDeficits(
     regions.forEach((region, index) => {
       const scopeKey = `region:${region}`;
       const regionalCurrent = current(bundle, 'regional', scopeKey);
-      const regionalTarget = regionalTargets[index] ?? 0;
+      const regionalTarget = Math.max(1, Math.round((regionalTargets[index] ?? 0) * bundleWeight));
       const regionalDeficit = Math.max(0, regionalTarget - regionalCurrent);
       if (regionalDeficit > 0) {
         const urgency = regionalCurrent < regionalTarget * 0.5 ? 2 : 1;
@@ -222,7 +257,7 @@ export function calculateDeficits(
     for (const country of countries) {
       const scopeKey = `country:${country.id}`;
       const exclusiveCurrent = current(bundle, 'exclusive', scopeKey);
-      const exclusiveTarget = exclusiveTargetForCountry(country.blitz_priority);
+      const exclusiveTarget = exclusiveTargetForCountry(country.blitz_priority, bundleWeight);
       const exclusiveDeficit = Math.max(0, exclusiveTarget - exclusiveCurrent);
       if (exclusiveDeficit > 0) {
         const urgency = exclusiveCurrent < exclusiveTarget * 0.5 ? 2 : 1;

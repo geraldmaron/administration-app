@@ -115,9 +115,9 @@ async function regenerateScenario(original: BundleScenario): Promise<BundleScena
       bundle,
       count: 1,
       applicable_countries:
-        Array.isArray(original.metadata?.applicable_countries) &&
-        original.metadata?.applicable_countries.length > 0
-          ? (original.metadata?.applicable_countries as string[])
+        Array.isArray(original.applicability?.applicableCountryIds) &&
+        original.applicability!.applicableCountryIds!.length > 0
+          ? (original.applicability!.applicableCountryIds as string[])
           : undefined,
       distributionConfig: { mode: 'fixed', loopLength: 1 },
     } as any);
@@ -128,17 +128,24 @@ async function regenerateScenario(original: BundleScenario): Promise<BundleScena
     const replacement = result.scenarios[0];
     replacement.id = original.id;
     const originalApplicableCountries =
-      Array.isArray(original.metadata?.applicable_countries) &&
-      original.metadata?.applicable_countries.length > 0
-        ? (original.metadata?.applicable_countries as string[])
+      Array.isArray(original.applicability?.applicableCountryIds) &&
+      original.applicability!.applicableCountryIds!.length > 0
+        ? (original.applicability!.applicableCountryIds as string[])
         : undefined;
     replacement.metadata = {
       ...replacement.metadata,
       bundle,
       severity: original.metadata?.severity ?? replacement.metadata?.severity,
       difficulty: original.metadata?.difficulty ?? replacement.metadata?.difficulty,
-      ...(originalApplicableCountries ? { applicable_countries: originalApplicableCountries } : {}),
     };
+    if (originalApplicableCountries) {
+      replacement.applicability = {
+        requires: replacement.applicability?.requires ?? {},
+        metricGates: replacement.applicability?.metricGates ?? [],
+        ...replacement.applicability,
+        applicableCountryIds: originalApplicableCountries,
+      };
+    }
     return replacement;
   } catch (err: any) {
     console.error(`[AuditFix] Regeneration failed for ${original.id}:`, err.message);
@@ -180,7 +187,7 @@ async function run() {
       const scenario = data as BundleScenario;
 
       if (opts.countryIds && opts.countryIds.length > 0) {
-        const ac = scenario.metadata?.applicable_countries;
+        const ac = scenario.applicability?.applicableCountryIds;
         if (Array.isArray(ac)) {
           const matches = ac.some((c) => opts.countryIds!.includes(c.toLowerCase()));
           if (!matches) {
@@ -256,7 +263,19 @@ async function run() {
           // Use direct Firestore update (not saveScenario, which blocks overwrites of existing docs).
           const db = getFirestore();
           await db.collection('scenarios').doc(updatedScenario.id).set(
-            { ...updatedScenario, updated_at: admin.firestore.FieldValue.serverTimestamp() },
+            {
+              ...updatedScenario,
+              metadata: {
+                ...updatedScenario.metadata,
+                auditMetadata: {
+                  lastAudited: new Date().toISOString(),
+                  score: scoreAfter,
+                  issues: postIssues.map((i) => i.rule),
+                  autoFixed: true,
+                },
+              },
+              updated_at: admin.firestore.FieldValue.serverTimestamp(),
+            },
             { merge: true }
           );
           console.log(`[AuditFix] ${action} applied for scenario ${scenario.id}`);

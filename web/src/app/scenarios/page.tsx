@@ -508,16 +508,33 @@ function ScenariosInner() {
                   </td>
 
                   <td>
-                    <div className="flex items-center gap-1.5">
-                      {scenario.conditionCount ? (
-                        <span title="Has metric conditions" className="h-1.5 w-1.5 rounded-full bg-[#f59e0b] flex-shrink-0" />
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        {scenario.conditionCount ? (
+                          <span title="Has metric conditions" className="h-1.5 w-1.5 rounded-full bg-[#f59e0b] flex-shrink-0" />
+                        ) : null}
+                        <span className="font-mono text-[11px] text-[var(--foreground-muted)]">
+                          {scenario.scopeTier ?? '—'}
+                        </span>
+                        {scenario.countryCount != null && scenario.countryCount > 0 && (
+                          <span className="font-mono text-[10px] text-[var(--foreground-subtle)]">({scenario.countryCount})</span>
+                        )}
+                        {(scenario.conditionCount ?? 0) > 0 && (
+                          <span className="font-mono text-[10px] text-[var(--warning)]">
+                            C{scenario.conditionCount}
+                          </span>
+                        )}
+                        {(scenario.relationshipConditionCount ?? 0) > 0 && (
+                          <span className="font-mono text-[10px] text-[var(--accent-primary)]">
+                            R{scenario.relationshipConditionCount}
+                          </span>
+                        )}
+                      </div>
+                      {scenario.conditionSummary ? (
+                        <div className="truncate font-mono text-[10px] text-[var(--foreground-subtle)]" title={scenario.conditionSummary}>
+                          {scenario.conditionSummary}
+                        </div>
                       ) : null}
-                      <span className="font-mono text-[11px] text-[var(--foreground-muted)]">
-                        {scenario.scopeTier ?? '—'}
-                      </span>
-                      {scenario.countryCount != null && scenario.countryCount > 0 && (
-                        <span className="font-mono text-[10px] text-[var(--foreground-subtle)]">({scenario.countryCount})</span>
-                      )}
                     </div>
                   </td>
 

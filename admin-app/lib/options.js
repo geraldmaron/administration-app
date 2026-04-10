@@ -21,7 +21,7 @@ export const REGIONS = [
 export const DEFAULT_BUNDLE_IDS = [
   'economy', 'politics', 'military', 'tech', 'environment', 'social',
   'health', 'diplomacy', 'justice', 'corruption', 'culture', 'infrastructure',
-  'resources', 'dick_mode',
+  'resources', 'authoritarian',
 ];
 
 /** Bundle labels with short guidance for prompts (so every option has insight). */
@@ -39,7 +39,7 @@ export const BUNDLE_CHOICES = [
   { name: 'culture — cultural conflicts, media, censorship', value: 'culture' },
   { name: 'infrastructure — transportation, utilities, communications', value: 'infrastructure' },
   { name: 'resources — energy crises, water scarcity, mining', value: 'resources' },
-  { name: 'dick_mode — authoritarian and morally dark options', value: 'dick_mode' },
+  { name: 'authoritarian — authoritarian and morally dark options', value: 'authoritarian' },
 ];
 
 /**

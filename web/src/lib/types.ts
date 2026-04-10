@@ -34,6 +34,8 @@ export interface ScenarioSummary {
   scopeKey: string | null;
   countryCount: number | null;
   conditionCount?: number;
+  relationshipConditionCount?: number;
+  conditionSummary?: string | null;
   tagCount: number;
   tagResolutionStatus: 'unresolved' | 'resolved' | 'manual' | null;
   gaiaReviewedAt?: string | null;

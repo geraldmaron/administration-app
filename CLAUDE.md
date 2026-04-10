@@ -55,6 +55,21 @@ Full specs: `.claude/agents.md`
 Default routing for most tasks: `engineer` → `qa` → `reviewer`
 Cross-cutting changes: `orchestrator` → `architect` → `engineer` → `qa` → `reviewer` → `ops`
 
+## Doc Sync Contract (BLOCKING)
+
+When any of the following change, you **MUST** update `docs/SCHEMA.md` and `docs/ARCHITECTURE.md` in the same change. Doc drift is a **blocking review finding** — no exceptions.
+
+- Scenario schema (`functions/src/types.ts` — `Scenario`, `ScenarioApplicability`, `MetricGate`, `RelationshipGate`, `ScenarioOption`, `ScenarioMetadata`)
+- Token system (`functions/src/lib/token-registry.ts` — `TOKEN_CATEGORIES`, `TOKEN_ALIAS_MAP`, `CONCEPT_TO_TOKEN_MAP`, `CANONICAL_ROLE_IDS`)
+- Audit rules (`functions/src/shared/scenario-audit.ts` — `REQUIRES_FLAG_REGISTRY`)
+- Role canonicalization (`functions/src/lib/audit-rules.ts` — `ROLE_ID_CANONICALIZATION`)
+- Country archetypes (`functions/src/data/schemas/country-archetypes.ts` — `CountryArchetype` enum or derivation rules)
+- Metric keys (`MetricKey` in `functions/src/types.ts`)
+- Firestore collection schemas
+- Generation pipeline stages (`functions/src/scenario-engine.ts`, `functions/src/lib/blitz-planner.ts`, `functions/src/gaia.ts`)
+
+Additionally, `logic.md` must be updated when game-logic rules change (metrics, crises, effects, phases).
+
 ## Code Review Checklist
 
 Every PR must pass before merge:
@@ -66,6 +81,7 @@ Every PR must pass before merge:
 - [ ] No silent error swallowing (`catch` blocks must handle or rethrow)
 - [ ] Functions < 50 lines, files < 800 lines
 - [ ] Immutable patterns — no direct object/array mutation
+- [ ] **Doc sync** — `docs/SCHEMA.md` + `docs/ARCHITECTURE.md` updated if any listed surface changed
 - [ ] All `plan.md` acceptance criteria met (if applicable)
 
 ## Key Contracts
@@ -74,11 +90,15 @@ Understand these before touching the generation pipeline or iOS client:
 
 | File | Purpose |
 |------|---------|
+| `docs/ARCHITECTURE.md` | End-to-end system architecture — read first |
+| `docs/SCHEMA.md` | Scenario schema, token system, country archetypes — authoritative |
+| `docs/ABOUT_THE_GAME.md` | Player-facing game overview |
 | `functions/src/types.ts` | Core scenario and game types |
 | `functions/src/shared/generation-job.ts` | Generation job contract |
 | `functions/src/shared/action-resolution-contract.ts` | Action resolution types |
 | `functions/src/shared/token-registry-contract.ts` | Token registry interface |
 | `functions/src/shared/scenario-repair.ts` | Repair pipeline contract |
+| `functions/src/data/schemas/country-archetypes.ts` | Country archetype enum + derivation |
 
 ## Test Commands
 

@@ -23,7 +23,7 @@ import { validateConfig } from './lib/config-validator';
 import { callModelProvider } from './lib/model-providers';
 import { isValidBundleId, type BundleId } from './data/schemas/bundleIds';
 import { normalizeRegion } from './data/schemas/regions';
-import { type NewsItem } from './types';
+import { type NewsItem, type Scenario } from './types';
 import {
     generateEmbedding,
     findSimilarByEmbedding,
@@ -627,7 +627,7 @@ export const dailyNewsToScenarios = onSchedule(
                             date: newsItem.pubDate,
                         };
 
-                        const saveResult = await saveScenario(scenario);
+                        const saveResult = await saveScenario(scenario as unknown as Scenario);
                         if (saveResult.saved) {
                             log.scenariosSaved++;
                             log.savedScenarioIds.push(scenario.id);

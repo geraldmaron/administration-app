@@ -1,9 +1,10 @@
 import { CANONICAL_ROLE_IDS, ROLE_ALIAS_MAP, buildTokenWhitelistPromptSection, buildCompactTokenPromptSection, MINIMAL_ALL_TOKENS } from './token-registry';
+import { buildBestEffortMetricGates } from './scenario-conditions';
 import type { CompiledTokenRegistry } from '../shared/token-registry-contract';
 import { ALL_BUNDLE_IDS, isValidBundleId } from '../data/schemas/bundleIds';
 import { tryNormalizeMetricId } from '../data/schemas/metricIds';
 import { loadCountryCatalog } from './country-catalog';
-import type { ScenarioRequirements, ScenarioSourceKind } from '../types';
+import type { RequiresFlag, ScenarioSourceKind } from '../types';
 import { VALID_SETTING_TARGETS } from '../types';
 import {
     auditScenario as _auditScenarioWithConfig,
@@ -41,6 +42,8 @@ import {
     ABBREVIATION_PATTERN,
     REPEATED_WORD_PATTERN,
     DANGLING_ENDING_PATTERN,
+    TOKEN_REQUIRES_MAP,
+    REQUIRES_FLAG_REGISTRY,
 } from '../shared/scenario-audit';
 
 export {
@@ -77,6 +80,7 @@ export {
     ABBREVIATION_PATTERN,
     REPEATED_WORD_PATTERN,
     DANGLING_ENDING_PATTERN,
+    REQUIRES_FLAG_REGISTRY,
 };
 
 export const VALID_BUNDLE_IDS = new Set(ALL_BUNDLE_IDS);
@@ -649,19 +653,44 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         for (const tag of (scenario.metadata.tags ?? [])) {
             const implied = STATE_TAG_CONDITION_MAP[tag];
             if (!implied) continue;
-            const conditions: Array<{ metricId: string; min?: number; max?: number }> = Array.isArray(scenario.conditions) ? scenario.conditions : [];
+            const conditions: Array<{ metricId: string; min?: number; max?: number }> = Array.isArray(scenario.applicability?.metricGates) ? scenario.applicability!.metricGates : [];
             const covered = conditions.some(
                 (c) => c.metricId === implied.metricId && (implied.op === 'max' ? c.max !== undefined : c.min !== undefined)
             );
             if (!covered) {
-                if (!Array.isArray(scenario.conditions)) scenario.conditions = [];
+                if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
+                if (!Array.isArray(scenario.applicability.metricGates)) scenario.applicability.metricGates = [];
                 const newCondition: { metricId: string; min?: number; max?: number } =
                     implied.op === 'max'
                         ? { metricId: implied.metricId, max: implied.threshold }
                         : { metricId: implied.metricId, min: implied.threshold };
-                scenario.conditions.push(newCondition);
+                scenario.applicability.metricGates.push(newCondition);
                 fixed = true;
                 fixes.push(`auto-injected condition for tag "${tag}": ${implied.metricId} ${implied.op} ${implied.threshold}`);
+            }
+        }
+    }
+
+    const ROLE_ID_CANONICALIZATION: Record<string, string> = {
+        role_bureaucracy:       'role_interior',
+        role_civil_service:     'role_interior',
+        role_legislature:       'role_executive',
+        role_press:             'role_executive',
+        role_communications:    'role_executive',
+        role_media:             'role_executive',
+        role_technology:        'role_commerce',
+        role_innovation:        'role_commerce',
+        role_digital:           'role_commerce',
+        role_national_security: 'role_defense',
+        role_intelligence:      'role_interior',
+    };
+    for (const opt of scenario.options) {
+        for (const fb of ((opt.advisorFeedback ?? []) as any[])) {
+            const canonical = ROLE_ID_CANONICALIZATION[fb.roleId as string];
+            if (canonical) {
+                fixes.push(`${opt.id}: canonicalized roleId ${fb.roleId} → ${canonical}`);
+                fb.roleId = canonical;
+                fixed = true;
             }
         }
     }
@@ -678,13 +707,124 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         scenario.description,
         ...scenario.options.map(o => o.text),
     ].filter(Boolean).join(' ');
-    const inferred = inferRequirementsFromNarrative(corpus, scenario.metadata?.requires);
+    const inferred = inferRequirementsFromNarrative(corpus, scenario.applicability?.requires);
     if (Object.keys(inferred).length > 0) {
-        if (!scenario.metadata) (scenario as any).metadata = {};
-        if (!scenario.metadata!.requires) (scenario.metadata as any).requires = {};
-        Object.assign(scenario.metadata!.requires!, inferred);
+        if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
+        scenario.applicability.requires = { ...scenario.applicability.requires, ...inferred };
         fixed = true;
         fixes.push(`auto-inferred requirements: ${Object.keys(inferred).join(', ')}`);
+    }
+
+    const allText = [
+        scenario.title,
+        scenario.description,
+        ...scenario.options.flatMap(o => [
+            o.text,
+            o.outcomeHeadline,
+            o.outcomeSummary,
+            o.outcomeContext,
+            ...((o.advisorFeedback ?? []) as any[]).map((fb: any) => fb.feedback),
+        ]),
+    ].filter(Boolean).join(' ');
+    const tokenRequiresEntries = Object.entries(TOKEN_REQUIRES_MAP) as Array<[string, RequiresFlag]>;
+    for (const [tokenName, flag] of tokenRequiresEntries) {
+        const tokenPattern = new RegExp(`\\{(?:the_)?${tokenName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}(?:'s|'s)?`, 'i');
+        if (tokenPattern.test(allText) && !scenario.applicability?.requires?.[flag]) {
+            if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
+            if (!scenario.applicability.requires) scenario.applicability.requires = {};
+            (scenario.applicability.requires as Record<string, true>)[flag] = true;
+            fixed = true;
+            fixes.push(`auto-set requires.${flag} (token {${tokenName}} found in text)`);
+        }
+    }
+    for (const [flag, def] of Object.entries(REQUIRES_FLAG_REGISTRY) as Array<[RequiresFlag, (typeof REQUIRES_FLAG_REGISTRY)[RequiresFlag]]>) {
+        if (!def?.tokens?.length || scenario.applicability?.requires?.[flag]) continue;
+        const matched = def.tokens.some((tokenName) => {
+            const tokenPattern = new RegExp(`\\{(?:the_)?${tokenName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}(?:'s|'s)?`, 'i');
+            return tokenPattern.test(allText);
+        });
+        if (!matched) continue;
+        if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
+        if (!scenario.applicability.requires) scenario.applicability.requires = {};
+        (scenario.applicability.requires as Record<string, true>)[flag] = true;
+        fixed = true;
+        fixes.push(`auto-set requires.${flag} (matched institutional token family)`);
+    }
+    const explicitInstitutionTokenRepairs: Array<{ flag: RequiresFlag; pattern: RegExp }> = [
+        { flag: 'has_legislature', pattern: /\{(?:the_)?legislature\}(?:'s|'s)?/i },
+        { flag: 'has_opposition_party', pattern: /\{(?:the_)?opposition_party(?:_leader)?\}(?:'s|'s)?/i },
+        { flag: 'has_central_bank', pattern: /\{(?:the_)?central_bank\}(?:'s|'s)?/i },
+        { flag: 'has_stock_exchange', pattern: /\{(?:the_)?stock_exchange\}(?:'s|'s)?/i },
+    ];
+    for (const repair of explicitInstitutionTokenRepairs) {
+        if (!repair.pattern.test(allText) || scenario.applicability?.requires?.[repair.flag]) continue;
+        if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
+        if (!scenario.applicability.requires) scenario.applicability.requires = {};
+        (scenario.applicability.requires as Record<string, true>)[repair.flag] = true;
+        fixed = true;
+        fixes.push(`auto-set requires.${repair.flag} (matched institution token)`);
+    }
+
+    // Sync requires flags → metricGates: for each requires flag that implies a metric gate,
+    // ensure the corresponding metricGate exists (repairs requires-missing-condition warns).
+    if (scenario.applicability?.requires) {
+        const existingGates = scenario.applicability.metricGates ?? [];
+        const gatesToAdd: typeof existingGates = [];
+        for (const [flag, implied] of Object.entries(REQUIRES_CONDITION_MAP) as Array<[RequiresFlag, { metricId: string; op: 'min' | 'max'; threshold: number }]>) {
+            if (!scenario.applicability.requires[flag]) continue;
+            const covered = existingGates.some(g =>
+                g.metricId === implied.metricId &&
+                (implied.op === 'max' ? g.max !== undefined : g.min !== undefined)
+            );
+            if (!covered) {
+                gatesToAdd.push({
+                    metricId: implied.metricId,
+                    ...(implied.op === 'min' ? { min: implied.threshold } : { max: implied.threshold }),
+                });
+                fixed = true;
+                fixes.push(`auto-added metricGate for requires.${flag}: ${implied.metricId} ${implied.op} ${implied.threshold}`);
+            }
+        }
+        if (gatesToAdd.length > 0) {
+            scenario.applicability.metricGates = [...existingGates, ...gatesToAdd];
+        }
+    }
+
+    const rebuiltMetricGates = buildBestEffortMetricGates({
+        existingConditions: scenario.applicability?.metricGates,
+        title: scenario.title,
+        description: scenario.description,
+        tags: scenario.metadata?.tags,
+        requires: scenario.applicability?.requires,
+    });
+    const existingMetricGates = scenario.applicability?.metricGates ?? [];
+    if (JSON.stringify(rebuiltMetricGates) !== JSON.stringify(existingMetricGates)) {
+        if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
+        scenario.applicability.metricGates = rebuiltMetricGates;
+        fixed = true;
+        fixes.push(
+            existingMetricGates.length > 0
+                ? 'normalized applicability.metricGates to scoring-aligned thresholds'
+                : 'reconstructed applicability.metricGates from narrative, tags, and requires flags'
+        );
+    }
+
+    // Universal scope: strip regime-type requires flags that restrict to a subset of countries.
+    // These flags (democratic_regime, authoritarian_regime, fragile_state) belong on cluster/
+    // regional/exclusive scope, not universal scenarios that must fire for all countries.
+    if (scenario.metadata?.scopeTier === 'universal' && scenario.applicability?.requires) {
+        const UNIVERSAL_INCOMPATIBLE_FLAGS = new Set([
+            'democratic_regime', 'authoritarian_regime', 'fragile_state',
+        ]);
+        const toRemove = Object.keys(scenario.applicability.requires)
+            .filter(flag => UNIVERSAL_INCOMPATIBLE_FLAGS.has(flag));
+        if (toRemove.length > 0) {
+            for (const flag of toRemove) {
+                delete (scenario.applicability.requires as Record<string, unknown>)[flag];
+            }
+            fixed = true;
+            fixes.push(`stripped universal-incompatible requires flags: ${toRemove.join(', ')}`);
+        }
     }
 
     return { fixed, fixes };
@@ -1702,10 +1842,10 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
         if (issue.rule === 'narrative-requires-coherence') {
             const premiseParts = [scenario.title, scenario.description, ...(scenario.options ?? []).map(o => o.text)].filter(Boolean);
             const premiseCorpus = premiseParts.join(' ');
-            const inferred = inferRequirementsFromNarrative(premiseCorpus, scenario.metadata?.requires as ScenarioRequirements | undefined);
+            const inferred = inferRequirementsFromNarrative(premiseCorpus, scenario.applicability?.requires);
             if (Object.keys(inferred).length > 0) {
-                if (!scenario.metadata) scenario.metadata = {};
-                scenario.metadata.requires = { ...(scenario.metadata.requires as ScenarioRequirements | undefined), ...inferred };
+                if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
+                scenario.applicability.requires = { ...scenario.applicability.requires, ...inferred };
                 fixes.push(`merged narrative-inferred requires: ${Object.keys(inferred).join(', ')}`);
                 fixed = true;
             }

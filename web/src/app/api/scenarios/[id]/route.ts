@@ -2,61 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
 import { requireAdminAuth } from '@/lib/auth';
 import { FieldValue } from 'firebase-admin/firestore';
+import { toScenarioDetail } from '@/lib/scenario-normalization';
 
 export const dynamic = 'force-dynamic';
-import type { ScenarioDetail } from '@/lib/types';
-
-function serializeTimestamp(ts: unknown): string | undefined {
-  if (!ts) return undefined;
-  if (typeof (ts as any).toDate === 'function') return (ts as any).toDate().toISOString();
-  if (ts instanceof Date) return ts.toISOString();
-  if (typeof ts === 'number') return new Date(ts).toISOString();
-  if (typeof ts === 'string') return ts;
-  return undefined;
-}
-
-function toDetail(id: string, data: FirebaseFirestore.DocumentData): ScenarioDetail {
-  return {
-    id,
-    title: data.title ?? '',
-    description: data.description ?? '',
-    is_active: data.is_active ?? false,
-    createdAt: serializeTimestamp(data.created_at),
-    updatedAt: serializeTimestamp(data.updated_at),
-    phase: data.phase,
-    actIndex: data.actIndex,
-    options: (data.options ?? []).map((opt: FirebaseFirestore.DocumentData) => ({
-      id: opt.id ?? '',
-      text: opt.text ?? '',
-      label: opt.label,
-      effects: opt.effects ?? [],
-      relationshipEffects: opt.relationshipEffects,
-      advisorFeedback: opt.advisorFeedback ?? [],
-      outcomeHeadline: opt.outcomeHeadline,
-      outcomeSummary: opt.outcomeSummary,
-      outcomeContext: opt.outcomeContext,
-    })),
-    metadata: data.metadata
-      ? {
-          ...data.metadata,
-          auditMetadata: data.metadata.auditMetadata
-            ? {
-                ...data.metadata.auditMetadata,
-                lastAudited: serializeTimestamp(data.metadata.auditMetadata.lastAudited) ?? data.metadata.auditMetadata.lastAudited,
-              }
-            : undefined,
-        }
-      : undefined,
-    conditions: data.conditions,
-    relationship_conditions: data.relationship_conditions,
-    chain_id: data.chain_id,
-    token_map: data.token_map,
-    legislature_requirement: data.legislature_requirement,
-    generationProvenance: data.metadata?.generationProvenance,
-    gaiaReviewedAt: serializeTimestamp(data.gaiaReviewedAt) ?? null,
-    gaiaRunId: data.gaiaRunId ?? null,
-  };
-}
 
 export async function GET(
   _request: NextRequest,
@@ -70,7 +18,7 @@ export async function GET(
     if (!doc.exists) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    const detail = toDetail(doc.id, doc.data()!);
+    const detail = toScenarioDetail(doc.id, doc.data()!);
     return NextResponse.json({ ...detail, isGolden: trainingDoc.exists && trainingDoc.data()?.isGolden === true });
   } catch (err) {
     console.error('GET /api/scenarios/[id] error:', err);

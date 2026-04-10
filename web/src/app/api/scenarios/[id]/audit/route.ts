@@ -108,7 +108,7 @@ export async function POST(
       description: data.description ?? '',
       options: data.options ?? [],
       metadata: data.metadata,
-      conditions: data.conditions,
+      applicability: data.applicability,
       relationship_conditions: data.relationship_conditions,
       token_map: data.token_map,
       phase: data.phase,

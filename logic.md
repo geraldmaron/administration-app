@@ -1875,7 +1875,7 @@ Canonical design note:
 
 Canonical IDs stored in `scenario.category` (no `bundle_` prefix):
 
-`economy`, `politics`, `military`, `tech`, `environment`, `social`, `health`, `diplomacy`, `justice`, `corruption`, `culture`, `infrastructure`, `resources`, `dick_mode`
+`economy`, `politics`, `military`, `tech`, `environment`, `social`, `health`, `diplomacy`, `justice`, `corruption`, `culture`, `infrastructure`, `resources`, `authoritarian`
 
 Source of truth: `functions/src/data/schemas/bundleIds.ts`.
 

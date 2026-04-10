@@ -467,5 +467,5 @@ const CANONICAL_TAG_SET = new Set<string>(CANONICAL_SCENARIO_TAGS as readonly st
 const BUNDLE_TAGS = new Set<string>([
     'economy', 'politics', 'military', 'tech', 'environment', 'social',
     'health', 'diplomacy', 'justice', 'corruption', 'culture',
-    'infrastructure', 'resources', 'dick_mode',
+    'infrastructure', 'resources', 'authoritarian',
 ]);

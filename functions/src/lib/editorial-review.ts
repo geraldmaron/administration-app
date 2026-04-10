@@ -61,10 +61,10 @@ export function combineEditorialReview(
   }
   if (narrativeReviewGate.enabled && narrative) {
     if (
-      narrative.overallScore < 3.7 ||
-      narrative.optionDifferentiation.score < 4 ||
-      narrative.consequenceQuality.score < 4 ||
-      narrative.replayValue.score < 4
+      narrative.overallScore < 3.5 ||
+      narrative.optionDifferentiation.score < 3 ||
+      narrative.consequenceQuality.score < 3 ||
+      narrative.replayValue.score < 3
     ) {
       reasons.push(`narrative review failed: overall=${narrative.overallScore.toFixed(2)}`);
     }

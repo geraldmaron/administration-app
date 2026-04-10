@@ -4,31 +4,11 @@
  */
 
 import type { ScenarioScopeTier, ScenarioSourceKind, ScenarioExclusivityReason } from './generation-contract';
+import type { ScenarioApplicability, RequiresFlag } from '../types';
 
-// ── Types re-declared locally (originals in types.ts which shared/ can't import) ──
-
-export interface ScenarioRequirements {
-    land_border_adversary?: boolean;
-    formal_ally?: boolean;
-    adversary?: boolean;
-    trade_partner?: boolean;
-    nuclear_state?: boolean;
-    island_nation?: boolean;
-    landlocked?: boolean;
-    coastal?: boolean;
-    min_power_tier?: 'superpower' | 'great_power' | 'regional_power' | 'middle_power' | 'small_state';
-    cyber_capable?: boolean;
-    power_projection?: boolean;
-    large_military?: boolean;
-    authoritarian_regime?: boolean;
-    democratic_regime?: boolean;
-    fragile_state?: boolean;
-    has_legislature?: boolean;
-    has_opposition_party?: boolean;
-    has_stock_exchange?: boolean;
-    has_central_bank?: boolean;
-    resource_rich?: boolean;
-}
+// ── Legacy type alias kept for internal migration use ──────────────────────────
+/** @deprecated Use applicability.requires (Partial<Record<RequiresFlag, true>>) instead. */
+export type ScenarioRequirements = Partial<Record<RequiresFlag, boolean>>;
 
 export type TagResolutionMethod = 'deterministic' | 'llm' | 'manual';
 export type TagResolutionStatus = 'unresolved' | 'resolved' | 'manual';
@@ -106,10 +86,8 @@ export interface BundleScenario {
             modelUsed: string;
             generatedAt: string;
         };
-        applicable_countries?: string[] | string;
         requires_tags?: string[];
         excludes_tags?: string[];
-        requires?: ScenarioRequirements;
         auditMetadata?: AuditMetadata;
         tagResolution?: TagResolutionMetadata;
     };
@@ -117,7 +95,7 @@ export interface BundleScenario {
     oncePerGame?: boolean;
     cooldown?: number;
     phase?: 'root' | 'mid' | 'final';
-    conditions?: any[];
+    applicability?: ScenarioApplicability;
     chainId?: string;
     actIndex?: number;
     acts?: any[];
@@ -179,7 +157,7 @@ export type PhraseRule = { detect: RegExp; replacement: string; suggestion: stri
 export const CANONICAL_SCENARIO_TAGS = [
     'economy', 'politics', 'military', 'tech', 'environment', 'social',
     'health', 'diplomacy', 'justice', 'corruption', 'culture',
-    'infrastructure', 'resources', 'dick_mode',
+    'infrastructure', 'resources', 'authoritarian',
     'governance', 'elections', 'reform', 'constitutional_crisis', 'coup',
     'judicial_independence', 'civil_rights', 'censorship',
     'taxation', 'austerity', 'debt', 'trade', 'sanctions', 'privatization',
@@ -228,106 +206,38 @@ export const STATE_TAG_CONDITION_MAP: Readonly<Record<string, { metricId: string
     budget_crisis:         { metricId: 'metric_budget',       op: 'max', threshold: 40 },
 };
 
-/**
- * Maps `metadata.requires` flags to the metric condition that must accompany them.
- *
- * Rationale: a `requires` flag gates by *country profile* (static), but the corresponding
- * metric condition gates by *current game state* (dynamic). Both layers are needed because
- * in-game decisions can degrade a country's democracy, liberty, or order regardless of its
- * starting profile. Without the condition, a scenario tagged `democratic_regime` can fire
- * even after the player has destroyed their democracy metric.
- *
- * Audit rule: `requires-missing-condition` (warn, −4 pts, auto-fixable).
- */
-export const REQUIRES_CONDITION_MAP: Readonly<Partial<Record<keyof ScenarioRequirements, { metricId: string; op: 'min' | 'max'; threshold: number }>>> = {
-    democratic_regime:    { metricId: 'metric_democracy', op: 'min', threshold: 40 },
-    authoritarian_regime: { metricId: 'metric_democracy', op: 'max', threshold: 40 },
-};
+// ---------------------------------------------------------------------------
+// REQUIRES_FLAG_REGISTRY — Single source of truth for all requires flags.
+//
+// Every entry captures, in one place:
+//   condition       — the metric gate that must accompany this flag at game time
+//   narrativePatterns — prose/token patterns that imply this flag is needed
+//   tokens          — token names (no {}) whose use commits the scenario to this flag
+//   implies         — other flags that are also true when this flag is set
+//
+// All downstream structures (REQUIRES_CONDITION_MAP, NARRATIVE_GEOPOLITICAL_MAP,
+// CONDITION_GATED_TOKENS in token-registry.ts) are derived from this registry.
+// Add a new flag here once; everything else updates automatically.
+// ---------------------------------------------------------------------------
 
-export const NARRATIVE_GEOPOLITICAL_MAP: ReadonlyArray<{
-    patterns: RegExp[];
-    requires: Partial<ScenarioRequirements>;
-}> = [
-    {
-        patterns: [
-            /neighboring\s+regime/i,
-            /border\s+(adversary|rival|threat)/i,
-            /hostile\s+neighbor/i,
-            /land[- ]?border\s+(conflict|dispute|tension|standoff)/i,
-            /bordering\s+(rival|adversary|regime|state)/i,
-        ],
-        requires: { land_border_adversary: true },
-    },
-    {
-        patterns: [
-            /\byour\s+(main\s+)?adversary\b/i,
-            /\bthe\s+(hostile|opposing)\s+(state|power|nation)\b/i,
-            /\bhostile\s+power\b/i,
-            /\byour\s+rival\s+(state|nation|power)\b/i,
-        ],
-        requires: { adversary: true },
-    },
-    {
-        patterns: [
-            /\bformal\s+ally\b/i,
-            /\btreaty\s+(ally|partner|obligation)\b/i,
-            /\ballied\s+(nation|government|state)\b/i,
-            /\byour\s+(close\s+)?ally\b/i,
-        ],
-        requires: { formal_ally: true },
-    },
-    {
-        patterns: [
-            /\bnuclear\s+(deterrent|arsenal|weapon|warhead|test|strike)\b/i,
-            /\bnuclear[- ]armed\b/i,
-            /\bnuclear\s+state\b/i,
-        ],
-        requires: { nuclear_state: true },
-    },
-    {
-        patterns: [
-            /\bisland\s+(nation|state|territory)\b/i,
-            /\bmaritime\s+(sovereignty|border|exclusive\s+zone|dispute)\b/i,
-            /\bcoastal\s+(defense|erosion|infrastructure|flooding)\b/i,
-        ],
-        requires: { coastal: true },
-    },
-    {
-        patterns: [
-            /\btrade\s+partner\b/i,
-            /\bstrategic\s+(economic\s+)?partner\b/i,
-            /\bbilateral\s+trade\s+(deal|agreement|partner)\b/i,
-        ],
-        requires: { trade_partner: true },
-    },
-    // Token-based requirement derivation: if the scenario uses relationship tokens,
-    // the country must have those relationships populated for the scenario to render.
-    {
-        patterns: [
-            /\{(?:the_)?(?:ally|primary_ally|key_alliance)\}/i,
-        ],
-        requires: { formal_ally: true },
-    },
-    {
-        patterns: [
-            /\{(?:the_)?(?:adversary|primary_adversary)\}/i,
-        ],
-        requires: { adversary: true },
-    },
-    {
-        patterns: [
-            /\{(?:the_)?border_rival(?:_country)?\}/i,
-        ],
-        requires: { land_border_adversary: true },
-    },
-    {
-        patterns: [
-            /\{(?:the_)?(?:trade_partner|partner)\}/i,
-        ],
-        requires: { trade_partner: true },
-    },
-    {
-        patterns: [
+export interface RequiresFlagDef {
+    label: string;
+    /** Metric condition that must co-exist with this requires flag. */
+    condition?: { metricId: string; op: 'min' | 'max'; threshold: number };
+    /** Prose/token patterns that imply this flag should be set. */
+    narrativePatterns?: RegExp[];
+    /** Token names (no braces) whose presence commits a scenario to this flag. */
+    tokens?: string[];
+    /** Other flags that are logically implied when this flag is set. */
+    implies?: ReadonlyArray<keyof ScenarioRequirements>;
+}
+
+export const REQUIRES_FLAG_REGISTRY: Readonly<Partial<Record<RequiresFlag, RequiresFlagDef>>> = {
+    // ── Regime type ───────────────────────────────────────────────────────────
+    democratic_regime: {
+        label: 'Democratic regime',
+        condition: { metricId: 'metric_democracy', op: 'min', threshold: 40 },
+        narrativePatterns: [
             /\{(?:the_)?legislature\}/i,
             /\{(?:the_)?upper_house\}/i,
             /\{(?:the_)?lower_house\}/i,
@@ -335,19 +245,292 @@ export const NARRATIVE_GEOPOLITICAL_MAP: ReadonlyArray<{
             /\blegislat(?:ure|ive|or)\b/i,
             /\belection(?:s|al)?\b/i,
             /\bvot(?:e|ing|ers)\s+(?:in|on|for)\b/i,
+            /\{(?:the_)?governing_party(?:_short|_leader|_ideology)?\}/i,
         ],
-        requires: { democratic_regime: true },
+        tokens: ['legislature', 'upper_house', 'lower_house', 'governing_party', 'governing_party_short', 'governing_party_leader', 'governing_party_ideology'],
     },
-    {
-        patterns: [
+    authoritarian_regime: {
+        label: 'Authoritarian regime',
+        condition: { metricId: 'metric_democracy', op: 'max', threshold: 40 },
+        narrativePatterns: [
+            /\bauthoritarian\b/i,
+            /\bdictator(?:ship)?\b/i,
+            /\bone[- ]party\s+(?:state|rule)\b/i,
+            /\bpolitical\s+repression\b/i,
+            /\bsuppression\s+of\s+dissent\b/i,
+        ],
+    },
+    // ── Democratic institutions ───────────────────────────────────────────────
+    has_legislature: {
+        label: 'Has legislature',
+        condition: { metricId: 'metric_democracy', op: 'min', threshold: 25 },
+        tokens: ['legislature', 'upper_house', 'lower_house'],
+        implies: ['democratic_regime'],
+    },
+    has_opposition_party: {
+        label: 'Has opposition party',
+        condition: { metricId: 'metric_democracy', op: 'min', threshold: 40 },
+        narrativePatterns: [
             /\{(?:the_)?opposition_party(?:_leader)?\}/i,
             /\bopposition\s+party\b/i,
             /\bopposition\s+leader\b/i,
             /\bthe\s+opposition(?:'s|\s+(?:demands|calls|vows|warns|threatens|condemns|criticizes|attacks|mobilizes|rallies|bloc|caucus|coalition|bench|lawmakers))\b/i,
         ],
-        requires: { democratic_regime: true, has_opposition_party: true },
+        tokens: ['opposition_party', 'opposition_party_leader'],
+        implies: ['democratic_regime'],
     },
-];
+    has_party_system: {
+        label: 'Has multi-party system',
+        condition: { metricId: 'metric_democracy', op: 'min', threshold: 30 },
+        narrativePatterns: [
+            /\bpolitical\s+part(?:y|ies)\b/i,
+            /\bmulti[- ]?party\b/i,
+            /\bparty\s+(system|politics|competition)\b/i,
+            /\{(?:the_)?governing_party(?:_short|_leader|_ideology)?\}/i,
+        ],
+        tokens: ['governing_party', 'governing_party_short', 'governing_party_leader', 'governing_party_ideology'],
+        implies: ['democratic_regime'],
+    },
+    has_supreme_court: {
+        label: 'Has supreme court',
+        condition: { metricId: 'metric_democracy', op: 'min', threshold: 25 },
+        narrativePatterns: [
+            /\bsupreme\s+court\b/i,
+            /\bconstitutional\s+court\b/i,
+            /\bjudicial\s+(review|oversight|ruling|independence)\b/i,
+            /\{(?:the_)?(?:supreme_court|constitutional_court|judicial_role)\}/i,
+        ],
+        tokens: ['supreme_court', 'constitutional_court', 'judicial_role'],
+    },
+    has_written_constitution: {
+        label: 'Has written constitution',
+        condition: { metricId: 'metric_democracy', op: 'min', threshold: 20 },
+        narrativePatterns: [
+            /\bconstitution(?:al)?\b/i,
+            /\bconstitutional\s+(amendment|provision|clause|right|mandate|crisis|reform)\b/i,
+            /\bunconstitutional\b/i,
+        ],
+    },
+    has_monarch: {
+        label: 'Has monarch',
+        narrativePatterns: [
+            /\bmonarch(?:y|ical)?\b/i,
+            /\bking(?:dom)?\b/i,
+            /\bqueen\b/i,
+            /\bsultanate?\b/i,
+            /\broyal\s+(family|decree|assent|prerogative|household)\b/i,
+            /\{(?:the_)?monarch\}/i,
+        ],
+        tokens: ['monarch'],
+    },
+    // ── Geopolitical relationships ────────────────────────────────────────────
+    formal_ally: {
+        label: 'Has formal ally',
+        narrativePatterns: [
+            /\bformal\s+ally\b/i,
+            /\btreaty\s+(ally|partner|obligation)\b/i,
+            /\ballied\s+(nation|government|state)\b/i,
+            /\byour\s+(close\s+)?ally\b/i,
+            /\{(?:the_)?(?:ally|primary_ally|key_alliance)\}/i,
+        ],
+        tokens: ['ally', 'the_ally'],
+    },
+    adversary: {
+        label: 'Has adversary',
+        narrativePatterns: [
+            /\byour\s+(main\s+)?adversary\b/i,
+            /\bthe\s+(hostile|opposing)\s+(state|power|nation)\b/i,
+            /\bhostile\s+power\b/i,
+            /\byour\s+rival\s+(state|nation|power)\b/i,
+            /\{(?:the_)?(?:adversary|primary_adversary)\}/i,
+        ],
+        tokens: ['adversary', 'the_adversary'],
+    },
+    land_border_adversary: {
+        label: 'Has land border with adversary',
+        narrativePatterns: [
+            /\bneighboring\s+regime\b/i,
+            /\bborder\s+(adversary|rival|threat)\b/i,
+            /\bhostile\s+neighbor\b/i,
+            /\bland[- ]?border\s+(conflict|dispute|tension|standoff)\b/i,
+            /\bbordering\s+(rival|adversary|regime|state)\b/i,
+            /\{(?:the_)?border_rival(?:_country)?\}/i,
+        ],
+        tokens: ['border_rival', 'the_border_rival'],
+    },
+    trade_partner: {
+        label: 'Has trade partner',
+        narrativePatterns: [
+            /\btrade\s+partner\b/i,
+            /\bstrategic\s+(economic\s+)?partner\b/i,
+            /\bbilateral\s+trade\s+(deal|agreement|partner)\b/i,
+            /\{(?:the_)?(?:trade_partner|partner)\}/i,
+        ],
+        tokens: ['trade_partner', 'the_trade_partner'],
+    },
+    // ── Military / power ──────────────────────────────────────────────────────
+    nuclear_state: {
+        label: 'Nuclear state',
+        condition: { metricId: 'metric_military', op: 'min', threshold: 40 },
+        narrativePatterns: [
+            /\bnuclear\s+(deterrent|arsenal|weapon|warhead|test|strike)\b/i,
+            /\bnuclear[- ]armed\b/i,
+            /\bnuclear\s+state\b/i,
+        ],
+    },
+    large_military: {
+        label: 'Large military',
+        condition: { metricId: 'metric_military', op: 'min', threshold: 45 },
+        narrativePatterns: [
+            /\blarge\s+(military|army|armed\s+forces)\b/i,
+            /\bmassive\s+military\b/i,
+            /\bsignificant\s+military\s+(force|power|capability|strength)\b/i,
+        ],
+    },
+    power_projection: {
+        label: 'Power projection capability',
+        condition: { metricId: 'metric_military', op: 'min', threshold: 55 },
+        narrativePatterns: [
+            /\bpower\s+projection\b/i,
+            /\bproject\s+(military\s+)?power\b/i,
+            /\boverseas\s+(military\s+)?(base|presence|deployment)\b/i,
+            /\bexpeditionary\s+force\b/i,
+        ],
+    },
+    cyber_capable: {
+        label: 'Cyber capable',
+        narrativePatterns: [
+            /\bcyber\s+(attack|warfare|operation|capability|weapon|espionage|offensive)\b/i,
+            /\bdigital\s+(warfare|weapon|attack)\b/i,
+            /\bstate[- ]sponsored\s+hack\b/i,
+        ],
+    },
+    // ── Geography ─────────────────────────────────────────────────────────────
+    coastal: {
+        label: 'Coastal nation',
+        narrativePatterns: [
+            /\bcoastal\s+(defense|erosion|infrastructure|flooding|border|waters?)\b/i,
+            /\bmaritime\s+(sovereignty|border|exclusive\s+zone|dispute|trade|law|route)\b/i,
+            /\bnaval\s+(base|fleet|force|blockade|patrol|power)\b/i,
+            /\bsea\s+(route|lane|border|access|level)\b/i,
+            /\bexclusive\s+economic\s+zone\b/i,
+        ],
+    },
+    island_nation: {
+        label: 'Island nation',
+        narrativePatterns: [
+            /\bisland\s+(nation|state|territory)\b/i,
+            /\barchipelago\b/i,
+            /\bsurrounded\s+by\s+(sea|ocean|water)\b/i,
+        ],
+        implies: ['coastal'],
+    },
+    landlocked: {
+        label: 'Landlocked',
+        narrativePatterns: [
+            /\blandlocked\b/i,
+            /\bno\s+(direct\s+)?(sea|ocean|port|coastal)\s+access\b/i,
+            /\btransit\s+corridor\b/i,
+        ],
+    },
+    // ── Economic institutions ─────────────────────────────────────────────────
+    has_central_bank: {
+        label: 'Has central bank',
+        condition: { metricId: 'metric_economy', op: 'min', threshold: 30 },
+        narrativePatterns: [
+            /\{(?:the_)?central_bank\}/i,
+            /\bcentral\s+bank\b/i,
+            /\bmonetary\s+policy\b/i,
+            /\binterest\s+rate\b/i,
+            /\bbase\s+rate\b/i,
+            /\bmoney\s+supply\b/i,
+        ],
+        tokens: ['central_bank', 'the_central_bank'],
+    },
+    has_stock_exchange: {
+        label: 'Has stock exchange',
+        condition: { metricId: 'metric_economy', op: 'min', threshold: 35 },
+        narrativePatterns: [
+            /\{(?:the_)?stock_exchange\}/i,
+            /\bstock\s+(exchange|market|index|crash|rally|collapse)\b/i,
+            /\bfinancial\s+markets?\b/i,
+            /\bshare\s+(prices?|market|sell[- ]off)\b/i,
+            /\bequity\s+market\b/i,
+        ],
+        tokens: ['stock_exchange', 'the_stock_exchange'],
+    },
+    // ── State fragility ───────────────────────────────────────────────────────
+    fragile_state: {
+        label: 'Fragile state',
+        condition: { metricId: 'metric_public_order', op: 'max', threshold: 40 },
+        narrativePatterns: [
+            /\bfragile\s+state\b/i,
+            /\bstate\s+(collapse|failure|fragility)\b/i,
+            /\bfailed\s+state\b/i,
+            /\bweak\s+(state|institutions)\b/i,
+        ],
+    },
+    // ── Resources ─────────────────────────────────────────────────────────────
+    resource_rich: {
+        label: 'Resource rich',
+        narrativePatterns: [
+            /\bresource[- ]rich\b/i,
+            /\bnatural\s+resources?\b/i,
+            /\boil\s+(reserve|revenue|export|field|wealth)\b/i,
+            /\bmineral\s+(wealth|reserve|resource)\b/i,
+            /\benergy\s+export(?:er|ing)?\b/i,
+        ],
+    },
+};
+
+// ---------------------------------------------------------------------------
+// Derived structures — computed from REQUIRES_FLAG_REGISTRY.
+// Import these instead of maintaining them separately.
+// ---------------------------------------------------------------------------
+
+/**
+ * Maps requires flags to the metric condition that must accompany them.
+ * Rationale: a requires flag gates by country profile (static), but the metric
+ * condition gates by current game state (dynamic). Without the condition, a
+ * scenario tagged `democratic_regime` can fire even after the player has
+ * destroyed their democracy metric.
+ *
+ * Audit rule: `requires-missing-condition` (warn, auto-fixable).
+ */
+export const REQUIRES_CONDITION_MAP: Readonly<Partial<Record<RequiresFlag, { metricId: string; op: 'min' | 'max'; threshold: number }>>> =
+    Object.fromEntries(
+        (Object.entries(REQUIRES_FLAG_REGISTRY) as Array<[RequiresFlag, RequiresFlagDef]>)
+            .filter(([, def]) => def.condition != null)
+            .map(([flag, def]) => [flag, def.condition!])
+    ) as Readonly<Partial<Record<RequiresFlag, { metricId: string; op: 'min' | 'max'; threshold: number }>>>;
+
+/**
+ * Maps narrative prose patterns to the requires flags they imply.
+ * Each entry corresponds to one flag in REQUIRES_FLAG_REGISTRY.
+ * Implies chains are resolved by inferRequirementsFromNarrative.
+ */
+export const NARRATIVE_GEOPOLITICAL_MAP: ReadonlyArray<{
+    patterns: RegExp[];
+    requires: Partial<Record<RequiresFlag, true>>;
+    implies?: ReadonlyArray<RequiresFlag>;
+}> = (Object.entries(REQUIRES_FLAG_REGISTRY) as Array<[RequiresFlag, RequiresFlagDef]>)
+    .filter(([, def]) => def.narrativePatterns != null && def.narrativePatterns.length > 0)
+    .map(([flag, def]) => ({
+        patterns: def.narrativePatterns!,
+        requires: { [flag]: true } as Partial<Record<RequiresFlag, true>>,
+        implies: def.implies as ReadonlyArray<RequiresFlag> | undefined,
+    }));
+
+/**
+ * Maps token names (no braces) to the requires flag their use commits a scenario to.
+ * Derived from REQUIRES_FLAG_REGISTRY. Consumed by token-registry.ts and audit rules.
+ */
+export const TOKEN_REQUIRES_MAP: Readonly<Record<string, RequiresFlag>> =
+    Object.fromEntries(
+        (Object.entries(REQUIRES_FLAG_REGISTRY) as Array<[RequiresFlag, RequiresFlagDef]>)
+            .flatMap(([flag, def]) => (def.tokens ?? []).map(t => [t, flag]))
+    );
+
 
 const CANONICAL_TAG_SET = new Set<string>(CANONICAL_SCENARIO_TAGS);
 
@@ -355,7 +538,7 @@ export const GOV_STRUCTURE_RULES: PhraseRule[] = [
     { detect: /\bruling coalition\b/gi,       replacement: '{governing_party}',           suggestion: '"ruling coalition" → use {governing_party}' },
     { detect: /\bgoverning coalition\b/gi,    replacement: '{governing_party}',           suggestion: '"governing coalition" → use {governing_party}' },
     { detect: /\bcoalition government\b/gi,   replacement: '{governing_party}',           suggestion: '"coalition government" → use {governing_party}' },
-    { detect: /\bcoalition allies\b/gi,       replacement: 'political allies in {the_legislature}', suggestion: '"coalition allies" → use "political allies" or "allies in {legislature}"' },
+    { detect: /\bcoalition allies\b/gi,       replacement: 'political allies in the {legislature}', suggestion: '"coalition allies" → use "political allies" or "allies in the {legislature}"' },
     { detect: /\bparliamentary majority\b/gi, replacement: '{legislature} majority',   suggestion: '"parliamentary majority" → use "{legislature} majority"' },
     { detect: /\bparliamentary minority\b/gi, replacement: '{legislature} minority',   suggestion: '"parliamentary minority" → use "{legislature} minority"' },
     { detect: /\bparliamentary support\b/gi,  replacement: '{legislature} support',    suggestion: '"parliamentary support" → use "{legislature} support"' },
@@ -592,18 +775,44 @@ export function buildBannedPhrasePromptGuidance(): string {
 
 export function inferRequirementsFromNarrative(
     corpus: string,
-    existingRequires?: ScenarioRequirements,
-): Partial<ScenarioRequirements> {
-    const injected: Partial<ScenarioRequirements> = {};
+    existingRequires?: Partial<Record<RequiresFlag, boolean>>,
+): Partial<Record<RequiresFlag, true>> {
+    const injected: Partial<Record<RequiresFlag, true>> = {};
+
+    const inject = (key: RequiresFlag) => {
+        if (existingRequires?.[key] == null && injected[key] == null) {
+            injected[key] = true;
+            // Chase implies chains: if flag A implies flag B, inject B too.
+            const def = REQUIRES_FLAG_REGISTRY[key];
+            if (def?.implies) {
+                for (const implied of def.implies) inject(implied as RequiresFlag);
+            }
+        }
+    };
+
     for (const { patterns, requires } of NARRATIVE_GEOPOLITICAL_MAP) {
         if (!patterns.some((p) => p.test(corpus))) continue;
-        for (const [key, value] of Object.entries(requires) as [keyof ScenarioRequirements, unknown][]) {
-            if (existingRequires?.[key] == null) {
-                (injected as Record<string, unknown>)[key] = value;
-            }
+        for (const key of Object.keys(requires) as Array<RequiresFlag>) {
+            inject(key);
+        }
+    }
+
+    for (const [flag, def] of Object.entries(REQUIRES_FLAG_REGISTRY) as Array<[RequiresFlag, RequiresFlagDef]>) {
+        if (!def) continue;
+        if (def.narrativePatterns?.some((pattern) => pattern.test(corpus))) {
+            inject(flag);
+        }
+        if (def.tokens?.some((tokenName) => new RegExp(`\\{(?:the_)?${tokenName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}(?:'s|'s)?`, 'i').test(corpus))) {
+            inject(flag);
         }
     }
     return injected;
+}
+
+function scenarioUsesTokenVariant(corpus: string, tokenName: string): boolean {
+    const escaped = tokenName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`\\{(?:the_)?${escaped}\\}(?:'s|'s)?`, 'i');
+    return pattern.test(corpus);
 }
 
 function collectRelationshipTokens(text: string): RelationshipTokenName[] {
@@ -1001,11 +1210,9 @@ export function auditScenario(
                 containsGoverningPartyToken(opt.outcomeContext)
         );
 
-    if (anyTextUsesGoverningPartyToken && scenario.metadata?.applicable_countries && scenario.metadata.applicable_countries !== 'all') {
+    if (anyTextUsesGoverningPartyToken && scenario.applicability?.applicableCountryIds?.length) {
         const govTypesByCountryId = cfg.govTypesByCountryId || {};
-        const ids = Array.isArray(scenario.metadata.applicable_countries)
-            ? scenario.metadata.applicable_countries
-            : [scenario.metadata.applicable_countries];
+        const ids = scenario.applicability.applicableCountryIds;
         const flaggedGovTypes = new Set<string>();
         for (const id of ids) {
             const govType = govTypesByCountryId[id];
@@ -1026,6 +1233,36 @@ export function auditScenario(
         }
     }
 
+    // For every token that commits a scenario to a requires flag (per TOKEN_REQUIRES_MAP),
+    // verify that the requires flag is actually set. This catches missing gates for
+    // political tokens ({legislature}, {governing_party}), relationship tokens
+    // ({adversary}, {ally}, {border_rival}, {trade_partner}), and institutional tokens
+    // ({central_bank}, {stock_exchange}) alike.
+    const allScenarioText = [
+        scenario.title,
+        scenario.description,
+        ...scenario.options.flatMap(o => [o.text, o.outcomeSummary, o.outcomeContext, o.outcomeHeadline]),
+    ].filter(Boolean).join(' ');
+
+    const missingByFlag = new Map<RequiresFlag, string[]>();
+    for (const [tokenName, requiredFlag] of Object.entries(TOKEN_REQUIRES_MAP) as Array<[string, RequiresFlag]>) {
+        const braced = `{${tokenName}}`;
+        if (!scenarioUsesTokenVariant(allScenarioText, tokenName)) continue;
+        if (scenario.applicability?.requires?.[requiredFlag]) continue;
+        const tokensForFlag = missingByFlag.get(requiredFlag) ?? [];
+        tokensForFlag.push(braced);
+        missingByFlag.set(requiredFlag, tokensForFlag);
+    }
+    for (const [flag, tokens] of missingByFlag) {
+        add(
+            'warn',
+            'token-without-requires',
+            scenario.id,
+            `Scenario uses ${tokens.join(', ')} but applicability.requires.${flag} is not set — this scenario may fire for countries where this token cannot resolve.`,
+            true
+        );
+    }
+
     if (scenario.metadata) {
         const meta = scenario.metadata;
         const validSeverities = ['low', 'medium', 'high', 'extreme', 'critical'];
@@ -1038,10 +1275,8 @@ export function auditScenario(
             add('error', 'invalid-urgency', scenario.id, `Urgency "${meta.urgency}" is invalid`);
         if (meta.difficulty !== undefined && (!Number.isInteger(meta.difficulty) || meta.difficulty < 1 || meta.difficulty > 5))
             add('warn', 'invalid-difficulty', scenario.id, `Difficulty ${meta.difficulty} must be integer 1-5`, true);
-        if (meta.applicable_countries && meta.applicable_countries !== 'all' && !Array.isArray(meta.applicable_countries))
-            add('error', 'invalid-countries', scenario.id, 'applicable_countries must be "all" or string[]');
-        if (Array.isArray(meta.applicable_countries) && cfg.countriesById) {
-            for (const id of meta.applicable_countries) {
+        if (Array.isArray(scenario.applicability?.applicableCountryIds) && cfg.countriesById) {
+            for (const id of scenario.applicability.applicableCountryIds) {
                 if (!cfg.countriesById[id]) {
                     add('error', 'invalid-country-id', scenario.id,
                         `"${id}" is not a recognized country ID in the catalog — use catalog IDs (e.g. "country_de"), not names`);
@@ -1075,8 +1310,8 @@ export function auditScenario(
             if (!meta.exclusivityReason) {
                 add('error', 'missing-exclusivity-reason', scenario.id, 'Exclusive scenarios must include exclusivityReason');
             }
-            if (!Array.isArray(meta.applicable_countries) || meta.applicable_countries.length === 0) {
-                add('error', 'exclusive-missing-countries', scenario.id, 'Exclusive scenarios must include applicable_countries');
+            if (!Array.isArray(scenario.applicability?.applicableCountryIds) || scenario.applicability.applicableCountryIds.length === 0) {
+                add('error', 'exclusive-missing-countries', scenario.id, 'Exclusive scenarios must include applicability.applicableCountryIds');
             }
             if (meta.scopeKey && !meta.scopeKey.startsWith('country:')) {
                 add('error', 'invalid-scope-key', scenario.id, 'Exclusive scenarios must use a country:* scopeKey');
@@ -1089,6 +1324,22 @@ export function auditScenario(
 
         if (meta.scopeTier === 'universal' && meta.scopeKey && meta.scopeKey !== 'universal') {
             add('error', 'invalid-scope-key', scenario.id, 'Universal scenarios must use the scopeKey "universal"');
+        }
+
+        // Universal scenarios must not gate on any requires flags — they are supposed to fire for all countries.
+        if (meta.scopeTier === 'universal' && scenario.applicability?.requires) {
+            const setRequires = Object.entries(scenario.applicability.requires)
+                .filter(([, v]) => v === true || v != null)
+                .map(([k]) => k);
+            if (setRequires.length > 0) {
+                add(
+                    'warn',
+                    'universal-has-requires',
+                    scenario.id,
+                    `Universal scenario sets requires flags (${setRequires.join(', ')}) but universal scope should apply to all countries. Move country-specific gating to a regional, cluster, or exclusive scenario instead.`,
+                    false
+                );
+            }
         }
     }
 
@@ -1285,13 +1536,11 @@ export function auditScenario(
         );
     }
 
-    const applicableCountries = Array.isArray(scenario.metadata?.applicable_countries)
-        ? scenario.metadata?.applicable_countries
-        : [];
+    const applicableCountries = scenario.applicability?.applicableCountryIds ?? [];
     const countriesById = cfg.countriesById ?? {};
     if (relationshipTokensUsed.length > 0 && applicableCountries.length > 0) {
         for (const tokenName of relationshipTokensUsed) {
-            const unsupportedCountryIds = applicableCountries.filter((countryId) => {
+            const unsupportedCountryIds = applicableCountries.filter((countryId: string) => {
                 const country = countriesById[countryId];
                 return !country || !supportsRelationshipToken(country, tokenName);
             });
@@ -1340,14 +1589,19 @@ export function auditScenario(
             scenario.description,
             ...(scenario.options ?? []).flatMap((o) => [o.text, o.outcomeHeadline, o.outcomeSummary]),
         ].filter(Boolean).join(' ');
-        const inferred = inferRequirementsFromNarrative(narrativeCorpus, scenario.metadata?.requires);
-        const missingKeys = Object.keys(inferred) as (keyof ScenarioRequirements)[];
+        const inferred = inferRequirementsFromNarrative(narrativeCorpus, scenario.applicability?.requires);
+        // For universal scope, regime flags (democratic_regime, authoritarian_regime, fragile_state)
+        // are stripped by deterministicFix — suppress coherence warns for them to avoid false positives.
+        const UNIVERSAL_STRIPPED: ReadonlySet<string> = new Set(['democratic_regime', 'authoritarian_regime', 'fragile_state']);
+        const isUniversal = scenario.metadata?.scopeTier === 'universal';
+        const missingKeys = (Object.keys(inferred) as RequiresFlag[])
+            .filter(k => !(isUniversal && UNIVERSAL_STRIPPED.has(k)));
         if (missingKeys.length > 0) {
             add(
                 'warn',
                 'narrative-requires-coherence',
                 scenario.id,
-                `Scenario narrative implies geopolitical requirements not in requires block: ${missingKeys.join(', ')}. Add metadata.requires.${missingKeys[0]}=true (and others as needed) to restrict eligibility to appropriate countries.`,
+                `Scenario narrative implies geopolitical requirements not in requires block: ${missingKeys.join(', ')}. Add applicability.requires.${missingKeys[0]}=true (and others as needed) to restrict eligibility to appropriate countries.`,
                 true,
             );
         }
@@ -1484,19 +1738,19 @@ export function auditScenario(
         }
     }
 
-    if (Array.isArray(scenario.conditions)) {
-        scenario.conditions.forEach((cond: any, i: number) => {
-            if (cond.metricId && !cfg.validMetricIds.has(cond.metricId)) {
+    if (Array.isArray(scenario.applicability?.metricGates)) {
+        scenario.applicability!.metricGates.forEach((gate, i) => {
+            if (gate.metricId && !cfg.validMetricIds.has(gate.metricId)) {
                 add('error', 'conditions-invalid-metric', scenario.id,
-                    `conditions[${i}] references unknown metricId "${cond.metricId}"`);
+                    `applicability.metricGates[${i}] references unknown metricId "${gate.metricId}"`);
             }
-            if (cond.min !== undefined && cond.max !== undefined && cond.min >= cond.max) {
+            if (gate.min !== undefined && gate.max !== undefined && gate.min >= gate.max) {
                 add('warn', 'conditions-unreachable-range', scenario.id,
-                    `conditions[${i}] has unreachable range (min ${cond.min} >= max ${cond.max})`);
+                    `applicability.metricGates[${i}] has unreachable range (min ${gate.min} >= gate.max ${gate.max})`);
             }
-            if ((cond.max !== undefined && cond.max < 15) || (cond.min !== undefined && cond.min > 85)) {
+            if ((gate.max !== undefined && gate.max < 15) || (gate.min !== undefined && gate.min > 85)) {
                 add('warn', 'conditions-too-restrictive', scenario.id,
-                    `conditions[${i}] threshold is extreme — scenario may rarely appear in gameplay`);
+                    `applicability.metricGates[${i}] threshold is extreme — scenario may rarely appear in gameplay`);
             }
         });
     }
@@ -1529,6 +1783,18 @@ export function auditScenario(
         if (!hasRelCond) {
             add('warn', 'actor-pattern-no-relationship-condition', scenario.id,
                 `Scenario uses actor pattern "${scenarioActorPattern}" but has no relationship_conditions — it may appear regardless of the actual relationship state`);
+        }
+    }
+    // Geopolitical RequiresFlags should also be paired with relationship_conditions so the scenario
+    // only fires when the relationship is actually in the expected state.
+    const geopoliticalRequiresFlags = new Set(['formal_ally', 'adversary', 'land_border_adversary', 'trade_partner']);
+    const requires = scenario.applicability?.requires ?? {};
+    const usedGeoFlags = (Object.keys(requires) as string[]).filter((f) => geopoliticalRequiresFlags.has(f));
+    if (usedGeoFlags.length > 0) {
+        const hasRelCond = Array.isArray(scenario.relationship_conditions) && scenario.relationship_conditions.length > 0;
+        if (!hasRelCond) {
+            add('warn', 'geo-flag-no-relationship-condition', scenario.id,
+                `Scenario requires [${usedGeoFlags.join(', ')}] but has no relationship_conditions — relationship strength is dynamic and should be bounded`);
         }
     }
 
@@ -1645,25 +1911,27 @@ export function auditScenario(
         }
         const implied = STATE_TAG_CONDITION_MAP[tag];
         if (!implied) continue;
-        const covered = (scenario.conditions ?? []).some(
-            (c) => c.metricId === implied.metricId && (implied.op === 'max' ? c.max !== undefined : c.min !== undefined)
+        const metricGates = scenario.applicability?.metricGates ?? [];
+        const covered = metricGates.some(
+            (g) => g.metricId === implied.metricId && (implied.op === 'max' ? g.max !== undefined : g.min !== undefined)
         );
         if (!covered) {
             add('warn', 'state-tag-missing-condition', scenario.id,
-                `Tag "${tag}" implies ${implied.metricId} ${implied.op} ${implied.threshold} but no matching condition is set — scenario may appear in mismatched game states.`,
+                `Tag "${tag}" implies ${implied.metricId} ${implied.op} ${implied.threshold} but no matching metricGate is set — scenario may appear in mismatched game states.`,
                 true);
         }
     }
 
-    const scenarioRequires = scenario.metadata?.requires ?? {};
-    for (const [requiresKey, implied] of Object.entries(REQUIRES_CONDITION_MAP) as Array<[keyof ScenarioRequirements, { metricId: string; op: 'min' | 'max'; threshold: number }]>) {
+    const scenarioRequires = scenario.applicability?.requires ?? {};
+    for (const [requiresKey, implied] of Object.entries(REQUIRES_CONDITION_MAP) as Array<[RequiresFlag, { metricId: string; op: 'min' | 'max'; threshold: number }]>) {
         if (!scenarioRequires[requiresKey]) continue;
-        const covered = (scenario.conditions ?? []).some(
-            (c: any) => c.metricId === implied.metricId && (implied.op === 'max' ? c.max !== undefined : c.min !== undefined)
+        const metricGates2 = scenario.applicability?.metricGates ?? [];
+        const covered = metricGates2.some(
+            (g) => g.metricId === implied.metricId && (implied.op === 'max' ? g.max !== undefined : g.min !== undefined)
         );
         if (!covered) {
             add('warn', 'requires-missing-condition', scenario.id,
-                `requires.${requiresKey} is set but no condition gates ${implied.metricId} (${implied.op} ${implied.threshold}) — scenario may fire in degraded game states where this requirement is no longer meaningful.`,
+                `applicability.requires.${requiresKey} is set but no metricGate gates ${implied.metricId} (${implied.op} ${implied.threshold}) — scenario may fire in degraded game states where this requirement is no longer meaningful.`,
                 true);
         }
     }
