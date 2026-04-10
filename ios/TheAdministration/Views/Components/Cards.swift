@@ -256,24 +256,14 @@ struct ScenarioOptionCard: View {
                         .frame(width: 22, height: 22)
                         .background(isSelected ? AppColors.accentPrimary : AppColors.accentPrimary.opacity(0.12), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(option.text)
-                            .font(AppTypography.bodySmall)
-                            .fontWeight(.medium)
-                            .foregroundColor(isDimmed ? AppColors.foregroundSubtle : AppColors.foreground)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.trailing, onAdvisor != nil ? 28 : 0)
-
-                        if let feedback = option.advisorFeedback, !feedback.isEmpty {
-                            let supports = feedback.filter { ["support", "approve", "positive"].contains($0.stance.lowercased()) }.count
-                            let opposes = feedback.filter { ["oppose", "reject", "negative"].contains($0.stance.lowercased()) }.count
-                            if supports > 0 || opposes > 0 {
-                                cabinetBadge(supports: supports, opposes: opposes)
-                            }
-                        }
-                    }
+                    Text(option.text)
+                        .font(AppTypography.bodySmall)
+                        .fontWeight(.medium)
+                        .foregroundColor(isDimmed ? AppColors.foregroundSubtle : AppColors.foreground)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.trailing, onAdvisor != nil ? 32 : 0)
                 }
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -290,11 +280,13 @@ struct ScenarioOptionCard: View {
             if let onAdvisor = onAdvisor {
                 Button(action: onAdvisor) {
                     Image(systemName: "person.text.rectangle")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(AppColors.accentPrimary)
-                        .frame(width: 28, height: 28)
-                        .background(AppColors.accentPrimary.opacity(0.15), in: Circle())
+                        .frame(width: 30, height: 30)
+                        .background(AppColors.accentPrimary.opacity(0.22), in: Circle())
+                        .overlay(Circle().strokeBorder(AppColors.accentPrimary.opacity(0.35), lineWidth: 1))
                 }
+                .padding(10)
                 .accessibilityLabel("View cabinet briefing for this option")
             }
         }

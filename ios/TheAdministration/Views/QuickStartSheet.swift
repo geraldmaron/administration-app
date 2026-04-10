@@ -17,6 +17,7 @@ struct QuickStartSheet: View {
     @State private var selectedGameLength: String = "medium"
     @State private var localParties: [PoliticalParty] = []
     @State private var isLoadingLocalParties: Bool = false
+    @State private var dossierCountry: Country? = nil
 
     private var filteredCountries: [Country] {
         let sorted = gameStore.availableCountries.sorted { $0.name < $1.name }
@@ -261,48 +262,68 @@ struct QuickStartSheet: View {
                         .padding(.top, 48)
                     } else {
                         ForEach(filteredCountries, id: \.id) { country in
-                            Button(action: {
-                                HapticEngine.shared.light()
-                                selectedCountry = country
-                                gameStore.setCountry(country.id)
-                            }) {
-                                HStack(spacing: 12) {
-                                    Text(country.flagEmoji)
-                                        .font(.system(size: 22))
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(country.name)
-                                            .font(AppTypography.bodySmall)
-                                            .foregroundColor(AppColors.foreground)
-                                        Text(country.region ?? "")
-                                            .font(AppTypography.micro)
-                                            .foregroundColor(AppColors.foregroundMuted)
+                            HStack(spacing: 0) {
+                                Button(action: {
+                                    HapticEngine.shared.light()
+                                    selectedCountry = country
+                                    gameStore.setCountry(country.id)
+                                }) {
+                                    HStack(spacing: 12) {
+                                        Text(country.flagEmoji)
+                                            .font(.system(size: 22))
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(country.name)
+                                                .font(AppTypography.bodySmall)
+                                                .foregroundColor(AppColors.foreground)
+                                            Text(country.region ?? "")
+                                                .font(AppTypography.micro)
+                                                .foregroundColor(AppColors.foregroundMuted)
+                                        }
+                                        Spacer()
+                                        if selectedCountry?.id == country.id {
+                                            Circle()
+                                                .fill(AppColors.foreground)
+                                                .frame(width: 8, height: 8)
+                                        } else {
+                                            Circle()
+                                                .stroke(AppColors.borderStrong, lineWidth: 1)
+                                                .frame(width: 8, height: 8)
+                                        }
                                     }
-                                    Spacer()
-                                    if selectedCountry?.id == country.id {
-                                        Circle()
-                                            .fill(AppColors.foreground)
-                                            .frame(width: 8, height: 8)
-                                    } else {
-                                        Circle()
-                                            .stroke(AppColors.borderStrong, lineWidth: 1)
-                                            .frame(width: 8, height: 8)
-                                    }
+                                    .padding(.leading, 16)
+                                    .padding(.trailing, 8)
+                                    .padding(.vertical, 14)
+                                    .contentShape(Rectangle())
                                 }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
-                                .background(selectedCountry?.id == country.id ? AppColors.backgroundElevated : Color.clear)
-                                .contentShape(Rectangle())
-                                .overlay(
-                                    Rectangle()
-                                        .frame(height: 1)
-                                        .foregroundColor(AppColors.backgroundElevated),
-                                    alignment: .bottom
-                                )
+                                .buttonStyle(.plain)
+
+                                Button(action: {
+                                    HapticEngine.shared.light()
+                                    dossierCountry = country
+                                }) {
+                                    Image(systemName: "info.circle")
+                                        .font(.system(size: 15, weight: .regular))
+                                        .foregroundColor(AppColors.foregroundSubtle)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 14)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
+                            .background(selectedCountry?.id == country.id ? AppColors.backgroundElevated : Color.clear)
+                            .overlay(
+                                Rectangle()
+                                    .frame(height: 1)
+                                    .foregroundColor(AppColors.backgroundElevated),
+                                alignment: .bottom
+                            )
                         }
                     }
                 }
+                .padding(.bottom, 24)
+            }
+            .sheet(item: $dossierCountry) { country in
+                CountryDetailView(country: country, gameStore: gameStore)
             }
 
             Button(action: {
@@ -520,8 +541,8 @@ struct QuickStartSheet: View {
                                     .foregroundColor(isSelected ? AppColors.background : (canSelect ? AppColors.accentPrimary : AppColors.foregroundSubtle))
                                     .frame(width: 22, height: 22)
                                 Text(skill.name)
-                                    .font(AppTypography.micro)
-                                    .foregroundColor(isSelected ? AppColors.background : (canSelect ? AppColors.foreground : AppColors.foregroundSubtle))
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(isSelected ? AppColors.background : (canSelect ? Color.white : AppColors.foregroundSubtle))
                                     .lineLimit(2)
                                     .multilineTextAlignment(.leading)
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -593,6 +614,7 @@ struct QuickStartSheet: View {
                     .background(AppColors.backgroundMuted)
                     .padding(.horizontal, 24)
                     .padding(.top, 16)
+                    .padding(.bottom, 24)
                 }
             }
 
