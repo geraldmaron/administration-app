@@ -1018,6 +1018,8 @@ export interface GenerationRequest {
   /** Pre-seeded concepts to use instead of calling the architect model. Skips the architect LLM phase entirely. */
   preSeededConcepts?: GeneratedConcept[];
   abortSignal?: AbortSignal;
+  /** Job ID for pipeline stage metric attribution. */
+  jobId?: string;
 }
 
 export async function generateScenarios(request: GenerationRequest): Promise<GenerationResult> {
@@ -2449,7 +2451,7 @@ async function expandConceptToLoop(
   concept: GeneratedConcept,
   bundle: string,
   mode: GenerationMode,
-  request?: { region?: string; regions?: string[]; applicable_countries?: string[]; countryCatalogSource?: CountryCatalogSourceMetadata; countries?: Record<string, any>; modelConfig?: GenerationModelConfig; onAttemptFailed?: GenerationRequest['onAttemptFailed']; scopeTier?: ScenarioScopeTier; scopeKey?: string; clusterId?: string; exclusivityReason?: ScenarioExclusivityReason; sourceKind?: ScenarioSourceKind; lowLatencyMode?: boolean; compiledValidTokenSet?: ReadonlySet<string>; rejectionBuffer?: TokenRejectionBuffer; compiledRegistry?: CompiledTokenRegistry }
+  request?: { region?: string; regions?: string[]; applicable_countries?: string[]; countryCatalogSource?: CountryCatalogSourceMetadata; countries?: Record<string, any>; modelConfig?: GenerationModelConfig; onAttemptFailed?: GenerationRequest['onAttemptFailed']; scopeTier?: ScenarioScopeTier; scopeKey?: string; clusterId?: string; exclusivityReason?: ScenarioExclusivityReason; sourceKind?: ScenarioSourceKind; lowLatencyMode?: boolean; compiledValidTokenSet?: ReadonlySet<string>; rejectionBuffer?: TokenRejectionBuffer; compiledRegistry?: CompiledTokenRegistry; jobId?: string }
 ): Promise<BundleScenario[]> {
   const bundleOverlay = getBundlePromptOverlay(bundle as BundleId);
   const scopeTier = request?.scopeTier ?? 'universal';

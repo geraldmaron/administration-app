@@ -2777,6 +2777,7 @@ struct PoliticalParty: Codable, Identifiable {
     let foundingYear: Int?
     let isRuling: Bool
     let isCoalitionMember: Bool
+    let isMainOpposition: Bool?
     let currentLeader: String?
     let color: String?          // hex e.g. "#0047AB"
     let keyPolicies: [String]
@@ -2795,6 +2796,7 @@ struct PoliticalParty: Codable, Identifiable {
         case foundingYear = "foundingYear"
         case isRuling = "isRuling"
         case isCoalitionMember = "isCoalitionMember"
+        case isMainOpposition = "isMainOpposition"
         case currentLeader = "currentLeader"
         case keyPolicies = "keyPolicies"
         case metricBiases = "metricBiases"

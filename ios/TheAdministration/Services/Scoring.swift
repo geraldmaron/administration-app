@@ -2,7 +2,7 @@ import Foundation
 
 class ScoringEngine {
     static let INITIAL_METRIC_VALUE: Double = 50.0
-    static let MAX_METRIC_CHANGE_BASE: Double = 6.0
+    static let MAX_METRIC_CHANGE_BASE: Double = 4.5
 
     private static let METRIC_IDS: [String: String] = [
         "approval": "metric_approval",
@@ -1206,15 +1206,13 @@ class ScoringEngine {
             newState.metricHistory[metricId]?.append(newState.metrics[metricId] ?? INITIAL_METRIC_VALUE)
         }
         
-        let approvalOldVal = newState.metrics["metric_approval"] ?? INITIAL_METRIC_VALUE
-        
+        calculateApproval(&newState)
         let hasDirectApprovalEffect = abs(directApprovalEffect.value) >= 0.01 || abs(directApprovalEffect.cabinetOffset) >= 0.01
-        
         if hasDirectApprovalEffect {
             let directEffect = directApprovalEffect.value + directApprovalEffect.cabinetOffset
-            newState.metrics["metric_approval"] = clampMetricInt(approvalOldVal + directEffect)
-        } else {
-            calculateApproval(&newState)
+            let capped = max(-8.0, min(8.0, directEffect))
+            let approvalVal = newState.metrics["metric_approval"] ?? INITIAL_METRIC_VALUE
+            newState.metrics["metric_approval"] = clampMetricInt(approvalVal + capped)
         }
         
         if newState.metricHistory["metric_approval"] == nil {
@@ -1273,10 +1271,15 @@ class ScoringEngine {
             let current = newState.metrics["metric_democracy"] ?? INITIAL_METRIC_VALUE
             newState.metrics["metric_democracy"] = clampMetricInt(current - democracyDrag)
         }
-        if democracy < 35 {
-            let corruptionGrowth = (35 - democracy) * 0.015
+        var corruptionDrift = 0.0
+        if democracy < 35    { corruptionDrift += (35 - democracy) * 0.015 }
+        if publicOrder < 40  { corruptionDrift += (40 - publicOrder) * 0.010 }
+        if economy < 35      { corruptionDrift += (35 - economy) * 0.008 }
+        if unrest > 65       { corruptionDrift += (unrest - 65) * 0.008 }
+        if corruptionDrift == 0 && corruption > 50 { corruptionDrift = -0.25 }
+        if corruptionDrift != 0 {
             let current = newState.metrics["metric_corruption"] ?? INITIAL_METRIC_VALUE
-            newState.metrics["metric_corruption"] = clampMetricInt(current + corruptionGrowth)
+            newState.metrics["metric_corruption"] = clampMetricInt(current + corruptionDrift)
         }
 
         // ── ECONOMY ─────────────────────────────────────────────────────────────
@@ -1298,9 +1301,10 @@ class ScoringEngine {
         // economics show inflation consequences within ~30-40 turns in medium games).
         // Energy crisis is a primary supply-shock inflation driver.
         var inflationDrift = 0.0
-        if economy > 65 { inflationDrift += (economy - 65) * 0.025 }  // demand-pull
-        if economy < 35 { inflationDrift -= (35 - economy) * 0.008 }  // demand collapse → deflation
-        if energyVal < 35 { inflationDrift += (35 - energyVal) * 0.015 }  // supply-shock
+        if economy > 65    { inflationDrift += (economy - 65) * 0.012 }
+        if economy < 35    { inflationDrift -= (35 - economy) * 0.008 }
+        if energyVal < 35  { inflationDrift += (35 - energyVal) * 0.015 }
+        if inflation > 70  { inflationDrift -= (inflation - 70) * 0.010 }
         if inflationDrift != 0 {
             let current = newState.metrics["metric_inflation"] ?? INITIAL_METRIC_VALUE
             newState.metrics["metric_inflation"] = clampMetricInt(current + inflationDrift)
@@ -1545,24 +1549,13 @@ class ScoringEngine {
         }
         base += max(-20.0, min(20.0, secondaryPressure)) * 0.5
 
-        // Player trait modifiers
-        if let playerStats = state.player?.stats {
-            let compassionBase = (playerStats.compassion - 50) * 0.15
-            let integrityBase = (playerStats.integrity - 50) * 0.1
-            let compassionJitter = (Double.random(in: 0...1) * 0.06) - 0.03
-            let integrityJitter = (Double.random(in: 0...1) * 0.04) - 0.02
-            base += (compassionBase + compassionJitter + integrityBase + integrityJitter)
-        }
-
         // Corruption penalty — nonlinear threshold effect, applied separately.
         // Below 40: within tolerance, no penalty. Above 40: each point costs 0.45 approval.
         // Reflects research showing minor ethics issues are tolerated but major scandals
         // (Watergate, Lewinsky) cause catastrophic nonlinear approval collapses.
         let corruption = state.metrics["metric_corruption"] ?? 0
         if corruption > 40 {
-            let corruptionPenalty = (corruption - 40) * 0.45
-            let penaltyJitter = (Double.random(in: 0...1) * 0.05) - 0.025
-            base -= (corruptionPenalty + penaltyJitter) * 0.5
+            base -= (corruption - 40) * 0.45 * 0.5
         }
 
         // Foreign relations nonlinear threshold — below 35 is diplomatic collapse territory.
@@ -1571,9 +1564,7 @@ class ScoringEngine {
         // approval drag, which better reflects real political cost of diplomatic isolation.
         let foreignRelations = state.metrics["metric_foreign_relations"] ?? 50
         if foreignRelations < 35 {
-            let foreignPenalty = (35 - foreignRelations) * 0.30
-            let fJitter = (Double.random(in: 0...1) * 0.04) - 0.02
-            base -= (foreignPenalty + fJitter) * 0.5
+            base -= (35 - foreignRelations) * 0.30 * 0.5
         }
 
         // Governing party bias — adjusts approval based on how well current metric values
@@ -1606,9 +1597,9 @@ class ScoringEngine {
         // Compression above 80 asymptotically caps the ceiling around 88–90 for any governance
         // profile, matching historical peaks (Bush post-9/11 ~90%, sustained ~85% is extraordinary).
         // Without this, consistently positive metric states compound toward 100 over long games.
-        if base > 80 {
-            let excess = base - 80
-            base = 80 + excess * 0.55
+        if base > 72 {
+            let excess = base - 72
+            base = 72 + excess * 0.28
         }
 
         state.metrics["metric_approval"] = clampMetricInt(base)

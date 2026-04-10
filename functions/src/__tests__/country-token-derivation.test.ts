@@ -1,4 +1,4 @@
-import { deriveCountryTokenPatch, type RawCountryRecord } from '../lib/country-token-derivation';
+import { deriveCountryTokenPatch, derivePlayerPartyTokens, type RawCountryRecord } from '../lib/country-token-derivation';
 
 describe('deriveCountryTokenPatch', () => {
   test('derives scalable economy and population tokens from numeric country data', () => {
@@ -76,6 +76,28 @@ describe('deriveCountryTokenPatch', () => {
     expect(patch.fiscal_condition).toBe('acute fiscal strain');
   });
 
+  test('does not override derived opposition_party with stale stored token value', () => {
+    const country: RawCountryRecord = {
+      facts: {
+        schema_version: 2,
+        baseline_id: 'us',
+        demographics: { population_total: 331_000_000, source_year: 2024 },
+        economy: { gdp_nominal_usd: 25_400_000_000_000, source_year: 2024, currency_name: 'US dollar' },
+      },
+      parties: [
+        { id: 'us_dem', countryId: 'us', name: 'Democratic Party', ideology: 3, isRuling: true, isCoalitionMember: false },
+        { id: 'us_rep', countryId: 'us', name: 'Republican Party', ideology: 8, isRuling: false, isCoalitionMember: false },
+      ],
+      tokens: {
+        opposition_party: 'STALE_VALUE',
+      },
+    };
+
+    const patch = deriveCountryTokenPatch(country);
+
+    expect(patch.opposition_party).toBe('Republican Party');
+  });
+
   test('derives country role titles from the stored cabinet structure', () => {
     const country: RawCountryRecord = {
       facts: {
@@ -140,5 +162,108 @@ describe('deriveCountryTokenPatch', () => {
     expect(patch.energy_role).toBe('Minister of Energy');
     expect(patch.environment_role).toBe('Minister of Environment');
     expect(patch.transport_role).toBe('Minister of Transport');
+  });
+});
+
+describe('derivePlayerPartyTokens', () => {
+  const usaCountry: RawCountryRecord = {
+    facts: {
+      schema_version: 2,
+      baseline_id: 'us',
+      demographics: { population_total: 331_000_000, source_year: 2024 },
+      economy: { gdp_nominal_usd: 25_400_000_000_000, source_year: 2024, currency_name: 'US dollar' },
+    },
+    parties: [
+      { id: 'us_dem', countryId: 'us', name: 'Democratic Party', shortName: 'Democrats', ideology: 3, isRuling: false, isCoalitionMember: false, isMainOpposition: true },
+      { id: 'us_rep', countryId: 'us', name: 'Republican Party', shortName: 'Republicans', ideology: 8, isRuling: true, isCoalitionMember: false, isMainOpposition: true },
+    ],
+    tokens: {},
+  };
+
+  test('when player picks Democrat, opposition resolves to Republican Party', () => {
+    const tokens = derivePlayerPartyTokens(usaCountry, 'Democratic Party');
+    expect(tokens.governing_party).toBe('Democratic Party');
+    expect(tokens.opposition_party).toBe('Republican Party');
+  });
+
+  test('when player picks Republican (the isRuling party), opposition resolves to Democratic Party', () => {
+    const tokens = derivePlayerPartyTokens(usaCountry, 'Republican Party');
+    expect(tokens.governing_party).toBe('Republican Party');
+    expect(tokens.opposition_party).toBe('Democratic Party');
+  });
+
+  test('matches by shortName when playerPartyName is an abbreviation', () => {
+    const tokens = derivePlayerPartyTokens(usaCountry, 'Democrats');
+    expect(tokens.governing_party).toBe('Democratic Party');
+    expect(tokens.opposition_party).toBe('Republican Party');
+  });
+
+  test('falls back to isRuling when playerPartyName does not match any party', () => {
+    const tokens = derivePlayerPartyTokens(usaCountry, 'Unknown Party');
+    expect(tokens.governing_party).toBe('Republican Party');
+    expect(tokens.opposition_party).toBe('Democratic Party');
+  });
+
+  test('without playerPartyName, uses isRuling flag as before', () => {
+    const tokens = derivePlayerPartyTokens(usaCountry, undefined);
+    expect(tokens.governing_party).toBe('Republican Party');
+    expect(tokens.opposition_party).toBe('Democratic Party');
+  });
+
+  test('opposition_party is null when there is only one party', () => {
+    const singlePartyCountry: RawCountryRecord = {
+      ...usaCountry,
+      parties: [
+        { id: 'party_a', countryId: 'us', name: 'Unity Party', ideology: 5, isRuling: true, isCoalitionMember: false },
+      ],
+    };
+    const tokens = derivePlayerPartyTokens(singlePartyCountry, 'Unity Party');
+    expect(tokens.governing_party).toBe('Unity Party');
+    expect(tokens.opposition_party).toBeNull();
+  });
+
+  test('isMainOpposition flag routes correctly in multi-party system, bypassing array order', () => {
+    // Canada: array order would incorrectly return Bloc Québécois (first alphabetically)
+    // but isMainOpposition on Liberals should win
+    const canadaCountry: RawCountryRecord = {
+      facts: { schema_version: 2, baseline_id: 'ca', demographics: { population_total: 40_000_000, source_year: 2024 }, economy: { gdp_nominal_usd: 2_200_000_000_000, source_year: 2024, currency_name: 'Canadian dollar' } },
+      parties: [
+        { id: 'ca_bloc',  countryId: 'ca', name: 'Bloc Québécois',              ideology: 4, isRuling: false, isCoalitionMember: false, isMainOpposition: false },
+        { id: 'ca_con',   countryId: 'ca', name: 'Conservative Party of Canada', ideology: 7, isRuling: true,  isCoalitionMember: false, isMainOpposition: true },
+        { id: 'ca_green', countryId: 'ca', name: 'Green Party of Canada',        ideology: 3, isRuling: false, isCoalitionMember: false, isMainOpposition: false },
+        { id: 'ca_lib',   countryId: 'ca', name: 'Liberal Party of Canada',      ideology: 5, isRuling: false, isCoalitionMember: false, isMainOpposition: true },
+        { id: 'ca_ndp',   countryId: 'ca', name: 'New Democratic Party',         ideology: 2, isRuling: false, isCoalitionMember: false, isMainOpposition: false },
+      ],
+      tokens: {},
+    };
+    // Player picks Conservative → Liberal should be opposition (not Bloc)
+    const tokensAsCon = derivePlayerPartyTokens(canadaCountry, 'Conservative Party of Canada');
+    expect(tokensAsCon.governing_party).toBe('Conservative Party of Canada');
+    expect(tokensAsCon.opposition_party).toBe('Liberal Party of Canada');
+
+    // Player picks Liberal → Conservative should be opposition (symmetric isMainOpposition)
+    const tokensAsLib = derivePlayerPartyTokens(canadaCountry, 'Liberal Party of Canada');
+    expect(tokensAsLib.governing_party).toBe('Liberal Party of Canada');
+    expect(tokensAsLib.opposition_party).toBe('Conservative Party of Canada');
+  });
+
+  test('populates governing_party_leader and opposition_party_leader from currentLeader', () => {
+    const countryWithLeaders: RawCountryRecord = {
+      facts: { schema_version: 2, baseline_id: 'us', demographics: { population_total: 331_000_000, source_year: 2024 }, economy: { gdp_nominal_usd: 25_400_000_000_000, source_year: 2024, currency_name: 'US dollar' } },
+      parties: [
+        { id: 'us_rep', countryId: 'us', name: 'Republican Party', ideology: 8, isRuling: true, isCoalitionMember: false, isMainOpposition: true, currentLeader: 'Donald Trump' },
+        { id: 'us_dem', countryId: 'us', name: 'Democratic Party', ideology: 3, isRuling: false, isCoalitionMember: false, isMainOpposition: true, currentLeader: 'Hakeem Jeffries' },
+      ],
+      tokens: {},
+    };
+    const tokens = derivePlayerPartyTokens(countryWithLeaders, 'Republican Party');
+    expect(tokens.governing_party_leader).toBe('Donald Trump');
+    expect(tokens.opposition_party_leader).toBe('Hakeem Jeffries');
+  });
+
+  test('governing_party_leader and opposition_party_leader are null when currentLeader absent', () => {
+    const tokens = derivePlayerPartyTokens(usaCountry, 'Republican Party');
+    expect(tokens.governing_party_leader).toBeNull();
+    expect(tokens.opposition_party_leader).toBeNull();
   });
 });

@@ -85,21 +85,29 @@ async function fetchResolvedDescription(
   countryId: string,
 ): Promise<{ title: string; description: string } | null> {
   try {
-    const doc = await db.collection('scenarios').doc(scenarioId).get();
-    if (!doc.exists) return null;
-    const data = doc.data()!;
-    const title: string = data.title ?? '';
-    const description: string = data.description ?? '';
-    const tokenMap: Record<string, string> = data.token_map ?? {};
-    const countryDoc = await db.collection('countries').doc(countryId).get();
-    if (!countryDoc.exists) return { title, description };
-    const country = countryDoc.data()!;
-    const resolve = (text: string) =>
-      text.replace(/\{\{(\w+)\}\}/g, (_match: string, key: string) => {
-        if (key === 'country') return country.name ?? countryId;
-        return tokenMap[key] ?? country[key] ?? `{{${key}}}`;
-      });
-    return { title: resolve(title), description: resolve(description) };
+    const [scenarioDoc, countryDoc, countriesSnap] = await Promise.all([
+      db.collection('scenarios').doc(scenarioId).get(),
+      db.collection('countries').doc(countryId).get(),
+      db.collection('countries').get(),
+    ]);
+    if (!scenarioDoc.exists) return null;
+    if (!countryDoc.exists) {
+      const data = scenarioDoc.data()!;
+      return { title: data.title ?? '', description: data.description ?? '' };
+    }
+    const scenario = { id: scenarioDoc.id, ...scenarioDoc.data() } as SimScenarioDoc;
+    const country = normalizeCountryDoc({ id: countryDoc.id, ...countryDoc.data() } as CountryDoc);
+    const countriesById = Object.fromEntries(
+      countriesSnap.docs.map((doc) => [doc.id, normalizeCountryDoc({ id: doc.id, ...doc.data() } as CountryDoc)])
+    );
+    const context = buildSimulationTokenContext(country, countriesById);
+    if (scenario.token_map) {
+      for (const [k, v] of Object.entries(scenario.token_map)) {
+        if (!context[k]) context[k] = v;
+      }
+    }
+    const resolved = resolveSimulationScenario(scenario, country, {}, context);
+    return { title: resolved.title, description: resolved.description };
   } catch {
     return null;
   }
@@ -278,6 +286,11 @@ export default async function ScenarioDetailPage({
               {scenario.isGolden ? (
                 <span className="rounded-full border border-[var(--accent-secondary)]/35 bg-[var(--accent-secondary)]/10 px-2.5 py-1 text-[10px] font-mono text-[var(--accent-secondary)]">
                   Golden Example
+                </span>
+              ) : null}
+              {scenario.gaiaReviewedAt ? (
+                <span title={`Reviewed by Gaia on ${new Date(scenario.gaiaReviewedAt).toLocaleDateString()}`} className="rounded-full border border-[var(--foreground-subtle)]/35 bg-[var(--surface-fill)] px-2.5 py-1 text-[10px] font-mono text-[var(--foreground-muted)]">
+                  Gaia
                 </span>
               ) : null}
             </div>

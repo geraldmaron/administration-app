@@ -56,6 +56,7 @@ const OPERATIONS_ITEMS: NavItemDef[] = [
 
 const INTEL_ITEMS: NavItemDef[] = [
   { href: '/analytics', label: 'Analytics', Icon: AnalyticsIcon },
+  { href: '/gaia', label: 'Gaia' },
   { href: '/settings', label: 'Settings', Icon: SettingsIcon },
 ];
 
@@ -68,6 +69,7 @@ const ALL_MOBILE_ITEMS: NavItemDef[] = [
   { href: '/tokens', label: 'Tokens' },
   { href: '/geopolitics', label: 'Geopolitics' },
   { href: '/analytics', label: 'Analytics' },
+  { href: '/gaia', label: 'Gaia' },
   { href: '/settings', label: 'Settings' },
 ];
 

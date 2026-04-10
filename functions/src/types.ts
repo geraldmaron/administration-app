@@ -516,6 +516,7 @@ export interface PoliticalParty {
     foundingYear?: number;
     isRuling: boolean;
     isCoalitionMember: boolean; // true if in ruling coalition but not lead party
+    isMainOpposition?: boolean; // true if this is the primary opposition party
     currentLeader?: string;     // name of current party leader
     color?: string;             // hex color e.g. "#0047AB"
     keyPolicies: string[];      // 2–4 brief policy descriptors

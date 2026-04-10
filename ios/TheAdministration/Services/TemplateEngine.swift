@@ -158,10 +158,15 @@ class TemplateEngine {
             }
         }
 
-        // Resolve party tokens from countryParties in gameState
-        let rulingParty = gameState.countryParties.first(where: { $0.isRuling })
-        let coalitionParty = gameState.countryParties.first(where: { $0.isCoalitionMember && !$0.isRuling })
-        let oppositionParty = gameState.countryParties.first(where: { !$0.isRuling && !$0.isCoalitionMember })
+        // Resolve party tokens from countryParties — prefer player's party as ruling over static isRuling flag
+        let playerPartyName = gameState.player?.party
+        let rulingParty = playerPartyName.flatMap { name in
+            gameState.countryParties.first(where: { $0.name == name || $0.shortName == name })
+        } ?? gameState.countryParties.first(where: { $0.isRuling })
+        let coalitionParty = gameState.countryParties.first(where: { $0.isCoalitionMember && $0.id != rulingParty?.id })
+        let oppositionParty =
+            gameState.countryParties.first(where: { ($0.isMainOpposition == true) && $0.id != rulingParty?.id }) ??
+            gameState.countryParties.first(where: { $0.id != rulingParty?.id && $0.id != coalitionParty?.id })
 
         if let ruling = rulingParty {
             context["governing_party"] = ruling.name

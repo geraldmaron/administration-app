@@ -36,6 +36,8 @@ export interface ScenarioSummary {
   conditionCount?: number;
   tagCount: number;
   tagResolutionStatus: 'unresolved' | 'resolved' | 'manual' | null;
+  gaiaReviewedAt?: string | null;
+  gaiaRunId?: string | null;
 }
 
 export interface OptionEffect {
@@ -198,6 +200,8 @@ export interface ScenarioDetail {
     modelUsed: string;
     generatedAt: string;
   };
+  gaiaReviewedAt?: string | null;
+  gaiaRunId?: string | null;
 }
 
 export interface AuditSummary {

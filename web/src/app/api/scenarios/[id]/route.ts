@@ -53,6 +53,8 @@ function toDetail(id: string, data: FirebaseFirestore.DocumentData): ScenarioDet
     token_map: data.token_map,
     legislature_requirement: data.legislature_requirement,
     generationProvenance: data.metadata?.generationProvenance,
+    gaiaReviewedAt: serializeTimestamp(data.gaiaReviewedAt) ?? null,
+    gaiaRunId: data.gaiaRunId ?? null,
   };
 }
 

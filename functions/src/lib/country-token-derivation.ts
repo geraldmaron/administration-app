@@ -336,17 +336,26 @@ function ideologyLabel(score: number): string {
   return 'far-right';
 }
 
-function derivePoliticalPartyTokens(parties: PoliticalParty[] | undefined): Record<string, string | null> {
+function derivePoliticalPartyTokens(
+  parties: PoliticalParty[] | undefined,
+  playerPartyName?: string,
+): Record<string, string | null> {
   if (!parties?.length) return {};
-  const ruling = parties.find(p => p.isRuling);
-  const coalition = parties.find(p => p.isCoalitionMember && !p.isRuling);
-  const opposition = parties.find(p => !p.isRuling && !p.isCoalitionMember);
+  const ruling = playerPartyName
+    ? (parties.find(p => p.name === playerPartyName || p.shortName === playerPartyName) ?? parties.find(p => p.isRuling))
+    : parties.find(p => p.isRuling);
+  const coalition = parties.find(p => p.isCoalitionMember && p.id !== ruling?.id);
+  const opposition =
+    parties.find(p => p.isMainOpposition && p.id !== ruling?.id) ??
+    parties.find(p => p.id !== ruling?.id && p.id !== coalition?.id);
   return {
     governing_party: ruling?.name ?? null,
     governing_party_short: ruling?.shortName ?? null,
     governing_party_ideology: ruling ? ideologyLabel(ruling.ideology) : null,
+    governing_party_leader: ruling?.currentLeader ?? null,
     coalition_party: coalition?.name ?? null,
     opposition_party: opposition?.name ?? null,
+    opposition_party_leader: opposition?.currentLeader ?? null,
   };
 }
 
@@ -404,8 +413,6 @@ export function deriveCountryTokenPatch(country: RawCountryRecord, randomFn?: ()
     disaster_cost: formatDerivedAmount(amountValues.disaster_cost),
     sanctions_amount: formatDerivedAmount(amountValues.sanctions_amount),
     opposition_leader: null,
-    opposition_party_leader: null,
-    opposition_party: cleanText(country.tokens?.opposition_party),
     state_media: isGenericTokenValue(country.tokens?.state_media) ? null : cleanText(country.tokens?.state_media),
     state_enterprise: isGenericTokenValue(country.tokens?.state_enterprise) ? null : cleanText(country.tokens?.state_enterprise),
     sovereign_fund: isGenericTokenValue(country.tokens?.sovereign_fund) ? null : cleanText(country.tokens?.sovereign_fund),
@@ -420,6 +427,13 @@ function applyVariance(
   if (base <= 0) return base;
   const multiplier = 1 + (randomFn() * 2 - 1) * variancePct;
   return Math.round(base * multiplier);
+}
+
+export function derivePlayerPartyTokens(
+  country: RawCountryRecord,
+  playerPartyName: string | undefined,
+): Record<string, string | null> {
+  return derivePoliticalPartyTokens(country.parties, playerPartyName);
 }
 
 export function deriveCountryAmountValues(

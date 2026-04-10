@@ -15,18 +15,19 @@
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { Timestamp } from 'firebase-admin/firestore';
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { auditScenario, deterministicFix, scoreScenario, type BundleScenario } from './lib/audit-rules';
+import { auditScenario, deterministicFix, scoreScenario, initializeAuditConfig, type BundleScenario } from './lib/audit-rules';
 import { agenticRepair } from './lib/agentic-repair';
 import { loadCompiledTokenRegistry } from './lib/token-registry';
 import { callModelProvider, type ModelConfig } from './lib/model-providers';
 import { createGenerationJob } from './background-jobs';
 import type { GenerationModelConfig } from './shared/generation-contract';
 import type { CompiledTokenRegistry } from './shared/token-registry-contract';
+import { derivePlayerPartyTokens, type RawCountryRecord } from './lib/country-token-derivation';
 
 // ---------------------------------------------------------------------------
 // Shared types — exported for use in web API routes and tests
@@ -100,6 +101,41 @@ export interface GaiaRunPromptRecommendations {
   summary: string;
 }
 
+export interface ScenarioResult {
+  id: string;
+  type: 'sampled' | 'generated';
+  title: string;
+  auditScore: number;
+  issueCount: number;
+  issueTypes: string[];
+  unresolvedTokens: number;
+  verbiageFlagged: boolean;
+  repaired: boolean;
+}
+
+export interface LogEntry {
+  ts: number;
+  msg: string;
+  level: 'info' | 'warn' | 'error';
+}
+
+export interface GaiaProgress {
+  phase: string;
+  phaseLabel: string;
+  step: number;
+  totalSteps: number;
+  detail: string;
+  scenariosAudited: number;
+  scenariosTotal: number;
+  issuesFound: number;
+  topIssuesSoFar: string[];
+  unresolvedTokensSoFar: number;
+  verbiageFindingsSoFar: string[];
+  scenarioResults: ScenarioResult[];
+  log: LogEntry[];
+  updatedAt: Timestamp;
+}
+
 export interface GaiaRun {
   runId: string;
   triggeredAt: Timestamp;
@@ -118,7 +154,9 @@ export interface GaiaRun {
   };
   verbiageFindings: string[];
   promptRecommendations: GaiaRunPromptRecommendations;
-  status: 'running' | 'complete' | 'failed';
+  scenarioResults: ScenarioResult[];
+  status: 'queued' | 'running' | 'complete' | 'failed' | 'cancelled';
+  progress?: GaiaProgress;
   error?: string;
   modelConfig?: GenerationModelConfig;
 }
@@ -132,6 +170,7 @@ const GAIA_GENERATE_COUNT = 5;
 const GAIA_COUNTRIES_PER_SCENARIO = 5;
 const GAIA_JOB_POLL_INTERVAL_MS = 10_000;
 const GAIA_JOB_MAX_WAIT_MS = 5 * 60 * 1000;
+const GAIA_MODEL = 'gpt-4.1';
 const EVAL_MODEL_CONFIG: ModelConfig = { maxTokens: 1024, temperature: 0.2 };
 const RECO_MODEL_CONFIG: ModelConfig = { maxTokens: 4096, temperature: 0.3 };
 
@@ -167,18 +206,42 @@ async function sampleCountries(
   hint: string[],
   count: number,
 ): Promise<{ id: string; tokens?: Record<string, string>; facts?: Record<string, unknown> }[]> {
-  if (hint.length >= count) {
-    const docs = await Promise.all(
+  const result: { id: string; tokens?: Record<string, string>; facts?: Record<string, unknown> }[] = [];
+
+  // Always prefer hint countries (applicable_countries) first
+  if (hint.length > 0) {
+    const hintDocs = await Promise.all(
       hint.slice(0, count).map((id) => db.collection('countries').doc(id).get()),
     );
-    return docs
-      .filter((d) => d.exists)
-      .map((d) => ({ id: d.id, ...d.data() }));
+    result.push(...hintDocs.filter((d) => d.exists).map((d) => ({ id: d.id, ...d.data() })));
   }
 
-  const snap = await db.collection('countries').limit(100).get();
-  const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return all.sort(() => Math.random() - 0.5).slice(0, count);
+  if (result.length < count) {
+    // Fill remaining slots with random countries not already included
+    const snap = await db.collection('countries').limit(100).get();
+    const hintSet = new Set(hint);
+    const pool = snap.docs
+      .filter((d) => !hintSet.has(d.id))
+      .map((d) => ({ id: d.id, ...d.data() }));
+    const shuffled = pool.sort(() => Math.random() - 0.5);
+    result.push(...shuffled.slice(0, count - result.length));
+  }
+
+  // Load parties subcollection and merge derived party tokens so opposition_party resolves correctly
+  await Promise.all(
+    result.map(async (country) => {
+      const partiesSnap = await db.collection('countries').doc(country.id).collection('parties').get();
+      if (!partiesSnap.empty) {
+        const parties = partiesSnap.docs.map((p) => p.data()) as RawCountryRecord['parties'];
+        const partyTokens = derivePlayerPartyTokens({ parties } as RawCountryRecord, undefined);
+        country.tokens = { ...(country.tokens ?? {}), ...Object.fromEntries(
+          Object.entries(partyTokens).filter(([, v]) => v != null).map(([k, v]) => [k, v as string]),
+        )};
+      }
+    }),
+  );
+
+  return result.slice(0, count);
 }
 
 async function pollJobCompletion(
@@ -219,29 +282,36 @@ interface TokenResolutionSummary {
   findings: string[];
 }
 
-async function resolveScenarioTokens(
+function resolveScenarioTokens(
   scenario: BundleScenario,
   countries: { id: string; tokens?: Record<string, string> }[],
-): Promise<TokenResolutionSummary> {
+  registryTokenSet: Set<string>,
+): TokenResolutionSummary {
   let totalUnresolved = 0;
-  let totalFallback = 0;
+  const totalFallback = 0;
   const findings: string[] = [];
 
+  const fieldsToCheck = [
+    scenario.title,
+    scenario.description,
+    ...(scenario.options ?? []).map((o) => o.text),
+  ].filter(Boolean) as string[];
+
   for (const country of countries) {
-    const tokens = country.tokens ?? {};
-    const fieldsToCheck = [
-      scenario.title,
-      scenario.description,
-      ...(scenario.options ?? []).map((o) => o.text),
-    ].filter(Boolean);
+    const countryTokens = country.tokens ?? {};
 
     for (const field of fieldsToCheck) {
-      const { unresolved } = resolveTokensInText(field as string, tokens);
-      if (unresolved.length > 0) {
-        totalUnresolved += unresolved.length;
-        findings.push(
-          `Scenario ${scenario.id} | Country ${country.id}: unresolved tokens ${unresolved.join(', ')}`,
-        );
+      const { unresolved } = resolveTokensInText(field, countryTokens);
+      for (const key of unresolved) {
+        if (!registryTokenSet.has(key)) {
+          // Token is not in the registry at all — genuine hallucination
+          totalUnresolved++;
+          findings.push(
+            `Scenario ${scenario.id} | hallucinated token {${key}} (not in registry)`,
+          );
+        }
+        // If the token IS in the registry but missing from this country, it is a
+        // country-data gap — not a scenario defect. Skip silently.
       }
     }
   }
@@ -251,28 +321,47 @@ async function resolveScenarioTokens(
 
 async function evaluateVerbiage(
   scenario: BundleScenario,
+  validTokens: readonly string[],
   modelConfig?: GenerationModelConfig,
 ): Promise<string[]> {
+  const validTokenList = validTokens.map((t) => `{${t}}`).join(', ');
+  const optionSample = (scenario.options ?? [])
+    .slice(0, 2)
+    .map((o, i) => `Option ${i + 1}: ${o.text?.slice(0, 200) ?? ''}`)
+    .join('\n');
+
   const prompt = `You are a quality evaluator for a geopolitical simulation game.
 
+VALID TOKENS — intentional render-time placeholders that MUST NOT be flagged:
+${validTokenList}
+
+Evaluate the scenario below. Flag ONLY:
+- {placeholder} patterns that are NOT in the valid token list above (genuine hallucinations)
+- Awkward, unnatural, or repetitive phrasing
+- Hardcoded real country or leader names (should use tokens or generic references)
+- Unnatural second-person shifts
+- Generation artifacts (e.g. incomplete sentences, template bleed-through)
+
 Scenario title: ${scenario.title}
-Scenario description: ${scenario.description?.slice(0, 600) ?? ''}
+Description: ${scenario.description?.slice(0, 600) ?? ''}
+${optionSample ? `\n${optionSample}` : ''}
 
-Briefly list any issues you find (token artifacts like {{token}}, awkward phrasing, generation patterns, hardcoded country names, unnatural second-person shifts). Return a JSON array of short strings. If no issues, return [].`;
+Return a JSON array of short issue strings. If no issues, return [].`;
 
+  const schema = {
+    type: 'object',
+    properties: { issues: { type: 'array', items: { type: 'string' } } },
+    required: ['issues'],
+  };
   try {
-    const resp = await callModelProvider(
-      prompt,
-      '',
+    const modelOverride = modelConfig?.repairModel ?? GAIA_MODEL;
+    const resp = await callModelProvider<{ issues: string[] }>(
       EVAL_MODEL_CONFIG,
-      undefined,
-      modelConfig,
+      prompt,
+      schema,
+      modelOverride,
     );
-    const text = resp.content?.trim() ?? '[]';
-    const start = text.indexOf('[');
-    const end = text.lastIndexOf(']');
-    if (start === -1 || end === -1) return [];
-    return JSON.parse(text.slice(start, end + 1)) as string[];
+    return resp.data?.issues ?? [];
   } catch {
     return [];
   }
@@ -281,7 +370,7 @@ Briefly list any issues you find (token artifacts like {{token}}, awkward phrasi
 async function aggregateStageMetrics(
   db: admin.firestore.Firestore,
   weeksBack = 8,
-): Promise<Record<PipelineStage, { passRate: number; sampleSize: number; topIssues: string[] }>> {
+): Promise<Record<PipelineStage, { passRate: number; sampleSize: number; topIssues: string[]; ruleFrequencies: Array<{ ruleId: string; frequency: number }> }>> {
   const since = Timestamp.fromDate(new Date(Date.now() - weeksBack * 7 * 24 * 3600 * 1000));
   const snap = await db.collection('pipeline_stage_metrics')
     .where('createdAt', '>=', since)
@@ -301,7 +390,7 @@ async function aggregateStageMetrics(
       const stageData = data.stages[stage];
       if (!stageData) continue;
       counts[stage].total++;
-      if (stageData.passed) counts[stage].passed++;
+      if ('passed' in stageData && stageData.passed) counts[stage].passed++;
       const issueList = 'issues' in stageData ? stageData.issues : [];
       for (const issue of issueList) {
         counts[stage].issueFreq[issue] = (counts[stage].issueFreq[issue] ?? 0) + 1;
@@ -309,14 +398,13 @@ async function aggregateStageMetrics(
     }
   }
 
-  const result = {} as Record<PipelineStage, { passRate: number; sampleSize: number; topIssues: string[] }>;
+  const result = {} as Record<PipelineStage, { passRate: number; sampleSize: number; topIssues: string[]; ruleFrequencies: Array<{ ruleId: string; frequency: number }> }>;
   for (const stage of stages) {
     const { passed, total, issueFreq } = counts[stage];
-    const topIssues = Object.entries(issueFreq)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([k]) => k);
-    result[stage] = { passRate: total > 0 ? passed / total : 1, sampleSize: total, topIssues };
+    const sortedFreqs = Object.entries(issueFreq).sort((a, b) => b[1] - a[1]);
+    const topIssues = sortedFreqs.slice(0, 3).map(([k]) => k);
+    const ruleFrequencies = sortedFreqs.map(([ruleId, frequency]) => ({ ruleId, frequency }));
+    result[stage] = { passRate: total > 0 ? passed / total : 1, sampleSize: total, topIssues, ruleFrequencies };
   }
   return result;
 }
@@ -324,14 +412,19 @@ async function aggregateStageMetrics(
 async function generatePromptRecommendations(
   verbiageFindings: string[],
   tokenFindings: string[],
-  stageMetrics: Record<PipelineStage, { passRate: number; sampleSize: number; topIssues: string[] }>,
+  stageMetrics: Record<PipelineStage, { passRate: number; sampleSize: number; topIssues: string[]; ruleFrequencies: Array<{ ruleId: string; frequency: number }> }>,
   modelConfig?: GenerationModelConfig,
 ): Promise<GaiaRunPromptRecommendations> {
   const architectPrompt = readPromptFile('architect.prompt.md');
   const drafterPrompt = readPromptFile('drafter.prompt.md');
 
   const metricSummary = Object.entries(stageMetrics)
-    .map(([stage, m]) => `${stage}: ${(m.passRate * 100).toFixed(0)}% pass rate (n=${m.sampleSize}), top issues: ${m.topIssues.join(', ') || 'none'}`)
+    .map(([stage, m]) => {
+      const freqDetail = m.ruleFrequencies.slice(0, 8)
+        .map(({ ruleId, frequency }) => `${ruleId}(×${frequency})`)
+        .join(', ');
+      return `${stage}: ${(m.passRate * 100).toFixed(0)}% pass rate (n=${m.sampleSize})\n  Rule failures: ${freqDetail || 'none'}`;
+    })
     .join('\n');
 
   const findingsSummary = [
@@ -363,38 +456,57 @@ Focus on high-impact, evidence-backed changes only. Max 6 recommendations.`;
 
   const contextSnippet = `ARCHITECT PROMPT (excerpt):\n${architectPrompt.slice(0, 1500)}\n\nDRAFTER PROMPT (excerpt):\n${drafterPrompt.slice(0, 1500)}`;
 
+  const recoSchema = {
+    type: 'object',
+    properties: {
+      recommendations: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            pipelineStage: { type: 'string', enum: ['architect', 'drafter', 'repair'] },
+            targetSection: { type: 'string' },
+            reason: { type: 'string' },
+            currentExcerpt: { type: 'string' },
+            suggestedChange: { type: 'string' },
+          },
+          required: ['pipelineStage', 'targetSection', 'reason', 'currentExcerpt', 'suggestedChange'],
+        },
+      },
+      summary: { type: 'string' },
+    },
+    required: ['recommendations', 'summary'],
+  };
+
+  type RecoRaw = {
+    recommendations: Array<{
+      pipelineStage: 'architect' | 'drafter' | 'repair';
+      targetSection: string;
+      reason: string;
+      currentExcerpt: string;
+      suggestedChange: string;
+    }>;
+    summary: string;
+  };
+
   try {
-    const resp = await callModelProvider(
-      systemPrompt,
-      contextSnippet,
+    const modelOverride = modelConfig?.repairModel ?? GAIA_MODEL;
+    const resp = await callModelProvider<RecoRaw>(
       RECO_MODEL_CONFIG,
-      undefined,
-      modelConfig,
+      `${systemPrompt}\n\n${contextSnippet}`,
+      recoSchema,
+      modelOverride,
     );
 
-    const text = resp.content?.trim() ?? '{}';
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start === -1 || end === -1) throw new Error('No JSON in response');
-
-    const parsed = JSON.parse(text.slice(start, end + 1)) as {
-      recommendations: Array<{
-        pipelineStage: 'architect' | 'drafter' | 'repair';
-        targetSection: string;
-        reason: string;
-        currentExcerpt: string;
-        suggestedChange: string;
-      }>;
-      summary: string;
-    };
+    const parsed = resp.data;
 
     const architect: RecommendationItem[] = [];
     const drafter: RecommendationItem[] = [];
     const repair: RecommendationItem[] = [];
 
-    for (const rec of parsed.recommendations ?? []) {
+    for (const rec of parsed?.recommendations ?? []) {
       const stage = rec.pipelineStage;
-      const stageMetric = stageMetrics[stage === 'repair' ? 'repair' : stage] ?? { passRate: 1, sampleSize: 0, topIssues: [] };
+      const stageMetric = stageMetrics[stage === 'repair' ? 'repair' : stage] ?? { passRate: 1, sampleSize: 0, topIssues: [], ruleFrequencies: [] };
       const item: RecommendationItem = {
         id: randomUUID(),
         pipelineStage: stage,
@@ -414,7 +526,7 @@ Focus on high-impact, evidence-backed changes only. Max 6 recommendations.`;
       else repair.push(item);
     }
 
-    return { architect, drafter, repair, summary: parsed.summary ?? '' };
+    return { architect, drafter, repair, summary: parsed?.summary ?? '' };
   } catch (err) {
     logger.error('[Gaia] Failed to generate prompt recommendations:', err);
     return { architect: [], drafter: [], repair: [], summary: 'Recommendation generation failed.' };
@@ -430,37 +542,89 @@ async function runGaia(
   triggeredBy: 'schedule' | 'manual',
   triggeredByUid?: string,
   modelConfig?: GenerationModelConfig,
+  existingRunId?: string,
 ): Promise<string> {
-  const runId = randomUUID();
+  const runId = existingRunId ?? randomUUID();
   const runRef = db.collection('gaia_runs').doc(runId);
 
   const runRecord: GaiaRun = {
     runId,
     triggeredAt: Timestamp.now(),
     triggeredBy,
-    triggeredByUid,
+    ...(triggeredByUid !== undefined ? { triggeredByUid } : {}),
     sampledScenarioIds: [],
     generatedScenarioIds: [],
     auditSummary: { totalIssues: 0, byType: {} },
     tokenResolutionSummary: { unresolvedCount: 0, fallbackCount: 0, countriesTested: 0 },
     verbiageFindings: [],
     promptRecommendations: { architect: [], drafter: [], repair: [], summary: '' },
+    scenarioResults: [],
     status: 'running',
-    modelConfig,
+    ...(modelConfig !== undefined ? { modelConfig } : {}),
   };
   await runRef.set(runRecord);
 
+  const TOTAL_STEPS = 7;
+  const topIssues = (byType: Record<string, number>) =>
+    Object.entries(byType).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k]) => k);
+
+  const runLog: LogEntry[] = [];
+  function addLog(level: LogEntry['level'], msg: string) {
+    runLog.push({ ts: Date.now(), msg, level });
+    if (runLog.length > 20) runLog.splice(0, runLog.length - 20);
+  }
+
+  const scenarioResults: ScenarioResult[] = [];
+
+  async function pushProgress(step: number, phase: string, phaseLabel: string, detail: string, extra: Partial<GaiaProgress> = {}) {
+    const p: GaiaProgress = {
+      phase,
+      phaseLabel,
+      step,
+      totalSteps: TOTAL_STEPS,
+      detail,
+      scenariosAudited: 0,
+      scenariosTotal: 0,
+      issuesFound: 0,
+      topIssuesSoFar: [],
+      unresolvedTokensSoFar: 0,
+      verbiageFindingsSoFar: [],
+      scenarioResults: [...scenarioResults],
+      log: [...runLog],
+      updatedAt: Timestamp.now(),
+      ...extra,
+    };
+    await runRef.update({ progress: p }).catch(() => undefined);
+  }
+
+  async function checkCancelled() {
+    const snap = await runRef.get();
+    if (snap.data()?.status === 'cancelled') {
+      throw new Error('GAIA_CANCELLED');
+    }
+  }
+
   try {
+    // Initialize audit config (required before any auditScenario call)
+    await initializeAuditConfig(db);
+
     // 1. Sample existing scenarios
+    addLog('info', `Fetching ${GAIA_SAMPLE_COUNT} active scenarios from the database…`);
+    await pushProgress(1, 'sampling', 'Sampling scenarios', `Fetching ${GAIA_SAMPLE_COUNT} active scenarios from the database…`);
     logger.info(`[Gaia:${runId}] Sampling ${GAIA_SAMPLE_COUNT} existing scenarios`);
     const sampledScenarios = await sampleActiveScenarios(db, GAIA_SAMPLE_COUNT);
     runRecord.sampledScenarioIds = sampledScenarios.map((s) => s.id);
+    addLog('info', `Sampled ${sampledScenarios.length} scenarios: ${sampledScenarios.map((s) => s.title.slice(0, 30)).join(', ')}`);
+    await pushProgress(1, 'sampling', 'Sampling scenarios', `Sampled ${sampledScenarios.length} scenarios: ${sampledScenarios.map((s) => s.title.slice(0, 30)).join(', ')}`);
 
+    await checkCancelled();
     // 2. Generate new scenarios
+    addLog('info', `Requesting ${GAIA_GENERATE_COUNT} fresh scenarios from the generation pipeline…`);
+    await pushProgress(2, 'generating', 'Generating new scenarios', `Requesting ${GAIA_GENERATE_COUNT} fresh scenarios from the generation pipeline…`);
     logger.info(`[Gaia:${runId}] Generating ${GAIA_GENERATE_COUNT} new scenarios`);
     let generatedScenarioIds: string[] = [];
     try {
-      const uniqueBundles = [...new Set(sampledScenarios.map((s) => s.bundle).filter(Boolean))] as string[];
+      const uniqueBundles = [...new Set(sampledScenarios.map((s) => s.metadata?.bundle).filter(Boolean))] as string[];
       const bundleForJob = uniqueBundles.length > 0 ? [uniqueBundles[0]] : ['economics'];
       const { jobId } = await createGenerationJob(db, {
         bundles: bundleForJob as Parameters<typeof createGenerationJob>[1]['bundles'],
@@ -470,9 +634,15 @@ async function runGaia(
         requestedBy: `gaia:${runId}`,
         modelConfig,
       });
+      addLog('info', `Generation job queued (${jobId.slice(0, 8)}…). Waiting for completion…`);
+      await pushProgress(2, 'generating', 'Generating new scenarios', `Generation job queued (${jobId.slice(0, 8)}…). Waiting for completion — this may take a few minutes.`);
       generatedScenarioIds = await pollJobCompletion(db, jobId);
+      addLog('info', `Generation complete — ${generatedScenarioIds.length} scenarios produced.`);
+      await pushProgress(2, 'generating', 'Generating new scenarios', `Generation complete — ${generatedScenarioIds.length} scenarios produced.`);
     } catch (err) {
+      addLog('warn', `Generation skipped or partial: ${String(err).slice(0, 80)}`);
       logger.warn(`[Gaia:${runId}] Generation phase skipped or partial:`, err);
+      await pushProgress(2, 'generating', 'Generating new scenarios', `Generation skipped or partial: ${String(err).slice(0, 120)}`);
     }
     runRecord.generatedScenarioIds = generatedScenarioIds;
 
@@ -487,45 +657,71 @@ async function runGaia(
 
     // 3. Load token registry
     const registry = await loadCompiledTokenRegistry();
+    const registryTokenSet = new Set(registry.allTokens);
 
+    await checkCancelled();
     // 4. Audit + repair loop
-    logger.info(`[Gaia:${runId}] Auditing + repairing ${allScenarios.length} scenarios`);
     const auditByType: Record<string, number> = {};
     let totalIssues = 0;
-
     const repairedScenarios: BundleScenario[] = [];
-    for (const scenario of allScenarios) {
+
+    for (let i = 0; i < allScenarios.length; i++) {
+      const scenario = allScenarios[i];
+      const isGenerated = generatedScenarioIds.includes(scenario.id);
+      addLog('info', `Auditing scenario ${i + 1}/${allScenarios.length}: "${scenario.title.slice(0, 50)}"`);
+      await pushProgress(3, 'auditing', 'Auditing & repairing', `Scenario ${i + 1}/${allScenarios.length}: "${scenario.title.slice(0, 50)}"`, {
+        scenariosAudited: i,
+        scenariosTotal: allScenarios.length,
+        issuesFound: totalIssues,
+        topIssuesSoFar: topIssues(auditByType),
+      });
+
       let current = scenario;
-      const issues = auditScenario(current);
+      const bundle = current.metadata?.bundle ?? 'economics';
+      const issues = auditScenario(current, bundle);
       totalIssues += issues.length;
       for (const issue of issues) {
-        auditByType[issue.code] = (auditByType[issue.code] ?? 0) + 1;
+        auditByType[issue.rule] = (auditByType[issue.rule] ?? 0) + 1;
       }
 
-      // Deterministic fixes first
-      current = deterministicFix(current);
+      deterministicFix(current);
 
-      // Agentic repair for scenarios with issues
-      if (issues.length > 0 && scoreScenario(issues) < 90) {
+      let repaired = false;
+      const auditScore = scoreScenario(issues);
+      if (issues.length > 0 && auditScore < 90) {
         try {
           const repairResult = await agenticRepair(
             current,
             issues,
-            current.bundle ?? 'economics',
+            bundle,
             false,
             75,
             modelConfig,
             registry as CompiledTokenRegistry,
           );
           current = repairResult.scenario;
+          repaired = true;
+          addLog('info', `Repaired: "${scenario.title.slice(0, 40)}" (${issues.length} issues)`);
         } catch (err) {
+          addLog('warn', `Repair failed for "${scenario.title.slice(0, 40)}": ${String(err).slice(0, 60)}`);
           logger.warn(`[Gaia:${runId}] Repair failed for ${scenario.id}:`, err);
         }
       }
 
       repairedScenarios.push(current);
 
-      // Stamp scenario with gaiaReviewedAt
+      scenarioResults.push({
+        id: scenario.id,
+        type: isGenerated ? 'generated' : 'sampled',
+        title: scenario.title ?? '',
+        auditScore,
+        issueCount: issues.length,
+        issueTypes: issues.map((iss) => iss.rule),
+        unresolvedTokens: 0,
+        verbiageFlagged: false,
+        repaired,
+      });
+
       await db.collection('scenarios').doc(scenario.id).update({
         gaiaReviewedAt: Timestamp.now(),
         gaiaRunId: runId,
@@ -533,7 +729,15 @@ async function runGaia(
     }
 
     runRecord.auditSummary = { totalIssues, byType: auditByType };
+    addLog('info', `Audit complete — ${totalIssues} issues across ${Object.keys(auditByType).length} rule types`);
+    await pushProgress(3, 'auditing', 'Auditing & repairing', `Audited ${allScenarios.length} scenarios — ${totalIssues} issues across ${Object.keys(auditByType).length} rule types. Top: ${topIssues(auditByType).slice(0, 3).join(', ') || 'none'}.`, {
+      scenariosAudited: allScenarios.length,
+      scenariosTotal: allScenarios.length,
+      issuesFound: totalIssues,
+      topIssuesSoFar: topIssues(auditByType),
+    });
 
+    await checkCancelled();
     // 5. Token resolution across countries
     logger.info(`[Gaia:${runId}] Resolving tokens for ${repairedScenarios.length} scenarios`);
     let totalUnresolved = 0;
@@ -541,17 +745,33 @@ async function runGaia(
     const tokenFindings: string[] = [];
     let countriesTested = 0;
 
-    for (const scenario of repairedScenarios) {
+    for (let i = 0; i < repairedScenarios.length; i++) {
+      const scenario = repairedScenarios[i];
+      addLog('info', `Resolving tokens: "${scenario.title.slice(0, 45)}" across ${GAIA_COUNTRIES_PER_SCENARIO} countries`);
+      await pushProgress(4, 'token_resolve', 'Resolving tokens', `Scenario ${i + 1}/${repairedScenarios.length}: "${scenario.title.slice(0, 50)}" — testing across ${GAIA_COUNTRIES_PER_SCENARIO} countries`, {
+        scenariosAudited: allScenarios.length,
+        scenariosTotal: allScenarios.length,
+        issuesFound: totalIssues,
+        topIssuesSoFar: topIssues(auditByType),
+        unresolvedTokensSoFar: totalUnresolved,
+      });
+
       const hintCountries = Array.isArray(scenario.metadata?.applicable_countries)
         ? scenario.metadata!.applicable_countries as string[]
         : [];
       const countries = await sampleCountries(db, hintCountries, GAIA_COUNTRIES_PER_SCENARIO);
       countriesTested = Math.max(countriesTested, countries.length);
 
-      const summary = await resolveScenarioTokens(scenario, countries);
+      const summary = resolveScenarioTokens(scenario, countries, registryTokenSet);
       totalUnresolved += summary.unresolvedCount;
       totalFallback += summary.fallbackCount;
       tokenFindings.push(...summary.findings);
+
+      const sr = scenarioResults.find((r) => r.id === scenario.id);
+      if (sr) sr.unresolvedTokens = summary.unresolvedCount;
+      if (summary.unresolvedCount > 0) {
+        addLog('warn', `"${scenario.title.slice(0, 40)}" — ${summary.unresolvedCount} unresolved tokens`);
+      }
     }
 
     runRecord.tokenResolutionSummary = {
@@ -559,19 +779,75 @@ async function runGaia(
       fallbackCount: totalFallback,
       countriesTested,
     };
+    await pushProgress(4, 'token_resolve', 'Resolving tokens', `Token resolution complete — ${totalUnresolved} unresolved, ${totalFallback} fallbacks across ${countriesTested} countries.`, {
+      scenariosAudited: allScenarios.length,
+      scenariosTotal: allScenarios.length,
+      issuesFound: totalIssues,
+      topIssuesSoFar: topIssues(auditByType),
+      unresolvedTokensSoFar: totalUnresolved,
+    });
 
+    await checkCancelled();
     // 6. Verbiage evaluation
     logger.info(`[Gaia:${runId}] Evaluating verbiage quality`);
     const verbiageFindings: string[] = [];
-    for (const scenario of repairedScenarios.slice(0, 6)) {
-      const findings = await evaluateVerbiage(scenario, modelConfig);
+    const evalOrder = [
+      ...repairedScenarios.filter((s) => generatedScenarioIds.includes(s.id)),
+      ...repairedScenarios.filter((s) => !generatedScenarioIds.includes(s.id)),
+    ].slice(0, 6);
+    const evalCount = evalOrder.length;
+    for (let i = 0; i < evalCount; i++) {
+      const scenario = evalOrder[i];
+      addLog('info', `Evaluating verbiage: "${scenario.title.slice(0, 45)}"`);
+      await pushProgress(5, 'verbiage', 'Evaluating verbiage quality', `Evaluating scenario ${i + 1}/${evalCount}: "${scenario.title.slice(0, 50)}"`, {
+        scenariosAudited: allScenarios.length,
+        scenariosTotal: allScenarios.length,
+        issuesFound: totalIssues,
+        topIssuesSoFar: topIssues(auditByType),
+        unresolvedTokensSoFar: totalUnresolved,
+        verbiageFindingsSoFar: verbiageFindings.slice(-5),
+      });
+      const findings = await evaluateVerbiage(scenario, registry.allTokens, modelConfig);
       verbiageFindings.push(...findings.map((f) => `[${scenario.id}] ${f}`));
+
+      const sr = scenarioResults.find((r) => r.id === scenario.id);
+      if (sr && findings.length > 0) {
+        sr.verbiageFlagged = true;
+        addLog('warn', `"${scenario.title.slice(0, 40)}" — ${findings.length} verbiage issue${findings.length > 1 ? 's' : ''}`);
+      }
     }
     runRecord.verbiageFindings = verbiageFindings;
+    await pushProgress(5, 'verbiage', 'Evaluating verbiage quality', `Verbiage evaluation complete — ${verbiageFindings.length} findings across ${evalCount} scenarios.`, {
+      scenariosAudited: allScenarios.length,
+      scenariosTotal: allScenarios.length,
+      issuesFound: totalIssues,
+      topIssuesSoFar: topIssues(auditByType),
+      unresolvedTokensSoFar: totalUnresolved,
+      verbiageFindingsSoFar: verbiageFindings.slice(-5),
+    });
 
+    await checkCancelled();
     // 7. Stage metrics aggregation + prompt recommendations
+    addLog('info', 'Loading 8-week pipeline accuracy data…');
+    await pushProgress(6, 'metrics', 'Aggregating stage metrics', 'Loading 8-week pipeline accuracy data across architect, drafter, token, audit, and repair stages…', {
+      scenariosAudited: allScenarios.length,
+      scenariosTotal: allScenarios.length,
+      issuesFound: totalIssues,
+      topIssuesSoFar: topIssues(auditByType),
+      unresolvedTokensSoFar: totalUnresolved,
+      verbiageFindingsSoFar: verbiageFindings.slice(-5),
+    });
     logger.info(`[Gaia:${runId}] Generating prompt recommendations`);
     const stageMetrics = await aggregateStageMetrics(db);
+    addLog('info', `Synthesising ${verbiageFindings.length} verbiage + ${tokenFindings.length} token findings into prompt improvements…`);
+    await pushProgress(7, 'recommending', 'Generating prompt recommendations', `Synthesising ${verbiageFindings.length} verbiage findings + ${tokenFindings.length} token findings into targeted prompt improvements…`, {
+      scenariosAudited: allScenarios.length,
+      scenariosTotal: allScenarios.length,
+      issuesFound: totalIssues,
+      topIssuesSoFar: topIssues(auditByType),
+      unresolvedTokensSoFar: totalUnresolved,
+      verbiageFindingsSoFar: verbiageFindings.slice(-5),
+    });
     const promptRecommendations = await generatePromptRecommendations(
       verbiageFindings,
       tokenFindings,
@@ -581,23 +857,35 @@ async function runGaia(
     runRecord.promptRecommendations = promptRecommendations;
     runRecord.status = 'complete';
 
+    runRecord.scenarioResults = [...scenarioResults];
+
     await runRef.update({
       sampledScenarioIds: runRecord.sampledScenarioIds,
       generatedScenarioIds: runRecord.generatedScenarioIds,
       auditSummary: runRecord.auditSummary,
       tokenResolutionSummary: runRecord.tokenResolutionSummary,
+      tokenFindings,
       verbiageFindings: runRecord.verbiageFindings,
       promptRecommendations: runRecord.promptRecommendations,
+      scenarioResults: runRecord.scenarioResults,
       status: 'complete',
+      progress: null,
     });
 
     logger.info(`[Gaia:${runId}] Complete — ${promptRecommendations.architect.length + promptRecommendations.drafter.length + promptRecommendations.repair.length} recommendations`);
     return runId;
   } catch (err) {
-    logger.error(`[Gaia:${runId}] Failed:`, err);
-    await runRef.update({ status: 'failed', error: String(err) });
-    throw err;
+    const isCancelled = err instanceof Error && err.message === 'GAIA_CANCELLED';
+    if (isCancelled) {
+      logger.info(`[Gaia:${runId}] Cancelled by user`);
+      await runRef.update({ status: 'cancelled', progress: null }).catch(() => undefined);
+    } else {
+      logger.error(`[Gaia:${runId}] Failed:`, err);
+      await runRef.update({ status: 'failed', error: String(err), progress: null });
+      throw err;
+    }
   }
+  return runId;
 }
 
 // ---------------------------------------------------------------------------
@@ -624,24 +912,31 @@ export const gaiaScheduled = onSchedule(
 );
 
 // ---------------------------------------------------------------------------
-// HTTP callable — manual trigger from admin UI
+// Firestore trigger — fires when web API enqueues a run via POST /api/gaia
 // ---------------------------------------------------------------------------
 
-export const triggerGaia = onCall(
+export const gaiaOnEnqueue = onDocumentCreated(
   {
+    document: 'gaia_queue/{docId}',
     timeoutSeconds: 540,
     memory: '1GiB',
     secrets: ['OPENAI_API_KEY'],
   },
-  async (request) => {
-    if (!request.auth?.uid) {
-      throw new HttpsError('unauthenticated', 'Authentication required');
-    }
-
+  async (event) => {
     const db = admin.firestore();
-    const modelConfig = (request.data?.modelConfig as GenerationModelConfig | undefined) ?? undefined;
+    const data = event.data?.data() ?? {};
+    const triggeredBy = (data.triggeredBy as 'manual' | 'schedule') ?? 'manual';
+    const triggeredByUid = (data.triggeredByUid as string | undefined) ?? undefined;
+    const modelConfig = (data.modelConfig as GenerationModelConfig | undefined) ?? undefined;
+    const preAssignedRunId = (data.runId as string | undefined) ?? undefined;
 
-    const runId = await runGaia(db, 'manual', request.auth.uid, modelConfig);
-    return { runId };
+    try {
+      const runId = await runGaia(db, triggeredBy, triggeredByUid, modelConfig, preAssignedRunId);
+      logger.info(`[Gaia] Enqueued run completed: ${runId}`);
+      // Clean up the queue doc
+      await event.data?.ref.delete().catch(() => undefined);
+    } catch (err) {
+      logger.error('[Gaia] Enqueued run failed:', err);
+    }
   },
 );

@@ -97,11 +97,7 @@ class GameStore: ObservableObject {
     private let aiService = AIService()
     
     private static var testMode: Bool {
-        #if DEBUG
-        return true
-        #else
-        return false
-        #endif
+        ProcessInfo.processInfo.environment["GAME_TEST_MODE"] == "1"
     }
     
     init() {

@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { deriveCountryAmountValues, deriveCountryTokenPatch, type RawCountryRecord } from '../lib/country-token-derivation';
+import type { PoliticalParty } from '../types';
 
 const isDryRun = process.argv.includes('--mode=dry-run');
 
@@ -35,6 +36,12 @@ async function run(): Promise<void> {
       console.warn(`Skipping countries/${doc.id}: missing canonical facts`);
       continue;
     }
+
+    const partiesSnap = await doc.ref.collection('parties').get();
+    if (!partiesSnap.empty) {
+      country.parties = partiesSnap.docs.map((p) => p.data() as PoliticalParty);
+    }
+
     const existingTokens = country.tokens ?? {};
     const patch = deriveCountryTokenPatch(country);
     const amounts = deriveCountryAmountValues(country);

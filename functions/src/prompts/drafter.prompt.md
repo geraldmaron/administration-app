@@ -177,7 +177,9 @@ Each option MUST include **5–9** `advisorFeedback` entries.
 
 Format: `{ "roleId": "role_xxx", "stance": "support"|"oppose"|"neutral"|"concerned", "feedback": "1–2 sentences, 30–50 words" }`
 
-**Valid roles:** `role_executive`, `role_diplomacy`, `role_defense`, `role_economy`, `role_justice`, `role_health`, `role_commerce`, `role_labor`, `role_interior`, `role_energy`, `role_environment`, `role_transport`, `role_education`
+**Valid roles (EXHAUSTIVE — no others exist):** `role_executive`, `role_diplomacy`, `role_defense`, `role_economy`, `role_justice`, `role_health`, `role_commerce`, `role_labor`, `role_interior`, `role_energy`, `role_environment`, `role_transport`, `role_education`
+
+⚠️ NEVER invent roleIds. Do NOT derive roleIds from bundle names, metric names, or policy domains (e.g. `role_infrastructure`, `role_finance`, `role_trade`, `role_security` are NOT valid). If no exact match exists, choose the closest valid role from the list above.
 
 ---
 

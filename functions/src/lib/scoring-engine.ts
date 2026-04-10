@@ -266,8 +266,8 @@ export function calculateApproval(state: BackendGameState): BackendGameState {
         base += Math.max(-20, Math.min(20, shock)) * 0.5;
     }
 
-    if (base > 80) {
-        base = 80 + (base - 80) * 0.55;
+    if (base > 72) {
+        base = 72 + (base - 72) * 0.28;
     }
 
     nextState.metrics[METRIC_IDS.APPROVAL] = clampMetric(base);
@@ -313,12 +313,12 @@ export function advanceTurn(state: BackendGameState, random: RandomSource = defa
         appendMetricHistory(nextState, metricId);
     }
 
+    const recalculated = calculateApproval(nextState);
+    nextState.metrics = recalculated.metrics;
     const approvalEffect = metricDeltas[METRIC_IDS.APPROVAL] ?? 0;
     if (Math.abs(approvalEffect) > 0.01) {
-        nextState.metrics[METRIC_IDS.APPROVAL] = clampMetric((nextState.metrics[METRIC_IDS.APPROVAL] ?? INITIAL_METRIC_VALUE) + approvalEffect);
-    } else {
-        const recalculated = calculateApproval(nextState);
-        nextState.metrics = recalculated.metrics;
+        const capped = clamp(approvalEffect, -8, 8);
+        nextState.metrics[METRIC_IDS.APPROVAL] = clampMetric((nextState.metrics[METRIC_IDS.APPROVAL] ?? INITIAL_METRIC_VALUE) + capped);
     }
     appendMetricHistory(nextState, METRIC_IDS.APPROVAL);
 
@@ -373,9 +373,13 @@ function applyOrganicDrift(state: BackendGameState): void {
     if (liberty < 35) {
         state.metrics[METRIC_IDS.DEMOCRACY] = clampMetric((state.metrics[METRIC_IDS.DEMOCRACY] ?? INITIAL_METRIC_VALUE) - (35 - liberty) * 0.015);
     }
-    if (democracy < 35) {
-        state.metrics[METRIC_IDS.CORRUPTION] = clampMetric((state.metrics[METRIC_IDS.CORRUPTION] ?? INITIAL_METRIC_VALUE) + (35 - democracy) * 0.015);
-    }
+    let corruptionDrift = 0;
+    if (democracy < 35) corruptionDrift += (35 - democracy) * 0.015;
+    if (publicOrder < 40) corruptionDrift += (40 - publicOrder) * 0.010;
+    if (economy < 35) corruptionDrift += (35 - economy) * 0.008;
+    if (unrest > 65) corruptionDrift += (unrest - 65) * 0.008;
+    if (corruptionDrift === 0 && corruption > 50) corruptionDrift = -0.25;
+    if (corruptionDrift !== 0) state.metrics[METRIC_IDS.CORRUPTION] = clampMetric(corruption + corruptionDrift);
 
     let ecoDrift = 0;
     if (foreignRelations < 35) ecoDrift -= (35 - foreignRelations) * 0.02;
@@ -386,9 +390,10 @@ function applyOrganicDrift(state: BackendGameState): void {
     if (ecoDrift !== 0) state.metrics[METRIC_IDS.ECONOMY] = clampMetric(economy + ecoDrift);
 
     let inflationDrift = 0;
-    if (economy > 65) inflationDrift += (economy - 65) * 0.025;
+    if (economy > 65) inflationDrift += (economy - 65) * 0.012;
     if (economy < 35) inflationDrift -= (35 - economy) * 0.008;
     if (energy < 35) inflationDrift += (35 - energy) * 0.015;
+    if (inflation > 70) inflationDrift -= (inflation - 70) * 0.010;
     if (inflationDrift !== 0) state.metrics[METRIC_IDS.INFLATION] = clampMetric(inflation + inflationDrift);
 
     let bubbleDrift = 0;

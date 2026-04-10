@@ -48,6 +48,8 @@ function toSummary(id: string, data: FirebaseFirestore.DocumentData): ScenarioSu
     conditionCount: Array.isArray(data.conditions) ? data.conditions.length : 0,
     tagCount: tags.length,
     tagResolutionStatus: data.metadata?.tagResolution?.status ?? null,
+    gaiaReviewedAt: coerceTimestamp(data.gaiaReviewedAt) ?? null,
+    gaiaRunId: data.gaiaRunId ?? null,
   };
 }
 

@@ -11,6 +11,7 @@ export { onScenarioJobCreated, recoverZombieJobs, worldSimulationTick } from "./
 export { dailyNewsToScenarios } from "./news-to-scenarios";
 export { processGenerationBundle, updateJobProgress } from "./generation-services";
 export { resolveAction } from "./action-resolution";
+export { gaiaScheduled, gaiaOnEnqueue } from "./gaia";
 
 if (!admin.apps.length) {
     admin.initializeApp();

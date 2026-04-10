@@ -4,11 +4,17 @@
 /// before the game UI loads.
 import SwiftUI
 import FirebaseCore
+import FirebaseFirestore
 
 @main
 struct TheAdministrationApp: App {
     init() {
         FirebaseApp.configure()
+        #if DEBUG
+        let settings = FirestoreSettings()
+        settings.cacheSettings = MemoryCacheSettings()
+        Firestore.firestore().settings = settings
+        #endif
     }
 
     var body: some Scene {

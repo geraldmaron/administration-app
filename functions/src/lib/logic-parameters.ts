@@ -184,7 +184,7 @@ ${concepts.map(({ concept, token }) => `   - ${concept} → ${token}`).join('\n'
    - Minor: ${LOGIC_PARAMETERS.effectRanges.minor.min}–${LOGIC_PARAMETERS.effectRanges.minor.max} (e.g. 0.4, 0.9, 1.5)
    - Moderate: ${LOGIC_PARAMETERS.effectRanges.moderate.min}–${LOGIC_PARAMETERS.effectRanges.moderate.max} (e.g. 2.1, 3.2, 4.0)
    - Major: ${LOGIC_PARAMETERS.effectRanges.major.min}–${LOGIC_PARAMETERS.effectRanges.major.max} (e.g. 4.2, 5.5, 6.8)
-   Use specific decimal values. Whole numbers like 1, 2, or 3 are invalid output.
+   Use specific decimal values. Whole numbers like 1, 2, or 3 are invalid output.${severity === 'critical' ? '\n   ⚠️ HARD REQUIREMENT for critical severity: AT LEAST ONE primary effect MUST have |value| ≥ 5.0. This is an audit hard-fail — any critical scenario where all effects are < 5.0 will be rejected.' : ''}
 
 4. **Effect Probability**: MUST be ${LOGIC_PARAMETERS.probability.required} (deterministic)
 

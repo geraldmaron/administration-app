@@ -496,6 +496,14 @@ function ScenariosInner() {
                       {(!scenario.tagResolutionStatus || scenario.tagResolutionStatus === 'unresolved') && scenario.tagCount > 0 && (
                         <span className="h-1.5 w-1.5 rounded-full bg-[#f59e0b] flex-shrink-0" title="Tags unresolved" />
                       )}
+                      {scenario.gaiaReviewedAt && (
+                        <span
+                          title={`Reviewed by Gaia on ${new Date(scenario.gaiaReviewedAt).toLocaleDateString()}`}
+                          className="text-[8px] font-bold text-[var(--accent-secondary)] leading-none"
+                        >
+                          G
+                        </span>
+                      )}
                     </div>
                   </td>
 
