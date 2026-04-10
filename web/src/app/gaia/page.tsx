@@ -353,6 +353,9 @@ function ScenarioResultsGrid({ results, sampledIds, generatedIds }: { results: S
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] text-foreground truncate">{r.title || r.id.slice(0, 20)}</div>
+                      {r.descriptionSnippet && (
+                        <div className="text-[10px] text-[var(--foreground-subtle)] leading-4 mt-0.5 line-clamp-2">{r.descriptionSnippet}</div>
+                      )}
                       {r.issueTypes.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-0.5">
                           {r.issueTypes.slice(0, 3).map((t) => (
@@ -607,7 +610,14 @@ function RunDetail({ run, onRunChange }: { run: GaiaRun; onRunChange: (r: GaiaRu
               <span><span className="text-[var(--foreground-subtle)]">verbiage </span><span className="font-semibold">{run.verbiageFindings.length}</span></span>
               <span><span className="text-[var(--foreground-subtle)]">recs </span><span className="font-semibold">{totalRecs}</span></span>
             </div>
-            <span className="text-[10px] font-mono text-[var(--foreground-subtle)] opacity-50 select-all">{run.runId}</span>
+            <button
+              type="button"
+              className="text-[10px] font-mono text-[var(--foreground-subtle)] opacity-50 hover:opacity-80 transition-opacity cursor-copy select-all"
+              title="Click to copy run ID"
+              onClick={() => navigator.clipboard.writeText(run.runId)}
+            >
+              {run.runId}
+            </button>
           </div>
 
           <ScenarioResultsGrid
@@ -929,8 +939,12 @@ export default function GaiaPage() {
                   <span className="text-[10px] font-mono text-[var(--foreground-subtle)]">
                     {run.triggeredBy === 'manual' ? 'Manual' : 'Scheduled'}
                   </span>
-                  <span className="text-[10px] font-mono text-[var(--foreground-subtle)] opacity-40">
-                    {run.runId.slice(0, 12)}…
+                  <span
+                    className="text-[10px] font-mono text-[var(--foreground-subtle)] opacity-40 cursor-pointer hover:opacity-70 transition-opacity"
+                    title={run.runId}
+                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(run.runId); }}
+                  >
+                    {run.runId.slice(0, 8)}
                   </span>
                   {run.progress && isActive && (
                     <span className="text-[10px] font-mono text-[var(--warning)]">

@@ -29,6 +29,7 @@ export interface ScenarioResult {
   id: string;
   type: 'sampled' | 'generated';
   title: string;
+  descriptionSnippet: string;
   auditScore: number;
   issueCount: number;
   issueTypes: string[];

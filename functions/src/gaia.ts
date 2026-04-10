@@ -105,6 +105,7 @@ export interface ScenarioResult {
   id: string;
   type: 'sampled' | 'generated';
   title: string;
+  descriptionSnippet: string;
   auditScore: number;
   issueCount: number;
   issueTypes: string[];
@@ -714,6 +715,7 @@ async function runGaia(
         id: scenario.id,
         type: isGenerated ? 'generated' : 'sampled',
         title: scenario.title ?? '',
+        descriptionSnippet: (scenario.description ?? '').slice(0, 180),
         auditScore,
         issueCount: issues.length,
         issueTypes: issues.map((iss) => iss.rule),
