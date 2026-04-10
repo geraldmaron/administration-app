@@ -70,6 +70,7 @@ class GameStore: ObservableObject {
     @Published var activeLocale: SubLocale? = nil
     @Published var countryMilitaryState: CountryMilitaryState? = nil
     @Published var availableCountries: [Country] = []
+    @Published var countryWorldStates: [String: CountryWorldState] = [:]
     var liveCountries: [Country] {
         state.countries.isEmpty ? availableCountries : state.countries
     }
@@ -401,11 +402,11 @@ class GameStore: ObservableObject {
         } else {
             state.legislatureState = LegislatureState(
                 composition: [
-                    LegislativeBloc(partyId: "ruling", partyName: "Ruling Coalition", ideologicalPosition: 5,
+                    LegislativeBloc(partyId: "ruling", partyName: party.isEmpty ? "Your Party" : party, ideologicalPosition: 5,
                                     seatShare: 0.52, approvalOfPlayer: 60, chamber: "lower", isRulingCoalition: true),
-                    LegislativeBloc(partyId: "opposition", partyName: "Main Opposition", ideologicalPosition: 5,
+                    LegislativeBloc(partyId: "opposition", partyName: "Opposition", ideologicalPosition: 5,
                                     seatShare: 0.42, approvalOfPlayer: 35, chamber: "lower", isRulingCoalition: false),
-                    LegislativeBloc(partyId: "minor", partyName: "Minor Parties", ideologicalPosition: 4,
+                    LegislativeBloc(partyId: "minor", partyName: "Other", ideologicalPosition: 4,
                                     seatShare: 0.06, approvalOfPlayer: 50, chamber: "lower", isRulingCoalition: false)
                 ],
                 approvalOfPlayer: 55,
@@ -599,11 +600,11 @@ class GameStore: ObservableObject {
         } else {
             state.legislatureState = LegislatureState(
                 composition: [
-                    LegislativeBloc(partyId: "ruling", partyName: "Ruling Coalition", ideologicalPosition: 5,
+                    LegislativeBloc(partyId: "ruling", partyName: state.player?.party.isEmpty == false ? state.player!.party : "Your Party", ideologicalPosition: 5,
                                     seatShare: 0.52, approvalOfPlayer: 60, chamber: "lower", isRulingCoalition: true),
-                    LegislativeBloc(partyId: "opposition", partyName: "Main Opposition", ideologicalPosition: 5,
+                    LegislativeBloc(partyId: "opposition", partyName: "Opposition", ideologicalPosition: 5,
                                     seatShare: 0.42, approvalOfPlayer: 35, chamber: "lower", isRulingCoalition: false),
-                    LegislativeBloc(partyId: "minor", partyName: "Minor Parties", ideologicalPosition: 4,
+                    LegislativeBloc(partyId: "minor", partyName: "Other", ideologicalPosition: 4,
                                     seatShare: 0.06, approvalOfPlayer: 50, chamber: "lower", isRulingCoalition: false)
                 ],
                 approvalOfPlayer: 55,
@@ -861,6 +862,7 @@ class GameStore: ObservableObject {
 
         // Process background world events and cabinet auto-decisions
         processBackgroundEvents()
+        Task { await injectServerWorldEvents() }
 
         // Emit a warning news article the first time any core metric crosses into danger territory
         let dangerMetrics = ["metric_approval", "metric_economy", "metric_foreign_relations", "metric_public_order"]
@@ -3262,8 +3264,9 @@ class GameStore: ObservableObject {
         return max(0, getMaxTrustYourGutUses() - state.trustYourGutUsed)
     }
 
-    func trustYourGut(command: String) async {
-        guard getRemainingTrustYourGutUses() > 0 || isAtrocityCommand(command) else { return }
+    @discardableResult
+    func trustYourGut(command: String) async -> Bool {
+        guard getRemainingTrustYourGutUses() > 0 || isAtrocityCommand(command) else { return false }
 
         isLoading = true
         state.trustYourGutUsed += 1
@@ -3282,8 +3285,10 @@ class GameStore: ObservableObject {
             freeFormCommand: command
         )
         let aiResult = await ActionResolutionService.shared.resolve(aiRequest)
+        var usedAI = false
 
         if let res = aiResult, res.success, let payload = res.result {
+            usedAI = true
             let detectedAtrocity = payload.isAtrocity == true
 
             for md in payload.metricDeltas {
@@ -3352,6 +3357,53 @@ class GameStore: ObservableObject {
         let tygStance = inferStance(from: tygDeltas, category: "trust_your_gut")
         applyLegislativeStanceEffect(stance: tygStance, category: "trust_your_gut")
         saveGame()
+        return usedAI
+    }
+
+    private func injectServerWorldEvents() async {
+        let since = Calendar.current.date(byAdding: .hour, value: -48, to: Date())
+        let serverEvents = await FirebaseDataService.shared.fetchRecentWorldEvents(since: since, limit: 10)
+        guard !serverEvents.isEmpty else { return }
+
+        let playerCountryId = state.countryId ?? ""
+        let alreadyInjected = Set(state.newsHistory.compactMap { $0.id })
+
+        await MainActor.run {
+            for event in serverEvents {
+                let articleId = "srv_\(event.id)"
+                guard !alreadyInjected.contains(articleId) else { continue }
+
+                for delta in event.globalMetricDeltas {
+                    modifyMetricBy(delta.metricId, delta: delta.delta * 0.4)
+                }
+
+                let involvedInEvent = event.actorCountryId == playerCountryId || event.targetCountryId == playerCountryId
+                if !involvedInEvent {
+                    let otherCountryId = event.actorCountryId == playerCountryId ? event.targetCountryId : event.actorCountryId
+                    let relDelta: Double = event.actionCategory == "military" ? -4 : (event.severity == "high" ? -2 : 0)
+                    if relDelta != 0, let idx = state.countries.firstIndex(where: { $0.id == otherCountryId }) {
+                        let cur = state.countries[idx].diplomacy.relationship
+                        state.countries[idx].diplomacy.relationship = max(-100, min(100, cur + relDelta))
+                    }
+                }
+
+                let article = NewsArticle(
+                    id: articleId,
+                    title: event.headline,
+                    headline: event.headline,
+                    summary: event.summary,
+                    content: event.context,
+                    turn: state.turn,
+                    impact: nil,
+                    tags: event.newsTags + ["world"],
+                    category: "WORLD",
+                    relatedScenarioId: nil,
+                    isAlert: event.isBreakingNews,
+                    isBackgroundEvent: true
+                )
+                state.newsHistory = ([article] + state.newsHistory).prefix(30).map { $0 }
+            }
+        }
     }
 
     private func isAtrocityCommand(_ rawCommand: String) -> Bool {

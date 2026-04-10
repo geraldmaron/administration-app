@@ -167,28 +167,35 @@ struct GlobalView: View {
         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
-    private func legislatureCompositionRow(_ bloc: LegislativeBloc) -> some View {
-        HStack(spacing: 8) {
-            Text(bloc.partyName)
-                .font(AppTypography.caption)
-                .foregroundColor(AppColors.foreground)
-                .lineLimit(1)
-            Spacer()
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Rectangle().fill(AppColors.border).frame(height: 4)
-                    Rectangle()
-                        .fill(bloc.isRulingCoalition ? AppColors.accentPrimary : AppColors.foregroundSubtle)
-                        .frame(width: geo.size.width * bloc.seatShare, height: 4)
-                }
-                .clipShape(Capsule())
-            }
-            .frame(width: 80, height: 4)
-            Text("\(Int(bloc.seatShare * 100))%")
-                .font(AppTypography.micro)
-                .foregroundColor(AppColors.foregroundSubtle)
-                .frame(width: 32, alignment: .trailing)
+private func collapsedBlocs(_ legislature: LegislatureState) -> [(name: String, seatShare: Double, approval: Int, isPlayer: Bool)] {
+        let playerPartyName = gameStore.state.player?.party ?? ""
+        let all = legislature.composition
+
+        let playerBloc = all.first(where: { $0.partyName == playerPartyName })
+            ?? all.first(where: { $0.isRulingCoalition })
+
+        let opposition = all
+            .filter { $0.partyId != playerBloc?.partyId && !$0.isRulingCoalition }
+            .sorted { $0.seatShare > $1.seatShare }
+            .first
+
+        let otherBlocs = all.filter { bloc in
+            bloc.partyId != playerBloc?.partyId && bloc.partyId != opposition?.partyId
         }
+        let otherShare = otherBlocs.reduce(0.0) { $0 + $1.seatShare }
+        let otherApproval = otherBlocs.isEmpty ? 50 : otherBlocs.reduce(0) { $0 + $1.approvalOfPlayer } / otherBlocs.count
+
+        var result: [(name: String, seatShare: Double, approval: Int, isPlayer: Bool)] = []
+        if let p = playerBloc {
+            result.append((name: p.partyName, seatShare: p.seatShare, approval: p.approvalOfPlayer, isPlayer: true))
+        }
+        if let o = opposition {
+            result.append((name: o.partyName, seatShare: o.seatShare, approval: o.approvalOfPlayer, isPlayer: false))
+        }
+        if otherShare > 0 {
+            result.append((name: "Other", seatShare: otherShare, approval: otherApproval, isPlayer: false))
+        }
+        return result
     }
 
     private var legislatureSection: some View {
@@ -226,8 +233,8 @@ struct GlobalView: View {
                         .accessibilityLabel("Open full legislature details")
                     }
                     legislatureStatsRow(legislature)
-                    ForEach(legislature.composition.prefix(4)) { bloc in
-                        legislatureCompositionRow(bloc)
+                    ForEach(collapsedBlocs(legislature), id: \.name) { bloc in
+                        collapsedBlocRow(bloc)
                     }
                 }
             }
@@ -235,6 +242,30 @@ struct GlobalView: View {
         .padding(12)
         .background(AppColors.backgroundElevated)
         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+
+    private func collapsedBlocRow(_ bloc: (name: String, seatShare: Double, approval: Int, isPlayer: Bool)) -> some View {
+        HStack(spacing: 8) {
+            Text(bloc.name)
+                .font(AppTypography.caption)
+                .foregroundColor(bloc.isPlayer ? AppColors.accentPrimary : AppColors.foreground)
+                .lineLimit(1)
+            Spacer()
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Rectangle().fill(AppColors.border).frame(height: 4)
+                    Rectangle()
+                        .fill(bloc.isPlayer ? AppColors.accentPrimary : AppColors.foregroundSubtle)
+                        .frame(width: geo.size.width * bloc.seatShare, height: 4)
+                }
+                .clipShape(Capsule())
+            }
+            .frame(width: 80, height: 4)
+            Text("\(Int(bloc.seatShare * 100))%")
+                .font(AppTypography.micro)
+                .foregroundColor(AppColors.foregroundSubtle)
+                .frame(width: 32, alignment: .trailing)
+        }
     }
 
 
@@ -583,30 +614,80 @@ struct CountryDetailView: View {
     private var economicSection: some View {
         sectionBlock(title: "Economic Profile") {
             VStack(spacing: 10) {
-                statRow(label: "GDP", value: country.resolvedGdpBillions.map { formatMoney($0 * 1_000_000_000) } ?? "N/A")
+                if let gdp = country.resolvedGdpBillions {
+                    statRow(label: "Economic Output", value: "\(formatMoney(gdp * 1_000_000_000)) (\(economicScale(gdp)))")
+                } else {
+                    statRow(label: "Economic Scale", value: economicScale(country.resolvedGdpBillions))
+                }
                 statRow(label: "Population", value: formatPop(Double(country.resolvedPopulation)))
+                if let economy = country.economy {
+                    statRow(label: "Economic System", value: economy.system.capitalized)
+                    statRow(label: "Primary Export", value: economy.primaryExport)
+                    statRow(label: "Primary Import", value: economy.primaryImport)
+                    if !economy.tradeDependencies.isEmpty {
+                        statRow(label: "Trade Ties", value: economy.tradeDependencies.prefix(3).joined(separator: ", "))
+                    }
+                }
                 if let difficulty = country.difficulty {
                     statRow(label: "Governance", value: difficulty.capitalized)
                 }
-                if let economy = country.economy {
-                    statRow(label: "Economic system", value: economy.system.capitalized)
-                    statRow(label: "Primary export", value: economy.primaryExport)
-                    statRow(label: "Primary import", value: economy.primaryImport)
-                    if !economy.tradeDependencies.isEmpty {
-                        statRow(label: "Trade ties", value: economy.tradeDependencies.prefix(3).joined(separator: ", "))
-                    }
-                }
-                if let amounts = country.amounts {
-                    statRow(label: "Aid benchmark", value: amounts.aidAmount.map(formatMoney) ?? "N/A")
-                    statRow(label: "Disaster cost", value: amounts.disasterCost.map(formatMoney) ?? "N/A")
-                    statRow(label: "Graft amount", value: amounts.graftAmount.map(formatMoney) ?? "N/A")
-                    statRow(label: "Infrastructure", value: amounts.infrastructureCost.map(formatMoney) ?? "N/A")
-                    statRow(label: "Military budget", value: amounts.militaryBudgetAmount.map(formatMoney) ?? "N/A")
-                    statRow(label: "Sanctions impact", value: amounts.sanctionsAmount.map(formatMoney) ?? "N/A")
-                    statRow(label: "Trade benchmark", value: amounts.tradeValue.map(formatMoney) ?? "N/A")
-                }
+                statRow(label: "Corruption Risk", value: corruptionRisk(country))
+                statRow(label: "Trade Exposure", value: tradeExposure(country))
+                statRow(label: "Disaster Cost Risk", value: disasterRisk(country))
+                statRow(label: "Sanctions Leverage", value: sanctionsLeverage(country))
             }
         }
+    }
+
+    private func economicScale(_ gdpBillions: Double?) -> String {
+        guard let gdp = gdpBillions else { return "Frontier" }
+        switch gdp {
+        case 3_000...: return "Major"
+        case 500..<3_000: return "Advanced"
+        case 100..<500: return "Emerging"
+        case 20..<100: return "Developing"
+        default: return "Frontier"
+        }
+    }
+
+    private func corruptionRisk(_ country: Country) -> String {
+        let hasHighGraft = country.amounts?.graftAmount.map { $0 > 5_000_000_000 } ?? false
+        let difficulty = country.difficulty ?? ""
+        if hasHighGraft || difficulty == "hard" { return "Endemic" }
+        if difficulty == "medium" { return "High" }
+        if let gdp = country.resolvedGdpBillions, gdp > 500 { return "Low" }
+        return "Moderate"
+    }
+
+    private func tradeExposure(_ country: Country) -> String {
+        let depCount = country.economy?.tradeDependencies.count ?? 0
+        let system = country.economy?.system ?? ""
+        if system == "command" { return "Isolated" }
+        switch depCount {
+        case 0: return "Limited"
+        case 1...2: return "Moderate"
+        case 3...4: return "High"
+        default: return "Deeply Integrated"
+        }
+    }
+
+    private func disasterRisk(_ country: Country) -> String {
+        let hasHighCost = country.amounts?.disasterCost.map { $0 > 10_000_000_000 } ?? false
+        if hasHighCost { return "High" }
+        guard let gdp = country.resolvedGdpBillions else { return "High" }
+        if gdp > 1_000 { return "Low" }
+        if gdp > 100 { return "Medium" }
+        return "High"
+    }
+
+    private func sanctionsLeverage(_ country: Country) -> String {
+        let system = country.economy?.system ?? ""
+        let exposure = country.economy?.tradeDependencies.count ?? 0
+        if system == "command" { return "Minimal" }
+        if system == "state-directed" && exposure < 2 { return "Limited" }
+        if exposure >= 3 { return "High" }
+        if let gdp = country.resolvedGdpBillions, gdp > 1_000 { return "Moderate" }
+        return "Limited"
     }
 
     // MARK: - Military
