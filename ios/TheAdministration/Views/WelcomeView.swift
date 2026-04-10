@@ -20,7 +20,7 @@ struct WelcomeView: View {
 
             GlobeBackgroundView()
                 .ignoresSafeArea()
-                .opacity(0.5)
+                .opacity(0.75)
 
             GeometryReader { geo in
                 RadialGradient(
@@ -92,6 +92,7 @@ struct WelcomeView: View {
                     .position(x: geo.size.width / 2, y: geo.size.height / 2)
                 }
                 .frame(height: 80)
+                .padding(.horizontal, 40)
                 .opacity(titleVisible ? 1 : 0)
                 .offset(y: titleVisible ? 0 : 12)
                 .animation(.easeOut(duration: 0.5), value: titleVisible)

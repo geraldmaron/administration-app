@@ -438,10 +438,25 @@ struct QuickStartSheet: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("GOVERNING STYLE")
-                            .font(AppTypography.micro)
-                            .foregroundColor(AppColors.foregroundSubtle)
-                            .tracking(2)
+                        HStack {
+                            Text("GOVERNING STYLE")
+                                .font(AppTypography.micro)
+                                .foregroundColor(AppColors.foregroundSubtle)
+                                .tracking(2)
+                            Spacer()
+                            HStack(spacing: 2) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 8, weight: .medium))
+                                    .foregroundColor(AppColors.foregroundSubtle.opacity(0.5))
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 8, weight: .medium))
+                                    .foregroundColor(AppColors.foregroundSubtle.opacity(0.5))
+                                Text("swipe")
+                                    .font(.system(size: 9, weight: .regular))
+                                    .foregroundColor(AppColors.foregroundSubtle.opacity(0.5))
+                                    .tracking(0.5)
+                            }
+                        }
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
                                 ForEach(approaches, id: \.self) { a in
@@ -461,8 +476,20 @@ struct QuickStartSheet: View {
                                     }
                                     .buttonStyle(.plain)
                                 }
+                                Color.clear.frame(width: 16)
                             }
                         }
+                        .mask(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .black, location: 0),
+                                    .init(color: .black, location: 0.80),
+                                    .init(color: .clear, location: 1.0)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                     }
                 }
                 .padding(.horizontal, 24)

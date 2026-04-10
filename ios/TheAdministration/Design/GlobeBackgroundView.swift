@@ -125,13 +125,6 @@ private struct WireframeGlobeView: View {
         let sinE = sin(elevRad)
         let centerLon = displayLon
 
-        // Orthographic projection with elevation tilt.
-        // Viewing from elevation angle above equatorial plane.
-        // right axis = (0,1,0), up axis = (-sinE,0,cosE)
-        // P = (cos(φ)cos(λ), cos(φ)sin(λ), sin(φ))
-        // screen_x = R * cos(φ) * sin(λ)
-        // screen_y = R * (sinE*cos(φ)*cos(λ) − cosE*sin(φ))
-        // visible  = cosE*cos(φ)*cos(λ) + sinE*sin(φ) > 0
         func project(lat: Double, lon: Double) -> (CGPoint, Bool) {
             let phi = lat * .pi / 180.0
             let lam = (lon - centerLon) * .pi / 180.0
@@ -143,10 +136,96 @@ private struct WireframeGlobeView: View {
             return (CGPoint(x: cx + sx, y: cy + sy), visible)
         }
 
+        let globeRect = CGRect(x: cx - R, y: cy - R, width: R * 2, height: R * 2)
+
+        // Ocean sphere fill
+        var oceanPath = Path()
+        oceanPath.addEllipse(in: globeRect)
+        ctx.fill(oceanPath, with: .color(accent.opacity(0.04)))
+
         // Globe outline
         var outline = Path()
-        outline.addEllipse(in: CGRect(x: cx - R, y: cy - R, width: R * 2, height: R * 2))
-        ctx.stroke(outline, with: .color(accent.opacity(0.18)), lineWidth: 0.75)
+        outline.addEllipse(in: globeRect)
+        ctx.stroke(outline, with: .color(accent.opacity(0.22)), lineWidth: 0.75)
+
+        // Continent fills — simplified but recognisable polygons
+        // Build a clipped path for each continent using only visible hemisphere points.
+        // When a point crosses the horizon we close the current subpath and start fresh
+        // for the next visible run, producing correct partial fills without back-hemisphere artifacts.
+        func continentPath(for coords: [(Double, Double)]) -> Path {
+            var path = Path()
+            var runStart: CGPoint? = nil
+            for (lat, lon) in coords {
+                let (pt, visible) = project(lat: lat, lon: lon)
+                if visible {
+                    if runStart == nil {
+                        path.move(to: pt)
+                        runStart = pt
+                    } else {
+                        path.addLine(to: pt)
+                    }
+                } else {
+                    if runStart != nil {
+                        path.closeSubpath()
+                        runStart = nil
+                    }
+                }
+            }
+            if runStart != nil { path.closeSubpath() }
+            return path
+        }
+
+        let continents: [[(Double, Double)]] = [
+            // Africa
+            [(37, -6), (37, 10), (32, 32), (22, 37), (12, 44), (2, 42), (-5, 40),
+             (-10, 38), (-17, 36), (-27, 33), (-35, 19), (-34, 26), (-30, 30),
+             (-22, 35), (-12, 40), (-5, 40), (2, 42), (12, 44), (22, 37), (32, 32),
+             (37, 10), (37, -6), (30, -6), (24, -17), (15, -17), (5, -5), (4, 2),
+             (5, 10), (10, 16), (16, 12), (21, 16), (30, 32), (37, 36), (37, -6)],
+            // Europe
+            [(71, 25), (70, 31), (69, 30), (65, 14), (58, 5), (51, 2), (43, -9),
+             (36, -9), (36, 5), (40, 18), (37, 24), (41, 29), (47, 37), (54, 20),
+             (60, 25), (64, 26), (65, 28), (70, 28), (71, 25)],
+            // Asia
+            [(71, 25), (72, 55), (73, 80), (72, 105), (68, 140), (60, 142),
+             (52, 142), (43, 132), (38, 121), (32, 122), (22, 114), (10, 105),
+             (1, 104), (-5, 105), (5, 100), (13, 101), (20, 93), (24, 88),
+             (8, 77), (8, 81), (16, 82), (22, 70), (27, 63), (22, 58),
+             (12, 44), (22, 37), (32, 32), (37, 36), (41, 29), (47, 37),
+             (54, 50), (60, 61), (65, 60), (71, 25)],
+            // North America
+            [(70, -140), (72, -100), (70, -85), (60, -65), (48, -53), (44, -66),
+             (35, -76), (25, -80), (18, -66), (15, -61), (10, -83), (8, -77),
+             (10, -84), (20, -90), (24, -110), (22, -106), (20, -104), (24, -110),
+             (30, -114), (32, -117), (38, -123), (48, -124), (55, -130),
+             (60, -142), (66, -168), (70, -140)],
+            // South America
+            [(12, -72), (10, -62), (5, -52), (-5, -35), (-10, -37), (-15, -39),
+             (-22, -43), (-30, -51), (-35, -58), (-42, -65), (-52, -69), (-55, -65),
+             (-52, -58), (-42, -63), (-35, -57), (-30, -50), (-22, -42), (-15, -38),
+             (-5, -35), (5, -50), (8, -60), (12, -72)],
+            // Australia
+            [(-16, 136), (-12, 136), (-12, 130), (-14, 126), (-22, 114), (-32, 116),
+             (-34, 121), (-34, 128), (-38, 140), (-38, 146), (-33, 152), (-26, 153),
+             (-18, 147), (-15, 145), (-12, 137), (-16, 136)],
+            // Greenland
+            [(83, -40), (83, -20), (76, -18), (72, -22), (60, -44), (65, -52),
+             (74, -58), (80, -56), (83, -40)]
+        ]
+
+        var continentUnion = Path()
+        for coords in continents {
+            continentUnion.addPath(continentPath(for: coords))
+        }
+
+        // Clip continent fills to globe disc using a nested layer
+        ctx.drawLayer { layerCtx in
+            var clipPath = Path()
+            clipPath.addEllipse(in: globeRect)
+            layerCtx.clip(to: clipPath)
+            layerCtx.fill(continentUnion, with: .color(accent.opacity(0.14)))
+            layerCtx.stroke(continentUnion, with: .color(accent.opacity(0.32)), lineWidth: 0.6)
+        }
 
         // Latitude parallels — sample lon from center−90° to center+90° (visible hemisphere)
         let latitudes: [(Double, Double)] = [

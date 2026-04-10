@@ -223,23 +223,7 @@ struct CabinetCard: View {
 
                 if isFilled, let stats = member?.candidate?.stats {
                     let overall = (stats.diplomacy + stats.economics + stats.military + stats.management + stats.integrity) / 5
-                    let color = AppColors.metricColor(for: CGFloat(overall))
-                    VStack(spacing: 2) {
-                        Text("\(Int(overall))")
-                            .font(.system(size: 20, weight: .bold, design: .monospaced))
-                            .foregroundColor(color)
-                        Text("OVR")
-                            .font(.system(size: 9, weight: .black))
-                            .foregroundColor(color.opacity(0.7))
-                            .tracking(2)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .strokeBorder(color.opacity(0.25), lineWidth: 1)
-                    )
+                    RatingRing(score: overall)
                 }
             }
 
@@ -361,6 +345,43 @@ struct PersonSilhouette: View {
     }
 }
 
+// MARK: - RatingRing
+
+struct RatingRing: View {
+    let score: Double
+
+    private var color: Color { AppColors.metricColor(for: CGFloat(score)) }
+    private var fraction: Double { score / 100.0 }
+    private let ringSize: CGFloat = 46
+    private let lineWidth: CGFloat = 4
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .trim(from: 0, to: 0.75)
+                .stroke(color.opacity(0.12), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(135))
+
+            Circle()
+                .trim(from: 0, to: 0.75 * fraction)
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(135))
+                .shadow(color: color.opacity(0.4), radius: 3)
+
+            VStack(spacing: 0) {
+                Text("\(Int(score))")
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundColor(color)
+                Text("OVR")
+                    .font(.system(size: 7, weight: .black))
+                    .foregroundColor(color.opacity(0.6))
+                    .tracking(1)
+            }
+        }
+        .frame(width: ringSize, height: ringSize)
+    }
+}
+
 // MARK: - MiniStatBars
 
 struct MiniStatBars: View {
@@ -377,29 +398,31 @@ struct MiniStatBars: View {
     }
 
     var body: some View {
-        HStack(spacing: 4) {
+        VStack(spacing: 5) {
             ForEach(pairs, id: \.label) { pair in
-                VStack(spacing: 3) {
+                let color = AppColors.metricColor(for: pair.value)
+                HStack(spacing: 8) {
+                    Text(pair.label)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(AppColors.foregroundSubtle)
+                        .tracking(0.5)
+                        .frame(width: 22, alignment: .leading)
+
                     GeometryReader { geo in
-                        ZStack(alignment: .bottom) {
-                            Rectangle().fill(AppColors.border)
-                            Rectangle()
-                                .fill(AppColors.metricColor(for: pair.value))
-                                .frame(height: geo.size.height * CGFloat(pair.value / 100))
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(AppColors.border)
+                            Capsule()
+                                .fill(color)
+                                .frame(width: geo.size.width * CGFloat(pair.value / 100))
                         }
                     }
-                    .frame(height: 20)
+                    .frame(height: 4)
 
-                    HStack(spacing: 2) {
-                        Text("\(Int(pair.value))")
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
-                            .foregroundColor(AppColors.metricColor(for: pair.value))
-                        Text(pair.label)
-                            .font(AppTypography.micro)
-                            .foregroundColor(AppColors.foregroundSubtle)
-                    }
+                    Text("\(Int(pair.value))")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundColor(color)
+                        .frame(width: 20, alignment: .trailing)
                 }
-                .frame(maxWidth: .infinity)
             }
         }
     }
