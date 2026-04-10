@@ -948,6 +948,187 @@ const NAVAL_BLOCKADE_TEMPLATES: ActionTemplate[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// DIPLOMATIC: treaty_proposal
+// ---------------------------------------------------------------------------
+const TREATY_PROPOSAL_TEMPLATES: ActionTemplate[] = [
+    {
+        id: 'treaty_neutral_001',
+        actionType: 'treaty_proposal',
+        relationshipContext: 'neutral',
+        powerContext: 'all',
+        severityContext: 'all',
+        headline: '{countryName} tables formal treaty framework with {targetCountryName}',
+        summary: '{leaderTitle} formally submitted a treaty proposal to {targetCountryName} covering security cooperation, border management, and economic access rights. Both governments agreed to establish a joint negotiation commission to review the draft within sixty days.',
+        context: 'The proposal represents a significant step toward structured bilateral engagement after years of informal contact. Legal teams from both foreign ministries will examine key provisions, particularly those governing third-party arbitration and exit clauses. Analysts note that treaty ratification will require legislative approval in both countries, introducing a timeline of several months even if initial negotiations succeed. Regional observers welcomed the initiative as a stabilizing signal in an otherwise tense geopolitical environment.',
+        baseMetricDeltas: [
+            { metricId: 'metric_foreign_relations', delta: 3 },
+            { metricId: 'metric_approval', delta: 1 },
+        ],
+        baseRelationshipDelta: 12,
+        newsCategory: 'diplomacy',
+        newsTags: ['treaty', 'diplomacy', 'bilateral', 'negotiation'],
+    },
+    {
+        id: 'treaty_ally_001',
+        actionType: 'treaty_proposal',
+        relationshipContext: 'ally',
+        powerContext: 'all',
+        severityContext: 'all',
+        headline: '{countryName} and {targetCountryName} advance comprehensive alliance treaty',
+        summary: '{leaderTitle} proposed a sweeping alliance treaty with {targetCountryName} that would formalize mutual defense obligations, intelligence sharing, and joint crisis response procedures. The proposal builds on years of close cooperation and is expected to deepen strategic integration.',
+        context: 'The treaty would obligate both parties to consult within forty-eight hours of any security threat and to provide material assistance in the event of armed conflict against either signatory. Defense analysts called the proposal one of the most consequential bilateral agreements in recent years. Critics in both parliaments raised questions about fiscal commitments and the risk of entanglement in regional conflicts. {leaderTitle} called the treaty a generational investment in collective security.',
+        baseMetricDeltas: [
+            { metricId: 'metric_foreign_relations', delta: 4 },
+            { metricId: 'metric_military', delta: 2 },
+            { metricId: 'metric_approval', delta: 1 },
+        ],
+        baseRelationshipDelta: 15,
+        newsCategory: 'diplomacy',
+        newsTags: ['treaty', 'alliance', 'mutual_defense', 'security'],
+    },
+    {
+        id: 'treaty_rival_001',
+        actionType: 'treaty_proposal',
+        relationshipContext: 'rival',
+        powerContext: 'all',
+        severityContext: 'all',
+        headline: '{countryName} extends conditional treaty offer to {targetCountryName}',
+        summary: '{leaderTitle} made a conditional treaty offer to {targetCountryName}, proposing a limited framework governing military de-escalation zones and communication channels. The proposal was described as a confidence-building measure rather than a normalization of relations.',
+        context: 'The offer was presented through a third-party intermediary, reflecting the absence of direct diplomatic channels. Provisions include a mutual notification system for military exercises near shared borders and a crisis hotline to reduce miscalculation risk. {targetCountryName}\'s government acknowledged receipt but offered no immediate public response. Some domestic officials criticized the move as a concession to a hostile state, while foreign policy analysts praised the pragmatic approach to managing escalation risk.',
+        baseMetricDeltas: [
+            { metricId: 'metric_foreign_relations', delta: 2 },
+            { metricId: 'metric_approval', delta: -1 },
+        ],
+        baseRelationshipDelta: 8,
+        newsCategory: 'diplomacy',
+        newsTags: ['treaty', 'de-escalation', 'rival', 'confidence_building'],
+    },
+];
+
+// ---------------------------------------------------------------------------
+// DIPLOMATIC: trade_war_escalation
+// ---------------------------------------------------------------------------
+const TRADE_WAR_ESCALATION_TEMPLATES: ActionTemplate[] = [
+    {
+        id: 'trade_war_rival_001',
+        actionType: 'trade_war_escalation',
+        relationshipContext: 'rival',
+        powerContext: 'all',
+        severityContext: 'low',
+        headline: '{countryName} imposes targeted tariffs on {targetCountryName} exports',
+        summary: '{leaderTitle} announced a new round of targeted tariffs on key {targetCountryName} export categories, escalating an ongoing trade dispute. The measures affect steel, electronics, and agricultural goods and are expected to take effect within thirty days.',
+        context: 'The tariffs represent a calibrated escalation following {targetCountryName}\'s failure to comply with previous trade dispute rulings. Industry groups in {countryName} expressed mixed reactions: manufacturing sectors welcomed protection from lower-priced imports, while export-oriented industries warned of retaliatory measures. Economists projected modest inflation pressure in consumer goods over the following quarter. {targetCountryName} condemned the action as protectionism and indicated a retaliatory response was under review.',
+        baseMetricDeltas: [
+            { metricId: 'metric_trade', delta: -2 },
+            { metricId: 'metric_economy', delta: -1 },
+            { metricId: 'metric_approval', delta: 1 },
+        ],
+        baseRelationshipDelta: -10,
+        newsCategory: 'diplomacy',
+        newsTags: ['trade_war', 'tariffs', 'trade', 'economic_coercion'],
+    },
+    {
+        id: 'trade_war_rival_002',
+        actionType: 'trade_war_escalation',
+        relationshipContext: 'rival',
+        powerContext: 'all',
+        severityContext: 'high',
+        headline: '{countryName} launches broad economic offensive against {targetCountryName}',
+        summary: '{leaderTitle} declared a comprehensive trade offensive against {targetCountryName}, imposing broad tariffs across nearly all import categories, restricting financial services access, and freezing joint infrastructure projects. The measures signal a significant escalation in bilateral economic confrontation.',
+        context: 'The sweeping package goes beyond previous targeted tariffs and is designed to exert systemic pressure on {targetCountryName}\'s export economy. Economists warned of significant supply chain disruption for industries dependent on bilateral trade flows. Third-country governments with economic exposure to both nations expressed alarm and called for dialogue. {targetCountryName} announced retaliatory tariffs within hours and suspended ongoing negotiations on three separate trade frameworks. Markets reacted with volatility in currency and commodity futures.',
+        baseMetricDeltas: [
+            { metricId: 'metric_trade', delta: -5 },
+            { metricId: 'metric_economy', delta: -3 },
+            { metricId: 'metric_foreign_relations', delta: -4 },
+            { metricId: 'metric_approval', delta: 2 },
+        ],
+        baseRelationshipDelta: -25,
+        newsCategory: 'crisis',
+        newsTags: ['trade_war', 'economic_warfare', 'tariffs', 'escalation'],
+    },
+    {
+        id: 'trade_war_adversary_001',
+        actionType: 'trade_war_escalation',
+        relationshipContext: 'adversary',
+        powerContext: 'all',
+        severityContext: 'all',
+        headline: '{countryName} weaponizes trade access against {targetCountryName}',
+        summary: '{leaderTitle} announced a comprehensive set of economic measures against {targetCountryName} including full import bans on strategic goods, restrictions on financial transfers, and suspension of all bilateral trade agreements. The government described the package as economic defense against a hostile state.',
+        context: 'The measures constitute one of the most aggressive economic actions taken against {targetCountryName} in recent years. Analysts said the package was designed to deny {targetCountryName} revenue from key export sectors while imposing costs on its financial system. Collateral impact on domestic consumers was acknowledged by officials, who argued short-term price increases were a necessary cost of geopolitical security. Allied governments were briefed in advance and expressed varying degrees of support. {targetCountryName}\'s government condemned the measures as economic warfare and pledged retaliatory action on multiple fronts.',
+        baseMetricDeltas: [
+            { metricId: 'metric_trade', delta: -6 },
+            { metricId: 'metric_economy', delta: -3 },
+            { metricId: 'metric_foreign_relations', delta: -3 },
+            { metricId: 'metric_approval', delta: 2 },
+        ],
+        baseRelationshipDelta: -30,
+        newsCategory: 'crisis',
+        newsTags: ['trade_war', 'sanctions', 'economic_warfare', 'adversary'],
+    },
+];
+
+// ---------------------------------------------------------------------------
+// HUMANITARIAN: humanitarian_intervention
+// ---------------------------------------------------------------------------
+const HUMANITARIAN_INTERVENTION_TEMPLATES: ActionTemplate[] = [
+    {
+        id: 'humanitarian_neutral_001',
+        actionType: 'humanitarian_intervention',
+        relationshipContext: 'neutral',
+        powerContext: 'all',
+        severityContext: 'low',
+        headline: '{countryName} deploys humanitarian mission to crisis zone in {targetCountryName}',
+        summary: '{leaderTitle} authorized a humanitarian assistance mission to {targetCountryName}, dispatching medical teams, emergency supplies, and logistical support to regions affected by ongoing instability. The mission operates under civilian mandate and excludes combat forces.',
+        context: 'The deployment is coordinated with international humanitarian organizations and is expected to operate for an initial period of ninety days. Government officials emphasized the mission\'s civilian character and its alignment with international law. Aid groups welcomed the commitment but called for expanded access to conflict-affected areas. Neighboring states expressed cautious support, while some domestic critics questioned the cost and risk to deployed personnel. {targetCountryName}\'s government officially requested international assistance, providing legal cover for the operation.',
+        baseMetricDeltas: [
+            { metricId: 'metric_foreign_relations', delta: 4 },
+            { metricId: 'metric_approval', delta: 2 },
+            { metricId: 'metric_economy', delta: -1 },
+        ],
+        baseRelationshipDelta: 10,
+        newsCategory: 'diplomacy',
+        newsTags: ['humanitarian', 'aid', 'intervention', 'civilian_mission'],
+    },
+    {
+        id: 'humanitarian_conflict_001',
+        actionType: 'humanitarian_intervention',
+        relationshipContext: 'conflict',
+        powerContext: 'striking_down',
+        severityContext: 'high',
+        headline: '{countryName} launches protective intervention in {targetCountryName} amid civilian crisis',
+        summary: '{leaderTitle} ordered a protective military intervention in {targetCountryName} following reports of mass atrocities and civilian displacement. The operation is framed as a humanitarian mission under international mandate, with forces authorized to establish protected corridors and safe zones.',
+        context: 'The intervention was triggered by documented reports of large-scale violence against civilian populations and the collapse of local protective capacity. {countryName} secured a partial international mandate but faced objections from regional powers who called the action interference in internal affairs. Military planners described the operation as limited in scope and duration, focused on establishing humanitarian corridors rather than achieving territorial objectives. Human rights organizations called the intervention overdue while cautioning against mission creep. Exit conditions and handover arrangements to international peacekeeping forces were not publicly specified.',
+        baseMetricDeltas: [
+            { metricId: 'metric_foreign_relations', delta: 3 },
+            { metricId: 'metric_military', delta: -2 },
+            { metricId: 'metric_economy', delta: -3 },
+            { metricId: 'metric_approval', delta: 1 },
+        ],
+        baseRelationshipDelta: -5,
+        targetMilitaryStrengthDelta: -10,
+        newsCategory: 'military',
+        newsTags: ['humanitarian', 'intervention', 'atrocity_response', 'civilian_protection'],
+    },
+    {
+        id: 'humanitarian_adversary_001',
+        actionType: 'humanitarian_intervention',
+        relationshipContext: 'adversary',
+        powerContext: 'all',
+        severityContext: 'medium',
+        headline: '{countryName} offers conditional humanitarian access to {targetCountryName} crisis',
+        summary: '{leaderTitle} extended a conditional offer of humanitarian assistance to {targetCountryName}, proposing to provide medical supplies and food aid through neutral third-party channels despite ongoing political tensions. The offer was accompanied by calls for an immediate ceasefire and humanitarian access.',
+        context: 'The gesture was framed as separating civilian welfare from political disputes, a position {leaderTitle} has articulated in previous humanitarian contexts. {targetCountryName}\'s government responded with skepticism, questioning the motives behind the offer. International aid agencies offered to serve as intermediaries to ensure supplies reach affected populations without political conditions. Domestic audiences in {countryName} were divided, with some praising the humanitarian impulse and others questioning assistance to an adversarial government. The offer was seen by regional analysts as a calibrated signal aimed at improving {countryName}\'s international standing.',
+        baseMetricDeltas: [
+            { metricId: 'metric_foreign_relations', delta: 5 },
+            { metricId: 'metric_approval', delta: 2 },
+        ],
+        baseRelationshipDelta: 5,
+        newsCategory: 'diplomacy',
+        newsTags: ['humanitarian', 'adversary', 'conditional_aid', 'diplomacy'],
+    },
+];
+
+// ---------------------------------------------------------------------------
 // Full registry
 // ---------------------------------------------------------------------------
 const ALL_TEMPLATES: ActionTemplate[] = [
@@ -961,6 +1142,9 @@ const ALL_TEMPLATES: ActionTemplate[] = [
     ...NUCLEAR_STRIKE_TEMPLATES,
     ...CYBERATTACK_TEMPLATES,
     ...NAVAL_BLOCKADE_TEMPLATES,
+    ...TREATY_PROPOSAL_TEMPLATES,
+    ...TRADE_WAR_ESCALATION_TEMPLATES,
+    ...HUMANITARIAN_INTERVENTION_TEMPLATES,
 ];
 
 // ---------------------------------------------------------------------------

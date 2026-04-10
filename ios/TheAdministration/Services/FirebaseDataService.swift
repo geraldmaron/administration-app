@@ -730,11 +730,55 @@ class FirebaseDataService {
                     return RelationshipEffect(relationshipId: roleId, delta: delta, probability: (d["probability"] as? NSNumber)?.doubleValue)
                 }
             }(),
-            populationImpact: nil, // TODO: Map if needed
-            economicImpact: nil, // TODO: Map if needed
-            humanCost: nil, // TODO: Map if needed
+            populationImpact: {
+                let raw = data["population_impact"] as? [[String: Any]] ?? data["populationImpact"] as? [[String: Any]]
+                return raw?.compactMap { d -> PopulationImpact? in
+                    guard let cid = d["country_id"] as? String ?? d["countryId"] as? String else { return nil }
+                    return PopulationImpact(
+                        countryId: cid,
+                        casualties: (d["casualties"] as? NSNumber)?.doubleValue,
+                        displaced: (d["displaced"] as? NSNumber)?.doubleValue,
+                        severity: SeverityLevel(rawValue: d["severity"] as? String ?? "")
+                    )
+                }
+            }(),
+            economicImpact: {
+                let raw = data["economic_impact"] as? [[String: Any]] ?? data["economicImpact"] as? [[String: Any]]
+                return raw?.compactMap { d -> EconomicImpact? in
+                    return EconomicImpact(
+                        countryId: d["country_id"] as? String ?? d["countryId"] as? String,
+                        gdpDelta: (d["gdp_delta"] as? NSNumber)?.doubleValue ?? (d["gdpDelta"] as? NSNumber)?.doubleValue,
+                        tradeDelta: (d["trade_delta"] as? NSNumber)?.doubleValue ?? (d["tradeDelta"] as? NSNumber)?.doubleValue,
+                        energyDelta: (d["energy_delta"] as? NSNumber)?.doubleValue ?? (d["energyDelta"] as? NSNumber)?.doubleValue
+                    )
+                }
+            }(),
+            humanCost: {
+                let d = data["human_cost"] as? [String: Any] ?? data["humanCost"] as? [String: Any]
+                guard let d else { return nil }
+                return HumanCost(
+                    civilian: (d["civilian"] as? NSNumber)?.doubleValue,
+                    military: (d["military"] as? NSNumber)?.doubleValue,
+                    displaced: (d["displaced"] as? NSNumber)?.doubleValue,
+                    casualtyConfidence: (d["casualty_confidence"] as? NSNumber)?.doubleValue ?? (d["casualtyConfidence"] as? NSNumber)?.doubleValue
+                )
+            }(),
             actor: data["actor"] as? String,
-            location: nil, // TODO: Map location if needed
+            location: {
+                let d = data["location"] as? [String: Any]
+                guard let d else { return nil }
+                return ScenarioLocation(
+                    countryId: d["countryId"] as? String ?? d["country_id"] as? String,
+                    region: d["region"] as? String,
+                    city: d["city"] as? String,
+                    site: d["site"] as? String,
+                    cityId: d["cityId"] as? String ?? d["city_id"] as? String,
+                    cityIds: d["cityIds"] as? [String] ?? d["city_ids"] as? [String],
+                    regionId: d["regionId"] as? String ?? d["region_id"] as? String,
+                    siteId: d["siteId"] as? String ?? d["site_id"] as? String,
+                    localeTemplate: d["localeTemplate"] as? String ?? d["locale_template"] as? String
+                )
+            }(),
             severity: mapSeverityLevel(from: data["severity"] as? String),
             tags: data["tags"] as? [String],
             cooldown: data["cooldown"] as? Int,

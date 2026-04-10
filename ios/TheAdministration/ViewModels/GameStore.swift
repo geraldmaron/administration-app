@@ -129,14 +129,14 @@ class GameStore: ObservableObject {
             if FirebaseDataService.shared.isFirebaseAvailable() {
                 await ScenarioNavigator.shared.loadScenarios()
                 let count = await ScenarioNavigator.shared.getScenarioCount()
-                print("✓ Loaded \(count) scenarios from Firebase")
+                AppLogger.info("Loaded \(count) scenarios from Firebase", category: .scenarios)
                 if count == 0 {
                     await MainActor.run {
                         self.scenarioLoadError = "No scenarios available. Check your connection."
                     }
                 }
             } else {
-                print("⚠️  Firebase not available - scenarios won't load")
+                AppLogger.warning("Firebase not available - scenarios won't load", category: .firebase)
                 await MainActor.run {
                     self.scenarioLoadError = "Firebase not available"
                 }
@@ -147,7 +147,7 @@ class GameStore: ObservableObject {
 
             let (countries, config) = await (countriesFetch, configFetch)
             TemplateEngine.shared.setCountries(countries)
-            print("✓ Loaded \(countries.count) countries with token data")
+            AppLogger.info("Loaded \(countries.count) countries with token data", category: .firebase)
 
             await MainActor.run {
                 self.availableCountries = countries
@@ -955,7 +955,7 @@ class GameStore: ObservableObject {
         await AuthService.shared.ensureAuthenticated()
         await ScenarioNavigator.shared.loadScenarios()
         let scenarioCount = await ScenarioNavigator.shared.getScenarioCount()
-        print("🎯 [GameStore] Firebase scenario count: \(scenarioCount)")
+        AppLogger.debug("[GameStore] Firebase scenario count: \(scenarioCount)", category: .scenarios)
         
         let allScenarios = await FirebaseDataService.shared.getAllScenarios()
         cachedScenarios = allScenarios
@@ -963,7 +963,7 @@ class GameStore: ObservableObject {
             state.countries.first(where: { $0.id == countryId }) ?? availableCountries.first(where: { $0.id == countryId })
         }
         
-        print("🎯 [GameStore] Total scenarios available: \(allScenarios.count)")
+        AppLogger.debug("[GameStore] Total scenarios available: \(allScenarios.count)", category: .scenarios)
 
         // Check pending consequences before general pool
         if nextScenario == nil {
@@ -972,7 +972,7 @@ class GameStore: ObservableObject {
             if let consequence = ScoringEngine.findApplicableConsequence(state: &mutableState, availableScenarios: allScenarios) {
                 state.pendingConsequences = mutableState.pendingConsequences
                 nextScenario = consequence
-                print("🎯 [GameStore] Firing pending consequence: \(consequence.id)")
+                AppLogger.debug("[GameStore] Firing pending consequence: \(consequence.id)", category: .game)
             }
         }
 
@@ -1017,7 +1017,7 @@ class GameStore: ObservableObject {
 
                 if let picked = pickNeighborScenario(from: neighborPool, for: country, gameState: state) {
                     nextScenario = picked
-                    print("🎯 [GameStore] Selected neighbor event scenario: \(picked.id)")
+                    AppLogger.debug("[GameStore] Selected neighbor event scenario: \(picked.id)", category: .scenarios)
                 }
             }
         }
@@ -1110,7 +1110,7 @@ class GameStore: ObservableObject {
                 }
                 return true
             }
-            print("🎯 [GameStore] Condition-relaxed pool size: \(pool.count)")
+            AppLogger.debug("[GameStore] Condition-relaxed pool size: \(pool.count)", category: .scenarios)
         }
 
         // De-prioritise recently seen scenarios
@@ -1125,12 +1125,12 @@ class GameStore: ObservableObject {
             if !distinct.isEmpty { pool = distinct }
         }
 
-        print("🎯 [GameStore] Filtered pool size: \(pool.count)")
+        AppLogger.debug("[GameStore] Filtered pool size: \(pool.count)", category: .scenarios)
 
         if nextScenario == nil, !pool.isEmpty {
             // Tag-diversity + geopolitical weighted pick
             nextScenario = weightedPick(from: pool, recentTagQueue: recentTagSet)
-            print("🎯 [GameStore] Selected Firebase scenario: \(nextScenario?.id ?? "none")")
+            AppLogger.debug("[GameStore] Selected Firebase scenario: \(nextScenario?.id ?? "none")", category: .scenarios)
         }
         
         // 2. Check AI Scenario Queue
@@ -1139,7 +1139,7 @@ class GameStore: ObservableObject {
                 let chain = queue.readyChains.removeFirst()
                 nextScenario = chain.scenarios.first
                 state.aiScenarioQueue = queue
-                print("🎯 [GameStore] Using queued AI scenario: \(nextScenario?.id ?? "none")")
+                AppLogger.debug("[GameStore] Using queued AI scenario: \(nextScenario?.id ?? "none")", category: .scenarios)
             }
         }
         

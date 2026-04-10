@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
+import { requireAdminAuth } from '@/lib/auth';
 import type { GeopoliticalProfile, CountryRelationship } from '@/types/geopolitical';
 
 export const dynamic = 'force-dynamic';
@@ -64,6 +65,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ countryId: string }> }
 ) {
+  const authError = await requireAdminAuth(request);
+  if (authError) return authError;
+
   const { countryId } = await params;
   const format = new URL(request.url).searchParams.get('format') || 'json';
 

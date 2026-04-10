@@ -1,6 +1,7 @@
-import type { ScenarioCondition } from '../types';
+import type { MetricGate, RequiresFlag } from '../types';
+import { REQUIRES_CONDITION_MAP } from '../shared/scenario-audit';
 
-export interface ScenarioConditionInferenceInput {
+export interface MetricGateInferenceInput {
   title?: string;
   description?: string;
   tags?: string[];
@@ -163,7 +164,7 @@ const NARRATIVE_CONDITION_RULES: readonly ConditionRule[] = [
   },
 ];
 
-function normalizeCondition(condition: ScenarioCondition): ScenarioCondition | null {
+function normalizeCondition(condition: MetricGate): MetricGate | null {
   if (!condition?.metricId || typeof condition.metricId !== 'string') return null;
   const metricId = condition.metricId.trim();
   if (!metricId) return null;
@@ -173,8 +174,8 @@ function normalizeCondition(condition: ScenarioCondition): ScenarioCondition | n
   return { metricId, ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}) };
 }
 
-export function mergeScenarioConditions(...groups: Array<ScenarioCondition[] | undefined>): ScenarioCondition[] {
-  const merged = new Map<string, ScenarioCondition>();
+export function mergeMetricGates(...groups: Array<MetricGate[] | undefined>): MetricGate[] {
+  const merged = new Map<string, MetricGate>();
 
   for (const group of groups) {
     for (const rawCondition of group ?? []) {
@@ -207,9 +208,9 @@ export function mergeScenarioConditions(...groups: Array<ScenarioCondition[] | u
   });
 }
 
-export function inferScenarioConditions(input: ScenarioConditionInferenceInput): ScenarioCondition[] {
+export function inferMetricGates(input: MetricGateInferenceInput): MetricGate[] {
   const combined = `${input.title ?? ''} ${input.description ?? ''}`;
-  const inferred: ScenarioCondition[] = [];
+  const inferred: MetricGate[] = [];
 
   for (const tag of input.tags ?? []) {
     const rule = TAG_CONDITION_RULES[String(tag).trim().toLowerCase()];
@@ -223,21 +224,38 @@ export function inferScenarioConditions(input: ScenarioConditionInferenceInput):
     }
   }
 
-  return mergeScenarioConditions(inferred);
+  return mergeMetricGates(inferred);
 }
 
-export function buildBestEffortScenarioConditions(options: {
-  existingConditions?: ScenarioCondition[];
-  architectConditions?: ScenarioCondition[];
+export function buildBestEffortMetricGates(options: {
+  existingConditions?: MetricGate[];
+  architectConditions?: MetricGate[];
   title?: string;
   description?: string;
   tags?: string[];
-}): ScenarioCondition[] {
-  const inferred = inferScenarioConditions({
+  requires?: Partial<Record<RequiresFlag, true>>;
+}): MetricGate[] {
+  const inferred = inferMetricGates({
     title: options.title,
     description: options.description,
     tags: options.tags,
   });
 
-  return mergeScenarioConditions(options.architectConditions, options.existingConditions, inferred);
+  // Derive metric gates from requires flags via the registry.
+  // e.g. requires.democratic_regime: true → add metric_democracy >= 40 gate.
+  const fromRequires: MetricGate[] = [];
+  if (options.requires) {
+    for (const [flag, value] of Object.entries(options.requires) as Array<[RequiresFlag, unknown]>) {
+      if (!value) continue;
+      const mapped = REQUIRES_CONDITION_MAP[flag];
+      if (!mapped) continue;
+      fromRequires.push({
+        metricId: mapped.metricId,
+        ...(mapped.op === 'min' ? { min: mapped.threshold } : { max: mapped.threshold }),
+      });
+    }
+  }
+
+  return mergeMetricGates(options.architectConditions, options.existingConditions, inferred, fromRequires);
 }
+

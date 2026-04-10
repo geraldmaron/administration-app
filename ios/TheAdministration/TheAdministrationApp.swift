@@ -5,11 +5,15 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseFirestore
+import FirebaseCrashlytics
 
 @main
 struct TheAdministrationApp: App {
     init() {
         FirebaseApp.configure()
+        Crashlytics.crashlytics().checkForUnsentReports { hasReports in
+            if hasReports { Crashlytics.crashlytics().sendUnsentReports() }
+        }
         #if DEBUG
         let settings = FirestoreSettings()
         settings.cacheSettings = MemoryCacheSettings()

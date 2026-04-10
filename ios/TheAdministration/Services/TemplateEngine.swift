@@ -519,7 +519,7 @@ class TemplateEngine {
         let pattern = TemplateEngine.placeholderPattern
 
         guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-            print("⚠️ [TemplateEngine] Failed to create regex pattern")
+            AppLogger.warning("[TemplateEngine] Failed to create regex pattern")
             return text
         }
 
@@ -538,7 +538,7 @@ class TemplateEngine {
             
             // Validate token casing - should be all lowercase with underscores
             if tokenName != tokenLower {
-                print("⚠️ [TemplateEngine] Token casing error: {\(tokenName)} should be {\(tokenLower)}")
+                AppLogger.warning("[TemplateEngine] Token casing error: {\(tokenName)} should be {\(tokenLower)}")
             }
 
             // Try both the original case and lowercase version
@@ -550,7 +550,7 @@ class TemplateEngine {
                 let fallback = fallbackValue(for: tokenLower, context: context)
                 result.replaceSubrange(fullRange, with: fallback)
                 #if DEBUG
-                print("⚠️ [TemplateEngine] Unresolved token: {\(tokenName)}")
+                AppLogger.warning("[TemplateEngine] Unresolved token: {\(tokenName)}")
                 #endif
             }
         }
@@ -567,7 +567,7 @@ class TemplateEngine {
                     guard let range = Range(match.range(at: 0), in: result) else { return nil }
                     return String(result[range])
                 }
-                print("⚠️ [TemplateEngine] Unresolved tokens after resolution: \(unresolvedTokens.joined(separator: ", "))")
+                AppLogger.warning("[TemplateEngine] Unresolved tokens after resolution: \(unresolvedTokens.joined(separator: ", "))")
                 #endif
 
                 for match in unresolvedMatches {

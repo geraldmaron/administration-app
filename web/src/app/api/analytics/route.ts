@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
+import { requireAdminAuth } from '@/lib/auth';
 import type {
   AnalyticsResponse,
   AnalyticsBundleRow,
@@ -11,8 +12,14 @@ import type {
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   const { searchParams } = new URL(request.url);
-  const days = Math.min(Math.max(parseInt(searchParams.get('days') ?? '30', 10), 1), 90);
+  const days = (() => {
+    const n = Number(searchParams.get('days') ?? '30');
+    return Number.isFinite(n) && n > 0 ? Math.min(Math.max(Math.round(n), 1), 90) : 30;
+  })();
 
   const endDate = new Date();
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);

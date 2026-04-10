@@ -431,6 +431,51 @@ extension ScenarioNavigator {
         return max(score, 0)
     }
 
+    func filterByRelationshipGates(_ scenarios: [Scenario], for country: Country?) -> [Scenario] {
+        guard let geo = country?.geopoliticalProfile else { return scenarios }
+        return scenarios.filter { scenario in
+            guard let gates = scenario.metadata?.relationshipGates, !gates.isEmpty else { return true }
+            return gates.allSatisfy { gate in passesRelationshipGate(gate, geo: geo) }
+        }
+    }
+
+    private func passesRelationshipGate(_ gate: RelationshipGate, geo: GeopoliticalProfile) -> Bool {
+        let allRelationships: [CountryRelationship] = geo.neighbors + geo.allies + geo.adversaries
+
+        let candidates: [CountryRelationship]
+        switch gate.kind {
+        case "ally":
+            candidates = allRelationships.filter { ["formal_ally", "strategic_partner"].contains($0.type) }
+        case "rival":
+            candidates = allRelationships.filter { $0.type == "rival" }
+        case "adversary":
+            candidates = allRelationships.filter { ["adversary", "conflict"].contains($0.type) }
+        case "neighbor":
+            candidates = geo.neighbors
+        case "trade_partner":
+            candidates = allRelationships.filter { $0.type == "strategic_partner" }
+        default:
+            return true
+        }
+
+        if let targetId = gate.targetId {
+            guard let match = candidates.first(where: { $0.countryId == targetId }) else { return false }
+            return passesRelationshipState(gate.state, strength: match.strength)
+        }
+
+        return candidates.contains { passesRelationshipState(gate.state, strength: $0.strength) }
+    }
+
+    private func passesRelationshipState(_ state: String, strength: Double) -> Bool {
+        switch state {
+        case "friendly": return strength >= 40
+        case "hostile": return strength <= -40
+        case "tense": return strength > -40 && strength < 0
+        case "neutral": return strength >= -20 && strength <= 20
+        default: return true
+        }
+    }
+
     func matchesRegionalScope(_ scenario: Scenario, for country: Country?) -> Bool {
         guard let regionTags = scenario.metadata?.regionTags, !regionTags.isEmpty else {
             return true

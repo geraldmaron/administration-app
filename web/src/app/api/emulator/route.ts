@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminAuth } from '@/lib/auth';
 import { type ChildProcess, spawn } from 'child_process';
 import * as net from 'net';
 import * as path from 'path';
@@ -56,7 +57,10 @@ function probePort(port: number): Promise<boolean> {
   });
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   const [firestoreUp, functionsUp] = await Promise.all([
     probePort(8080),
     probePort(5001),
@@ -79,7 +83,10 @@ export async function GET() {
   });
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   const firestoreUp = await probePort(8080);
 
   if (firestoreUp) {

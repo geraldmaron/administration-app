@@ -67,7 +67,7 @@ class PersistenceService {
         do {
             try data.write(to: fileURL(for: targetSlot))
         } catch {
-            print("⚠️  Failed to save game to slot \(targetSlot): \(error)")
+            AppLogger.error("Failed to save game to slot \(targetSlot): \(error)")
         }
         updateMetadata(for: targetSlot, from: state, overrideName: customName)
     }
@@ -114,7 +114,7 @@ class PersistenceService {
         do {
             try data.write(to: autoSaveFileURL)
         } catch {
-            print("⚠️  Failed to auto-save game: \(error)")
+            AppLogger.error("Failed to auto-save game: \(error)")
         }
         let meta = SaveSlotMetadata(
             id: 0,

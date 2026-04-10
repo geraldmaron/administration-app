@@ -4,7 +4,12 @@ export type DiplomaticActionType =
   | 'trade_agreement'
   | 'impose_sanctions'
   | 'request_alliance'
-  | 'expel_ambassador';
+  | 'expel_ambassador'
+  | 'treaty_proposal'
+  | 'trade_war_escalation';
+
+export type HumanitarianActionType =
+  | 'humanitarian_intervention';
 
 export type MilitaryActionType =
   | 'covert_ops'

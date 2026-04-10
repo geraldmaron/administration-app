@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
+import { requireAdminAuth } from '@/lib/auth';
 import type { GeopoliticalProfile, CountryRelationship } from '@/types/geopolitical';
 
 export const dynamic = 'force-dynamic';
@@ -9,6 +10,9 @@ function relToCsvRow(r: CountryRelationship): string {
 }
 
 export async function GET(request: NextRequest) {
+  const authError = await requireAdminAuth(request);
+  if (authError) return authError;
+
   const format = new URL(request.url).searchParams.get('format') || 'json';
 
   try {

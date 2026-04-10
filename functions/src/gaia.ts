@@ -186,6 +186,7 @@ function readPromptFile(name: string): string {
   try {
     return readFileSync(join(__dirname, 'prompts', name), 'utf-8');
   } catch {
+    console.warn(`[gaia] Prompt file not found: ${name} — ensure Firestore template is populated`);
     return '';
   }
 }
@@ -773,8 +774,8 @@ async function runGaia(
         unresolvedTokensSoFar: totalUnresolved,
       });
 
-      const hintCountries = Array.isArray(scenario.metadata?.applicable_countries)
-        ? scenario.metadata!.applicable_countries as string[]
+      const hintCountries = Array.isArray(scenario.applicability?.applicableCountryIds)
+        ? scenario.applicability!.applicableCountryIds as string[]
         : [];
       const countries = await sampleCountries(db, hintCountries, GAIA_COUNTRIES_PER_SCENARIO);
       countriesTested = Math.max(countriesTested, countries.length);

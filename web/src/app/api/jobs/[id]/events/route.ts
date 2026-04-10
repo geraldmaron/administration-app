@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
+import { requireAdminAuth } from '@/lib/auth';
 import type { JobEvent } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authError = await requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const jobRef = db.collection('generation_jobs').doc(params.id);
     const jobDoc = await jobRef.get();

@@ -470,6 +470,12 @@ struct RelationshipEffect: Codable {
     let probability: Double?
 }
 
+struct RelationshipGate: Codable {
+    let kind: String
+    let state: String
+    let targetId: String?
+}
+
 struct ScenarioRequirements: Codable {
     let landBorderAdversary: Bool?
     let formalAlly: Bool?
@@ -561,6 +567,7 @@ struct ScenarioMetadata: Codable {
     var primaryMetrics: [String]? = nil
     var secondaryMetrics: [String]? = nil
     var actorPattern: String? = nil
+    var relationshipGates: [RelationshipGate]? = nil
 
     enum CodingKeys: String, CodingKey {
         case applicableCountries = "applicable_countries"
@@ -582,6 +589,7 @@ struct ScenarioMetadata: Codable {
         case primaryMetrics = "primary_metrics"
         case secondaryMetrics = "secondary_metrics"
         case actorPattern
+        case relationshipGates = "relationship_gates"
     }
 }
 

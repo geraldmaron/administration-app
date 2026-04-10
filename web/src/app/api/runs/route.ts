@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
+import { requireAdminAuth } from '@/lib/auth';
 import type { GenerationRunSummary } from '@/lib/types';
 import { rollupRunDocument, toJobSummary } from './_lib';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const limit = Math.min(parseInt(request.nextUrl.searchParams.get('limit') ?? '50', 10) || 50, 200);
     const snap = await db.collection('generation_runs').orderBy('requestedAt', 'desc').limit(limit).get();

@@ -1,7 +1,7 @@
 import {
-    buildBestEffortScenarioConditions,
-    inferScenarioConditions,
-    mergeScenarioConditions,
+    buildBestEffortMetricGates as buildBestEffortScenarioConditions,
+    inferMetricGates as inferScenarioConditions,
+    mergeMetricGates as mergeScenarioConditions,
 } from '../lib/scenario-conditions';
 
 describe('scenario condition helpers', () => {

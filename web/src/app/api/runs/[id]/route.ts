@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
+import { requireAdminAuth } from '@/lib/auth';
 import type { GenerationRunDetail, JobEvent, JobIssueSummary, JobSummary } from '@/lib/types';
 import { rollupRunDocument, toJobSummary } from '../_lib';
 
@@ -82,9 +83,12 @@ function buildRunIssueSummaries(jobs: JobSummary[], mergedEvents: Array<JobEvent
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const runRef = db.collection('generation_runs').doc(params.id);
     const [runDoc, jobsSnap] = await Promise.all([

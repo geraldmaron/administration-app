@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { db } from '@/lib/firebase-admin';
+import { requireAdminAuth } from '@/lib/auth';
 
 type PipelineStage = 'architect' | 'drafter' | 'tokenResolve' | 'audit' | 'repair';
 
@@ -22,7 +23,10 @@ interface StageMetricDoc {
 const WEEKS_BACK = 8;
 const STAGES: PipelineStage[] = ['architect', 'drafter', 'tokenResolve', 'audit', 'repair'];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authError = requireAdminAuth(request);
+  if (authError) return authError;
+
   const since = Timestamp.fromDate(
     new Date(Date.now() - WEEKS_BACK * 7 * 24 * 3600 * 1000),
   );
