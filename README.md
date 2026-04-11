@@ -62,29 +62,46 @@ firebase deploy --only firestore
 firebase deploy --only storage
 ```
 
-**OpenAI settings** (used by Cloud Functions for scenario generation; the iOS app does not call OpenAI directly):
+**Cloud LLM (OpenRouter)** — Cloud Functions use [OpenRouter](https://openrouter.ai/) for all non-local generation. The iOS app does not call the LLM directly.
 
-- **Production (required):** Set your OpenAI API key as a Firebase secret so the deployed functions can use it:
+- **Production (required):** Set your OpenRouter API key as a Firebase secret:
   ```bash
-  firebase functions:secrets:set OPENAI_API_KEY
+  firebase functions:secrets:set OPENROUTER_API_KEY
   ```
-  When prompted, paste your key from [OpenAI API keys](https://platform.openai.com/api-keys). Redeploy functions after setting secrets: `firebase deploy --only functions`.
+  Optional: `firebase functions:secrets:set OPENROUTER_MANAGEMENT_KEY` for management APIs. Redeploy after setting secrets: `firebase deploy --only functions`.
 
-- **Optional overrides** (env vars; defaults in code if unset):
-  - `OPENAI_BASE_URL` — API base URL (default: `https://api.openai.com/v1`; use for compatible proxies or Azure).
-  - `CONCEPT_MODEL`, `BLUEPRINT_MODEL`, `DRAFTER_MODEL`, `REPAIR_MODEL`, `ARCHITECT_MODEL` — model names (default: `gpt-4o-mini`).
-  - `EMBEDDING_MODEL` / `OPENAI_EMBEDDING_MODEL` — embedding model (default: `text-embedding-3-small`).
-  - `OPENAI_MAX_CONCURRENT` — max concurrent OpenAI requests (default: `20`).
+- **Legacy direct OpenAI (optional):** Set `USE_OPENAI_DIRECT=true` and provide `OPENAI_API_KEY` (local `.env` or Secret Manager). You must add `OPENAI_API_KEY` to each function’s `secrets` array in code if you use this path in production.
+
+- **Optional overrides** (env vars; OpenRouter-style defaults apply when unset — see `functions/src/lib/generation-models.ts`):
+  - `CONCEPT_MODEL`, `BLUEPRINT_MODEL`, `DRAFTER_MODEL`, `REPAIR_MODEL`, `ARCHITECT_MODEL`, `ADVISOR_MODEL`, `CONTENT_QUALITY_MODEL`, `NARRATIVE_REVIEW_MODEL` — model IDs (vendor/slug or `gpt-*` routed via OpenRouter).
+  - `EMBEDDING_MODEL` / `OPENAI_EMBEDDING_MODEL` — embedding model (default: `openai/text-embedding-3-small` on OpenRouter).
+  - `USE_OPENROUTER_DEFAULTS=false` — use OpenAI-style default *names* when no per-phase env is set (still routed through OpenRouter if `OPENROUTER_API_KEY` is set).
+  - `OPENROUTER_BASE_URL` — override API base if needed.
+  - `OPENAI_BASE_URL` / `OPENAI_MAX_CONCURRENT` — only for `USE_OPENAI_DIRECT` or compatible proxies.
   - `ENABLE_SEMANTIC_DEDUP` — set to `false` to disable semantic dedup (default: enabled).
   - `SEMANTIC_SIMILARITY_THRESHOLD` — similarity threshold for dedup (default: `0.85`).
 
-  For **deployed functions**, set these in [Google Cloud Console](https://console.cloud.google.com/) → Cloud Functions → your function → Edit → Runtime, build, connections and security → Environment variables. For **local** runs (emulator or scripts), use a `.env` or `.env.local` in `functions/` (e.g. `OPENAI_API_KEY=sk-...`) and ensure your process loads them (e.g. `dotenv`); do not commit keys.
+  For **deployed functions**, set non-secret env vars in [Google Cloud Console](https://console.cloud.google.com/) → Cloud Functions → your function → Edit → Runtime, build, connections and security → Environment variables. For **local** runs, use `.env` or `.env.local` in `functions/` (e.g. `OPENROUTER_API_KEY=sk-or-...`); do not commit keys.
 
 **Local emulation:**
 
 ```bash
 firebase emulators:start --only functions,firestore,auth
 ```
+
+**Inspect the latest generation job** (requires `serviceAccountKey.json` at the repo root or `GOOGLE_APPLICATION_CREDENTIALS`):
+
+```bash
+cd functions && npx tsx src/tools/dump-last-generation-job.ts
+```
+
+**Queue a generation job** (triggers `onScenarioJobCreated`; requires the same credentials as above):
+
+```bash
+cd functions && pnpm exec tsx src/tools/create-generation-job.ts --bundles standard-diplomacy-first --count 2 --mode manual
+```
+
+Use `standard-diplomacy-first` to run the **diplomacy** bundle before the other standard bundles (helps catch universal-scope / foreign-policy prompt issues early). Use `standard` or `all` for default ordering.
 
 ## Admin Scripts
 
@@ -194,7 +211,7 @@ Run `admin-app generate --help` for full option descriptions and an **Options ex
 
 With Firebase credentials (`FIREBASE_PROJECT_ID` or `GOOGLE_APPLICATION_CREDENTIALS`), admin-app can list/audit against Firestore and trigger the scenario pipeline; without them it runs in stub/dry-run style.
 
-**Concurrency and OpenAI:** Generation runs batches **concurrently** (multiple batches in flight). Default concurrency is **20** to align with the backend `OPENAI_MAX_CONCURRENT` limit. If you set `OPENAI_MAX_CONCURRENT` in the environment, admin-app caps its concurrency to that value. Retries use exponential backoff for rate-limit resilience.
+**Concurrency:** Generation runs batches **concurrently** (multiple batches in flight). Default concurrency is **20** (see `OPENAI_MAX_CONCURRENT` when using direct OpenAI). If you set `OPENAI_MAX_CONCURRENT` in the environment, admin-app caps its concurrency to that value. Retries use exponential backoff for rate-limit resilience.
 
 **Deduplication (guard rails):** By default, generation **skips scenarios that already exist** for the chosen bundle/region/country (existing IDs are loaded before run and passed to the backend) and **avoids duplicates within the same run** (backend uses deterministic seeds per batch). Use `--no-skip-existing` to generate even if duplicates exist, or `--no-dedup-within-run` to disable within-run dedup. In interactive mode you can choose these via arrow-key lists.
 
@@ -204,9 +221,19 @@ With Firebase credentials (`FIREBASE_PROJECT_ID` or `GOOGLE_APPLICATION_CREDENTI
 
 - **Game State**: Managed by `GameStore` (SwiftUI `ObservableObject`) — scenarios, metrics, diplomacy, cabinet, policy, news, persistence.
 - **Data Models**: Defined in `Models.swift` — mirrors Firebase Firestore schema.
-- **Scenario Engine**: Cloud Functions (`scenario-engine.ts`) generate AI scenarios using OpenAI. Scenarios are stored in Firestore and fetched by `FirebaseDataService`.
+- **Scenario Engine**: Cloud Functions (`scenario-engine.ts`) generate AI scenarios using OpenAI. Scenarios are stored in Firestore and fetched by `FirebaseDataService`. Multi-act arcs use `chain_id`, `act_index`, option `consequence_scenario_ids` / `consequence_delay`, and iOS `pendingConsequences` + `chainTokenBindings` for consistent follow-ups (see `docs/SCHEMA.md`).
 - **Scoring**: `Scoring.swift` implements the full scoring engine including cabinet modifiers, trait bonuses, and end-game review.
 - **Authentication**: Anonymous Firebase Auth on launch via `AuthService`.
+
+### Scripts — name pools (cabinet / candidates)
+
+The iOS app loads regional name lists from Firestore `world_state/names` (`regions.{region_id}.first_male`, `first_female`, `first_neutral`, `last`). To seed or refresh them (requires `serviceAccountKey.json` at repo root, same as other `scripts/` seed tools):
+
+```bash
+cd scripts && pnpm install && pnpm exec tsx seed-name-pools.ts
+```
+
+Use `--dry-run` to validate pool sizes without writing. Source data lives in `scripts/lib/world-name-pools.ts`.
 
 ## Features
 

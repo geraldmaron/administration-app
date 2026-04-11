@@ -117,7 +117,7 @@ struct TrustYourGutSheet: View {
                       remaining > 0 else { return }
                 isSubmitting = true
                 let cmd = command
-                Task {
+                Task { @MainActor in
                     let usedAI = await gameStore.trustYourGut(command: cmd)
                     isSubmitting = false
                     if usedAI {

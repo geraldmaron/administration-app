@@ -683,6 +683,17 @@ class ScoringEngine {
         let contribution: String
     }
 
+    /// Probability that a scheduled follow-up scenario surfaces when its trigger turn arrives (by originating scenario severity).
+    static func consequenceFireProbability(for scenario: Scenario) -> Double {
+        switch scenario.severity {
+        case .critical: return 1.0
+        case .extreme: return 0.95
+        case .high: return 0.85
+        case .medium: return 0.7
+        case .low, .none: return 0.55
+        }
+    }
+
     static func recordOutcome(state: inout GameState, scenario: Scenario, option: Option, metricDeltas: [String: Double], sourceTurn: Int? = nil) {
         if state.outcomeHistory == nil {
             state.outcomeHistory = []
@@ -701,21 +712,30 @@ class ScoringEngine {
         
         state.outcomeHistory?.append(record)
         
-        // Register pending consequences
-        if let consequenceIds = option.consequenceScenarioIds, !consequenceIds.isEmpty {
+        let idsToSchedule: [String] = {
+            if let c = option.consequenceScenarioIds, !c.isEmpty { return c }
+            if let chain = scenario.chainsTo, let first = chain.first, !first.isEmpty { return [first] }
+            return []
+        }()
+
+        if !idsToSchedule.isEmpty {
             if state.pendingConsequences == nil {
                 state.pendingConsequences = []
             }
-            
+
             let delayTurns = option.consequenceDelay ?? 2
-            
-            for cid in consequenceIds {
+            // `sourceTurn` is the turn before advance; the next played turn is `sourceTurn + 1`.
+            // Delay 0 means "next briefing after this decision" → trigger on `sourceTurn + 1`.
+            let triggerTurn = resolvedSourceTurn + (delayTurns == 0 ? 1 : delayTurns)
+            let probability = consequenceFireProbability(for: scenario)
+
+            for cid in idsToSchedule {
                 let pending = PendingConsequence(
                     scenarioId: cid,
-                    triggerTurn: resolvedSourceTurn + delayTurns,
+                    triggerTurn: triggerTurn,
                     sourceTurn: resolvedSourceTurn,
                     sourceOptionId: option.id,
-                    probability: 0.7
+                    probability: probability
                 )
                 state.pendingConsequences?.append(pending)
             }
@@ -1005,30 +1025,38 @@ class ScoringEngine {
         }
     }
 
+    /// Pending follow-ups stay eligible through `triggerTurn` and up to this many turns after (probability retries).
+    private static let pendingConsequenceGraceTurns = 3
+
     static func cleanupExpiredConsequences(state: inout GameState) {
         guard let pending = state.pendingConsequences else { return }
-        state.pendingConsequences = pending.filter { $0.triggerTurn >= state.turn }
+        state.pendingConsequences = pending.filter { state.turn <= $0.triggerTurn + Self.pendingConsequenceGraceTurns }
     }
-    
+
     static func findApplicableConsequence(state: inout GameState, availableScenarios: [Scenario]) -> Scenario? {
-        guard let readyConsequences = state.pendingConsequences?.filter({ $0.triggerTurn == state.turn }), !readyConsequences.isEmpty else {
-            return nil
+        guard let pending = state.pendingConsequences, !pending.isEmpty else { return nil }
+        let grace = Self.pendingConsequenceGraceTurns
+        let readyConsequences = pending.filter {
+            $0.triggerTurn <= state.turn && state.turn <= $0.triggerTurn + grace
         }
-        
-        for consequence in readyConsequences {
+        guard !readyConsequences.isEmpty else { return nil }
+
+        for consequence in readyConsequences.sorted(by: { $0.triggerTurn < $1.triggerTurn }) {
             if Double.random(in: 0...1) > consequence.probability {
                 continue
             }
-            
+
             if let scenario = availableScenarios.first(where: { $0.id == consequence.scenarioId }) {
-                // Remove from pending
-                state.pendingConsequences = state.pendingConsequences?.filter { 
-                    $0.scenarioId != consequence.scenarioId || $0.triggerTurn != state.turn 
+                state.pendingConsequences = state.pendingConsequences?.filter { existing in
+                    !(existing.scenarioId == consequence.scenarioId
+                        && existing.triggerTurn == consequence.triggerTurn
+                        && existing.sourceTurn == consequence.sourceTurn
+                        && existing.sourceOptionId == consequence.sourceOptionId)
                 }
                 return scenario
             }
         }
-        
+
         return nil
     }
     

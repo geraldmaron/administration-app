@@ -74,7 +74,7 @@ export interface CountryGameplayProfile {
 
 export interface ScenarioMetadata {
     bundle?: BundleId | string;
-    severity?: 'low' | 'medium' | 'high' | 'critical' | string;
+    severity?: 'low' | 'medium' | 'high' | 'extreme' | 'critical';
     urgency?: 'low' | 'medium' | 'high' | 'immediate' | string;
     difficulty?: 1 | 2 | 3 | 4 | 5;
     tags?: string[];
@@ -112,8 +112,15 @@ export interface ScenarioMetadata {
     regionalBoost?: Partial<Record<RegionId, number>>;
     isNeighborEvent?: boolean;
     involvedCountries?: string[];
+    /** @deprecated Legacy persisted shape; prefer applicability.applicableCountryIds */
+    applicable_countries?: string[];
     tagResolution?: TagResolutionMetadata;
     tokenStrategy?: TokenStrategy;
+    /**
+     * Coarse event category denormalized for fast iOS-side scoring. Derived
+     * from inferred `active_*` flags; 'none' means no specific-event signal.
+     */
+    eventCategory?: 'disaster' | 'violence' | 'health' | 'war' | 'political_shock' | 'none';
 }
 
 export type TagResolutionMethod = 'deterministic' | 'llm' | 'manual';
@@ -175,7 +182,25 @@ export type RequiresFlag =
     | 'authoritarian_regime'
     | 'democratic_regime'
     | 'fragile_state'
-    | 'resource_rich';
+    | 'resource_rich'
+    // Static geography-hazard traits (country-intrinsic, used by realism rules)
+    | 'has_civilian_firearms'
+    | 'seismically_active'
+    | 'tropical_cyclone_zone'
+    | 'arid_interior'
+    // Active event state flags (mutable, time-bounded per-country state)
+    | 'active_natural_disaster'
+    | 'active_school_shooting'
+    | 'active_mass_shooting'
+    | 'active_pandemic'
+    | 'active_interstate_war'
+    | 'active_civil_war'
+    | 'active_coup_attempt'
+    | 'active_assassination_crisis'
+    | 'active_terror_campaign'
+    | 'active_refugee_crisis'
+    | 'active_energy_crisis'
+    | 'active_diplomatic_crisis';
 
 /** Single source of truth for when a scenario can apply to a country. */
 export interface ScenarioApplicability {
@@ -241,9 +266,16 @@ export interface Scenario {
     id: string;
     title: string;
     description: string;
+    outcomeHeadline?: string;
+    outcomeSummary?: string;
+    outcomeContext?: string;
     options: Option[];
     phase?: 'root' | 'mid' | 'final';
     actIndex?: number;
+    /** Groups acts in a multi-turn arc; iOS uses it with chainTokenBindings for stable token resolution. */
+    chainId?: string;
+    /** Next scenario IDs in order; generation sets this for act-to-act wiring (client may use for continuation UX). */
+    chainsTo?: string[];
     metadata?: ScenarioMetadata;
     applicability: ScenarioApplicability;
 }
@@ -321,6 +353,12 @@ export interface Option {
     outcomeHeadline?: string;
     outcomeSummary?: string;
     outcomeContext?: string;
+    /** Scenario IDs scheduled as follow-ups after this option (iOS: PendingConsequence). */
+    consequenceScenarioIds?: string[];
+    /** Turns after the choice before the consequence may fire; default 2 on iOS if omitted. */
+    consequenceDelay?: number;
+    /** Optional immediate branch target (reserved for branching flows; not all clients use this). */
+    nextScenarioId?: string;
 }
 
 export interface NewsItem {
@@ -567,6 +605,28 @@ export interface CountryWorldState {
     lastTickAt: string; // ISO timestamp
     generation: number;
     recentScenarioIds: string[];
+    /**
+     * Mutable, time-bounded per-country event state. Each key is a
+     * `active_*` RequiresFlag; values carry TTL bookkeeping so the
+     * cooldown/causal audit rules and iOS scoring can reason about what is
+     * currently happening to this country without re-parsing scenario prose.
+     */
+    activeEventFlags?: Partial<Record<RequiresFlag, {
+        startedAt: number;       // epoch ms
+        expiresAt: number;       // epoch ms; when the event state decays
+        severity: number;        // 0–1 intensity hint for downstream scoring
+        sourceScenarioId?: string;
+    }>>;
+    /**
+     * Rolling history of recently active event flags. Populated when an
+     * entry on `activeEventFlags` expires. Used by the cooldown rule to
+     * reject the same flag firing again too soon.
+     */
+    recentEventHistory?: Array<{
+        flag: RequiresFlag;
+        turn: number;
+        scenarioId?: string;
+    }>;
 }
 
 // ── Political Parties ─────────────────────────────────────────────────────────

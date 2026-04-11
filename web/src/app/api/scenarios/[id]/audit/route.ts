@@ -29,14 +29,14 @@ async function getAuditConfig(): Promise<AuditConfig> {
     db.doc('world_state/metrics').get(),
     db.doc('world_state/content_rules').get(),
     db.doc('world_state/generation_config').get(),
-    db.doc('world_state/countries').get(),
+    db.collection('countries').get(),
     db.doc('world_state/token_registry').get(),
   ]);
 
   const metricsData: any[] = metricsSnap.data()?.metrics ?? [];
   const contentRules = contentRulesSnap.data() ?? {};
   const genConfig = genConfigSnap.data() ?? {};
-  const countriesDoc = countriesSnap.data() ?? {};
+  const countriesDoc = Object.fromEntries(countriesSnap.docs.map((doc) => [doc.id, doc.data()]));
 
   const registryDoc = tokenRegistrySnap.data() as TokenRegistryDocument | undefined;
   const compiledRegistry = registryDoc ? compileTokenRegistry(registryDoc) : null;

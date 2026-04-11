@@ -1,6 +1,11 @@
-import { generateWorldTick, getIndirectPlayerDeltas } from '../lib/world-simulation';
+import {
+    generateWorldTick,
+    getIndirectPlayerDeltas,
+    generateNeighborEventSeeds,
+    decayActiveEventFlags,
+} from '../lib/world-simulation';
 import type { WorldEvent } from '../lib/world-simulation';
-import type { CountryDocument } from '../types';
+import type { CountryDocument, CountryWorldState, RequiresFlag } from '../types';
 import type { CountryRelationship } from '../types';
 
 function makeCountry(
@@ -206,5 +211,135 @@ describe('getIndirectPlayerDeltas', () => {
         const serialized = JSON.parse(JSON.stringify(event));
         expect(serialized.id).toBe(event.id);
         expect(serialized.globalMetricDeltas).toEqual([]);
+    });
+});
+
+describe('decayActiveEventFlags', () => {
+    const base: CountryWorldState = {
+        countryId: 'xyz',
+        currentMetrics: {},
+        relationships: [],
+        lastTickAt: new Date().toISOString(),
+        generation: 1,
+        recentScenarioIds: [],
+    };
+
+    it('evicts expired active flags into recentEventHistory', () => {
+        const now = 1_000_000;
+        const state: CountryWorldState = {
+            ...base,
+            activeEventFlags: {
+                active_school_shooting: { startedAt: 0, expiresAt: now - 1, severity: 0.5 },
+                active_pandemic: { startedAt: 0, expiresAt: now + 1_000_000, severity: 0.7 },
+            },
+        };
+        const next = decayActiveEventFlags(state, 10, now);
+        expect(next.activeEventFlags?.active_school_shooting).toBeUndefined();
+        expect(next.activeEventFlags?.active_pandemic).toBeDefined();
+        expect(next.recentEventHistory).toEqual([
+            { flag: 'active_school_shooting', turn: 10, scenarioId: undefined },
+        ]);
+    });
+
+    it('returns the same state when nothing has expired', () => {
+        const now = 1_000_000;
+        const state: CountryWorldState = {
+            ...base,
+            activeEventFlags: {
+                active_pandemic: { startedAt: 0, expiresAt: now + 1_000, severity: 0.5 },
+            },
+        };
+        const next = decayActiveEventFlags(state, 10, now);
+        expect(next).toBe(state);
+    });
+
+    it('is a no-op when no activeEventFlags exist', () => {
+        const next = decayActiveEventFlags(base, 10, Date.now());
+        expect(next).toBe(base);
+    });
+});
+
+describe('generateNeighborEventSeeds', () => {
+    function mkCountry(
+        id: string,
+        flags: Partial<Record<RequiresFlag, boolean>>,
+        chance = 1.0,
+    ): CountryDocument {
+        const c = makeCountry(id, id, 'Europe');
+        c.flags = flags;
+        c.gameplay.neighbor_event_chance = chance;
+        return c;
+    }
+
+    it('respects neighbor_event_chance = 0 (no seeds fire)', () => {
+        const c = mkCountry('zero', { seismically_active: true }, 0);
+        const { events, updatedWorldStates } = generateNeighborEventSeeds([c], {}, 1, 42);
+        expect(events).toHaveLength(0);
+        expect(updatedWorldStates['zero']).toBeUndefined();
+    });
+
+    it('seeds only flags consistent with static traits', () => {
+        const seismic = mkCountry('seis', { seismically_active: true }, 1);
+        const arid = mkCountry('arid', { arid_interior: true }, 1);
+        // Run several seeds and inspect produced flags
+        const allFlagsSeen = new Set<string>();
+        for (let s = 0; s < 20; s++) {
+            const { events } = generateNeighborEventSeeds([seismic, arid], {}, 1, s);
+            for (const ev of events) allFlagsSeen.add(ev.actionType);
+        }
+        // Arid should never produce a flood-coded natural disaster — we only test
+        // that the flag vocabulary stays within the ACTIVE_EVENT_FLAGS set.
+        expect(allFlagsSeen.size).toBeGreaterThan(0);
+        for (const flag of allFlagsSeen) {
+            expect(flag.startsWith('active_')).toBe(true);
+        }
+    });
+
+    it('writes active flag entries with expiresAt in the future', () => {
+        const c = mkCountry('coast', { coastal: true, tropical_cyclone_zone: true }, 1);
+        const { updatedWorldStates, events } = generateNeighborEventSeeds([c], {}, 1, 7);
+        // Either the roll produced an event (most likely) or not; both are valid,
+        // but if an event fired, the world state must reflect it.
+        if (events.length > 0) {
+            const flag = events[0].actionType as RequiresFlag;
+            const entry = updatedWorldStates['coast'].activeEventFlags?.[flag];
+            expect(entry).toBeDefined();
+            if (entry) {
+                expect(entry.expiresAt).toBeGreaterThan(entry.startedAt);
+                expect(entry.severity).toBeGreaterThanOrEqual(0);
+                expect(entry.severity).toBeLessThanOrEqual(1);
+            }
+        }
+    });
+
+    it('decays expired flags before rolling new ones', () => {
+        const c = mkCountry('decay', { seismically_active: true }, 0); // chance 0 so we only decay
+        const now = Date.now();
+        const state: CountryWorldState = {
+            countryId: 'decay',
+            currentMetrics: {},
+            relationships: [],
+            lastTickAt: new Date().toISOString(),
+            generation: 1,
+            recentScenarioIds: [],
+            activeEventFlags: {
+                active_school_shooting: { startedAt: 0, expiresAt: now - 1, severity: 0.5 },
+            },
+        };
+        const { updatedWorldStates } = generateNeighborEventSeeds([c], { decay: state }, 5, 1);
+        expect(updatedWorldStates['decay'].activeEventFlags?.active_school_shooting).toBeUndefined();
+        expect(updatedWorldStates['decay'].recentEventHistory?.[0]?.flag).toBe('active_school_shooting');
+    });
+
+    it('emits a scenarioSeed payload on every generated event', () => {
+        const c = mkCountry('seed', { seismically_active: true, has_civilian_firearms: true }, 1);
+        const { events } = generateNeighborEventSeeds([c], {}, 1, 123);
+        for (const ev of events) {
+            expect(ev.scenarioSeed).toBeDefined();
+            expect(ev.scenarioSeed?.flag).toBe(ev.actionType);
+            expect(ev.scenarioSeed?.actorCountryId).toBe('seed');
+            expect(ev.scenarioSeed?.narrativeHint).toBeTruthy();
+            expect(ev.scenarioSeed?.ttlTurns).toBeGreaterThan(0);
+        }
     });
 });

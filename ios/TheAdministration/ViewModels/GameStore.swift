@@ -11,6 +11,7 @@ enum ScoreDisplayFormat: String, CaseIterable {
     case letter
 }
 
+@MainActor
 class GameStore: ObservableObject {
         @MainActor
         func reconcileLegislatureWithCountryParties() {
@@ -84,13 +85,23 @@ class GameStore: ObservableObject {
         return .percentage
     }()
     
-    // Recent scenario tracking for cooldown/similarity filtering
+    // Recent scenario tracking for cooldown/similarity/diversity filtering
     private var recentScenarioQueue: [String] = []
     private var recentTagQueue: [String] = []
+    // Rolling window of the *combinations* of tags the player has just seen. Used by
+    // weightedPick to penalize "same-combo-different-wording" scenarios that slip past
+    // the flat single-tag penalty (e.g. two education+student_loans+protest scenarios
+    // back-to-back). Each entry is the full tag set of a scenario the player saw.
+    private var recentTagComboQueue: [Set<String>] = []
+    private var recentBundleQueue: [String] = []
+    private var recentScopeTierQueue: [String] = []
     private var scenarioCooldowns: [String: Int] = [:]
     private var cachedScenarios: [Scenario] = []
     private let maxRecentScenarios = 20
     private let maxRecentTags = 8
+    private let maxRecentTagCombos = 10
+    private let maxRecentBundles = 8
+    private let maxRecentScopeTiers = 12
 
     /// Turn cooldown between mood updates. Tasks, reminders, quests should use the same throttle pattern (playerActionLastUsedTurn) to avoid conflicts.
     private let moodUpdateCooldownTurns = 3
@@ -996,7 +1007,7 @@ class GameStore: ObservableObject {
         
         AppLogger.debug("[GameStore] Total scenarios available: \(allScenarios.count)", category: .scenarios)
 
-        // Check pending consequences before general pool
+        // Check pending consequences before general pool (schedules from option.consequenceScenarioIds or scenario.chainsTo via recordOutcome).
         if nextScenario == nil {
             var mutableState = state
             ScoringEngine.cleanupExpiredConsequences(state: &mutableState)
@@ -1146,7 +1157,6 @@ class GameStore: ObservableObject {
 
         // De-prioritise recently seen scenarios
         let recentIds = Set(recentScenarioQueue)
-        let recentTagSet = Set(recentTagQueue)
         let notRecent = pool.filter { !recentIds.contains($0.id) }
         if !notRecent.isEmpty { pool = notRecent }
 
@@ -1160,7 +1170,7 @@ class GameStore: ObservableObject {
 
         if nextScenario == nil, !pool.isEmpty {
             // Tag-diversity + geopolitical weighted pick
-            nextScenario = weightedPick(from: pool, recentTagQueue: recentTagSet)
+            nextScenario = weightedPick(from: pool)
             AppLogger.debug("[GameStore] Selected Firebase scenario: \(nextScenario?.id ?? "none")", category: .scenarios)
         }
         
@@ -1626,11 +1636,29 @@ class GameStore: ObservableObject {
     private func registerScenarioUsage(_ scenario: Scenario) {
         recentScenarioQueue.append(scenario.id)
         if recentScenarioQueue.count > maxRecentScenarios { recentScenarioQueue.removeFirst() }
+
         let tags = scenario.tags?.isEmpty == false ? scenario.tags! : ["general"]
         for tag in tags {
             recentTagQueue.append(tag)
             if recentTagQueue.count > maxRecentTags { recentTagQueue.removeFirst() }
         }
+
+        let normalizedCombo = Set(tags.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .filter { !$0.isEmpty })
+        if !normalizedCombo.isEmpty {
+            recentTagComboQueue.append(normalizedCombo)
+            if recentTagComboQueue.count > maxRecentTagCombos { recentTagComboQueue.removeFirst() }
+        }
+
+        if let cat = scenario.category {
+            recentBundleQueue.append(cat)
+            if recentBundleQueue.count > maxRecentBundles { recentBundleQueue.removeFirst() }
+        }
+
+        let scopeTier = scenario.metadata?.scopeTier ?? "universal"
+        recentScopeTierQueue.append(scopeTier)
+        if recentScopeTierQueue.count > maxRecentScopeTiers { recentScopeTierQueue.removeFirst() }
+
         if let cooldown = scenario.cooldown, cooldown > 0 {
             scenarioCooldowns[scenario.id] = state.turn + cooldown
         }
@@ -1720,7 +1748,7 @@ class GameStore: ObservableObject {
         return similarity > 0.7 || titleSim > 0.6
     }
 
-    private func weightedPick(from candidates: [Scenario], recentTagQueue: Set<String>) -> Scenario {
+    private func weightedPick(from candidates: [Scenario]) -> Scenario {
         guard !candidates.isEmpty else { return createFallbackScenario() }
         if candidates.count == 1 { return candidates[0] }
 
@@ -1743,17 +1771,70 @@ class GameStore: ObservableObject {
             if baseScore <= 0 {
                 return 0
             }
-            let tagPenalty = s.tags?.contains(where: { recentTagQueue.contains($0) }) == true ? 0.4 : 1.0
-            let bundleBoost: Double
-            if let lastAction = state.recentActions?.first {
-                let preferredBundle: String?
-                if lastAction.hasPrefix("military:") { preferredBundle = "bundle_military" }
-                else if lastAction.hasPrefix("diplomatic:") { preferredBundle = "bundle_diplomacy" }
-                else { preferredBundle = nil }
-                bundleBoost = (preferredBundle != nil && s.category == preferredBundle) ? 2.0 : 1.0
-            } else {
-                bundleBoost = 1.0
-            }
+            // Tag-combo penalty: penalize scenarios whose tag set overlaps heavily with
+            // any scenario seen in the last `maxRecentTagCombos` turns. Jaccard bands:
+            //   ≥0.67 (same combo)      → ×0.3
+            //    0.40–0.66 (close)      → ×0.6
+            //    0.20–0.39 (moderate)   → ×0.85
+            //   <0.20 (fresh)           → ×1.0
+            // The old flat `tagPenalty` (any single tag overlap) is subsumed by this.
+            let candidateCombo: Set<String> = {
+                guard let raw = s.tags, !raw.isEmpty else { return [] }
+                return Set(raw.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+                    .filter { !$0.isEmpty })
+            }()
+            let tagPenalty: Double = {
+                guard !candidateCombo.isEmpty, !recentTagComboQueue.isEmpty else { return 1.0 }
+                var maxJaccard = 0.0
+                for past in recentTagComboQueue {
+                    if past.isEmpty { continue }
+                    let intersection = candidateCombo.intersection(past).count
+                    let union = candidateCombo.union(past).count
+                    guard union > 0 else { continue }
+                    let j = Double(intersection) / Double(union)
+                    if j > maxJaccard { maxJaccard = j }
+                }
+                if maxJaccard >= 0.67 { return 0.3 }
+                if maxJaccard >= 0.40 { return 0.6 }
+                if maxJaccard >= 0.20 { return 0.85 }
+                return 1.0
+            }()
+
+            // Penalise over-represented bundles to prevent topic streaks.
+            // Bundles unseen recently get a mild boost; frequently repeated bundles
+            // are progressively discounted.
+            let bundleDiversityFactor: Double = {
+                guard let cat = s.category else { return 1.0 }
+                let recentCount = recentBundleQueue.filter { $0 == cat }.count
+                switch recentCount {
+                case 0: return 1.25
+                case 1: return 0.75
+                case 2: return 0.5
+                default: return 0.25
+                }
+            }()
+
+            // Scope-tier need: push toward the target universal/regional/cluster/exclusive
+            // mix for the current game phase, per logic.md §10.1.
+            let scopeNeed: Double = {
+                let tier = s.metadata?.scopeTier ?? "universal"
+                let progress = state.maxTurns > 0 ? Double(state.turn) / Double(state.maxTurns) : 0.0
+                let targets: [String: Double]
+                if progress < 0.25 {
+                    targets = ["universal": 0.50, "regional": 0.20, "cluster": 0.20, "exclusive": 0.10]
+                } else if progress < 0.60 {
+                    targets = ["universal": 0.35, "regional": 0.25, "cluster": 0.30, "exclusive": 0.10]
+                } else if progress < 0.90 {
+                    targets = ["universal": 0.25, "regional": 0.25, "cluster": 0.35, "exclusive": 0.15]
+                } else {
+                    targets = ["universal": 0.20, "regional": 0.20, "cluster": 0.40, "exclusive": 0.20]
+                }
+                let target = targets[tier] ?? 0.25
+                let recentCount = recentScopeTierQueue.filter { $0 == tier }.count
+                let recentShare = recentScopeTierQueue.isEmpty ? target : Double(recentCount) / Double(recentScopeTierQueue.count)
+                return min(1.5, max(0.65, 1.0 + (target - recentShare) * 2.0))
+            }()
+
             let partyBias: Double = {
                 guard let party = governingParty, let biases = party.metricBiases, let primaryMetrics = s.metadata?.primaryMetrics else { return 1.0 }
                 var totalBias = 0.0
@@ -1768,7 +1849,22 @@ class GameStore: ObservableObject {
                 let avgBias = totalBias / Double(count)
                 return 1.0 + avgBias * 0.5
             }()
-            return baseScore * tagPenalty * bundleBoost * partyBias
+
+            // Active-event match boost: mild boost for scenarios whose eventCategory
+            // matches a currently-active flag on the player's CountryWorldState.
+            // Penalise if the category just cooled down (in recentEventHistory).
+            let activeEventFactor: Double = {
+                guard let category = s.metadata?.eventCategory, category != "none" else { return 1.0 }
+                let playerState = state.countryId.flatMap { countryWorldStates[$0] }
+                let prefixes = Self.eventCategoryToFlagPrefixes(category)
+                guard !prefixes.isEmpty else { return 1.0 }
+                let hasActive = playerState?.activeEventFlags?.keys.contains(where: { prefixes.contains($0) }) == true
+                if hasActive { return 1.2 }
+                let recentlyCooled = playerState?.recentEventHistory?.contains(where: { prefixes.contains($0.flag) }) == true
+                return recentlyCooled ? 0.7 : 1.0
+            }()
+
+            return baseScore * tagPenalty * bundleDiversityFactor * scopeNeed * partyBias * activeEventFactor
         }
 
         let positiveWeights = weights.filter { $0 > 0 }
@@ -1784,6 +1880,17 @@ class GameStore: ObservableObject {
             if r <= 0 { return candidates[i] }
         }
         return candidates.last!
+    }
+
+    private static func eventCategoryToFlagPrefixes(_ category: String) -> [String] {
+        switch category {
+        case "disaster": return ["active_natural_disaster"]
+        case "violence": return ["active_school_shooting", "active_mass_shooting", "active_terror_campaign"]
+        case "health": return ["active_pandemic"]
+        case "war": return ["active_interstate_war", "active_civil_war"]
+        case "political_shock": return ["active_coup_attempt", "active_assassination_crisis", "active_diplomatic_crisis"]
+        default: return []
+        }
     }
 
     // MARK: - Neighbor Event Helpers

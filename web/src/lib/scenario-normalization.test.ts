@@ -40,4 +40,27 @@ describe('scenario normalization', () => {
     expect(detail.metadata?.requires).toEqual({ has_central_bank: true });
     expect(detail.metadata?.applicable_countries).toEqual(['country_a', 'country_b']);
   });
+
+  test('maps multi-turn chain and option consequence fields (snake or camel)', () => {
+    const raw = {
+      title: 'Act one',
+      description: 'd'.repeat(50),
+      chainsTo: ['gen_x_act2'],
+      options: [
+        {
+          id: 'a',
+          text: 'Go',
+          effects: [],
+          consequenceScenarioIds: ['gen_x_act2'],
+          consequenceDelay: 0,
+          nextScenarioId: 'gen_x_act2',
+        },
+      ],
+    };
+    const detail = toScenarioDetail('gen_x_act1', raw);
+    expect(detail.chains_to).toEqual(['gen_x_act2']);
+    expect(detail.options[0].consequence_scenario_ids).toEqual(['gen_x_act2']);
+    expect(detail.options[0].consequence_delay).toBe(0);
+    expect(detail.options[0].next_scenario_id).toBe('gen_x_act2');
+  });
 });

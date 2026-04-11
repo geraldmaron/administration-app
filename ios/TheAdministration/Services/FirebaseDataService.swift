@@ -280,7 +280,10 @@ class FirebaseDataService {
 
         var config = AppConfig()
 
-        // Names: parse new "regions" key or fall back to old flat structure
+        // Names: parse new "regions" key or fall back to old flat structure.
+        // Silent fallback here was the root cause of the "12 Alex" bug — log loudly
+        // whenever the Firebase document is missing, empty, or yields zero usable names
+        // so the CandidateGenerator built-in pool kicks in visibly.
         if let namesDoc = namesData {
             if let regionsData = namesDoc["regions"] as? [String: [String: Any]] {
                 var pools: [String: RegionNamePool] = [:]
@@ -312,6 +315,19 @@ class FirebaseDataService {
                 }
                 config.namePoolsByRegion = pools
                 config.fallbackNamePool = pools["North America"] ?? pools["north_america"]
+            }
+        } else {
+            AppLogger.error("[FirebaseDataService] world_state/names document is MISSING — CandidateGenerator will use built-in fallback pool. Run scripts/seed-names to populate Firebase.")
+        }
+
+        if config.namePoolsByRegion.isEmpty {
+            AppLogger.error("[FirebaseDataService] world_state/names parsed to ZERO regions — CandidateGenerator will use built-in fallback pool. Check document structure.")
+        } else {
+            let emptyRegions = config.namePoolsByRegion.filter { _, pool in
+                pool.firstMale.isEmpty && pool.firstFemale.isEmpty && pool.firstNeutral.isEmpty && pool.last.isEmpty
+            }
+            if !emptyRegions.isEmpty {
+                AppLogger.error("[FirebaseDataService] world_state/names has empty regions: \(emptyRegions.keys.sorted()). Built-in fallback pool will be used for these.")
             }
         }
 
@@ -676,6 +692,12 @@ class FirebaseDataService {
             )
         }
 
+        let actIndex: Int? = {
+            if let n = data["act_index"] as? Int { return n }
+            if let num = data["act_index"] as? NSNumber { return num.intValue }
+            return nil
+        }()
+
         return Scenario(
             id: id,
             title: title,
@@ -683,10 +705,11 @@ class FirebaseDataService {
             conditions: conditions,
             relationshipConditions: relationshipConditions,
             phase: data["phase"] as? String,
+            actIndex: actIndex,
             severity: mapSeverityLevel(from: data["severity"] as? String),
             chainId: data["chain_id"] as? String,
             options: options,
-            chainsTo: data["chains_to"] as? [String],
+            chainsTo: data["chains_to"] as? [String] ?? data["chainsTo"] as? [String],
             actor: data["actor"] as? String,
             tags: data["tags"] as? [String],
             cooldown: data["cooldown"] as? Int,

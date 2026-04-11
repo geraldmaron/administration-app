@@ -9,7 +9,7 @@ import BundleBadge from '@/components/BundleBadge';
 import AuditScore from '@/components/AuditScore';
 import StatusBadge from '@/components/StatusBadge';
 import { ALL_BUNDLES, BUNDLE_ACCENT_COLORS } from '@/lib/constants';
-import type { JobDetail, JobResult, JobError, JobEvent, JobLiveActivity, NewsContextArticle } from '@/lib/types';
+import type { JobDetail, JobResult, JobError, JobEvent, JobLiveActivity, NewsContextArticle, ScenarioDetail } from '@/lib/types';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -451,46 +451,228 @@ function buildPipelines(
 
 // ─── Pipeline Components ─────────────────────────────────────────
 
-function ChatBubble({ msg, expanded, onToggle }: { msg: LLMMessage; expanded: boolean; onToggle: () => void }) {
+function LLMBlock({
+  msg,
+  expanded,
+  onToggle,
+  index,
+}: {
+  msg: LLMMessage;
+  expanded: boolean;
+  onToggle: () => void;
+  index: number;
+}) {
   const isOut = msg.direction === 'out';
+  const modelShort = msg.model ? msg.model.split('/').pop() ?? msg.model : null;
+
   return (
-    <div
-      className={`group cursor-pointer ${isOut ? 'pl-1' : 'pl-1'}`}
-      onClick={onToggle}
-    >
-      <div className="flex items-center gap-2 text-[10px] font-mono">
-        <span className={isOut ? 'text-[var(--accent-primary)]' : 'text-[var(--success)]'}>
-          {isOut ? '→' : '←'}
+    <div className="rounded-md overflow-hidden border border-[var(--border)]">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+        style={{ backgroundColor: isOut ? 'rgba(99,102,241,0.06)' : 'rgba(34,197,94,0.06)' }}
+      >
+        <span
+          className="text-[10px] font-bold tracking-widest px-1.5 py-0.5 rounded shrink-0"
+          style={
+            isOut
+              ? { background: 'rgba(99,102,241,0.18)', color: 'oklch(72% 0.18 265)' }
+              : { background: 'rgba(34,197,94,0.18)', color: 'oklch(72% 0.2 155)' }
+          }
+        >
+          {isOut ? 'PROMPT' : 'RESPONSE'}
         </span>
-        {msg.model && (
-          <span className="text-foreground-muted">{msg.model}</span>
+        {index > 0 && (
+          <span className="text-[10px] text-foreground-subtle shrink-0">#{index + 1}</span>
         )}
-        <span className="flex-1" />
-        {msg.charCount && <span className="text-foreground-subtle">{msg.charCount.toLocaleString()} chars</span>}
-        {msg.elapsedMs !== undefined && (
-          <span className="text-foreground-subtle">{formatElapsed(msg.elapsedMs)}</span>
+        {modelShort && (
+          <span className="text-xs text-foreground-muted font-medium">{modelShort}</span>
         )}
-        {(msg.tokensIn || msg.tokensOut) && (
-          <span className="text-foreground-subtle">
-            {msg.tokensIn?.toLocaleString()}↑ {msg.tokensOut?.toLocaleString()}↓
+        <span className="flex-1 min-w-0">
+          {!expanded && msg.preview && (
+            <span className="text-xs text-foreground-subtle truncate block leading-none">
+              {msg.preview.slice(0, 90)}{msg.preview.length > 90 ? '…' : ''}
+            </span>
+          )}
+        </span>
+        <div className="flex items-center gap-3 shrink-0 text-[11px] text-foreground-subtle">
+          {isOut && msg.charCount && (
+            <span>{msg.charCount.toLocaleString()} chars</span>
+          )}
+          {!isOut && msg.elapsedMs !== undefined && (
+            <span>{formatElapsed(msg.elapsedMs)}</span>
+          )}
+          {!isOut && (msg.tokensIn || msg.tokensOut) && (
+            <span>
+              {(msg.tokensIn ?? 0).toLocaleString()} in · {(msg.tokensOut ?? 0).toLocaleString()} out
+            </span>
+          )}
+          <span
+            className="text-[10px] transition-transform duration-150"
+            style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block' }}
+          >
+            ▶
           </span>
-        )}
-        <span className="text-foreground-subtle opacity-40 text-[9px]">{expanded ? '▲' : '▼'}</span>
-      </div>
+        </div>
+      </button>
       {expanded && msg.preview && (
-        <pre className={`mt-1 text-[10px] font-mono whitespace-pre-wrap break-words max-h-[300px] overflow-y-auto rounded p-2.5 leading-relaxed border ${
-          isOut
-            ? 'bg-[var(--accent-primary)]/5 border-[var(--accent-primary)]/20 text-foreground-muted'
-            : 'bg-[var(--success)]/5 border-[var(--success)]/20 text-foreground-muted'
-        }`}>
-          {msg.preview}
-        </pre>
+        <div
+          className="border-t border-[var(--border)]"
+          style={{ background: isOut ? 'rgba(99,102,241,0.03)' : 'rgba(34,197,94,0.03)' }}
+        >
+          <pre className="text-xs leading-relaxed whitespace-pre-wrap break-words max-h-[400px] overflow-y-auto p-3.5 text-foreground-muted font-mono">
+            {msg.preview}
+          </pre>
+        </div>
       )}
-      {!expanded && msg.preview && (
-        <p className="text-[10px] font-mono text-foreground-subtle opacity-50 truncate pl-5 leading-snug">
-          {msg.preview.slice(0, 120)}…
-        </p>
+      {expanded && !msg.preview && (
+        <div className="px-3 py-2 text-xs text-foreground-subtle italic border-t border-[var(--border)]">
+          No preview captured for this {isOut ? 'prompt' : 'response'}.
+        </div>
       )}
+    </div>
+  );
+}
+
+function PhaseStep({
+  phase,
+  stepNumber,
+  expandedMessages,
+  onToggleMessage,
+  runKey,
+}: {
+  phase: PipelinePhase;
+  stepNumber: number;
+  expandedMessages: Set<string>;
+  onToggleMessage: (key: string) => void;
+  runKey: string;
+}) {
+  const meta = PHASE_META[phase.name];
+  const isDone = phase.status === 'done';
+  const isFailed = phase.status === 'failed';
+  const isActive = phase.status === 'active';
+
+  const dotColor = isDone
+    ? 'var(--success)'
+    : isFailed
+      ? 'var(--error)'
+      : isActive
+        ? 'var(--accent-primary)'
+        : 'var(--foreground-subtle)';
+
+  const prompt = phase.messages.find((m) => m.direction === 'out');
+  const response = phase.messages.find((m) => m.direction === 'in');
+  const allMessages = phase.messages;
+
+  return (
+    <div className="flex gap-3">
+      <div className="flex flex-col items-center shrink-0">
+        <div
+          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+          style={{
+            background: `${dotColor}22`,
+            border: `1.5px solid ${dotColor}`,
+            color: dotColor,
+          }}
+        >
+          {isDone ? '✓' : isFailed ? '✗' : isActive ? (
+            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: dotColor }} />
+          ) : stepNumber}
+        </div>
+        {true && (
+          <div className="w-px flex-1 mt-1" style={{ background: 'var(--border)', minHeight: 8 }} />
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0 pb-4">
+        <div className="flex items-center gap-2 mb-2 min-h-[24px]">
+          <span className="text-sm font-medium text-foreground">
+            {meta?.label ?? phase.label}
+          </span>
+          {prompt?.model && (
+            <span className="text-[11px] text-foreground-subtle px-1.5 py-0.5 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.03)]">
+              {prompt.model.split('/').pop()}
+            </span>
+          )}
+          {!prompt?.model && response?.model && (
+            <span className="text-[11px] text-foreground-subtle px-1.5 py-0.5 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.03)]">
+              {response.model.split('/').pop()}
+            </span>
+          )}
+          <span className="flex-1" />
+          {phase.durationMs !== undefined && phase.durationMs > 0 && (
+            <span className="text-xs text-foreground-subtle">{formatElapsed(phase.durationMs)}</span>
+          )}
+          {(phase.tokensIn || phase.tokensOut) && (
+            <span className="text-[11px] text-foreground-subtle">
+              {(phase.tokensIn ?? 0).toLocaleString()} / {(phase.tokensOut ?? 0).toLocaleString()} tok
+            </span>
+          )}
+          {phase.score !== undefined && (
+            <span
+              className="text-xs font-bold px-2 py-0.5 rounded"
+              style={
+                phase.score >= 70
+                  ? { background: 'rgba(34,197,94,0.15)', color: 'oklch(72% 0.2 155)' }
+                  : { background: 'rgba(245,158,11,0.15)', color: 'oklch(78% 0.18 75)' }
+              }
+            >
+              {Math.round(phase.score)}
+            </span>
+          )}
+        </div>
+
+        {allMessages.length > 0 && (
+          <div className="space-y-2">
+            {allMessages.map((msg, mi) => {
+              const msgKey = `${runKey}-${phase.name}-${mi}`;
+              return (
+                <LLMBlock
+                  key={mi}
+                  msg={msg}
+                  index={mi}
+                  expanded={expandedMessages.has(msgKey)}
+                  onToggle={() => onToggleMessage(msgKey)}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {phase.issues && phase.issues.length > 0 && (
+          <div className="mt-2 rounded-md border border-[var(--error)]/30 overflow-hidden">
+            <div
+              className="px-3 py-1.5 text-[11px] font-semibold tracking-wide"
+              style={{ background: 'rgba(239,68,68,0.1)', color: 'oklch(65% 0.2 25)' }}
+            >
+              {phase.issues.length} AUDIT {phase.issues.length === 1 ? 'ISSUE' : 'ISSUES'}
+            </div>
+            <div className="divide-y divide-[var(--error)]/15">
+              {phase.issues.map((issue, ii) => {
+                const sevMatch = issue.match(/^\[(\w+)\]/);
+                const sev = sevMatch?.[1]?.toLowerCase();
+                const rest = sevMatch ? issue.slice(sevMatch[0].length).trim() : issue;
+                return (
+                  <div key={ii} className="flex items-start gap-2 px-3 py-2">
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 mt-0.5"
+                      style={
+                        sev === 'error'
+                          ? { background: 'rgba(239,68,68,0.18)', color: 'oklch(65% 0.2 25)' }
+                          : { background: 'rgba(245,158,11,0.18)', color: 'oklch(78% 0.18 75)' }
+                      }
+                    >
+                      {sev?.toUpperCase() ?? 'ISSUE'}
+                    </span>
+                    <span className="text-xs text-foreground-muted leading-relaxed">{rest}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -521,69 +703,82 @@ function PhaseIndicator({ phase }: { phase: PipelinePhase }) {
   );
 }
 
-function PhaseDetail({
-  phase,
-  expandedMessages,
-  onToggleMessage,
-  runKey,
-}: {
-  phase: PipelinePhase;
-  expandedMessages: Set<string>;
-  onToggleMessage: (key: string) => void;
-  runKey: string;
-}) {
-  const meta = PHASE_META[phase.name];
-  const icon =
-    phase.status === 'active' ? (meta?.icon ?? '◐') : phase.status === 'done' ? '✓' : '✗';
-  const color =
-    phase.status === 'active'
-      ? 'text-[var(--accent-primary)]'
-      : phase.status === 'done'
-        ? 'text-[var(--success)]'
-        : 'text-[var(--error)]';
+function ScenarioPreview({ scenarioId }: { scenarioId: string }) {
+  const [data, setData] = useState<ScenarioDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/scenarios/${scenarioId}`)
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
+      .then((d: ScenarioDetail) => { if (!cancelled) { setData(d); setLoading(false); } })
+      .catch((e: Error) => { if (!cancelled) { setError(e.message); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, [scenarioId]);
+
+  if (loading) return <div className="text-xs text-foreground-subtle py-2">Loading scenario…</div>;
+  if (error) return <div className="text-xs text-[var(--error)] py-2">Failed to load: {error}</div>;
+  if (!data) return null;
+
+  const auditScore = data.metadata?.auditMetadata?.score;
 
   return (
-    <div className="py-1.5 space-y-1">
-      <div className="flex items-center gap-2 text-[11px] font-mono" title={meta?.tip}>
-        <span className={`${color} ${phase.status === 'active' ? 'animate-pulse' : ''}`}>{icon}</span>
-        <span className="text-foreground-muted">{meta?.label ?? phase.label}</span>
-        <span className="flex-1 border-b border-dotted border-[var(--border)] mx-1" />
-        {phase.durationMs !== undefined && phase.durationMs > 0 && (
-          <span className="text-foreground-subtle">{formatElapsed(phase.durationMs)}</span>
-        )}
-        {(phase.tokensIn || phase.tokensOut) && (
-          <span className="text-foreground-subtle text-[10px]">
-            {(phase.tokensIn ?? 0).toLocaleString()}↑ {(phase.tokensOut ?? 0).toLocaleString()}↓
-          </span>
-        )}
-        {phase.score !== undefined && (
-          <span className={`text-[10px] font-bold ${phase.score >= 70 ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`}>
-            {Math.round(phase.score)}
-          </span>
-        )}
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-semibold text-foreground">{data.title}</span>
+          {auditScore !== undefined && (
+            <span
+              className="text-[11px] font-bold px-2 py-0.5 rounded"
+              style={
+                auditScore >= 70
+                  ? { background: 'rgba(34,197,94,0.15)', color: 'oklch(72% 0.2 155)' }
+                  : { background: 'rgba(245,158,11,0.15)', color: 'oklch(78% 0.18 75)' }
+              }
+            >
+              Score {Math.round(auditScore)}
+            </span>
+          )}
+          {data.metadata?.bundle && (
+            <span className="text-[11px] text-foreground-subtle px-2 py-0.5 rounded border border-[var(--border)]">
+              {data.metadata.bundle}
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-foreground-muted leading-relaxed">{data.description}</p>
       </div>
 
-      {phase.messages.length > 0 && (
-        <div className="ml-5 space-y-1.5">
-          {phase.messages.map((msg, mi) => {
-            const msgKey = `${runKey}-${phase.name}-${mi}`;
-            return (
-              <ChatBubble
-                key={mi}
-                msg={msg}
-                expanded={expandedMessages.has(msgKey)}
-                onToggle={() => onToggleMessage(msgKey)}
-              />
-            );
-          })}
-        </div>
-      )}
-
-      {phase.issues && phase.issues.length > 0 && (
-        <div className="ml-5 space-y-0.5">
-          {phase.issues.map((issue, ii) => (
-            <div key={ii} className="text-[10px] font-mono text-[var(--error)] leading-snug">
-              · {issue}
+      {data.options.length > 0 && (
+        <div className="space-y-2">
+          {data.options.map((opt) => (
+            <div key={opt.id} className="border border-[var(--border)] rounded-md p-3 space-y-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
+              <div className="flex items-start gap-2">
+                <span className="text-[11px] font-bold text-foreground-subtle shrink-0 mt-0.5 w-5">{opt.label ?? opt.id}</span>
+                <span className="text-sm text-foreground-muted leading-relaxed">{opt.text}</span>
+              </div>
+              {opt.effects.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pl-7">
+                  {opt.effects.slice(0, 6).map((eff, ei) => {
+                    const positive = eff.value > 0;
+                    return (
+                      <span
+                        key={ei}
+                        className="text-[11px] font-medium px-1.5 py-0.5 rounded"
+                        style={
+                          positive
+                            ? { background: 'rgba(34,197,94,0.12)', color: 'oklch(72% 0.2 155)' }
+                            : { background: 'rgba(239,68,68,0.12)', color: 'oklch(65% 0.2 25)' }
+                        }
+                      >
+                        {positive ? '+' : ''}{eff.value} {eff.targetMetricId?.replace(/^metric_/, '')}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -608,89 +803,138 @@ function RunCard({
   defaultOpen: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const [scenarioOpen, setScenarioOpen] = useState(false);
   const runKey = `${bundleId}-${run.index}`;
 
-  const statusIcon =
-    run.status === 'active' ? '◐' : run.status === 'saved' ? '✓' : run.status === 'rejected' ? '✗' : '✗';
-  const statusColor =
-    run.status === 'active'
-      ? 'text-[var(--accent-primary)]'
-      : run.status === 'saved'
-        ? 'text-[var(--success)]'
-        : 'text-[var(--error)]';
+  const isSaved = run.status === 'saved';
+  const isFailed = run.status === 'failed';
+  const isRejected = run.status === 'rejected';
+  const isActive = run.status === 'active';
+
+  const statusLabel = isSaved ? 'Saved' : isFailed ? 'Failed' : isRejected ? 'Rejected' : 'Running';
+  const statusStyle = isSaved
+    ? { color: 'oklch(72% 0.2 155)', bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.3)' }
+    : isFailed || isRejected
+      ? { color: 'oklch(65% 0.2 25)', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)' }
+      : { color: 'oklch(72% 0.18 265)', bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)' };
 
   return (
-    <div className={`border-l-2 ${
-      run.status === 'active'
-        ? 'border-[var(--accent-primary)]'
-        : run.status === 'saved'
-          ? 'border-[var(--success)]/40'
-          : 'border-[var(--error)]/40'
-    }`}>
+    <div
+      className="rounded-lg overflow-hidden border"
+      style={{ borderColor: statusStyle.border, background: 'rgba(255,255,255,0.01)' }}
+    >
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[rgba(255,255,255,0.02)] transition-colors"
+        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[rgba(255,255,255,0.02)] transition-colors"
       >
-        <span className={`text-xs font-mono ${statusColor} ${run.status === 'active' ? 'animate-pulse' : ''}`}>
-          {statusIcon}
+        <span
+          className="text-[10px] font-bold px-2 py-1 rounded shrink-0 mt-0.5"
+          style={{ background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}` }}
+        >
+          {isActive ? (
+            <span className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse inline-block" style={{ background: statusStyle.color }} />
+              {statusLabel}
+            </span>
+          ) : statusLabel}
         </span>
-        <span className="text-[11px] font-mono text-foreground">
-          {run.title ? run.title : `Scenario ${run.index}`}
-        </span>
-        {run.scenarioId && (
-          <Link href={`/scenarios/${run.scenarioId}`} className="text-[9px] font-mono text-foreground-subtle hover:text-[var(--accent-primary)] transition-colors" onClick={(e) => e.stopPropagation()}>
-            {run.scenarioId.slice(0, 8)}
-          </Link>
-        )}
-        <span className="flex-1" />
 
-        <div className="hidden sm:flex items-center gap-1 shrink-0 overflow-hidden">
-          {run.phases.map((p, pi) => {
-            const meta = PHASE_META[p.name];
-            const statusIcon = p.status === 'done' ? '✓' : p.status === 'active' ? (meta?.icon ?? '◐') : '✗';
-            const cls =
-              p.status === 'done' ? 'text-[var(--success)]'
-              : p.status === 'active' ? 'text-[var(--accent-primary)] animate-pulse'
-              : 'text-[var(--error)]';
-            return (
-              <span key={pi} className="flex items-center gap-0.5" title={meta?.tip}>
-                {pi > 0 && <span className="text-[8px] text-foreground-subtle mx-0.5">→</span>}
-                <span className={`text-[10px] ${cls}`}>{statusIcon}</span>
-                <span className={`text-[9px] font-mono ${p.status === 'active' ? 'text-foreground' : 'text-foreground-subtle'}`}>
-                  {meta?.label ?? p.label}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-foreground">
+              {run.title || `Attempt ${run.index}`}
+            </span>
+            {run.scenarioId && (
+              <Link
+                href={`/scenarios/${run.scenarioId}`}
+                className="text-[10px] font-mono text-foreground-subtle hover:text-[var(--accent-primary)] transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {run.scenarioId.slice(0, 8)}…
+              </Link>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            {run.phases.map((p, pi) => {
+              const meta = PHASE_META[p.name];
+              const pColor = p.status === 'done' ? 'oklch(72% 0.2 155)' : p.status === 'failed' ? 'oklch(65% 0.2 25)' : 'oklch(72% 0.18 265)';
+              return (
+                <span key={pi} className="flex items-center gap-1 text-[11px]" title={meta?.tip}>
+                  {pi > 0 && <span className="text-foreground-subtle opacity-30">·</span>}
+                  <span style={{ color: p.status === 'active' ? pColor : p.status === 'done' ? 'var(--foreground-subtle)' : pColor }}>
+                    {p.status === 'done' ? '✓' : p.status === 'failed' ? '✗' : '○'}
+                  </span>
+                  <span className={p.status === 'active' ? 'text-foreground' : 'text-foreground-subtle'}>
+                    {meta?.label ?? p.label}
+                  </span>
                 </span>
-              </span>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
-        {run.auditScore !== undefined && (
-          <span className={`text-[10px] font-mono ${run.auditScore >= 70 ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`}>
-            {Math.round(run.auditScore)}
+        <div className="flex items-center gap-3 shrink-0 text-xs text-foreground-subtle">
+          {run.auditScore !== undefined && (
+            <span
+              className="font-bold"
+              style={{ color: run.auditScore >= 70 ? 'oklch(72% 0.2 155)' : 'oklch(78% 0.18 75)' }}
+            >
+              {Math.round(run.auditScore)}
+            </span>
+          )}
+          {run.totalDurationMs !== undefined && (
+            <span>{formatElapsed(run.totalDurationMs)}</span>
+          )}
+          <span
+            className="text-[10px] transition-transform duration-150 text-foreground-subtle"
+            style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block' }}
+          >
+            ▶
           </span>
-        )}
-        {run.totalDurationMs !== undefined && (
-          <span className="text-[10px] font-mono text-foreground-subtle">{formatElapsed(run.totalDurationMs)}</span>
-        )}
-        {(run.totalTokensIn > 0 || run.totalTokensOut > 0) && (
-          <span className="text-[9px] font-mono text-foreground-subtle">
-            {run.totalTokensIn.toLocaleString()}↑{run.totalTokensOut.toLocaleString()}↓
-          </span>
-        )}
-        <span className="text-[9px] font-mono text-foreground-subtle opacity-40">{open ? '▲' : '▼'}</span>
+        </div>
       </button>
 
       {open && (
-        <div className="px-3 pb-2 max-h-[420px] overflow-y-auto divide-y divide-[var(--border)]/30">
-          {run.phases.map((phase, pi) => (
-            <PhaseDetail
-              key={pi}
-              phase={phase}
-              expandedMessages={expandedMessages}
-              onToggleMessage={onToggleMessage}
-              runKey={runKey}
-            />
-          ))}
+        <div className="border-t px-4 py-4 max-h-[700px] overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
+          {run.phases.length > 0 ? (
+            <div>
+              {run.phases.map((phase, pi) => (
+                <PhaseStep
+                  key={pi}
+                  phase={phase}
+                  stepNumber={pi + 1}
+                  expandedMessages={expandedMessages}
+                  onToggleMessage={onToggleMessage}
+                  runKey={runKey}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-foreground-subtle italic">No phase data captured for this attempt.</p>
+          )}
+
+          {run.scenarioId && (
+            <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+              <button
+                onClick={() => setScenarioOpen(!scenarioOpen)}
+                className="text-xs text-[var(--accent-primary)] hover:underline flex items-center gap-1"
+              >
+                {scenarioOpen ? '▼' : '▶'} {scenarioOpen ? 'Hide scenario' : 'View saved scenario'}
+              </button>
+              {scenarioOpen && (
+                <div className="mt-3">
+                  <ScenarioPreview scenarioId={run.scenarioId} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {(run.totalTokensIn > 0 || run.totalTokensOut > 0) && (
+            <div className="mt-3 pt-3 border-t flex items-center gap-4 text-xs text-foreground-subtle" style={{ borderColor: 'var(--border)' }}>
+              <span>{run.totalTokensIn.toLocaleString()} tokens in</span>
+              <span>{run.totalTokensOut.toLocaleString()} tokens out</span>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -832,7 +1076,7 @@ function BundleSection({
           )}
 
           {pipeline.runs.length > 0 && (
-            <div className="divide-y divide-[var(--border)]/30 max-h-[600px] overflow-y-auto">
+            <div className="p-3 space-y-2">
               {pipeline.runs.map((run) => (
                 <RunCard
                   key={run.index}
@@ -895,7 +1139,7 @@ export default function JobDetailPage() {
   const [filterScoreMax, setFilterScoreMax] = useState<string>('');
   const [filterScope, setFilterScope] = useState<string | null>(null);
   const [filterFixed, setFilterFixed] = useState<boolean | null>(null);
-  const [filterProvider, setFilterProvider] = useState<'openai' | 'local' | null>(null);
+  const [filterProvider, setFilterProvider] = useState<'cloud' | 'local' | null>(null);
   const [pipelineTab, setPipelineTab] = useState<'pipeline' | 'events'>('pipeline');
   const [eventLog, setEventLog] = useState<JobEvent[]>([]);
   const [eventLogTotal, setEventLogTotal] = useState(0);
@@ -910,6 +1154,7 @@ export default function JobDetailPage() {
   const [forceCancelling, setForceCancelling] = useState(false);
   const [newsExpanded, setNewsExpanded] = useState(false);
   const [countriesExpanded, setCountriesExpanded] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!job?.startedAt || (job.status !== 'running' && job.status !== 'pending')) {
@@ -1000,10 +1245,17 @@ export default function JobDetailPage() {
 
   async function handleCancel() {
     if (!job || !confirm('Cancel this job?')) return;
+    setActionError(null);
     setCancelling(true);
     try {
-      await fetch(`/api/jobs/${job.id}`, { method: 'DELETE' });
-      setJob((prev) => prev ? { ...prev, status: 'cancelled' } : prev);
+      const res = await fetch(`/api/jobs/${job.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setJob((prev) => prev ? { ...prev, status: 'cancelled' } : prev);
+      } else {
+        setActionError(`Cancel failed (${res.status}).`);
+      }
+    } catch {
+      setActionError('Cancel failed because the dev server connection dropped. Refresh and try again.');
     } finally {
       setCancelling(false);
     }
@@ -1011,6 +1263,7 @@ export default function JobDetailPage() {
 
   async function handleStop() {
     if (!job || !confirm('Stop this job? It will be marked cancelled and the generation process will wind down.')) return;
+    setActionError(null);
     setStopping(true);
     try {
       const res = await fetch(`/api/jobs/${job.id}`, {
@@ -1020,7 +1273,11 @@ export default function JobDetailPage() {
       });
       if (res.ok) {
         setJob((prev) => prev ? { ...prev, status: 'cancelled' } : prev);
+      } else {
+        setActionError(`Stop failed (${res.status}).`);
       }
+    } catch {
+      setActionError('Stop failed because the dev server connection dropped. Refresh and try again.');
     } finally {
       setStopping(false);
     }
@@ -1028,6 +1285,7 @@ export default function JobDetailPage() {
 
   async function handleForceCancel() {
     if (!job || !confirm('Force cancel this job? This marks it as failed and is irreversible.')) return;
+    setActionError(null);
     setForceCancelling(true);
     try {
       const res = await fetch(`/api/jobs/${job.id}`, {
@@ -1037,7 +1295,11 @@ export default function JobDetailPage() {
       });
       if (res.ok) {
         setJob((prev) => prev ? { ...prev, status: 'failed', error: 'Force cancelled by operator' } : prev);
+      } else {
+        setActionError(`Force cancel failed (${res.status}).`);
       }
+    } catch {
+      setActionError('Force cancel failed because the dev server connection dropped. Refresh and try again.');
     } finally {
       setForceCancelling(false);
     }
@@ -1058,6 +1320,8 @@ export default function JobDetailPage() {
       setEventLog(reset ? data.events : [...eventLog, ...data.events]);
       setEventLogTotal(data.total);
       setEventLogHasMore(data.hasMore);
+    } catch {
+      // Polling can race with local dev server restarts/HMR. Keep the job page mounted.
     } finally {
       setEventLogLoading(false);
     }
@@ -1256,6 +1520,11 @@ export default function JobDetailPage() {
         </div>
         {job.description && (
           <p className="mt-2 text-xs text-foreground-muted">{job.description}</p>
+        )}
+        {actionError && (
+          <div className="mt-3 rounded-[var(--radius-tight)] border border-[var(--error)]/40 bg-[var(--error)]/8 px-3 py-2 text-xs text-[var(--error)]">
+            {actionError}
+          </div>
         )}
 
         {job.runId && (
@@ -2059,9 +2328,9 @@ export default function JobDetailPage() {
                 <div className="flex items-center gap-1">
                   {([
                     [null, 'All'],
-                    ['openai', 'OpenAI'],
+                    ['cloud', 'Cloud'],
                     ['local', 'Local'],
-                  ] as ['openai' | 'local' | null, string][]).map(([val, label]) => (
+                  ] as ['cloud' | 'local' | null, string][]).map(([val, label]) => (
                     <button
                       key={label}
                       onClick={() => setFilterProvider(val)}
@@ -2158,9 +2427,9 @@ export default function JobDetailPage() {
                     </td>
                     {job.mode === 'full_send' && (
                       <td className="px-4 py-2.5 hidden lg:table-cell">
-                        {r.fullSendProvider === 'openai' ? (
+                        {r.fullSendProvider === 'cloud' ? (
                           <span className="text-[9px] font-semibold text-[var(--accent-secondary)] px-1.5 py-0.5 rounded border border-[var(--accent-secondary)]/30 bg-[var(--accent-secondary)]/10">
-                            OpenAI
+                            Cloud
                           </span>
                         ) : r.fullSendProvider === 'local' ? (
                           <span className="text-[9px] font-semibold text-[var(--accent-primary)] px-1.5 py-0.5 rounded border border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/10">

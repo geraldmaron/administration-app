@@ -62,6 +62,15 @@ export function buildOllamaModelConfig(availableModels: string[]): GenerationMod
   };
 }
 
+export const CLOUD_MODEL_DEFAULTS = {
+  architectModel:       'google/gemini-2.5-flash',
+  drafterModel:         'qwen/qwen3.5-397b-a17b',
+  advisorModel:         'google/gemini-2.5-flash',
+  repairModel:          'mistralai/mistral-small-2603',
+  contentQualityModel:  'mistralai/mistral-small-2603',
+  narrativeReviewModel: 'google/gemini-2.5-flash',
+} as const satisfies Partial<GenerationModelConfig>;
+
 export function hasMeaningfulModelConfig(config?: GenerationModelConfig | null): boolean {
   return MODEL_KEYS.some(
     (key) => typeof config?.[key] === 'string' && (config[key] as string).length > 0,

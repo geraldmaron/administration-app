@@ -18,7 +18,9 @@ describe('generation-models', () => {
       ARCHITECT_MODEL: 'gpt-4o-mini',
       CONCEPT_MODEL: 'gpt-4o-mini',
       DRAFTER_MODEL: 'gpt-4o-mini',
+      ADVISOR_MODEL: 'gpt-4.1-mini',
       REPAIR_MODEL: 'gpt-4o-mini',
+      CONTENT_QUALITY_MODEL: 'gpt-4.1-mini',
       NARRATIVE_REVIEW_MODEL: 'gpt-4o-mini',
       EMBEDDING_MODEL: 'text-embedding-3-small',
     };
@@ -66,7 +68,7 @@ describe('generation-models', () => {
     expect(exceedsBundleLimitForModel(10)).toBe(false);
   });
 
-  it('resolves default models when no overrides are provided', () => {
+  it('resolves gpt-* models when env overrides set them (routed via OpenRouter in production)', () => {
     expect(getResolvedGenerationModels()).toEqual({
       architect: 'gpt-4o-mini',
       advisor: 'gpt-4.1-mini',
@@ -77,6 +79,36 @@ describe('generation-models', () => {
       narrativeReview: 'gpt-4o-mini',
       embedding: 'text-embedding-3-small',
     });
+  });
+
+  it('resolves OpenRouter-style defaults when phase env vars are unset', () => {
+    process.env = { ...originalEnv };
+    delete process.env.ARCHITECT_MODEL;
+    delete process.env.CONCEPT_MODEL;
+    delete process.env.DRAFTER_MODEL;
+    delete process.env.REPAIR_MODEL;
+    delete process.env.NARRATIVE_REVIEW_MODEL;
+    delete process.env.ADVISOR_MODEL;
+    delete process.env.CONTENT_QUALITY_MODEL;
+    delete process.env.EMBEDDING_MODEL;
+    delete process.env.USE_OPENAI_DIRECT;
+    delete process.env.USE_OPENROUTER_DEFAULTS;
+    expect(getResolvedGenerationModels()).toEqual({
+      architect: 'google/gemini-2.5-flash',
+      advisor: 'google/gemini-2.5-flash',
+      blueprint: 'google/gemini-2.5-flash',
+      drafter: 'qwen/qwen3.5-397b-a17b',
+      repair: 'mistralai/mistral-small-2603',
+      contentQuality: 'mistralai/mistral-small-2603',
+      narrativeReview: 'google/gemini-2.5-flash',
+      embedding: 'openai/text-embedding-3-small',
+    });
+  });
+
+  it('uses openrouter model family for cloud-only runs', () => {
+    process.env = { ...originalEnv };
+    delete process.env.USE_OPENAI_DIRECT;
+    expect(getModelFamily()).toBe('openrouter');
   });
 
   it('strips the ollama prefix only when present', () => {

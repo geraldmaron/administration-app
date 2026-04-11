@@ -18,6 +18,9 @@
  *   # 5 scenarios per bundle for economy + military (10 total)
  *   pnpm dlx tsx src/tools/create-generation-job.ts --bundles economy,military --count 5
  *
+ *   # Standard bundles with diplomacy first (same set as standard, reordered)
+ *   pnpm dlx tsx src/tools/create-generation-job.ts --bundles standard-diplomacy-first --count 2
+ *
  * NOTE: `count` is per-bundle. Total scenarios ~= bundles.length * count
  * (each scenario may have multiple acts depending on distributionConfig).
  */
@@ -37,7 +40,7 @@ import {
 } from '../data/schemas/bundleIds';
 
 interface CliArgs {
-  bundles: 'all' | 'standard' | BundleId[];
+  bundles: 'all' | 'standard' | 'standard_diplomacy_first' | BundleId[];
   count: number;
   mode: 'news' | 'manual';
   description?: string;
@@ -52,10 +55,11 @@ function parseArgs(): CliArgs {
   };
 
   const bundlesRaw = getArg('--bundles') ?? 'standard';
-  let bundles: 'all' | 'standard' | BundleId[];
+  let bundles: 'all' | 'standard' | 'standard_diplomacy_first' | BundleId[];
 
-  if (bundlesRaw === 'all' || bundlesRaw === 'standard') {
-    bundles = bundlesRaw;
+  if (bundlesRaw === 'all' || bundlesRaw === 'standard' || bundlesRaw === 'standard-diplomacy-first') {
+    bundles =
+      bundlesRaw === 'standard-diplomacy-first' ? 'standard_diplomacy_first' : bundlesRaw;
   } else {
     const parts = bundlesRaw.split(',').map((s) => s.trim()).filter(Boolean);
     const valid: BundleId[] = [];
@@ -157,6 +161,8 @@ async function main() {
       ? 'all'
       : bundleSpec === 'standard'
       ? `standard (${STANDARD_BUNDLE_IDS.join(', ')})`
+      : bundleSpec === 'standard_diplomacy_first'
+      ? `standard_diplomacy_first (diplomacy first, then ${STANDARD_BUNDLE_IDS.filter((b) => b !== 'diplomacy').join(', ')})`
       : (bundleSpec as BundleId[]).join(', ')
   }`);
   console.log(`Count/bundle : ${args.count}`);

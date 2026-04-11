@@ -155,15 +155,59 @@ private struct WireframeGlobeView: View {
 
         let globeRect = CGRect(x: cx - R, y: cy - R, width: R * 2, height: R * 2)
 
+        // Star field — deterministic LCG so layout never changes between frames
+        var lcg: UInt64 = 0xDEADBEEF1A2B3C4D
+        func nextRand() -> Double {
+            lcg = lcg &* 6364136223846793005 &+ 1442695040888963407
+            return Double(lcg >> 33) / Double(1 << 31)
+        }
+        for _ in 0..<110 {
+            let sx = nextRand() * size.width
+            let sy = nextRand() * size.height
+            let sr = nextRand() * 0.85 + 0.25
+            let op = nextRand() * 0.30 + 0.07
+            let dx = sx - cx, dy = sy - cy
+            guard dx * dx + dy * dy > R * R * 1.08 else { continue }
+            ctx.fill(Path(ellipseIn: CGRect(x: sx - sr, y: sy - sr, width: sr * 2, height: sr * 2)),
+                     with: .color(Color.white.opacity(op)))
+        }
+
+        // Atmosphere glow — concentric halos just outside the sphere
+        for i in 0..<6 {
+            let expand = R + CGFloat(i + 1) * 3.8
+            var atmPath = Path()
+            atmPath.addEllipse(in: CGRect(x: cx - expand, y: cy - expand, width: expand * 2, height: expand * 2))
+            let atmOpacity = 0.20 - Double(i) * 0.032
+            ctx.stroke(atmPath, with: .color(accent.opacity(atmOpacity)),
+                       lineWidth: 2.2 - CGFloat(i) * 0.28)
+        }
+
         // Ocean sphere fill
         var oceanPath = Path()
         oceanPath.addEllipse(in: globeRect)
-        ctx.fill(oceanPath, with: .color(accent.opacity(0.04)))
+        ctx.fill(oceanPath, with: .color(accent.opacity(0.07)))
 
-        // Globe outline
+        // Globe outline — brighter
         var outline = Path()
         outline.addEllipse(in: globeRect)
-        ctx.stroke(outline, with: .color(accent.opacity(0.22)), lineWidth: 0.75)
+        ctx.stroke(outline, with: .color(accent.opacity(0.55)), lineWidth: 1.0)
+
+        // Hemisphere shading — light from upper-left, shadow lower-right
+        ctx.drawLayer { shadeCtx in
+            var clipPath = Path()
+            clipPath.addEllipse(in: globeRect)
+            shadeCtx.clip(to: clipPath)
+            let shadingGradient = Gradient(colors: [
+                Color.white.opacity(0.07),
+                Color.clear,
+                Color.black.opacity(0.40),
+            ])
+            shadeCtx.fill(clipPath, with: .linearGradient(
+                shadingGradient,
+                startPoint: CGPoint(x: cx - R * 0.55, y: cy - R * 0.65),
+                endPoint:   CGPoint(x: cx + R * 0.55, y: cy + R * 0.55)
+            ))
+        }
 
         // Continent fills — simplified but recognisable polygons
         // Build a clipped path for each continent using only visible hemisphere points.
@@ -341,13 +385,13 @@ private struct WireframeGlobeView: View {
             var clipPath = Path()
             clipPath.addEllipse(in: globeRect)
             layerCtx.clip(to: clipPath)
-            layerCtx.fill(continentUnion, with: .color(accent.opacity(0.14)))
-            layerCtx.stroke(continentUnion, with: .color(accent.opacity(0.32)), lineWidth: 0.6)
+            layerCtx.fill(continentUnion, with: .color(accent.opacity(0.24)))
+            layerCtx.stroke(continentUnion, with: .color(accent.opacity(0.60)), lineWidth: 0.8)
         }
 
         // Latitude parallels — sample lon from center−90° to center+90° (visible hemisphere)
         let latitudes: [(Double, Double)] = [
-            (-60, 0.055), (-30, 0.065), (0, 0.105), (30, 0.065), (60, 0.055)
+            (-60, 0.09), (-30, 0.12), (0, 0.18), (30, 0.12), (60, 0.09)
         ]
         for (lat, opacity) in latitudes {
             var path = Path()
@@ -370,7 +414,7 @@ private struct WireframeGlobeView: View {
             let lon = centerLon + lonOffset
             var path = Path()
             var started = false
-            let opacity: Double = abs(lonOffset) < 1.0 ? 0.11 : 0.06
+            let opacity: Double = abs(lonOffset) < 1.0 ? 0.18 : 0.10
             for step in 0...170 {
                 let lat = -85.0 + Double(step)
                 let (pt, visible) = project(lat: lat, lon: lon)
@@ -388,10 +432,10 @@ private struct WireframeGlobeView: View {
         for cap in GlobeBackgroundView.capitalCoordinates.values {
             let (pt, visible) = project(lat: cap.latitude, lon: cap.longitude)
             guard visible else { continue }
-            let dotR: CGFloat = 1.4
+            let dotR: CGFloat = 1.6
             ctx.fill(
                 Path(ellipseIn: CGRect(x: pt.x - dotR, y: pt.y - dotR, width: dotR * 2, height: dotR * 2)),
-                with: .color(accent.opacity(0.22))
+                with: .color(accent.opacity(0.45))
             )
         }
 

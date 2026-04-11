@@ -175,7 +175,11 @@ function selectSampleCountries(
   limit = 3
 ): CountryDocument[] {
   const metadata = scenario.metadata;
-  const explicitIds = Array.isArray(scenario.applicability?.applicableCountryIds) ? scenario.applicability!.applicableCountryIds! : [];
+  const explicitIds = Array.isArray(scenario.applicability?.applicableCountryIds) && scenario.applicability!.applicableCountryIds!.length > 0
+    ? scenario.applicability!.applicableCountryIds!
+    : Array.isArray(scenario.metadata?.applicable_countries)
+      ? (scenario.metadata!.applicable_countries as string[])
+      : [];
   const regionTags = Array.isArray(metadata?.region_tags) ? metadata.region_tags.map((item) => String(item)) : [];
 
   const byExplicit = explicitIds

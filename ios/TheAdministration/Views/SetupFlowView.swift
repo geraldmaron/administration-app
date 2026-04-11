@@ -646,6 +646,8 @@ struct CabinetFormationView: View {
             var byRole: [String: [Candidate]] = [:]
             var sel: [String: Candidate] = [:]
             let numRoles = CabinetRoles.DEFAULT_ROLES.count
+            var usedFirstNames = Set<String>()
+            var usedLastNames = Set<String>()
             for role in CabinetRoles.DEFAULT_ROLES {
                 let candidates = CandidateGenerator.generateMinisters(
                     roleId: role.id,
@@ -654,14 +656,22 @@ struct CabinetFormationView: View {
                     countryId: countryId,
                     count: 10,
                     config: config,
-                    partyNames: partyNames
+                    partyNames: partyNames,
+                    excludedFirstNames: usedFirstNames,
+                    excludedLastNames: usedLastNames
                 )
                 byRole[role.id] = candidates
                 let mid = candidates.min(by: {
                     abs(($0.cost ?? 0) - CabinetPointsService.TARGET_AVG_COST_PER_SLOT) <
                     abs(($1.cost ?? 0) - CabinetPointsService.TARGET_AVG_COST_PER_SLOT)
                 })
-                sel[role.id] = mid ?? candidates.first
+                let chosen = mid ?? candidates.first
+                sel[role.id] = chosen
+                if let pick = chosen {
+                    let parts = pick.name.split(separator: " ", maxSplits: 1)
+                    if let fn = parts.first { usedFirstNames.insert(String(fn)) }
+                    if parts.count > 1 { usedLastNames.insert(String(parts[1])) }
+                }
             }
             DispatchQueue.main.async {
                 self.candidatesByRole = byRole

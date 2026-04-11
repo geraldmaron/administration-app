@@ -541,7 +541,7 @@ export async function GET(
     const completedAt = data.completedAt?.toDate?.() as Date | undefined;
     const bundles: string[] = Array.isArray(data.bundles) ? data.bundles : [];
 
-    const events = eventsSnap.docs.map((eventDoc) => toEvent(eventDoc.id, eventDoc.data())).reverse();
+    let events = eventsSnap.docs.map((eventDoc) => toEvent(eventDoc.id, eventDoc.data())).reverse();
     const siblingPromise = typeof data.runId === 'string' && data.runId.length > 0
       ? db.collection('generation_jobs').where('runId', '==', data.runId).get()
       : Promise.resolve(null);
@@ -581,6 +581,43 @@ export async function GET(
             tags: Array.isArray(s.metadata?.tags) ? s.metadata.tags : [],
           };
         });
+    }
+
+    if (backfilledResults?.length) {
+      const knownTerminalScenarioIds = new Set(
+        events
+          .filter((event) => event.code === 'scenario_saved' || event.code === 'scenario_staged')
+          .map((event) => event.scenarioId)
+          .filter((scenarioId): scenarioId is string => typeof scenarioId === 'string' && scenarioId.length > 0)
+      );
+      const syntheticTimestamp =
+        data.completedAt?.toDate?.()?.toISOString?.() ??
+        data.updatedAt?.toDate?.()?.toISOString?.() ??
+        new Date().toISOString();
+      const syntheticSaveEvents = backfilledResults
+        .filter((result) => result.id && !knownTerminalScenarioIds.has(result.id))
+        .map((result, index) => ({
+          id: `synthetic-save-${result.id}`,
+          timestamp: syntheticTimestamp,
+          level: 'success' as const,
+          code: detail.dryRun ? 'scenario_staged' : 'scenario_saved',
+          message: `${detail.dryRun ? 'Staged' : 'Saved'} scenario "${result.title || result.id}".`,
+          bundle: result.bundle,
+          phase: 'save',
+          scenarioId: result.id,
+          data: {
+            synthetic: true,
+            completedCount: index + 1,
+            ...(typeof result.auditScore === 'number' ? { score: result.auditScore } : {}),
+          },
+        } satisfies JobEvent));
+      if (syntheticSaveEvents.length > 0) {
+        events = [...events, ...syntheticSaveEvents].sort((left, right) => {
+          const leftTime = left.timestamp ? new Date(left.timestamp).getTime() : 0;
+          const rightTime = right.timestamp ? new Date(right.timestamp).getTime() : 0;
+          return leftTime - rightTime;
+        });
+      }
     }
 
     const responseDetail: JobDetail = {

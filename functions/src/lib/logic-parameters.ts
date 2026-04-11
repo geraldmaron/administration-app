@@ -277,35 +277,11 @@ ${NARRATIVE_TO_METRIC_ALIGNMENT.map(({ concepts, metricIds, note }) => `    - ${
     - Corruption probe (entrenched corruption) → \`[{ "metricId": "metric_corruption", "min": 45 }]\`
     - Post-riot emergency powers → \`[{ "metricId": "metric_public_order", "max": 45 }, { "metricId": "metric_approval", "max": 45 }]\`
 
-15. **Descriptive and Monetary Token Semantics** (CRITICAL — prevents unrealistic monetary references):
-    CONTEXT tokens (describe the country at a qualitative level, never use as line-item amounts):
-    - {gdp_description} → Resolves to the ENTIRE national GDP (e.g., "a 25 trillion dollars economy").
-      NEVER use as a stolen, siphoned, lost, or misappropriated amount. It is the TOTAL economic output.
-    - {economic_scale} → Qualitative descriptor ("the world's largest economy", "small island economy").
-    - {population_scale} → "a nation of over 330 million" etc.
-    - {fiscal_condition} → Fiscal health descriptor ("strong fiscal reserves", "manageable debt levels", "persistent deficits").
-
-    GEOGRAPHY tokens (spatial/terrain descriptors):
-    - {geography_type}, {climate_risk} → Geographic/environmental descriptors.
-
-    MILITARY tokens (military standing descriptor):
-    - {military_capability} → Military standing descriptor ("world-class military superpower", "limited defense capacity").
-
-    LEGISLATIVE tokens (political opposition):
-    - {opposition_leader} → Name or title of the leading opposition figure.
-
-    SCALED MONETARY tokens (auto-proportional to the player's GDP — USE THESE for specific amounts):
-    - {graft_amount} → 0.5–3% of GDP. Use for corruption, embezzlement, fraud, misappropriation, graft.
-    - {infrastructure_cost} → 1–5% of GDP. Use for construction, disaster damage, development projects.
-    - {trade_value} → 5–15% of GDP. Use for trade deal values, trade disruption impacts.
-    - {military_budget_amount} → 1.5–4% of GDP. Use for defense spending, military procurement.
-    - {aid_amount} → 0.1–1% of GDP. Use for foreign aid packages, humanitarian assistance.
-    - {disaster_cost} → 1–8% of GDP. Use for natural disaster recovery, emergency response costs.
-    - {sanctions_amount} → 2–10% of GDP. Use for economic sanctions, trade embargo impacts.
-
-    ✅ DO: "officials siphoned {graft_amount}" / "threatens {gdp_description}"
-    ❌ NEVER: "siphoned {gdp_description}" / "stole a portion of {gdp_description}"
-    ❌ NEVER: invent hard-coded dollar amounts like "$500 million" — always use scaled tokens.
+15. **Descriptive and Monetary Language** (CRITICAL — prevents unrealistic monetary references):
+    - Only use tokens that are explicitly listed in the token context for this request. Do not invent scale-label tokens such as {economic_scale}, {gdp_description}, {population_scale}, {geography_type}, {climate_risk}, or {major_industry}.
+    - Use plain proportional language for scale-sensitive claims: "a significant share of national output", "a major export sector", "climate-exposed areas", "a substantial procurement budget".
+    - Never treat a national-economy descriptor as a stolen, siphoned, lost, or misappropriated amount. It represents overall scale, not a line item.
+    - If a supported scaled monetary token is explicitly provided in the token context, use it for specific amounts. Otherwise avoid hard-coded dollar amounts like "$500 million".
 
 16. **Option Distinctiveness** (CRITICAL):
     The three options MUST represent genuinely different policy directions. Each option must have at least one effect targeting a **different primary metric domain** from the other two.

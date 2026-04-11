@@ -417,9 +417,23 @@ struct DeskView: View {
                     .foregroundColor(AppColors.foregroundMuted)
                     .shimmerLoading()
             } else if let scenario = gameStore.currentScenario {
-                Text(scenario.title)
-                    .font(AppTypography.headline)
-                    .foregroundColor(AppColors.foreground)
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(scenario.title)
+                        .font(AppTypography.headline)
+                        .foregroundColor(AppColors.foreground)
+                    if scenario.chainId != nil, let act = scenario.actIndex {
+                        Text("Part \(act)")
+                            .font(AppTypography.micro)
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.foregroundMuted)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule().fill(AppColors.backgroundElevated.opacity(0.9))
+                            )
+                            .accessibilityLabel("Multi-part storyline, act \(act)")
+                    }
+                }
 
                 Text(displayDescription(for: scenario))
                     .font(AppTypography.bodySmall)

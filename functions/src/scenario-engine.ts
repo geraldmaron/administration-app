@@ -1,6 +1,10 @@
+/**
+ * Scenario generation engine: concept expansion, multi-act loop drafting (sequential or parallel),
+ * normalization of chain wiring (`chainId`, `chainsTo`, option consequences), validation, and bundle integration.
+ */
 import { NewsItem } from './types';
 import { getLogicParametersPrompt, METRIC_IDS } from './lib/logic-parameters';
-import { ALL_METRIC_IDS } from './data/schemas/metricIds';
+import { ALL_METRIC_IDS, tryNormalizeMetricId, isValidMetricId } from './data/schemas/metricIds';
 import { normalizeTokenAliases, isValidToken, CONCEPT_TO_TOKEN_MAP, loadCompiledTokenRegistry, retokenizeText, deriveTokenStrategy, buildMinimalTokenPromptSection, buildExclusivePromptSection, CANONICAL_ROLE_IDS } from './lib/token-registry';
 import type { CompiledTokenRegistry } from './shared/token-registry-contract';
 import { TokenRejectionBuffer } from './lib/token-rejection-tracker';
@@ -18,6 +22,7 @@ import {
   repairTextIntegrity,
   getAuditConfig,
   STATE_TAG_CONDITION_MAP,
+  REQUIRES_CONDITION_MAP,
   CANONICAL_SCENARIO_TAGS,
   sanitizeInventedTokens,
   heuristicFix,
@@ -30,6 +35,7 @@ import {
 } from './lib/country-catalog';
 import { getSeedConcepts, deduplicateAndDiversifyConcepts, persistAcceptedConcept, type ConceptSeed } from './lib/concept-seeds';
 import { ALL_BUNDLE_IDS, type BundleId } from './data/schemas/bundleIds';
+import { filterUniversalConceptsWithForeignRelationshipLanguage } from './lib/universal-concept-filter';
 import {
   logGenerationAttempt,
   logFailure,
@@ -54,7 +60,7 @@ import {
 import { buildBestEffortMetricGates as buildBestEffortScenarioConditions } from './lib/scenario-conditions';
 import { Timestamp } from 'firebase-admin/firestore';
 import { callModelProvider, setModelEventHandler, aggregateCosts, type ModelConfig, type ModelEvent, type TokenUsage } from './lib/model-providers';
-import { getRecentScenarioSummaries, getThemeDistribution } from './storage';
+import { getRecentScenarioSummaries, getThemeDistribution, loadCountryWorldStates } from './storage';
 
 // Engine-level event handlers — supports multiple concurrent bundle executions
 type EngineEventHandler = (event: ModelEvent) => void;
@@ -94,6 +100,7 @@ import {
   generateEmbedding,
   getEmbeddingText,
   findSimilarByEmbedding,
+  findSimilarByTagCombo,
   isSemanticDedupEnabled
 } from './lib/semantic-dedup';
 import {
@@ -116,7 +123,7 @@ import {
 } from './lib/scenario-acceptance';
 import { resolveTagsDeterministic, TAG_RESOLVER_VERSION } from './services/tag-resolver';
 import { inferRequirementsFromNarrative } from './lib/audit-rules';
-import type { ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind } from './types';
+import type { RequiresFlag, ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind, CountryWorldState } from './types';
 
 // ------------------------------------------------------------------
 // Rich Concept Type
@@ -332,10 +339,14 @@ async function loadCountriesData(): Promise<{ countries: Record<string, any>; so
 // Country context for prompt enrichment (economic scale, geography, proportionality)
 // ------------------------------------------------------------------
 
-async function getCountryContextBlock(applicableCountryIds: string[] | undefined): Promise<string> {
+async function getCountryContextBlock(
+  applicableCountryIds: string[] | undefined,
+  worldContext?: { playerState: CountryWorldState; neighborStates: CountryWorldState[] },
+): Promise<string> {
+  const worldContextBlock = buildWorldContextBlock(worldContext);
   if (!applicableCountryIds?.length) {
     return `
-UNIVERSAL SCENARIO: This scenario must work for countries of ANY size, from micro island states to major powers. Use relative terms ("a significant portion of GDP", "thousands of workers", "major fiscal impact") rather than hard-coded dollar amounts. Use the tokens {economic_scale}, {gdp_description}, {population_scale}, {geography_type}, {climate_risk} so the narrative adapts at runtime, and avoid treating {gdp_description} itself as a specific budget line item.`;
+UNIVERSAL SCENARIO: This scenario must work for countries of ANY size, from micro island states to major powers. Use relative plain language ("a significant share of national output", "thousands of workers", "major fiscal impact") rather than hard-coded dollar amounts or scale-label tokens. Only use tokens that are explicitly listed in the token context for this request.${worldContextBlock}`;
   }
 
   const { countries: data, source } = await loadCountriesData();
@@ -426,19 +437,19 @@ UNIVERSAL SCENARIO: This scenario must work for countries of ANY size, from micr
     const tags = [...geoTags];
     const hints: string[] = [];
     if (tags.some(t => /oil|petroleum|fossil|energy_export/i.test(t))) {
-      hints.push('{major_industry} typically resolves to oil & gas or petrochemicals for these countries');
+      hints.push('sector references should usually point to oil & gas or petrochemicals for these countries');
     } else if (tags.some(t => /tourism/i.test(t))) {
-      hints.push('{major_industry} typically resolves to tourism and hospitality for these countries');
+      hints.push('sector references should usually point to tourism and hospitality for these countries');
     } else if (tags.some(t => /manufacturing|industrial/i.test(t))) {
-      hints.push('{major_industry} typically resolves to manufacturing and exports for these countries');
+      hints.push('sector references should usually point to manufacturing and exports for these countries');
     } else if (tags.some(t => /agri/i.test(t))) {
-      hints.push('{major_industry} typically resolves to agriculture for these countries');
+      hints.push('sector references should usually point to agriculture for these countries');
     } else if (tags.some(t => /tech|innovation/i.test(t))) {
-      hints.push('{major_industry} typically resolves to technology for these countries');
+      hints.push('sector references should usually point to technology for these countries');
     } else if (tags.some(t => /mining|mineral|resource/i.test(t))) {
-      hints.push('{major_industry} typically resolves to mining and natural resources for these countries');
+      hints.push('sector references should usually point to mining and natural resources for these countries');
     } else if (tags.some(t => /financ|banking/i.test(t))) {
-      hints.push('{major_industry} typically resolves to financial services for these countries');
+      hints.push('sector references should usually point to financial services for these countries');
     }
     return hints.length > 0 ? `Token resolution hints: ${hints.join('. ')}.` : '';
   })();
@@ -458,14 +469,8 @@ CRITICAL - ECONOMIC PROPORTIONALITY (MAJOR ECONOMY, GDP ~${Math.round(gdpBillion
 Even for the world's largest economies, corruption scandals involve millions to low billions — NOT trillions.
 A scandal siphoning the entire GDP is physically impossible. Realistic corruption amounts: 0.5–3% of GDP.
 For a ~$${Math.round(gdpBillions).toLocaleString()}B economy, a major scandal might involve $${Math.round(gdpBillions * 0.005).toLocaleString()}B–$${Math.round(gdpBillions * 0.03).toLocaleString()}B.
-USE the token {graft_amount} for corruption/theft amounts — it auto-scales to the country's GDP.
-USE the token {infrastructure_cost} for infrastructure projects or construction costs.
-USE the token {disaster_cost} for natural disaster recovery or emergency response costs.
-USE the token {sanctions_amount} for economic sanctions or trade embargo impacts.
-USE the token {trade_value} for trade disruption amounts.
-USE the token {military_budget_amount} for defense spending.
-USE the token {gdp_description} ONLY to describe the overall economy (e.g., "draining resources from {gdp_description}").
-NEVER treat {gdp_description} as the specific amount stolen, lost, or transferred — it resolves to the ENTIRE national GDP.`;
+Use proportional plain language for corruption/theft amounts unless the token context explicitly lists a scaled monetary token for this request.
+Never describe a corruption loss as the entire national economy.`;
     }
     if (maxGdpMillions >= 500_000) {
       // Large economies ($500B–$5T)
@@ -473,24 +478,24 @@ NEVER treat {gdp_description} as the specific amount stolen, lost, or transferre
 CRITICAL - ECONOMIC PROPORTIONALITY (LARGE ECONOMY, GDP ~${Math.round(gdpBillions).toLocaleString()}B):
 Corruption scandals: hundreds of millions to single-digit billions. NOT tens or hundreds of billions.
 For a ~$${Math.round(gdpBillions).toLocaleString()}B economy, a scandal might involve $${Math.round(gdpBillions * 0.005).toLocaleString()}B–$${Math.round(gdpBillions * 0.03).toLocaleString()}B.
-USE tokens {graft_amount}, {infrastructure_cost}, {disaster_cost}, {sanctions_amount}, {trade_value}, {military_budget_amount} for specific monetary amounts.
-NEVER treat {gdp_description} as a stolen/siphoned amount — it resolves to the ENTIRE national GDP.`;
+Use proportional plain language for specific monetary amounts unless the token context explicitly lists a scaled monetary token for this request.
+Never treat the whole national economy as a stolen or siphoned amount.`;
     }
     if (maxGdpMillions >= 50_000) {
       // Medium economies ($50B–$500B)
       return `
 CRITICAL - ECONOMIC PROPORTIONALITY (MEDIUM ECONOMY, GDP ~${Math.round(gdpBillions).toLocaleString()}B):
 Financial scandal amounts: tens of millions to low hundreds of millions. NOT billions.
-USE tokens {graft_amount}, {infrastructure_cost}, {disaster_cost}, {trade_value} for proportional monetary references.
-NEVER treat {gdp_description} as a stolen/siphoned amount — it resolves to the ENTIRE national GDP.`;
+Use proportional plain language for monetary references unless the token context explicitly lists a scaled monetary token for this request.
+Never treat the whole national economy as a stolen or siphoned amount.`;
     }
     // Small/micro economies (<$50B)
     return `
 CRITICAL - ECONOMIC PROPORTIONALITY (SMALL/MICRO ECONOMY, GDP ~${gdpBillions < 1 ? Math.round(maxGdpMillions).toLocaleString() + 'M' : Math.round(gdpBillions).toLocaleString() + 'B'}):
 These scenarios target small or micro economies. All financial references MUST be proportional.
 A "major economic shock" is on the order of millions, not billions. Do NOT reference impacts in the billions.
-USE tokens {graft_amount}, {infrastructure_cost}, {disaster_cost}, {aid_amount} for proportional monetary references.
-NEVER treat {gdp_description} as a stolen/siphoned amount — it resolves to the ENTIRE national GDP.`;
+Use proportional plain language for monetary references unless the token context explicitly lists a scaled monetary token for this request.
+Never treat the whole national economy as a stolen or siphoned amount.`;
   })();
 
   const highSensLine = highSensitivityMetrics.size
@@ -523,9 +528,61 @@ CRITICAL GEOPOLITICAL RULES:
 - If any target country has tags like 'oil_exporter' or 'resources', preferentially include energy/resources-related stakes and effects.
 - If any target country has tags like 'nuclear_state', use nuclear deterrence/escalation themes sparingly and realistically — no instant apocalypse.
 - If any target country has tags like 'conflict_zone' or 'post_conflict', border tension, refugee flows, and security dilemmas are appropriate.
-- When writing about {major_industry}, use the geopolitical tag context above to write sector-specific language. For example, if tags include 'oil_exporter', don't write "Your {major_industry} faces pressure" — write "Your {major_industry} faces a sustained drop in export demand as buyer nations accelerate energy transition". The token stays generic; the surrounding narrative must be specific.
+- Use the geopolitical tag context above to write sector-specific language. For example, if tags include 'oil_exporter', don't write "A major export sector faces pressure" — write "Oil and gas exporters face a sustained drop in demand as buyer nations accelerate energy transition."
 
-Use the tokens {economic_scale}, {gdp_description}, {population_scale}, {geography_type}, {climate_risk} so the narrative adapts to the player's country at runtime. Do NOT use actual country names in scenario text — they are substituted by tokens at runtime.`;
+Only use tokens that are explicitly listed in the token context for this request. Do NOT use actual country names in scenario text — they are substituted by supported tokens at runtime.${worldContextBlock}`;
+}
+
+/**
+ * WORLD CONTEXT section. Summarises active event flags on the player's country
+ * and up to 3 neighbors so the drafter can write scenarios that hang off what
+ * is actually happening in-world (rather than free-floating premises).
+ * Returns an empty string when no worldContext is provided so existing callers
+ * see zero behaviour change.
+ */
+function buildWorldContextBlock(
+  worldContext?: { playerState: CountryWorldState; neighborStates: CountryWorldState[] },
+): string {
+  if (!worldContext) return '';
+
+  const { playerState, neighborStates } = worldContext;
+
+  const formatActive = (state: CountryWorldState): string[] => {
+    const flags = state.activeEventFlags ?? {};
+    return Object.keys(flags).filter((k) => flags[k as RequiresFlag]);
+  };
+
+  const playerFlags = formatActive(playerState);
+  const playerHistory = (playerState.recentEventHistory ?? [])
+    .slice(-5)
+    .map((h) => `${h.flag} (turn ${h.turn})`);
+
+  const neighborLines: string[] = [];
+  const ranked = [...neighborStates]
+    .filter((n) => formatActive(n).length > 0)
+    .slice(0, 3);
+  for (const n of ranked) {
+    const flags = formatActive(n);
+    if (flags.length === 0) continue;
+    neighborLines.push(`- ${n.countryId}: ${flags.join(', ')}`);
+  }
+
+  const playerBlock = playerFlags.length
+    ? `Player active events: ${playerFlags.join(', ')}.`
+    : 'Player active events: none.';
+  const historyBlock = playerHistory.length
+    ? `Recent player event history: ${playerHistory.join('; ')}.`
+    : '';
+  const neighborBlock = neighborLines.length
+    ? `Neighbors with active events:\n${neighborLines.join('\n')}`
+    : 'Neighbors with active events: none.';
+
+  return `\n\nWORLD CONTEXT (recent ~7 days):
+${playerBlock}
+${historyBlock}
+${neighborBlock}
+
+Use this context to ground scenarios in what is actually happening. Do NOT invent contradictory events (e.g. a new war on a calm relationship, a second pandemic on top of one already active). Respect cooldowns: if an event already appears above, avoid generating a near-identical scenario for the same flag.`;
 }
 
 // Builds a specific, actionable country note for drafter/architect prompts.
@@ -648,8 +705,6 @@ const SCENARIO_DETAILS_SCHEMA = {
     description: { type: 'string' },
     options: {
       type: 'array',
-      minItems: 3,
-      maxItems: 3,
       items: {
         type: 'object',
         properties: {
@@ -686,7 +741,7 @@ const SCENARIO_DETAILS_SCHEMA = {
                     'policy.educationFunding', 'policy.socialWelfare'
                   ]
                 },
-                delta: { type: 'number', minimum: -15, maximum: 15 }
+                delta: { type: 'number' }
               },
               required: ['target', 'delta']
             }
@@ -697,8 +752,8 @@ const SCENARIO_DETAILS_SCHEMA = {
               type: 'object',
               properties: {
                 relationshipId: { type: 'string', enum: ['border_rival', 'adversary', 'ally', 'trade_partner', 'partner', 'rival', 'regional_rival', 'neutral', 'neighbor', 'nation'] },
-                delta: { type: 'number', minimum: -100, maximum: 100 },
-                probability: { type: 'number', minimum: 0, maximum: 1 }
+                delta: { type: 'number' },
+                probability: { type: 'number' }
               },
               required: ['relationshipId', 'delta']
             }
@@ -722,7 +777,7 @@ const SCENARIO_DETAILS_SCHEMA = {
             }
           },
           is_authoritarian: { type: 'boolean' },
-          moral_weight: { type: 'number', minimum: -1, maximum: 1 },
+          moral_weight: { type: 'number' },
           classification: {
             type: 'object',
             properties: {
@@ -740,8 +795,8 @@ const SCENARIO_DETAILS_SCHEMA = {
       properties: {
         severity: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
         urgency: { type: 'string', enum: ['low', 'medium', 'high', 'immediate'] },
-        difficulty: { type: 'integer', minimum: 1, maximum: 5 },
-        tags: { type: 'array', maxItems: 6, items: { type: 'string', enum: [...CANONICAL_SCENARIO_TAGS] } }
+        difficulty: { type: 'number' },
+        tags: { type: 'array', items: { type: 'string', enum: [...CANONICAL_SCENARIO_TAGS] } }
       },
       required: ['severity', 'urgency', 'difficulty']
     },
@@ -778,7 +833,6 @@ const SCENARIO_DETAILS_SCHEMA = {
         },
         metricGates: {
           type: 'array',
-          maxItems: 2,
           items: {
             type: 'object',
             properties: {
@@ -794,13 +848,12 @@ const SCENARIO_DETAILS_SCHEMA = {
     },
     relationship_conditions: {
       type: 'array',
-      maxItems: 3,
       items: {
         type: 'object',
         properties: {
           relationshipId: { type: 'string', enum: ['adversary', 'ally', 'trade_partner', 'partner', 'rival', 'border_rival', 'regional_rival', 'neutral', 'nation'] },
-          min: { type: 'number', minimum: -100, maximum: 100 },
-          max: { type: 'number', minimum: -100, maximum: 100 }
+          min: { type: 'number' },
+          max: { type: 'number' }
         },
         required: ['relationshipId']
       }
@@ -818,8 +871,6 @@ const SCENARIO_SKELETON_SCHEMA = {
     description: { type: 'string' },
     options: {
       type: 'array',
-      minItems: 3,
-      maxItems: 3,
       items: {
         type: 'object',
         properties: {
@@ -840,8 +891,6 @@ const SCENARIO_EFFECTS_SCHEMA = {
   properties: {
     options: {
       type: 'array',
-      minItems: 3,
-      maxItems: 3,
       items: {
         type: 'object',
         properties: {
@@ -876,7 +925,7 @@ const SCENARIO_EFFECTS_SCHEMA = {
                     'policy.educationFunding', 'policy.socialWelfare'
                   ]
                 },
-                delta: { type: 'number', minimum: -15, maximum: 15 }
+                delta: { type: 'number' }
               },
               required: ['target', 'delta']
             }
@@ -885,7 +934,7 @@ const SCENARIO_EFFECTS_SCHEMA = {
           outcomeSummary: { type: 'string' },
           outcomeContext: { type: 'string' },
           is_authoritarian: { type: 'boolean' },
-          moral_weight: { type: 'number', minimum: -1, maximum: 1 },
+          moral_weight: { type: 'number' },
           classification: {
             type: 'object',
             properties: {
@@ -912,8 +961,6 @@ const ADVISOR_FEEDBACK_SCHEMA = {
   properties: {
     advisorsByOption: {
       type: 'array',
-      minItems: 3,
-      maxItems: 3,
       items: {
         type: 'object',
         properties: {
@@ -1041,6 +1088,17 @@ export interface GenerationRequest {
   abortSignal?: AbortSignal;
   /** Job ID for pipeline stage metric attribution. */
   jobId?: string;
+  /**
+   * Snapshot of the player's country world state plus top-N neighbor states at
+   * generation time. Injected into the drafter WORLD CONTEXT block so the LLM
+   * can reference ongoing events (hurricanes, wars, neighbor crises) and
+   * respect realism/cooldown rules. Gated by WORLD_DYNAMIC_EVENTS_* env flags
+   * — absent when the dynamic-world feature is disabled.
+   */
+  worldContext?: {
+    playerState: CountryWorldState;
+    neighborStates: CountryWorldState[];
+  };
 }
 
 export async function generateScenarios(request: GenerationRequest): Promise<GenerationResult> {
@@ -1103,12 +1161,43 @@ export async function generateScenarios(request: GenerationRequest): Promise<Gen
     }
   }
 
+  // World-state hydration (WORLD_DYNAMIC_EVENTS_ENABLED)
+  // When enabled and the request doesn't already carry a worldContext, load the player
+  // country's CountryWorldState plus up to 6 neighbor/ally/adversary states from Firestore.
+  // The drafter injection is gated separately by WORLD_DYNAMIC_EVENTS_DRAFTER_CONTEXT_ENABLED.
+  let resolvedRequest = request;
+  if (
+    process.env.WORLD_DYNAMIC_EVENTS_ENABLED === 'true' &&
+    !request.worldContext &&
+    request.applicable_countries?.length
+  ) {
+    const playerCountryId = request.applicable_countries[0];
+    const playerCountry = countryCatalog.countries[playerCountryId];
+    const neighborIds: string[] = [];
+    if (playerCountry?.geopolitical) {
+      const { allies, neighbors, adversaries } = playerCountry.geopolitical;
+      for (const rel of [...(allies ?? []), ...(neighbors ?? []), ...(adversaries ?? [])]) {
+        if (rel.countryId && !neighborIds.includes(rel.countryId)) neighborIds.push(rel.countryId);
+        if (neighborIds.length >= 6) break;
+      }
+    }
+    const stateMap = await loadCountryWorldStates([playerCountryId, ...neighborIds], db);
+    const playerState = stateMap.get(playerCountryId);
+    if (playerState && process.env.WORLD_DYNAMIC_EVENTS_DRAFTER_CONTEXT_ENABLED === 'true') {
+      const neighborStates = neighborIds.flatMap(id => {
+        const s = stateMap.get(id);
+        return s ? [s] : [];
+      });
+      resolvedRequest = { ...request, worldContext: { playerState, neighborStates } };
+    }
+  }
+
   // 1. PHASE 1: Concept Seeding
-  const effectiveRequest = isBulkSafeMode && !request.lowLatencyMode
-    ? { ...request, lowLatencyMode: true }
-    : request;
-  let rawConcepts = request.preSeededConcepts && request.preSeededConcepts.length > 0
-    ? request.preSeededConcepts
+  const effectiveRequest = isBulkSafeMode && !resolvedRequest.lowLatencyMode
+    ? { ...resolvedRequest, lowLatencyMode: true }
+    : resolvedRequest;
+  let rawConcepts = resolvedRequest.preSeededConcepts && resolvedRequest.preSeededConcepts.length > 0
+    ? resolvedRequest.preSeededConcepts
     : await generateConceptSeeds(effectiveRequest);
 
   if (rawConcepts.length > request.count) {
@@ -1151,8 +1240,8 @@ export async function generateScenarios(request: GenerationRequest): Promise<Gen
     emitEngineEvent({ level: 'info', code: 'concept_expand', message: `Concept ${idx + 1}/${concepts.length} — ${concept.concept.slice(0, 120)}`, data: { idx: idx + 1, total: concepts.length, desiredActs: concept.desiredActs } });
 
     const runAttempt = async (): Promise<BundleScenario[]> => {
-      const loop = await expandConceptToLoop(concept, request.bundle, request.mode, {
-        ...request,
+      const loop = await expandConceptToLoop(concept, resolvedRequest.bundle, resolvedRequest.mode, {
+        ...resolvedRequest,
         countryCatalogSource: countryCatalog.source,
         countries: countryCatalog.countries,
         compiledValidTokenSet: validTokenSet,
@@ -1174,10 +1263,7 @@ export async function generateScenarios(request: GenerationRequest): Promise<Gen
       if (validatedLoop.length > concept.desiredActs) {
         console.warn(`[ScenarioEngine] Trimming loop from ${validatedLoop.length} to ${concept.desiredActs} acts`);
         validatedLoop.splice(concept.desiredActs);
-        // Clear dangling consequence chains on the new last act
-        const lastAct = validatedLoop[validatedLoop.length - 1] as any;
-        lastAct.consequenceScenarioIds = [];
-        lastAct.phase = validatedLoop.length === 1 ? 'root' : 'final';
+        normalizeLoopStructure(validatedLoop);
       }
 
       // Validate loop completion
@@ -1281,7 +1367,11 @@ export async function generateScenarios(request: GenerationRequest): Promise<Gen
       }
     }
 
-    const mergedRequires = Object.keys(inferredRequires).length > 0
+    const hasInferredRequires = Object.keys(inferredRequires).length > 0;
+    const hasExplicitRequires = Object.entries(scenario.applicability?.requires ?? {}).some(
+      ([, v]) => v === true || (v !== null && v !== undefined && v !== false)
+    );
+    const mergedRequires = (hasInferredRequires || hasExplicitRequires)
       ? { ...scenario.applicability?.requires, ...inferredRequires }
       : scenario.applicability?.requires;
 
@@ -1362,8 +1452,8 @@ export async function generateScenarios(request: GenerationRequest): Promise<Gen
 
   const costs = aggregateCosts(accumulator.usages);
   const tokenSummary: TokenSummary = {
-    inputTokens: costs.openai.inputTokens + costs.ollama.inputTokens,
-    outputTokens: costs.openai.outputTokens + costs.ollama.outputTokens,
+    inputTokens: costs.openai.inputTokens + costs.openrouter.inputTokens + costs.ollama.inputTokens,
+    outputTokens: costs.openai.outputTokens + costs.openrouter.outputTokens + costs.ollama.outputTokens,
     costUsd: Math.round(costs.totalUsd * 10000) / 10000,
     callCount: accumulator.usages.length,
     ...(conceptDurations.length > 0 ? {
@@ -1399,7 +1489,7 @@ SPECIFIC THRESHOLDS:
 Add mechanism details, affected groups, institutional reactions, or market impacts.
 Do not change the meaning or tone — only add substantive content.
 Do NOT introduce new token placeholders unless they are on the approved whitelist.
-CRITICAL: NEVER use curly-brace placeholders {like_this} in your expanded text unless they exactly match the approved whitelist. Write all institution names, roles, and country references as plain English.
+CRITICAL: NEVER use curly-brace placeholders {like_this} in your expanded text unless they exactly match the approved whitelist. Use approved role/institution tokens for government offices; if no token fits, reframe around cabinet officials or agencies without naming the office.
 CRITICAL: Return the COMPLETE expanded text for each field, not just the added portion.
 The returned text must be LONGER than the original — never truncate.`,
 
@@ -1686,6 +1776,76 @@ function logIssueSummary(prefix: string, issues: any[], score: number): void {
 // Helpers: Generation Logic
 // ------------------------------------------------------------------
 
+function getScenarioRequirementCorpus(scenario: BundleScenario): string {
+  return [
+    scenario.title,
+    scenario.description,
+    ...scenario.options.flatMap((option) => [
+      option.text,
+      option.label,
+      option.outcomeHeadline,
+      option.outcomeSummary,
+      option.outcomeContext,
+      ...((option as any).advisorFeedback ?? []).map((feedback: any) => feedback?.feedback),
+    ]),
+  ].filter(Boolean).join(' ');
+}
+
+function syncInferredRequirementsFromScenario(scenario: BundleScenario): boolean {
+  const inferred = inferRequirementsFromNarrative(
+    getScenarioRequirementCorpus(scenario),
+    scenario.applicability?.requires,
+  );
+  if (Object.keys(inferred).length === 0) return false;
+
+  if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
+  if (!scenario.applicability.requires) scenario.applicability.requires = {};
+  scenario.applicability.requires = {
+    ...scenario.applicability.requires,
+    ...inferred,
+  };
+  if (!Array.isArray(scenario.applicability.metricGates)) scenario.applicability.metricGates = [];
+
+  for (const [flag, implied] of Object.entries(REQUIRES_CONDITION_MAP) as Array<[RequiresFlag, { metricId: string; op: 'min' | 'max'; threshold: number }]>) {
+    if (!scenario.applicability.requires[flag]) continue;
+    if (!implied) continue;
+    const covered = scenario.applicability.metricGates.some((gate) =>
+      gate.metricId === implied.metricId &&
+      (implied.op === 'max' ? gate.max !== undefined : gate.min !== undefined)
+    );
+    if (covered) continue;
+    scenario.applicability.metricGates.push(
+      implied.op === 'max'
+        ? { metricId: implied.metricId, max: implied.threshold }
+        : { metricId: implied.metricId, min: implied.threshold },
+    );
+  }
+
+  return true;
+}
+
+// Tier B1: silently normalize hallucinated metric IDs (metric_security, metric_culture, etc.)
+// BEFORE the audit runs so they never surface as `invalid-metric-id` errors and waste repair calls.
+function normalizeEffectMetricIds(scenario: BundleScenario): void {
+  if (!Array.isArray(scenario.options)) return;
+  const rewrites: string[] = [];
+  for (const opt of scenario.options) {
+    if (!Array.isArray(opt.effects)) continue;
+    for (const effect of opt.effects) {
+      const rawId = effect?.targetMetricId;
+      if (typeof rawId !== 'string' || !rawId) continue;
+      if (isValidMetricId(rawId)) continue;
+      const normalized = tryNormalizeMetricId(rawId);
+      if (!normalized || normalized === rawId) continue;
+      effect.targetMetricId = normalized;
+      rewrites.push(`${rawId} -> ${normalized}`);
+    }
+  }
+  if (rewrites.length > 0) {
+    console.log(`[Audit] Normalized ${rewrites.length} hallucinated metricId(s) pre-audit: ${rewrites.join(', ')}`);
+  }
+}
+
 async function auditAndRepair(
   scenario: BundleScenario,
   bundle: string,
@@ -1769,6 +1929,7 @@ async function auditAndRepair(
   }
 
   normalizeScenarioTextFields(scenario);
+  normalizeEffectMetricIds(scenario);
 
   const earlyTokenValidator = (t: string) => (validTokenSet ? validTokenSet.has(t) : isValidToken(t));
   deterministicFix(scenario);
@@ -1776,26 +1937,7 @@ async function auditAndRepair(
     sanitizeInventedTokens(scenario, earlyTokenValidator);
   }
 
-  const preAuditRequiresCorpus = [
-    scenario.title,
-    scenario.description,
-    ...scenario.options.map((o) => o.text),
-    ...scenario.options.map((o) => o.outcomeHeadline).filter(Boolean),
-    ...scenario.options.map((o) => o.outcomeSummary).filter(Boolean),
-    ...scenario.options.map((o) => o.outcomeContext).filter(Boolean),
-    ...scenario.options.flatMap((o) => ((o as any).advisorFeedback || []).map((f: any) => f.feedback)).filter(Boolean),
-  ].join(' ');
-  const preAuditDerivedRequires = inferRequirementsFromNarrative(
-    preAuditRequiresCorpus,
-    scenario.applicability?.requires,
-  );
-  if (Object.keys(preAuditDerivedRequires).length > 0) {
-    if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
-    scenario.applicability.requires = {
-      ...scenario.applicability.requires,
-      ...preAuditDerivedRequires,
-    };
-  }
+  syncInferredRequirementsFromScenario(scenario);
 
   let issues = auditScenario(scenario, bundle, isNews);
 
@@ -2000,7 +2142,7 @@ async function auditAndRepair(
     console.warn(`[ScenarioEngine] Grounded effects validation failed (non-fatal):`, error.message);
   }
 
-  const score = scoreScenario(issues);
+  let score = scoreScenario(issues);
   const {
     audit_pass_threshold,
     content_quality_gate_enabled,
@@ -2012,22 +2154,9 @@ async function auditAndRepair(
 
   // Derive requires metadata from token usage — ensures the iOS client only shows
   // scenarios to countries that can resolve all relationship tokens.
-  const requiresCorpus = [
-    scenario.title, scenario.description,
-    ...scenario.options.map((o) => o.text),
-    ...scenario.options.map((o) => o.outcomeSummary).filter(Boolean),
-    ...scenario.options.map((o) => o.outcomeContext).filter(Boolean),
-  ].join(' ');
-  const derivedRequires = inferRequirementsFromNarrative(
-    requiresCorpus,
-    scenario.applicability?.requires,
-  );
-  if (Object.keys(derivedRequires).length > 0) {
-    if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
-    scenario.applicability.requires = {
-      ...scenario.applicability.requires,
-      ...derivedRequires,
-    };
+  if (syncInferredRequirementsFromScenario(scenario)) {
+    issues = auditScenario(scenario, bundle, isNews);
+    score = scoreScenario(issues);
   }
 
   const hasCountries = Object.keys(countries).length > 0;
@@ -2272,7 +2401,7 @@ async function generateConceptSeeds(request: GenerationRequest): Promise<any[]> 
 
   const [architectPromptBase, countryContextBlock, countryNote, recentSummaries, themeDistribution] = await Promise.all([
     getArchitectPromptBase().then((prompt) => buildArchitectPrompt(prompt, { lowLatencyMode })),
-    lowLatencyMode ? Promise.resolve('') : getCountryContextBlock(request.applicable_countries),
+    lowLatencyMode ? Promise.resolve('') : getCountryContextBlock(request.applicable_countries, request.worldContext),
     buildCountryNote(request.applicable_countries),
     lowLatencyMode
       ? Promise.resolve([] as Array<{ title: string; description: string }>)
@@ -2343,6 +2472,11 @@ async function generateConceptSeeds(request: GenerationRequest): Promise<any[]> 
     - sourceKind: ${resolvedScope.sourceKind}
     ${resolvedScope.clusterId ? `- clusterId: ${resolvedScope.clusterId}` : ''}
     ${resolvedScope.exclusivityReason ? `- exclusivityReason: ${resolvedScope.exclusivityReason}` : ''}
+    ${resolvedScope.scopeTier === 'universal' ? `
+UNIVERSAL SCOPE — FORBIDDEN CONCEPT TYPES:
+Do NOT generate any concept that involves: legislatures, parliaments, elections, voting, opposition parties, governing parties, central banks, monetary policy, interest rates, stock markets, monarchs, nuclear arsenals, or foreign policy disputes with named bilateral actors. Universal concepts must work for any government type (democracy, autocracy, theocracy, military junta). Write around: the cabinet, domestic regulatory agencies, {leader_title}, public protest, and non-monetary fiscal policy.
+If your concept cannot avoid these institutional actors, choose a different concept entirely.
+` : ''}
     ${request.region ? `\nTARGET REGION: ${request.region}. Generate concepts that feel relevant to this region (e.g. small island states, regional dynamics, local stakes).` : ''}
     ${countryNote}
 
@@ -2434,22 +2568,16 @@ async function generateConceptSeeds(request: GenerationRequest): Promise<any[]> 
     let normalized = normalizeConcepts(concepts);
 
     if (resolvedScope.scopeTier === 'universal') {
-      const RELATIONSHIP_CONCEPT_PATTERNS = [
-        /neighbor/i, /border.*rival/i, /bilateral/i, /foreign.*power/i,
-        /allied.*nation/i, /adversar/i, /rival.*nation/i, /trade.*partner/i,
-        /hostile.*nation/i, /border.*conflict/i, /cross.*border/i,
-      ];
       const before = normalized.length;
-      normalized = normalized.filter(c => {
-        const text = `${c.concept} ${c.theme ?? ''}`;
-        const hasRelationship = RELATIONSHIP_CONCEPT_PATTERNS.some(p => p.test(text));
-        if (hasRelationship) {
-          console.log(`[ScenarioEngine] Filtered universal concept with relationship language: "${c.concept}"`);
-        }
-        return !hasRelationship;
-      });
-      if (normalized.length < before) {
-        console.log(`[ScenarioEngine] Filtered ${before - normalized.length} universal concepts with foreign relationship language`);
+      normalized = filterUniversalConceptsWithForeignRelationshipLanguage(
+        normalized,
+        request.bundle as BundleId
+      );
+      const dropped = before - normalized.length;
+      if (dropped > 0) {
+        console.log(
+          `[ScenarioEngine] Dropped ${dropped} universal concept(s) (foreign-relationship language); bundle=${request.bundle}`
+        );
       }
     }
 
@@ -2499,11 +2627,62 @@ async function generateConceptSeeds(request: GenerationRequest): Promise<any[]> 
   }
 }
 
+/** Prior drafted acts → prompt block so later acts stay consistent (countries, narrative thread). */
+export function buildMultiActContinuityPromptBlock(
+  priorActs: BundleScenario[],
+  totalActs: number,
+  actPlan: { actIndex: number; title?: string; summary?: string }
+): string {
+  if (priorActs.length === 0) return '';
+  const involved = new Set<string>();
+  for (const a of priorActs) {
+    const meta = a.metadata as { involvedCountries?: string[] } | undefined;
+    for (const c of meta?.involvedCountries ?? []) {
+      if (c) involved.add(String(c));
+    }
+  }
+  const involvedLine =
+    involved.size > 0
+      ? `Countries and actors already established in this arc — keep them consistent (same adversary/ally/border framing unless the act summary explicitly pivots): ${[...involved].join(', ')}.\n`
+      : '';
+  const priorText = priorActs
+    .map((a, i) => {
+      const optBits = (a.options ?? [])
+        .map(o => `[${o.id}] ${String(o.text ?? '').slice(0, 280)}`)
+        .join('\n');
+      return `--- Prior act ${i + 1} (canonical) ---\nTitle: ${a.title}\nDescription: ${a.description}\nOptions:\n${optBits}\nOutcome framing (if any): ${String(a.outcomeSummary ?? a.metadata?.theme ?? '').slice(0, 400)}`;
+    })
+    .join('\n\n');
+  return `
+MULTI-ACT CONTINUITY — You are drafting act ${actPlan.actIndex} of ${totalActs} ("${actPlan.title ?? ''}").
+The text below is authoritative prior narrative. Continue the same plot thread, institutions, and relationship language.
+Do NOT introduce new major external countries or named third-party states not already implied in prior acts unless this act's summary explicitly requires a new actor.
+${involvedLine}
+${priorText}
+`;
+}
+
+function consequenceDelayFromScenarioSeverity(severity: string | undefined): number {
+  switch (severity) {
+    case 'critical':
+      return 0;
+    case 'extreme':
+      return 1;
+    case 'high':
+      return 1;
+    case 'medium':
+      return 2;
+    case 'low':
+    default:
+      return 3;
+  }
+}
+
 async function expandConceptToLoop(
   concept: GeneratedConcept,
   bundle: string,
   mode: GenerationMode,
-  request?: { region?: string; regions?: string[]; applicable_countries?: string[]; countryCatalogSource?: CountryCatalogSourceMetadata; countries?: Record<string, any>; modelConfig?: GenerationModelConfig; onAttemptFailed?: GenerationRequest['onAttemptFailed']; scopeTier?: ScenarioScopeTier; scopeKey?: string; clusterId?: string; exclusivityReason?: ScenarioExclusivityReason; sourceKind?: ScenarioSourceKind; lowLatencyMode?: boolean; compiledValidTokenSet?: ReadonlySet<string>; rejectionBuffer?: TokenRejectionBuffer; compiledRegistry?: CompiledTokenRegistry; jobId?: string }
+  request?: { region?: string; regions?: string[]; applicable_countries?: string[]; countryCatalogSource?: CountryCatalogSourceMetadata; countries?: Record<string, any>; modelConfig?: GenerationModelConfig; onAttemptFailed?: GenerationRequest['onAttemptFailed']; scopeTier?: ScenarioScopeTier; scopeKey?: string; clusterId?: string; exclusivityReason?: ScenarioExclusivityReason; sourceKind?: ScenarioSourceKind; lowLatencyMode?: boolean; compiledValidTokenSet?: ReadonlySet<string>; rejectionBuffer?: TokenRejectionBuffer; compiledRegistry?: CompiledTokenRegistry; jobId?: string; worldContext?: GenerationRequest['worldContext'] }
 ): Promise<BundleScenario[]> {
   const bundleOverlay = getBundlePromptOverlay(bundle as BundleId);
   const scopeTier = request?.scopeTier ?? 'universal';
@@ -2524,7 +2703,7 @@ async function expandConceptToLoop(
     isOllamaRun ? Promise.resolve(getCompactDrafterPromptBase(deriveTokenStrategy(scopeTier))) : getDrafterPromptBase(),
     getReflectionPrompt(),
     getArchitectPromptBase(),
-    getCountryContextBlock(request?.applicable_countries),
+    getCountryContextBlock(request?.applicable_countries, request?.worldContext),
     buildCountryNote(request?.applicable_countries),
   ]);
 
@@ -2613,7 +2792,9 @@ async function expandConceptToLoop(
   const MAX_RETRIES = request?.lowLatencyMode
     ? (isOllamaRun ? 2 : 1)
     : Math.max(1, (await getGenerationConfig()).max_llm_repair_attempts);
-  const allExpectedIds = blueprint.acts.map((a: any) => `${baseId}_act${a.actIndex}`);
+  const sortedActs = [...blueprint.acts].sort((a, b) => (a.actIndex || 0) - (b.actIndex || 0));
+  const allExpectedIds = sortedActs.map((a: any) => `${baseId}_act${a.actIndex}`);
+  const useSequentialMultiAct = !request?.lowLatencyMode && sortedActs.length > 1 && !useStandardPath;
 
   let resolvedDrafterPromptBase = drafterPromptBase;
   if (resolvedDrafterPromptBase.includes('{{TOKEN_CONTEXT}}') || resolvedDrafterPromptBase.includes('{{TOKEN_SYSTEM}}')) {
@@ -2631,9 +2812,8 @@ async function expandConceptToLoop(
       .replace('{{TOKEN_CONTEXT}}', tokenContext);
   }
 
-  // 2. Draft All Acts in Parallel (Drafter)
-  // allSettled so a single failing act doesn't discard in-flight sibling API calls
-  const actSettled = await Promise.allSettled(blueprint.acts.map(async (actPlan: any) => {
+  // 2. Draft acts: sequential for multi-act premium (continuity), parallel when low-latency or single-act
+  const runDraftForAct = async (actPlan: any, priorCompletedActs: BundleScenario[]): Promise<BundleScenario> => {
     let actScenario: BundleScenario | null = null;
     let lastAuditResult: { scenario: BundleScenario | null; score: number; issues: any[] } | null = null;
     let previousAttemptScore: number | undefined;
@@ -2651,17 +2831,19 @@ async function expandConceptToLoop(
       const conceptContextBlock = useStandardPath && (concept.primaryMetrics?.length || concept.actorPattern || concept.optionShape || concept.triggerConditions?.length || concept.optionDomains?.length)
         ? `\nCONCEPT CONTEXT:\n- Primary metrics affected: ${(concept.primaryMetrics ?? []).join(', ')}\n- Actor pattern: ${concept.actorPattern ?? 'unspecified'}\n- Option shape: ${concept.optionShape ?? 'unspecified'}${triggerConditionsHint}${optionDomainsHint}\n`
         : '';
+      const multiActContinuityBlock = buildMultiActContinuityPromptBlock(priorCompletedActs, sortedActs.length, actPlan);
       const actorTokenRequirementBlock = buildActorTokenRequirement(concept.actorPattern, scopeTier);
 
       let drafterPrompt: string;
       if (isOllamaRun) {
         drafterPrompt = `
-        Act ${actPlan.actIndex}/${blueprint.acts.length}: "${actPlan.title}"
+        Act ${actPlan.actIndex}/${sortedActs.length}: "${actPlan.title}"
         Concept: "${concept.concept}"
         Full Loop Arc: ${blueprintSummary}
         Act Summary: ${actPlan.summary}
         Difficulty: ${concept.difficulty || 3}/5
         ${conceptContextBlock}
+        ${multiActContinuityBlock}
         ${actorTokenRequirementBlock ? `${actorTokenRequirementBlock}\n` : ''}
         ${regionNote}${scopeNote}${countryNote}
 
@@ -2677,7 +2859,7 @@ async function expandConceptToLoop(
         ${scopeOverlay.drafter}
 
         METADATA REQUIREMENTS:
-        - severity: one of 'low', 'medium', 'high', 'critical'
+        - severity: one of 'low', 'medium', 'high', 'extreme', 'critical'
         - urgency: one of 'low', 'medium', 'high', 'immediate'
         - difficulty: integer 1-5 matching concept difficulty (${concept.difficulty || 3})
         - tags: 2-4 relevant tags
@@ -2714,19 +2896,20 @@ async function expandConceptToLoop(
         **OUTPUT GUARD RAILS (comply first)**:
         description = 2–3 sentences, 60–140 words (hard minimum 60 words — count before submitting). Each option text = 2–3 sentences, 50–80 words. Each option: 2, 3, or 4 effects only — not 5 or more. title = 4–8 words, no tokens in title.
 
-        Act ${actPlan.actIndex}/${blueprint.acts.length}: "${actPlan.title}"
+        Act ${actPlan.actIndex}/${sortedActs.length}: "${actPlan.title}"
         Concept: "${concept.concept}"
         Full Loop Arc: ${blueprintSummary}
         Act Summary: ${actPlan.summary}
         Difficulty: ${concept.difficulty || 3}/5 (1=routine, 5=existential crisis)
         ${conceptContextBlock}
+        ${multiActContinuityBlock}
         ${actorTokenRequirementBlock ? `${actorTokenRequirementBlock}\n` : ''}
         ${regionNote}${scopeNote}${countryNote}
 
         ${countryContextBlock}
 
         ${getLogicParametersPrompt(concept.severity as 'low' | 'medium' | 'high' | 'critical' | undefined, request?.compiledRegistry)}
-        ${isOllamaRun ? getCompactAuditRulesPrompt(request?.compiledRegistry) : getAuditRulesPrompt(request?.compiledRegistry)}
+        ${isOllamaRun ? getCompactAuditRulesPrompt(request?.compiledRegistry) : getAuditRulesPrompt(request?.compiledRegistry, scopeTier)}
 
         BUNDLE-SPECIFIC GUIDANCE:
         ${bundleOverlay.drafter}
@@ -2735,7 +2918,7 @@ async function expandConceptToLoop(
         ${scopeOverlay.drafter}
 
         METADATA REQUIREMENTS:
-        - severity: must be one of 'low', 'medium', 'high', 'critical'
+        - severity: must be one of 'low', 'medium', 'high', 'extreme', 'critical'
         - urgency: must be one of 'low', 'medium', 'high', 'immediate'
         - difficulty: integer 1-5 matching concept difficulty (${concept.difficulty || 3})
         - tags: 2-4 relevant tags for this scenario
@@ -2871,11 +3054,11 @@ Write as if you are a real cabinet minister briefing the head of government on T
           drafterPrompt += scopeTier === 'universal'
             ? `\n\nNEVER write: "ruling coalition", "governing coalition", "coalition government", "parliament", "parliamentary majority/minority/support", "election", "central bank", "monetary policy", "interest rate", "stock market". At universal scope do NOT use {legislature}, {governing_party}, {opposition_party}, or {central_bank} — they gate on country-trait requires flags. Reframe around cabinet decisions, the {finance_role}, the {judicial_role}, regulators, and public protest instead.\n`
             : `\n\nNEVER write: "ruling coalition", "governing coalition", "coalition government", "parliamentary majority/minority/support". Use {governing_party} and {legislature} tokens instead.\n`;
-          drafterPrompt += `\nALSO: Never write hardcoded institution names. Use role tokens (write "the {token}" naturally):\n- "Finance Ministry" / "Treasury Department" → the {finance_role}\n- "Justice Ministry" / "Dept of Justice" → the {justice_role}\n- "Foreign Ministry" / "State Department" → the {foreign_affairs_role}\n- "Defense Ministry" / "Dept of Defense" → the {defense_role}\n- "Interior Ministry" / "Home Office" → the {interior_role}\n- "Health Ministry" / "Dept of Health" → the {health_role}\n- "Education Ministry" / "Dept of Education" → the {education_role}\n`;
+          drafterPrompt += `\nALSO: Never write hardcoded institution or minister names. Use role tokens (write "the {token}" naturally):\n- "Finance Ministry" / "Treasury Department" / "Finance Minister" → the {finance_role}\n- "Justice Ministry" / "Dept of Justice" / "Justice Minister" → the {justice_role}\n- "Foreign Ministry" / "State Department" / "Foreign Minister" → the {foreign_affairs_role}\n- "Defense Ministry" / "Dept of Defense" / "Defense Minister" → the {defense_role}\n- "Interior Ministry" / "Home Office" / "Interior Minister" → the {interior_role}\n- "Health Ministry" / "Dept of Health" / "Health Minister" → the {health_role}\n- "Education Ministry" / "Dept of Education" / "Education Minister" → the {education_role}\n- "Culture Minister" / "Culture Ministry" / "Ministry of Culture" → the {education_role} or reframe as cabinet officials\n`;
         } else if (failureCategory === 'title-violation') {
           drafterPrompt += `\n**TITLE LENGTH ERROR**: Your title must be 4–8 words. Three-word titles are rejected. Use "Verb + Agent + Outcome" pattern. Examples: "Parliament Blocks Emergency Spending Bill", "Auditors Raid Central Bank After Leak".\n`;
         } else if (failureCategory === 'gdp-as-amount-violation') {
-          drafterPrompt += `\n**GDP DESCRIPTION MISUSE**: You used {gdp_description} as if it were a specific stolen or siphoned amount. {gdp_description} resolves to the ENTIRE national GDP — it is a scale descriptor, not a stealable sum. Replace any reference to stealing/siphoning/diverting {gdp_description} with the token {graft_amount}, which auto-scales to a realistic corruption amount for this country's economy.\n`;
+          drafterPrompt += `\n**GDP DESCRIPTION MISUSE**: You used {gdp_description} as if it were a specific stolen or siphoned amount. Treat national economic scale as context, not a stealable sum. Replace any reference to stealing/siphoning/diverting a national-economy descriptor with proportional plain language such as "a significant procurement budget" or with a scaled monetary token only if that token is explicitly listed in this request's token context.\n`;
         } else if (failureCategory === 'outcome-voice-violation' || failureCategory === 'framing-violation') {
           // Both voice violations can co-occur — inject guidance for each one present
           const issueRules = new Set(lastAuditResult.issues.map((i: any) => i.rule));
@@ -3482,39 +3665,71 @@ Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
       throw new Error(`Failed to generate Act ${actPlan.actIndex} after ${MAX_RETRIES} attempts`);
     }
 
-    // Semantic deduplication check (if enabled)
+    // Semantic deduplication check (if enabled) — two-pass:
+    //   1. Cosine embedding distance (narrative prose overlap)
+    //   2. Tag-combo Jaccard / fingerprint (same tag combination, different wording)
     if (isSemanticDedupEnabled() && !isOllamaGeneration(request?.modelConfig)) {
       let duplicateOf: string | null = null;
+      let duplicateReason: string | null = null;
       try {
         const embeddingText = getEmbeddingText(actScenario);
         const embedding = await generateEmbedding(embeddingText);
         const similar = await findSimilarByEmbedding(embedding, bundle, allExpectedIds);
         if (similar) {
           duplicateOf = similar.id;
+          duplicateReason = `embedding similarity ${similar.similarity.toFixed(3)}`;
           console.warn(`[ScenarioEngine] Act ${actPlan.actIndex} rejected: Too similar to existing scenario ${similar.id} (similarity: ${similar.similarity.toFixed(3)})`);
         } else {
-          (actScenario as any)._embedding = embedding;
-          console.log(`[ScenarioEngine] Act ${actPlan.actIndex} passed semantic uniqueness check`);
+          const candidateTags = Array.isArray(actScenario.metadata?.tags) ? actScenario.metadata!.tags! : [];
+          const tagDup = await findSimilarByTagCombo(candidateTags, bundle, allExpectedIds);
+          if (tagDup) {
+            duplicateOf = tagDup.id;
+            duplicateReason = tagDup.reason === 'fingerprint'
+              ? 'tag-combo fingerprint match'
+              : `tag Jaccard ${tagDup.jaccard?.toFixed(2) ?? '?'}`;
+            console.warn(`[ScenarioEngine] Act ${actPlan.actIndex} rejected: tag-combo duplicate of ${tagDup.id} (${duplicateReason})`);
+          } else {
+            (actScenario as any)._embedding = embedding;
+            console.log(`[ScenarioEngine] Act ${actPlan.actIndex} passed semantic uniqueness check`);
+          }
         }
       } catch (error: any) {
         console.warn(`[ScenarioEngine] Semantic dedup check failed (non-fatal):`, error.message);
       }
       if (duplicateOf !== null) {
-        throw new Error(`Act too similar to existing scenario (ID: ${duplicateOf})`);
+        throw new Error(`Act too similar to existing scenario (${duplicateReason ?? 'duplicate'}: ${duplicateOf})`);
       }
     } else if (isSemanticDedupEnabled() && isOllamaGeneration(request?.modelConfig)) {
       console.log(`[ScenarioEngine] Skipping semantic dedup for ${actScenario.id} because Ollama generation does not provide embedding-based dedup`);
     }
 
     return actScenario;
-  }));
+  };
+
+  let actSettled: PromiseSettledResult<BundleScenario>[];
+  if (useSequentialMultiAct) {
+    const prior: BundleScenario[] = [];
+    actSettled = [];
+    for (const actPlan of sortedActs) {
+      try {
+        const value = await runDraftForAct(actPlan, prior);
+        prior.push(value);
+        actSettled.push({ status: 'fulfilled', value });
+      } catch (reason) {
+        actSettled.push({ status: 'rejected', reason });
+        break;
+      }
+    }
+  } else {
+    actSettled = await Promise.allSettled(sortedActs.map(actPlan => runDraftForAct(actPlan, [])));
+  }
 
   const loop: BundleScenario[] = [];
   for (const result of actSettled) {
     if (result.status === 'fulfilled' && result.value !== null) {
       loop.push(result.value);
     } else if (result.status === 'rejected') {
-      console.error(`[ScenarioEngine] Act failed in parallel batch:`, result.reason);
+      console.error(`[ScenarioEngine] Act failed in draft batch:`, result.reason);
     }
   }
   return loop;
@@ -3670,7 +3885,7 @@ function validateLoopComplete(loop: BundleScenario[], expectedLength: number): {
   return { valid: true };
 }
 
-function normalizeLoopStructure(loop: BundleScenario[]) {
+export function normalizeLoopStructure(loop: BundleScenario[]) {
   if (loop.length === 0) return;
 
   loop.sort((a, b) => (a.actIndex || 0) - (b.actIndex || 0));
@@ -3687,8 +3902,7 @@ function normalizeLoopStructure(loop: BundleScenario[]) {
     // Force actIndex consistency
     act.actIndex = idx + 1;
 
-    // Add chainId for loop grouping
-    (act as any).chainId = chainId;
+    act.chainId = chainId;
 
     // Force chaining at scenario level
     if (idx < loop.length - 1) {
@@ -3700,15 +3914,20 @@ function normalizeLoopStructure(loop: BundleScenario[]) {
     // Add consequence chains at option level (links options to next act)
     if (idx < loop.length - 1) {
       const nextActId = loop[idx + 1].id;
-      const consequenceDelay = 2; // Default: consequence triggers 2 turns later
+      const consequenceDelay = consequenceDelayFromScenarioSeverity(act.metadata?.severity as string | undefined);
 
       act.options = act.options.map(option => ({
         ...option,
         consequenceScenarioIds: [nextActId],
-        consequenceDelay
+        consequenceDelay,
       }));
 
       console.log(`[LoopStructure] Act ${act.actIndex}: Wired consequence chains → ${nextActId} (delay: ${consequenceDelay})`);
+    } else {
+      act.options = act.options.map(option => {
+        const { consequenceScenarioIds: _c, consequenceDelay: _d, ...rest } = option as any;
+        return rest;
+      });
     }
   });
 
@@ -3734,7 +3953,7 @@ function collapseLoopToStandalone(loop: BundleScenario[]): BundleScenario[] {
   return [rootScenario];
 }
 
-function buildLoopLengthPlan(count: number, config?: any): number[] {
+export function buildLoopLengthPlan(count: number, config?: any): number[] {
   // Fixed mode: all scenarios share one act count (capped at 3)
   if (config?.mode === 'fixed' && config?.loopLength) {
     return Array(count).fill(Math.min(3, config.loopLength));
@@ -3758,7 +3977,31 @@ function buildLoopLengthPlan(count: number, config?: any): number[] {
   }
 
   if (!config || config.mode === 'auto') {
-    return Array(count).fill(1);
+    // ~60% single-act, ~30% two-act, ~10% three-act (rounded to fill `count`)
+    const plan: number[] = [];
+    let n1 = Math.round(0.6 * count);
+    let n2 = Math.round(0.3 * count);
+    let n3 = count - n1 - n2;
+    while (n3 < 0) {
+      if (n1 > 0) {
+        n1 -= 1;
+        n3 += 1;
+      } else if (n2 > 0) {
+        n2 -= 1;
+        n3 += 1;
+      } else {
+        n3 = 0;
+        break;
+      }
+    }
+    for (let i = 0; i < n1; i++) plan.push(1);
+    for (let i = 0; i < n2; i++) plan.push(2);
+    for (let i = 0; i < n3; i++) plan.push(3);
+    for (let i = plan.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [plan[i], plan[j]] = [plan[j], plan[i]];
+    }
+    return plan;
   }
 
   // Legacy weighted mode: preserved for explicit gameLength-based configs.

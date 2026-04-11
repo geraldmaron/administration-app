@@ -43,6 +43,7 @@ class TemplateEngine {
             conditions: scenario.conditions,
             relationshipConditions: scenario.relationshipConditions,
             phase: scenario.phase,
+            actIndex: scenario.actIndex,
             severity: scenario.severity,
             chainId: scenario.chainId,
             options: scenario.options.map { resolveOption($0, with: context) },
@@ -61,7 +62,10 @@ class TemplateEngine {
             titleTemplate: scenario.titleTemplate,
             descriptionTemplate: scenario.descriptionTemplate,
             tokenMap: scenario.tokenMap,
-            storagePath: scenario.storagePath
+            storagePath: scenario.storagePath,
+            metadata: scenario.metadata,
+            legislatureRequirement: scenario.legislatureRequirement,
+            dynamicProfile: scenario.dynamicProfile
         )
 
         return resolved

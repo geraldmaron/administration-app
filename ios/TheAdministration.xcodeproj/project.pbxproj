@@ -198,7 +198,7 @@
 				8A20A11BBEB7748BC07DE5C1 /* PolicyView.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* MilitarySheet.swift */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* LegislatureSheet.swift */,
-					B418ECFE8FC4B090E3F7855D /* SetupFlowView.swift */,
+				B418ECFE8FC4B090E3F7855D /* SetupFlowView.swift */,
 				192A8AB75BED78942CCA2536 /* StrategicPlanSheet.swift */,
 				78A9694F81F060364CD40820 /* SystemView.swift */,
 				EAC7E5DA27BD6D8ECAE5431C /* TrustYourGutSheet.swift */,
@@ -505,7 +505,7 @@
 				974AB79A3BA32C41E0A9A8D7 /* PolicyView.swift in Sources */,
 				A2B3C4D5E6F7A8B9C0D1E2F3 /* MilitarySheet.swift in Sources */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* LegislatureSheet.swift in Sources */,
-					28FB3253E9CC2B6E86CACC4F /* RateLimiter.swift in Sources */,
+				28FB3253E9CC2B6E86CACC4F /* RateLimiter.swift in Sources */,
 				E253AF41939666E680811C41 /* ScenarioBundleManager.swift in Sources */,
 				9F5AEA6C6B1EE4EB8018BC19 /* ScenarioNavigator.swift in Sources */,
 				A5AC5923E1F0579B805A189F /* Scoring.swift in Sources */,
@@ -570,7 +570,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 0.2;
 				INFOPLIST_FILE = TheAdministration/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "The Administration";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.strategy-games";
@@ -584,7 +584,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theadministration.theadministration;
 				PRODUCT_NAME = TheAdministration;
 				SDKROOT = iphoneos;
@@ -668,7 +668,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 0.2;
 				INFOPLIST_FILE = TheAdministration/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "The Administration";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.strategy-games";
@@ -682,7 +682,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theadministration.theadministration;
 				PRODUCT_NAME = TheAdministration;
 				SDKROOT = iphoneos;

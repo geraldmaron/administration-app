@@ -10,7 +10,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import StatusBadge from '@/components/StatusBadge';
 import { buildManualGenerationRequests, buildNewsGenerationRequests, countExpectedScenarios } from '@/lib/generation-request';
 import { ALL_BUNDLES, ALL_REGIONS, BUNDLE_ACCENT_COLORS } from '@/lib/constants';
-import { buildOllamaModelConfig } from '@/lib/generation-models';
+import { buildOllamaModelConfig, CLOUD_MODEL_DEFAULTS } from '@/lib/generation-models';
 import { SCOPE_TIER_RATIOS } from '@/lib/blitz-planner';
 import type { DeficitCell, TierAllocation } from '@/lib/blitz-planner';
 import type { ArticleClassification, CountrySummary, JobDetail, NewsArticle, ScenarioExclusivityReason, GenerationJobRequest } from '@/lib/types';
@@ -254,7 +254,7 @@ export default function GeneratePage() {
 
   // Calculate full send distribution
   const fullSendToLocal = Math.round(blitzTotalScenarios * fullSendLocalRatio);
-  const fullSendToOpenAI = blitzTotalScenarios - fullSendToLocal;
+  const fullSendToCloud = blitzTotalScenarios - fullSendToLocal;
 
   useEffect(() => {
     fetch('/api/countries').then((r) => r.json())
@@ -275,7 +275,7 @@ export default function GeneratePage() {
     fetch('/api/settings/ollama').then((r) => r.json())
       .then((d: { connected: boolean; models: string[] }) => {
         setOllamaConnected(d.connected);
-        setOllamaModels(d.models);
+        setOllamaModels(d.models ?? []);
       })
       .catch(() => undefined)
       .finally(() => setOllamaChecking(false));
@@ -333,7 +333,7 @@ export default function GeneratePage() {
         executionTarget: activeExecutionTarget,
         ...(blitzGuidance.trim() ? { description: blitzGuidance.trim() } : {}),
         ...(activeModelConfig ? { modelConfig: activeModelConfig } : {}),
-        ...(blitzRunMode === 'full_send' ? { providerDistribution: { local: fullSendToLocal, openai: fullSendToOpenAI } } : {}),
+        ...(blitzRunMode === 'full_send' ? { providerDistribution: { local: fullSendToLocal, cloud: fullSendToCloud } } : {}),
       };
       const res = await fetch('/api/blitz', {
         method: 'POST',
@@ -685,13 +685,13 @@ export default function GeneratePage() {
             <div className="rounded-[var(--radius-tight)] border border-[var(--accent-secondary)]/30 bg-[var(--accent-secondary)]/5 px-4 py-3">
               <div className="mb-2 flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full flex-shrink-0 bg-[var(--success)]" />
-                <span className="text-xs font-semibold text-foreground">Pipeline B — OpenAI (Cloud)</span>
+                <span className="text-xs font-semibold text-foreground">Pipeline B — Cloud (OpenRouter)</span>
               </div>
               <div className="space-y-1">
                 {([
-                  ['Architect', 'gpt-4.1-mini'],
-                  ['Drafter', 'gpt-4.1'],
-                  ['Repair', 'gpt-4.1-mini'],
+                  ['Architect', CLOUD_MODEL_DEFAULTS.architectModel],
+                  ['Drafter',   CLOUD_MODEL_DEFAULTS.drafterModel],
+                  ['Repair',    CLOUD_MODEL_DEFAULTS.repairModel],
                 ] as const).map(([label, model]) => (
                   <div key={label} className="flex items-center justify-between text-[11px]">
                     <span className="text-[var(--foreground-subtle)]">{label}</span>
@@ -710,7 +710,7 @@ export default function GeneratePage() {
                 <span className="font-mono text-[var(--foreground-muted)]">local first</span>
               </div>
               <div className="flex items-center justify-between text-[11px]">
-                <span className="text-[var(--foreground-subtle)]">OpenAI concurrency</span>
+                <span className="text-[var(--foreground-subtle)]">Cloud concurrency</span>
                 <span className="font-mono text-[var(--foreground-muted)]">6 bundles</span>
               </div>
             </div>
@@ -720,7 +720,7 @@ export default function GeneratePage() {
                 <div>
                   <div className="text-xs font-semibold text-foreground mb-1">Job Distribution</div>
                   <div className="text-[11px] text-[var(--foreground-muted)]">
-                    {fullSendToLocal} scenarios to Local, {fullSendToOpenAI} to OpenAI
+                    {fullSendToLocal} scenarios to Local, {fullSendToCloud} to Cloud
                   </div>
                 </div>
               </div>
@@ -747,7 +747,7 @@ export default function GeneratePage() {
         <>
           <div className="flex items-center gap-3 mb-5">
             {([
-              { value: 'cloud' as const, label: 'Cloud (OpenAI)' },
+              { value: 'cloud' as const, label: 'Cloud (OpenRouter)' },
               { value: 'local' as const, label: 'Corsair (Local)' },
             ]).map(({ value, label }) => (
               <button key={value} type="button"
@@ -790,10 +790,20 @@ export default function GeneratePage() {
               )}
             </div>
           ) : (
-            <div>
-              <p className="text-xs text-[var(--foreground-muted)]">
-                Routes to OpenAI via Cloud Functions.
-              </p>
+            <div className="rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3 space-y-1.5">
+              {([
+                ['Architect', CLOUD_MODEL_DEFAULTS.architectModel],
+                ['Drafter',   CLOUD_MODEL_DEFAULTS.drafterModel],
+                ['Advisor',   CLOUD_MODEL_DEFAULTS.advisorModel],
+                ['Repair',    CLOUD_MODEL_DEFAULTS.repairModel],
+                ['Quality',   CLOUD_MODEL_DEFAULTS.contentQualityModel],
+                ['Review',    CLOUD_MODEL_DEFAULTS.narrativeReviewModel],
+              ] as const).map(([label, model]) => (
+                <div key={label} className="flex items-center justify-between text-xs">
+                  <span className="text-[var(--foreground-muted)]">{label}</span>
+                  <span className="font-mono text-foreground">{model}</span>
+                </div>
+              ))}
             </div>
           )}
         </>
@@ -907,7 +917,7 @@ export default function GeneratePage() {
                       </div>
                       <div className="mt-1 text-[11px] leading-5 text-[var(--foreground-muted)]">
                         {blitzIsFullSend
-                          ? 'Runs local and OpenAI pipelines together, then merges and deduplicates results.'
+                          ? 'Runs local and cloud pipelines together, then merges and deduplicates results.'
                           : 'Uses the standard planner path to fill the highest-pressure gaps.'}
                       </div>
                     </div>
@@ -1459,7 +1469,7 @@ export default function GeneratePage() {
                     ['Budget', blitzCountValid ? `${blitzTotalScenarios} scenarios` : 'invalid'],
                     ['Jobs', blitzSummary?.jobsToCreate ?? '—'],
                     ['Coverage', blitzSummary ? `${blitzCoveragePct}% of target` : '—'],
-                    ['Provider', blitzIsFullSend ? 'Local + OpenAI' : modelSource === 'local' ? 'Corsair' : 'OpenAI'],
+                    ['Provider', blitzIsFullSend ? 'Local + Cloud' : modelSource === 'local' ? 'Corsair' : 'Cloud'],
                     ['Queue slots', blitzSummary?.availableSlots ?? '—'],
                   ].map(([label, val]) => (
                     <div key={label as string} className="flex items-center justify-between gap-3">
@@ -1491,7 +1501,7 @@ export default function GeneratePage() {
                   ['Scope', targetSummary],
                   ['Format', STORY_MODE_LABELS[storyMode]],
                   ['Priority', priority],
-                  ['Provider', modelSource === 'local' ? 'Corsair' : 'OpenAI'],
+                  ['Provider', modelSource === 'local' ? 'Corsair' : 'Cloud'],
                   ['Review gate', stageForReview ? 'Staged' : 'Auto-save'],
                 ].map(([label, val]) => (
                   <div key={label} className="flex items-center justify-between gap-3">
@@ -1516,7 +1526,7 @@ export default function GeneratePage() {
                   ['Classified', classifications.filter(c => selectedArticleIds.has(c.articleIndex)).length || '—'],
                   ['Bundles', newsClassifiedBundles.size > 0 ? Array.from(newsClassifiedBundles.keys()).join(', ') : '—'],
                   ['Format', STORY_MODE_LABELS[storyMode]],
-                  ['Provider', modelSource === 'local' ? 'Corsair' : 'OpenAI'],
+                  ['Provider', modelSource === 'local' ? 'Corsair' : 'Cloud'],
                   ['Scenarios', newsScenariosExpected || '—'],
                 ].map(([label, val]) => (
                   <div key={label as string} className="flex items-center justify-between gap-3">
@@ -1572,7 +1582,7 @@ export default function GeneratePage() {
                   <h2 className="text-lg font-semibold text-foreground">{blitzIsFullSend ? 'Launch Full Send' : 'Launch Blitz'}</h2>
                   <p className="mt-1 text-xs text-[var(--foreground-muted)]">
                     {blitzIsFullSend
-                      ? 'Fire local and OpenAI generation together, then merge the strongest unique results.'
+                      ? 'Fire local and cloud generation together, then merge the strongest unique results.'
                       : 'Submit the planned coverage jobs through the standard Blitz planner path.'}
                   </p>
                 </div>
@@ -1600,7 +1610,7 @@ export default function GeneratePage() {
                   {[
                     ['Bundles', selectedBundles.size > 0 ? `${selectedBundles.size} selected` : 'none', selectedBundles.size > 0],
                     ['Scope', scopeReady ? 'ready' : 'incomplete', scopeReady],
-                    ['Provider', modelSource === 'local' ? 'Corsair (Local)' : 'Cloud (OpenAI)', true],
+                    ['Provider', modelSource === 'local' ? 'Corsair (Local)' : 'Cloud (OpenRouter)', true],
                     ['Models', modelSource === 'local' ? (ollamaConnected ? `${ollamaModels.length} loaded` : 'not connected') : 'cloud defaults', modelSource === 'local' ? ollamaConnected : true],
                   ].map(([label, val, ok]) => (
                     <div key={label as string} className="flex items-center justify-between gap-3 rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3">
@@ -1623,7 +1633,7 @@ export default function GeneratePage() {
                     ['Headlines', newsArticles.length > 0 ? `${newsArticles.length} loaded` : 'not loaded', newsArticles.length > 0],
                     ['Selection', selectedArticleIds.size > 0 ? `${selectedArticleIds.size} articles` : 'none', selectedArticleIds.size > 0],
                     ['Analysis', classifications.length > 0 ? `${classifications.length} classified` : 'not run', classifications.length > 0],
-                    ['Provider', modelSource === 'local' ? 'Corsair (Local)' : 'Cloud (OpenAI)', true],
+                    ['Provider', modelSource === 'local' ? 'Corsair (Local)' : 'Cloud (OpenRouter)', true],
                   ].map(([label, val, ok]) => (
                     <div key={label as string} className="flex items-center justify-between gap-3 rounded-[var(--radius-tight)] border border-[var(--border)] px-4 py-3">
                       <span>{label}</span>

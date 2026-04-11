@@ -19,7 +19,7 @@ import { saveScenario, getActiveBundleCount, saveWorldEvent, saveCountryWorldSta
 import { generateWorldTick, buildUpdatedWorldState } from './lib/world-simulation';
 import type { CountryWorldState } from './types';
 import type { CountryDocument } from './types';
-import { ALL_BUNDLE_IDS, isValidBundleId, STANDARD_BUNDLE_IDS, type BundleId } from './data/schemas/bundleIds';
+import { ALL_BUNDLE_IDS, BUNDLE_IDS, isValidBundleId, STANDARD_BUNDLE_IDS, type BundleId } from './data/schemas/bundleIds';
 import type { Scenario, ScenarioExclusivityReason, ScenarioScopeTier, ScenarioSourceKind } from './types';
 import { validateConfig, logConfigStatus } from './lib/config-validator';
 import { normalizeGenerationScopeInput } from './lib/generation-scope';
@@ -60,13 +60,14 @@ export const GENERATION_JOB_TRIGGER_CONCURRENCY = 1;
 // ---------------------------------------------------------------------------
 
 export interface GenerationJobData extends GenerationJobRecord<admin.firestore.Timestamp, BundleId> {
-    results?: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; countrySource?: string; policyVersion?: string; scopeTier?: ScenarioScopeTier; scopeKey?: string; sourceKind?: ScenarioSourceKind; fullSendProvider?: 'openai' | 'local' }[];
+    results?: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; countrySource?: string; policyVersion?: string; scopeTier?: ScenarioScopeTier; scopeKey?: string; sourceKind?: ScenarioSourceKind; fullSendProvider?: 'cloud' | 'local' }[];
     errors?: { id?: string; bundle?: string; error: string }[];
     error?: string;
 }
 
 export interface CreateJobOptions {
-    bundles: BundleId[] | 'all' | 'standard';
+    /** `standard_diplomacy_first`: same as standard but processes `diplomacy` first (forensics + prompt tuning). */
+    bundles: BundleId[] | 'all' | 'standard' | 'standard_diplomacy_first';
     count: number;
     runId?: string;
     runKind?: GenerationJobData['runKind'];
@@ -112,12 +113,16 @@ interface JobEventInput {
 /**
  * Resolve bundle specification to array of valid bundle IDs
  */
-export function resolveBundles(bundleSpec: BundleId[] | 'all' | 'standard'): BundleId[] {
+export function resolveBundles(bundleSpec: BundleId[] | 'all' | 'standard' | 'standard_diplomacy_first'): BundleId[] {
     if (bundleSpec === 'all') {
         return [...ALL_BUNDLE_IDS];
     }
     if (bundleSpec === 'standard') {
         return [...STANDARD_BUNDLE_IDS];
+    }
+    if (bundleSpec === 'standard_diplomacy_first') {
+        const dip = BUNDLE_IDS.DIPLOMACY;
+        return [dip, ...STANDARD_BUNDLE_IDS.filter((b) => b !== dip)];
     }
     return bundleSpec.filter((b): b is BundleId => isValidBundleId(b));
 }
@@ -193,7 +198,7 @@ export const onScenarioJobCreated = onDocumentCreated({
     memory: "1GiB",
     maxInstances: GENERATION_JOB_MAX_INSTANCES,
     concurrency: GENERATION_JOB_TRIGGER_CONCURRENCY,
-    secrets: ["OPENAI_API_KEY"]
+    secrets: ["OPENROUTER_API_KEY", "OPENROUTER_MANAGEMENT_KEY"]
 }, async (event) => {
     const snapshot = event.data;
     if (!snapshot) return;
@@ -278,7 +283,7 @@ export const onScenarioJobCreated = onDocumentCreated({
         logConfigStatus();
         await snapshot.ref.update({
             status: 'failed',
-            error: 'Scenario generation is misconfigured. Set OPENAI_API_KEY in Firebase secrets (firebase functions:secrets:set OPENAI_API_KEY). ' + configValidation.errors.join('; '),
+            error: 'Scenario generation is misconfigured. Set OPENROUTER_API_KEY in Firebase secrets (firebase functions:secrets:set OPENROUTER_API_KEY). ' + configValidation.errors.join('; '),
             completedAt: admin.firestore.FieldValue.serverTimestamp()
         });
         await appendJobEvent(jobRef, {
@@ -344,7 +349,7 @@ export const onScenarioJobCreated = onDocumentCreated({
         let totalCompleted = 0;
         let totalFailed = 0;
         const jobTokenSummary = { inputTokens: 0, outputTokens: 0, costUsd: 0, callCount: 0, conceptCount: 0, totalDurationMs: 0 };
-        const allResults: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; auditScore?: number; autoFixed?: boolean; countrySource?: string; policyVersion?: string; scopeTier?: ScenarioScopeTier; scopeKey?: string; sourceKind?: ScenarioSourceKind; fullSendProvider?: 'openai' | 'local' }[] = [];
+        const allResults: { id: string; title: string; bundle: string; difficulty?: number; actCount?: number; isRoot?: boolean; auditScore?: number; autoFixed?: boolean; countrySource?: string; policyVersion?: string; scopeTier?: ScenarioScopeTier; scopeKey?: string; sourceKind?: ScenarioSourceKind; fullSendProvider?: 'cloud' | 'local' }[] = [];
         const allErrors: { id?: string; bundle?: string; error: string }[] = [];
         const savedScenarioIds: string[] = [];
 
@@ -412,21 +417,21 @@ export const onScenarioJobCreated = onDocumentCreated({
                 },
             });
 
-            jobTokenSummary.inputTokens += fsResult.localTokenSummary.inputTokens + fsResult.openaiTokenSummary.inputTokens;
-            jobTokenSummary.outputTokens += fsResult.localTokenSummary.outputTokens + fsResult.openaiTokenSummary.outputTokens;
-            jobTokenSummary.costUsd += fsResult.localTokenSummary.costUsd + fsResult.openaiTokenSummary.costUsd;
-            jobTokenSummary.callCount += fsResult.localTokenSummary.callCount + fsResult.openaiTokenSummary.callCount;
+            jobTokenSummary.inputTokens += fsResult.localTokenSummary.inputTokens + fsResult.cloudTokenSummary.inputTokens;
+            jobTokenSummary.outputTokens += fsResult.localTokenSummary.outputTokens + fsResult.cloudTokenSummary.outputTokens;
+            jobTokenSummary.costUsd += fsResult.localTokenSummary.costUsd + fsResult.cloudTokenSummary.costUsd;
+            jobTokenSummary.callCount += fsResult.localTokenSummary.callCount + fsResult.cloudTokenSummary.callCount;
 
             await appendJobEvent(jobRef, {
                 level: 'info',
                 code: 'full_send_merged',
-                message: `Full Send merged: ${fsResult.localScenarios.length} local + ${fsResult.openaiScenarios.length} OpenAI → ${fsResult.mergedScenarios.length} unique.`,
+                message: `Full Send merged: ${fsResult.localScenarios.length} local + ${fsResult.cloudScenarios.length} cloud → ${fsResult.mergedScenarios.length} unique.`,
                 data: {
                     localCount: fsResult.localScenarios.length,
-                    openaiCount: fsResult.openaiScenarios.length,
+                    cloudCount: fsResult.cloudScenarios.length,
                     mergedCount: fsResult.mergedScenarios.length,
                     localFailed: fsResult.localFailed,
-                    openaiFailed: fsResult.openaiFailed,
+                    cloudFailed: fsResult.cloudFailed,
                 },
             }, { currentPhase: 'save', currentMessage: `Saving ${fsResult.mergedScenarios.length} merged scenarios` });
 

@@ -1,12 +1,13 @@
 /**
- * Configuration Validator for Multi-Model Generation System
- * Validates that all required environment variables are present for the new system
+ * Validates LLM-related environment (OpenRouter-first cloud, optional legacy direct OpenAI, Ollama)
+ * against resolved phase models so misconfiguration surfaces before generation runs.
  */
 
 import {
   getResolvedGenerationModels,
   isOpenAIModel,
   isOllamaModel,
+  isOpenRouterModel,
   type GenerationModelConfig,
 } from './generation-models';
 
@@ -16,6 +17,8 @@ export interface ConfigValidation {
   warnings: string[];
   config: {
     hasOpenAI: boolean;
+    hasOpenRouter: boolean;
+    hasOpenRouterManagement: boolean;
     semanticDedupEnabled: boolean;
     models: {
       architect: string;
@@ -40,12 +43,30 @@ export function validateConfig(modelConfig?: RequestedModelConfig): ConfigValida
   const warnings: string[] = [];
 
   // Check required API keys
-  const hasOpenAI = !!process.env.OPENAI_API_KEY;
+  const hasOpenAI = !!process.env.OPENAI_API_KEY?.trim();
+  const hasOpenRouter = !!process.env.OPENROUTER_API_KEY?.trim();
+  const hasOpenRouterManagement = !!process.env.OPENROUTER_MANAGEMENT_KEY?.trim();
+  const directOpenAIOk =
+    process.env.USE_OPENAI_DIRECT === 'true' && hasOpenAI;
 
   if (hasOpenAI) {
     const key = process.env.OPENAI_API_KEY!.trim();
     if (!key.startsWith('sk-') && !key.startsWith('sess-')) {
       warnings.push('OPENAI_API_KEY does not start with expected prefix (sk- or sess-) — verify the key is correct');
+    }
+  }
+
+  if (hasOpenRouter) {
+    const key = process.env.OPENROUTER_API_KEY!.trim();
+    if (!key.startsWith('sk-or-')) {
+      warnings.push('OPENROUTER_API_KEY does not start with expected prefix (sk-or-) — verify the key is correct');
+    }
+  }
+
+  if (hasOpenRouterManagement) {
+    const key = process.env.OPENROUTER_MANAGEMENT_KEY!.trim();
+    if (!key.startsWith('sk-or-')) {
+      warnings.push('OPENROUTER_MANAGEMENT_KEY does not start with expected prefix (sk-or-) — verify the key is correct');
     }
   }
 
@@ -70,34 +91,39 @@ export function validateConfig(modelConfig?: RequestedModelConfig): ConfigValida
   ] as const;
 
   for (const [label, model] of requiredModels) {
-    if (!isOpenAIModel(model) && !isOllamaModel(model)) {
-      errors.push(`${label} is set to ${model} but only OpenAI (gpt-*, o1, o3) and Ollama (ollama:*) models are supported`);
+    if (!isOpenAIModel(model) && !isOllamaModel(model) && !isOpenRouterModel(model)) {
+      errors.push(`${label} is set to ${model} but only OpenRouter (openrouter:*), OpenAI (gpt-*, o1, o3), and Ollama (ollama:*) models are supported`);
       continue;
     }
-    if (isOpenAIModel(model) && !hasOpenAI) {
-      errors.push(`${label} is set to ${model} but OPENAI_API_KEY is missing`);
+    if (isOpenRouterModel(model) && !hasOpenRouter) {
+      errors.push(`${label} is set to ${model} but OPENROUTER_API_KEY is missing`);
+    }
+    if (isOpenAIModel(model) && !hasOpenRouter && !directOpenAIOk) {
+      errors.push(
+        `${label} is set to ${model} but cloud generation needs OPENROUTER_API_KEY, or USE_OPENAI_DIRECT=true with OPENAI_API_KEY`
+      );
     }
   }
 
-  // Check semantic deduplication
+  // Check semantic deduplication. Embeddings can be served by either OpenAI
+  // or OpenRouter (which proxies OpenAI embeddings), so either key is sufficient.
   const semanticDedupEnabled = process.env.ENABLE_SEMANTIC_DEDUP !== 'false';
-  if (semanticDedupEnabled && !hasOpenAI) {
-    warnings.push('Semantic deduplication is enabled but OPENAI_API_KEY is missing - embedding-based dedup will be unavailable');
+  if (semanticDedupEnabled && !hasOpenRouter && !directOpenAIOk) {
+    warnings.push(
+      'Semantic deduplication is enabled but OPENROUTER_API_KEY is missing (or USE_OPENAI_DIRECT=true with OPENAI_API_KEY) — embedding-based dedup will be unavailable'
+    );
   }
 
-  // Warnings for non-optimal configurations
-  if (architectModel !== 'gpt-4.1-mini') {
-    warnings.push(`ARCHITECT_MODEL is ${architectModel} - recommended: gpt-4.1-mini for cost efficiency`);
-  }
-  if (drafterModel !== 'gpt-4.1' && drafterModel !== 'gpt-4.1-mini') {
-    warnings.push(`DRAFTER_MODEL is ${drafterModel} - recommended: gpt-4.1 for quality or gpt-4.1-mini for cost efficiency`);
-  }
+  // Informational only: we no longer enforce a preferred model per phase because
+  // the per-phase routing table is now managed via env vars / Firestore config.
   return {
     valid: errors.length === 0,
     errors,
     warnings,
     config: {
       hasOpenAI,
+      hasOpenRouter,
+      hasOpenRouterManagement,
       semanticDedupEnabled,
       models: {
         architect: architectModel,
@@ -120,7 +146,9 @@ export function logConfigStatus(): void {
   const validation = validateConfig();
   
   console.log('[Config] Generation provider configuration:');
-  console.log(`  OpenAI API: ${validation.config.hasOpenAI ? '✓' : '✗'}`);
+  console.log(`  OpenRouter API: ${validation.config.hasOpenRouter ? '✓' : '✗'}`);
+  console.log(`  OpenRouter Management: ${validation.config.hasOpenRouterManagement ? '✓' : '✗'}`);
+  console.log(`  OpenAI API (USE_OPENAI_DIRECT only): ${validation.config.hasOpenAI ? '✓' : '✗'}`);
   console.log(`  Semantic Dedup: ${validation.config.semanticDedupEnabled ? 'enabled' : 'disabled'}`);
   console.log(`  Models:`);
   console.log(`    - Architect: ${validation.config.models.architect}`);

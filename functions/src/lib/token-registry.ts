@@ -580,7 +580,7 @@ export function buildTokenWhitelistPromptSection(registry?: CompiledTokenRegistr
   return `## Token System
 
 Use \`{token}\` placeholders for country-specific institutional facts. NEVER hardcode country names, currencies, or institution names.
-If you need a role or institution not in this list, write it in plain English instead.
+If a government role or institution is not in this list, reframe around cabinet officials or agencies without naming the office.
 
 ### Approved Tokens
 
@@ -609,12 +609,12 @@ export function buildCompactTokenPromptSection(registry?: CompiledTokenRegistry)
   return `## Token System (MANDATORY)
 
 Use \`{token}\` placeholders for country-specific institutional facts. NEVER hardcode country names, currencies, or institution names.
-If you need a role or institution not listed below, write it in plain English.
+If a government role or institution is not listed below, reframe around cabinet officials or agencies without naming the office.
 
 ### Approved Tokens
 - \`{player_country}\` — the player's country; write "the {player_country}" or "{player_country}'s" naturally
 - \`{leader_title}\` — president / PM / chancellor
-- \`{finance_role}\`, \`{defense_role}\`, \`{interior_role}\`, \`{foreign_affairs_role}\`, \`{justice_role}\`, \`{health_role}\`, \`{press_role}\` — government roles
+- \`{finance_role}\`, \`{defense_role}\`, \`{interior_role}\`, \`{foreign_affairs_role}\`, \`{justice_role}\`, \`{health_role}\`, \`{education_role}\`, \`{commerce_role}\`, \`{labor_role}\`, \`{energy_role}\`, \`{environment_role}\`, \`{transport_role}\`, \`{press_role}\` — government roles
 - \`{currency}\`, \`{central_bank}\`, \`{armed_forces_name}\`, \`{capital_city}\` — economic/military facts
 
 ### Rules
@@ -652,7 +652,7 @@ export function buildBundleScopedTokenPrompt(bundle: string, registry?: Compiled
   return `## Token System (MANDATORY)
 
 Use \`{token}\` placeholders for country-specific institutional facts. NEVER hardcode country names, currencies, or institution names.
-If you need a role or institution not listed below, write it in plain English.
+If a government role or institution is not listed below, reframe around cabinet officials or agencies without naming the office.
 
 ### Available Tokens${!isFullSet ? ` (${bundle} bundle)` : ''}
 ${tokenList}
@@ -710,13 +710,21 @@ ${gatedTable}
 
 ### BANNED plain-text government vocabulary (use the token equivalent instead)
 Ministry of Finance · Finance Ministry · Treasury Department · Department of the Treasury → \`{finance_role}\`
+Finance Minister · Treasury Secretary · Chancellor of the Exchequer → \`{finance_role}\`
 Ministry of Defense · Defense Ministry · Department of Defense → \`{defense_role}\`
+Defense Minister · Defence Minister → \`{defense_role}\`
 Trade Ministry · Commerce Ministry · Ministry of Commerce → \`{commerce_role}\`
+Trade Minister · Commerce Minister → \`{commerce_role}\`
 Health Ministry · Ministry of Health → \`{health_role}\`
+Health Minister → \`{health_role}\`
 Ministry of Foreign Affairs · Foreign Ministry · State Department · Department of State → \`{foreign_affairs_role}\`
+Foreign Minister · Secretary of State → \`{foreign_affairs_role}\`
 Interior Ministry · Ministry of Interior → \`{interior_role}\`
+Interior Minister · Home Secretary → \`{interior_role}\`
 Justice Ministry · Ministry of Justice → \`{justice_role}\`
+Justice Minister · Attorney General → \`{justice_role}\`
 Education Ministry · Ministry of Education → \`{education_role}\`
+Education Minister · Culture Minister · Culture Ministry · Ministry of Culture → \`{education_role}\`
 Parliament · Congress · National Assembly · Bundestag · Diet → \`{legislature}\`
 Federal Reserve · Central Bank · Reserve Bank → \`{central_bank}\`
 Supreme Court · High Court · Constitutional Court → \`{judicial_role}\`
@@ -878,7 +886,7 @@ export function preResolveTokenContext(
   return `## Token System (MANDATORY)
 
 Use {token} placeholders for institutional facts. NEVER hardcode names.
-If you need a role or institution not listed below, write it in plain English.
+If a government role or institution is not listed below, reframe around cabinet officials or agencies without naming the office.
 
 ### Token Cheat Sheet
 ${cheatSheet}
@@ -888,7 +896,7 @@ ${cheatSheet}
 - Use "{player_country}'s" for possessives
 - NEVER use {the_player_country}, {the_finance_role}, {the_central_bank} etc. — these do not exist
 - NEVER hardcode country names, capitals, or institution names.
-- If unsure a token exists, write it in plain English.
+- If unsure a government role token exists, reframe around cabinet officials or agencies without naming the office.
 ${scopeTier === 'universal' ? '- UNIVERSAL SCOPE: keep entirely domestic. Do not reference foreign relationships.' : ''}
 ${scopeTier === 'universal' ? '- UNIVERSAL SCOPE: avoid regime-specific tokens like {legislature}, {upper_house}, {lower_house}, {governing_party}, {opposition_party}, and {state_media}. Rewrite them in plain English unless the scenario is explicitly country-targeted.' : ''}
 

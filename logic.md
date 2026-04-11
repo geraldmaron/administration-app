@@ -897,7 +897,7 @@ Rules:
 
 ### 12.1 Overview
 
-50 playable countries across 10 regions. Countries stored in `world_state/countries/{countryId}`.
+20 playable countries across the active country catalog. Countries are stored in the top-level `countries/{countryId}` collection.
 
 Each country is more than a skin. It defines the realism envelope for scenario generation and runtime selection through:
 
@@ -1810,7 +1810,7 @@ Firebase is the persistence and distribution layer for the scenario system. It s
 | Collection | Purpose |
 |------------|---------|
 | `world_state/` | Global config documents |
-| `world_state/countries/{countryId}` | Country definitions, tokens, gameplay profiles |
+| `countries/{countryId}` | Active country definitions, tokens, gameplay profiles |
 | `world_state/generation_config` | Generation settings including `audit_pass_threshold` |
 | `world_state/scenario_manifest` | Bundle version tracking for iOS |
 | `scenarios/` | All generated scenarios (flat, ~20k docs at scale) |

@@ -1,9 +1,16 @@
+/**
+ * Resolves default and per-phase LLM IDs for scenario generation: OpenRouter-first cloud defaults,
+ * optional legacy direct OpenAI (`USE_OPENAI_DIRECT`), Ollama/Corsair local prefixes, and helpers
+ * for bundle limits and model family reporting.
+ */
 import type { GenerationModelConfig } from '../shared/generation-contract';
 export type { GenerationModelConfig };
 
 export type GenerationPhase = 'architect' | 'drafter' | 'advisor' | 'repair' | 'contentQuality' | 'narrativeReview';
 
-export type ModelFamily = 'openai' | 'ollama';
+export type ModelFamily = 'openai' | 'ollama' | 'openrouter';
+
+export const OPENROUTER_MODEL_PREFIX = 'openrouter:';
 
 export const MAX_OLLAMA_BUNDLES_PER_JOB = 2;
 
@@ -18,24 +25,101 @@ const LANGUAGE_MODEL_KEYS = [
 
 const ALL_MODEL_KEYS = [...LANGUAGE_MODEL_KEYS, 'embeddingModel'] as const;
 
-function getDefaultArchitectModel(): string {
-  return process.env.ARCHITECT_MODEL || process.env.CONCEPT_MODEL || 'gpt-4.1-mini';
+/**
+ * Default phase model IDs (when env vars are unset) use OpenRouter vendor/slugs.
+ * Set `USE_OPENAI_DIRECT=true` with `OPENAI_API_KEY` to restore legacy direct-OpenAI defaults and routing.
+ * Set `USE_OPENROUTER_DEFAULTS=false` only if you need the old OpenAI-named defaults without OpenRouter keys (rare).
+ */
+export function useDirectOpenAI(): boolean {
+  return process.env.USE_OPENAI_DIRECT === 'true' && !!process.env.OPENAI_API_KEY?.trim();
 }
 
-function getDefaultDrafterModel(): string {
-  return process.env.DRAFTER_MODEL || 'gpt-4.1';
+export function useOpenRouterDefaults(): boolean {
+  if (useDirectOpenAI()) return false;
+  return process.env.USE_OPENROUTER_DEFAULTS !== 'false';
 }
 
-function getDefaultRepairModel(): string {
-  return process.env.REPAIR_MODEL || 'gpt-4.1-mini';
+export function defaultOr(envVar: string | undefined, openRouterDefault: string, openAIDefault: string): string {
+  if (envVar) return envVar;
+  return useOpenRouterDefaults() ? openRouterDefault : openAIDefault;
 }
 
-function getDefaultNarrativeReviewModel(): string {
-  return process.env.NARRATIVE_REVIEW_MODEL || 'gpt-4.1-mini';
+/**
+ * OpenRouter defaults: cost/quality tuned stack (see admin Full Send "Pipeline B" + COST_PER_MILLION).
+ *
+ * Tier-1 cost optimizations (2026-04):
+ *   - Drafter: 4.5 → 4.6 (same price $3/$15, newer model)
+ *   - Repair / ContentQuality: haiku-4.5 → mistral-small-2603 (~90% cheaper, JSON surgery + editorial scoring don't need Haiku-tier reasoning)
+ * OR_HAIKU is retained for ActionResolution / PartialRegen where reasoning depth still matters.
+ */
+const OR_FAST = 'google/gemini-2.5-flash';
+const OR_DRAFTER = 'qwen/qwen3.5-397b-a17b';
+const OR_HAIKU = 'anthropic/claude-haiku-4.5';
+const OR_CHEAP = 'mistralai/mistral-small-2603';
+const OR_GAIA = 'google/gemini-2.5-pro';
+
+export function getDefaultArchitectModel(): string {
+  return defaultOr(
+    process.env.ARCHITECT_MODEL || process.env.CONCEPT_MODEL,
+    OR_FAST,
+    'gpt-4.1-mini',
+  );
 }
 
-function getDefaultEmbeddingModel(): string {
-  return process.env.EMBEDDING_MODEL || 'text-embedding-3-small';
+export function getDefaultDrafterModel(): string {
+  return defaultOr(process.env.DRAFTER_MODEL, OR_DRAFTER, 'gpt-4.1');
+}
+
+export function getDefaultAdvisorModel(): string {
+  return defaultOr(process.env.ADVISOR_MODEL, OR_FAST, 'gpt-4.1-mini');
+}
+
+export function getDefaultRepairModel(): string {
+  return defaultOr(process.env.REPAIR_MODEL, OR_CHEAP, 'gpt-4.1-mini');
+}
+
+export function getDefaultContentQualityModel(): string {
+  return defaultOr(process.env.CONTENT_QUALITY_MODEL, OR_CHEAP, 'gpt-4.1-mini');
+}
+
+export function getDefaultNarrativeReviewModel(): string {
+  return defaultOr(process.env.NARRATIVE_REVIEW_MODEL, OR_FAST, 'gpt-4.1-mini');
+}
+
+export function getDefaultEmbeddingModel(): string {
+  return defaultOr(process.env.EMBEDDING_MODEL, 'openai/text-embedding-3-small', 'text-embedding-3-small');
+}
+
+export function getDefaultGaiaModel(): string {
+  return defaultOr(process.env.GAIA_MODEL, OR_GAIA, 'gpt-4.1');
+}
+
+export function getDefaultNewsClassifierModel(): string {
+  return defaultOr(process.env.NEWS_CLASSIFIER_MODEL, 'mistralai/mistral-small-2603', 'gpt-4.1-mini');
+}
+
+export function getDefaultPartialRegenModel(): string {
+  return defaultOr(process.env.PARTIAL_REGEN_MODEL, OR_HAIKU, 'gpt-4.1-mini');
+}
+
+export function getDefaultConceptModel(): string {
+  return defaultOr(
+    process.env.CONCEPT_MODEL || process.env.ARCHITECT_MODEL,
+    OR_FAST,
+    'gpt-4.1-mini',
+  );
+}
+
+export function getDefaultBlueprintModel(): string {
+  return defaultOr(
+    process.env.BLUEPRINT_MODEL || process.env.ARCHITECT_MODEL,
+    OR_FAST,
+    'gpt-4.1-mini',
+  );
+}
+
+export function getDefaultActionResolutionModel(): string {
+  return defaultOr(process.env.ACTION_RESOLUTION_MODEL, OR_HAIKU, 'gpt-4.1-mini');
 }
 
 export function isOpenAIModel(model: string): boolean {
@@ -53,6 +137,27 @@ export function isOllamaModel(model: string): boolean {
 
 export function stripOllamaPrefix(model: string): string {
   return model.startsWith('ollama:') ? model.slice('ollama:'.length) : model;
+}
+
+/**
+ * OpenRouter routes models by vendor/slug (e.g. `anthropic/claude-sonnet-4.5`,
+ * `google/gemini-2.5-flash`). We accept two forms:
+ *   - Explicit prefix: `openrouter:anthropic/claude-sonnet-4.5`
+ *   - Bare vendor/slug containing `/`: `anthropic/claude-sonnet-4.5`
+ * The latter is disambiguated from Ollama (`ollama:*`) and OpenAI (`gpt-*`, `o1`, `o3`)
+ * because those use non-slash schemes.
+ */
+export function isOpenRouterModel(model: string): boolean {
+  if (model.startsWith(OPENROUTER_MODEL_PREFIX)) return true;
+  if (isOllamaModel(model)) return false;
+  if (isOpenAIModel(model)) return false;
+  return model.includes('/');
+}
+
+export function stripOpenRouterPrefix(model: string): string {
+  return model.startsWith(OPENROUTER_MODEL_PREFIX)
+    ? model.slice(OPENROUTER_MODEL_PREFIX.length)
+    : model;
 }
 
 export function getRequestedModels(
@@ -77,7 +182,8 @@ export function isOllamaGeneration(modelConfig?: GenerationModelConfig): boolean
 }
 
 export function getModelFamily(modelConfig?: GenerationModelConfig): ModelFamily {
-  return isOllamaGeneration(modelConfig) ? 'ollama' : 'openai';
+  if (isOllamaGeneration(modelConfig)) return 'ollama';
+  return useDirectOpenAI() ? 'openai' : 'openrouter';
 }
 
 export function getMaxBundlesPerJob(modelConfig?: GenerationModelConfig): number {
@@ -204,29 +310,29 @@ export function resolvePhaseModel(
 
   switch (phase) {
     case 'architect':
-      return modelConfig?.architectModel || getDefaultArchitectModel();
+      return modelConfig?.architectModel || (isOllama ? ollamaFallback() : getDefaultArchitectModel());
     case 'drafter':
-      return modelConfig?.drafterModel || getDefaultDrafterModel();
+      return modelConfig?.drafterModel || (isOllama ? ollamaFallback() : getDefaultDrafterModel());
     case 'advisor':
-      return modelConfig?.advisorModel || (isOllama ? ollamaFallback() : 'gpt-4.1-mini');
+      return modelConfig?.advisorModel || (isOllama ? ollamaFallback() : getDefaultAdvisorModel());
     case 'repair':
       return modelConfig?.repairModel || (isOllama ? ollamaFallback() : getDefaultRepairModel());
     case 'contentQuality':
-      return modelConfig?.contentQualityModel || (isOllama ? ollamaFallback() : 'gpt-4.1-mini');
+      return modelConfig?.contentQualityModel || (isOllama ? ollamaFallback() : getDefaultContentQualityModel());
     case 'narrativeReview':
       return modelConfig?.narrativeReviewModel || (isOllama ? ollamaFallback() : getDefaultNarrativeReviewModel());
   }
 }
 
-export function buildOpenAIFullSendModelConfig(): GenerationModelConfig {
+export function buildCloudFullSendModelConfig(): GenerationModelConfig {
   return {
-    architectModel: process.env.FULL_SEND_ARCHITECT_MODEL || 'gpt-4.1-mini',
-    drafterModel: process.env.FULL_SEND_DRAFTER_MODEL || 'gpt-4.1',
-    advisorModel: process.env.FULL_SEND_ADVISOR_MODEL || 'gpt-4.1-mini',
-    repairModel: process.env.FULL_SEND_REPAIR_MODEL || 'gpt-4.1-mini',
-    contentQualityModel: process.env.FULL_SEND_CONTENT_QUALITY_MODEL || 'gpt-4.1-mini',
-    narrativeReviewModel: process.env.FULL_SEND_NARRATIVE_REVIEW_MODEL || 'gpt-4.1-mini',
-    embeddingModel: process.env.FULL_SEND_EMBEDDING_MODEL || 'text-embedding-3-small',
+    architectModel: defaultOr(process.env.FULL_SEND_ARCHITECT_MODEL, OR_FAST, 'gpt-4.1-mini'),
+    drafterModel: defaultOr(process.env.FULL_SEND_DRAFTER_MODEL, OR_DRAFTER, 'gpt-4.1'),
+    advisorModel: defaultOr(process.env.FULL_SEND_ADVISOR_MODEL, OR_FAST, 'gpt-4.1-mini'),
+    repairModel: defaultOr(process.env.FULL_SEND_REPAIR_MODEL, OR_CHEAP, 'gpt-4.1-mini'),
+    contentQualityModel: defaultOr(process.env.FULL_SEND_CONTENT_QUALITY_MODEL, OR_CHEAP, 'gpt-4.1-mini'),
+    narrativeReviewModel: defaultOr(process.env.FULL_SEND_NARRATIVE_REVIEW_MODEL, OR_FAST, 'gpt-4.1-mini'),
+    embeddingModel: defaultOr(process.env.FULL_SEND_EMBEDDING_MODEL, 'openai/text-embedding-3-small', 'text-embedding-3-small'),
   };
 }
 

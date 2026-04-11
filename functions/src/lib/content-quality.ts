@@ -143,7 +143,7 @@ Evaluate the following scenario on five dimensions. All content uses placeholder
 - Readability: plain language for lay players, avoid policy jargon and newsroom-unfriendly words like "bloc" or "gambit", keep sentences concise and direct
 - Option consistency: all three options should address the same central scenario (different approaches, not unrelated topics)
 - Advisor feedback: must be role-specific and actionable — generic phrases like "Our department supports this" score 1-2
-- Specificity: every reference must name the concrete mechanism, sector, population, or institution. "The economy faces pressure" → score 1. "A 15% tariff on {major_industry} exports threatens 40,000 jobs in the supply chain" → score 5. Tokens like {major_industry} are acceptable but the surrounding language must be sector-specific
+- Specificity: every reference must name the concrete mechanism, sector, population, or institution. "The economy faces pressure" → score 1. "A tariff on semiconductor exports threatens 40,000 jobs in the supply chain" → score 5. Sector language must be specific, and tokens should only appear when they were explicitly provided in the token context
 
 **Scenario:**
 Title: ${scenario.title}

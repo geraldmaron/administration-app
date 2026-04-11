@@ -106,6 +106,9 @@ export function toScenarioDetail(id: string, data: RawScenarioDoc): ScenarioDeta
     id,
     title: data.title ?? '',
     description: data.description ?? '',
+    outcomeHeadline: data.outcomeHeadline,
+    outcomeSummary: data.outcomeSummary,
+    outcomeContext: data.outcomeContext,
     is_active: data.is_active ?? false,
     createdAt: coerceTimestamp(data.created_at),
     updatedAt: coerceTimestamp(data.updated_at),
@@ -121,6 +124,9 @@ export function toScenarioDetail(id: string, data: RawScenarioDoc): ScenarioDeta
       outcomeHeadline: opt.outcomeHeadline,
       outcomeSummary: opt.outcomeSummary,
       outcomeContext: opt.outcomeContext,
+      consequence_scenario_ids: opt.consequence_scenario_ids ?? opt.consequenceScenarioIds,
+      consequence_delay: opt.consequence_delay ?? opt.consequenceDelay,
+      next_scenario_id: opt.next_scenario_id ?? opt.nextScenarioId,
     })),
     metadata: data.metadata
       ? {
@@ -138,6 +144,7 @@ export function toScenarioDetail(id: string, data: RawScenarioDoc): ScenarioDeta
     conditions,
     relationship_conditions: Array.isArray(data.relationship_conditions) ? data.relationship_conditions : [],
     chain_id: data.chain_id,
+    chains_to: data.chains_to ?? data.chainsTo,
     token_map: data.token_map,
     legislature_requirement: data.legislature_requirement,
     generationProvenance: data.metadata?.generationProvenance,

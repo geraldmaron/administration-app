@@ -211,7 +211,7 @@ export const submitGenerationJob = onRequest({
     cors: true,
     timeoutSeconds: 60,
     memory: "256MiB",
-    secrets: ["GENERATION_INTAKE_SECRET", "OPENAI_API_KEY"],
+    secrets: ["GENERATION_INTAKE_SECRET", "OPENROUTER_API_KEY", "OPENROUTER_MANAGEMENT_KEY"],
 }, async (request, response) => {
     if (request.method !== "POST") {
         response.status(405).json({ error: "Method not allowed" });
@@ -244,7 +244,7 @@ export const getGenerationJob = onRequest({
     cors: true,
     timeoutSeconds: 60,
     memory: "256MiB",
-    secrets: ["GENERATION_INTAKE_SECRET", "OPENAI_API_KEY"],
+    secrets: ["GENERATION_INTAKE_SECRET", "OPENROUTER_API_KEY", "OPENROUTER_MANAGEMENT_KEY"],
 }, async (request, response) => {
     if (request.method !== "GET") {
         response.status(405).json({ error: "Method not allowed" });

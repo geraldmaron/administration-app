@@ -165,13 +165,13 @@ describe('auditScenario relationship scope validation', () => {
         const result = deterministicFix(scenario);
 
         expect(result.fixed).toBe(true);
-        expect(scenario.description).toContain('the governing coalition');
+        expect(scenario.description.toLowerCase()).toContain('the governing coalition');
         expect(scenario.description).toContain('lawmakers');
         expect(scenario.description).toContain('the opposition');
         expect(scenario.description).not.toContain('{governing_party}');
         expect(scenario.description).not.toContain('{legislature}');
-        expect(scenario.options[0].outcomeContext).toContain('state broadcasters');
-        expect(scenario.options[0].advisorFeedback?.[0]?.feedback).toContain('the governing coalition');
+        expect(scenario.options[0].outcomeContext?.toLowerCase()).toContain('state broadcasters');
+        expect(scenario.options[0].advisorFeedback?.[0]?.feedback.toLowerCase()).toContain('the governing coalition');
     });
 
     test('rejects targeted scenarios whose countries cannot resolve required relationship tokens', () => {

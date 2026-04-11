@@ -6,7 +6,14 @@
  * Pure TypeScript — no Firebase or external dependencies.
  */
 
-import { INSTITUTION_PHRASE_RULES, GOV_STRUCTURE_RULES, type PhraseRule, type ScenarioRequirements } from './scenario-audit';
+import {
+  INSTITUTION_PHRASE_RULES,
+  GOV_STRUCTURE_RULES,
+  repairUnsupportedScaleTokenArtifacts,
+  collapseRepeatedSentences,
+  type PhraseRule,
+  type ScenarioRequirements,
+} from './scenario-audit';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -50,6 +57,9 @@ export interface RepairableScenario {
   id: string;
   title: string;
   description: string;
+  outcomeHeadline?: string;
+  outcomeSummary?: string;
+  outcomeContext?: string;
   options: RepairableOption[];
   relationship_conditions?: RelationshipCondition[];
   metadata?: {
@@ -261,7 +271,7 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
   const applyPhraseRules = (text: string, rules: PhraseRule[]): string => {
     let result = text;
     for (const rule of rules) result = result.replace(rule.detect, rule.replacement);
-    return result;
+    return result.replace(/\bthe\s+the\s+\{/gi, 'the {');
   };
 
   const fix = (text: string | undefined): string | undefined => {
@@ -283,7 +293,25 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
     const afterInstitution = applyPhraseRules(applyPhraseRules(updated, INSTITUTION_PHRASE_RULES), GOV_STRUCTURE_RULES);
     if (afterInstitution !== updated) { updated = afterInstitution; changed = true; }
 
+    // Strip stranded proper names that appear immediately after a role/institution token.
+    // These are artifacts from replacing "Finance Minister Davies" → "the {finance_role} Davies"
+    // where the role title is replaced but the person name is left floating.
+    const afterTokenNameCleanup = updated.replace(
+      /(\{[a-z_]+_(?:role|title|agency|force|bank|court|exchange)\})\s+([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})?)\b/g,
+      '$1'
+    );
+    if (afterTokenNameCleanup !== updated) { updated = afterTokenNameCleanup; changed = true; }
+
+    const afterScaleArtifacts = repairUnsupportedScaleTokenArtifacts(afterInstitution);
+    if (afterScaleArtifacts !== afterInstitution && afterScaleArtifacts) {
+      updated = afterScaleArtifacts;
+      changed = true;
+    }
+
     // Article form fixes removed — LLM writes "the {token}" naturally, no conversion to {the_token}.
+
+    const afterDedup = collapseRepeatedSentences(updated);
+    if (afterDedup !== updated) { updated = afterDedup; changed = true; }
 
     const { result: wsFixed, changed: wsChanged } = applyWhitespaceFixes(updated);
     if (wsChanged && wsFixed) { updated = wsFixed; changed = true; }
@@ -299,12 +327,27 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
 
   clone.title = fix(clone.title) || clone.title;
   clone.description = fix(clone.description) || clone.description;
+  clone.outcomeHeadline = fix(clone.outcomeHeadline) || clone.outcomeHeadline;
+  clone.outcomeSummary = fix(clone.outcomeSummary) || clone.outcomeSummary;
+  clone.outcomeContext = fix(clone.outcomeContext) || clone.outcomeContext;
 
   // Capitalize after condensing and whitespace fixes.
   const capTitle = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(clone.title));
   if (capTitle !== clone.title) { clone.title = capTitle; changed = true; }
   const capDesc = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(clone.description ?? ''));
   if (capDesc !== clone.description) { clone.description = capDesc; changed = true; }
+  if (clone.outcomeHeadline) {
+    const capHeadline = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(clone.outcomeHeadline));
+    if (capHeadline !== clone.outcomeHeadline) { clone.outcomeHeadline = capHeadline; changed = true; }
+  }
+  if (clone.outcomeSummary) {
+    const capSummary = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(clone.outcomeSummary));
+    if (capSummary !== clone.outcomeSummary) { clone.outcomeSummary = capSummary; changed = true; }
+  }
+  if (clone.outcomeContext) {
+    const capContext = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(clone.outcomeContext));
+    if (capContext !== clone.outcomeContext) { clone.outcomeContext = capContext; changed = true; }
+  }
 
   clone.options = clone.options.map((opt) => {
     const next = { ...opt };
@@ -316,7 +359,11 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
     const capText = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(next.text ?? ''));
     if (capText !== next.text) { next.text = capText; changed = true; }
 
-    if (next.outcomeHeadline) next.outcomeHeadline = fix(next.outcomeHeadline) || next.outcomeHeadline;
+    if (next.outcomeHeadline) {
+      next.outcomeHeadline = fix(next.outcomeHeadline) || next.outcomeHeadline;
+      const capHeadline = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(next.outcomeHeadline));
+      if (capHeadline !== next.outcomeHeadline) { next.outcomeHeadline = capHeadline; changed = true; }
+    }
     if (next.outcomeSummary) {
       next.outcomeSummary = fix(next.outcomeSummary) || next.outcomeSummary;
       const capSum = capitalizeFirstNarrativeLetter(capitalizeSentenceBoundaries(next.outcomeSummary));
@@ -399,6 +446,9 @@ export function analyzeScenario(scenario: RepairableScenario): RepairAnalysis {
 
   diff('title', scenario.title, updated.title);
   diff('description', scenario.description, updated.description);
+  diff('outcomeHeadline', scenario.outcomeHeadline, updated.outcomeHeadline);
+  diff('outcomeSummary', scenario.outcomeSummary, updated.outcomeSummary);
+  diff('outcomeContext', scenario.outcomeContext, updated.outcomeContext);
 
   scenario.options.forEach((opt, oi) => {
     const updOpt = updated.options[oi];
@@ -455,6 +505,9 @@ export function applyPatchesToScenario<T extends RepairableScenario>(
 export function formatRepairPath(path: string): string {
   if (path === 'title') return 'Title';
   if (path === 'description') return 'Description';
+  if (path === 'outcomeHeadline') return 'Outcome headline';
+  if (path === 'outcomeSummary') return 'Outcome summary';
+  if (path === 'outcomeContext') return 'Outcome context';
 
   const optMatch = path.match(/^options\.(\d+)\.(.+)$/);
   if (optMatch) {

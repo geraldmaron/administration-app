@@ -18,6 +18,14 @@ interface Scenario {
   options: ScenarioOption[];  // exactly 3
   metadata: ScenarioMetadata;
   applicability: ScenarioApplicability;
+  /** Multi-turn arc: first act = root, middle = mid, last = final. Omitted for standalone scenarios. */
+  phase?: 'root' | 'mid' | 'final';
+  /** 1-based position within a multi-act chain. */
+  actIndex?: number;
+  /** Stable id shared by all acts in one generated arc; client binds relationship tokens once per chainId. */
+  chainId?: string;
+  /** Next scenario document ids in play order (act N → act N+1). Last act should use [] or omit. */
+  chainsTo?: string[];
   tokenMap?: Record<string, string>;   // per-scenario token overrides
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -32,18 +40,28 @@ interface ScenarioOption {
   outcomeHeadline: string;
   outcomeSummary: string;              // ~60–110 words, journalistic
   outcomeContext: string;              // short follow-up beat
+  /** Follow-up scenario ids queued after this choice (typically next act in the same chainId). */
+  consequenceScenarioIds?: string[];
+  /** Turns after the decision before the client may surface a consequence (typical range 0–3; default 2 if omitted). */
+  consequenceDelay?: number;
+  /** Optional branch target for immediate navigation (reserved; not all runtimes use it). */
+  nextScenarioId?: string;
 }
 
 interface ScenarioMetadata {
   bundle: BundleId;                    // e.g. 'economy','politics','military'
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: 'low' | 'medium' | 'high' | 'extreme' | 'critical';
   difficulty: 1 | 2 | 3 | 4 | 5;
-  scopeTier: 'global' | 'regional' | 'country' | 'archetype';
+  scopeTier: 'universal' | 'regional' | 'cluster' | 'exclusive';
+  /** Denormalized event category for fast iOS active-event scoring (§10). */
+  eventCategory?: 'disaster' | 'violence' | 'health' | 'war' | 'political_shock' | 'none';
   scopeKey?: string;                   // region code or country id, depending on scopeTier
   region_tags?: string[];
   tags?: string[];
   source?: 'blitz' | 'news' | 'manual' | 'gaia';
   sourceKind?: string;
+  /** @deprecated Optional legacy snake_case list; prefer applicability.applicableCountryIds */
+  applicable_countries?: string[];
 }
 
 interface ScenarioApplicability {
@@ -67,12 +85,57 @@ interface RelationshipGate {
 }
 ```
 
+### Scope tier vs. applicability distinction
+
+| Concept | Field | Meaning |
+|---------|-------|---------|
+| `scopeTier: 'universal'` | `metadata.scopeTier` | Fires for every country. `applicability.requires` **must be empty**. Narrative must be regime-agnostic (cabinet, roles, regulators, public protest only). |
+| `scopeTier: 'cluster'` | `metadata.scopeTier` | Fires for countries satisfying `applicability.requires` structural flags. Used for institution-specific scenarios (legislature, parties, elections). |
+| `scopeTier: 'regional'` | `metadata.scopeTier` | Fires for countries in a specific geographic region. |
+| `scopeTier: 'exclusive'` | `metadata.scopeTier` | Fires for a single country or explicit allow-list. |
+| `requires.democratic_regime` | `applicability.requires` | Structural: country IS a democracy (has legislature, parties, elections). Static, derived from country archetype. |
+| `metricGates: [{ metricId, max }]` | `applicability.metricGates` | Dynamic: game-state condition evaluated at selection time (e.g. democracy score currently below 60). Compatible with ANY `scopeTier`. |
+
+**Key rule:** `requires` flags express *what the country structurally is*. `metricGates` express *what the game state currently is*. A scenario about democracy-under-pressure can be `universal` if written with cabinet/roles only. A scenario that mechanically uses `{legislature}`, `{opposition_party}`, or `{election}` **cannot** be `universal`.
+
+### Multi-turn scenario contract
+
+- **`chainId`:** All acts in one Architect/Drafter loop share the same `chainId`. The iOS client records `chainTokenBindings[chainId]` on first presentation so `{adversary}`, `{ally}`, etc. resolve to the same countries for later acts.
+- **`phase` / `actIndex`:** `root` + `actIndex: 1` for the opening act; `mid` for middle acts; `final` for the closing act. Standalone scenarios omit these fields.
+- **`chainsTo`:** Points to the next scenario id(s) in the arc. Generation normalizes this after drafting; the client may use it for continuation UX alongside option-level consequences.
+- **`consequenceScenarioIds` / `consequenceDelay`:** On non-final acts, each option typically lists the next act’s scenario id. Delay is chosen from severity: `critical`/`extreme` → 0–1 turns; `high` → 1–2; `medium`/`low` → 2–3 (see `scenario-engine` normalization). If `consequenceDelay` is omitted, clients default to **2** turns.
+- **Unrelated scenarios between acts:** The delay field allows other scenarios to play on intervening turns; the pending-consequence queue fires when `triggerTurn` matches the current turn.
+
+Canonical TypeScript definitions: `functions/src/types.ts` (`Scenario`, `Option`).
+
 ### Authority rules
 
 - `applicability.requires` is the **only** structural gate on tokens. Anything writing to `metadata.requires` or `Scenario.conditions` is a bug.
 - `deterministicFix` (`functions/src/lib/audit-rules.ts`) is the **only** writer that derives `applicability.requires` and `applicability.archetypes` from text + country data. LLMs never set these directly.
 - `auditScenario` (`functions/src/shared/scenario-audit.ts`) validates `applicability` and rejects scenarios that reference a gated token without the matching requires flag.
 - Adding a new token, requires flag, archetype, or metric gate requires updating this document and `ARCHITECTURE.md` in the same change. See §9.
+
+### Severity → Magnitude Contract
+
+`getAuditRulesPrompt` (`functions/src/lib/audit-rules.ts`) is the single source of truth for the drafter's audit prompt. It enforces that at least one effect on the chosen option satisfies the minimum magnitude floor for the declared `metadata.severity`:
+
+| severity | min |max(effect.value)| |
+|----------|---------------------------|
+| `low`      | ≥ 1.5 |
+| `medium`   | ≥ 2.0 |
+| `high`     | ≥ 2.5 |
+| `extreme`  | ≥ 3.5 |
+| `critical` | ≥ 5.0 |
+
+Violations raise the `severity-effect-mismatch` audit error. The structured repair pipeline (`functions/src/lib/context-repair.ts`) resolves these via `severity_fixes` — either raising an effect magnitude (clamped to |7.0|) or downgrading the severity label — so the contract is enforced deterministically during repair without prose rewriting.
+
+### Forbidden Token Forms
+
+The drafter's Authoritative Registries block also rejects:
+
+- `{the_*}` token prefixes (e.g. `{the_player_country}`, `{the_government}`, `{the_administration}`) — use the canonical bare token (`{player_country}`, etc.) instead.
+- Bare-prose phrases `the government` and `the administration` — write in the authoritative voice against the player's country directly.
+- At `scopeTier === 'universal'`, all country-specific tokens (`{legislature}`, `{upper_house}`, `{lower_house}`, `{supreme_court}`, `{central_bank}`, `{stock_exchange}`, `{monarch}`, `{governing_party*}`, `{opposition_party*}`, `{ally}`, `{adversary}`, `{border_rival}`, `{regional_rival}`, `{trade_partner}`, `{rival}`) are forbidden, since universal scenarios must play on any country without requiring specific institutions.
 
 ---
 
@@ -139,6 +202,34 @@ The complete flag-to-token mapping lives in `REQUIRES_FLAG_REGISTRY` in `functio
 | `{supreme_court}` | `has_supreme_court` | Country has a supreme court |
 | `{constitution}` | `has_written_constitution` | Country has a codified constitution |
 | `{monarch}`, `{royal_family}` | `has_monarch` | Country has a reigning monarch |
+
+#### Static geography-hazard flags (country traits)
+
+| Flag | Description |
+|---|---|
+| `has_civilian_firearms` | Country permits widespread civilian firearm ownership (gun-violence scenario gating) |
+| `seismically_active` | Country sits on active fault lines (earthquake scenario gating) |
+| `tropical_cyclone_zone` | Country is in a typhoon/hurricane belt (cyclone scenario gating) |
+| `arid_interior` | Country has a predominantly arid interior (blocks flooding scenarios) |
+
+#### Active-event flags (mutable, TTL-bounded)
+
+These flags are set on `CountryWorldState.activeEventFlags` by `generateNeighborEventSeeds()` and expire after a TTL determined by severity. They are distinct from static country-trait flags — they represent *current in-game events*, not permanent geography.
+
+| Flag | Narrative patterns | Notes |
+|---|---|---|
+| `active_natural_disaster` | earthquake, tsunami, hurricane, typhoon, wildfire, flood, volcanic eruption | Subtype inferred from country geography via realism rules |
+| `active_school_shooting` | school shooting/shooter, campus attack | Requires `has_civilian_firearms` |
+| `active_mass_shooting` | mass shooting/shooter, active shooter | |
+| `active_pandemic` | pandemic, disease outbreak, epidemic | |
+| `active_interstate_war` | declared war, cross-border invasion/offensive | Requires prior adversary relationship |
+| `active_civil_war` | civil war, armed insurgency | Blocked in `micro_state` |
+| `active_coup_attempt` | coup attempt, coup d'état, mutiny | |
+| `active_assassination_crisis` | assassination/assassinated (head-of-state context) | |
+| `active_terror_campaign` | bombing campaign, terror wave | |
+| `active_refugee_crisis` | refugee crisis/influx/camp | Requires neighbor with `active_civil_war` or `active_interstate_war` |
+| `active_energy_crisis` | blackout, grid collapse | |
+| `active_diplomatic_crisis` | ambassador recalled, embassy stormed | |
 
 `TOKEN_REQUIRES_MAP` is derived automatically from `REQUIRES_FLAG_REGISTRY` — do not maintain it separately.
 
@@ -297,6 +388,18 @@ interface CountryWorldState {
   lastTickAt: string;                                 // ISO timestamp
   generation: number;                                 // increments each tick
   recentScenarioIds: string[];                        // cooldown tracking
+  /** Mutable, TTL-bounded event states keyed by RequiresFlag (active_* flags only). */
+  activeEventFlags?: Record<string, {
+    startedAt: number;   // unix ms
+    expiresAt: number;   // unix ms — flag evicted to recentEventHistory when elapsed
+    severity: number;    // 0–1
+  }>;
+  /** Rolling log of recently-expired event flags; feeds cooldown rules and iOS scoring. */
+  recentEventHistory?: Array<{
+    flag: string;        // the RequiresFlag that expired
+    turn: number;        // game turn when it expired
+    scenarioId?: string; // scenario that was surfaced while the flag was active
+  }>;
 }
 ```
 
@@ -361,6 +464,10 @@ When you change any of the following, you **MUST** update this file (`SCHEMA.md`
 - `TOKEN_CATEGORIES`, `TOKEN_ALIAS_MAP`, `CONCEPT_TO_TOKEN_MAP`, `CANONICAL_ROLE_IDS`
 - `REQUIRES_FLAG_REGISTRY`
 - `ROLE_ID_CANONICALIZATION`
+- `getAuditRulesPrompt` Authoritative Registries block (metric IDs, canonical role IDs, policy targets, severity→magnitude contract, forbidden tokens)
+- `ContextRepairResponse` fix categories (`metric_fixes`, `token_fixes`, `severity_fixes`, `title_fixes`, `policy_implication_fixes`, `role_id_fixes`)
+- `FLAG_BOUND_SEED_PATTERN` in `functions/src/lib/concept-seeds.ts` (keywords that flag a seed as institution-dependent and exclude it from universal-scope selection)
+- `enrichScenario` `scopeTier` downgrade logic (universal→cluster when `inferRequirementsFromNarrative` infers any requires flags)
 - `CountryArchetype` enum or its derivation rules
 - `MetricKey`
 - Any Firestore collection schema

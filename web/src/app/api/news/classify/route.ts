@@ -1,3 +1,8 @@
+/**
+ * Admin API: classifies news articles into game bundles via LLM. Uses Corsair/Ollama when the
+ * request supplies Ollama models; otherwise cloud calls go through OpenRouter (OpenAI direct only
+ * when USE_OPENAI_DIRECT=true and OPENAI_API_KEY is set).
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/auth';
 import { db } from '@/lib/firebase-admin';
@@ -102,21 +107,47 @@ async function getOllamaBaseUrl(): Promise<string> {
   }
 }
 
-async function classifyWithOpenAI(userPrompt: string): Promise<Response> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+async function classifyWithCloud(userPrompt: string): Promise<Response> {
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const openAIKey = process.env.OPENAI_API_KEY;
+  const directOpenAI =
+    process.env.USE_OPENAI_DIRECT === 'true' && !!openAIKey?.trim();
+
+  if (!openRouterKey?.trim() && !directOpenAI) {
     return NextResponse.json(
-      { error: 'No AI provider available. Ensure OPENAI_API_KEY is set.' },
+      {
+        error:
+          'No AI provider available. Set OPENROUTER_API_KEY for cloud classification, or USE_OPENAI_DIRECT=true with OPENAI_API_KEY.',
+      },
       { status: 400 }
     );
   }
 
+  const useOpenRouter = !!openRouterKey?.trim();
+  const endpoint = useOpenRouter
+    ? `${process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1'}/chat/completions`
+    : 'https://api.openai.com/v1/chat/completions';
+  const apiKey = useOpenRouter ? openRouterKey! : openAIKey!;
+  const model = useOpenRouter
+    ? (process.env.NEWS_CLASSIFY_MODEL || 'mistralai/mistral-small-2603')
+    : (process.env.NEWS_CLASSIFY_MODEL || 'gpt-4o-mini');
+  const providerLabel = useOpenRouter ? 'OpenRouter' : 'OpenAI';
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${apiKey}`,
+  };
+  if (useOpenRouter) {
+    headers['HTTP-Referer'] = process.env.OPENROUTER_HTTP_REFERER || 'https://the-administration.app';
+    headers['X-Title'] = process.env.OPENROUTER_APP_TITLE || 'The Administration';
+  }
+
   try {
-    return await fetch('https://api.openai.com/v1/chat/completions', {
+    return await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      headers,
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model,
         messages: [
           { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
           { role: 'user', content: userPrompt },
@@ -129,7 +160,7 @@ async function classifyWithOpenAI(userPrompt: string): Promise<Response> {
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: `OpenAI unreachable: ${message}` }, { status: 502 });
+    return NextResponse.json({ error: `${providerLabel} unreachable: ${message}` }, { status: 502 });
   }
 }
 
@@ -191,7 +222,7 @@ export async function POST(request: NextRequest) {
   let rawData: any;
   const res = getRequestedOllamaModels(modelConfig).length > 0
     ? await classifyWithOllama(userPrompt, modelConfig)
-    : await classifyWithOpenAI(userPrompt);
+    : await classifyWithCloud(userPrompt);
 
   if (!res.ok) {
     const errText = await res.text();

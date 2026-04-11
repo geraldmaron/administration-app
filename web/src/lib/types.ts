@@ -108,6 +108,12 @@ export interface Option {
   outcomeHeadline?: string;
   outcomeSummary?: string;
   outcomeContext?: string;
+  /** Follow-up scenario IDs when this option is chosen (multi-turn arcs). */
+  consequence_scenario_ids?: string[];
+  /** Turns after the decision before the follow-up is eligible (0 = next briefing). */
+  consequence_delay?: number;
+  /** Immediate branch target scenario id when supported by content. */
+  next_scenario_id?: string;
 }
 
 export interface ScenarioCondition {
@@ -183,6 +189,9 @@ export interface ScenarioDetail {
   id: string;
   title: string;
   description: string;
+  outcomeHeadline?: string;
+  outcomeSummary?: string;
+  outcomeContext?: string;
   is_active: boolean;
   isGolden?: boolean;
   createdAt?: string;
@@ -190,6 +199,8 @@ export interface ScenarioDetail {
   phase?: string;
   actIndex?: number;
   chain_id?: string;
+  /** Ordered next scenario ids in a multi-act chain (same as `chainsTo` in functions types). */
+  chains_to?: string[];
   token_map?: Record<string, string>;
   options: Option[];
   metadata?: ScenarioMetadata;
@@ -224,7 +235,7 @@ export interface JobResult {
   countryCount?: number | null;
   requires?: Record<string, boolean | string>;
   tags?: string[];
-  fullSendProvider?: 'openai' | 'local';
+  fullSendProvider?: 'cloud' | 'local';
 }
 
 export interface JobError {

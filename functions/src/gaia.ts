@@ -24,6 +24,7 @@ import { auditScenario, deterministicFix, scoreScenario, initializeAuditConfig, 
 import { agenticRepair } from './lib/agentic-repair';
 import { loadCompiledTokenRegistry } from './lib/token-registry';
 import { callModelProvider, type ModelConfig } from './lib/model-providers';
+import { getDefaultGaiaModel } from './lib/generation-models';
 import { createGenerationJob } from './background-jobs';
 import type { GenerationModelConfig } from './shared/generation-contract';
 import type { CompiledTokenRegistry } from './shared/token-registry-contract';
@@ -174,7 +175,6 @@ const GAIA_GENERATE_COUNT = 5;
 const GAIA_COUNTRIES_PER_SCENARIO = 5;
 const GAIA_JOB_POLL_INTERVAL_MS = 10_000;
 const GAIA_JOB_MAX_WAIT_MS = 5 * 60 * 1000;
-const GAIA_MODEL = 'gpt-4.1';
 const EVAL_MODEL_CONFIG: ModelConfig = { maxTokens: 1024, temperature: 0.2 };
 const RECO_MODEL_CONFIG: ModelConfig = { maxTokens: 4096, temperature: 0.3 };
 
@@ -367,7 +367,7 @@ Return a JSON array of short issue strings. If no issues, return [].`;
     required: ['issues'],
   };
   try {
-    const modelOverride = modelConfig?.repairModel ?? GAIA_MODEL;
+    const modelOverride = modelConfig?.repairModel ?? getDefaultGaiaModel();
     const resp = await callModelProvider<{ issues: string[] }>(
       EVAL_MODEL_CONFIG,
       prompt,
@@ -507,7 +507,7 @@ Focus on high-impact, evidence-backed changes only. Max 6 recommendations.`;
   };
 
   try {
-    const modelOverride = modelConfig?.repairModel ?? GAIA_MODEL;
+    const modelOverride = modelConfig?.repairModel ?? getDefaultGaiaModel();
     const resp = await callModelProvider<RecoRaw>(
       RECO_MODEL_CONFIG,
       `${systemPrompt}\n\n${contextSnippet}`,
@@ -942,7 +942,7 @@ export const gaiaScheduled = onSchedule(
     timeZone: 'UTC',
     timeoutSeconds: 540,
     memory: '1GiB',
-    secrets: ['OPENAI_API_KEY'],
+    secrets: ['OPENROUTER_API_KEY', 'OPENROUTER_MANAGEMENT_KEY'],
   },
   async () => {
     const db = admin.firestore();
@@ -964,7 +964,7 @@ export const gaiaOnEnqueue = onDocumentCreated(
     document: 'gaia_queue/{docId}',
     timeoutSeconds: 540,
     memory: '1GiB',
-    secrets: ['OPENAI_API_KEY'],
+    secrets: ['OPENROUTER_API_KEY', 'OPENROUTER_MANAGEMENT_KEY'],
   },
   async (event) => {
     const db = admin.firestore();

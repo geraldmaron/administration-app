@@ -1,13 +1,26 @@
 /**
- * Model Providers Module
- *
- * OpenAI and Ollama model routing for generation phases.
+ * HTTP clients and routing for LLM calls: OpenRouter-first cloud (including `gpt-*` aliases),
+ * optional direct OpenAI when `USE_OPENAI_DIRECT` + `OPENAI_API_KEY`, and Ollama/Corsair local.
  */
 
 import * as http from 'node:http';
 import * as https from 'node:https';
 import * as json5 from 'json5';
-import { isOpenAIModel, isOllamaModel, stripOllamaPrefix } from './generation-models';
+import {
+  isOpenAIModel,
+  isOllamaModel,
+  isOpenRouterModel,
+  stripOllamaPrefix,
+  stripOpenRouterPrefix,
+  getDefaultConceptModel,
+  getDefaultBlueprintModel,
+  getDefaultDrafterModel,
+  getDefaultRepairModel,
+  getDefaultContentQualityModel,
+  getDefaultNarrativeReviewModel,
+  getDefaultEmbeddingModel,
+  getDefaultActionResolutionModel,
+} from './generation-models';
 
 // Environment configuration - using getters for lazy evaluation
 // This ensures secrets injected by Firebase are available at call time
@@ -21,6 +34,36 @@ function getOpenAIApiKey(): string {
 
 function getOpenAIBaseUrl(): string {
   return process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
+}
+
+// OpenRouter is the primary cloud LLM gateway. All new cloud generation should
+// route through OpenRouter; OpenAI direct access remains only as an optional
+// fallback for legacy paths.
+export function getOpenRouterApiKey(): string {
+  const key = process.env.OPENROUTER_API_KEY || '';
+  if (!key) {
+    console.debug('[OpenRouter] No API key configured via OPENROUTER_API_KEY');
+  }
+  return key;
+}
+
+// Management key is a separate scoped credential used for billing / provisioning
+// endpoints (balance, usage aggregation, key rotation). Never used for chat calls.
+export function getOpenRouterManagementKey(): string {
+  return process.env.OPENROUTER_MANAGEMENT_KEY || '';
+}
+
+export function getOpenRouterBaseUrl(): string {
+  return process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
+}
+
+// Optional attribution headers required by OpenRouter's leaderboard / rate policies.
+export function getOpenRouterReferer(): string {
+  return process.env.OPENROUTER_HTTP_REFERER || 'https://the-administration.app';
+}
+
+export function getOpenRouterAppTitle(): string {
+  return process.env.OPENROUTER_APP_TITLE || 'The Administration';
 }
 
 function getOllamaBaseUrl(): string {
@@ -45,35 +88,65 @@ function describeError(err: unknown): string {
   return msg;
 }
 
-// Model configuration per phase - also lazy to support runtime config
+// Model configuration per phase - lazy getters, all backed by generation-models.ts registry.
 export function getPhaseModels() {
   return {
-    concept: process.env.CONCEPT_MODEL || 'gpt-4.1-mini',
-    blueprint: process.env.BLUEPRINT_MODEL || 'gpt-4.1-mini',
-    drafter: process.env.DRAFTER_MODEL || 'gpt-4.1-mini',
-    embedding: process.env.EMBEDDING_MODEL || 'text-embedding-3-small',
-    repair: process.env.REPAIR_MODEL || 'gpt-4.1-mini',
-    contentQuality: process.env.CONTENT_QUALITY_MODEL || 'gpt-4.1-mini',
-    narrativeReview: process.env.NARRATIVE_REVIEW_MODEL || 'gpt-4.1-mini',
-    actionResolution: process.env.ACTION_RESOLUTION_MODEL || 'gpt-4.1-mini',
+    concept: getDefaultConceptModel(),
+    blueprint: getDefaultBlueprintModel(),
+    drafter: getDefaultDrafterModel(),
+    embedding: getDefaultEmbeddingModel(),
+    repair: getDefaultRepairModel(),
+    contentQuality: getDefaultContentQualityModel(),
+    narrativeReview: getDefaultNarrativeReviewModel(),
+    actionResolution: getDefaultActionResolutionModel(),
   };
 }
 
 export const PHASE_MODELS = {
-  get concept() { return process.env.CONCEPT_MODEL || 'gpt-4.1-mini'; },
-  get blueprint() { return process.env.BLUEPRINT_MODEL || 'gpt-4.1-mini'; },
-  get drafter() { return process.env.DRAFTER_MODEL || 'gpt-4.1-mini'; },
-  get embedding() { return process.env.EMBEDDING_MODEL || 'text-embedding-3-small'; },
+  get concept() { return getDefaultConceptModel(); },
+  get blueprint() { return getDefaultBlueprintModel(); },
+  get drafter() { return getDefaultDrafterModel(); },
+  get embedding() { return getDefaultEmbeddingModel(); },
 };
 
 // Provider detection from model name
-export type Provider = 'openai' | 'ollama';
+export type Provider = 'openai' | 'ollama' | 'openrouter';
 
 function getProvider(modelName: string): Provider {
   if (isOllamaModel(modelName)) return 'ollama';
-  if (isOpenAIModel(modelName)) return 'openai';
+  if (isOpenRouterModel(modelName)) return 'openrouter';
+  if (isOpenAIModel(modelName)) {
+    // Cloud generation uses OpenRouter for `gpt-*` / OpenAI-style IDs. Legacy direct OpenAI only when
+    // `USE_OPENAI_DIRECT=true` and `OPENAI_API_KEY` are both set.
+    if (process.env.USE_OPENAI_DIRECT === 'true' && getOpenAIApiKey()) return 'openai';
+    if (getOpenRouterApiKey()) return 'openrouter';
+    throw new Error(
+      `Model "${modelName}" requires OPENROUTER_API_KEY for cloud generation, or set USE_OPENAI_DIRECT=true with OPENAI_API_KEY`
+    );
+  }
   if (getOllamaBaseUrl() && getOllamaModel()) return 'ollama';
-  throw new Error(`Unsupported model: ${modelName}. Only OpenAI (gpt-*, o1, o3) and Ollama (ollama:*) models are supported.`);
+  throw new Error(`Unsupported model: ${modelName}. Only OpenRouter (vendor/slug or openrouter:*), OpenAI (gpt-*, o1, o3), and Ollama (ollama:*) models are supported.`);
+}
+
+/**
+ * OpenAI-style model IDs that should be auto-rewritten to an OpenRouter slug
+ * when the request is routed through OpenRouter. Extend as needed.
+ */
+const OPENROUTER_MODEL_ALIAS: Record<string, string> = {
+  'gpt-4.1': 'openai/gpt-4.1',
+  'gpt-4.1-mini': 'openai/gpt-4.1-mini',
+  'gpt-4o': 'openai/gpt-4o',
+  'gpt-4o-mini': 'openai/gpt-4o-mini',
+  'o1-mini': 'openai/o1-mini',
+  'o3-mini': 'openai/o3-mini',
+  'text-embedding-3-small': 'openai/text-embedding-3-small',
+  'text-embedding-3-large': 'openai/text-embedding-3-large',
+};
+
+function toOpenRouterSlug(modelName: string): string {
+  const stripped = stripOpenRouterPrefix(modelName);
+  if (stripped.includes('/')) return stripped;
+  return OPENROUTER_MODEL_ALIAS[stripped] ?? stripped;
 }
 
 // Model configuration
@@ -462,6 +535,234 @@ async function callOpenAI<T>(
 }
 
 // ---------------------------------------------------------------------------
+// OpenRouter provider
+// ---------------------------------------------------------------------------
+// OpenRouter exposes an OpenAI-compatible /chat/completions API behind a single
+// key, routing to dozens of upstream vendors (Anthropic, Google, Meta, DeepSeek,
+// Qwen, OpenAI, etc.). Using OpenRouter lets us pick the best per-phase model
+// without juggling vendor-specific SDKs and without a hard OpenAI dependency.
+
+const OPENROUTER_MAX_CONCURRENT = parseInt(
+  process.env.OPENROUTER_MAX_CONCURRENT || (process.env.K_SERVICE ? '4' : '6'),
+  10,
+);
+const OPENROUTER_TPM_LIMIT = parseInt(process.env.OPENROUTER_TPM_LIMIT || '1000000', 10);
+const openRouterSemaphore = new Semaphore(OPENROUTER_MAX_CONCURRENT);
+const openRouterTpmThrottle = new TpmThrottle(OPENROUTER_TPM_LIMIT);
+
+async function callOpenRouter<T>(
+  config: ModelConfig,
+  prompt: string,
+  schema: object,
+  modelOverride?: string,
+): Promise<CallResult<T>> {
+  const modelToUse = toOpenRouterSlug(modelOverride || 'google/gemini-2.5-flash');
+  const timeout = config.timeoutMs ?? getModelTimeout(modelToUse);
+  const maxRetries = config.maxRetries ?? parseInt(
+    process.env.OPENROUTER_MAX_RETRIES || (process.env.K_SERVICE ? '2' : '3'),
+    10,
+  );
+  const baseDelay = 2000;
+
+  const apiKey = getOpenRouterApiKey();
+  const baseUrl = getOpenRouterBaseUrl();
+
+  if (!apiKey) {
+    console.error('[OpenRouter] No API key configured');
+    return { data: null, usage: null, error: 'No OpenRouter API key' };
+  }
+
+  // OpenRouter supports structured JSON output for most vendors, but not all.
+  // Anthropic + Google honour json_schema; older vendors only honour json_object.
+  // We send json_schema when the slug is from a vendor known to support it.
+  const vendorSupportsJsonSchema = /^(openai|anthropic|google|mistralai|meta-llama|qwen|deepseek)\//i.test(modelToUse);
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const startTime = Date.now();
+    let stopHeartbeat: (() => void) | null = null;
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const isAnthropicModel = modelToUse.startsWith('anthropic/');
+      const isGoogleModel = modelToUse.startsWith('google/');
+      const systemContent = 'You are a precise JSON generator for a geopolitical simulation game. Generate realistic, nuanced political scenarios. Always respond with valid JSON matching the requested schema. Never include explanatory text.';
+
+      const systemMessage: Record<string, unknown> = {
+        role: 'system',
+        content: isAnthropicModel
+          ? [{ type: 'text', text: systemContent, cache_control: { type: 'ephemeral' } }]
+          : systemContent,
+      };
+
+      const providerRouting: Record<string, unknown> = isAnthropicModel
+        ? { order: ['Anthropic'], allow_fallbacks: false }
+        : isGoogleModel
+          ? { order: ['Google'] }
+          : {};
+
+      const requestBody: Record<string, unknown> = {
+        model: modelToUse,
+        messages: [
+          systemMessage,
+          {
+            role: 'user',
+            content: vendorSupportsJsonSchema
+              ? prompt
+              : `${prompt}\n\nRespond with ONLY valid JSON matching this schema:\n${JSON.stringify(schema, null, 2)}`,
+          },
+        ],
+        max_tokens: config.maxTokens,
+        ...(Object.keys(providerRouting).length > 0 ? { provider: providerRouting } : {}),
+        response_format: vendorSupportsJsonSchema
+          ? { type: 'json_schema', json_schema: { name: 'response', schema, strict: false } }
+          : { type: 'json_object' },
+      };
+
+      if (config.temperature !== undefined && !/^openai\/o[0-9]/.test(modelToUse)) {
+        requestBody.temperature = config.temperature;
+      }
+      if (config.topP !== undefined) {
+        requestBody.top_p = config.topP;
+      }
+
+      console.log(`[OpenRouter] Request to ${modelToUse} at ${baseUrl} (attempt ${attempt + 1}/${maxRetries + 1})`);
+      emitModelEvent({
+        level: 'info',
+        code: 'llm_request',
+        message: `→ ${modelToUse} (attempt ${attempt + 1}/${maxRetries + 1}) — ${prompt.length} chars`,
+        data: {
+          provider: 'openrouter',
+          model: modelToUse,
+          promptLength: prompt.length,
+          attempt: attempt + 1,
+          promptPreview: prompt.length > 600 ? prompt.slice(0, 600) + '\n…[truncated]' : prompt,
+        },
+      });
+      stopHeartbeat = startRequestHeartbeat({
+        provider: 'openrouter',
+        model: modelToUse,
+        attempt: attempt + 1,
+        maxAttempts: maxRetries + 1,
+        timeoutMs: timeout,
+      });
+
+      await openRouterSemaphore.acquire(Math.floor(timeout / 2));
+      const estimatedTokens = (config.maxTokens ?? 4096) + 4096;
+      await openRouterTpmThrottle.reserve(estimatedTokens);
+
+      let response: Response;
+      try {
+        response = await fetch(`${baseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+            'HTTP-Referer': getOpenRouterReferer(),
+            'X-Title': getOpenRouterAppTitle(),
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+        openRouterSemaphore.release();
+      }
+
+      const elapsed = Date.now() - startTime;
+      stopHeartbeat?.();
+      stopHeartbeat = null;
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[OpenRouter] Error ${response.status} after ${elapsed}ms: ${errorText.substring(0, 500)}`);
+
+        if (response.status === 429 || response.status >= 500) {
+          if (response.status === 429) {
+            retryTelemetry.rateLimitRetries++;
+          } else {
+            retryTelemetry.serverRetries++;
+          }
+          if (attempt < maxRetries) {
+            const retryAfterHeader = response.headers.get('retry-after');
+            const retryAfterMs = retryAfterHeader ? parseFloat(retryAfterHeader) * 1000 : 0;
+            const backoff = baseDelay * Math.pow(2, attempt) * (0.5 + Math.random() * 0.5);
+            const delay = Math.max(retryAfterMs, backoff);
+            console.warn(`[OpenRouter] Retrying in ${Math.round(delay)}ms (attempt ${attempt + 1}/${maxRetries})...`);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            continue;
+          }
+        }
+        return { data: null, usage: null, error: `HTTP ${response.status}: ${errorText.substring(0, 200)}` };
+      }
+
+      const data = await response.json();
+      const responseText: string | undefined = data.choices?.[0]?.message?.content?.trim();
+      const usage: TokenUsage = {
+        inputTokens: data.usage?.prompt_tokens || 0,
+        outputTokens: data.usage?.completion_tokens || 0,
+        provider: 'openrouter',
+        model: modelToUse,
+      };
+
+      console.log(`[OpenRouter] Response in ${elapsed}ms, tokens: ${usage.inputTokens}+${usage.outputTokens}`);
+      emitModelEvent({
+        level: 'info',
+        code: 'llm_response',
+        message: `← ${modelToUse} ${elapsed}ms — ${usage.inputTokens}↑ ${usage.outputTokens}↓ tokens`,
+        data: {
+          provider: 'openrouter' as const,
+          model: modelToUse,
+          elapsed,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          responsePreview: responseText
+            ? (responseText.length > 800 ? responseText.slice(0, 800) + '\n…[truncated]' : responseText)
+            : undefined,
+        },
+      });
+
+      if (!responseText) {
+        return { data: null, usage, error: 'Empty response' };
+      }
+
+      try {
+        let cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (jsonMatch) cleaned = jsonMatch[0];
+        return { data: JSON.parse(cleaned), usage };
+      } catch {
+        try {
+          return { data: json5.parse(responseText), usage };
+        } catch (parseErr) {
+          console.error('[OpenRouter] Failed to parse JSON:', parseErr);
+          return { data: null, usage, error: 'JSON parse error' };
+        }
+      }
+    } catch (error) {
+      const elapsed = Date.now() - startTime;
+      stopHeartbeat?.();
+      stopHeartbeat = null;
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error(`[OpenRouter] Timeout after ${elapsed}ms`);
+        if (attempt < maxRetries) continue;
+        return { data: null, usage: null, error: 'Timeout' };
+      }
+      console.error(`[OpenRouter] Error after ${elapsed}ms: ${describeError(error)}`);
+      if (attempt < maxRetries) {
+        const backoff = baseDelay * Math.pow(2, attempt) * (0.5 + Math.random() * 0.5);
+        await new Promise((resolve) => setTimeout(resolve, backoff));
+        continue;
+      }
+      return { data: null, usage: null, error: describeError(error) };
+    }
+  }
+
+  return { data: null, usage: null, error: 'Max retries exceeded' };
+}
+
+// ---------------------------------------------------------------------------
 // Ollama provider
 // ---------------------------------------------------------------------------
 
@@ -760,42 +1061,59 @@ export async function callModelProvider<T>(
 ): Promise<CallResult<T>> {
   const modelToUse = modelOverride || PHASE_MODELS.drafter;
   const provider = getProvider(modelToUse);
+  if (provider === 'openrouter') return callOpenRouter<T>(config, prompt, schema, modelToUse);
   if (provider === 'openai') return callOpenAI<T>(config, prompt, schema, modelToUse);
   if (provider === 'ollama') return callOllama<T>(config, prompt, schema, modelToUse);
   throw new Error(`Unsupported provider for model: ${modelToUse}`);
 }
 
 /**
- * Generate embeddings using OpenAI
- * Uses text-embedding-3-small for cost efficiency ($0.02/1M tokens)
+ * Generate embeddings. Prefers OpenRouter when configured so we don't need a
+ * direct OpenAI key; falls back to OpenAI direct if OpenRouter is unavailable.
+ * Default model is text-embedding-3-small ($0.02/1M tokens).
  */
 export async function generateEmbedding(text: string): Promise<{ embedding: number[] | null; usage: TokenUsage | null }> {
   const modelToUse = PHASE_MODELS.embedding;
-  const apiKey = getOpenAIApiKey();
-  const baseUrl = getOpenAIBaseUrl();
+  const openRouterKey = getOpenRouterApiKey();
+  const openAIKey = getOpenAIApiKey();
+
+  const useOpenRouter = !!openRouterKey && (!openAIKey || isOpenRouterModel(modelToUse));
+  const provider: Provider = useOpenRouter ? 'openrouter' : 'openai';
+  const apiKey = useOpenRouter ? openRouterKey : openAIKey;
+  const baseUrl = useOpenRouter ? getOpenRouterBaseUrl() : getOpenAIBaseUrl();
+  const remoteModel = useOpenRouter ? toOpenRouterSlug(modelToUse) : modelToUse;
+  const tag = useOpenRouter ? 'OpenRouter Embedding' : 'OpenAI Embedding';
 
   if (!apiKey) {
-    console.error('[OpenAI Embedding] No API key configured');
+    console.error(
+      `[${tag}] No API key configured (set OPENROUTER_API_KEY, or USE_OPENAI_DIRECT=true with OPENAI_API_KEY)`
+    );
     return { embedding: null, usage: null };
   }
 
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    };
+    if (useOpenRouter) {
+      headers['HTTP-Referer'] = getOpenRouterReferer();
+      headers['X-Title'] = getOpenRouterAppTitle();
+    }
+
     const response = await fetch(`${baseUrl}/embeddings`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
+      headers,
       body: JSON.stringify({
-        model: modelToUse,
+        model: remoteModel,
         input: text.substring(0, 8000), // Limit input for cost
-        encoding_format: 'float'
-      })
+        encoding_format: 'float',
+      }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[OpenAI Embedding] Error ${response.status}: ${errorText.substring(0, 200)}`);
+      console.error(`[${tag}] Error ${response.status}: ${errorText.substring(0, 200)}`);
       return { embedding: null, usage: null };
     }
 
@@ -803,13 +1121,13 @@ export async function generateEmbedding(text: string): Promise<{ embedding: numb
     const usage: TokenUsage = {
       inputTokens: data.usage?.total_tokens || 0,
       outputTokens: 0,
-      provider: 'openai',
-      model: modelToUse
+      provider,
+      model: remoteModel,
     };
 
     return { embedding: data.data?.[0]?.embedding || null, usage };
   } catch (error) {
-    console.error('[OpenAI Embedding] Error:', error);
+    console.error(`[${tag}] Error:`, error);
     return { embedding: null, usage: null };
   }
 }
@@ -835,15 +1153,33 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 /**
- * Cost calculation helpers (USD per 1M tokens)
+ * Cost calculation helpers (USD per 1M tokens).
+ * OpenRouter passes the upstream vendor price through (plus a small routing fee),
+ * so entries are keyed by both raw name and OpenRouter slug where useful.
  */
 const COST_PER_MILLION: Record<string, { input: number; output: number }> = {
+  // OpenAI direct
   'gpt-4o-mini': { input: 0.15, output: 0.60 },
   'gpt-4.1-mini': { input: 0.40, output: 1.60 },
+  'gpt-4.1': { input: 2.00, output: 8.00 },
   'gpt-4o': { input: 2.50, output: 10.00 },
   'o1-mini': { input: 1.10, output: 4.40 },
   'o3-mini': { input: 1.10, output: 4.40 },
   'text-embedding-3-small': { input: 0.02, output: 0 },
+  // OpenRouter slugs
+  'openai/gpt-4.1': { input: 2.00, output: 8.00 },
+  'openai/gpt-4.1-mini': { input: 0.40, output: 1.60 },
+  'openai/gpt-4o': { input: 2.50, output: 10.00 },
+  'openai/gpt-4o-mini': { input: 0.15, output: 0.60 },
+  'openai/text-embedding-3-small': { input: 0.02, output: 0 },
+  'anthropic/claude-sonnet-4.5': { input: 3.00, output: 15.00 },
+  'anthropic/claude-sonnet-4.6': { input: 3.00, output: 15.00 },
+  'anthropic/claude-haiku-4.5': { input: 1.00, output: 5.00 },
+  'google/gemini-2.5-pro': { input: 1.25, output: 10.00 },
+  'google/gemini-2.5-flash': { input: 0.15, output: 0.60 },
+  'mistralai/mistral-small-2603': { input: 0.10, output: 0.30 },
+  'deepseek/deepseek-chat': { input: 0.27, output: 1.10 },
+  'qwen/qwen3-coder': { input: 0.30, output: 0.90 },
 };
 
 export function calculateCost(usage: TokenUsage): number {
@@ -856,11 +1192,13 @@ export function calculateCost(usage: TokenUsage): number {
  */
 export function aggregateCosts(usages: (TokenUsage | null)[]): {
   openai: { inputTokens: number; outputTokens: number; costUsd: number };
+  openrouter: { inputTokens: number; outputTokens: number; costUsd: number };
   ollama: { inputTokens: number; outputTokens: number; costUsd: number };
   totalUsd: number;
 } {
   const result = {
     openai: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
+    openrouter: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
     ollama: { inputTokens: 0, outputTokens: 0, costUsd: 0 },
     totalUsd: 0
   };
@@ -873,6 +1211,10 @@ export function aggregateCosts(usages: (TokenUsage | null)[]): {
       result.openai.inputTokens += usage.inputTokens;
       result.openai.outputTokens += usage.outputTokens;
       result.openai.costUsd += cost;
+    } else if (usage.provider === 'openrouter') {
+      result.openrouter.inputTokens += usage.inputTokens;
+      result.openrouter.outputTokens += usage.outputTokens;
+      result.openrouter.costUsd += cost;
     } else if (usage.provider === 'ollama') {
       result.ollama.inputTokens += usage.inputTokens;
       result.ollama.outputTokens += usage.outputTokens;

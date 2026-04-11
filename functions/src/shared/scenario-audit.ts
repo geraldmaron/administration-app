@@ -61,6 +61,9 @@ export interface BundleScenario {
     id: string;
     title: string;
     description: string;
+    outcomeHeadline?: string;
+    outcomeSummary?: string;
+    outcomeContext?: string;
     options: BundleOption[];
     _generationPath?: 'standard' | 'premium';
     metadata?: {
@@ -90,6 +93,8 @@ export interface BundleScenario {
         excludes_tags?: string[];
         auditMetadata?: AuditMetadata;
         tagResolution?: TagResolutionMetadata;
+        /** @deprecated Prefer applicability.applicableCountryIds; legacy persisted field */
+        applicable_countries?: string[];
     };
     chainsTo?: string[];
     oncePerGame?: boolean;
@@ -481,6 +486,194 @@ export const REQUIRES_FLAG_REGISTRY: Readonly<Partial<Record<RequiresFlag, Requi
             /\benergy\s+export(?:er|ing)?\b/i,
         ],
     },
+    // ── Geography hazards (static country traits consumed by realism rules) ──
+    has_civilian_firearms: {
+        label: 'Widespread civilian firearm access',
+        narrativePatterns: [
+            /\bcivilian\s+firearm(?:s)?\b/i,
+            /\bgun\s+(?:ownership|culture|rights|lobby|control)\b/i,
+            /\bfirearm(?:s)?\s+(?:ownership|access|proliferation)\b/i,
+            /\bsecond\s+amendment\b/i,
+        ],
+    },
+    seismically_active: {
+        label: 'Seismically active region',
+        narrativePatterns: [
+            /\bseismic(?:ally)?\s+(?:active|zone|region|fault)\b/i,
+            /\btectonic\s+(?:fault|plate|activity)\b/i,
+            /\bearthquake[- ]prone\b/i,
+            /\bfault\s+line\b/i,
+        ],
+    },
+    tropical_cyclone_zone: {
+        label: 'Tropical cyclone zone',
+        narrativePatterns: [
+            /\bhurricane\s+belt\b/i,
+            /\btyphoon\s+(?:belt|season|path|corridor)\b/i,
+            /\bcyclone[- ]prone\b/i,
+            /\btropical\s+storm\s+(?:belt|corridor|track)\b/i,
+        ],
+    },
+    arid_interior: {
+        label: 'Arid interior geography',
+        narrativePatterns: [
+            /\barid\s+(?:interior|region|landscape)\b/i,
+            /\bdesert\s+(?:interior|nation|country|climate)\b/i,
+            /\bsemi[- ]arid\b/i,
+            /\bdrought[- ]prone\s+interior\b/i,
+        ],
+    },
+    // ── Active event states (mutable, time-bounded — scored by cooldown rule) ──
+    // These flags represent a country currently experiencing a specific event.
+    // They are distinct from static country traits because they decay with TTL
+    // and the audit layer rejects repeats inside the cooldown window.
+    active_natural_disaster: {
+        label: 'Active natural disaster',
+        narrativePatterns: [
+            /\b(?:earthquake|tsunami|hurricane|typhoon|cyclone|wildfire|flood(?:ing)?|volcanic\s+eruption|landslide|mudslide)\b/i,
+            /\bdisaster\s+(?:zone|declaration|relief|response)\b/i,
+            /\bstate\s+of\s+emergency\s+declared\b/i,
+        ],
+    },
+    active_school_shooting: {
+        label: 'Active school shooting event',
+        narrativePatterns: [
+            /\bschool\s+shoot(?:ing|er)\b/i,
+            /\bcampus\s+attack\b/i,
+            /\bclassroom\s+massacre\b/i,
+        ],
+        implies: ['has_civilian_firearms'],
+    },
+    active_mass_shooting: {
+        label: 'Active mass shooting event',
+        narrativePatterns: [
+            /\bmass\s+shoot(?:ing|er)\b/i,
+            /\bactive\s+shooter\b/i,
+            /\bgunman\s+(?:opened\s+fire|at\s+large|killed)\b/i,
+        ],
+        implies: ['has_civilian_firearms'],
+    },
+    active_pandemic: {
+        label: 'Active pandemic',
+        narrativePatterns: [
+            /\bpandemic\b/i,
+            /\bdisease\s+outbreak\b/i,
+            /\bepidemic\b/i,
+            /\bnovel\s+(?:virus|pathogen|variant)\b/i,
+        ],
+    },
+    active_interstate_war: {
+        label: 'Active interstate war',
+        narrativePatterns: [
+            /\bdeclared\s+war\b/i,
+            /\bcross[- ]border\s+(?:invasion|offensive|strike)\b/i,
+            /\bfull[- ]scale\s+(?:war|invasion)\b/i,
+            /\bmilitary\s+invasion\b/i,
+        ],
+        implies: ['adversary'],
+    },
+    active_civil_war: {
+        label: 'Active civil war',
+        narrativePatterns: [
+            /\bcivil\s+war\b/i,
+            /\barmed\s+insurgency\b/i,
+            /\bsectarian\s+conflict\b/i,
+            /\binternal\s+armed\s+conflict\b/i,
+        ],
+    },
+    active_coup_attempt: {
+        label: 'Active coup attempt',
+        narrativePatterns: [
+            /\bcoup\s+(?:attempt|d'état|d'etat|plot)\b/i,
+            /\bmilitary\s+mutiny\b/i,
+            /\battempted\s+(?:overthrow|putsch)\b/i,
+        ],
+    },
+    active_assassination_crisis: {
+        label: 'Active assassination crisis',
+        narrativePatterns: [
+            /\bassassinat(?:ion|ed)\b/i,
+            /\bhead\s+of\s+state\s+(?:killed|shot|murdered)\b/i,
+            /\btarget(?:ed)?\s+killing\s+of\s+(?:the\s+)?(?:president|prime\s+minister|leader)\b/i,
+        ],
+    },
+    active_terror_campaign: {
+        label: 'Active terror campaign',
+        narrativePatterns: [
+            /\bbombing\s+campaign\b/i,
+            /\bterror\s+(?:wave|campaign|cell)\b/i,
+            /\bcoordinated\s+(?:bombings?|attacks?)\b/i,
+        ],
+    },
+    active_refugee_crisis: {
+        label: 'Active refugee crisis',
+        narrativePatterns: [
+            /\brefugee\s+(?:crisis|influx|camp|wave)\b/i,
+            /\bmass\s+displacement\b/i,
+            /\bdisplaced\s+persons\s+crisis\b/i,
+        ],
+    },
+    active_energy_crisis: {
+        label: 'Active energy crisis',
+        narrativePatterns: [
+            /\bblackout\b/i,
+            /\bgrid\s+collapse\b/i,
+            /\benergy\s+(?:crisis|shortage|rationing)\b/i,
+            /\brolling\s+outages\b/i,
+        ],
+    },
+    active_diplomatic_crisis: {
+        label: 'Active diplomatic crisis',
+        narrativePatterns: [
+            /\bambassador\s+recalled\b/i,
+            /\bembassy\s+(?:stormed|evacuated|closed)\b/i,
+            /\bdiplomatic\s+(?:crisis|rupture|expulsion)\b/i,
+            /\bsevered\s+diplomatic\s+ties\b/i,
+        ],
+    },
+};
+
+/**
+ * Set of flag names that represent *active event states* rather than static
+ * country traits. Used by cooldown logic, iOS scoring, and the world-tick
+ * event seeder to distinguish mutable state from intrinsic country profile.
+ *
+ * These flags must also decay with TTL on CountryWorldState.activeEventFlags.
+ */
+export const ACTIVE_EVENT_FLAGS: ReadonlySet<RequiresFlag> = new Set<RequiresFlag>([
+    'active_natural_disaster',
+    'active_school_shooting',
+    'active_mass_shooting',
+    'active_pandemic',
+    'active_interstate_war',
+    'active_civil_war',
+    'active_coup_attempt',
+    'active_assassination_crisis',
+    'active_terror_campaign',
+    'active_refugee_crisis',
+    'active_energy_crisis',
+    'active_diplomatic_crisis',
+]);
+
+/**
+ * Default cooldown window (in generation turns) for each active event flag.
+ * The cooldown audit rule rejects a scenario inferring one of these flags if
+ * the same flag appears in CountryWorldState.recentEventHistory within the
+ * corresponding window.
+ */
+export const EVENT_COOLDOWN_TURNS: Readonly<Partial<Record<RequiresFlag, number>>> = {
+    active_school_shooting: 6,
+    active_mass_shooting: 6,
+    active_natural_disaster: 10,
+    active_energy_crisis: 8,
+    active_pandemic: 15,
+    active_interstate_war: 20,
+    active_civil_war: 20,
+    active_coup_attempt: 20,
+    active_assassination_crisis: 20,
+    active_terror_campaign: 10,
+    active_refugee_crisis: 12,
+    active_diplomatic_crisis: 8,
 };
 
 // ---------------------------------------------------------------------------
@@ -558,6 +751,44 @@ export const GOV_STRUCTURE_RULES: PhraseRule[] = [
 ];
 
 export const INSTITUTION_PHRASE_RULES: PhraseRule[] = [
+    { detect: /\bculture\s+minister\b/gi,                                   replacement: 'the {education_role}',                    suggestion: '"Culture Minister" → use {education_role} or reframe as cabinet officials' },
+    { detect: /\bminister\s+of\s+culture\b/gi,                               replacement: 'the {education_role}',                    suggestion: '"Minister of Culture" → use {education_role} or reframe as cabinet officials' },
+    { detect: /\bcultural\s+affairs\s+minister\b/gi,                         replacement: 'the {education_role}',                    suggestion: '"Cultural Affairs Minister" → use {education_role} or reframe as cabinet officials' },
+    { detect: /\b(?:culture|cultural\s+affairs)\s+ministry\b/gi,             replacement: "the {education_role}'s office",            suggestion: '"Culture Ministry" → use {education_role} or reframe as cabinet officials' },
+    { detect: /\bministry\s+of\s+(?:culture|cultural\s+affairs)\b/gi,        replacement: "the {education_role}'s office",            suggestion: '"Ministry of Culture" → use {education_role} or reframe as cabinet officials' },
+    { detect: /\bdepartment\s+of\s+(?:culture|cultural\s+affairs)\b/gi,      replacement: "the {education_role}'s office",            suggestion: '"Department of Culture" → use {education_role} or reframe as cabinet officials' },
+    { detect: /\bfinance\s+minister\b/gi,                                    replacement: 'the {finance_role}',                      suggestion: '"Finance Minister" → use {finance_role}' },
+    { detect: /\bminister\s+of\s+finance\b/gi,                               replacement: 'the {finance_role}',                      suggestion: '"Minister of Finance" → use {finance_role}' },
+    { detect: /\btreasury\s+secretary\b/gi,                                  replacement: 'the {finance_role}',                      suggestion: '"Treasury Secretary" → use {finance_role}' },
+    { detect: /\bchancellor\s+of\s+the\s+exchequer\b/gi,                    replacement: 'the {finance_role}',                      suggestion: '"Chancellor of the Exchequer" → use {finance_role}' },
+    { detect: /\bdefen[cs]e\s+minister\b/gi,                                 replacement: 'the {defense_role}',                      suggestion: '"Defense Minister" → use {defense_role}' },
+    { detect: /\bminister\s+of\s+defen[cs]e\b/gi,                            replacement: 'the {defense_role}',                      suggestion: '"Minister of Defense" → use {defense_role}' },
+    { detect: /\bforeign\s+minister\b/gi,                                    replacement: 'the {foreign_affairs_role}',              suggestion: '"Foreign Minister" → use {foreign_affairs_role}' },
+    { detect: /\bminister\s+of\s+foreign\s+affairs\b/gi,                    replacement: 'the {foreign_affairs_role}',              suggestion: '"Minister of Foreign Affairs" → use {foreign_affairs_role}' },
+    { detect: /\bsecretary\s+of\s+state\b/gi,                                replacement: 'the {foreign_affairs_role}',              suggestion: '"Secretary of State" → use {foreign_affairs_role}' },
+    { detect: /\bjustice\s+minister\b/gi,                                    replacement: 'the {justice_role}',                      suggestion: '"Justice Minister" → use {justice_role}' },
+    { detect: /\bminister\s+of\s+justice\b/gi,                               replacement: 'the {justice_role}',                      suggestion: '"Minister of Justice" → use {justice_role}' },
+    { detect: /\bhealth\s+minister\b/gi,                                     replacement: 'the {health_role}',                       suggestion: '"Health Minister" → use {health_role}' },
+    { detect: /\bminister\s+of\s+health\b/gi,                                replacement: 'the {health_role}',                       suggestion: '"Minister of Health" → use {health_role}' },
+    { detect: /\beducation\s+minister\b/gi,                                  replacement: 'the {education_role}',                    suggestion: '"Education Minister" → use {education_role}' },
+    { detect: /\bminister\s+of\s+education\b/gi,                             replacement: 'the {education_role}',                    suggestion: '"Minister of Education" → use {education_role}' },
+    { detect: /\binterior\s+minister\b/gi,                                   replacement: 'the {interior_role}',                     suggestion: '"Interior Minister" → use {interior_role}' },
+    { detect: /\bminister\s+of\s+(?:interior|the\s+interior)\b/gi,           replacement: 'the {interior_role}',                     suggestion: '"Minister of Interior" → use {interior_role}' },
+    { detect: /\bhome\s+secretary\b/gi,                                      replacement: 'the {interior_role}',                     suggestion: '"Home Secretary" → use {interior_role}' },
+    { detect: /\bcommerce\s+minister\b/gi,                                   replacement: 'the {commerce_role}',                     suggestion: '"Commerce Minister" → use {commerce_role}' },
+    { detect: /\bminister\s+of\s+commerce\b/gi,                              replacement: 'the {commerce_role}',                     suggestion: '"Minister of Commerce" → use {commerce_role}' },
+    { detect: /\btrade\s+minister\b/gi,                                      replacement: 'the {commerce_role}',                     suggestion: '"Trade Minister" → use {commerce_role}' },
+    { detect: /\bminister\s+of\s+trade\b/gi,                                 replacement: 'the {commerce_role}',                     suggestion: '"Minister of Trade" → use {commerce_role}' },
+    { detect: /\blabou?r\s+minister\b/gi,                                    replacement: 'the {labor_role}',                        suggestion: '"Labor Minister" → use {labor_role}' },
+    { detect: /\bminister\s+of\s+labou?r\b/gi,                               replacement: 'the {labor_role}',                        suggestion: '"Minister of Labor" → use {labor_role}' },
+    { detect: /\benergy\s+minister\b/gi,                                     replacement: 'the {energy_role}',                       suggestion: '"Energy Minister" → use {energy_role}' },
+    { detect: /\bminister\s+of\s+energy\b/gi,                                replacement: 'the {energy_role}',                       suggestion: '"Minister of Energy" → use {energy_role}' },
+    { detect: /\benvironment\s+minister\b/gi,                                replacement: 'the {environment_role}',                  suggestion: '"Environment Minister" → use {environment_role}' },
+    { detect: /\bminister\s+of\s+(?:environment|the\s+environment)\b/gi,     replacement: 'the {environment_role}',                  suggestion: '"Minister of Environment" → use {environment_role}' },
+    { detect: /\btransport(?:ation)?\s+minister\b/gi,                        replacement: 'the {transport_role}',                    suggestion: '"Transport Minister" → use {transport_role}' },
+    { detect: /\bminister\s+of\s+transportation?\b/gi,                       replacement: 'the {transport_role}',                    suggestion: '"Minister of Transport" → use {transport_role}' },
+    { detect: /\bagriculture\s+minister\b/gi,                                replacement: 'the {agriculture_role}',                  suggestion: '"Agriculture Minister" → use {agriculture_role}' },
+    { detect: /\bminister\s+of\s+agriculture\b/gi,                           replacement: 'the {agriculture_role}',                  suggestion: '"Minister of Agriculture" → use {agriculture_role}' },
     { detect: /\bjustice\s+ministry\b/gi,                                    replacement: "the {justice_role}'s office",              suggestion: '"Justice Ministry" → use {justice_role}' },
     { detect: /\bministry\s+of\s+justice\b/gi,                               replacement: "the {justice_role}'s office",              suggestion: '"Ministry of Justice" → use {justice_role}' },
     { detect: /\b(department\s+of\s+justice|justice\s+department)\b/gi,       replacement: "the {justice_role}'s office",              suggestion: '"Department of Justice" → use {justice_role}' },
@@ -615,6 +846,12 @@ export const INSTITUTION_PHRASE_RULES: PhraseRule[] = [
     { detect: /\bfederal\s+reserve\b/gi,                                     replacement: 'the {central_bank}',                       suggestion: '"Federal Reserve" → use {central_bank}' },
     { detect: /\breserve\s+bank\b/gi,                                        replacement: 'the {central_bank}',                       suggestion: '"Reserve Bank" → use {central_bank}' },
     { detect: /\bstock\s+exchange\b/gi,                                      replacement: 'the {stock_exchange}',                     suggestion: '"Stock Exchange" → use {stock_exchange}' },
+    { detect: /\bprime\s+minister\b/gi,                                      replacement: '{leader_title}',                           suggestion: '"Prime Minister" → use {leader_title}' },
+    { detect: /\bpremier\b/gi,                                               replacement: '{leader_title}',                           suggestion: '"Premier" → use {leader_title}' },
+    { detect: /\bchancellor\b(?!\s+of\s+the)/gi,                             replacement: '{leader_title}',                           suggestion: '"Chancellor" → use {leader_title}' },
+    { detect: /\bhead\s+of\s+(?:state|government)\b/gi,                      replacement: '{leader_title}',                           suggestion: '"Head of State/Government" → use {leader_title}' },
+    // Catch "Minister [LastName]" and "[FirstName] [LastName], minister" — person names adjacent to role references
+    { detect: /\bminister\s+[A-Z][a-z]{1,20}(?:\s+[A-Z][a-z]{1,20})?\b/g,   replacement: 'the minister',                             suggestion: '"Minister [Name]" → use a role token ({finance_role}, {defense_role}, etc.) with no person name' },
 ];
 
 export const SOFT_PENALTY_RULES = new Set([
@@ -659,6 +896,52 @@ export const ABBREVIATION_PATTERN = /\b(?:U\.S|U\.K|U\.S\.A|D\.C|e\.g|i\.e|vs|Dr
 export const REPEATED_WORD_PATTERN = /\b([A-Za-z][A-Za-z'-]*)\s+\1\b/gi;
 
 export const DANGLING_ENDING_PATTERN = /\b(a|an|the|to|for|with|from|into|onto|of|in|on|at|by)\s*([.!?])?\s*$/i;
+
+export const UNSUPPORTED_SCALE_TOKEN_TEXT_REPLACEMENTS: ReadonlyArray<{
+    detect: RegExp;
+    replacement: string;
+    suggestion: string;
+}> = [
+    {
+        detect: /\b(?:the\s+)?economic\s+scale\b/gi,
+        replacement: 'the national economy',
+        suggestion: '"economic scale" → "the national economy"',
+    },
+    {
+        detect: /\b(?:the\s+)?gdp\s+description\b/gi,
+        replacement: 'the national economy',
+        suggestion: '"gdp description" → "the national economy"',
+    },
+    {
+        detect: /\b(?:the\s+)?population\s+scale\b/gi,
+        replacement: 'the population',
+        suggestion: '"population scale" → "the population"',
+    },
+    {
+        detect: /\b(?:the\s+)?geography\s+type\b/gi,
+        replacement: "the country's geography",
+        suggestion: '"geography type" → "the country\'s geography"',
+    },
+    {
+        detect: /\b(?:the\s+)?climate\s+risk\b/gi,
+        replacement: 'climate-exposed areas',
+        suggestion: '"climate risk" → "climate-exposed areas"',
+    },
+    {
+        detect: /\bmajor\s+industry\b/gi,
+        replacement: 'major export-sector',
+        suggestion: '"major industry" → "major export-sector"',
+    },
+];
+
+export function repairUnsupportedScaleTokenArtifacts(text: string | undefined): string | undefined {
+    if (!text) return text;
+    let result = text;
+    for (const rule of UNSUPPORTED_SCALE_TOKEN_TEXT_REPLACEMENTS) {
+        result = result.replace(rule.detect, rule.replacement);
+    }
+    return result;
+}
 
 // ── Pure helper functions ──
 
@@ -731,6 +1014,22 @@ export function repairTextIntegrity(text: string | undefined): string | undefine
 function hasRepeatedWord(text: string): boolean {
     REPEATED_WORD_PATTERN.lastIndex = 0;
     return REPEATED_WORD_PATTERN.test(text);
+}
+
+function splitSentencesForDedup(text: string): string[] {
+    return text.split(/(?<=[.!?])\s+/).filter(Boolean);
+}
+
+function hasDuplicateSentence(text: string): boolean {
+    const sentences = splitSentencesForDedup(text);
+    const seen = new Set<string>();
+    for (const s of sentences) {
+        const key = s.trim().toLowerCase();
+        if (key.length < 15) continue;
+        if (seen.has(key)) return true;
+        seen.add(key);
+    }
+    return false;
 }
 
 function hasDanglingEnding(text: string): boolean {
@@ -978,6 +1277,19 @@ export function auditScenario(
 
     checkBannedPhrases(scenario.title, 'title');
     checkBannedPhrases(scenario.description, 'description');
+    checkBannedPhrases(scenario.outcomeHeadline, 'outcomeHeadline');
+    checkBannedPhrases(scenario.outcomeSummary, 'outcomeSummary');
+    checkBannedPhrases(scenario.outcomeContext, 'outcomeContext');
+    const checkOutcomeVoice = (text: string | undefined, fieldName: string) => {
+        if (!text) return;
+        const lower = text.toLowerCase();
+        if (/\byour\b/.test(lower)) {
+            add('error', 'outcome-second-person', scenario.id, `${fieldName} contains second-person "your" — outcome fields must be third-person journalistic`);
+        }
+        if (/(?<![a-z])you(?! know| see| understand| get| can| may| might| would| should| could| will| have| are| were| had| did)\b/.test(lower)) {
+            add('error', 'outcome-second-person', scenario.id, `${fieldName} contains second-person "you" — outcome fields must be third-person journalistic`);
+        }
+    };
     for (const opt of scenario.options) {
         checkFraming(opt.text, `option ${opt.id} text`, 'error');
         checkBannedPhrases(opt.text, `option ${opt.id} text`);
@@ -985,16 +1297,6 @@ export function auditScenario(
         checkBannedPhrases(opt.outcomeContext, `option ${opt.id} outcomeContext`);
         checkBannedPhrases(opt.outcomeHeadline, `option ${opt.id} headline`);
 
-        const checkOutcomeVoice = (text: string | undefined, fieldName: string) => {
-            if (!text) return;
-            const lower = text.toLowerCase();
-            if (/\byour\b/.test(lower)) {
-                add('error', 'outcome-second-person', scenario.id, `${fieldName} contains second-person "your" — outcome fields must be third-person journalistic`);
-            }
-            if (/(?<![a-z])you(?! know| see| understand| get| can| may| might| would| should| could| will| have| are| were| had| did)\b/.test(lower)) {
-                add('error', 'outcome-second-person', scenario.id, `${fieldName} contains second-person "you" — outcome fields must be third-person journalistic`);
-            }
-        };
         checkOutcomeVoice(opt.outcomeHeadline, `option ${opt.id} outcomeHeadline`);
         checkFraming(opt.outcomeHeadline, `option ${opt.id} outcomeHeadline`, 'warn', '{leader_title}');
         checkOutcomeVoice(opt.outcomeSummary, `option ${opt.id} outcomeSummary`);
@@ -1002,6 +1304,12 @@ export function auditScenario(
         checkOutcomeVoice(opt.outcomeContext, `option ${opt.id} outcomeContext`);
         checkFraming(opt.outcomeContext, `option ${opt.id} outcomeContext`, 'warn', '{leader_title}');
     }
+    checkOutcomeVoice(scenario.outcomeHeadline, 'outcomeHeadline');
+    checkFraming(scenario.outcomeHeadline, 'outcomeHeadline', 'warn', '{leader_title}');
+    checkOutcomeVoice(scenario.outcomeSummary, 'outcomeSummary');
+    checkFraming(scenario.outcomeSummary, 'outcomeSummary', 'warn', '{leader_title}');
+    checkOutcomeVoice(scenario.outcomeContext, 'outcomeContext');
+    checkFraming(scenario.outcomeContext, 'outcomeContext', 'warn', '{leader_title}');
 
     if (scenario.description) {
         const optionPreviews = [
@@ -1058,10 +1366,10 @@ export function auditScenario(
         for (const pat of GENERIC_RELATIONSHIP_PHRASES) {
             if (pat.test(text)) {
                 add(
-                    isUniversal ? 'error' : 'warn',
+                    isUniversal && scenario.metadata?.bundle !== 'diplomacy' ? 'error' : 'warn',
                     'generic-relationship-phrase',
                     scenario.id,
-                    `${fieldName}: generic foreign reference detected${isUniversal ? ' in universal scenario — must be entirely domestic' : ' — use relationship tokens ({the_neighbor}, {the_adversary}, etc.) instead'}`
+                    `${fieldName}: generic foreign reference detected${isUniversal && scenario.metadata?.bundle !== 'diplomacy' ? ' in universal scenario — must be entirely domestic' : ' — use relationship tokens ({the_neighbor}, {the_adversary}, etc.) instead'}`
                 );
                 break;
             }
@@ -1176,10 +1484,16 @@ export function auditScenario(
 
     checkHardCodedCurrency(scenario.title, 'title');
     checkHardCodedCurrency(scenario.description, 'description');
+    checkHardCodedCurrency(scenario.outcomeHeadline, 'outcomeHeadline');
+    checkHardCodedCurrency(scenario.outcomeSummary, 'outcomeSummary');
+    checkHardCodedCurrency(scenario.outcomeContext, 'outcomeContext');
     allOptionTexts.forEach((txt, idx) => checkHardCodedCurrency(txt, `option ${scenario.options[idx]?.id ?? idx} text/outcome`));
 
     checkGdpDescriptionMisuse(scenario.title, 'title');
     checkGdpDescriptionMisuse(scenario.description, 'description');
+    checkGdpDescriptionMisuse(scenario.outcomeHeadline, 'outcomeHeadline');
+    checkGdpDescriptionMisuse(scenario.outcomeSummary, 'outcomeSummary');
+    checkGdpDescriptionMisuse(scenario.outcomeContext, 'outcomeContext');
     allOptionTexts.forEach((txt, idx) => checkGdpDescriptionMisuse(txt, `option ${scenario.options[idx]?.id ?? idx} text/outcome`));
 
     if (scenario.description) {
@@ -1327,16 +1641,17 @@ export function auditScenario(
         }
 
         // Universal scenarios must not gate on any requires flags — they are supposed to fire for all countries.
+        // This is a non-repairable error: the concept itself must be regenerated without institutional content.
         if (meta.scopeTier === 'universal' && scenario.applicability?.requires) {
             const setRequires = Object.entries(scenario.applicability.requires)
                 .filter(([, v]) => v === true || v != null)
                 .map(([k]) => k);
             if (setRequires.length > 0) {
                 add(
-                    'warn',
-                    'universal-has-requires',
+                    'error',
+                    'universal-institutional-content',
                     scenario.id,
-                    `Universal scenario sets requires flags (${setRequires.join(', ')}) but universal scope should apply to all countries. Move country-specific gating to a regional, cluster, or exclusive scenario instead.`,
+                    `Universal scenario requires institutional flags (${setRequires.join(', ')}). Concept must be rewritten without institutional content — this is not repairable.`,
                     false
                 );
             }
@@ -1505,6 +1820,9 @@ export function auditScenario(
 
     checkTokens(scenario.description, 'description');
     checkTokens(scenario.title, 'title');
+    checkTokens(scenario.outcomeHeadline, 'outcomeHeadline');
+    checkTokens(scenario.outcomeSummary, 'outcomeSummary');
+    checkTokens(scenario.outcomeContext, 'outcomeContext');
     for (const opt of scenario.options) {
         checkTokens(opt.text, `option ${opt.id} text`);
         checkTokens(opt.outcomeHeadline, `option ${opt.id} headline`);
@@ -1536,7 +1854,11 @@ export function auditScenario(
         );
     }
 
-    const applicableCountries = scenario.applicability?.applicableCountryIds ?? [];
+    const applicableCountries = (scenario.applicability?.applicableCountryIds?.length ?? 0) > 0
+        ? (scenario.applicability!.applicableCountryIds as string[])
+        : Array.isArray(scenario.metadata?.applicable_countries)
+            ? (scenario.metadata!.applicable_countries as string[])
+            : [];
     const countriesById = cfg.countriesById ?? {};
     if (relationshipTokensUsed.length > 0 && applicableCountries.length > 0) {
         for (const tokenName of relationshipTokensUsed) {
@@ -1646,12 +1968,26 @@ export function auditScenario(
             add('error', 'orphaned-punctuation', scenario.id, `${fieldName} contains orphaned or doubled punctuation`, true);
         if (hasRepeatedWord(text))
             add('warn', 'repeated-word', scenario.id, `${fieldName} repeats a word consecutively`, true);
+        if (hasDuplicateSentence(text))
+            add('warn', 'repeated-sentence', scenario.id, `${fieldName} contains a duplicated sentence`, true);
         if (hasDanglingEnding(text))
             add('warn', 'dangling-ending', scenario.id, `${fieldName} ends with a dangling article or preposition`, true);
         if (fieldName.includes('headline') && isHeadlineFragment(text))
             add('warn', 'headline-fragment', scenario.id, `${fieldName} reads like an incomplete fragment`, true);
         if (fieldName.includes('option') && /\b(You|you)\s+direct(ed)?\s+to\b/.test(text))
             add('warn', 'missing-direct-object', scenario.id, `${fieldName} is missing a direct object after "direct to"`, true);
+        for (const rule of UNSUPPORTED_SCALE_TOKEN_TEXT_REPLACEMENTS) {
+            rule.detect.lastIndex = 0;
+            if (rule.detect.test(text)) {
+                add(
+                    'warn',
+                    'unsupported-scale-token-artifact',
+                    scenario.id,
+                    `${fieldName} contains text left behind by an unsupported scale token — ${rule.suggestion}.`,
+                    true
+                );
+            }
+        }
         if (!isExclusive && /\bthe \{[a-z_]+\}/i.test(text)) {
             // In the minimal strategy, "the {finance_role}" is the CORRECT way to write it
             // (no article form tokens). This rule only applies to legacy.
@@ -1715,6 +2051,9 @@ export function auditScenario(
 
     checkTextQuality(scenario.title, 'title');
     checkTextQuality(scenario.description, 'description');
+    checkTextQuality(scenario.outcomeHeadline, 'outcomeHeadline');
+    checkTextQuality(scenario.outcomeSummary, 'outcomeSummary');
+    checkTextQuality(scenario.outcomeContext, 'outcomeContext');
     for (const opt of scenario.options) {
         checkTextQuality(opt.text, `option ${opt.id} text`);
         checkTextQuality(opt.outcomeHeadline, `option ${opt.id} headline`);
@@ -1953,6 +2292,19 @@ export function scoreScenario(issues: Issue[]): number {
     return Math.max(0, score);
 }
 
+export function collapseRepeatedSentences(text: string): string {
+    const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+    const seen = new Set<string>();
+    const deduped: string[] = [];
+    for (const sentence of sentences) {
+        const key = sentence.trim().toLowerCase();
+        if (key.length >= 15 && seen.has(key)) continue;
+        seen.add(key);
+        deduped.push(sentence);
+    }
+    return deduped.join(' ');
+}
+
 export function normalizeScenarioTextFields(scenario: BundleScenario): { fixed: boolean; fixes: string[] } {
     let fixed = false;
     const fixes: string[] = [];
@@ -1963,15 +2315,6 @@ export function normalizeScenarioTextFields(scenario: BundleScenario): { fixed: 
     const collapseRepeatedPhrase = (text: string): string =>
         text.replace(/\b([A-Za-z][A-Za-z'-]*(?:\s+[A-Za-z][A-Za-z'-]*){0,3})\s+\1\b/gi, '$1');
 
-    const collapseRepeatedSentences = (text: string): string => {
-        const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
-        const deduped: string[] = [];
-        for (const sentence of sentences) {
-            if (deduped[deduped.length - 1]?.toLowerCase() === sentence.toLowerCase()) continue;
-            deduped.push(sentence);
-        }
-        return deduped.join(' ');
-    };
 
     const capitalizeFirstNarrativeLetter = (text: string | undefined): string | undefined => {
         if (!text) return text;
@@ -2066,22 +2409,46 @@ export function normalizeScenarioTextFields(scenario: BundleScenario): { fixed: 
         return normalized;
     };
 
+    const applyPhraseRulesToText = (text: string): string => {
+        let result = text;
+        for (const rule of GOV_STRUCTURE_RULES) {
+            result = result.replace(rule.detect, rule.replacement);
+        }
+        for (const rule of INSTITUTION_PHRASE_RULES) {
+            result = result.replace(rule.detect, rule.replacement);
+        }
+        return result;
+    };
+
+    const applyPhraseNormalization = (value: string | undefined, label: string): string | undefined => {
+        if (!value) return value;
+        const normalized = applyPhraseRulesToText(value);
+        if (value !== normalized) {
+            fixed = true;
+            fixes.push(`${label}: phrase normalization`);
+        }
+        return normalized;
+    };
+
     scenario.title = apply(scenario.title, 'normalized title') ?? scenario.title;
-    scenario.description = apply(scenario.description, 'normalized description') ?? scenario.description;
+    scenario.description = applyPhraseNormalization(apply(scenario.description, 'normalized description'), 'description') ?? scenario.description;
+    scenario.outcomeHeadline = applyPhraseNormalization(apply(scenario.outcomeHeadline, 'normalized outcomeHeadline'), 'outcomeHeadline') ?? scenario.outcomeHeadline;
+    scenario.outcomeSummary = applyPhraseNormalization(apply(scenario.outcomeSummary, 'normalized outcomeSummary'), 'outcomeSummary') ?? scenario.outcomeSummary;
+    scenario.outcomeContext = applyPhraseNormalization(apply(scenario.outcomeContext, 'normalized outcomeContext'), 'outcomeContext') ?? scenario.outcomeContext;
 
     for (const option of scenario.options) {
-        option.text = apply(option.text, `${option.id}: normalized text`) ?? option.text;
+        option.text = applyPhraseNormalization(apply(option.text, `${option.id}: normalized text`), `${option.id}: text`) ?? option.text;
         if (typeof option.outcomeHeadline === 'string') {
-            option.outcomeHeadline = apply(option.outcomeHeadline, `${option.id}: normalized outcomeHeadline`) ?? option.outcomeHeadline;
+            option.outcomeHeadline = applyPhraseNormalization(apply(option.outcomeHeadline, `${option.id}: normalized outcomeHeadline`), `${option.id}: outcomeHeadline`) ?? option.outcomeHeadline;
         }
         if (typeof option.outcomeSummary === 'string') {
-            option.outcomeSummary = apply(option.outcomeSummary, `${option.id}: normalized outcomeSummary`) ?? option.outcomeSummary;
+            option.outcomeSummary = applyPhraseNormalization(apply(option.outcomeSummary, `${option.id}: normalized outcomeSummary`), `${option.id}: outcomeSummary`) ?? option.outcomeSummary;
         }
         if (typeof option.outcomeContext === 'string') {
-            option.outcomeContext = apply(option.outcomeContext, `${option.id}: normalized outcomeContext`) ?? option.outcomeContext;
+            option.outcomeContext = applyPhraseNormalization(apply(option.outcomeContext, `${option.id}: normalized outcomeContext`), `${option.id}: outcomeContext`) ?? option.outcomeContext;
         }
         for (const feedback of option.advisorFeedback ?? []) {
-            feedback.feedback = apply(feedback.feedback, `${option.id}: normalized advisor feedback`) ?? feedback.feedback;
+            feedback.feedback = applyPhraseNormalization(apply(feedback.feedback, `${option.id}: normalized advisor feedback`), `${option.id}: advisor feedback`) ?? feedback.feedback;
         }
     }
 

@@ -17,6 +17,10 @@ export interface ConceptSeed {
   sourceKind?: ScenarioSourceKind;
   active?: boolean;
   rank?: number;
+  // Canonical scenario tags this seed is expected to emit (e.g. ['education','student_loans']).
+  // Used by lane-uniqueness dedup so two seeds that would produce the same tag combo in the
+  // same bundle don't both run in the same generation batch.
+  primaryTags?: string[];
 }
 
 interface SeedQuery {
@@ -32,6 +36,21 @@ function getFirestore(): FirebaseFirestore.Firestore {
     admin.initializeApp();
   }
   return admin.firestore();
+}
+
+/**
+ * B4: Keywords whose presence in a seed concept/theme indicates the scenario will require
+ * a country-specific institution token (legislature, opposition party, central bank, monarch, etc.).
+ * Seeds containing these terms should not be selected for universal-scope generation because
+ * the drafter will inevitably reach for the gated token, triggering audit warnings or scope
+ * mismatches after enrichment.
+ */
+const FLAG_BOUND_SEED_PATTERN =
+  /\b(parliament|parliamentary|legislature|legislative|congress|congressional|senate|senatorial|opposition\s+party|governing\s+party|governing\s+coalition|central\s+bank|monetary\s+policy|interest\s+rates?|stock\s+market|financial\s+markets?|supreme\s+court|monarch|royal\s+family|royalist|electoral|election|ballot|referendum|vote\s+of\s+confidence|democratic\s+(?:oversight|reform|accountability|system|process|institution|backsliding|erosion)|election\s+integrity|parliamentary\s+system|partisan\s+(?:divide|split|gridlock)|multiparty|multi-party)\b/i;
+
+function isFlagBoundConcept(seed: ConceptSeed): boolean {
+  const text = `${seed.concept ?? ''} ${seed.theme ?? ''}`;
+  return FLAG_BOUND_SEED_PATTERN.test(text);
 }
 
 function getSeedPriority(seed: ConceptSeed, query: SeedQuery): number {
@@ -50,7 +69,20 @@ function getSeedPriority(seed: ConceptSeed, query: SeedQuery): number {
 
 export function selectSeedConcepts(seeds: ConceptSeed[], query: SeedQuery): ConceptSeed[] {
   const eligible = seeds
-    .filter((seed) => seed.active !== false)
+    .filter((seed) => {
+      if (seed.active === false) return false;
+      // B4: At universal scope, exclude seeds whose concept/theme contains flag-bound institutional
+      // keywords. These seeds would cause the drafter to reach for gated tokens ({legislature},
+      // {opposition_party}, etc.) that are forbidden at universal scope, producing audit warnings
+      // or a scopeTier downgrade after enrichment.
+      if (query.scopeTier === 'universal' && isFlagBoundConcept(seed)) {
+        console.log(
+          `[ConceptSeeds] Excluded flag-bound seed at universal scope: "${seed.theme || seed.concept?.slice(0, 50)}"`
+        );
+        return false;
+      }
+      return true;
+    })
     .sort((left, right) => {
       const priorityDiff = getSeedPriority(right, query) - getSeedPriority(left, query);
       if (priorityDiff !== 0) return priorityDiff;
@@ -62,14 +94,27 @@ export function selectSeedConcepts(seeds: ConceptSeed[], query: SeedQuery): Conc
   const selected: ConceptSeed[] = [];
   const usedLanes = new Set<string>();
 
-  const laneFor = (seed: ConceptSeed) => [
-    seed.severity ?? 'unknown',
-    seed.difficulty ?? 'unknown',
-    seed.actorPattern ?? 'unknown',
-    seed.optionShape ?? 'unknown',
-    seed.theme ?? 'unknown',
-    seed.primaryMetrics?.[0] ?? 'unknown',
-  ].join('|');
+  const laneFor = (seed: ConceptSeed) => {
+    // Include up to the first 2 canonical tags (sorted+lowercased) so two seeds that
+    // would produce the same tag combo don't both run in the same batch even if their
+    // severity / difficulty / shape differ.
+    const topTags = Array.isArray(seed.primaryTags)
+      ? [...seed.primaryTags]
+          .map((t) => t.trim().toLowerCase())
+          .filter((t) => t.length > 0)
+          .sort()
+          .slice(0, 2)
+      : [];
+    return [
+      seed.severity ?? 'unknown',
+      seed.difficulty ?? 'unknown',
+      seed.actorPattern ?? 'unknown',
+      seed.optionShape ?? 'unknown',
+      seed.theme ?? 'unknown',
+      seed.primaryMetrics?.[0] ?? 'unknown',
+      topTags.join(',') || 'no_tags',
+    ].join('|');
+  };
 
   for (const seed of eligible) {
     if (selected.length >= query.count) break;

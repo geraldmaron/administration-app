@@ -5,7 +5,8 @@
  *   npx tsx src/tools/generate-bundle.ts --bundle diplomacy --count 10
  *   npx tsx src/tools/generate-bundle.ts --bundle diplomacy --count 10 --dry-run
  *
- * Requires: OPENAI_API_KEY env var and serviceAccountKey.json at project root.
+ * Requires OPENROUTER_API_KEY for cloud, or `USE_OPENAI_DIRECT=true` with OPENAI_API_KEY, or `--ollama` (local).
+ * Also requires serviceAccountKey.json at project root (or GOOGLE_APPLICATION_CREDENTIALS).
  */
 
 import * as path from 'path';
@@ -27,7 +28,7 @@ function loadEnvFromFile(): void {
             if (eq < 1) continue;
             const key = trimmed.slice(0, eq).trim();
             const val = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
-            if (!(key in process.env)) process.env[key] = val;
+            if (!(key in process.env) || process.env[key] === '') process.env[key] = val;
         }
     }
 }
@@ -98,7 +99,7 @@ async function main() {
         console.error('Usage: npx tsx src/tools/generate-bundle.ts --bundle <bundleId> --count <n>');
         console.error('  --dry-run      Show plan without generating');
         console.error('  --skip-export  Generate and save to Firestore but skip Storage export');
-        console.error('  --ollama       Use Ollama models instead of OpenAI');
+        console.error('  --ollama       Use Ollama (local) instead of cloud OpenRouter');
         process.exit(1);
     }
 
@@ -107,8 +108,14 @@ async function main() {
         process.exit(1);
     }
 
-    if (!useOllama && !process.env.OPENAI_API_KEY && !process.env.OPENAI_KEY) {
-        console.error('[generate-bundle] OPENAI_API_KEY is not set. Use --ollama for local models.');
+    const directOpenAI =
+        process.env.USE_OPENAI_DIRECT === 'true' &&
+        !!(process.env.OPENAI_API_KEY || process.env.OPENAI_KEY);
+    const hasCloudKey = !!process.env.OPENROUTER_API_KEY || directOpenAI;
+    if (!useOllama && !hasCloudKey) {
+        console.error(
+            '[generate-bundle] No cloud LLM key found. Set OPENROUTER_API_KEY, or USE_OPENAI_DIRECT=true with OPENAI_API_KEY, or pass --ollama for local models.',
+        );
         process.exit(1);
     }
 

@@ -2,14 +2,14 @@ import * as logger from 'firebase-functions/logger';
 import type * as FirebaseFirestore from '@google-cloud/firestore';
 import { generateScenarios, type GenerationRequest, type GenerationResult } from '../scenario-engine';
 import { generateEmbedding, getEmbeddingText } from './semantic-dedup';
-import { buildOpenAIFullSendModelConfig } from './generation-models';
+import { buildCloudFullSendModelConfig } from './generation-models';
 import type { BundleId } from '../data/schemas/bundleIds';
 import type { GenerationDistributionConfig, GenerationNewsContextItem, GenerationModelConfig } from '../shared/generation-contract';
 import type { NormalizedGenerationScope } from '../shared/generation-contract';
 import type { BundleScenario } from './audit-rules';
 
 const FULL_SEND_DEDUP_SIMILARITY_THRESHOLD = 0.88;
-const FULL_SEND_OPENAI_CONCURRENCY = parseInt(process.env.FULL_SEND_OPENAI_CONCURRENCY ?? '6', 10);
+const FULL_SEND_CLOUD_CONCURRENCY = parseInt(process.env.FULL_SEND_CLOUD_CONCURRENCY ?? process.env.FULL_SEND_OPENAI_CONCURRENCY ?? '6', 10);
 
 export interface FullSendCoordinatorParams {
   jobId: string;
@@ -27,12 +27,12 @@ export interface FullSendCoordinatorParams {
 
 export interface FullSendResult {
   localScenarios: BundleScenario[];
-  openaiScenarios: BundleScenario[];
+  cloudScenarios: BundleScenario[];
   mergedScenarios: BundleScenario[];
   localTokenSummary: GenerationResult['tokenSummary'];
-  openaiTokenSummary: GenerationResult['tokenSummary'];
+  cloudTokenSummary: GenerationResult['tokenSummary'];
   localFailed: boolean;
-  openaiFailed: boolean;
+  cloudFailed: boolean;
 }
 
 function buildBundleRequest(
@@ -59,7 +59,7 @@ function buildBundleRequest(
 }
 
 async function runPipeline(
-  label: 'local' | 'openai',
+  label: 'local' | 'cloud',
   bundles: BundleId[],
   params: FullSendCoordinatorParams,
   modelConfig: GenerationModelConfig | undefined,
@@ -108,10 +108,10 @@ async function cosineSimilarity(a: number[], b: number[]): Promise<number> {
 
 export async function deduplicateAcrossProviders(
   localScenarios: BundleScenario[],
-  openaiScenarios: BundleScenario[],
+  cloudScenarios: BundleScenario[],
 ): Promise<BundleScenario[]> {
-  if (openaiScenarios.length === 0) return localScenarios;
-  if (localScenarios.length === 0) return openaiScenarios;
+  if (cloudScenarios.length === 0) return localScenarios;
+  if (localScenarios.length === 0) return cloudScenarios;
 
   const localEmbeddings: Array<{ scenario: BundleScenario; embedding: number[] }> = await Promise.all(
     localScenarios.map(async (s) => ({
@@ -123,7 +123,7 @@ export async function deduplicateAcrossProviders(
   const accepted: BundleScenario[] = [...localScenarios];
   const acceptedEmbeddings: number[][] = localEmbeddings.map((e) => e.embedding);
 
-  for (const candidate of openaiScenarios) {
+  for (const candidate of cloudScenarios) {
     let embedding: number[];
     try {
       embedding = await generateEmbedding(getEmbeddingText(candidate));
@@ -163,46 +163,46 @@ export async function deduplicateAcrossProviders(
 }
 
 export async function runFullSendCoordinator(params: FullSendCoordinatorParams): Promise<FullSendResult> {
-  const openaiModelConfig = buildOpenAIFullSendModelConfig();
+  const cloudModelConfig = buildCloudFullSendModelConfig();
 
   logger.info(`[FullSend] Starting dual-pipeline for job ${params.jobId}: ${params.validBundles.length} bundles`);
 
-  const [localSettled, openaiSettled] = await Promise.allSettled([
+  const [localSettled, cloudSettled] = await Promise.allSettled([
     runPipeline('local', params.validBundles, params, params.localModelConfig, params.maxBundleConcurrency),
-    runPipeline('openai', params.validBundles, params, openaiModelConfig, FULL_SEND_OPENAI_CONCURRENCY),
+    runPipeline('cloud', params.validBundles, params, cloudModelConfig, FULL_SEND_CLOUD_CONCURRENCY),
   ]);
 
   const emptyTokenSummary = () => ({ inputTokens: 0, outputTokens: 0, costUsd: 0, callCount: 0 });
 
   const localResult = localSettled.status === 'fulfilled' ? localSettled.value : null;
-  const openaiResult = openaiSettled.status === 'fulfilled' ? openaiSettled.value : null;
+  const cloudResult = cloudSettled.status === 'fulfilled' ? cloudSettled.value : null;
 
   if (localSettled.status === 'rejected') {
     logger.error(`[FullSend] Local pipeline failed: ${localSettled.reason?.message ?? localSettled.reason}`);
   }
-  if (openaiSettled.status === 'rejected') {
-    logger.error(`[FullSend] OpenAI pipeline failed: ${openaiSettled.reason?.message ?? openaiSettled.reason}`);
+  if (cloudSettled.status === 'rejected') {
+    logger.error(`[FullSend] Cloud pipeline failed: ${cloudSettled.reason?.message ?? cloudSettled.reason}`);
   }
 
   const localScenarios = localResult?.scenarios ?? [];
-  const openaiScenarios = (openaiResult?.scenarios ?? []).map((s) => ({
+  const cloudScenarios = (cloudResult?.scenarios ?? []).map((s) => ({
     ...s,
-    metadata: { ...s.metadata, fullSendProvider: 'openai' as const },
+    metadata: { ...s.metadata, fullSendProvider: 'cloud' as const },
   }));
 
-  logger.info(`[FullSend] Local: ${localScenarios.length} scenarios, OpenAI: ${openaiScenarios.length} scenarios — deduplicating`);
+  logger.info(`[FullSend] Local: ${localScenarios.length} scenarios, Cloud: ${cloudScenarios.length} scenarios — deduplicating`);
 
-  const mergedScenarios = await deduplicateAcrossProviders(localScenarios, openaiScenarios);
+  const mergedScenarios = await deduplicateAcrossProviders(localScenarios, cloudScenarios);
 
   logger.info(`[FullSend] Merged: ${mergedScenarios.length} unique scenarios`);
 
   return {
     localScenarios,
-    openaiScenarios,
+    cloudScenarios,
     mergedScenarios,
     localTokenSummary: localResult?.tokenSummary ?? emptyTokenSummary(),
-    openaiTokenSummary: openaiResult?.tokenSummary ?? emptyTokenSummary(),
+    cloudTokenSummary: cloudResult?.tokenSummary ?? emptyTokenSummary(),
     localFailed: localSettled.status === 'rejected',
-    openaiFailed: openaiSettled.status === 'rejected',
+    cloudFailed: cloudSettled.status === 'rejected',
   };
 }

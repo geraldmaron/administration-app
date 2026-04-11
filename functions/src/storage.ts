@@ -499,6 +499,7 @@ export async function saveScenario(
 
     // 5. Save embedding if semantic dedup is enabled
     const bundle = scenario.metadata?.bundle || 'general';
+    const scenarioTags = Array.isArray(scenario.metadata?.tags) ? scenario.metadata!.tags! : [];
     if (isSemanticDedupEnabled()) {
         try {
             // Check if embedding was pre-computed during generation
@@ -510,13 +511,14 @@ export async function saveScenario(
                     scenario.id,
                     embedding,
                     bundle,
-                    getEmbeddingText(scenario)
+                    getEmbeddingText(scenario),
+                    scenarioTags
                 );
             } else {
                 // Generate embedding on the fly (for manual scenarios)
                 const embeddingText = getEmbeddingText(scenario);
                 const newEmbedding = await generateEmbedding(embeddingText);
-                await saveEmbedding(scenario.id, newEmbedding, bundle, embeddingText);
+                await saveEmbedding(scenario.id, newEmbedding, bundle, embeddingText, scenarioTags);
             }
         } catch (error: any) {
             console.warn(`[Storage] Failed to save embedding (non-fatal):`, error.message);

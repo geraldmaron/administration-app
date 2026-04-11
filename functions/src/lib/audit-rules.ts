@@ -4,7 +4,7 @@ import type { CompiledTokenRegistry } from '../shared/token-registry-contract';
 import { ALL_BUNDLE_IDS, isValidBundleId } from '../data/schemas/bundleIds';
 import { tryNormalizeMetricId } from '../data/schemas/metricIds';
 import { loadCountryCatalog } from './country-catalog';
-import type { RequiresFlag, ScenarioSourceKind } from '../types';
+import type { RequiresFlag, ScenarioScopeTier, ScenarioSourceKind } from '../types';
 import { VALID_SETTING_TARGETS } from '../types';
 import {
     auditScenario as _auditScenarioWithConfig,
@@ -42,6 +42,8 @@ import {
     ABBREVIATION_PATTERN,
     REPEATED_WORD_PATTERN,
     DANGLING_ENDING_PATTERN,
+    UNSUPPORTED_SCALE_TOKEN_TEXT_REPLACEMENTS,
+    repairUnsupportedScaleTokenArtifacts,
     TOKEN_REQUIRES_MAP,
     REQUIRES_FLAG_REGISTRY,
 } from '../shared/scenario-audit';
@@ -80,6 +82,8 @@ export {
     ABBREVIATION_PATTERN,
     REPEATED_WORD_PATTERN,
     DANGLING_ENDING_PATTERN,
+    UNSUPPORTED_SCALE_TOKEN_TEXT_REPLACEMENTS,
+    repairUnsupportedScaleTokenArtifacts,
     REQUIRES_FLAG_REGISTRY,
 };
 
@@ -88,6 +92,12 @@ export { isValidBundleId };
 export { CANONICAL_ROLE_IDS };
 
 const CANONICAL_TAG_SET = new Set<string>(CANONICAL_SCENARIO_TAGS);
+
+const POLICY_TARGET_MAPPINGS: Record<string, string> = {
+    'policy.housing': 'fiscal.spendingSocial',
+    'policy.housingPolicy': 'fiscal.spendingSocial',
+    'policy.housingAffordability': 'fiscal.spendingSocial',
+};
 
 // ---------------------------------------------------------------------------
 // Config cache — populated by initializeAuditConfig()
@@ -176,7 +186,7 @@ function applyPhraseRules(text: string, rules: PhraseRule[]): string {
     for (const rule of rules) {
         result = result.replace(rule.detect, rule.replacement);
     }
-    return result;
+    return result.replace(/\bthe\s+the\s+\{/gi, 'the {');
 }
 
 function calculateAdvisorStance(
@@ -385,6 +395,25 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         }
     }
 
+    for (const opt of scenario.options) {
+        if (!Array.isArray(opt.policyImplications)) continue;
+        for (const implication of opt.policyImplications as any[]) {
+            if (!implication || typeof implication.target !== 'string') continue;
+            const mappedTarget = POLICY_TARGET_MAPPINGS[implication.target];
+            if (mappedTarget) {
+                fixes.push(`${opt.id}: mapped policyImplication target ${implication.target}->${mappedTarget}`);
+                implication.target = mappedTarget;
+                fixed = true;
+            }
+            if (typeof implication.delta === 'number' && Number.isFinite(implication.delta) && (implication.delta < -15 || implication.delta > 15)) {
+                const clamped = Math.max(-15, Math.min(15, implication.delta));
+                fixes.push(`${opt.id}: clamped policyImplication delta ${implication.delta}->${clamped}`);
+                implication.delta = clamped;
+                fixed = true;
+            }
+        }
+    }
+
     const fixWhitespace = (text: string | undefined): string | undefined => {
         if (!text) return text;
         return (repairTextIntegrity(text) ?? text)
@@ -481,6 +510,34 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
                     opt.text = optCondensed;
                     fixed = true;
                     fixes.push(`${opt.id}: condensed option text to 3 sentences`);
+                }
+            }
+        }
+    }
+
+    {
+        const repairScaleArtifacts = (text: string | undefined): string | undefined =>
+            repairUnsupportedScaleTokenArtifacts(text);
+        const applyScaleArtifactRepair = (text: string | undefined, label: string): string | undefined => {
+            const after = repairScaleArtifacts(text);
+            if (after !== text) {
+                fixes.push(`${label}: repaired unsupported scale-token artifact text`);
+                fixed = true;
+            }
+            return after ?? text;
+        };
+
+        scenario.title = applyScaleArtifactRepair(scenario.title, 'title') ?? scenario.title;
+        scenario.description = applyScaleArtifactRepair(scenario.description, 'description') ?? scenario.description;
+        for (const opt of scenario.options) {
+            for (const field of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+                if (typeof opt[field] === 'string') {
+                    (opt[field] as string) = applyScaleArtifactRepair(opt[field] as string, `${opt.id} ${field}`) ?? (opt[field] as string);
+                }
+            }
+            for (const fb of ((opt.advisorFeedback ?? []) as any[])) {
+                if (typeof fb?.feedback === 'string') {
+                    fb.feedback = applyScaleArtifactRepair(fb.feedback, `${opt.id} advisor ${fb.roleId} feedback`) ?? fb.feedback;
                 }
             }
         }
@@ -612,7 +669,8 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         }
     }
 
-    const formulaicEndings = /\s+(Crisis|Debate|Decision|Dilemma|Challenge|Conflict|Response|Response Options|Choices|Options)\s*$/i;
+    const formulaicEndings =
+        /\s+(Crisis|Crises)(?:\s+(Response|Options|Management|Mitigation))?\s*$|\s+(Debate|Decision|Dilemma|Challenge|Conflict|Response|Response\s+Options|Choices|Options|Management|Mitigation)\s*$/i;
     const gerundOpeners = /^(Managing|Balancing|Handling|Navigating|Addressing)\s+/i;
     if (formulaicEndings.test(scenario.title)) {
         const before = scenario.title;
@@ -626,11 +684,15 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
     }
     if (gerundOpeners.test(scenario.title)) {
         const before = scenario.title;
-        scenario.title = scenario.title.replace(gerundOpeners, '').trim();
-        if (scenario.title.split(/\s+/).length < 4) {
-            scenario.title = before;
-        } else {
-            fixes.push(`title: stripped gerund opener "${before}" → "${scenario.title}"`);
+        let rest = scenario.title.replace(gerundOpeners, '').trim();
+        const wordCount = rest.split(/\s+/).filter(Boolean).length;
+        if (wordCount < 4) {
+            const tail = rest.length > 0 ? rest.charAt(0).toUpperCase() + rest.slice(1) : 'Policy Crossroads';
+            rest = `Cabinet Faces ${tail}`;
+        }
+        scenario.title = rest;
+        if (before !== scenario.title) {
+            fixes.push(`title: replaced gerund opener "${before}" → "${scenario.title}"`);
             fixed = true;
         }
     }
@@ -707,7 +769,10 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         scenario.description,
         ...scenario.options.map(o => o.text),
     ].filter(Boolean).join(' ');
-    const inferred = inferRequirementsFromNarrative(corpus, scenario.applicability?.requires);
+    const isUniversalScope = scenario.metadata?.scopeTier === 'universal';
+    const inferred = isUniversalScope
+        ? ({} as Partial<Record<RequiresFlag, true>>)
+        : inferRequirementsFromNarrative(corpus, scenario.applicability?.requires);
     if (Object.keys(inferred).length > 0) {
         if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
         scenario.applicability.requires = { ...scenario.applicability.requires, ...inferred };
@@ -726,43 +791,45 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
             ...((o.advisorFeedback ?? []) as any[]).map((fb: any) => fb.feedback),
         ]),
     ].filter(Boolean).join(' ');
-    const tokenRequiresEntries = Object.entries(TOKEN_REQUIRES_MAP) as Array<[string, RequiresFlag]>;
-    for (const [tokenName, flag] of tokenRequiresEntries) {
-        const tokenPattern = new RegExp(`\\{(?:the_)?${tokenName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}(?:'s|'s)?`, 'i');
-        if (tokenPattern.test(allText) && !scenario.applicability?.requires?.[flag]) {
+    if (!isUniversalScope) {
+        const tokenRequiresEntries = Object.entries(TOKEN_REQUIRES_MAP) as Array<[string, RequiresFlag]>;
+        for (const [tokenName, flag] of tokenRequiresEntries) {
+            const tokenPattern = new RegExp(`\\{(?:the_)?${tokenName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}(?:'s|'s)?`, 'i');
+            if (tokenPattern.test(allText) && !scenario.applicability?.requires?.[flag]) {
+                if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
+                if (!scenario.applicability.requires) scenario.applicability.requires = {};
+                (scenario.applicability.requires as Record<string, true>)[flag] = true;
+                fixed = true;
+                fixes.push(`auto-set requires.${flag} (token {${tokenName}} found in text)`);
+            }
+        }
+        for (const [flag, def] of Object.entries(REQUIRES_FLAG_REGISTRY) as Array<[RequiresFlag, (typeof REQUIRES_FLAG_REGISTRY)[RequiresFlag]]>) {
+            if (!def?.tokens?.length || scenario.applicability?.requires?.[flag]) continue;
+            const matched = def.tokens.some((tokenName) => {
+                const tokenPattern = new RegExp(`\\{(?:the_)?${tokenName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}(?:'s|'s)?`, 'i');
+                return tokenPattern.test(allText);
+            });
+            if (!matched) continue;
             if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
             if (!scenario.applicability.requires) scenario.applicability.requires = {};
             (scenario.applicability.requires as Record<string, true>)[flag] = true;
             fixed = true;
-            fixes.push(`auto-set requires.${flag} (token {${tokenName}} found in text)`);
+            fixes.push(`auto-set requires.${flag} (matched institutional token family)`);
         }
-    }
-    for (const [flag, def] of Object.entries(REQUIRES_FLAG_REGISTRY) as Array<[RequiresFlag, (typeof REQUIRES_FLAG_REGISTRY)[RequiresFlag]]>) {
-        if (!def?.tokens?.length || scenario.applicability?.requires?.[flag]) continue;
-        const matched = def.tokens.some((tokenName) => {
-            const tokenPattern = new RegExp(`\\{(?:the_)?${tokenName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}(?:'s|'s)?`, 'i');
-            return tokenPattern.test(allText);
-        });
-        if (!matched) continue;
-        if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
-        if (!scenario.applicability.requires) scenario.applicability.requires = {};
-        (scenario.applicability.requires as Record<string, true>)[flag] = true;
-        fixed = true;
-        fixes.push(`auto-set requires.${flag} (matched institutional token family)`);
-    }
-    const explicitInstitutionTokenRepairs: Array<{ flag: RequiresFlag; pattern: RegExp }> = [
-        { flag: 'has_legislature', pattern: /\{(?:the_)?legislature\}(?:'s|'s)?/i },
-        { flag: 'has_opposition_party', pattern: /\{(?:the_)?opposition_party(?:_leader)?\}(?:'s|'s)?/i },
-        { flag: 'has_central_bank', pattern: /\{(?:the_)?central_bank\}(?:'s|'s)?/i },
-        { flag: 'has_stock_exchange', pattern: /\{(?:the_)?stock_exchange\}(?:'s|'s)?/i },
-    ];
-    for (const repair of explicitInstitutionTokenRepairs) {
-        if (!repair.pattern.test(allText) || scenario.applicability?.requires?.[repair.flag]) continue;
-        if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
-        if (!scenario.applicability.requires) scenario.applicability.requires = {};
-        (scenario.applicability.requires as Record<string, true>)[repair.flag] = true;
-        fixed = true;
-        fixes.push(`auto-set requires.${repair.flag} (matched institution token)`);
+        const explicitInstitutionTokenRepairs: Array<{ flag: RequiresFlag; pattern: RegExp }> = [
+            { flag: 'has_legislature', pattern: /\{(?:the_)?legislature\}(?:'s|'s)?/i },
+            { flag: 'has_opposition_party', pattern: /\{(?:the_)?opposition_party(?:_leader)?\}(?:'s|'s)?/i },
+            { flag: 'has_central_bank', pattern: /\{(?:the_)?central_bank\}(?:'s|'s)?/i },
+            { flag: 'has_stock_exchange', pattern: /\{(?:the_)?stock_exchange\}(?:'s|'s)?/i },
+        ];
+        for (const repair of explicitInstitutionTokenRepairs) {
+            if (!repair.pattern.test(allText) || scenario.applicability?.requires?.[repair.flag]) continue;
+            if (!scenario.applicability) scenario.applicability = { requires: {}, metricGates: [] };
+            if (!scenario.applicability.requires) scenario.applicability.requires = {};
+            (scenario.applicability.requires as Record<string, true>)[repair.flag] = true;
+            fixed = true;
+            fixes.push(`auto-set requires.${repair.flag} (matched institution token)`);
+        }
     }
 
     // Sync requires flags → metricGates: for each requires flag that implies a metric gate,
@@ -795,7 +862,7 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         title: scenario.title,
         description: scenario.description,
         tags: scenario.metadata?.tags,
-        requires: scenario.applicability?.requires,
+        requires: isUniversalScope ? {} : scenario.applicability?.requires,
     });
     const existingMetricGates = scenario.applicability?.metricGates ?? [];
     if (JSON.stringify(rebuiltMetricGates) !== JSON.stringify(existingMetricGates)) {
@@ -809,21 +876,97 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         );
     }
 
-    // Universal scope: strip regime-type requires flags that restrict to a subset of countries.
-    // These flags (democratic_regime, authoritarian_regime, fragile_state) belong on cluster/
-    // regional/exclusive scope, not universal scenarios that must fire for all countries.
-    if (scenario.metadata?.scopeTier === 'universal' && scenario.applicability?.requires) {
-        const UNIVERSAL_INCOMPATIBLE_FLAGS = new Set([
-            'democratic_regime', 'authoritarian_regime', 'fragile_state',
-        ]);
-        const toRemove = Object.keys(scenario.applicability.requires)
-            .filter(flag => UNIVERSAL_INCOMPATIBLE_FLAGS.has(flag));
-        if (toRemove.length > 0) {
-            for (const flag of toRemove) {
-                delete (scenario.applicability.requires as Record<string, unknown>)[flag];
+    {
+        const scrubPhrases = (text: string | undefined): string | undefined => {
+            if (!text) return text;
+            return applyPhraseRules(text, INSTITUTION_PHRASE_RULES);
+        };
+        for (const field of ['title', 'description', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+            if (typeof (scenario as any)[field] === 'string') {
+                const before = (scenario as any)[field];
+                (scenario as any)[field] = scrubPhrases(before) ?? before;
+                (scenario as any)[field] = capitalizeFirstNarrativeLetter((scenario as any)[field]) ?? (scenario as any)[field];
+                if (before !== (scenario as any)[field]) {
+                    fixes.push(`${field}: replaced hardcoded institutions/gov-structure with tokens`);
+                    fixed = true;
+                }
             }
-            fixed = true;
-            fixes.push(`stripped universal-incompatible requires flags: ${toRemove.join(', ')}`);
+        }
+        for (const opt of scenario.options) {
+            for (const field of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+                if (typeof opt[field] === 'string') {
+                    const before = opt[field] as string;
+                    (opt[field] as any) = scrubPhrases(before) ?? before;
+                    (opt[field] as any) = capitalizeFirstNarrativeLetter(opt[field] as string) ?? opt[field];
+                    if (before !== opt[field]) {
+                        fixes.push(`${opt.id}: replaced hardcoded phrases in ${field}`);
+                        fixed = true;
+                    }
+                }
+            }
+            if (Array.isArray(opt.advisorFeedback)) {
+                for (const fb of opt.advisorFeedback as any[]) {
+                    if (typeof fb.feedback === 'string') {
+                        const before = fb.feedback;
+                        fb.feedback = scrubPhrases(fb.feedback) ?? fb.feedback;
+                        if (before !== fb.feedback) {
+                            fixes.push(`${opt.id}: replaced hardcoded phrases in advisor ${fb.roleId}`);
+                            fixed = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    const fixOutcomeJournalisticFraming = (text: string | undefined): string | undefined => {
+        if (!text) return text;
+        let r = text;
+        r = r.replace(/(?<!\{[a-z_]+\}'s |your |their |its |our )\bthe administration\b/gi, '{leader_title}');
+        r = r.replace(/(?<!\{[a-z_]+\}'s |your |their |its |our )\bThe administration\b/g, '{leader_title}');
+        r = r.replace(/(?<!\{[a-z_]+\}'s |your |their |its |our )\bthe government\b/gi, "{leader_title}'s government");
+        r = r.replace(/(?<!\{[a-z_]+\}'s |your |their |its |our )\bThe government\b/g, "{leader_title}'s government");
+        return r;
+    };
+    for (const opt of scenario.options) {
+        for (const field of ['outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+            if (typeof opt[field] === 'string') {
+                const before = opt[field] as string;
+                const after = fixOutcomeJournalisticFraming(before) ?? before;
+                if (after !== before) {
+                    (opt[field] as string) = after;
+                    fixed = true;
+                    fixes.push(`${opt.id}: outcome ${field} — replaced administration/government phrasing with leader token`);
+                }
+            }
+        }
+    }
+
+    if (scenario.metadata?.severity === 'critical') {
+        const opts = scenario.options ?? [];
+        const allEffects = opts.flatMap((o) => o.effects ?? []);
+        const hasSig = allEffects.some((e) => Number.isFinite(e.value) && Math.abs(Number(e.value)) >= 5.0);
+        if (allEffects.length > 0 && !hasSig) {
+            let bestOi = -1;
+            let bestEi = -1;
+            let bestAbs = -1;
+            opts.forEach((opt, oi) => {
+                (opt.effects ?? []).forEach((eff, ei) => {
+                    const abs = Math.abs(Number(eff.value) || 0);
+                    if (abs > bestAbs) {
+                        bestAbs = abs;
+                        bestOi = oi;
+                        bestEi = ei;
+                    }
+                });
+            });
+            const targetEff = bestOi >= 0 ? opts[bestOi]?.effects?.[bestEi] : undefined;
+            if (targetEff) {
+                const sign = Number(targetEff.value) < 0 ? -1 : 1;
+                targetEff.value = sign * 5;
+                fixed = true;
+                fixes.push('critical severity: raised strongest effect to |value| 5.0 minimum');
+            }
         }
     }
 
@@ -842,6 +985,17 @@ export function tokenToPlainText(tokenName: string): string {
     const articleMatch = tokenName.match(/^(the|an?)_(.+)$/);
     const article = articleMatch ? articleMatch[1] : null;
     const core = articleMatch ? articleMatch[2] : tokenName;
+
+    const unsupportedScaleTokenReplacements: Record<string, string> = {
+        economic_scale: 'the national economy',
+        gdp_description: 'the national economy',
+        population_scale: 'the population',
+        geography_type: "the country's geography",
+        climate_risk: 'climate-exposed areas',
+        major_industry: 'major export-sector',
+    };
+    const scaleReplacement = unsupportedScaleTokenReplacements[core];
+    if (scaleReplacement) return article ? `${article} ${scaleReplacement}` : scaleReplacement;
 
     // Role tokens: `X_role` or `the_X_role` → "your X minister"
     // Avoid "minister minister" by not appending "minister" if the name already implies it.
@@ -1404,6 +1558,35 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
     }
 
     {
+        const fixUnsupportedScaleArtifacts = (text: string | undefined): string | undefined =>
+            repairUnsupportedScaleTokenArtifacts(text);
+        const descBefore = scenario.description;
+        scenario.description = fixUnsupportedScaleArtifacts(scenario.description) ?? scenario.description;
+        if (descBefore !== scenario.description) { fixes.push('description: repaired unsupported scale-token artifact text'); fixed = true; }
+        const titleBefore = scenario.title;
+        scenario.title = fixUnsupportedScaleArtifacts(scenario.title) ?? scenario.title;
+        if (titleBefore !== scenario.title) { fixes.push('title: repaired unsupported scale-token artifact text'); fixed = true; }
+        for (const opt of scenario.options) {
+            for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+                if (typeof opt[f] === 'string') {
+                    const before = opt[f] as string;
+                    (opt[f] as any) = fixUnsupportedScaleArtifacts(before) ?? before;
+                    if (before !== opt[f]) { fixes.push(`${opt.id}: repaired unsupported scale-token artifact text in ${f}`); fixed = true; }
+                }
+            }
+            if (Array.isArray(opt.advisorFeedback)) {
+                for (const fb of opt.advisorFeedback as any[]) {
+                    if (typeof fb.feedback === 'string') {
+                        const before = fb.feedback;
+                        fb.feedback = fixUnsupportedScaleArtifacts(fb.feedback) ?? fb.feedback;
+                        if (before !== fb.feedback) { fixes.push(`${opt.id}: repaired unsupported scale-token artifact text in advisor ${fb.roleId}`); fixed = true; }
+                    }
+                }
+            }
+        }
+    }
+
+    {
         const title = scenario.title?.trim();
         if (title) {
             const tokenStripped = title.replace(/\{[a-z_]+\}/g, 'X');
@@ -1536,6 +1719,13 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
         const titleBefore = scenario.title;
         scenario.title = scrubPhrases(scenario.title) ?? scenario.title;
         if (titleBefore !== scenario.title) { fixes.push('title: replaced hardcoded institutions/gov-structure with tokens'); fixed = true; }
+        for (const field of ['outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+            if (typeof (scenario as any)[field] === 'string') {
+                const before = (scenario as any)[field];
+                (scenario as any)[field] = scrubPhrases(before) ?? before;
+                if (before !== (scenario as any)[field]) { fixes.push(`${field}: replaced hardcoded institutions/gov-structure with tokens`); fixed = true; }
+            }
+        }
         for (const opt of scenario.options) {
             for (const f of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
                 if (typeof opt[f] === 'string') {
@@ -1860,17 +2050,71 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
 // Prompt builders
 // ---------------------------------------------------------------------------
 
-export function getAuditRulesPrompt(registry?: CompiledTokenRegistry): string {
+function buildScopeTierForbiddenBlock(scopeTier?: ScenarioScopeTier): string {
+    if (scopeTier !== 'universal') return '';
+    return `
+## SCOPE TIER: UNIVERSAL — FORBIDDEN COUNTRY-SPECIFIC TOKENS
+Universal-scope scenarios apply to ALL countries and CANNOT assume any country trait. The following tokens gate on 'requires' flags that universal scope is not allowed to set — using them is an automatic REJECTION:
+- Institution tokens: {legislature}, {upper_house}, {lower_house}, {supreme_court}, {central_bank}, {stock_exchange}, {monarch}
+- Party tokens: {governing_party}, {governing_party_short}, {opposition_party}, {opposition_party_short}
+- Relationship tokens: {ally}, {adversary}, {border_rival}, {regional_rival}, {trade_partner}, {rival}
+Forbidden bare-prose equivalents at universal scope: "parliament", "congress", "senate", "the legislature", "the opposition", "central bank", "monetary policy", "interest rate(s)", "stock market", "financial markets".
+Frame universal scenarios around: the cabinet, {leader_title}, the {finance_role}, the {defense_role}, the {judicial_role}, regulators, sector lobbies, unions, and public protest. If the premise genuinely requires a legislature or foreign actor, it is NOT a universal-scope scenario — downgrade scope instead.
+`;
+}
+
+export function getAuditRulesPrompt(registry?: CompiledTokenRegistry, scopeTier?: ScenarioScopeTier): string {
     const cfg = getAuditConfig();
     const inverseList = Array.from(cfg.inverseMetrics).join(', ');
     const metricList = Array.from(cfg.validMetricIds).join(', ');
+    const roleList = Array.from(CANONICAL_ROLE_IDS).join(', ');
+    const settingTargetList = VALID_SETTING_TARGETS.join(', ');
     const tokenSection = buildTokenWhitelistPromptSection(registry);
+    const scopeTierBlock = buildScopeTierForbiddenBlock(scopeTier);
     return `**AUDIT COMPLIANCE RULES (VIOLATIONS = REJECTION):**
 
 ${tokenSection}
+${scopeTierBlock}
+## AUTHORITATIVE REGISTRIES (OUT-OF-REGISTRY VALUES = REJECTED)
 
-## VALID METRICS (USE EXACT NAMES)
+### Valid metricIds (27 — use EXACT spelling)
 ${metricList}
+Invalid examples (common hallucinations — REJECTED): metric_security, metric_culture, metric_social_welfare, metric_defense, metric_welfare.
+
+### Valid roleIds (13 canonical — use EXACT spelling)
+${roleList}
+Invalid examples (metric-shaped, not roles — REJECTED): role_social_welfare, role_legislature, role_finance, role_foreign_affairs, role_security, role_approval, role_innovation, role_public_order.
+
+### Valid policyImplication.target values (${VALID_SETTING_TARGETS.length} total)
+${settingTargetList}
+Invalid examples (REJECTED): policy.bureaucracy, policy.housing, policy.energy, fiscal.debt, policy.defense, policy.trade.
+policyImplication.delta must be in [-15, 15].
+
+## SEVERITY → EFFECT-MAGNITUDE CONTRACT (MISMATCH = REJECTED)
+If metadata.severity is set, at least ONE effect across the option's effects MUST satisfy:
+- severity="low"      → any effect |value| ≥ 1.5
+- severity="medium"   → any effect |value| ≥ 2.0
+- severity="high"     → any effect |value| ≥ 2.5
+- severity="extreme"  → any effect |value| ≥ 3.5
+- severity="critical" → any effect |value| ≥ 5.0
+
+**SEVERITY PRE-COMMIT SELF-CHECK (perform before returning JSON):**
+For each option, if metadata.severity is "extreme" or "critical" and NO effect satisfies the magnitude threshold above, either (a) raise one effect's |value| to meet the threshold, or (b) downgrade severity one step (critical→high, extreme→high). Do NOT return mismatched severity/magnitude.
+
+## TITLE FORMAT (VIOLATIONS = REJECTED)
+- 4–10 words. No tokens. No colons, parentheses, trailing ellipses.
+- FORBIDDEN openers: "Managing …", "Balancing …", "Handling …", "Navigating …"
+- FORBIDDEN trailing words: "… Crisis", "… Crisis Response", "… Response", "… Response Options", "… Debate", "… Decision", "… Dilemma", "… Challenge", "… Conflict"
+- Good examples (specific, concrete, active): "Drought Emergency Hits Southern Provinces", "Leaked Memo Implicates Finance Minister", "Power Grid Fails During Heatwave"
+- Bad examples (formulaic, generic): "Managing the Water Crisis", "Balancing Economic Priorities", "Drought Response Options"
+
+## FORBIDDEN TOKEN FORMS (AUTO-REJECTED)
+Never emit any of these token shapes — they do not exist in the registry and will be rejected:
+- {the_player_country}, {the_government}, {the_administration}, {the_legislature}, {the_finance_role}, {the_defense_role}, {the_central_bank}, {the_opposition_party}, {the_monarch}
+- Any {the_*} prefixed token — use the bare token ({player_country}, {finance_role}, etc.) with natural articles in prose.
+
+## BARE-PROSE REJECTION LIST (non-outcome fields)
+In description, options[].text, and advisorFeedback[].feedback the phrases "the government" and "the administration" are BANNED (case-insensitive). Use second-person ("you", "your administration") or a token ({leader_title}, the {finance_role}, the cabinet). Outcome fields (outcomeHeadline / outcomeSummary / outcomeContext) are the ONLY place "The administration ..." is allowed, and only in third-person journalistic voice.
 
 ## EFFECT CONSTRAINTS
 - Each option: exactly 3 effects (min 2, hard max 4 — more than 4 = REJECTION)
@@ -1911,6 +2155,10 @@ To REDUCE these problems, use NEGATIVE values.
   ✅ "The administration imposed emergency fuel controls, raising import costs for domestic suppliers."
   ❌ "Your administration imposed..." / "You imposed..." — REJECTED in outcome fields
   Never use "you" or "your" in outcomeHeadline, outcomeSummary, or outcomeContext.
+- NEVER open description with "As {leader_title} of {player_country}, you face..." — drop the framing clause entirely and open directly with the situation.
+  ✅ "A drought has idled 40% of grain output."  ❌ "As {leader_title} of {player_country}, you face a drought."
+- BANNED rhetorical phrases in options[].text (hedging constructions that weaken prose — REJECTED):
+  "aims to", "but risks", "but may", "could lead to", "at the cost of", "balances X with Y", "prioritizes X over Y", "risks provoking", "threatens to"
 
 ## ADVISOR FEEDBACK (REQUIRED — QUALITY IS AUDITED)
 Every option MUST have advisorFeedback array containing role_executive plus all roles whose metrics are affected.

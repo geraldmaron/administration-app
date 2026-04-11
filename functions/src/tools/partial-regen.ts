@@ -8,7 +8,8 @@
  * Run from functions/:
  *   npx tsx src/tools/partial-regen.ts [--scenario <id>] [--bundle <name>] [--dry-run] [--fields advisorFeedback,outcomeContext]
  *
- * Requires: OPENAI_API_KEY env var and Firebase Admin credentials.
+ * Requires OPENROUTER_API_KEY (or USE_OPENAI_DIRECT=true with OPENAI_API_KEY), plus Firebase Admin
+ * credentials.
  */
 
 import * as admin from 'firebase-admin';
@@ -30,6 +31,7 @@ import {
 } from '../lib/prompt-builder';
 import { evaluateContentQuality, type ContentQualityResult } from '../lib/content-quality';
 import { callModelProvider } from '../lib/model-providers';
+import { getDefaultPartialRegenModel } from '../lib/generation-models';
 
 function loadEnvFromFile(): void {
     const envPaths = ['.env.cli', '.env.local', '.env'].map((fileName) =>
@@ -115,7 +117,7 @@ async function regenerateField(
                 { maxTokens: 2048, temperature: 0.6 },
                 prompt,
                 { type: 'object', properties: { advisorFeedback: { type: 'array', items: { type: 'object' } } } },
-                'gpt-4.1-mini'
+                getDefaultPartialRegenModel()
             );
             if (result.data) {
                 // Handle various JSON wrapper formats the model may return
@@ -145,7 +147,7 @@ async function regenerateField(
                 { maxTokens: 1024, temperature: 0.7 },
                 prompt,
                 { type: 'object', properties: { outcomeContext: { type: 'string' } } },
-                'gpt-4.1-mini'
+                getDefaultPartialRegenModel()
             );
             if (result.data?.outcomeContext?.trim()) {
                 opt.outcomeContext = result.data.outcomeContext;
@@ -159,7 +161,7 @@ async function regenerateField(
                 { maxTokens: 512, temperature: 0.7 },
                 prompt,
                 { type: 'object', properties: { outcomeSummary: { type: 'string' } } },
-                'gpt-4.1-mini'
+                getDefaultPartialRegenModel()
             );
             if (result.data?.outcomeSummary?.trim()) {
                 opt.outcomeSummary = result.data.outcomeSummary;
@@ -172,7 +174,7 @@ async function regenerateField(
                 { maxTokens: 256, temperature: 0.7 },
                 prompt,
                 { type: 'object', properties: { outcomeHeadline: { type: 'string' } } },
-                'gpt-4.1-mini'
+                getDefaultPartialRegenModel()
             );
             if (result.data?.outcomeHeadline?.trim()) {
                 opt.outcomeHeadline = result.data.outcomeHeadline;

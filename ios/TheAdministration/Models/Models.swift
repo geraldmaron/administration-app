@@ -568,6 +568,7 @@ struct ScenarioMetadata: Codable {
     var secondaryMetrics: [String]? = nil
     var actorPattern: String? = nil
     var relationshipGates: [RelationshipGate]? = nil
+    var eventCategory: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case applicableCountries = "applicable_countries"
@@ -590,6 +591,7 @@ struct ScenarioMetadata: Codable {
         case secondaryMetrics = "secondary_metrics"
         case actorPattern
         case relationshipGates = "relationship_gates"
+        case eventCategory
     }
 }
 
@@ -635,6 +637,8 @@ struct Scenario: Identifiable, Codable {
     let conditions: [ScenarioCondition]?
     let relationshipConditions: [RelationshipCondition]?
     let phase: String?
+    /// 1-based index within a multi-act chain (`chain_id`); used for accessibility and storyline UI.
+    let actIndex: Int?
     let severity: SeverityLevel?
     let chainId: String?
     let options: [Option]
@@ -661,6 +665,7 @@ struct Scenario: Identifiable, Codable {
     init(
         id: String, title: String, description: String,
         conditions: [ScenarioCondition]? = nil, relationshipConditions: [RelationshipCondition]? = nil, phase: String? = nil,
+        actIndex: Int? = nil,
         severity: SeverityLevel? = nil, chainId: String? = nil,
         options: [Option], chainsTo: [String]? = nil,
         actor: String? = nil, location: ScenarioLocation? = nil,
@@ -676,7 +681,7 @@ struct Scenario: Identifiable, Codable {
         dynamicProfile: ScenarioDynamicProfile? = nil
     ) {
         self.id = id; self.title = title; self.description = description
-        self.conditions = conditions; self.relationshipConditions = relationshipConditions; self.phase = phase; self.severity = severity
+        self.conditions = conditions; self.relationshipConditions = relationshipConditions; self.phase = phase; self.actIndex = actIndex; self.severity = severity
         self.chainId = chainId; self.options = options; self.chainsTo = chainsTo
         self.actor = actor; self.location = location; self.tags = tags
         self.cooldown = cooldown; self.classification = classification
@@ -690,7 +695,9 @@ struct Scenario: Identifiable, Codable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, title, description, conditions, phase, severity
+        case id, title, description, conditions, phase
+        case actIndex = "act_index"
+        case severity
         case relationshipConditions = "relationship_conditions"
         case chainId = "chain_id"
         case options
@@ -2950,6 +2957,18 @@ struct CountryWorldStateRelationship: Codable {
     let sharedBorder: Bool
 }
 
+struct ActiveEventFlagEntry: Codable {
+    let startedAt: Double
+    let expiresAt: Double
+    let severity: Double
+}
+
+struct RecentEventHistoryEntry: Codable {
+    let flag: String
+    let turn: Int
+    let scenarioId: String?
+}
+
 struct CountryWorldState: Identifiable, Codable {
     var id: String { countryId }
     let countryId: String
@@ -2958,9 +2977,12 @@ struct CountryWorldState: Identifiable, Codable {
     let lastTickAt: String
     let generation: Int
     let recentScenarioIds: [String]
+    let activeEventFlags: [String: ActiveEventFlagEntry]?
+    let recentEventHistory: [RecentEventHistoryEntry]?
 
     enum CodingKeys: String, CodingKey {
         case countryId, currentMetrics, relationships, lastTickAt, generation, recentScenarioIds
+        case activeEventFlags, recentEventHistory
     }
 }
 

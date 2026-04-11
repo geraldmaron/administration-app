@@ -259,3 +259,79 @@ describe('deterministicFix sentence condensing', () => {
         expect(scenario.options[0].text).toContain('{finance_role}');
     });
 });
+
+describe('unsupported scale-token artifact repair', () => {
+    beforeEach(() => {
+        setAuditConfigForTests(makeAuditConfig());
+    });
+
+    afterEach(() => {
+        setAuditConfigForTests(null);
+    });
+
+    test('audits plain text left behind by unsupported scale tokens', () => {
+        const scenario = makeScenario();
+        scenario.description = 'You face pressure as geography type constraints and climate risk concerns strain port access. Cabinet officials say economic scale volatility could spill into food prices within weeks.';
+
+        const issues = auditScenario(scenario, 'bundle_economy');
+
+        expect(issues.some((issue) => issue.rule === 'unsupported-scale-token-artifact')).toBe(true);
+    });
+
+    test('deterministicFix repairs scale-token artifacts across scenario text', () => {
+        const scenario = makeScenario();
+        scenario.title = 'Geography Type Pressure Builds';
+        scenario.description = 'You face pressure as geography type constraints and climate risk concerns strain port access.';
+        scenario.options[0].text = 'You ask agencies to shield major industry employers while economic scale pressure spreads.';
+        scenario.options[0].outcomeSummary = 'Officials said population scale pressures complicated the response.';
+        scenario.options[0].advisorFeedback[0].feedback = 'The gdp description problem needs a narrower procurement response.';
+
+        const result = deterministicFix(scenario);
+
+        expect(result.fixed).toBe(true);
+        expect(result.fixes.some((fix) => fix.includes('unsupported scale-token artifact'))).toBe(true);
+        expect(scenario.title).toBe("The country's geography Pressure Builds");
+        expect(scenario.description).toContain("the country's geography constraints");
+        expect(scenario.description).toContain('climate-exposed areas concerns');
+        expect(scenario.options[0].text).toContain('major export-sector employers');
+        expect(scenario.options[0].text).toContain('the national economy pressure');
+        expect(scenario.options[0].outcomeSummary).toContain('the population pressures');
+        expect(scenario.options[0].advisorFeedback[0].feedback).toContain('The national economy problem');
+    });
+});
+
+describe('hardcoded role-title repair', () => {
+    beforeEach(() => {
+        setAuditConfigForTests(makeAuditConfig());
+    });
+
+    afterEach(() => {
+        setAuditConfigForTests(null);
+    });
+
+    test('audits and repairs hardcoded culture minister phrasing', () => {
+        const scenario = makeScenario();
+        scenario.description = 'The culture minister has introduced a new national curriculum that narrows minority histories. Regional leaders warn the change could alienate communities before the school year begins.';
+        scenario.options[0].text = 'You direct the culture minister to implement the curriculum immediately. Education groups warn the rushed rollout may deepen resentment in minority communities.';
+
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((issue) => issue.rule === 'hardcoded-institution-phrase' && issue.message.includes('Culture Minister'))).toBe(true);
+
+        const result = deterministicFix(scenario);
+
+        expect(result.fixed).toBe(true);
+        expect(scenario.description).toContain('The {education_role} has introduced');
+        expect(scenario.options[0].text).toContain('the {education_role} to implement');
+    });
+
+    test('audits legacy top-level outcome context hardcoded role phrases', () => {
+        const scenario = {
+            ...makeScenario(),
+            outcomeContext: 'The administration pursued a swift crackdown led by the justice ministry after investigators exposed secret funding.',
+        };
+
+        const issues = auditScenario(scenario, 'bundle_economy');
+
+        expect(issues.some((issue) => issue.rule === 'hardcoded-institution-phrase' && issue.message.includes('outcomeContext'))).toBe(true);
+    });
+});

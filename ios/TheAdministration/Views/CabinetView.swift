@@ -494,10 +494,19 @@ struct CandidateSelectionSheet: View {
     private func generateCandidates() {
         let country = gameStore.availableCountries.first { $0.id == gameStore.state.countryId }
         let partyNames = gameStore.countryParties.isEmpty ? nil : gameStore.countryParties.map { $0.name }
+        var usedFirst = Set<String>()
+        var usedLast = Set<String>()
+        for m in gameStore.state.cabinet where !m.isVacant {
+            let parts = m.name.split(separator: " ", maxSplits: 1)
+            if let fn = parts.first { usedFirst.insert(String(fn)) }
+            if parts.count > 1 { usedLast.insert(String(parts[1])) }
+        }
         candidates = CandidateGenerator.generateMinisters(
             roleId: role.id, category: role.category,
             region: country?.region, countryId: gameStore.state.countryId,
-            count: 4, config: gameStore.appConfig, partyNames: partyNames
+            count: 4, config: gameStore.appConfig, partyNames: partyNames,
+            excludedFirstNames: usedFirst,
+            excludedLastNames: usedLast
         )
     }
 }

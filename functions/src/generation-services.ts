@@ -143,6 +143,29 @@ async function appendJobEvent(
     ]);
 }
 
+function inferEngineEventPhase(event: import('./lib/model-providers').ModelEvent, activePhase?: string): string | undefined {
+    if (typeof event.data?.phase === 'string') return event.data.phase;
+    if (event.code === 'audit_pass' || event.code === 'audit_fail') return 'audit';
+    if (event.code === 'repair_action' || event.code === 'repair_rollback' || event.code === 'repair_failed' || event.code === 'repair_skipped_hopeless') return 'repair';
+    if (event.code === 'quality_gate') return 'quality_gate';
+    if (event.code === 'narrative_review') return 'narrative_review';
+    if (event.code === 'phase_draft') return 'details';
+    if (event.code === 'phase_blueprint') return 'blueprint';
+    if (event.code === 'phase_skeleton' || event.code === 'phase_skeleton_result' || event.code === 'skeleton_validated' || event.code === 'skeleton_rejected') return 'skeleton';
+    if (event.code === 'phase_effects' || event.code === 'phase_effects_result' || event.code === 'effects_validated' || event.code === 'effects_rejected') return 'effects';
+    if (event.code === 'phase_advisor' || event.code === 'phase_advisor_result') return 'advisor';
+    if (event.code === 'concept_expand' || event.code === 'concept_retry' || event.code === 'concept_zero_output' || event.code === 'concept_critical_failure') return 'concept';
+    if (event.code === 'loop_validated') return 'blueprint';
+    if (event.code === 'llm_request' || event.code === 'llm_response' || event.code === 'llm_progress') return activePhase;
+    if (event.code?.startsWith('phase_')) return event.code.replace('phase_', '');
+    return activePhase;
+}
+
+function getScenarioAuditScore(scenario: any): number | undefined {
+    const score = scenario?.metadata?.auditMetadata?.score;
+    return typeof score === 'number' ? score : undefined;
+}
+
 export function buildJobProgressEvent(body: UpdateJobProgressBody): JobEventInput | undefined {
     const completedCount = body.completedCount ?? 0;
     const failedCount = body.failedCount ?? 0;
@@ -310,12 +333,17 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
     let lastThrottledWriteMs = 0;
     const THROTTLE_INTERVAL_MS = 3000;
     let failedEventWrites = 0;
+    let activeEnginePhase = 'generate';
 
     const bundleEventHandler = (event: import('./lib/model-providers').ModelEvent) => {
         const now = Date.now();
+        const eventPhase = inferEngineEventPhase(event, activeEnginePhase);
+        if (eventPhase) activeEnginePhase = eventPhase;
         if (HEARTBEAT_ONLY_CODES.has(event.code)) {
             jobRef.set({
                 lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
+                currentBundle: bundle,
+                currentPhase: eventPhase,
                 currentMessage: event.message,
             }, { merge: true }).catch(() => {});
             return;
@@ -328,10 +356,15 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
             code: event.code,
             message: event.message,
             bundle,
+            ...(eventPhase ? { phase: eventPhase } : {}),
+            ...(typeof event.data?.scenarioId === 'string' ? { scenarioId: event.data.scenarioId } : {}),
             ...(event.data ? { data: event.data } : {}),
         }).then(() => {
             return jobRef.set({
                 lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
+                currentBundle: bundle,
+                ...(eventPhase ? { currentPhase: eventPhase } : {}),
+                currentMessage: event.message,
                 eventCount: admin.firestore.FieldValue.increment(1),
             }, { merge: true });
         }).catch((err) => {
@@ -375,6 +408,22 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
             completedCount++;
             savedByCallback.add(scenario.id);
             logger.info(`[processGenerationBundle] Staged for review: ${scenario.id}`);
+            await appendJobEvent(jobRef, {
+                level: 'success',
+                code: 'scenario_staged',
+                message: `Staged scenario "${scenario.title ?? scenario.id}" for review.`,
+                bundle,
+                phase: 'save',
+                scenarioId: scenario.id,
+                data: {
+                    completedCount,
+                    ...(getScenarioAuditScore(scenario) !== undefined ? { score: getScenarioAuditScore(scenario) } : {}),
+                },
+            }, {
+                currentBundle: bundle,
+                currentPhase: 'save',
+                currentMessage: `Staged ${scenario.title ?? scenario.id} for review`,
+            });
         } else {
             const saved = await saveScenario(scenario);
             if (saved.saved) {
@@ -388,6 +437,22 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                     lastHeartbeatAt: admin.firestore.FieldValue.serverTimestamp(),
                 });
+                await appendJobEvent(jobRef, {
+                    level: 'success',
+                    code: 'scenario_saved',
+                    message: `Saved scenario "${scenario.title ?? scenario.id}".`,
+                    bundle,
+                    phase: 'save',
+                    scenarioId: scenario.id,
+                    data: {
+                        completedCount,
+                        ...(getScenarioAuditScore(scenario) !== undefined ? { score: getScenarioAuditScore(scenario) } : {}),
+                    },
+                }, {
+                    currentBundle: bundle,
+                    currentPhase: 'save',
+                    currentMessage: `Saved ${scenario.title ?? scenario.id}`,
+                });
             } else {
                 const errorEntry = { id: scenario.id, bundle, error: saved.reason ?? 'Save rejected' };
                 errors.push(errorEntry);
@@ -397,6 +462,19 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
                     failedCount: admin.firestore.FieldValue.increment(1),
                     errors: admin.firestore.FieldValue.arrayUnion(errorEntry),
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+                await appendJobEvent(jobRef, {
+                    level: 'warning',
+                    code: 'scenario_rejected',
+                    message: `Rejected scenario "${scenario.title ?? scenario.id}": ${saved.reason ?? 'Save rejected'}.`,
+                    bundle,
+                    phase: 'save',
+                    scenarioId: scenario.id,
+                    data: { failedCount, reason: saved.reason ?? 'Save rejected' },
+                }, {
+                    currentBundle: bundle,
+                    currentPhase: 'save',
+                    currentMessage: `Rejected ${scenario.title ?? scenario.id}`,
                 });
             }
         }
@@ -430,6 +508,22 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
             ...(body.preSeededConcepts?.length ? { preSeededConcepts: body.preSeededConcepts } : {}),
             onAttemptFailed: ({ attempt, maxAttempts, score, topIssues }) => {
                 logger.warn(`[processGenerationBundle] ${bundle} attempt ${attempt}/${maxAttempts}: score ${score} — ${topIssues.slice(0, 3).join('; ')}`);
+                const write = appendJobEvent(jobRef, {
+                    level: 'warning',
+                    code: 'generation_attempt_failed',
+                    message: `Attempt ${attempt}/${maxAttempts} failed for ${bundle}: score ${score} — ${topIssues.slice(0, 3).join('; ')}`,
+                    bundle,
+                    phase: 'audit',
+                    data: { attempt, maxAttempts, score, topIssues },
+                }, {
+                    currentBundle: bundle,
+                    currentPhase: 'audit',
+                    currentMessage: `Repairing ${bundle} attempt ${attempt}/${maxAttempts}`,
+                }).catch((err) => {
+                    failedEventWrites++;
+                    logger.warn(`[processGenerationBundle] Attempt event write failed (non-fatal, total=${failedEventWrites}): ${err?.message ?? err}`);
+                });
+                pendingEventWrites.push(write);
             },
             onScenarioAccepted,
         });
@@ -444,15 +538,62 @@ export async function executeGenerationBundle(body: ProcessBundleBody): Promise<
                 completedScenarioIds.push(scenario.id);
                 completedCount++;
                 logger.info(`[processGenerationBundle] Staged for review (fallback): ${scenario.id}`);
+                await appendJobEvent(jobRef, {
+                    level: 'success',
+                    code: 'scenario_staged',
+                    message: `Staged scenario "${scenario.title ?? scenario.id}" for review.`,
+                    bundle,
+                    phase: 'save',
+                    scenarioId: scenario.id,
+                    data: {
+                        completedCount,
+                        fallback: true,
+                        ...(getScenarioAuditScore(scenario) !== undefined ? { score: getScenarioAuditScore(scenario) } : {}),
+                    },
+                }, {
+                    currentBundle: bundle,
+                    currentPhase: 'save',
+                    currentMessage: `Staged ${scenario.title ?? scenario.id} for review`,
+                });
             } else {
                 const saved = await saveScenario(scenario as unknown as Scenario);
                 if (saved.saved) {
                     completedScenarioIds.push(scenario.id);
                     completedCount++;
                     logger.info(`[processGenerationBundle] Saved (fallback): ${scenario.id} (${scenario.title})`);
+                    await appendJobEvent(jobRef, {
+                        level: 'success',
+                        code: 'scenario_saved',
+                        message: `Saved scenario "${scenario.title ?? scenario.id}".`,
+                        bundle,
+                        phase: 'save',
+                        scenarioId: scenario.id,
+                        data: {
+                            completedCount,
+                            fallback: true,
+                            ...(getScenarioAuditScore(scenario) !== undefined ? { score: getScenarioAuditScore(scenario) } : {}),
+                        },
+                    }, {
+                        currentBundle: bundle,
+                        currentPhase: 'save',
+                        currentMessage: `Saved ${scenario.title ?? scenario.id}`,
+                    });
                 } else {
                     errors.push({ id: scenario.id, bundle, error: saved.reason ?? 'Save rejected' });
                     failedCount++;
+                    await appendJobEvent(jobRef, {
+                        level: 'warning',
+                        code: 'scenario_rejected',
+                        message: `Rejected scenario "${scenario.title ?? scenario.id}": ${saved.reason ?? 'Save rejected'}.`,
+                        bundle,
+                        phase: 'save',
+                        scenarioId: scenario.id,
+                        data: { failedCount, fallback: true, reason: saved.reason ?? 'Save rejected' },
+                    }, {
+                        currentBundle: bundle,
+                        currentPhase: 'save',
+                        currentMessage: `Rejected ${scenario.title ?? scenario.id}`,
+                    });
                 }
             }
         }
@@ -548,7 +689,7 @@ export const processGenerationBundle = onRequest({
     timeoutSeconds: 540,
     memory: '1GiB',
     maxInstances: 4,
-    secrets: ['GENERATION_INTAKE_SECRET', 'OPENAI_API_KEY'],
+    secrets: ['GENERATION_INTAKE_SECRET', 'OPENROUTER_API_KEY', 'OPENROUTER_MANAGEMENT_KEY'],
 }, async (request, response) => {
     if (request.method !== 'POST') {
         response.status(405).json({ error: 'Method not allowed' });

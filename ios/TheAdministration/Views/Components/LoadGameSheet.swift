@@ -30,6 +30,7 @@ struct LoadGameSheet: View {
                         ForEach(slots) { slot in
                             saveRow(slot)
                                 .tag(slot.id)
+                                .listRowBackground(AppColors.background)
                         }
                         .onDelete(perform: deleteAtIndices)
                     }

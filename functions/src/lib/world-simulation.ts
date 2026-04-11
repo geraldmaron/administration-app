@@ -1,6 +1,18 @@
-import type { CountryDocument, CountryRelationship, CountryWorldState } from '../types';
+import type { CountryDocument, CountryRelationship, CountryWorldState, RequiresFlag } from '../types';
 import type { ActionResolutionRequest, MetricDelta } from '../shared/action-resolution-contract';
 import { resolveActionTemplate } from './action-templates';
+import { ACTIVE_EVENT_FLAGS } from '../shared/scenario-audit';
+
+export interface NeighborScenarioSeed {
+    flag: RequiresFlag;
+    actorCountryId: string;
+    actorCountryName: string;
+    targetCountryId?: string;
+    targetCountryName?: string;
+    narrativeHint: string;
+    severity: number; // 0–1 intensity hint
+    ttlTurns: number;
+}
 
 export interface WorldEvent {
     id: string;
@@ -20,6 +32,8 @@ export interface WorldEvent {
     globalMetricDeltas: MetricDelta[];
     regionId?: string;
     isBreakingNews: boolean;
+    /** Optional seed when this event represents a dynamic active_* flag firing. */
+    scenarioSeed?: NeighborScenarioSeed;
 }
 
 type RelationshipType = CountryRelationship['type'];
@@ -488,4 +502,327 @@ export function generateWorldTick(
     }
 
     return events;
+}
+
+// ---------------------------------------------------------------------------
+// Neighbor event seeding — dynamic active_* flag firing with TTL bookkeeping
+// ---------------------------------------------------------------------------
+
+interface CandidateEvent {
+    flag: RequiresFlag;
+    weight: number;
+    narrativeHint: string;
+    ttlRange: readonly [number, number]; // [minTurns, maxTurns]
+    severityRange: readonly [number, number];
+    // When true, prefers a hostile neighbor as target
+    needsHostileTarget?: boolean;
+}
+
+function buildNeighborCandidates(country: CountryDocument): CandidateEvent[] {
+    const flags = country.flags ?? {};
+    const candidates: CandidateEvent[] = [];
+
+    const push = (c: CandidateEvent) => candidates.push(c);
+
+    if (flags.seismically_active) {
+        push({
+            flag: 'active_natural_disaster',
+            weight: 10,
+            narrativeHint: 'earthquake strikes a populated region',
+            ttlRange: [4, 8],
+            severityRange: [0.4, 0.9],
+        });
+    }
+    if (flags.tropical_cyclone_zone && flags.coastal) {
+        push({
+            flag: 'active_natural_disaster',
+            weight: 10,
+            narrativeHint: 'tropical cyclone makes landfall on the coast',
+            ttlRange: [3, 6],
+            severityRange: [0.3, 0.9],
+        });
+    }
+    if (flags.coastal && !flags.arid_interior) {
+        push({
+            flag: 'active_natural_disaster',
+            weight: 4,
+            narrativeHint: 'coastal flooding follows intense rainfall',
+            ttlRange: [3, 5],
+            severityRange: [0.3, 0.7],
+        });
+    }
+    if (flags.arid_interior) {
+        push({
+            flag: 'active_natural_disaster',
+            weight: 5,
+            narrativeHint: 'wildfires sweep through dry interior',
+            ttlRange: [3, 6],
+            severityRange: [0.3, 0.8],
+        });
+        push({
+            flag: 'active_energy_crisis',
+            weight: 3,
+            narrativeHint: 'prolonged drought triggers energy grid strain',
+            ttlRange: [3, 6],
+            severityRange: [0.3, 0.7],
+        });
+    }
+
+    if (flags.has_civilian_firearms) {
+        push({
+            flag: 'active_mass_shooting',
+            weight: 4,
+            narrativeHint: 'mass shooting in a public space',
+            ttlRange: [3, 5],
+            severityRange: [0.4, 0.8],
+        });
+    }
+
+    if (flags.fragile_state) {
+        push({
+            flag: 'active_civil_war',
+            weight: 6,
+            narrativeHint: 'armed insurgency escalates into open civil war',
+            ttlRange: [5, 8],
+            severityRange: [0.5, 0.9],
+        });
+        push({
+            flag: 'active_coup_attempt',
+            weight: 5,
+            narrativeHint: 'military faction launches coup against the government',
+            ttlRange: [3, 5],
+            severityRange: [0.5, 0.9],
+        });
+        push({
+            flag: 'active_terror_campaign',
+            weight: 4,
+            narrativeHint: 'coordinated bombing campaign rattles the capital',
+            ttlRange: [4, 6],
+            severityRange: [0.4, 0.8],
+        });
+    }
+
+    // Diplomatic crises are possible anywhere with any adversary/rival
+    const hasHostile = (country.geopolitical.adversaries?.length ?? 0) > 0
+        || (country.geopolitical.neighbors ?? []).some(n => n.type === 'rival' || n.type === 'conflict');
+    if (hasHostile) {
+        push({
+            flag: 'active_diplomatic_crisis',
+            weight: 5,
+            narrativeHint: 'ambassador recalled amid escalating tensions',
+            ttlRange: [3, 5],
+            severityRange: [0.3, 0.7],
+            needsHostileTarget: true,
+        });
+    }
+
+    if (flags.adversary && flags.large_military) {
+        push({
+            flag: 'active_interstate_war',
+            weight: 2,
+            narrativeHint: 'cross-border offensive ignites interstate war',
+            ttlRange: [6, 8],
+            severityRange: [0.6, 1.0],
+            needsHostileTarget: true,
+        });
+    }
+
+    // Pandemic can fire anywhere but rare
+    push({
+        flag: 'active_pandemic',
+        weight: 1,
+        narrativeHint: 'novel disease outbreak spreads through urban centres',
+        ttlRange: [6, 8],
+        severityRange: [0.4, 0.9],
+    });
+
+    return candidates;
+}
+
+function pickHostileTarget(country: CountryDocument, seed: number): { countryId: string; countryName: string } | null {
+    const hostile = [
+        ...country.geopolitical.adversaries ?? [],
+        ...(country.geopolitical.neighbors ?? []).filter(n => n.type === 'rival' || n.type === 'conflict'),
+    ];
+    if (hostile.length === 0) return null;
+    const pick = hostile[Math.abs(seed) % hostile.length];
+    return { countryId: pick.countryId, countryName: pick.countryId };
+}
+
+function rangePick(range: readonly [number, number], seed: number): number {
+    const [min, max] = range;
+    if (max <= min) return min;
+    const span = max - min;
+    const r = Math.abs(Math.sin(seed)) * span;
+    return min + r;
+}
+
+/**
+ * Walk activeEventFlags, evict expired entries to recentEventHistory.
+ * Pure — returns a new CountryWorldState.
+ */
+export function decayActiveEventFlags(
+    state: CountryWorldState,
+    currentTurn: number,
+    now: number = Date.now(),
+): CountryWorldState {
+    const active = state.activeEventFlags;
+    if (!active) return state;
+
+    const nextActive: NonNullable<CountryWorldState['activeEventFlags']> = {};
+    const expired: NonNullable<CountryWorldState['recentEventHistory']> = [];
+
+    for (const [key, value] of Object.entries(active)) {
+        if (!value) continue;
+        if (value.expiresAt <= now) {
+            expired.push({
+                flag: key as RequiresFlag,
+                turn: currentTurn,
+                scenarioId: value.sourceScenarioId,
+            });
+        } else {
+            nextActive[key as RequiresFlag] = value;
+        }
+    }
+
+    if (expired.length === 0) return state;
+
+    const history = [...(state.recentEventHistory ?? []), ...expired].slice(-40);
+    return {
+        ...state,
+        activeEventFlags: nextActive,
+        recentEventHistory: history,
+    };
+}
+
+/**
+ * Roll per-country event seeds. For each country, applies TTL decay first,
+ * then with `gameplay.neighbor_event_chance` probability selects one plausible
+ * active_* event flag from a static-trait-filtered candidate pool and writes
+ * it to `activeEventFlags` with a severity-based TTL.
+ *
+ * Returns the updated world-state map + a list of structured WorldEvents with
+ * `scenarioSeed` payloads the scenario engine can convert into pre-staged
+ * neighbor scenarios.
+ */
+export function generateNeighborEventSeeds(
+    countries: CountryDocument[],
+    worldStates: Record<string, CountryWorldState>,
+    currentTurn: number,
+    seed: number = Date.now(),
+    turnDurationMs: number = 6 * 60 * 60 * 1000, // 6h per turn default
+): { updatedWorldStates: Record<string, CountryWorldState>; events: WorldEvent[] } {
+    const now = Date.now();
+    const updatedWorldStates: Record<string, CountryWorldState> = {};
+    const events: WorldEvent[] = [];
+
+    for (let i = 0; i < countries.length; i++) {
+        const country = countries[i];
+        const existing = worldStates[country.id];
+
+        // Decay first so recentEventHistory is fresh before cooldown consultation.
+        const decayed = existing ? decayActiveEventFlags(existing, currentTurn, now) : undefined;
+
+        const chance = country.gameplay?.neighbor_event_chance ?? 0;
+        const roll = Math.abs(Math.sin(seed + i * 97)) % 1;
+        if (chance <= 0 || roll >= chance) {
+            if (decayed) updatedWorldStates[country.id] = decayed;
+            continue;
+        }
+
+        const candidates = buildNeighborCandidates(country);
+        if (candidates.length === 0) {
+            if (decayed) updatedWorldStates[country.id] = decayed;
+            continue;
+        }
+
+        // Filter out flags that are already active or still inside cooldown window.
+        const activeNow = new Set(Object.keys(decayed?.activeEventFlags ?? {}));
+        const recentFlags = new Set((decayed?.recentEventHistory ?? []).map(h => h.flag));
+        const eligible = candidates.filter(c => !activeNow.has(c.flag) && !recentFlags.has(c.flag));
+        if (eligible.length === 0) {
+            if (decayed) updatedWorldStates[country.id] = decayed;
+            continue;
+        }
+
+        const picked = pickWeighted(eligible, seed + i * 17);
+        const severity = rangePick(picked.severityRange, seed + i * 41);
+        const ttlTurns = Math.round(rangePick(picked.ttlRange, seed + i * 53));
+        const target = picked.needsHostileTarget ? pickHostileTarget(country, seed + i * 67) : null;
+
+        // Write active flag entry to world state
+        const baseState: CountryWorldState = decayed ?? {
+            countryId: country.id,
+            currentMetrics: {},
+            relationships: [],
+            lastTickAt: new Date(now).toISOString(),
+            generation: 0,
+            recentScenarioIds: [],
+        };
+        const nextActive = {
+            ...(baseState.activeEventFlags ?? {}),
+            [picked.flag]: {
+                startedAt: now,
+                expiresAt: now + ttlTurns * turnDurationMs,
+                severity,
+            },
+        };
+        updatedWorldStates[country.id] = {
+            ...baseState,
+            activeEventFlags: nextActive,
+        };
+
+        // Emit a WorldEvent carrying the scenarioSeed payload
+        const timestamp = new Date(now).toISOString();
+        const seedPayload: NeighborScenarioSeed = {
+            flag: picked.flag,
+            actorCountryId: country.id,
+            actorCountryName: country.name,
+            targetCountryId: target?.countryId,
+            targetCountryName: target?.countryName,
+            narrativeHint: picked.narrativeHint,
+            severity,
+            ttlTurns,
+        };
+        const severityBand: 'low' | 'medium' | 'high' = severity >= 0.7 ? 'high' : severity >= 0.4 ? 'medium' : 'low';
+        events.push({
+            id: generateEventId(country.id, target?.countryId ?? country.id, picked.flag, timestamp),
+            timestamp,
+            actorCountryId: country.id,
+            actorCountryName: country.name,
+            targetCountryId: target?.countryId ?? country.id,
+            targetCountryName: target?.countryName ?? country.name,
+            actionType: picked.flag,
+            actionCategory: 'diplomatic',
+            severity: severityBand,
+            headline: `${country.name}: ${picked.narrativeHint}`,
+            summary: picked.narrativeHint,
+            context: `Dynamic event seed — ${picked.flag}`,
+            newsCategory: 'world_event',
+            newsTags: [picked.flag],
+            globalMetricDeltas: [],
+            regionId: country.region,
+            isBreakingNews: severityBand === 'high',
+            scenarioSeed: seedPayload,
+        });
+    }
+
+    // Ensure countries that had world state but didn't fire still carry forward any decay.
+    for (const country of countries) {
+        if (updatedWorldStates[country.id]) continue;
+        const existing = worldStates[country.id];
+        if (!existing) continue;
+        const decayed = decayActiveEventFlags(existing, currentTurn, now);
+        updatedWorldStates[country.id] = decayed;
+    }
+
+    // Sanity: ensure we registered ACTIVE_EVENT_FLAGS contains every flag we produced.
+    for (const evt of events) {
+        if (!ACTIVE_EVENT_FLAGS.has(evt.actionType as RequiresFlag)) {
+            // Defensive: should never happen because candidates derive from ACTIVE_EVENT_FLAGS domain.
+            // Leave as-is; downstream will ignore unknown flags.
+        }
+    }
+
+    return { updatedWorldStates, events };
 }

@@ -267,7 +267,7 @@ export const resolveAction = onRequest({
     timeoutSeconds: 30,
     memory: '256MiB',
     minInstances: 0,
-    secrets: ['GENERATION_INTAKE_SECRET', 'OPENAI_API_KEY'],
+    secrets: ['GENERATION_INTAKE_SECRET', 'OPENROUTER_API_KEY', 'OPENROUTER_MANAGEMENT_KEY'],
 }, async (request, response) => {
     if (request.method !== 'POST') {
         response.status(405).json({ success: false, error: 'Method not allowed' } satisfies ActionResolutionResult);

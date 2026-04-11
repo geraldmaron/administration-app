@@ -69,9 +69,7 @@ struct MainTabView: View {
         TabItem(id: 1, label: "World",   icon: "globe",                        activeIcon: "globe.americas.fill"),
         TabItem(id: 2, label: "Cabinet", icon: "person.3",                     activeIcon: "person.3.fill"),
         TabItem(id: 3, label: "Econ",    icon: "chart.line.uptrend.xyaxis",    activeIcon: "chart.line.uptrend.xyaxis"),
-        TabItem(id: 4, label: "Policy",  icon: "doc.plaintext",                activeIcon: "doc.plaintext.fill"),
-        TabItem(id: 5, label: "Archive", icon: "archivebox",                   activeIcon: "archivebox.fill"),
-        TabItem(id: 6, label: "System",  icon: "gear",                         activeIcon: "gearshape.fill")
+        TabItem(id: 4, label: "System",  icon: "slider.horizontal.3",         activeIcon: "slider.horizontal.3")
     ]
 
     var body: some View {
@@ -82,9 +80,7 @@ struct MainTabView: View {
                 case 1: GlobalView(gameStore: gameStore)
                 case 2: CabinetView(gameStore: gameStore)
                 case 3: FinanceView(gameStore: gameStore)
-                case 4: PolicyView(gameStore: gameStore)
-                case 5: ArchiveView(gameStore: gameStore)
-                case 6: SystemView(gameStore: gameStore)
+                case 4: SystemHubView(gameStore: gameStore)
                 default: DeskView(gameStore: gameStore)
                 }
             }
@@ -199,6 +195,86 @@ struct TabItem: Identifiable {
     let label: String
     let icon: String
     let activeIcon: String
+}
+
+// MARK: - System Hub
+
+struct SystemHubView: View {
+    @ObservedObject var gameStore: GameStore
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppColors.background.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ScreenHeader(
+                            protocolLabel: "SYSTEM_COMMAND_LINK_V8",
+                            title: "System",
+                            subtitle: "Administration controls"
+                        )
+                        .padding(.horizontal, 16)
+
+                        VStack(spacing: 1) {
+                            navRow(
+                                label: "Policy",
+                                subtitle: "Strategic posture & resource allocation",
+                                icon: "doc.plaintext.fill",
+                                destination: AnyView(PolicyView(gameStore: gameStore))
+                            )
+                            navRow(
+                                label: "Archive",
+                                subtitle: "Decision history",
+                                icon: "archivebox.fill",
+                                destination: AnyView(ArchiveView(gameStore: gameStore))
+                            )
+                            navRow(
+                                label: "God Mode",
+                                subtitle: "Administrative overrides",
+                                icon: "eye.fill",
+                                destination: AnyView(SystemView(gameStore: gameStore))
+                            )
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, AppSpacing.lg)
+                    }
+                    .padding(.bottom, AppSpacing.tabBarClearance)
+                }
+            }
+            .navigationBarHidden(true)
+        }
+    }
+
+    @ViewBuilder
+    private func navRow(label: String, subtitle: String, icon: String, destination: AnyView) -> some View {
+        NavigationLink(destination: destination.navigationBarHidden(true)) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(AppColors.accentPrimary.opacity(0.1))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(AppColors.accentPrimary)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(AppColors.foreground)
+                    Text(subtitle)
+                        .font(AppTypography.micro)
+                        .foregroundColor(AppColors.foregroundMuted)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AppColors.foregroundSubtle)
+            }
+            .padding(16)
+            .background(AppColors.backgroundElevated)
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 #Preview {

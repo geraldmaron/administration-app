@@ -21,6 +21,7 @@ import RssParser from 'rss-parser';
 import { saveScenario, getActiveBundleCount } from './storage';
 import { validateConfig } from './lib/config-validator';
 import { callModelProvider } from './lib/model-providers';
+import { getDefaultNewsClassifierModel } from './lib/generation-models';
 import { isValidBundleId, type BundleId } from './data/schemas/bundleIds';
 import { normalizeRegion } from './data/schemas/regions';
 import { type NewsItem, type Scenario } from './types';
@@ -321,7 +322,7 @@ ${headlineList}`;
         { maxTokens: 4096, temperature: 0.2 },
         fullPrompt,
         classificationSchema,
-        'gpt-4.1-mini'
+        getDefaultNewsClassifierModel()
     );
 
     if (!result.data) {
@@ -436,7 +437,7 @@ export const dailyNewsToScenarios = onSchedule(
         timeZone: 'UTC',
         timeoutSeconds: 540,
         memory: '1GiB',
-        secrets: ['OPENAI_API_KEY'],
+        secrets: ['OPENROUTER_API_KEY', 'OPENROUTER_MANAGEMENT_KEY'],
     },
     async () => {
         logger.info('[NewsIngest] Daily news-to-scenarios run starting');

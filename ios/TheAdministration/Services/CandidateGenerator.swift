@@ -66,23 +66,166 @@ class CandidateGenerator {
         DegreeTemplate(degree: "Ph.D.", fields: ["Economics", "Political Science", "Public Policy", "Sociology"])
     ]
 
+    // MARK: - Built-in name pool (final fallback when Firebase world_state/names is empty)
+
+    private static let BUILTIN_NAME_POOLS: [String: RegionNamePool] = [
+        "north_america": RegionNamePool(
+            firstMale: [
+                "James", "Michael", "Robert", "David", "William", "Richard", "Joseph", "Thomas", "Charles", "Christopher",
+                "Daniel", "Matthew", "Anthony", "Donald", "Steven", "Paul", "Andrew", "Joshua", "Kenneth", "Kevin",
+                "Brian", "George", "Timothy", "Ronald", "Jason", "Edward", "Jeffrey", "Ryan", "Jacob", "Gary",
+                "Nicholas", "Eric", "Jonathan", "Stephen", "Larry", "Justin", "Scott", "Brandon", "Benjamin", "Samuel",
+                "Gregory", "Frank", "Raymond", "Patrick", "Dennis", "Tyler", "Aaron", "Jose", "Adam", "Nathan"
+            ],
+            firstFemale: [
+                "Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Barbara", "Susan", "Jessica", "Sarah", "Karen",
+                "Lisa", "Nancy", "Betty", "Sandra", "Margaret", "Ashley", "Kimberly", "Emily", "Donna", "Michelle",
+                "Carol", "Amanda", "Melissa", "Deborah", "Stephanie", "Dorothy", "Rebecca", "Sharon", "Laura", "Cynthia",
+                "Amy", "Kathleen", "Angela", "Shirley", "Brenda", "Emma", "Anna", "Pamela", "Nicole", "Samantha",
+                "Katherine", "Christine", "Helen", "Debra", "Rachel", "Carolyn", "Janet", "Maria", "Catherine", "Heather"
+            ],
+            firstNeutral: [
+                "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Avery", "Quinn", "Reese", "Skyler", "Cameron",
+                "Drew", "Jamie", "Sage", "Rowan", "Finley", "Harper", "Parker", "Blake", "Peyton", "Logan",
+                "Dakota", "Hayden", "Emerson", "Sawyer", "Kendall", "Charlie", "Adrian", "Sidney", "Phoenix", "River"
+            ],
+            last: [
+                "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez",
+                "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin",
+                "Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson",
+                "Walker", "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores",
+                "Green", "Adams", "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell", "Carter", "Roberts"
+            ],
+            honorifics: nil
+        ),
+        "europe": RegionNamePool(
+            firstMale: [
+                "Liam", "Noah", "Oliver", "Elias", "Lucas", "Hugo", "Louis", "Jules", "Leon", "Felix",
+                "Maximilian", "Luca", "Ben", "Henri", "Anton", "Nikolai", "Mikhail", "Dmitri", "Sergei", "Adam",
+                "Jan", "Marek", "Andreas", "Stefan", "Klaus", "Hans", "Pieter", "Luuk", "Finn", "Matteo",
+                "Leonardo", "Francesco", "Alessandro", "Lorenzo", "Mateo", "Alejandro", "Javier", "Diego", "Santiago", "Arthur",
+                "Gabriel", "Raphael", "Etienne", "Mathis", "Theo", "Johan", "Viktor", "Petr", "Sven", "Magnus"
+            ],
+            firstFemale: [
+                "Emma", "Sophia", "Olivia", "Mia", "Hannah", "Lea", "Clara", "Lena", "Marie", "Sofia",
+                "Charlotte", "Amelie", "Louise", "Chloe", "Manon", "Jade", "Alice", "Elise", "Zoe", "Julia",
+                "Elena", "Isabella", "Giulia", "Aurora", "Martina", "Greta", "Nina", "Valentina", "Beatrice", "Anastasia",
+                "Ekaterina", "Natalia", "Alisa", "Olga", "Irina", "Svetlana", "Tatiana", "Polina", "Lucia", "Carmen",
+                "Paula", "Claudia", "Francesca", "Eva", "Yasmin", "Astrid", "Ingrid", "Freya", "Saoirse", "Ines"
+            ],
+            firstNeutral: [
+                "Sasha", "Noa", "Robin", "Kim", "Kai", "Jesse", "Toni", "Andrea", "Dominique", "Nicola",
+                "Nikita", "Eden", "Remy", "Ariel", "Fran", "Luka", "Mika", "Alex", "Sam", "Max"
+            ],
+            last: [
+                "Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Hoffmann",
+                "Bernard", "Dubois", "Robert", "Richard", "Petit", "Durand", "Leroy", "Moreau", "Simon", "Laurent",
+                "Rossi", "Russo", "Ferrari", "Esposito", "Bianchi", "Romano", "Colombo", "Ricci", "Marino", "Greco",
+                "García", "Fernández", "Rodríguez", "Martínez", "Sánchez", "Pérez", "Gómez", "Ruiz", "Álvarez", "Moreno",
+                "Ivanov", "Petrov", "Sokolov", "Morozov", "Novak", "Kowalski", "Novotny", "Larsson", "Andersson", "Nilsson"
+            ],
+            honorifics: nil
+        ),
+        "east_asia": RegionNamePool(
+            firstMale: [
+                "Hiroshi", "Takashi", "Kenji", "Daiki", "Haruto", "Sota", "Ren", "Kaito", "Riku", "Yuta",
+                "Wei", "Jun", "Ming", "Hao", "Lei", "Yang", "Tao", "Feng", "Bo", "Xiaolong",
+                "Minjun", "Jihoon", "Seojun", "Hyun", "Jinsoo", "Dongwook", "Sunghyun", "Jungwoo", "Taeyang", "Seunghyun",
+                "Akira", "Satoshi", "Kazuki", "Tatsuya", "Ryo", "Sho", "Takeshi", "Masaru", "Tomoya", "Yuki",
+                "Zhenyu", "Jianhua", "Weiming", "Yongjie", "Haoran", "Junwei", "Kun", "Liang", "Peng", "Zhihao"
+            ],
+            firstFemale: [
+                "Yui", "Hina", "Aoi", "Sakura", "Mio", "Rin", "Yuna", "Hinata", "Akari", "Himari",
+                "Fang", "Lin", "Ying", "Jing", "Hui", "Yan", "Xia", "Ling", "Mei", "Juan",
+                "Jiwoo", "Seoyeon", "Hayoon", "Jiyu", "Chaewon", "Dahyun", "Yoona", "Minji", "Sunhwa", "Eunjung",
+                "Aiko", "Haruka", "Kaori", "Kyoko", "Miyuki", "Naomi", "Reiko", "Sachiko", "Tomoko", "Yumi",
+                "Xiaoling", "Ruolan", "Meiling", "Yuxin", "Jingyi", "Xinyi", "Ziqi", "Siyu", "Yueying", "Lanfen"
+            ],
+            firstNeutral: [
+                "Haru", "Hikaru", "Makoto", "Rei", "Shinobu", "Tsubasa", "Yori", "Xiang", "An", "Bao",
+                "Li", "Min", "Qing", "Sen", "Yi", "Hong", "Nori", "Kazu", "Jin", "Ying"
+            ],
+            last: [
+                "Tanaka", "Suzuki", "Sato", "Takahashi", "Watanabe", "Ito", "Yamamoto", "Nakamura", "Kobayashi", "Yoshida",
+                "Kato", "Yamada", "Sasaki", "Yamaguchi", "Matsumoto", "Inoue", "Kimura", "Hayashi", "Shimizu", "Saito",
+                "Wang", "Li", "Zhang", "Liu", "Chen", "Yang", "Huang", "Zhao", "Wu", "Zhou",
+                "Xu", "Sun", "Ma", "Zhu", "Hu", "Guo", "He", "Gao", "Lin", "Luo",
+                "Kim", "Park", "Choi", "Jung", "Kang", "Cho", "Yoon", "Jang", "Lim", "Han"
+            ],
+            honorifics: nil
+        )
+    ]
+
+    /// Normalize a raw region/country string (e.g., "North America", "EUROPE", "East_Asia")
+    /// into a canonical built-in pool key. Unknown regions fall back to north_america.
+    private static func canonicalBuiltinRegion(_ raw: String?) -> String {
+        guard let raw = raw?.lowercased() else { return "north_america" }
+        let normalized = raw.replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: "-", with: "_")
+        if normalized.contains("europe") { return "europe" }
+        if normalized.contains("asia") || normalized.contains("japan") || normalized.contains("china") ||
+           normalized.contains("korea") || normalized.contains("east_asia") { return "east_asia" }
+        return "north_america"
+    }
+
+    private static func builtinPool(for region: String?) -> RegionNamePool {
+        let key = canonicalBuiltinRegion(region)
+        return BUILTIN_NAME_POOLS[key] ?? BUILTIN_NAME_POOLS["north_america"]!
+    }
+
     // MARK: - Name picking
 
     private static func pickNameForRegion(_ rng: RNG, region: String?, config: AppConfig?, gender: PersonGender, excludedFirstNames: Set<String> = [], excludedLastNames: Set<String> = []) -> String {
         let regionKey = region ?? "north_america"
-        let pool = config?.namePoolsByRegion[regionKey] ?? config?.namePoolsByRegion["north_america"] ?? config?.fallbackNamePool
-        let firstPool: [String]
+        let firebasePool = config?.namePoolsByRegion[regionKey]
+            ?? config?.namePoolsByRegion["north_america"]
+            ?? config?.fallbackNamePool
+        let builtin = builtinPool(for: region)
+
+        let firstFromFirebase: [String]
+        let firstFromBuiltin: [String]
         switch gender {
-        case .male:      firstPool = pool?.firstMale    ?? []
-        case .female:    firstPool = pool?.firstFemale  ?? []
-        case .nonbinary: firstPool = pool?.firstNeutral ?? pool?.firstMale ?? []
+        case .male:
+            firstFromFirebase = firebasePool?.firstMale ?? []
+            firstFromBuiltin = builtin.firstMale
+        case .female:
+            firstFromFirebase = firebasePool?.firstFemale ?? []
+            firstFromBuiltin = builtin.firstFemale
+        case .nonbinary:
+            firstFromFirebase = firebasePool?.firstNeutral ?? firebasePool?.firstMale ?? []
+            firstFromBuiltin = builtin.firstNeutral.isEmpty ? builtin.firstMale : builtin.firstNeutral
         }
-        let lastPool = pool?.last ?? []
-        let availableFirst = firstPool.filter { !excludedFirstNames.contains($0) }
-        let availableLast = lastPool.filter { !excludedLastNames.contains($0) }
-        let first = rng.pick(availableFirst.isEmpty ? firstPool : availableFirst) ?? "Alex"
-        let last = rng.pick(availableLast.isEmpty ? lastPool : availableLast) ?? "Smith"
+
+        let first = pickWithFallback(
+            rng,
+            primary: firstFromFirebase,
+            secondary: firstFromBuiltin,
+            excluded: excludedFirstNames
+        )
+        let last = pickWithFallback(
+            rng,
+            primary: firebasePool?.last ?? [],
+            secondary: builtin.last,
+            excluded: excludedLastNames
+        )
         return "\(first) \(last)"
+    }
+
+    /// Pick from primary first; if empty (or exhausted after exclusions), fall through to secondary.
+    /// Never returns an empty string — if both pools are somehow empty the built-in north_america pool
+    /// is used, and in debug builds a preconditionFailure flags the regression immediately.
+    private static func pickWithFallback(_ rng: RNG, primary: [String], secondary: [String], excluded: Set<String>) -> String {
+        let primaryAvailable = primary.filter { !excluded.contains($0) }
+        if let pick = rng.pick(primaryAvailable.isEmpty ? primary : primaryAvailable) {
+            return pick
+        }
+        let secondaryAvailable = secondary.filter { !excluded.contains($0) }
+        if let pick = rng.pick(secondaryAvailable.isEmpty ? secondary : secondaryAvailable) {
+            return pick
+        }
+        let emergency = BUILTIN_NAME_POOLS["north_america"]!
+        let pool = emergency.firstMale + emergency.last
+        assertionFailure("CandidateGenerator: both Firebase and built-in name pools empty — check BUILTIN_NAME_POOLS")
+        return rng.pick(pool) ?? "Unnamed"
     }
 
     // MARK: - Public API — standalone name generation

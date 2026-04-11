@@ -62,7 +62,7 @@ export function combineEditorialReview(
   if (narrativeReviewGate.enabled && narrative) {
     if (
       narrative.overallScore < 3.5 ||
-      narrative.optionDifferentiation.score < 3 ||
+      narrative.optionDifferentiation.score < 4 ||
       narrative.consequenceQuality.score < 3 ||
       narrative.replayValue.score < 3
     ) {

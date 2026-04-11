@@ -128,4 +128,32 @@ describe('deterministicFix condition repair', () => {
       expect.arrayContaining(['option_a: canonicalized roleId role_legislature → role_executive'])
     );
   });
+
+  test('maps hallucinated housing policy implication target to supported social spending target', () => {
+    const scenario: BundleScenario = {
+      id: 'housing_support',
+      title: 'Rent Protests Pressure Cabinet',
+      description: 'Housing advocates warn that eviction filings are rising across major cities.',
+      options: [
+        {
+          id: 'institutional_review',
+          text: 'You fund emergency housing support while agencies review eviction rules.',
+          effects: [{ targetMetricId: 'metric_budget', value: -2, duration: 2, probability: 1 }],
+          policyImplications: [{ target: 'policy.housing' as any, delta: 6 }],
+          advisorFeedback: [],
+        },
+      ],
+      metadata: {
+        bundle: 'social',
+      },
+    };
+
+    const result = deterministicFix(scenario);
+
+    expect(result.fixed).toBe(true);
+    expect(scenario.options[0].policyImplications?.[0]?.target).toBe('fiscal.spendingSocial');
+    expect(result.fixes).toEqual(
+      expect.arrayContaining(['institutional_review: mapped policyImplication target policy.housing->fiscal.spendingSocial'])
+    );
+  });
 });
