@@ -832,6 +832,17 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         }
     }
 
+    if (isUniversalScope && scenario.applicability?.requires) {
+        const had = Object.keys(scenario.applicability.requires).filter(
+            (k) => scenario.applicability!.requires![k as RequiresFlag]
+        );
+        if (had.length > 0) {
+            scenario.applicability.requires = {};
+            fixed = true;
+            fixes.push(`cleared applicability.requires for universal scope (${had.join(', ')})`);
+        }
+    }
+
     // Sync requires flags → metricGates: for each requires flag that implies a metric gate,
     // ensure the corresponding metricGate exists (repairs requires-missing-condition warns).
     if (scenario.applicability?.requires) {

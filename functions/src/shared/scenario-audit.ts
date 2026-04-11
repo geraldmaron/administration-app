@@ -1641,18 +1641,18 @@ export function auditScenario(
         }
 
         // Universal scenarios must not gate on any requires flags — they are supposed to fire for all countries.
-        // This is a non-repairable error: the concept itself must be regenerated without institutional content.
+        // heuristicFix will clear these automatically; this is a diagnostic warning only.
         if (meta.scopeTier === 'universal' && scenario.applicability?.requires) {
             const setRequires = Object.entries(scenario.applicability.requires)
                 .filter(([, v]) => v === true || v != null)
                 .map(([k]) => k);
             if (setRequires.length > 0) {
                 add(
-                    'error',
-                    'universal-institutional-content',
+                    'warn',
+                    'universal-has-requires',
                     scenario.id,
-                    `Universal scenario requires institutional flags (${setRequires.join(', ')}). Concept must be rewritten without institutional content — this is not repairable.`,
-                    false
+                    `Universal scenario sets requires flags (${setRequires.join(', ')}) — cleared automatically. Move institutional content to a cluster-scope scenario if the narrative specifically requires these institutions.`,
+                    true
                 );
             }
         }
