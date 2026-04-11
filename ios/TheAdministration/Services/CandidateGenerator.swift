@@ -385,7 +385,8 @@ class CandidateGenerator {
 
     /// Generate minister candidates for a specific cabinet role using Firebase AppConfig.
     static func generateMinisters(roleId: String, category: String, region: String?, countryId: String? = nil, seed: Int? = nil, count: Int = 1, gender: PersonGender? = nil, config: AppConfig?, partyNames: [String]? = nil, excludedFirstNames: Set<String> = [], excludedLastNames: Set<String> = []) -> [Candidate] {
-        let rng = RNG(seed: seed ?? Int(Date().timeIntervalSince1970))
+        let roleHash = roleId.unicodeScalars.reduce(0) { ($0 &* 31) &+ Int($1.value) }
+        let rng = RNG(seed: (seed ?? Int(Date().timeIntervalSince1970)) ^ (roleHash &* 999983))
         let parties = partyNames?.isEmpty == false ? partyNames! : (config?.parties(for: countryId) ?? ["Independent"])
         let traitPool = config?.traitPool ?? []
         var candidates: [Candidate] = []
@@ -453,7 +454,7 @@ class CandidateGenerator {
             candidate.roleAffinity = deriveRoleAffinity(degreeField: candidate.degreeField, skills: candidate.skills)
             candidates.append(candidate)
         }
-        return candidates
+        return candidates.sorted { ($0.cost ?? 0) < ($1.cost ?? 0) }
     }
 
     private static func deriveRoleAffinity(degreeField: String?, skills: [String]?) -> [String] {

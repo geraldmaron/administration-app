@@ -487,6 +487,7 @@ struct CabinetFormationView: View {
     @State private var candidatesByRole: [String: [Candidate]] = [:]
     @State private var selections: [String: Candidate] = [:]
     @State private var isGenerating = true
+    @State private var totalBudget: Int = 0
 
     private var country: Country? {
         gameStore.availableCountries.first(where: { $0.id == gameStore.state.countryId })
@@ -494,6 +495,39 @@ struct CabinetFormationView: View {
 
     private var totalCost: Int {
         selections.values.reduce(0) { $0 + ($1.cost ?? 0) }
+    }
+
+    private func remainingForRole(_ roleId: String) -> Int {
+        let otherCost = selections
+            .filter { $0.key != roleId }
+            .values.reduce(0) { $0 + ($1.cost ?? 0) }
+        return totalBudget - otherCost
+    }
+
+    private var budgetColor: Color {
+        guard totalBudget > 0 else { return AppColors.accentPrimary }
+        let ratio = Double(totalCost) / Double(totalBudget)
+        if ratio >= 1.0 { return AppColors.error }
+        if ratio >= 0.9 { return AppColors.warning }
+        return AppColors.success
+    }
+
+    private func autoFill() {
+        var scratch = selections
+        for role in CabinetRoles.DEFAULT_ROLES {
+            guard let candidates = candidatesByRole[role.id] else { continue }
+            let otherCost = scratch
+                .filter { $0.key != role.id }
+                .values.reduce(0) { $0 + ($1.cost ?? 0) }
+            let rem = totalBudget - otherCost
+            let affordable = candidates.filter { ($0.cost ?? 0) <= rem }
+            let pick = affordable.min(by: {
+                abs(($0.cost ?? 0) - CabinetPointsService.TARGET_AVG_COST_PER_SLOT) <
+                abs(($1.cost ?? 0) - CabinetPointsService.TARGET_AVG_COST_PER_SLOT)
+            })
+            if let pick { scratch[role.id] = pick }
+        }
+        selections = scratch
     }
 
     var body: some View {
@@ -526,15 +560,43 @@ struct CabinetFormationView: View {
                 }
                 Spacer()
             } else {
-                HStack {
-                    Text("TOTAL CABINET COST")
-                        .font(.system(size: 9, weight: .medium, design: .monospaced))
-                        .foregroundColor(AppColors.foregroundMuted)
-                        .tracking(2)
-                    Spacer()
-                    Text("$\(totalCost)k")
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundColor(AppColors.accentPrimary)
+                VStack(spacing: 8) {
+                    HStack(alignment: .center, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("PERSONNEL BUDGET")
+                                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                                    .foregroundColor(AppColors.foregroundMuted)
+                                    .tracking(2)
+                                Spacer()
+                                Text("\(totalCost) / \(totalBudget)")
+                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                    .foregroundColor(budgetColor)
+                            }
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Rectangle()
+                                        .fill(AppColors.backgroundMuted)
+                                        .frame(height: 3)
+                                    Rectangle()
+                                        .fill(budgetColor)
+                                        .frame(width: totalBudget > 0 ? max(0, geo.size.width * CGFloat(min(1, Double(totalCost) / Double(totalBudget)))) : 0, height: 3)
+                                }
+                            }
+                            .frame(height: 3)
+                        }
+
+                        Button(action: autoFill) {
+                            Text("AUTO-FILL")
+                                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                                .foregroundColor(AppColors.accentPrimary)
+                                .tracking(1)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 5)
+                                .overlay(Rectangle().stroke(AppColors.accentPrimary.opacity(0.5), lineWidth: 0.5))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 12)
@@ -545,6 +607,7 @@ struct CabinetFormationView: View {
                             RoleCandidateRow(
                                 role: role,
                                 candidates: candidatesByRole[role.id] ?? [],
+                                remainingPoints: remainingForRole(role.id),
                                 selection: Binding(
                                     get: { selections[role.id] },
                                     set: { selections[role.id] = $0 }
@@ -582,24 +645,28 @@ struct CabinetFormationView: View {
         DispatchQueue.global(qos: .userInitiated).async {
             var byRole: [String: [Candidate]] = [:]
             var sel: [String: Candidate] = [:]
+            let numRoles = CabinetRoles.DEFAULT_ROLES.count
             for role in CabinetRoles.DEFAULT_ROLES {
                 let candidates = CandidateGenerator.generateMinisters(
                     roleId: role.id,
                     category: role.category,
                     region: region,
                     countryId: countryId,
-                    count: 3,
+                    count: 10,
                     config: config,
                     partyNames: partyNames
                 )
                 byRole[role.id] = candidates
-                if let first = candidates.first {
-                    sel[role.id] = first
-                }
+                let mid = candidates.min(by: {
+                    abs(($0.cost ?? 0) - CabinetPointsService.TARGET_AVG_COST_PER_SLOT) <
+                    abs(($1.cost ?? 0) - CabinetPointsService.TARGET_AVG_COST_PER_SLOT)
+                })
+                sel[role.id] = mid ?? candidates.first
             }
             DispatchQueue.main.async {
                 self.candidatesByRole = byRole
                 self.selections = sel
+                self.totalBudget = CabinetPointsService.calculatePersonnelBudget(numRoles: numRoles)
                 self.isGenerating = false
             }
         }
@@ -1012,6 +1079,7 @@ struct SkillSelectionView: View {
 struct RoleCandidateRow: View {
     let role: Role
     let candidates: [Candidate]
+    let remainingPoints: Int
     @Binding var selection: Candidate?
 
     private func categoryColor(_ category: String) -> Color {
@@ -1040,12 +1108,26 @@ struct RoleCandidateRow: View {
                     ForEach(candidates) { candidate in
                         CandidateSelectionCard(
                             candidate: candidate,
-                            isSelected: selection?.id == candidate.id
+                            isSelected: selection?.id == candidate.id,
+                            canAfford: (candidate.cost ?? 0) <= remainingPoints || selection?.id == candidate.id
                         ) {
                             selection = candidate
                         }
                     }
                 }
+            }
+
+            if candidates.count > 3 {
+                HStack(spacing: 0) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 7, weight: .medium))
+                    Text("  \(candidates.count) CANDIDATES  ")
+                        .font(.system(size: 7, weight: .medium, design: .monospaced))
+                        .tracking(1)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 7, weight: .medium))
+                }
+                .foregroundColor(AppColors.foregroundSubtle)
             }
         }
     }
@@ -1056,6 +1138,7 @@ struct RoleCandidateRow: View {
 struct CandidateSelectionCard: View {
     let candidate: Candidate
     let isSelected: Bool
+    let canAfford: Bool
     let onSelect: () -> Void
 
     private var topStat: (String, Double) {
@@ -1126,6 +1209,8 @@ struct CandidateSelectionCard: View {
             )
         }
         .buttonStyle(.plain)
+        .disabled(!canAfford)
+        .opacity(canAfford ? 1.0 : 0.35)
     }
 
     @ViewBuilder

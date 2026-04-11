@@ -8,6 +8,7 @@ import BundleBadge from '@/components/BundleBadge';
 import ScreenHeader from '@/components/ScreenHeader';
 import { formatRepairPath } from '@shared/scenario-repair';
 import type { RepairAnalysis, ApprovedRepair, CountrySummary, SimulationScenario } from '@/lib/types';
+import { analyzeRepairAction, applyRepairsAction } from './actions';
 
 type Phase = 'loading' | 'review' | 'applying' | 'error';
 
@@ -231,20 +232,8 @@ function RepairPageInner() {
   useEffect(() => {
     if (ids.length === 0) { setPhase('error'); setErrorMessage('No scenario IDs provided.'); return; }
 
-    fetch('/api/scenarios/repair', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'analyze', ids }),
-    })
-      .then(async (r) => {
-        const data = await r.json().catch(() => ({}));
-        if (!r.ok) {
-          throw new Error(typeof data.error === 'string' ? data.error : 'Analysis failed');
-        }
-        return data;
-      })
-      .then((data: { results?: RepairAnalysis[]; error?: string }) => {
-        if (data.error) throw new Error(data.error);
+    analyzeRepairAction(ids)
+      .then((data) => {
         const results = data.results ?? [];
         setAnalyses(results);
         const initApproval: Record<string, Record<string, boolean>> = {};
@@ -310,15 +299,7 @@ function RepairPageInner() {
     if (approvedRepairs.length === 0) return;
     setPhase('applying');
     try {
-      const res = await fetch('/api/scenarios/repair', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'apply', approved: approvedRepairs }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(body.error ?? 'Apply failed');
-      }
+      await applyRepairsAction(approvedRepairs);
       router.push('/scenarios');
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Apply failed');
