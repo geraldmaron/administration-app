@@ -589,6 +589,7 @@ export interface PoliticalParty {
     metricBiases?: Partial<Record<MetricId, number>>;  // -1 to +1: how strongly this party's base cares about each metric
     popularBase?: string[];                             // demographic groups: ["urban", "youth", "labor", "rural", "business", etc.]
     coalitionWillingness?: number;                      // 0–1: likelihood to cooperate with player; 1=fully supportive, 0=total opposition
+    suggestedSkills?: string[];                         // skill IDs from PlayerSkillCatalogue recommended for this party's ideology
 }
 
 // ── Universities ──────────────────────────────────────────────────────────────

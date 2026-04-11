@@ -36,8 +36,8 @@ The authoritative source of truth is **code in `functions/src/`**. Firestore is 
 | Claim | `functions/src/background-jobs.ts` | Scheduled function claims `pending` jobs, transitions to `running`, enforces a heartbeat so zombie runs can be recovered by `recoverZombieJobs` every 5 min (health at `world_state/zombie_sweeper_health`). |
 | Architect | `functions/src/scenario-engine.ts` | LLM call produces an N-act blueprint. Standard path uses a synthetic 1-act blueprint. |
 | Drafter | `functions/src/scenario-engine.ts` + `functions/src/lib/prompt-templates.ts` | LLM expands each act into a full `Scenario` with title, description, 3 options, effects, advisor feedback. Prompts inject the target country’s **facts and archetypes** so realism is baked in at draft time. |
-| deterministicFix | `functions/src/lib/audit-rules.ts` | Pre-audit, no-LLM normalization: canonicalize roleIds, retokenize deprecated tokens, populate `applicability.requires` and `applicability.archetypes` from text scan + country lookup. |
-| Audit | `functions/src/shared/scenario-audit.ts` | Rule engine validates tokens, voice, field lengths, effect counts, structural coherence (`{token}` ⇔ `applicability.requires`), applicability validity. Emits blocking errors and warnings with a 0–100 score. |
+| deterministicFix | `functions/src/lib/audit-rules.ts` | Pre-audit, no-LLM normalization: canonicalize roleIds, retokenize deprecated tokens, populate `applicability.requires` and `applicability.archetypes` from text scan + country lookup. Also runs linguistic determiner and double-article fixes via `functions/src/shared/linguistic-validator.ts`. |
+| Audit | `functions/src/shared/scenario-audit.ts` | Rule engine validates tokens, voice, field lengths, effect counts, structural coherence (`{token}` ⇔ `applicability.requires`), applicability validity, and linguistic quality (determiner errors, double articles, sentence structure). Emits blocking errors and warnings with a 0–100 score. |
 | Repair | `functions/src/scenario-engine.ts` (`applyRepairPatch`) | For issues the rule engine can't fix, a narrow LLM repair is invoked with explicit action instructions. Re-audits after each attempt, capped by `max_llm_repair_attempts`. |
 | Embed | `functions/src/scenario-engine.ts` | `text-embedding-3-small` embedding; semantic dedup against `scenario_embeddings` with `SEMANTIC_SIMILARITY_THRESHOLD` (default 0.85). |
 | Save | `functions/src/scenario-engine.ts` → `scenarios/{id}` | Scenario is persisted with `applicability`, metadata, acceptance provenance, and embedding sidecar in `scenario_embeddings/{id}`. |
@@ -109,6 +109,8 @@ Layer 1 is authoritative. Layer 2 is a read-only mirror written by `seed-token-r
 
 Article-form tokens (`the_*`) have been removed. `the_player_country` is invalid and blocked by the audit — use `{player_country}` and write "the {player_country}" naturally.
 
+**Country determiner registry** (`functions/src/lib/country-determiner.ts`): authoritative set of country names that require "the" in English prose (e.g. "the Netherlands", "the United States"). Used by the linguistic validator and repair pipeline to detect and fix missing articles in generated text.
+
 ---
 
 ## 6. Country Token Refresh (GAIA tick + player actions)
@@ -124,6 +126,14 @@ Article-form tokens (`the_*`) have been removed. `the_player_country` is invalid
 ## 7. iOS Client
 
 `ios/TheAdministration/`
+
+### Bundle Sync
+
+`Services/ScenarioBundleManager.swift` downloads versioned JSON chunk files from Firebase Storage.
+
+- On each launch it fetches `world_state/scenario_manifest` (1 Firestore read).
+- Chunks are re-downloaded only when the locally cached chunk version is stale.
+- **Scenario-level delta (future):** the manifest now includes `scenarioHashes` (`Record<scenarioId, SHA-256>`). When this field is present, the client can diff local vs. remote hashes and mark only the containing chunks as stale, enabling per-scenario precision. The full algorithm is documented at the top of `functions/src/bundle-exporter.ts`. `ScenarioBundleManager.swift` does not yet implement the per-scenario diff path — the existing chunk-version mechanism remains operative.
 
 ### Fetch
 

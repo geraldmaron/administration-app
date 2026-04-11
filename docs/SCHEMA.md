@@ -285,6 +285,7 @@ See `ARCHITECTURE.md` §9 for the full inventory. Key scenario-related collectio
 - `countries/{id}/parties/{partyId}` — party subcollection.
 - `world_state/token_registry` — read-only mirror of Layer 1.
 - `world_state/zombie_sweeper_health` — sweeper heartbeat.
+- `world_state/scenario_manifest` — versioned bundle manifest with chunk metadata and per-scenario content hashes (see §7a).
 - `world_events/{id}` — inter-country actions from `worldSimulationTick`; surfaced in iOS news feed.
 - `country_world_state/{countryId}` — per-country dynamic metric state. Schema:
 
@@ -298,6 +299,39 @@ interface CountryWorldState {
   recentScenarioIds: string[];                        // cooldown tracking
 }
 ```
+
+---
+
+## 7a. Bundle Manifest Schema
+
+`world_state/scenario_manifest` — written by `functions/src/bundle-exporter.ts` on every export.
+
+```ts
+interface BundleManifest {
+  manifestVersion: number;
+  lastUpdated: Timestamp;
+  bundles: Record<BundleId, BundleManifestEntry>;
+}
+
+interface BundleManifestEntry {
+  version: number;             // bumps on every export of this bundle
+  totalCount: number;
+  chunkSize: number;           // 250
+  chunks: Array<{
+    idx: number;
+    version: number;
+    count: number;
+    sizeBytes: number;
+  }>;
+  scenarioHashes: Record<string, string>; // scenarioId → SHA-256 of stable content fields
+}
+```
+
+`scenarioHashes` covers stable narrative + structural fields only. Excluded: `createdAt`, `updatedAt`, `metadata.generationProvenance.generatedAt`, `metadata.auditMetadata.lastAudited`, `metadata.acceptanceMetadata.acceptedAt`.
+
+iOS uses `scenarioHashes` to determine which chunks to re-download at scenario granularity. See `ScenarioBundleManager.swift` and the contract comment at the top of `bundle-exporter.ts` for the full delta algorithm.
+
+Hash function: `computeScenarioContentHash()` in `functions/src/bundle-exporter.ts` — SHA-256 over canonical sorted JSON of stable fields.
 
 ---
 

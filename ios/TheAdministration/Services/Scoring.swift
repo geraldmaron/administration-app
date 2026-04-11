@@ -257,13 +257,71 @@ class ScoringEngine {
         return secondary
     }
     
+    private static let approachAlignedTags: [String: Set<String>] = [
+        "pragmatist":  ["compromise", "deal", "moderate", "trade", "bipartisan", "diplomatic"],
+        "ideologue":   ["reform", "rights", "progressive", "values", "humanitarian", "social"],
+        "technocrat":  ["data", "technical", "efficiency", "innovation", "evidence", "analysis"],
+        "nationalist": ["sovereignty", "military", "national", "security", "defense", "protectionist"],
+        "populist":    ["popular", "welfare", "public", "grassroots", "approval", "community"]
+    ]
+
+    private static func combinedPartyBias(metricId: String, state: GameState) -> Double {
+        let rulingBias: Double = {
+            guard let p = state.countryParties.first(where: { $0.isRuling }),
+                  let b = p.metricBiases?[metricId] else { return 0 }
+            return b * 0.10
+        }()
+        let playerBias: Double = {
+            let name = state.player?.party ?? ""
+            guard !name.isEmpty,
+                  let p = state.countryParties.first(where: { $0.name == name }),
+                  let b = p.metricBiases?[metricId] else { return 0 }
+            return b * 0.12
+        }()
+        return rulingBias + playerBias
+    }
+
+    private static func approachEffectModifier(
+        approach: String,
+        effectValue: Double,
+        metricId: String,
+        playerParty: PoliticalParty?
+    ) -> Double {
+        switch approach.lowercased() {
+        case "pragmatist":
+            return effectValue * 0.70
+        case "ideologue":
+            guard let bias = playerParty?.metricBiases?[metricId] else { return effectValue }
+            let aligned = (effectValue > 0 && bias > 0) || (effectValue < 0 && bias < 0)
+            return effectValue * (aligned ? 1.20 : 0.90)
+        default:
+            return effectValue
+        }
+    }
+
+    private static func approachAlignmentMultiplier(approach: String, optionTags: [String]) -> Double {
+        let lower = approach.lowercased()
+        let tagSet = Set(optionTags.map { $0.lowercased() })
+        guard !tagSet.isEmpty, !lower.isEmpty else { return 1.0 }
+        if let ownTags = approachAlignedTags[lower], !ownTags.isDisjoint(with: tagSet) {
+            return 1.15
+        }
+        let otherAligned = approachAlignedTags.filter { $0.key != lower }.values
+        let isMisaligned = otherAligned.contains { !$0.isDisjoint(with: tagSet) }
+        return isMisaligned ? 0.88 : 1.0
+    }
+
     static func applyDecision(state: GameState, option: Option) -> GameState {
         var newState = state
-        
+
         let scenario = state.currentScenario
         let metricsBefore = state.metrics
         let scaleFactor = state.countryScaleFactor ?? 1.0
-        
+        let alignmentMultiplier = approachAlignmentMultiplier(
+            approach: state.player?.approach ?? "",
+            optionTags: option.tags ?? []
+        )
+
         newState.activeEffects = state.activeEffects
         newState.countries = state.countries
 
@@ -271,7 +329,8 @@ class ScoringEngine {
 
         if !option.effects.isEmpty {
             for effect in option.effects {
-                let normalizedValue = normalizeEffectValue(targetMetricId: effect.targetMetricId, rawValue: effect.value, countryScaleFactor: scaleFactor)
+                var normalizedValue = normalizeEffectValue(targetMetricId: effect.targetMetricId, rawValue: effect.value, countryScaleFactor: scaleFactor)
+                if normalizedValue > 0 { normalizedValue *= alignmentMultiplier }
                 if Double.random(in: 0...1) <= effect.probability {
                     let targetId = effect.targetMetricId
                     if !targetId.isEmpty {
@@ -315,7 +374,8 @@ class ScoringEngine {
         } else if let effectsMap = option.effectsMap {
             for (metricId, value) in effectsMap {
                 let targetId = mapMetricNameToId(metricId)
-                let normalizedValue = normalizeEffectValue(targetMetricId: targetId, rawValue: value, countryScaleFactor: scaleFactor)
+                var normalizedValue = normalizeEffectValue(targetMetricId: targetId, rawValue: value, countryScaleFactor: scaleFactor)
+                if normalizedValue > 0 { normalizedValue *= alignmentMultiplier }
                 primaryEffects[targetId] = (primaryEffects[targetId] ?? 0) + normalizedValue
                 let activeEffect = ActiveEffect(
                     baseEffect: Effect(targetMetricId: targetId, value: applyJitter(normalizedValue), duration: 1, probability: 1, delay: nil),
@@ -1094,12 +1154,15 @@ class ScoringEngine {
                 }
             }
             
-            let partyBias: Double = {
-                guard let party = newState.countryParties.first(where: { $0.isRuling }),
-                      let biases = party.metricBiases,
-                      let bias = biases[effect.baseEffect.targetMetricId] else { return 0.0 }
-                return bias * 0.15
-            }()
+            let playerPartyObj = newState.countryParties.first(where: { $0.name == (newState.player?.party ?? "") })
+            effectValue = approachEffectModifier(
+                approach: newState.player?.approach ?? "",
+                effectValue: effectValue,
+                metricId: effect.baseEffect.targetMetricId,
+                playerParty: playerPartyObj
+            )
+
+            let partyBias = combinedPartyBias(metricId: effect.baseEffect.targetMetricId, state: newState)
             if partyBias != 0 {
                 effectValue *= (1 + partyBias)
             }
@@ -1179,7 +1242,8 @@ class ScoringEngine {
             }
         
         if let playerStats = newState.player?.stats {
-            let management = playerStats.management
+            let approachBoost = (newState.player?.approach ?? "").lowercased() == "technocrat" ? 15.0 : 0.0
+            let management = playerStats.management + approachBoost
                 if delta < 0 {
                     let mitigation = (management - 30) / 300
                     let mitigationJitter = (Double.random(in: 0...1) * 0.04) - 0.02
@@ -1582,6 +1646,21 @@ class ScoringEngine {
                 partyAlignmentScore += (adjusted - 50.0) * bias
             }
             base += max(-8.0, min(8.0, partyAlignmentScore * 0.08))
+        }
+
+        // Player's own party bias — when the player is NOT in the ruling party, their
+        // party's metric priorities still influence perceived approval among their political base.
+        let playerPartyName = state.player?.party ?? ""
+        if !playerPartyName.isEmpty,
+           let playerParty = state.countryParties.first(where: { $0.name == playerPartyName && !$0.isRuling }),
+           let biases = playerParty.metricBiases {
+            var score = 0.0
+            for (metricId, bias) in biases {
+                let value = state.metrics[metricId] ?? 50.0
+                let adjusted = isInverseMetric(metricId) ? (100 - value) : value
+                score += (adjusted - 50.0) * bias
+            }
+            base += max(-6.0, min(6.0, score * 0.06))
         }
 
         // Diplomatic/military shock — persistent approval pressure from hostile diplomatic or

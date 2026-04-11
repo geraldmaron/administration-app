@@ -1,5 +1,6 @@
 import type { ActionResolutionRequest, ActionResolutionResponse } from '../shared/action-resolution-contract';
 import { getSeverityMultiplier } from '../action-resolution';
+import { formatCountryWithArticle } from './country-determiner';
 
 type RelCtx = 'ally' | 'partner' | 'neutral' | 'rival' | 'adversary' | 'conflict' | 'all';
 type PowCtx = 'striking_up' | 'peer_conflict' | 'striking_down' | 'all';
@@ -1185,11 +1186,23 @@ function scoreTemplate(t: ActionTemplate, req: ActionResolutionRequest): number 
     return score;
 }
 
+function replacePlaceholderWithArticle(text: string, placeholder: string, name: string): string {
+    const pattern = new RegExp(`(^|[.!?]\\s+)\\{${placeholder}\\}`, 'g');
+    const sentenceInitialResult = text.replace(
+        pattern,
+        (_, prefix: string) => `${prefix}${formatCountryWithArticle(name, true)}`,
+    );
+    return sentenceInitialResult.replace(
+        new RegExp(`\\{${placeholder}\\}`, 'g'),
+        formatCountryWithArticle(name, false),
+    );
+}
+
 function interpolate(text: string, req: ActionResolutionRequest): string {
-    return text
-        .replace(/\{countryName\}/g, req.countryName)
-        .replace(/\{targetCountryName\}/g, req.targetCountryName ?? req.targetCountryId ?? 'the target country')
-        .replace(/\{leaderTitle\}/g, req.leaderTitle ?? 'The head of state');
+    const withCountry = replacePlaceholderWithArticle(text, 'countryName', req.countryName);
+    const targetName = req.targetCountryName ?? req.targetCountryId ?? 'the target country';
+    const withTarget = replacePlaceholderWithArticle(withCountry, 'targetCountryName', targetName);
+    return withTarget.replace(/\{leaderTitle\}/g, req.leaderTitle ?? 'The head of state');
 }
 
 export function resolveActionTemplate(req: ActionResolutionRequest): ActionResolutionResponse | null {

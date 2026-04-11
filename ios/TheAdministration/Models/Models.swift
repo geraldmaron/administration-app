@@ -2796,6 +2796,7 @@ struct PoliticalParty: Codable, Identifiable {
     let popularBase: [String]?
     /// 0–1: likelihood the party will cooperate in coalition arrangements.
     let coalitionWillingness: Double?
+    let suggestedSkills: [String]?
 
     enum CodingKeys: String, CodingKey {
         case id, name, description, color, ideology
@@ -2810,6 +2811,7 @@ struct PoliticalParty: Codable, Identifiable {
         case metricBiases = "metricBiases"
         case popularBase = "popularBase"
         case coalitionWillingness = "coalitionWillingness"
+        case suggestedSkills = "suggestedSkills"
     }
 
     var ideologyLabel: String {

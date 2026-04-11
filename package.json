@@ -8,6 +8,7 @@
     "dev": "npm --prefix web run dev",
     "build": "npm --prefix web run build",
     "start": "npm --prefix web run start",
+    "n8n:prune-executions": "node scripts/n8n/prune-executions.cjs",
     "functions:deploy": "firebase deploy --only functions",
     "rules:deploy": "firebase deploy --only firestore:rules,storage",
     "deploy:all": "firebase deploy"

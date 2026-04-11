@@ -17,7 +17,9 @@ var body: some View {
             if showWelcome {
                 WelcomeView(gameStore: gameStore, showWelcome: $showWelcome)
             } else if !gameStore.state.isSetup {
-                SetupFlowView(gameStore: gameStore)
+                SetupFlowView(gameStore: gameStore, onCancel: {
+                    withAnimation(AppMotion.standard) { showWelcome = true }
+                })
                     .onDisappear {
                         if gameStore.state.isSetup {
                             let done = UserDefaults.standard.bool(forKey: "onboarding_complete")

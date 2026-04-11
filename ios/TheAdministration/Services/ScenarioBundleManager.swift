@@ -5,10 +5,12 @@
 ///
 /// Flow per app launch:
 ///   1. Fetch world_state/scenario_manifest  (1 Firestore read)
-///   2. For each chunk where manifest chunk version > local cache version:
-///        download chunk file via Storage REST API
-///   3. Write each chunk to Application Support/scenario-bundles/{bundleId}/
-///   4. Decode all local chunk files in parallel → return merged [Scenario] array
+///   2. For each bundle, diff remote scenarioHashes against local to find changed scenario IDs.
+///      Any chunk whose version has advanced OR whose content hash changed is marked stale.
+///   3. Download only stale chunks via Storage REST API.
+///   4. After decoding a refreshed chunk, replace only changed scenarios in the local pool
+///      by scenarioId rather than replacing all chunks.
+///   5. Persist received scenarioHashes per bundle for the next launch diff.
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
@@ -23,6 +25,7 @@ actor ScenarioBundleManager {
     private let bundlePrefix = "scenario-bundles"
     private let manifestPath = "world_state/scenario_manifest"
     private let versionsKey = "scenario_bundle_versions_v3"
+    private let scenarioHashesKey = "scenario_bundle_hashes_v1"
 
     private var pool: [Scenario] = []
     private var loaded = false
@@ -33,13 +36,17 @@ actor ScenarioBundleManager {
         if loaded && !forceRefresh { return pool }
 
         let manifest = try await fetchManifest()
-        let updatedChunks = await syncChangedChunks(manifest: manifest, force: forceRefresh)
-        let all = try await decodeFromDisk()
-        pool = all
-        loaded = true
+        let (updatedChunks, refreshedScenarios) = try await syncChangedChunks(manifest: manifest, force: forceRefresh)
 
-        AppLogger.info("[ScenarioBundleManager] \(all.count) scenarios ready (\(updatedChunks) chunk(s) refreshed)")
-        return all
+        if !pool.isEmpty && !refreshedScenarios.isEmpty && !forceRefresh {
+            pool = mergeScenarios(base: pool, updated: refreshedScenarios)
+        } else {
+            pool = try await decodeFromDisk()
+        }
+
+        loaded = true
+        AppLogger.info("[ScenarioBundleManager] \(pool.count) scenarios ready (\(updatedChunks) chunk(s) refreshed, \(refreshedScenarios.count) scenario(s) updated)")
+        return pool
     }
 
     func invalidate() {
@@ -47,6 +54,7 @@ actor ScenarioBundleManager {
         pool = []
         try? FileManager.default.removeItem(at: cacheDir)
         UserDefaults.standard.removeObject(forKey: versionsKey)
+        UserDefaults.standard.removeObject(forKey: scenarioHashesKey)
     }
 
     // MARK: - Manifest
@@ -63,6 +71,7 @@ actor ScenarioBundleManager {
         struct BundleEntry {
             let version: Int
             let chunks: [ChunkEntry]
+            let scenarioHashes: [String: String]
         }
 
         init(data: [String: Any]) {
@@ -78,9 +87,11 @@ actor ScenarioBundleManager {
                             version: c["version"] as? Int ?? 0
                         )
                     }
+                    let hashes = entry["scenarioHashes"] as? [String: String] ?? [:]
                     b[id] = BundleEntry(
                         version: entry["version"] as? Int ?? 0,
-                        chunks: chunks
+                        chunks: chunks,
+                        scenarioHashes: hashes
                     )
                 }
             }
@@ -101,10 +112,9 @@ actor ScenarioBundleManager {
 
     // MARK: - Sync
 
-    @discardableResult
-    private func syncChangedChunks(manifest: Manifest, force: Bool) async -> Int {
+    private func syncChangedChunks(manifest: Manifest, force: Bool) async throws -> (chunkCount: Int, refreshedScenarios: [Scenario]) {
         let localVersions = loadLocalVersions()
-        var updatedCount = 0
+        let localHashes = loadLocalScenarioHashes()
 
         struct StaleChunk {
             let bundleId: String
@@ -114,57 +124,104 @@ actor ScenarioBundleManager {
 
         var stale: [StaleChunk] = []
         for (bundleId, entry) in manifest.bundles {
+            let changedIds = changedScenarioIds(
+                localHashes: localHashes[bundleId] ?? [:],
+                remoteHashes: entry.scenarioHashes
+            )
             for chunk in entry.chunks {
                 let key = versionKey(bundleId: bundleId, chunkIdx: chunk.idx)
-                if force || (localVersions[key] ?? -1) < chunk.version {
-                    stale.append(StaleChunk(
-                        bundleId: bundleId,
-                        chunkIdx: chunk.idx,
-                        versionKey: key
-                    ))
+                let versionStale = force || (localVersions[key] ?? -1) < chunk.version
+                let hashStale = !changedIds.isEmpty && entry.scenarioHashes.isEmpty == false
+                if versionStale || hashStale {
+                    stale.append(StaleChunk(bundleId: bundleId, chunkIdx: chunk.idx, versionKey: key))
                 }
             }
         }
 
-        guard !stale.isEmpty else { return 0 }
+        guard !stale.isEmpty else { return (0, []) }
 
-        var succeededKeys: Set<String> = []
+        struct DownloadResult {
+            let versionKey: String
+            let bundleId: String
+            let chunkIdx: Int
+            let success: Bool
+        }
 
-        await withTaskGroup(of: (String, Int?, Bool).self) { group in
+        var results: [DownloadResult] = []
+        await withTaskGroup(of: DownloadResult.self) { group in
             for item in stale {
                 group.addTask {
                     do {
-                        try await self.downloadChunk(
-                            bundleId: item.bundleId,
-                            chunkIdx: item.chunkIdx
-                        )
-                        return (item.versionKey, nil, true)
+                        try await self.downloadChunk(bundleId: item.bundleId, chunkIdx: item.chunkIdx)
+                        return DownloadResult(versionKey: item.versionKey, bundleId: item.bundleId, chunkIdx: item.chunkIdx, success: true)
                     } catch {
                         AppLogger.warning("[ScenarioBundleManager] Failed to download \(item.bundleId)/chunk-\(item.chunkIdx): \(error.localizedDescription)")
-                        return (item.versionKey, nil, false)
+                        return DownloadResult(versionKey: item.versionKey, bundleId: item.bundleId, chunkIdx: item.chunkIdx, success: false)
                     }
                 }
             }
-            for await (key, _, success) in group {
-                if success {
-                    updatedCount += 1
-                    succeededKeys.insert(key)
-                }
+            for await result in group {
+                results.append(result)
             }
         }
 
-        var updated = localVersions
-        for (bundleId, entry) in manifest.bundles {
-            for chunk in entry.chunks {
-                let key = versionKey(bundleId: bundleId, chunkIdx: chunk.idx)
-                if succeededKeys.contains(key) {
-                    updated[key] = chunk.version
-                }
+        let succeeded = results.filter { $0.success }
+
+        var updatedVersions = localVersions
+        for result in succeeded {
+            if let entry = manifest.bundles[result.bundleId],
+               let chunk = entry.chunks.first(where: { $0.idx == result.chunkIdx }) {
+                updatedVersions[result.versionKey] = chunk.version
             }
         }
-        saveLocalVersions(updated)
+        saveLocalVersions(updatedVersions)
 
-        return updatedCount
+        var updatedHashes = localHashes
+        for (bundleId, entry) in manifest.bundles where !entry.scenarioHashes.isEmpty {
+            if succeeded.contains(where: { $0.bundleId == bundleId }) {
+                updatedHashes[bundleId] = entry.scenarioHashes
+            }
+        }
+        saveLocalScenarioHashes(updatedHashes)
+
+        let refreshedScenarios = decodeRefreshedScenarios(from: succeeded.map { ($0.bundleId, $0.chunkIdx) })
+        return (succeeded.count, refreshedScenarios)
+    }
+
+    private func changedScenarioIds(
+        localHashes: [String: String],
+        remoteHashes: [String: String]
+    ) -> Set<String> {
+        var changed: Set<String> = []
+        for (id, remoteHash) in remoteHashes {
+            if localHashes[id] != remoteHash { changed.insert(id) }
+        }
+        return changed
+    }
+
+    private func mergeScenarios(base: [Scenario], updated: [Scenario]) -> [Scenario] {
+        let updatedById = Dictionary(uniqueKeysWithValues: updated.map { ($0.id, $0) })
+        var merged = base.map { updatedById[$0.id] ?? $0 }
+        let existingIds = Set(base.map { $0.id })
+        let newScenarios = updated.filter { !existingIds.contains($0.id) }
+        merged.append(contentsOf: newScenarios)
+        return merged
+    }
+
+    private func decodeRefreshedScenarios(from pairs: [(bundleId: String, chunkIdx: Int)]) -> [Scenario] {
+        let decoder = JSONDecoder()
+        var scenarios: [Scenario] = []
+        for (bundleId, chunkIdx) in pairs {
+            let filename = String(format: "chunk-%04d.json", chunkIdx)
+            let file = bundleCacheDir(for: bundleId).appendingPathComponent(filename)
+            guard let data = try? Data(contentsOf: file) else { continue }
+            if let decoded = try? decoder.decode([Scenario].self, from: data) {
+                scenarios.append(contentsOf: decoded)
+            } else {
+                scenarios.append(contentsOf: decodeScenariosFallback(from: data, file: file, decoder: decoder))
+            }
+        }
+        return scenarios
     }
 
     // MARK: - Download
@@ -290,6 +347,14 @@ actor ScenarioBundleManager {
 
     private func saveLocalVersions(_ v: [String: Int]) {
         UserDefaults.standard.set(v, forKey: versionsKey)
+    }
+
+    private func loadLocalScenarioHashes() -> [String: [String: String]] {
+        UserDefaults.standard.dictionary(forKey: scenarioHashesKey) as? [String: [String: String]] ?? [:]
+    }
+
+    private func saveLocalScenarioHashes(_ v: [String: [String: String]]) {
+        UserDefaults.standard.set(v, forKey: scenarioHashesKey)
     }
 }
 

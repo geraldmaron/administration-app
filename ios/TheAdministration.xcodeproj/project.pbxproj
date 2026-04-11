@@ -74,7 +74,6 @@
 		DC6010660D111487936F3B04 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FFCF76042A26037957AA364 /* Colors.swift */; };
 		E253AF41939666E680811C41 /* ScenarioBundleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A6542A3B9C4ECE9BC516BE /* ScenarioBundleManager.swift */; };
 		E5A7B9C1D3E5A7B9C1D3E5A7 /* MetricCatalogue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2D4F6A8C0E2F4A6B8D0E2F4 /* MetricCatalogue.swift */; };
-		E5F6A7B8C9D0E1F2A3B4C5D6 /* QuickStartSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A7B8C9D0E1F2A3B4C5D6E7 /* QuickStartSheet.swift */; };
 		EB86D13ECAC42E790B5BFA37 /* FinanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34A05E2D0044360EF45A2D57 /* FinanceView.swift */; };
 		EC5FF21E0C12C2CD59FC9461 /* HapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 070C3963370E700FB86FE999 /* HapticEngine.swift */; };
 		EE55FF66AA11BB22CC33DD44 /* PrivacySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF66AA11BB22CC33DD44EE55 /* PrivacySheet.swift */; };
@@ -167,7 +166,6 @@
 		EC7115C3D9BA7C4791CDEF24 /* TheAdministrationTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TheAdministrationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0505F40B2A366FD5C7F4A44 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		F3F1E87227BC4E6995A636CF /* LoadGameSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadGameSheet.swift; sourceTree = "<group>"; };
-		F6A7B8C9D0E1F2A3B4C5D6E7 /* QuickStartSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStartSheet.swift; sourceTree = "<group>"; };
 		FF66AA11BB22CC33DD44EE55 /* PrivacySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -200,8 +198,7 @@
 				8A20A11BBEB7748BC07DE5C1 /* PolicyView.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* MilitarySheet.swift */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* LegislatureSheet.swift */,
-				F6A7B8C9D0E1F2A3B4C5D6E7 /* QuickStartSheet.swift */,
-				B418ECFE8FC4B090E3F7855D /* SetupFlowView.swift */,
+					B418ECFE8FC4B090E3F7855D /* SetupFlowView.swift */,
 				192A8AB75BED78942CCA2536 /* StrategicPlanSheet.swift */,
 				78A9694F81F060364CD40820 /* SystemView.swift */,
 				EAC7E5DA27BD6D8ECAE5431C /* TrustYourGutSheet.swift */,
@@ -508,8 +505,7 @@
 				974AB79A3BA32C41E0A9A8D7 /* PolicyView.swift in Sources */,
 				A2B3C4D5E6F7A8B9C0D1E2F3 /* MilitarySheet.swift in Sources */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* LegislatureSheet.swift in Sources */,
-				E5F6A7B8C9D0E1F2A3B4C5D6 /* QuickStartSheet.swift in Sources */,
-				28FB3253E9CC2B6E86CACC4F /* RateLimiter.swift in Sources */,
+					28FB3253E9CC2B6E86CACC4F /* RateLimiter.swift in Sources */,
 				E253AF41939666E680811C41 /* ScenarioBundleManager.swift in Sources */,
 				9F5AEA6C6B1EE4EB8018BC19 /* ScenarioNavigator.swift in Sources */,
 				A5AC5923E1F0579B805A189F /* Scoring.swift in Sources */,

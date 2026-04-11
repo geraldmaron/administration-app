@@ -7,7 +7,6 @@ struct WelcomeView: View {
     @State private var titleVisible = false
     @State private var subtitleVisible = false
     @State private var ctasVisible = false
-    @State private var showQuickStartSheet = false
     @State private var showLoadSheet = false
     @State private var showHowToPlay = false
     @State private var showTerms = false
@@ -134,18 +133,6 @@ struct WelcomeView: View {
                         Text("BEGIN")
                     }
                     .buttonStyle(CommandButtonStyle(isEnabled: true))
-
-                    Button(action: {
-                        HapticEngine.shared.medium()
-                        showQuickStartSheet = true
-                    }) {
-                        Text("QUICK START")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-                    .sheet(isPresented: $showQuickStartSheet) {
-                        QuickStartSheet(gameStore: gameStore, showWelcome: $showWelcome)
-                    }
 
                     if hasSaves {
                         Button(action: {

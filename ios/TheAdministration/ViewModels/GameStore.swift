@@ -123,29 +123,18 @@ class GameStore: ObservableObject {
     }
     
     private func loadScenarios() {
-        // Load scenarios, countries, and app config from Firebase
+        // Countries + app config load independently of the scenario bundle so
+        // the setup flow is never blocked waiting on ScenarioNavigator.
         Task {
             await AuthService.shared.ensureAuthenticated()
 
-            if FirebaseDataService.shared.isFirebaseAvailable() {
-                await ScenarioNavigator.shared.loadScenarios()
-                let count = await ScenarioNavigator.shared.getScenarioCount()
-                AppLogger.info("Loaded \(count) scenarios from Firebase", category: .scenarios)
-                if count == 0 {
-                    await MainActor.run {
-                        self.scenarioLoadError = "No scenarios available. Check your connection."
-                    }
-                }
-            } else {
-                AppLogger.warning("Firebase not available - scenarios won't load", category: .firebase)
-                await MainActor.run {
-                    self.scenarioLoadError = "Firebase not available"
-                }
+            guard FirebaseDataService.shared.isFirebaseAvailable() else {
+                AppLogger.warning("Firebase not available - countries won't load", category: .firebase)
+                return
             }
 
             async let countriesFetch = FirebaseDataService.shared.getCountries()
             async let configFetch = FirebaseDataService.shared.getAppConfig()
-
             let (countries, config) = await (countriesFetch, configFetch)
             TemplateEngine.shared.setCountries(countries)
             AppLogger.info("Loaded \(countries.count) countries with token data", category: .firebase)
@@ -154,6 +143,26 @@ class GameStore: ObservableObject {
                 self.availableCountries = countries
                 self.state.countries = countries
                 self.appConfig = config
+            }
+        }
+
+        Task {
+            await AuthService.shared.ensureAuthenticated()
+
+            guard FirebaseDataService.shared.isFirebaseAvailable() else {
+                await MainActor.run {
+                    self.scenarioLoadError = "Firebase not available"
+                }
+                return
+            }
+
+            await ScenarioNavigator.shared.loadScenarios()
+            let count = await ScenarioNavigator.shared.getScenarioCount()
+            AppLogger.info("Loaded \(count) scenarios from Firebase", category: .scenarios)
+            if count == 0 {
+                await MainActor.run {
+                    self.scenarioLoadError = "No scenarios available. Check your connection."
+                }
             }
         }
     }
@@ -199,7 +208,27 @@ class GameStore: ObservableObject {
         state.player = PlayerProfile(name: name, party: party, approach: approach)
         saveGame()
     }
-    
+
+    func setPlayerSkills(_ skills: [PlayerSkill], strengths: [String], weaknesses: [String]) {
+        state.player?.skills = skills
+        state.player?.strengths = strengths
+        state.player?.weaknesses = weaknesses
+        state.player?.stats = computeStats(from: skills)
+    }
+
+    private func computeStats(from skills: [PlayerSkill]) -> PlayerStats {
+        var acc: [String: Double] = [:]
+        for skill in skills {
+            for bonus in skill.statBonuses { acc[bonus.stat, default: 0] += bonus.value }
+        }
+        func s(_ key: String) -> Double { 30.0 + (acc[key] ?? 0) * 14.0 }
+        return PlayerStats(
+            diplomacy: s("diplomacy"), economics: s("economics"), military: s("military"),
+            management: s("management"), compassion: s("compassion"), integrity: s("integrity"),
+            charisma: s("charisma"), competency: s("competency")
+        )
+    }
+
     func quickStart(name: String, party: String, approach: String, skills: [PlayerSkill] = [], strengths: [String] = [], weaknesses: [String] = [], gameLength: String = "medium") {
         let countries = availableCountries.isEmpty
             ? FirebaseDataService.shared.cachedCountries
@@ -2233,6 +2262,34 @@ class GameStore: ObservableObject {
         saveGame()
     }
 
+    private func approachActionMultiplier(actionCategory: String, actionType: String, metricId: String) -> Double {
+        let approach = (state.player?.approach ?? "").lowercased()
+        guard !approach.isEmpty else { return 1.0 }
+        let diplomaticAligned: Set<String> = ["trade_agreement", "treaty_proposal", "request_alliance"]
+        let militaryAligned: Set<String> = ["military_strike", "covert_ops", "cyberattack", "naval_blockade", "special_ops"]
+        let diplomaticMisaligned: Set<String> = ["military_strike", "covert_ops", "naval_blockade", "special_ops"]
+        let militaryMisaligned: Set<String> = ["trade_agreement", "treaty_proposal", "request_alliance", "humanitarian_intervention"]
+        switch approach {
+        case "pragmatist":
+            if diplomaticAligned.contains(actionType) { return 1.15 }
+            if militaryAligned.contains(actionType) { return 0.88 }
+        case "ideologue":
+            if actionType == "humanitarian_intervention" { return 1.15 }
+            if militaryAligned.contains(actionType) { return 0.88 }
+        case "technocrat":
+            return 1.08
+        case "nationalist":
+            if militaryAligned.contains(actionType) { return 1.15 }
+            if militaryMisaligned.contains(actionType) { return 0.88 }
+        case "populist":
+            if metricId == "metric_approval" { return 1.12 }
+            if diplomaticMisaligned.contains(actionType) { return 0.88 }
+        default:
+            break
+        }
+        return 1.0
+    }
+
     private func buildActionResolutionRequest(
         category: String,
         actionType: String?,
@@ -2347,7 +2404,8 @@ class GameStore: ObservableObject {
             outcomeDescription = payload.summary
 
             for md in payload.metricDeltas {
-                let scaledDelta = md.delta * diplomaticCompound
+                var scaledDelta = md.delta * diplomaticCompound
+                if scaledDelta > 0 { scaledDelta *= approachActionMultiplier(actionCategory: "diplomatic", actionType: type, metricId: md.metricId) }
                 modifyMetricBy(md.metricId, delta: scaledDelta)
                 injectResidualEffects(metricId: md.metricId, immediateValue: scaledDelta)
             }
@@ -2531,7 +2589,8 @@ class GameStore: ObservableObject {
             outcomeDescription = payload.summary
 
             for md in payload.metricDeltas {
-                let scaledDelta = md.delta * militaryCompound
+                var scaledDelta = md.delta * militaryCompound
+                if scaledDelta > 0 { scaledDelta *= approachActionMultiplier(actionCategory: "military", actionType: type, metricId: md.metricId) }
                 modifyMetricBy(md.metricId, delta: scaledDelta)
                 injectResidualEffects(metricId: md.metricId, immediateValue: scaledDelta)
             }

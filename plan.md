@@ -71,6 +71,11 @@ Status: **all phases complete as of 2026-04-08.** Generation pipeline operationa
 - `SCENARIO_GENERATION_LOOP_URL` = `<loop webhook URL after import>`
 - `GENERATION_INTAKE_SECRET` = same value as in `.env.local`
 
+**Recommended n8n retention settings (set in n8n instance):**
+- `EXECUTIONS_DATA_PRUNE=true`
+- `EXECUTIONS_DATA_MAX_AGE=168` (hours; 7 days)
+- `EXECUTIONS_DATA_PRUNE_MAX_COUNT=5000`
+
 **Acceptance:**
 - N8N can drive a complete generation run end-to-end.
 - Jobs created through n8n intake have `executionTarget: 'n8n'`; Firestore trigger skips them.

@@ -16,14 +16,46 @@
  *     lastUpdated: Timestamp,
  *     bundles: {
  *       [bundleId]: {
- *         version: number,      ← bumped when any chunk changes
+ *         version: number,         ← bumped when any chunk changes
  *         totalCount: number,
  *         chunkSize: number,
- *         chunks: [{ idx, version, count, sizeBytes }]
+ *         chunks: [{ idx, version, count, sizeBytes }],
+ *         scenarioHashes: {        ← NEW: scenarioId → SHA-256 of stable content
+ *           [scenarioId]: string
+ *         }
  *       }
  *     }
  *   }
+ *
+ * iOS Bundle Delta Contract (scenario-level granularity)
+ * ────────────────────────────────────────────────────────
+ * When `scenarioHashes` is present in the bundle manifest entry:
+ *
+ *   1. On first load, download all chunks as before.
+ *   2. On subsequent loads:
+ *      a. Fetch the manifest (1 Firestore read).
+ *      b. Diff `manifest.bundles[bundleId].scenarioHashes` against the locally
+ *         stored `scenarioHashes` dictionary (persisted in UserDefaults or a
+ *         local JSON file alongside the chunk cache).
+ *      c. If the hash for a given scenarioId changed (or is new), mark the
+ *         containing chunk stale. The chunk index is deterministic:
+ *           chunkIdx = floor(sortedScenarioIndex / CHUNK_SIZE)
+ *         Alternatively, iOS can re-download any chunk whose containing
+ *         scenario hashes differ, using the existing chunk-version mechanism
+ *         as a coarser fallback.
+ *      d. Download only the stale chunks.
+ *      e. After decoding, replace individual scenarios in the local pool by
+ *         scenarioId rather than replacing entire chunks.
+ *   3. The bundle `version` field continues to bump atomically on any export,
+ *      so clients that predate `scenarioHashes` remain compatible.
+ *   4. `scenarioHashes` excludes volatile fields: `updatedAt`, `createdAt`,
+ *      `metadata.generatedAt`, `metadata.auditMetadata.lastAudited`,
+ *      `metadata.acceptanceMetadata.acceptedAt`. The hash is computed over
+ *      the scenario's stable narrative and structural content only.
+ *   5. Persist the received `scenarioHashes` map locally (keyed by bundleId)
+ *      so the next launch can diff without a full re-download.
  */
+import * as crypto from 'crypto';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { ALL_BUNDLE_IDS, type BundleId } from './data/schemas/bundleIds';
@@ -56,6 +88,7 @@ interface BundleManifestEntry {
     totalCount: number;
     chunkSize: number;
     chunks: ChunkMeta[];
+    scenarioHashes: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +118,12 @@ export async function exportBundle(bundleId: BundleId): Promise<number> {
         SERVER_ONLY_FIELDS.forEach(f => delete data[f]);
         return data;
     });
+
+    const scenarioHashes: Record<string, string> = {};
+    for (const scenario of scenarios) {
+        const id = scenario['id'] as string;
+        if (id) scenarioHashes[id] = computeScenarioContentHash(scenario);
+    }
 
     const chunks = chunkArray(scenarios, CHUNK_SIZE);
     const bucket = admin.storage().bucket(BUCKET_NAME);
@@ -118,7 +157,7 @@ export async function exportBundle(bundleId: BundleId): Promise<number> {
         })
     );
 
-    await updateBundleManifest(bundleId, chunkMetas);
+    await updateBundleManifest(bundleId, chunkMetas, scenarioHashes);
 
     const total = scenarios.length;
     logger.info(`[BundleExporter] ✓ ${bundleId}: ${total} scenarios in ${chunks.length} chunks`);
@@ -164,7 +203,11 @@ async function fetchExistingChunkVersions(bundleId: string): Promise<Record<numb
     return Object.fromEntries(existing.map(c => [c.idx, c.version]));
 }
 
-async function updateBundleManifest(bundleId: string, chunkMetas: ChunkMeta[]): Promise<void> {
+async function updateBundleManifest(
+    bundleId: string,
+    chunkMetas: ChunkMeta[],
+    scenarioHashes: Record<string, string>,
+): Promise<void> {
     const ref = db.doc(MANIFEST_DOC);
     await db.runTransaction(async (tx) => {
         const snap = await tx.get(ref);
@@ -178,6 +221,7 @@ async function updateBundleManifest(bundleId: string, chunkMetas: ChunkMeta[]): 
             totalCount,
             chunkSize: CHUNK_SIZE,
             chunks: chunkMetas,
+            scenarioHashes,
         };
 
         tx.set(ref, {
@@ -189,6 +233,73 @@ async function updateBundleManifest(bundleId: string, chunkMetas: ChunkMeta[]): 
             },
         });
     });
+}
+
+// ---------------------------------------------------------------------------
+// Scenario content hash
+// ---------------------------------------------------------------------------
+
+/**
+ * Computes a SHA-256 hash over the stable content fields of a scenario document.
+ * Volatile fields (timestamps, audit metadata timestamps, generation provenance)
+ * are excluded so that administrative re-stamps do not invalidate iOS caches.
+ */
+export function computeScenarioContentHash(scenario: Record<string, unknown>): string {
+    const stable = extractStableFields(scenario);
+    const canonical = JSON.stringify(stable, sortedReplacer);
+    return crypto.createHash('sha256').update(canonical, 'utf8').digest('hex');
+}
+
+const VOLATILE_METADATA_KEYS: ReadonlySet<string> = new Set([
+    'generatedAt',
+    'lastAudited',
+    'acceptedAt',
+]);
+
+const VOLATILE_TOP_LEVEL_KEYS: ReadonlySet<string> = new Set([
+    'createdAt',
+    'updatedAt',
+    '_embedding',
+    'embedding_model',
+    'embedding_version',
+    'created_at',
+]);
+
+function extractStableFields(doc: Record<string, unknown>): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(doc)) {
+        if (VOLATILE_TOP_LEVEL_KEYS.has(key)) continue;
+        if (key === 'metadata' && value !== null && typeof value === 'object') {
+            result[key] = stripVolatileMetadataKeys(value as Record<string, unknown>);
+            continue;
+        }
+        result[key] = value;
+    }
+    return result;
+}
+
+function stripVolatileMetadataKeys(meta: Record<string, unknown>): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(meta)) {
+        if (VOLATILE_METADATA_KEYS.has(key)) continue;
+        if (key === 'generationProvenance' || key === 'acceptanceMetadata' || key === 'auditMetadata') {
+            if (value !== null && typeof value === 'object') {
+                result[key] = stripVolatileMetadataKeys(value as Record<string, unknown>);
+                continue;
+            }
+        }
+        result[key] = value;
+    }
+    return result;
+}
+
+function sortedReplacer(_key: string, value: unknown): unknown {
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        return Object.fromEntries(
+            Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b))
+        );
+    }
+    return value;
 }
 
 // ---------------------------------------------------------------------------
