@@ -271,7 +271,11 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   if (warningCodes.some(code => code === 'hardcoded-the-before-token' || code === 'label-has-token' || code === 'sentence-start-bare-token')) {
     return 'token-article-form-violation';
   }
-  if (errorCodes.includes('title-too-short') || errorCodes.includes('title-too-long') || warningCodes.includes('title-too-short') || warningCodes.includes('title-too-long')) {
+  if (
+    errorCodes.includes('title-too-short') || errorCodes.includes('title-too-long') ||
+    errorCodes.includes('formulaic-title') ||
+    warningCodes.includes('title-too-short') || warningCodes.includes('title-too-long')
+  ) {
     return 'title-violation';
   }
 

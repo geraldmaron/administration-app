@@ -90,7 +90,7 @@ export function validateSkeleton(
                 options[i].text = scenarioLike.options[i]?.text ?? options[i].text;
                 options[i].label = scenarioLike.options[i]?.label ?? options[i].label;
             }
-            fixes.push(...replaced.map(r => `sanitized: ${r}`));
+            fixes.push(...replaced.map((r: string) => `sanitized: ${r}`));
         }
 
         const remainingText = [skeleton.title, skeleton.description, ...options.map(o => o.text)].filter(Boolean).join(' ');

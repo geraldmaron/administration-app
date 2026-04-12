@@ -158,7 +158,7 @@ const ARCHITECT_CONFIG: ModelConfig = { maxTokens: 8192, temperature: 0.6, noThi
 // Drafter uses ~14K input + 3K output tokens; under Tier 1 rate limits concurrent
 // calls regularly take 60-120s and can exceed 120s when throttled. 300s keeps the
 // call alive while staying well within the Cloud Function's 540s budget.
-const DRAFTER_CONFIG: ModelConfig = { maxTokens: 16000, temperature: 0.4, timeoutMs: 300000 };
+const DRAFTER_CONFIG: ModelConfig = { maxTokens: 16000, temperature: 0.4, timeoutMs: 300000, noThink: true };
 // Split-phase configs for Ollama — no artificial output caps.
 // Core phase generates title + description + 3 full options with outcomes.
 // Advisor phase generates 39 advisor feedback entries.
@@ -1507,13 +1507,13 @@ Each entry must: name the specific policy mechanism, the constituency affected, 
 FORBIDDEN: "aligns with our", "our department", "course of action", "careful monitoring", "no strong position".`,
 
   'title-fix': `Fix the scenario title:
-- Minimum 4 words, maximum 8 words
-- Write like a newspaper headline: subject + active verb + object (e.g. "Parliament Blocks Emergency Bill", "Workers Strike Over Wage Cuts")
-- No tokens allowed in titles
+- 4–8 words, no tokens
+- Write as a newspaper headline: named agent + active verb + object (e.g. "Parliament Blocks Emergency Bill", "Auditors Uncover Budget Fraud")
 - Remove duplicate words
-- BANNED endings: Crisis, Crises, Response, Options, Management, Debate, Decision, Dilemma, Challenge, Conflict
-- BANNED openers: Managing, Balancing, Handling, Navigating
-- The title MUST contain a conjugated verb — "Blocks", "Strikes", "Faces", "Approves", "Rejects", "Demands"`,
+- BANNED endings (single word OR two-word phrase): Crisis, Crises, Response, Response Options, Options, Management, Debate, Decision, Dilemma, Challenge, Conflict, Dispute, Standoff, Transition
+- BANNED openers: Managing, Balancing, Handling, Navigating, Addressing, Resolving
+- The title MUST contain a conjugated verb — "Blocks", "Strikes", "Faces", "Approves", "Rejects", "Demands", "Fails", "Resigns", "Uncovers", "Freezes"
+- BAD → GOOD: "Drought Response" → "Farmers Demand Emergency Water Aid" | "Security Challenge" → "Border Guards Repel Armed Incursion" | "Managing the Crisis" → "Cabinet Invokes Emergency Powers"`,
 
   'label-fix': `Fix option labels:
 - MAX 3 words, prefer 1–2 words
@@ -3056,7 +3056,12 @@ Write as if you are a real cabinet minister briefing the head of government on T
             : `\n\nNEVER write: "ruling coalition", "governing coalition", "coalition government", "parliamentary majority/minority/support". Use {governing_party} and {legislature} tokens instead.\n`;
           drafterPrompt += `\nALSO: Never write hardcoded institution or minister names. Use role tokens (write "the {token}" naturally):\n- "Finance Ministry" / "Treasury Department" / "Finance Minister" → the {finance_role}\n- "Justice Ministry" / "Dept of Justice" / "Justice Minister" → the {justice_role}\n- "Foreign Ministry" / "State Department" / "Foreign Minister" → the {foreign_affairs_role}\n- "Defense Ministry" / "Dept of Defense" / "Defense Minister" → the {defense_role}\n- "Interior Ministry" / "Home Office" / "Interior Minister" → the {interior_role}\n- "Health Ministry" / "Dept of Health" / "Health Minister" → the {health_role}\n- "Education Ministry" / "Dept of Education" / "Education Minister" → the {education_role}\n- "Culture Minister" / "Culture Ministry" / "Ministry of Culture" → the {education_role} or reframe as cabinet officials\n`;
         } else if (failureCategory === 'title-violation') {
-          drafterPrompt += `\n**TITLE LENGTH ERROR**: Your title must be 4–8 words. Three-word titles are rejected. Use "Verb + Agent + Outcome" pattern. Examples: "Parliament Blocks Emergency Spending Bill", "Auditors Raid Central Bank After Leak".\n`;
+          const hasFormulaic = lastAuditResult.issues.some((i: any) => i.rule === 'formulaic-title');
+          if (hasFormulaic) {
+            drafterPrompt += `\n**TITLE CONTENT ERROR**: Your title used a forbidden ending or opener.\n❌ NEVER end with: "Response", "Response Options", "Crisis", "Challenge", "Conflict", "Dilemma", "Debate", "Decision", "Dispute", "Standoff", "Transition"\n❌ NEVER start with: "Managing", "Balancing", "Handling", "Navigating"\n✅ Write a newspaper headline: subject + active verb + object\n   Good: "Parliament Blocks Emergency Bill" / "Auditors Uncover Budget Fraud" / "Power Grid Fails During Heatwave"\n   Bad: "Drought Response" / "Security Challenge" / "Managing the Crisis"\n`;
+          } else {
+            drafterPrompt += `\n**TITLE LENGTH ERROR**: Your title must be 4–8 words. Three-word titles are rejected. Use "Verb + Agent + Outcome" pattern. Examples: "Parliament Blocks Emergency Spending Bill", "Auditors Raid Central Bank After Leak".\n`;
+          }
         } else if (failureCategory === 'gdp-as-amount-violation') {
           drafterPrompt += `\n**GDP DESCRIPTION MISUSE**: You used {gdp_description} as if it were a specific stolen or siphoned amount. Treat national economic scale as context, not a stealable sum. Replace any reference to stealing/siphoning/diverting a national-economy descriptor with proportional plain language such as "a significant procurement budget" or with a scaled monetary token only if that token is explicitly listed in this request's token context.\n`;
         } else if (failureCategory === 'outcome-voice-violation' || failureCategory === 'framing-violation') {

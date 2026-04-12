@@ -602,19 +602,23 @@ async function callOpenRouter<T>(
           ? { order: ['Google'] }
           : {};
 
+      // Suppress thinking tokens for hybrid reasoning models (qwen3, deepseek-r1, etc.).
+      // noThink defaults to true (suppress) when undefined, matching Ollama path behaviour.
+      const isThinkingModel = /qwen3|deepseek-r1|deepseek-r2|reasoning/i.test(modelToUse);
+      const suppressThinking = isThinkingModel && config.noThink !== false;
+      const userPrompt = suppressThinking
+        ? (vendorSupportsJsonSchema ? `${prompt} /no_think` : `${prompt} /no_think\n\nRespond with ONLY valid JSON matching this schema:\n${JSON.stringify(schema, null, 2)}`)
+        : (vendorSupportsJsonSchema ? prompt : `${prompt}\n\nRespond with ONLY valid JSON matching this schema:\n${JSON.stringify(schema, null, 2)}`);
+
       const requestBody: Record<string, unknown> = {
         model: modelToUse,
         messages: [
           systemMessage,
-          {
-            role: 'user',
-            content: vendorSupportsJsonSchema
-              ? prompt
-              : `${prompt}\n\nRespond with ONLY valid JSON matching this schema:\n${JSON.stringify(schema, null, 2)}`,
-          },
+          { role: 'user', content: userPrompt },
         ],
         max_tokens: config.maxTokens,
         ...(Object.keys(providerRouting).length > 0 ? { provider: providerRouting } : {}),
+        ...(suppressThinking ? { reasoning: { max_tokens: 0 } } : {}),
         response_format: vendorSupportsJsonSchema
           ? { type: 'json_schema', json_schema: { name: 'response', schema, strict: false } }
           : { type: 'json_object' },
@@ -745,8 +749,7 @@ async function callOpenRouter<T>(
       stopHeartbeat?.();
       stopHeartbeat = null;
       if (error instanceof Error && error.name === 'AbortError') {
-        console.error(`[OpenRouter] Timeout after ${elapsed}ms`);
-        if (attempt < maxRetries) continue;
+        console.error(`[OpenRouter] Timeout after ${elapsed}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
         return { data: null, usage: null, error: 'Timeout' };
       }
       console.error(`[OpenRouter] Error after ${elapsed}ms: ${describeError(error)}`);
@@ -1180,6 +1183,7 @@ const COST_PER_MILLION: Record<string, { input: number; output: number }> = {
   'mistralai/mistral-small-2603': { input: 0.10, output: 0.30 },
   'deepseek/deepseek-chat': { input: 0.27, output: 1.10 },
   'qwen/qwen3-coder': { input: 0.30, output: 0.90 },
+  'qwen/qwen3.6-plus': { input: 0.325, output: 1.95 },
 };
 
 export function calculateCost(usage: TokenUsage): number {

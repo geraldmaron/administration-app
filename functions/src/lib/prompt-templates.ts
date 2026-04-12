@@ -271,7 +271,7 @@ Write valid JSON only.
 ${tokenRules}
 - Metric IDs are for effects/conditions only — never in prose.
 - Title: 4-8 words, concrete headline style, no tokens.
-- Title must contain a verb and named institutional actor. Forbidden endings: Crisis, Debate, Decision, Dilemma, Challenge, Conflict, Response, Options.
+- Title must contain a verb and named institutional actor. Forbidden endings: Crisis, Debate, Decision, Dilemma, Challenge, Conflict, Response, "Response Options" (two-word phrase), Dispute, Standoff, Transition.
 - Description: 2-3 sentences, 60-140 words.
 - Count words before returning. If description is under 60 words, expand it with trigger, actors, and concrete stakes.
 - Exactly 3 options.
@@ -409,7 +409,7 @@ STRUCTURE:
   TITLE RULES — titles MUST read like a news headline:
   ✅ "Generals Threaten Mass Resignation", "Regulators Freeze Currency Reserves", "State Auditors Uncover Budget Fraud"
   ❌ NEVER start with: "Navigate", "Navigating", "Resolve", "Manage", "Managing", "Balance", "Balancing", "Handle", "Handling", "Decide on", "Address"
-  ❌ NEVER end with: "Crisis", "Challenge", "Conflict", "Dilemma", "Debate", "Decision", "Response", "Dispute", "Standoff", "Transition"
+  ❌ NEVER end with: "Crisis", "Challenge", "Conflict", "Dilemma", "Debate", "Decision", "Response", "Response Options", "Dispute", "Standoff", "Transition"
   ❌ NEVER use institution names that have token equivalents (Central Bank, Supreme Court, National Guard). Use generic actors: "Regulators", "Auditors", "Generals", "Prosecutors", "Officials".
 - description: 2-4 sentences, 30-200 words. Include the trigger event, key actors, and concrete stakes. Open directly — do not start with "As {leader_title}..."
 - Exactly 3 options, each with:

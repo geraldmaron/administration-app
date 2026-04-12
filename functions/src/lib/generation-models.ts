@@ -53,7 +53,7 @@ export function defaultOr(envVar: string | undefined, openRouterDefault: string,
  * OR_HAIKU is retained for ActionResolution / PartialRegen where reasoning depth still matters.
  */
 const OR_FAST = 'google/gemini-2.5-flash';
-const OR_DRAFTER = 'qwen/qwen3.5-397b-a17b';
+const OR_DRAFTER = 'qwen/qwen3.6-plus';
 const OR_HAIKU = 'anthropic/claude-haiku-4.5';
 const OR_CHEAP = 'mistralai/mistral-small-2603';
 const OR_GAIA = 'google/gemini-2.5-pro';

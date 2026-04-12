@@ -97,7 +97,7 @@ describe('generation-models', () => {
       architect: 'google/gemini-2.5-flash',
       advisor: 'google/gemini-2.5-flash',
       blueprint: 'google/gemini-2.5-flash',
-      drafter: 'qwen/qwen3.5-397b-a17b',
+      drafter: 'qwen/qwen3.6-plus',
       repair: 'mistralai/mistral-small-2603',
       contentQuality: 'mistralai/mistral-small-2603',
       narrativeReview: 'google/gemini-2.5-flash',

@@ -361,6 +361,13 @@ function applyContextRepairPatches(
             log.push(`[skip] title fix contains token: "${replacement}"`);
             continue;
         }
+        if (
+            /\b(response(\s+options)?|crisis|crises|challenge|conflict|dilemma|debate|decision|dispute|standoff|transition)\s*$/i.test(replacement) ||
+            /^(managing|balancing|handling|navigating|addressing)\s+/i.test(replacement)
+        ) {
+            log.push(`[skip] title fix still formulaic: "${replacement}"`);
+            continue;
+        }
         const oldTitle = scenario.title;
         scenario.title = replacement;
         log.push(`title: "${oldTitle}" → "${replacement}"`);

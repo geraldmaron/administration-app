@@ -439,6 +439,10 @@ export const ROLE_ALIAS_MAP: Readonly<Record<string, string>> = {
   'role_justice_ministry':     'role_justice',
   'role_judiciary':            'role_justice',
   'role_attorney_general':     'role_justice',
+  'role_legislature':          'role_executive',
+  'role_parliament':           'role_executive',
+  'role_senate':               'role_executive',
+  'role_congress':             'role_executive',
 };
 
 // ---------------------------------------------------------------------------
