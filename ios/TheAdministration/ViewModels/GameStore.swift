@@ -1034,11 +1034,6 @@ class GameStore: ObservableObject {
                     guard scenario.options.count >= 3 else { return false }
                     if scenario.metadata?.isNeighborEvent != true { return false }
                     if !ScenarioNavigator.shared.matchesRegionalScope(scenario, for: country) { return false }
-                    // If scenario restricts applicable countries, respect it
-                    if let ac = scenario.metadata?.applicableCountries, !ac.isEmpty {
-                        let matches = ac.contains { $0.lowercased() == cid.lowercased() }
-                        if !matches { return false }
-                    }
                     // Border-rival actor pattern gate: only show border_rival scenarios
                     // to countries with an actual land-adjacent adversarial neighbor
                     if scenario.dynamicProfile?.actorPattern == "border_rival" {
@@ -1047,8 +1042,8 @@ class GameStore: ObservableObject {
                         }
                         if !hasBorderAdversary { return false }
                     }
-                    if let req = scenario.metadata?.requires {
-                        if !scenarioMeetsRequirements(req, country: country, gameState: state) { return false }
+                    if !ScenarioNavigator.shared.matchesApplicability(scenario, country: country, gameState: state) {
+                        return false
                     }
                     if let currentCountry,
                        !TemplateEngine.shared.canResolveScenarioWithoutFallback(scenario, country: currentCountry, gameState: state) {
@@ -1075,31 +1070,8 @@ class GameStore: ObservableObject {
             if let readyTurn = scenarioCooldowns[scenario.id], state.turn < readyTurn { return false }
             // Already played (once-per-game)
             if state.playedScenarioIds.contains(scenario.id) { return false }
-            // Metric conditions
-            if let conditions = scenario.conditions {
-                for condition in conditions {
-                    let metricVal = state.metrics[condition.metricId] ?? 50.0
-                    if let minV = condition.min, metricVal < minV { return false }
-                    if let maxV = condition.max, metricVal > maxV { return false }
-                }
-            }
-            // Relationship conditions: gate on diplomatic score with the resolved country
-            if let relConditions = scenario.relationshipConditions, !relConditions.isEmpty {
-                guard let currentCountry else { return false }
-                for cond in relConditions {
-                    guard let countryId = TemplateEngine.shared.resolveRelationshipToCountryId(
-                        cond.relationshipId, country: currentCountry, gameState: state
-                    ) else { return false }
-                    let score = state.countries.first(where: { $0.id == countryId })?.diplomacy.relationship ?? 0.0
-                    if let minV = cond.min, score < minV { return false }
-                    if let maxV = cond.max, score > maxV { return false }
-                }
-            }
-            // Applicable countries filter
-            if let ac = scenario.metadata?.applicableCountries, !ac.isEmpty {
-                guard let countryId = state.countryId else { return false }
-                let matches = ac.contains(where: { $0.lowercased() == countryId.lowercased() })
-                if !matches { return false }
+            if !ScenarioNavigator.shared.matchesApplicability(scenario, country: currentCountry, gameState: state) {
+                return false
             }
             if !ScenarioNavigator.shared.matchesRegionalScope(scenario, for: currentCountry) { return false }
             // Legislature approval gate
@@ -1115,10 +1087,6 @@ class GameStore: ObservableObject {
                     $0.sharedBorder && ["rival", "adversary", "conflict"].contains($0.type)
                 }
                 if !hasBorderAdversary { return false }
-            }
-            // Structural requirements gate: enforce metadata.requires flags against current country state
-            if let req = scenario.metadata?.requires, let country = currentCountry {
-                if !scenarioMeetsRequirements(req, country: country, gameState: state) { return false }
             }
             if let currentCountry,
                !TemplateEngine.shared.canResolveScenarioWithoutFallback(scenario, country: currentCountry, gameState: state) {
@@ -1864,7 +1832,84 @@ class GameStore: ObservableObject {
                 return recentlyCooled ? 0.7 : 1.0
             }()
 
-            return baseScore * tagPenalty * bundleDiversityFactor * scopeNeed * partyBias * activeEventFactor
+            // Metric pressure: boost bundles aligned to metrics currently in crisis or boom.
+            // Takes the highest applicable boost across all crisis/boom rules for this bundle.
+            let metricPressureFactor: Double = {
+                guard let cat = s.category else { return 1.0 }
+                let m = state.metrics
+                var multiplier = 1.0
+
+                let crisisRules: [(metric: String, threshold: Double, bundles: [String: Double])] = [
+                    ("approval",           30, ["politics": 1.8, "justice": 1.2]),
+                    ("economy",            30, ["economy": 2.0, "corruption": 1.3, "infrastructure": 1.3]),
+                    ("military_readiness", 30, ["military": 2.0, "diplomacy": 1.3]),
+                    ("diplomatic_standing",30, ["diplomacy": 2.0, "military": 1.2]),
+                    ("stability",          30, ["politics": 1.7, "justice": 1.4, "infrastructure": 1.2]),
+                    ("democracy",          30, ["politics": 1.8, "justice": 1.4]),
+                    ("treasury",           25, ["economy": 1.7]),
+                ]
+                for rule in crisisRules {
+                    if let value = m[rule.metric], value < rule.threshold,
+                       let boost = rule.bundles[cat] {
+                        multiplier = max(multiplier, boost)
+                    }
+                }
+
+                // High corruption state boosts anti-corruption and justice bundles
+                if let corruption = m["corruption"], corruption > 70 {
+                    if cat == "corruption" { multiplier = max(multiplier, 2.0) }
+                    else if cat == "justice" { multiplier = max(multiplier, 1.5) }
+                }
+
+                // Economy boom: mild boost to expansion-oriented scenarios
+                if let econ = m["economy"], econ > 75 {
+                    if cat == "economy" { multiplier = max(multiplier, 1.25) }
+                    else if cat == "diplomacy" { multiplier = max(multiplier, 1.1) }
+                }
+
+                return multiplier
+            }()
+
+            // Legislature pressure: boost politics/governance bundles when the legislature
+            // is gridlocked, elections are imminent, or the coalition is fragile.
+            let legislaturePressureFactor: Double = {
+                guard let cat = s.category,
+                      let leg = state.legislatureState else { return 1.0 }
+                var multiplier = 1.0
+                if leg.gridlockLevel > 65, ["politics", "justice"].contains(cat) {
+                    multiplier = max(multiplier, 1.5)
+                }
+                let turnsToElection = leg.nextElectionTurn - state.turn
+                if turnsToElection >= 0, turnsToElection <= 3, ["politics", "culture"].contains(cat) {
+                    multiplier = max(multiplier, 1.6)
+                }
+                if leg.coalitionFragility > 70, ["politics", "justice"].contains(cat) {
+                    multiplier = max(multiplier, 1.3)
+                }
+                return multiplier
+            }()
+
+            // Relationship tension: boost diplomacy/military when live relationship scores
+            // with other countries are at hostile extremes, or diplomacy when warming.
+            let relationshipTensionFactor: Double = {
+                guard let cat = s.category else { return 1.0 }
+                let playerCountryId = state.countryId ?? ""
+                let others = state.countries.filter { $0.id != playerCountryId }
+                guard !others.isEmpty else { return 1.0 }
+                let minRel = others.map { $0.diplomacy.relationship }.min() ?? 0.0
+                let maxRel = others.map { $0.diplomacy.relationship }.max() ?? 0.0
+                var multiplier = 1.0
+                if minRel < -55 {
+                    if cat == "diplomacy" { multiplier = max(multiplier, 1.5) }
+                    else if cat == "military" { multiplier = max(multiplier, 1.3) }
+                }
+                if maxRel > 65, cat == "diplomacy" {
+                    multiplier = max(multiplier, 1.2)
+                }
+                return multiplier
+            }()
+
+            return baseScore * tagPenalty * bundleDiversityFactor * scopeNeed * partyBias * activeEventFactor * metricPressureFactor * legislaturePressureFactor * relationshipTensionFactor
         }
 
         let positiveWeights = weights.filter { $0 > 0 }

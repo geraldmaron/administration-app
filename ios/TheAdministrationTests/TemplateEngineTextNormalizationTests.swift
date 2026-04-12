@@ -68,10 +68,10 @@ final class TemplateEngineTextNormalizationTests: XCTestCase {
         let resolved = engine.resolveScenario(scenario, country: makeCountry(), gameState: makeGameState())
 
         XCTAssertEqual(resolved.title, "Budget crisis")
-        XCTAssertEqual(resolved.description, "The United States Faces a significant deficit.")
-        XCTAssertEqual(resolved.options[0].text, "The United States Faces a significant budget shock.")
-        XCTAssertEqual(resolved.options[0].outcomeHeadline, "President Announces emergency measures")
-        XCTAssertEqual(resolved.options[0].outcomeSummary, "Markets react. The United States Braces for austerity.")
+        XCTAssertEqual(resolved.description, "The United States faces a significant deficit.")
+        XCTAssertEqual(resolved.options[0].text, "The United States faces a significant budget shock.")
+        XCTAssertEqual(resolved.options[0].outcomeHeadline, "President announces emergency measures")
+        XCTAssertEqual(resolved.options[0].outcomeSummary, "Markets react. The United States braces for austerity.")
     }
 
     func testSingleBraceRoleTokensResolve() {

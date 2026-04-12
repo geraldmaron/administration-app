@@ -32,35 +32,34 @@ final class ScenarioEffectTests: XCTestCase {
         )
     }
 
-    private func makeMilitaryBranch(id: String, readiness: Double) -> MilitaryBranch {
-        MilitaryBranch(
-            id: id,
-            name: id.capitalized,
-            type: id,
+    private func makeMilitaryBranch(id: String, readiness: Int) -> MilitaryBranchData {
+        MilitaryBranchData(
+            canonicalType: id,
+            localName: id.capitalized,
+            tokenKey: id,
             readiness: readiness,
             size: 50,
-            equipment: 60,
-            specialCapabilities: nil,
-            limitations: nil
+            equipmentLevel: 60,
+            foundedYear: nil
         )
     }
 
     private func makeEffect(targetMetric: String? = nil, targetBranchId: String? = nil, value: Double, duration: Int = 1) -> Effect {
         Effect(
-            targetMetricId: targetMetric,
+            targetMetricId: targetMetric ?? "metric_economy",
             value: value,
             duration: duration,
             probability: 1.0,
             delay: nil,
+            type: nil,
             condition: nil,
             scaling: nil,
+            tags: nil,
+            scope: nil,
+            targetCountryId: nil,
             targetBranchId: targetBranchId,
-            valueRange: nil,
-            contextualNote: nil,
-            isHidden: nil,
-            scopeTag: nil,
             populationImpact: nil,
-            economicImpact: nil
+            environmentalImpact: nil
         )
     }
 
@@ -68,25 +67,25 @@ final class ScenarioEffectTests: XCTestCase {
 
     func testBranchReadinessIncreasesClamped() {
         var branch = makeMilitaryBranch(id: "army", readiness: 70)
-        let delta = 20.0
+        let delta = 20
         let newReadiness = min(100, max(0, branch.readiness + delta))
         branch.readiness = newReadiness
-        XCTAssertEqual(branch.readiness, 90.0, accuracy: 0.001)
+        XCTAssertEqual(branch.readiness, 90)
     }
 
     func testBranchReadinessDecreasesClamped() {
         var branch = makeMilitaryBranch(id: "navy", readiness: 10)
-        let delta = -30.0
+        let delta = -30
         let newReadiness = min(100, max(0, branch.readiness + delta))
         branch.readiness = newReadiness
-        XCTAssertEqual(branch.readiness, 0.0, accuracy: 0.001)
+        XCTAssertEqual(branch.readiness, 0)
     }
 
     func testBranchReadinessDoesNotExceed100() {
         var branch = makeMilitaryBranch(id: "air_force", readiness: 90)
-        let delta = 50.0
+        let delta = 50
         branch.readiness = min(100, max(0, branch.readiness + delta))
-        XCTAssertEqual(branch.readiness, 100.0, accuracy: 0.001)
+        XCTAssertEqual(branch.readiness, 100)
     }
 
     func testBranchEffectMaxDeltaClamp() {
@@ -104,41 +103,41 @@ final class ScenarioEffectTests: XCTestCase {
 
     func testUnrestIncreasesWithLowEmployment() {
         // employment < 40 → unrest +2 per turn
-        var state = makeMinimalState(metrics: ["metric_employment": 35, "metric_approval": 50])
+        let state = makeMinimalState(metrics: ["metric_employment": 35, "metric_approval": 50])
         var hiddenMetrics = state.hiddenMetrics ?? [:]
         hiddenMetrics["hidden_unrest"] = 10.0
 
         if let employment = state.metrics["metric_employment"], employment < 40 {
             hiddenMetrics["hidden_unrest"] = (hiddenMetrics["hidden_unrest"] ?? 0) + 2.0
         }
-        XCTAssertEqual(hiddenMetrics["hidden_unrest"], 12.0, accuracy: 0.001)
+        XCTAssertEqual(hiddenMetrics["hidden_unrest"] ?? 0, 12.0, accuracy: 0.001)
     }
 
     func testUnrestIncreasesWithHighInflation() {
         // inflation > 70 → unrest +1 per turn
-        var state = makeMinimalState(metrics: ["metric_inflation": 75])
+        let state = makeMinimalState(metrics: ["metric_inflation": 75])
         var hiddenMetrics = state.hiddenMetrics ?? [:]
         hiddenMetrics["hidden_unrest"] = 5.0
 
         if let inflation = state.metrics["metric_inflation"], inflation > 70 {
             hiddenMetrics["hidden_unrest"] = (hiddenMetrics["hidden_unrest"] ?? 0) + 1.0
         }
-        XCTAssertEqual(hiddenMetrics["hidden_unrest"], 6.0, accuracy: 0.001)
+        XCTAssertEqual(hiddenMetrics["hidden_unrest"] ?? 0, 6.0, accuracy: 0.001)
     }
 
     func testLibertyDecaysWithHighCorruption() {
         // corruption > 60 → liberty -1 per turn
-        var state = makeMinimalState(metrics: ["metric_corruption": 65, "metric_liberty": 55])
+        let state = makeMinimalState(metrics: ["metric_corruption": 65, "metric_liberty": 55])
         var metrics = state.metrics
 
         if let corruption = metrics["metric_corruption"], corruption > 60 {
             metrics["metric_liberty"] = (metrics["metric_liberty"] ?? 50) - 1.0
         }
-        XCTAssertEqual(metrics["metric_liberty"], 54.0, accuracy: 0.001)
+        XCTAssertEqual(metrics["metric_liberty"] ?? 0, 54.0, accuracy: 0.001)
     }
 
     func testUnrestDoesNotIncreaseWhenMetricsAreHealthy() {
-        var state = makeMinimalState(metrics: [
+        let state = makeMinimalState(metrics: [
             "metric_employment": 65,
             "metric_inflation": 30,
             "metric_corruption": 25,
@@ -154,18 +153,18 @@ final class ScenarioEffectTests: XCTestCase {
             hiddenMetrics["hidden_unrest"] = (hiddenMetrics["hidden_unrest"] ?? 0) + 1.0
         }
 
-        XCTAssertEqual(hiddenMetrics["hidden_unrest"], before, accuracy: 0.001, "Healthy metrics should not raise unrest")
+        XCTAssertEqual(hiddenMetrics["hidden_unrest"] ?? 0, before, accuracy: 0.001, "Healthy metrics should not raise unrest")
     }
 
     func testLibertyUnaffectedWithLowCorruption() {
-        var state = makeMinimalState(metrics: ["metric_corruption": 45, "metric_liberty": 60])
+        let state = makeMinimalState(metrics: ["metric_corruption": 45, "metric_liberty": 60])
         var metrics = state.metrics
         let before = metrics["metric_liberty"] ?? 60.0
 
         if let corruption = metrics["metric_corruption"], corruption > 60 {
             metrics["metric_liberty"] = (metrics["metric_liberty"] ?? 50) - 1.0
         }
-        XCTAssertEqual(metrics["metric_liberty"], before, accuracy: 0.001)
+        XCTAssertEqual(metrics["metric_liberty"] ?? 0, before, accuracy: 0.001)
     }
 
     // MARK: - Effect Value Validation
@@ -180,7 +179,7 @@ final class ScenarioEffectTests: XCTestCase {
 
     func testEffectProbabilityRange() {
         let effectFull = makeEffect(targetMetric: "metric_economy", value: 5, duration: 1)
-        let prob = effectFull.probability ?? 1.0
+        let prob = effectFull.probability
         XCTAssertGreaterThanOrEqual(prob, 0.0)
         XCTAssertLessThanOrEqual(prob, 1.0)
     }

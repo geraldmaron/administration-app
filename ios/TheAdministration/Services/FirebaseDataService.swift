@@ -542,9 +542,85 @@ class FirebaseDataService {
         let geopoliticalProfile = profiles.geopoliticalProfile
         let gameplayProfile = profiles.gameplayProfile
 
-        let legislatureProfile: LegislatureProfile? = (data["legislature"] as? [String: Any]).flatMap { decode(LegislatureProfile.self, from: $0) }
+        // LegislatureProfile: Firebase documents don't have a top-level "legislature" key,
+        // so derive a basic profile from tokens (upper_house/lower_house presence indicates
+        // bicameral vs unicameral).
+        let legislatureProfile: LegislatureProfile? = {
+            if let raw = data["legislature"] as? [String: Any] {
+                return decode(LegislatureProfile.self, from: raw)
+            }
+            guard let t = tokens else { return nil }
+            let isBicameral = t["upper_house"] != nil
+            let legType: LegislatureType = isBicameral ? .bicameral : .unicameral
+            let lowerName = t["lower_house"] ?? t["legislature"] ?? "Legislature"
+            let lowerToken = t["lower_house"] != nil ? "lower_house" : "legislature"
+            let lowerChamber = ChamberProfile(
+                name: lowerName,
+                token: lowerToken,
+                seatCount: 400,
+                termLengthFraction: 0.5,
+                electedPerCycleFraction: 1.0,
+                roleType: .representative,
+                partisan: true
+            )
+            var upperChamber: ChamberProfile?
+            if isBicameral, let upperName = t["upper_house"] {
+                upperChamber = ChamberProfile(
+                    name: upperName,
+                    token: "upper_house",
+                    seatCount: 100,
+                    termLengthFraction: 0.75,
+                    electedPerCycleFraction: 0.33,
+                    roleType: .senator,
+                    partisan: true
+                )
+            }
+            return LegislatureProfile(
+                type: legType,
+                upperHouse: upperChamber,
+                lowerHouse: isBicameral ? lowerChamber : nil,
+                singleChamber: isBicameral ? nil : lowerChamber,
+                electionSystem: .proportional
+            )
+        }()
 
-        let legislatureInitialState: LegislatureState? = (data["legislature_initial_state"] as? [String: Any]).flatMap { decode(LegislatureState.self, from: $0) }
+        // LegislatureState: Firebase legislature_initial_state uses camelCase keys and
+        // "blocs" (not "composition"), so decode manually rather than via the generic
+        // convertFromSnakeCase decoder.
+        let legislatureInitialState: LegislatureState? = {
+            guard let raw = data["legislature_initial_state"] as? [String: Any] else { return nil }
+            let rawBlocs = raw["blocs"] as? [[String: Any]] ?? []
+            guard !rawBlocs.isEmpty else { return nil }
+            let blocs: [LegislativeBloc] = rawBlocs.compactMap { b in
+                guard let partyId = b["partyId"] as? String else { return nil }
+                let seatShare = b["seatShare"] as? Double ?? 0.0
+                let approval = b["approvalOfPlayer"] as? Int ?? 50
+                return LegislativeBloc(
+                    partyId: partyId,
+                    partyName: partyId,
+                    ideologicalPosition: 5,
+                    seatShare: seatShare,
+                    approvalOfPlayer: approval,
+                    chamber: "lower",
+                    isRulingCoalition: seatShare >= 0.5
+                )
+            }
+            guard !blocs.isEmpty else { return nil }
+            let gridlock = {
+                if let v = raw["gridlockLevel"] as? Int { return v }
+                if let v = raw["gridlock_level"] as? Int { return v }
+                return 30
+            }()
+            let avgApproval = blocs.reduce(0) { $0 + $1.approvalOfPlayer } / blocs.count
+            return LegislatureState(
+                composition: blocs,
+                approvalOfPlayer: avgApproval,
+                lastElectionTurn: 0,
+                nextElectionTurn: 0,
+                gridlockLevel: gridlock,
+                notableMembers: []
+            )
+        }()
 
         let countryTraits: [CountryTrait]? = {
             guard let arr = data["traits"] as? [[String: Any]],
@@ -666,6 +742,44 @@ class FirebaseDataService {
             )
         }
 
+        let applicability: ScenarioApplicability? = {
+            guard let raw = data["applicability"] as? [String: Any] else { return nil }
+
+            let requires: ScenarioRequirements? = {
+                guard let req = raw["requires"] as? [String: Any],
+                      let reqData = try? JSONSerialization.data(withJSONObject: req) else { return nil }
+                return try? JSONDecoder().decode(ScenarioRequirements.self, from: reqData)
+            }()
+
+            let metricGates: [MetricGate] = (raw["metricGates"] as? [[String: Any]] ?? raw["metric_gates"] as? [[String: Any]] ?? []).compactMap { gate in
+                guard let metric = gate["metric"] as? String ?? gate["metricId"] as? String ?? gate["metric_id"] as? String else {
+                    return nil
+                }
+                return MetricGate(
+                    metric: metric,
+                    min: (gate["min"] as? NSNumber)?.doubleValue,
+                    max: (gate["max"] as? NSNumber)?.doubleValue
+                )
+            }
+
+            let relationshipGates: [RelationshipGate]? = (raw["relationshipGates"] as? [[String: Any]] ?? raw["relationship_gates"] as? [[String: Any]])?.compactMap { gate in
+                guard let kind = gate["kind"] as? String else { return nil }
+                return RelationshipGate(
+                    kind: kind,
+                    state: gate["state"] as? String ?? "any",
+                    targetId: gate["countryId"] as? String ?? gate["country_id"] as? String ?? gate["targetId"] as? String ?? gate["target_id"] as? String
+                )
+            }
+
+            return ScenarioApplicability(
+                archetypes: raw["archetypes"] as? [String],
+                requires: requires,
+                metricGates: metricGates,
+                relationshipGates: relationshipGates,
+                applicableCountryIds: raw["applicableCountryIds"] as? [String] ?? raw["applicable_country_ids"] as? [String]
+            )
+        }()
+
         var legislatureRequirement: LegislatureRequirement?
         if let legReq = data["legislature_requirement"] as? [String: Any],
            let minApproval = legReq["min_approval"] as? Int {
@@ -702,6 +816,7 @@ class FirebaseDataService {
             id: id,
             title: title,
             description: description,
+            applicability: applicability,
             conditions: conditions,
             relationshipConditions: relationshipConditions,
             phase: data["phase"] as? String,

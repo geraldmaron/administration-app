@@ -175,7 +175,7 @@ class TemplateEngine {
         if let ruling = rulingParty {
             context["governing_party"] = ruling.name
             context["governing_party_leader"] = ruling.currentLeader
-                ?? CandidateGenerator.generateLeaderName(forRegion: country.region, config: FirebaseDataService.shared.config)
+                ?? CandidateGenerator.pickName(region: country.region, gender: .nonbinary, config: FirebaseDataService.shared.config)
             context["governing_party_ideology"] = ruling.ideologyLabel
             if let short = ruling.shortName {
                 context["governing_party_short"] = short
@@ -187,7 +187,7 @@ class TemplateEngine {
         if let opposition = oppositionParty {
             context["opposition_party"] = opposition.name
             let leaderName = opposition.currentLeader
-                ?? CandidateGenerator.generateLeaderName(forRegion: country.region, config: FirebaseDataService.shared.config)
+                ?? CandidateGenerator.pickName(region: country.region, gender: .nonbinary, config: FirebaseDataService.shared.config)
             context["opposition_party_leader"] = leaderName
             context["opposition_leader"] = leaderName
         }

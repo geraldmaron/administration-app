@@ -15,6 +15,7 @@ import SwiftUI
 // The PDF export preserves vector fidelity for the launch screen storyboard.
 
 enum IconExporter {
+    @MainActor
     static func export() {
         exportIcon()
         exportLaunchMarkPDF()
@@ -22,6 +23,7 @@ enum IconExporter {
 
     // MARK: - App Icon (1024×1024 PNG)
 
+    @MainActor
     private static func exportIcon() {
         let canvas = 1024.0
         let markHeight = canvas * 0.5625  // 576pt
@@ -47,6 +49,7 @@ enum IconExporter {
 
     // MARK: - Launch Mark (PDF vector)
 
+    @MainActor
     private static func exportLaunchMarkPDF() {
         let markWidth: CGFloat = 120
         let markHeight: CGFloat = 144

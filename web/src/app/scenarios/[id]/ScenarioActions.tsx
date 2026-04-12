@@ -2,20 +2,24 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { markConfirmedAction } from '../actions';
 
 interface ScenarioActionsProps {
   id: string;
   isActive: boolean;
   isGolden: boolean;
+  isConfirmed: boolean;
   bundle?: string;
 }
 
-export default function ScenarioActions({ id, isActive, isGolden: initialGolden, bundle }: ScenarioActionsProps) {
+export default function ScenarioActions({ id, isActive, isGolden: initialGolden, isConfirmed: initialConfirmed, bundle }: ScenarioActionsProps) {
   const router = useRouter();
   const [active, setActive] = useState(isActive);
   const [golden, setGolden] = useState(initialGolden);
+  const [confirmed, setConfirmed] = useState(initialConfirmed);
   const [loading, setLoading] = useState(false);
   const [goldenLoading, setGoldenLoading] = useState(false);
+  const [confirmedLoading, setConfirmedLoading] = useState(false);
 
   async function toggleActive() {
     setLoading(true);
@@ -52,6 +56,16 @@ export default function ScenarioActions({ id, isActive, isGolden: initialGolden,
     }
   }
 
+  async function toggleConfirmed() {
+    setConfirmedLoading(true);
+    try {
+      await markConfirmedAction([id], !confirmed);
+      setConfirmed((v) => !v);
+    } finally {
+      setConfirmedLoading(false);
+    }
+  }
+
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
       <button
@@ -84,6 +98,19 @@ export default function ScenarioActions({ id, isActive, isGolden: initialGolden,
       >
         <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-[var(--success)]' : 'bg-[var(--foreground-subtle)]'}`} />
         {loading ? 'Updating…' : active ? 'Active' : 'Inactive'}
+      </button>
+      <button
+        onClick={toggleConfirmed}
+        disabled={confirmedLoading}
+        className={`btn ${
+          confirmed
+            ? 'border-[var(--success)]/30 text-[var(--success)] hover:bg-[var(--success)]/10'
+            : 'border-[var(--border)] text-foreground-muted hover:text-foreground hover:bg-background-muted'
+        }`}
+        title={confirmed ? 'Remove confirmed-clean status — scenario will appear in future repair audits' : 'Mark as confirmed clean — skips in future repair audits'}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${confirmed ? 'bg-[var(--success)]' : 'bg-[var(--foreground-subtle)]'}`} />
+        {confirmedLoading ? 'Updating…' : confirmed ? 'Confirmed' : 'Confirm'}
       </button>
       <button
         onClick={handleDelete}

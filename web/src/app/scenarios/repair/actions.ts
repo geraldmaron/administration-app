@@ -46,7 +46,10 @@ function repairApplicableCountries(
 
 const MAX_IDS = 50;
 
-export async function analyzeRepairAction(ids: string[]): Promise<{ results: RepairAnalysis[] }> {
+export async function analyzeRepairAction(
+  ids: string[],
+  force = false,
+): Promise<{ results: RepairAnalysis[]; confirmedSkippedCount: number }> {
   if (!Array.isArray(ids) || ids.length === 0) throw new Error('ids must be a non-empty array');
   if (ids.length > MAX_IDS) throw new Error(`Cannot analyze more than ${MAX_IDS} scenarios at once`);
 
@@ -55,46 +58,62 @@ export async function analyzeRepairAction(ids: string[]): Promise<{ results: Rep
     loadCountryLookup(),
   ]);
 
-  const results = snaps.map((snap) => {
-    if (!snap.exists) {
-      return {
-        id: snap.id,
-        title: '',
-        bundle: null,
-        auditScore: null,
-        auditIssues: ['Scenario not found'],
-        changes: [],
-        hasChanges: false,
-      } as RepairAnalysis;
-    }
-    const scenario = toScenarioDetail(snap.id, snap.data()!);
-    const analysis = analyzeScenario(scenario);
-    const { updated: relFixed, changed: relChanged } = applyRelationshipConditionRepair(scenario);
-    if (relChanged && relFixed.relationship_conditions) {
-      analysis.changes.push({
-        path: 'relationship_conditions',
-        before: JSON.stringify(scenario.relationship_conditions ?? []),
-        after: JSON.stringify(relFixed.relationship_conditions),
-      });
-      analysis.hasChanges = true;
-    }
-    const fixedCountries = repairApplicableCountries(
-      scenario.metadata?.applicable_countries,
-      nameToId,
-      knownIds
-    );
-    if (fixedCountries) {
-      analysis.changes.push({
-        path: 'metadata.applicable_countries',
-        before: JSON.stringify(scenario.metadata?.applicable_countries),
-        after: JSON.stringify(fixedCountries),
-      });
-      analysis.hasChanges = true;
-    }
-    return analysis;
-  });
+  let confirmedSkippedCount = 0;
 
-  return { results };
+  const results = snaps
+    .map((snap): RepairAnalysis | null => {
+      if (!snap.exists) {
+        return {
+          id: snap.id,
+          title: '',
+          bundle: null,
+          auditScore: null,
+          auditIssues: ['Scenario not found'],
+          changes: [],
+          hasChanges: false,
+        };
+      }
+
+      const isConfirmed = snap.data()?.metadata?.repairMetadata?.confirmedClean === true;
+      if (isConfirmed && !force) {
+        confirmedSkippedCount++;
+        return null;
+      }
+
+      const scenario = toScenarioDetail(snap.id, snap.data()!);
+      const analysis = analyzeScenario(scenario);
+
+      if (isConfirmed) {
+        analysis.confirmedClean = true;
+      }
+
+      const { updated: relFixed, changed: relChanged } = applyRelationshipConditionRepair(scenario);
+      if (relChanged && relFixed.relationship_conditions) {
+        analysis.changes.push({
+          path: 'relationship_conditions',
+          before: JSON.stringify(scenario.relationship_conditions ?? []),
+          after: JSON.stringify(relFixed.relationship_conditions),
+        });
+        analysis.hasChanges = true;
+      }
+      const fixedCountries = repairApplicableCountries(
+        scenario.metadata?.applicable_countries,
+        nameToId,
+        knownIds
+      );
+      if (fixedCountries) {
+        analysis.changes.push({
+          path: 'metadata.applicable_countries',
+          before: JSON.stringify(scenario.metadata?.applicable_countries),
+          after: JSON.stringify(fixedCountries),
+        });
+        analysis.hasChanges = true;
+      }
+      return analysis;
+    })
+    .filter((r): r is RepairAnalysis => r !== null);
+
+  return { results, confirmedSkippedCount };
 }
 
 export async function applyRepairsAction(approved: ApprovedRepair[]): Promise<{ applied: number; skipped: number }> {

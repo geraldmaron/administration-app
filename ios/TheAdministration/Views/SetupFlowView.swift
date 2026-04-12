@@ -729,7 +729,7 @@ struct PlayerIdentityView: View {
     }
 
     private let approaches: [(name: String, tagline: String, icon: String)] = [
-        ("Pragmatist",  "Results over ideology. Coalition-building keeps the machine moving.", "handshake"),
+        ("Pragmatist",  "Results over ideology. Coalition-building keeps the machine moving.", "handshake.fill"),
         ("Ideologue",   "Conviction-first governance. Your values are your mandate.",           "star.fill"),
         ("Technocrat",  "Evidence-based governance. Let the data decide.",                     "chart.bar.fill"),
         ("Nationalist", "Sovereignty above all. Strength at home, strength abroad.",           "shield.fill"),
@@ -821,6 +821,16 @@ struct PlayerIdentityView: View {
                                     .buttonStyle(.plain)
                                 }
                             }
+                            .onChange(of: parties.map(\.name)) { _ in
+                                if selectedParty.isEmpty, let first = parties.first {
+                                    selectedParty = first.name
+                                }
+                            }
+                            .onAppear {
+                                if selectedParty.isEmpty, let first = parties.first {
+                                    selectedParty = first.name
+                                }
+                            }
                         }
                     }
 
@@ -831,20 +841,22 @@ struct PlayerIdentityView: View {
 
             Spacer()
 
+            let canContinue = !playerName.isEmpty && !selectedParty.isEmpty
+
             Button {
-                guard !playerName.isEmpty else { return }
+                guard canContinue else { return }
                 gameStore.setPlayer(name: playerName, party: selectedParty, approach: selectedApproach)
                 onContinue?()
                 withAnimation(AppMotion.standard) { step = 3 }
             } label: {
                 Text("CONTINUE")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(playerName.isEmpty ? AppColors.foregroundSubtle : AppColors.background)
+                    .foregroundColor(canContinue ? AppColors.background : AppColors.foregroundSubtle)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(playerName.isEmpty ? AppColors.backgroundMuted : AppColors.foreground)
+                    .background(canContinue ? AppColors.foreground : AppColors.backgroundMuted)
             }
-            .disabled(playerName.isEmpty)
+            .disabled(!canContinue)
             .padding(.horizontal, 24)
             .padding(.bottom, 40)
         }
@@ -897,43 +909,44 @@ private struct GoverningStyleCard: View {
     let showSwipeHint: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
-                Image(systemName: approach.icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(isSelected ? AppColors.accentPrimary : AppColors.foregroundMuted)
-                Text(approach.name.uppercased())
-                    .font(AppTypography.micro)
-                    .foregroundColor(isSelected ? AppColors.foreground : AppColors.foregroundMuted)
-                    .tracking(1.5)
-                Spacer()
-                if showSwipeHint {
-                    HStack(spacing: 2) {
-                        Image(systemName: "chevron.left")
-                        Text("SWIPE")
-                        Image(systemName: "chevron.right")
-                    }
-                    .font(.system(size: 9, weight: .medium, design: .monospaced))
-                    .foregroundColor(AppColors.foregroundSubtle)
-                    .tracking(1)
-                }
-            }
-            Text(approach.tagline)
-                .font(AppTypography.bodySmall)
-                .foregroundColor(AppColors.foregroundMuted)
-                .fixedSize(horizontal: false, vertical: true)
-                .lineLimit(3)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(AppColors.backgroundMuted)
-        .overlay(
+        HStack(spacing: 0) {
             Rectangle()
                 .fill(isSelected ? AppColors.accentPrimary : AppColors.border)
-                .frame(height: 2),
-            alignment: .top
-        )
+                .frame(width: 3)
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Image(systemName: approach.icon)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(isSelected ? AppColors.accentPrimary : AppColors.foregroundMuted)
+                        .frame(width: 16)
+                    Text(approach.name.uppercased())
+                        .font(AppTypography.micro)
+                        .foregroundColor(isSelected ? AppColors.foreground : AppColors.foregroundMuted)
+                        .tracking(1.5)
+                    Spacer()
+                    if showSwipeHint {
+                        HStack(spacing: 2) {
+                            Image(systemName: "chevron.left")
+                            Text("SWIPE")
+                            Image(systemName: "chevron.right")
+                        }
+                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        .foregroundColor(AppColors.foregroundSubtle)
+                        .tracking(1)
+                    }
+                }
+                Text(approach.tagline)
+                    .font(AppTypography.bodySmall)
+                    .foregroundColor(AppColors.foregroundMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(3)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .background(AppColors.backgroundMuted)
     }
 }
 

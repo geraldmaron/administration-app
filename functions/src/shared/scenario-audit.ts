@@ -836,6 +836,18 @@ export const INSTITUTION_PHRASE_RULES: PhraseRule[] = [
     { detect: /\bnational\s+guard\b/gi,                                      replacement: 'the {armed_forces_name}',                    suggestion: '"National Guard" → use {armed_forces_name}' },
     { detect: /\bcoast\s+guard\b/gi,                                         replacement: 'the {armed_forces_name}',                    suggestion: '"Coast Guard" → use {armed_forces_name}' },
     { detect: /\bsecret\s+service\b/gi,                                      replacement: 'the {intelligence_agency}',                suggestion: '"Secret Service" → use {intelligence_agency}' },
+    { detect: /\bcentral\s+intelligence\s+agency\b/gi,                       replacement: 'the {intelligence_agency}',                suggestion: '"Central Intelligence Agency" → use {intelligence_agency}' },
+    { detect: /\bnational\s+intelligence\s+(?:service|agency|directorate)\b/gi, replacement: 'the {intelligence_agency}',             suggestion: '"National Intelligence [Service/Agency/Directorate]" → use {intelligence_agency}' },
+    { detect: /\bfederal\s+bureau\s+of\s+investigation\b/gi,                 replacement: 'the {domestic_intelligence}',              suggestion: '"Federal Bureau of Investigation" → use {domestic_intelligence}' },
+    { detect: /\b(?:the\s+)?C\.?I\.?A\.?\b/g,                               replacement: 'the {intelligence_agency}',                suggestion: '"CIA" → use {intelligence_agency}' },
+    { detect: /\b(?:the\s+)?F\.?B\.?I\.?\b/g,                               replacement: 'the {domestic_intelligence}',              suggestion: '"FBI" → use {domestic_intelligence}' },
+    { detect: /\b(?:the\s+)?N\.?S\.?A\.?\b/g,                               replacement: 'the {intelligence_agency}',                suggestion: '"NSA" → use {intelligence_agency}' },
+    { detect: /\bnational\s+security\s+agency\b/gi,                          replacement: 'the {intelligence_agency}',                suggestion: '"National Security Agency" → use {intelligence_agency}' },
+    { detect: /\b(?:department\s+of\s+justice|justice\s+department)\b/gi,    replacement: '{justice_role}',                           suggestion: '"Department of Justice/Justice Department" → use {justice_role}' },
+    { detect: /\b(?:state\s+department|department\s+of\s+state)\b/gi,        replacement: '{foreign_affairs_role}',                   suggestion: '"State Department" → use {foreign_affairs_role}' },
+    { detect: /\b(?:department\s+of\s+de[f]ense|ministry\s+of\s+de[f]en[cs]e)\b/gi, replacement: '{defense_role}',                  suggestion: '"Department/Ministry of Defense/Defence" → use {defense_role}' },
+    { detect: /\b(?:department\s+of\s+the\s+treasury|treasury\s+department)\b/gi, replacement: '{finance_role}',                     suggestion: '"Treasury Department" → use {finance_role}' },
+    { detect: /\b(?:home\s+office|ministry\s+of\s+(?:the\s+)?interior|department\s+of\s+(?:the\s+)?interior)\b/gi, replacement: '{interior_role}', suggestion: '"Home Office/Ministry of Interior" → use {interior_role}' },
     { detect: /\bsupreme\s+court\b/gi,                                       replacement: 'the {judicial_role}',                      suggestion: '"Supreme Court" → use {judicial_role}' },
     { detect: /\bhigh\s+court\b/gi,                                          replacement: 'the {judicial_role}',                      suggestion: '"High Court" → use {judicial_role}' },
     { detect: /\bconstitutional\s+court\b/gi,                                replacement: 'the {judicial_role}',                      suggestion: '"Constitutional Court" → use {judicial_role}' },
@@ -863,6 +875,12 @@ export const SOFT_PENALTY_RULES = new Set([
     'hardcoded-institution-phrase',
     'hardcoded-gov-structure',
     'third-person-framing',
+    'informal-tone',
+    'vague-reference',
+    'repeated-word',
+    'dangling-ending',
+    'headline-fragment',
+    'option-hedge-phrase',
 ]);
 
 export const RELATIONSHIP_TOKEN_NAMES = new Set<RelationshipTokenName>([
@@ -1290,9 +1308,28 @@ export function auditScenario(
             add('error', 'outcome-second-person', scenario.id, `${fieldName} contains second-person "you" — outcome fields must be third-person journalistic`);
         }
     };
+    const OPTION_HEDGE_PATTERNS: Array<[RegExp, string]> = [
+        [/\baims? to\b/i, '"aims to" — state the action, not the intent'],
+        [/\bbut risks?\b/i, '"but risks" — hedging pattern, omit and let outcomes speak'],
+        [/\bbut may\b/i, '"but may" — hedging pattern, commit to the consequence'],
+        [/\bcould lead to\b/i, '"could lead to" — use concrete consequence language'],
+        [/\bat the cost of\b/i, '"at the cost of" — explicit tradeoff framing, omit and show via effects'],
+        [/\bbalances? .+ with\b/i, '"balances X with Y" — false balance framing'],
+        [/\bprioritizes? .+ over\b/i, '"prioritizes X over Y" — editorial framing, not option text'],
+        [/\brisks? provoking\b/i, '"risks provoking" — hedging pattern'],
+        [/\bthreatens? to\b/i, '"threatens to" — hedging pattern'],
+    ];
     for (const opt of scenario.options) {
         checkFraming(opt.text, `option ${opt.id} text`, 'error');
         checkBannedPhrases(opt.text, `option ${opt.id} text`);
+        if (opt.text) {
+            for (const [pattern, reason] of OPTION_HEDGE_PATTERNS) {
+                if (pattern.test(opt.text)) {
+                    add('warn', 'option-hedge-phrase', opt.id, `Option text uses hedge/weak-language pattern: ${reason}`);
+                    break;
+                }
+            }
+        }
         checkBannedPhrases(opt.outcomeSummary, `option ${opt.id} outcomes`);
         checkBannedPhrases(opt.outcomeContext, `option ${opt.id} outcomeContext`);
         checkBannedPhrases(opt.outcomeHeadline, `option ${opt.id} headline`);
@@ -1758,6 +1795,10 @@ export function auditScenario(
                         /^Our department has no strong position on this matter\.$/i,
                         /^We see both risks and potential benefits for .+\.$/i,
                         /^This warrants careful monitoring from our department\.$/i,
+                        /\bThe risks outweigh the benefits\b/i,
+                        /\bThis is a measured approach\b/i,
+                        /\bWe must monitor the situation\b/i,
+                        /\bThis warrants careful consideration\b/i,
                     ];
 
                     if (HARD_FAIL_BOILERPLATE_PATTERNS.some(p => p.test(feedback))) {
@@ -1943,6 +1984,8 @@ export function auditScenario(
             [/^(balancing|handling|navigating)\s+/i, 'starts with a generic gerund (Balancing/Handling/Navigating)'],
             [/\b(debate|decision|dilemma|challenge|conflict)\s*$/i, 'ends with a generic noun (Debate/Decision/Dilemma/Challenge/Conflict) — use a verb instead'],
             [/\b(response|response\s+options)\s*$/i, 'ends with "Response" or "Response Options" — use a verb instead'],
+            [/\b(dispute|standoff|transition)\s*$/i, 'ends with a generic noun (Dispute/Standoff/Transition) — use a verb instead'],
+            [/\b(management|options|measures|planning|situation|issue|problem)\s*$/i, 'ends with a vague process noun (Management/Options/Measures/Planning/Situation/Issue/Problem) — use a verb instead'],
         ];
         for (const [pattern, reason] of formulaicPatterns) {
             if (pattern.test(title)) {
@@ -2197,7 +2240,7 @@ export function auditScenario(
         const hasSignificant = allEffects.some((e: any) => Number.isFinite(e.value) && Math.abs(e.value) >= 2.5);
         if (allEffects.length > 0 && !hasSignificant) {
             add('warn', 'severity-effect-mismatch', scenario.id,
-                `Severity is "high" but all ${allEffects.length} effects have |value| < 2.5. A high scenario needs at least one effect ≥ 2.5 (range: 4.5–6.0).`);
+                `Severity is "high" but all ${allEffects.length} effects have |value| < 2.5. A high scenario needs at least one effect ≥ 2.5 (range: 2.5–4.5).`);
         }
     }
 
@@ -2417,6 +2460,16 @@ export function normalizeScenarioTextFields(scenario: BundleScenario): { fixed: 
         for (const rule of INSTITUTION_PHRASE_RULES) {
             result = result.replace(rule.detect, rule.replacement);
         }
+        // After phrase rules inject "the {token}", dedupe article collisions:
+        //   "a the {x}" → "the {x}"
+        //   "an the {x}" → "the {x}"
+        //   "a [adj] the {x}" → "the [adj] {x}"
+        //   "The the {x}" / "the the {x}" → "The {x}" / "the {x}"
+        result = result
+            .replace(/\b(a|an)\s+(the)\s+(\{[a-z_]+\})/gi, 'the $3')
+            .replace(/\b(a|an)\s+(\w+)\s+(the)\s+(\{[a-z_]+\})/gi, 'the $2 $4')
+            .replace(/\bThe the\b/g, 'The')
+            .replace(/\bthe the\b/gi, 'the');
         return result;
     };
 

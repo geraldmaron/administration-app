@@ -1504,7 +1504,10 @@ The returned text must be LONGER than the original — never truncate.`,
   'advisor-regen': `Rewrite the flagged advisor feedback entries.
 Each entry must: name the specific policy mechanism, the constituency affected, and the causal chain.
 1–2 sentences from the advisor's professional perspective (30–50 words).
-FORBIDDEN: "aligns with our", "our department", "course of action", "careful monitoring", "no strong position".`,
+FORBIDDEN: "aligns with our", "our department", "course of action", "careful monitoring", "no strong position".
+VALID roleId values (use ONLY these 13): role_executive, role_diplomacy, role_defense, role_economy, role_justice, role_health, role_commerce, role_labor, role_interior, role_energy, role_environment, role_transport, role_education.
+DO NOT invent roleIds. Never use role_legislature, role_parliament, role_finance, role_foreign_affairs, or any ID not in the list above.
+Every option MUST include role_executive. Include 5–9 unique roles per option.`,
 
   'title-fix': `Fix the scenario title:
 - 4–8 words, no tokens
@@ -1529,9 +1532,10 @@ CRITICAL: Return the COMPLETE rewritten text for each field. Never omit or trunc
 
   'tone-fix': `Fix banned phrases and tone issues:
 - Replace hardcoded ministry names with role tokens (e.g. "Justice Ministry" → "{justice_role}")
-- Replace hardcoded government structure terms (e.g. "ruling coalition" → "{governing_party}")
+- Replace hardcoded government structure terms with plain language: "ruling coalition" → "your governing coalition", "the ruling bloc" → "your cabinet" — do NOT use {governing_party} or any scope-gated token as a replacement
 - Remove jargon ("bloc" → "alliance", "gambit" → "move")
-- Remove banned phrases ("the government" in second-person fields → "your government")`,
+- Remove banned phrases ("the government" in second-person fields → "your government")
+- NEVER introduce {governing_party}, {legislature}, {opposition_party}, or other regime-gated tokens as replacements for plain text phrases`,
 
   'option-differentiation-fix': `Fix option differentiation and optionDomains alignment:
 - If metadata.optionDomains is present, each option must include at least one effect targeting its assigned primary metric.
@@ -1586,18 +1590,27 @@ function buildRepairPromptForAction(
     }));
   }
 
+  const scopeTier = (scenario.metadata as Record<string, unknown>)?.scopeTier as string ?? 'universal';
+  const isUniversal = scopeTier === 'universal';
+
+  const rule2 = isUniversal
+    ? `2. Preserve regime-agnostic tokens ({leader_title}, {finance_role}, {defense_role}, {foreign_affairs_role}, {interior_role}, {justice_role}, {health_role}, {education_role}, {energy_role}, {environment_role}, {transport_role}, {labor_role}, {commerce_role}, {judicial_role}, {prosecutor_role}, {police_force}, {armed_forces_name}, {intelligence_agency}). REPLACE (do not preserve) these FORBIDDEN universal-scope tokens with plain language: {legislature}, {upper_house}, {lower_house}, {governing_party}, {governing_party_short}, {governing_party_leader}, {governing_party_ideology}, {opposition_party}, {opposition_party_leader}, {central_bank}, {stock_exchange}, {monarch}, {ally}, {adversary}, {border_rival}, {trade_partner}. Use "lawmakers", "your governing coalition", "the financial regulator", "a neighboring state", etc.`
+    : `2. Preserve ALL institution tokens exactly (e.g. {leader_title}, {legislature}, {finance_role}). Keep natural language relationship phrases unchanged.`;
+
   return `You are a surgical scenario text editor performing a targeted "${action.type}" repair.
 
 CURRENT AUDIT SCORE: ${currentScore}/100 (pass threshold: ${passThreshold})
 You must fix these issues to raise the score above ${passThreshold}.
+
+SCOPE: ${scopeTier.toUpperCase()}${isUniversal ? '\nUNIVERSAL SCOPE: This scenario must be entirely domestic and regime-agnostic. Do not introduce any foreign actors, relationship tokens, or regime-specific institutional tokens.' : ''}
 
 REPAIR FOCUS — ${action.type.toUpperCase()}:
 ${REPAIR_ACTION_PROMPTS[action.type] ?? 'Fix the listed issues.'}
 
 STRICT RULES:
 1. Fix ONLY the fields related to the issues below.
-2. Preserve ALL institution tokens exactly (e.g. {leader_title}, {legislature}, {finance_role}). Keep natural language relationship phrases unchanged.
-3. The returned JSON must never contain the literal substring "the {" anywhere.
+${rule2}
+3. Do NOT write {the_*} article-form token syntax directly (e.g. never write "{the_finance_role}" or "{the_legislature}"). Instead write natural prose like "the {finance_role}" — the pipeline converts it automatically.
 4. Do NOT change effects, metric IDs, durations, probabilities, or any numeric data UNLESS action type is "option-differentiation-fix".
 5. Return ONLY a partial JSON patch with the changed fields.
 
@@ -1722,7 +1735,8 @@ async function executeRepairActions(
         const candidate = applyRepairPatch(currentScenario, repairResult.data);
         const repairTokenStrategy = deriveTokenStrategy((scenario.metadata as any)?.scopeTier ?? 'universal');
         if (repairTokenStrategy !== 'none') {
-          normalizeTokenAliases(candidate.title) && (candidate.title = normalizeTokenAliases(candidate.title));
+          const normTitle = normalizeTokenAliases(candidate.title);
+          if (normTitle !== candidate.title) candidate.title = normTitle;
           candidate.description = normalizeTokenAliases(candidate.description);
           for (const opt of candidate.options) {
             opt.text = normalizeTokenAliases(opt.text);
@@ -2071,7 +2085,7 @@ async function auditAndRepair(
   const preRepairCurrentScore = scoreScenario(issues);
   const scoreGap = repairThreshold - preRepairCurrentScore;
 
-  if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold && scoreGap <= 20) {
+  if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold && scoreGap < 30) {
     let repaired: BundleScenario | null = null;
 
     repaired = await executeRepairActions(scenario, issues, bundle, isNews, repairThreshold, modelConfig, 1, compiledRegistry);
@@ -2117,8 +2131,8 @@ async function auditAndRepair(
       }
       issues = auditScenario(scenario, bundle, isNews);
     }
-  } else if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold && scoreGap > 20) {
-    console.log(`[ScenarioEngine] Scenario ${scenario.id}: score gap ${scoreGap} (>20) — skipping LLM repair, re-draft recommended`);
+  } else if (llm_repair_enabled && issues.length > 0 && preRepairCurrentScore < repairThreshold && scoreGap >= 30) {
+    console.log(`[ScenarioEngine] Scenario ${scenario.id}: score gap ${scoreGap} (>=30) — skipping LLM repair, re-draft recommended`);
     emitEngineEvent({ level: 'warning', code: 'repair_skipped_hopeless', message: `Score ${preRepairCurrentScore} (gap ${scoreGap}) too far from threshold — re-draft recommended`, data: { scenarioId: scenario.id, score: preRepairCurrentScore, gap: scoreGap, threshold: repairThreshold } });
   }
 

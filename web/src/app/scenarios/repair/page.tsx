@@ -9,6 +9,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import { formatRepairPath } from '@shared/scenario-repair';
 import type { RepairAnalysis, ApprovedRepair, CountrySummary, SimulationScenario } from '@/lib/types';
 import { analyzeRepairAction, applyRepairsAction } from './actions';
+import { markConfirmedAction } from '../actions';
 
 type Phase = 'loading' | 'review' | 'applying' | 'error';
 
@@ -156,7 +157,13 @@ function RepairPageInner() {
 
   const [phase, setPhase] = useState<Phase>('loading');
   const [analyses, setAnalyses] = useState<RepairAnalysis[]>([]);
+  const [confirmedSkippedCount, setConfirmedSkippedCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [forceAll, setForceAll] = useState(false);
+
+  // locally confirmed IDs (optimistic — hide after user confirms)
+  const [localConfirmed, setLocalConfirmed] = useState<Set<string>>(new Set());
+  const [confirmingIds, setConfirmingIds] = useState<Set<string>>(new Set());
 
   // Token preview state
   const [countries, setCountries] = useState<CountrySummary[]>([]);
@@ -172,7 +179,7 @@ function RepairPageInner() {
   const [editState, setEditState] = useState<Record<string, Record<string, string>>>({});
   // expanded edit mode per scenario
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
-  // skipped scenario IDs
+  // skipped scenario IDs (local only, not persisted)
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -181,6 +188,41 @@ function RepairPageInner() {
       .then((data: { countries: CountrySummary[] }) => setCountries(data.countries ?? []))
       .catch(() => undefined);
   }, []);
+
+  const runAnalysis = useCallback((force: boolean) => {
+    if (ids.length === 0) { setPhase('error'); setErrorMessage('No scenario IDs provided.'); return; }
+    setPhase('loading');
+
+    analyzeRepairAction(ids, force)
+      .then((data) => {
+        const results = data.results ?? [];
+        setAnalyses(results);
+        setConfirmedSkippedCount(data.confirmedSkippedCount ?? 0);
+        const initApproval: Record<string, Record<string, boolean>> = {};
+        for (const a of results) {
+          initApproval[a.id] = {};
+          for (const c of a.changes) initApproval[a.id][c.path] = true;
+        }
+        setApprovalState(initApproval);
+        setPhase('review');
+      })
+      .catch((err: Error) => {
+        setErrorMessage(err.message ?? 'Analysis failed');
+        setPhase('error');
+      });
+  }, [ids]);
+
+  useEffect(() => {
+    runAnalysis(forceAll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ids]);
+
+  const handleToggleForceAll = useCallback(() => {
+    const next = !forceAll;
+    setForceAll(next);
+    setLocalConfirmed(new Set());
+    runAnalysis(next);
+  }, [forceAll, runAnalysis]);
 
   const fetchPreview = useCallback((scenarioId: string, countryId: string) => {
     if (!countryId || inFlightPreviews.current.has(scenarioId)) return;
@@ -229,27 +271,6 @@ function RepairPageInner() {
     }
   }, [searchParams, router, fetchPreview]);
 
-  useEffect(() => {
-    if (ids.length === 0) { setPhase('error'); setErrorMessage('No scenario IDs provided.'); return; }
-
-    analyzeRepairAction(ids)
-      .then((data) => {
-        const results = data.results ?? [];
-        setAnalyses(results);
-        const initApproval: Record<string, Record<string, boolean>> = {};
-        for (const a of results) {
-          initApproval[a.id] = {};
-          for (const c of a.changes) initApproval[a.id][c.path] = true;
-        }
-        setApprovalState(initApproval);
-        setPhase('review');
-      })
-      .catch((err: Error) => {
-        setErrorMessage(err.message ?? 'Analysis failed');
-        setPhase('error');
-      });
-  }, [ids]);
-
   const toggleApproval = useCallback((scenarioId: string, path: string) => {
     setApprovalState((prev) => ({
       ...prev,
@@ -276,9 +297,19 @@ function RepairPageInner() {
     });
   }, []);
 
+  const handleConfirm = useCallback(async (scenarioId: string) => {
+    setConfirmingIds((prev) => new Set(prev).add(scenarioId));
+    try {
+      await markConfirmedAction([scenarioId], true);
+      setLocalConfirmed((prev) => new Set(prev).add(scenarioId));
+    } finally {
+      setConfirmingIds((prev) => { const next = new Set(prev); next.delete(scenarioId); return next; });
+    }
+  }, []);
+
   const approvedRepairs = useMemo<ApprovedRepair[]>(() => {
     return analyses
-      .filter((a) => !skipped.has(a.id) && a.hasChanges)
+      .filter((a) => !skipped.has(a.id) && !localConfirmed.has(a.id) && a.hasChanges)
       .map((a) => ({
         id: a.id,
         patches: a.changes
@@ -293,7 +324,7 @@ function RepairPageInner() {
           }),
       }))
       .filter((r) => r.patches.length > 0);
-  }, [analyses, approvalState, editState, skipped]);
+  }, [analyses, approvalState, editState, skipped, localConfirmed]);
 
   async function handleApply() {
     if (approvedRepairs.length === 0) return;
@@ -309,10 +340,12 @@ function RepairPageInner() {
 
   const isMissingScenarioAnalysis = (analysis: RepairAnalysis) => analysis.auditIssues.includes('Scenario not found');
 
-  const withChanges = analyses.filter((a) => a.hasChanges);
-  const invalidScenarios = analyses.filter((a) => !a.hasChanges && isMissingScenarioAnalysis(a));
-  const alreadyClean = analyses.filter((a) => !a.hasChanges && !isMissingScenarioAnalysis(a));
+  const visibleAnalyses = analyses.filter((a) => !localConfirmed.has(a.id));
+  const withChanges = visibleAnalyses.filter((a) => a.hasChanges);
+  const invalidScenarios = visibleAnalyses.filter((a) => !a.hasChanges && isMissingScenarioAnalysis(a));
+  const alreadyClean = visibleAnalyses.filter((a) => !a.hasChanges && !isMissingScenarioAnalysis(a));
   const totalPatches = approvedRepairs.reduce((n, r) => n + r.patches.length, 0);
+  const totalConfirmedSkipped = confirmedSkippedCount + localConfirmed.size;
 
   if (phase === 'loading') {
     return (
@@ -362,7 +395,7 @@ function RepairPageInner() {
       {/* Summary banner */}
       <div className="command-panel mb-3 flex flex-wrap items-center gap-4 px-4 py-3">
         <div className="text-[12px] font-mono text-[var(--foreground-muted)]">
-          <span className="font-semibold text-foreground">{analyses.length}</span> scenario{analyses.length !== 1 ? 's' : ''} analyzed
+          <span className="font-semibold text-foreground">{visibleAnalyses.length}</span> scenario{visibleAnalyses.length !== 1 ? 's' : ''} analyzed
         </div>
         <div className="text-[12px] font-mono text-[var(--foreground-muted)]">
           <span className="font-semibold text-[var(--warning)]">{withChanges.length}</span> need changes
@@ -376,8 +409,33 @@ function RepairPageInner() {
           </div>
         )}
         {approvedRepairs.length > 0 && (
-          <div className="ml-auto text-[12px] font-mono text-[var(--foreground-muted)]">
+          <div className="text-[12px] font-mono text-[var(--foreground-muted)]">
             <span className="font-semibold text-foreground">{totalPatches}</span> patch{totalPatches !== 1 ? 'es' : ''} queued
+          </div>
+        )}
+        {totalConfirmedSkipped > 0 && (
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-[11px] font-mono text-[var(--foreground-subtle)]">
+              {totalConfirmedSkipped} confirmed-clean skipped
+            </span>
+            <button
+              type="button"
+              onClick={handleToggleForceAll}
+              className={`btn btn-ghost text-[11px] ${forceAll ? 'text-[var(--accent-primary)]' : ''}`}
+            >
+              {forceAll ? 'Showing all' : 'Force all'}
+            </button>
+          </div>
+        )}
+        {totalConfirmedSkipped === 0 && forceAll && (
+          <div className="ml-auto">
+            <button
+              type="button"
+              onClick={handleToggleForceAll}
+              className="btn btn-ghost text-[11px] text-[var(--accent-primary)]"
+            >
+              Showing all · Reset
+            </button>
           </div>
         )}
       </div>
@@ -388,6 +446,7 @@ function RepairPageInner() {
           {withChanges.map((analysis) => {
             const isSkipped = skipped.has(analysis.id);
             const inEdit = editMode[analysis.id] ?? false;
+            const isConfirming = confirmingIds.has(analysis.id);
             const approvedCount = analysis.changes.filter(
               (c) => !isSkipped && approvalState[analysis.id]?.[c.path] !== false
             ).length;
@@ -398,7 +457,17 @@ function RepairPageInner() {
                 <div className="flex flex-wrap items-start gap-3 border-b border-[var(--border)] px-4 py-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[13px] font-semibold text-foreground truncate">{analysis.title}</span>
+                      <Link
+                        href={`/scenarios/${analysis.id}`}
+                        className="text-[13px] font-semibold text-foreground hover:text-[var(--accent-primary)] transition-colors truncate"
+                      >
+                        {analysis.title}
+                      </Link>
+                      {analysis.confirmedClean && (
+                        <span className="rounded-full border border-[var(--success)]/30 bg-[var(--success)]/8 px-2 py-0.5 text-[9px] font-mono text-[var(--success)]">
+                          confirmed
+                        </span>
+                      )}
                       {analysis.bundle && <BundleBadge bundle={analysis.bundle} />}
                       {analysis.auditScore != null && <AuditScore score={analysis.auditScore} />}
                     </div>
@@ -438,7 +507,16 @@ function RepairPageInner() {
                       onClick={() => toggleSkip(analysis.id)}
                       className={`btn btn-ghost text-[11px] ${isSkipped ? 'text-[var(--warning)]' : ''}`}
                     >
-                      {isSkipped ? 'Unskip' : 'Skip all'}
+                      {isSkipped ? 'Unskip' : 'Skip'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleConfirm(analysis.id)}
+                      disabled={isConfirming}
+                      className="btn btn-ghost text-[11px] text-[var(--foreground-subtle)] hover:text-[var(--success)] disabled:opacity-50"
+                      title="Mark as confirmed clean — skips this scenario in future audits"
+                    >
+                      {isConfirming ? 'Confirming…' : 'Confirm'}
                     </button>
                   </div>
                 </div>
@@ -495,8 +573,18 @@ function RepairPageInner() {
                 )}
 
                 {isSkipped && (
-                  <div className="px-4 py-3 text-[12px] text-[var(--foreground-subtle)]">
-                    Skipped — {analysis.changes.length} change{analysis.changes.length !== 1 ? 's' : ''} will not be applied.
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <span className="text-[12px] text-[var(--foreground-subtle)]">
+                      Skipped — {analysis.changes.length} change{analysis.changes.length !== 1 ? 's' : ''} will not be applied.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleConfirm(analysis.id)}
+                      disabled={confirmingIds.has(analysis.id)}
+                      className="btn btn-ghost text-[11px] text-[var(--foreground-subtle)] hover:text-[var(--success)] disabled:opacity-50"
+                    >
+                      {confirmingIds.has(analysis.id) ? 'Confirming…' : 'Confirm as clean'}
+                    </button>
                   </div>
                 )}
 
@@ -546,6 +634,21 @@ function RepairPageInner() {
                   {a.title || a.id}
                 </Link>
                 {a.bundle && <BundleBadge bundle={a.bundle} />}
+                {!a.confirmedClean && (
+                  <button
+                    type="button"
+                    onClick={() => handleConfirm(a.id)}
+                    disabled={confirmingIds.has(a.id)}
+                    className="btn btn-ghost text-[10px] text-[var(--foreground-subtle)] hover:text-[var(--success)] disabled:opacity-50"
+                  >
+                    {confirmingIds.has(a.id) ? 'Confirming…' : 'Confirm'}
+                  </button>
+                )}
+                {a.confirmedClean && (
+                  <span className="rounded-full border border-[var(--success)]/30 bg-[var(--success)]/8 px-2 py-0.5 text-[9px] font-mono text-[var(--success)]">
+                    confirmed
+                  </span>
+                )}
               </div>
             ))}
           </div>

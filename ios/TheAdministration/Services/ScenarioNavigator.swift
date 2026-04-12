@@ -297,9 +297,58 @@ extension ScenarioNavigator {
     /// Filter by applicable_countries — skips scenarios restricted to other countries
     func filterByCountry(_ countryId: String) -> [Scenario] {
         scenarios.filter { scenario in
-            guard let ac = scenario.metadata?.applicableCountries, !ac.isEmpty else { return true }
-            return ac.contains(where: { $0.lowercased() == countryId.lowercased() })
+            let allowList = scenario.applicability?.applicableCountryIds ?? scenario.metadata?.applicableCountries
+            guard let allowList, !allowList.isEmpty else { return true }
+            return allowList.contains(where: { $0.lowercased() == countryId.lowercased() })
         }
+    }
+
+    func matchesApplicability(
+        _ scenario: Scenario,
+        country: Country?,
+        gameState: GameState
+    ) -> Bool {
+        if let countryId = country?.id {
+            let allowList = scenario.applicability?.applicableCountryIds ?? scenario.metadata?.applicableCountries
+            if let allowList, !allowList.isEmpty,
+               !allowList.contains(where: { $0.lowercased() == countryId.lowercased() }) {
+                return false
+            }
+        } else if (scenario.applicability?.applicableCountryIds?.isEmpty == false) || (scenario.metadata?.applicableCountries?.isEmpty == false) {
+            return false
+        }
+
+        let requirements = scenario.applicability?.requires ?? scenario.metadata?.requires
+        if let requirements, !passesRequirements(requirements, for: country, gameState: gameState) {
+            return false
+        }
+
+        let metricGates = scenario.applicability?.metricGates ?? []
+        if !metricGates.isEmpty {
+            if !metricGates.allSatisfy({ gate in
+                let metricValue = gameState.metrics[gate.metric] ?? 50.0
+                if let min = gate.min, metricValue < min { return false }
+                if let max = gate.max, metricValue > max { return false }
+                return true
+            }) {
+                return false
+            }
+        } else if let legacyConditions = scenario.conditions, !legacyConditions.isEmpty {
+            if !legacyConditions.allSatisfy({ condition in
+                let metricValue = gameState.metrics[condition.metricId] ?? 50.0
+                if let min = condition.min, metricValue < min { return false }
+                if let max = condition.max, metricValue > max { return false }
+                return true
+            }) {
+                return false
+            }
+        }
+
+        if !passesRelationshipEligibility(scenario, country: country, gameState: gameState) {
+            return false
+        }
+
+        return true
     }
 
     /// Filter by country profile tags (requires_tags / excludes_tags)
@@ -342,6 +391,10 @@ extension ScenarioNavigator {
             return 0
         }
 
+        if !matchesApplicability(scenario, country: country, gameState: gameState) {
+            return 0
+        }
+
         // Government category gating
         if let requiredCats = scenario.metadata?.requiredGovernmentCategories,
            !requiredCats.isEmpty,
@@ -354,11 +407,6 @@ extension ScenarioNavigator {
            !excludedCats.isEmpty,
            let govCat = geoProfile?.governmentCategory.rawValue,
            excludedCats.contains(govCat) {
-            return 0
-        }
-
-        // Structural preconditions (requires block)
-        if let req = scenario.metadata?.requires, !passesRequirements(req, for: country) {
             return 0
         }
 
@@ -434,9 +482,42 @@ extension ScenarioNavigator {
     func filterByRelationshipGates(_ scenarios: [Scenario], for country: Country?) -> [Scenario] {
         guard let geo = country?.geopoliticalProfile else { return scenarios }
         return scenarios.filter { scenario in
-            guard let gates = scenario.metadata?.relationshipGates, !gates.isEmpty else { return true }
+            guard let gates = scenario.applicability?.relationshipGates ?? scenario.metadata?.relationshipGates,
+                  !gates.isEmpty else { return true }
             return gates.allSatisfy { gate in passesRelationshipGate(gate, geo: geo) }
         }
+    }
+
+    private func passesRelationshipEligibility(
+        _ scenario: Scenario,
+        country: Country?,
+        gameState: GameState
+    ) -> Bool {
+        if let gates = scenario.applicability?.relationshipGates ?? scenario.metadata?.relationshipGates,
+           !gates.isEmpty {
+            guard let geo = country?.geopoliticalProfile else { return false }
+            if !gates.allSatisfy({ gate in passesRelationshipGate(gate, geo: geo) }) {
+                return false
+            }
+        }
+
+        if let legacyConditions = scenario.relationshipConditions, !legacyConditions.isEmpty {
+            guard let country else { return false }
+            for condition in legacyConditions {
+                guard let countryId = TemplateEngine.shared.resolveRelationshipToCountryId(
+                    condition.relationshipId,
+                    country: country,
+                    gameState: gameState
+                ) else {
+                    return false
+                }
+                let relationshipScore = gameState.countries.first(where: { $0.id == countryId })?.diplomacy.relationship ?? 0.0
+                if let min = condition.min, relationshipScore < min { return false }
+                if let max = condition.max, relationshipScore > max { return false }
+            }
+        }
+
+        return true
     }
 
     private func passesRelationshipGate(_ gate: RelationshipGate, geo: GeopoliticalProfile) -> Bool {
@@ -486,7 +567,7 @@ extension ScenarioNavigator {
         return regionTags.contains { normalizedRegionId($0) == countryRegion }
     }
 
-    private func passesRequirements(_ req: ScenarioRequirements, for country: Country?) -> Bool {
+    private func passesRequirements(_ req: ScenarioRequirements, for country: Country?, gameState: GameState) -> Bool {
         let geo = country?.geopoliticalProfile
         let tags = Set(geo?.tags ?? [])
         let powerTierOrder = ["small_state", "middle_power", "regional_power", "great_power", "superpower"]
@@ -551,6 +632,14 @@ extension ScenarioNavigator {
         if let needed = req.fragileState {
             let stability = country?.geopoliticalProfile?.regimeStability ?? 50
             if (stability < 35) != needed { return false }
+        }
+        if let needed = req.hasLegislature {
+            let hasLegislature = gameState.legislatureState != nil
+            if hasLegislature != needed { return false }
+        }
+        if let needed = req.hasOppositionParty {
+            let hasOpposition = gameState.legislatureState?.composition.contains { !$0.isRulingCoalition } ?? false
+            if hasOpposition != needed { return false }
         }
         return true
     }

@@ -64,7 +64,8 @@ export function combineEditorialReview(
       narrative.overallScore < 3.5 ||
       narrative.optionDifferentiation.score < 4 ||
       narrative.consequenceQuality.score < 3 ||
-      narrative.replayValue.score < 3
+      narrative.replayValue.score < 3 ||
+      (narrative.politicalRealism && narrative.politicalRealism.score < 3)
     ) {
       reasons.push(`narrative review failed: overall=${narrative.overallScore.toFixed(2)}`);
     }

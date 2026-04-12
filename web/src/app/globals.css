@@ -2,60 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================
-   THE ADMINISTRATION — Design System
-   Visual direction: Secure Executive Terminal
-   Reference: Situation Room × NORAD × Bloomberg Terminal
-   ============================================================ */
-
 :root {
-  /* --- Palette: near-pure black, iOS Executive alignment --- */
-  --background: #06080c;
-  --background-elevated: #0c0e13;
-  --background-panel: #1a191f;
-  --background-surface: #141720;
-  --background-muted: #1a191f;
+  --background: #000000;
+  --background-elevated: #0f0f0f;
+  --background-muted: #1a1a1a;
   --background-overlay: rgba(255, 255, 255, 0.02);
-
-  --foreground: #d4dae6;
-  --foreground-muted: #7a849a;
-  --foreground-subtle: #454d60;
-
-  --border: rgba(255, 255, 255, 0.10);
-  --border-strong: rgba(255, 255, 255, 0.16);
-
-  /* Presidential Gold — authority, primary actions — exact iOS #c49428 */
-  --accent-primary: #c49428;
-  /* Cyan — data readouts, intel, secondary actions */
-  --accent-secondary: #4ecdc4;
-  /* Steel — tertiary, decorative */
-  --accent-tertiary: #7c8db5;
-  --accent-muted: rgba(196, 148, 40, 0.10);
-
-  --success: #2ecc71;
-  --warning: #c49428;
-  --error: #e74c3c;
-  --info: #4ecdc4;
-
-  --grid-color: rgba(255, 255, 255, 0.025);
-  --surface-fill: rgba(255, 255, 255, 0.04);
-  --surface-fill-strong: rgba(255, 255, 255, 0.07);
-  --surface-fill-muted: rgba(255, 255, 255, 0.02);
-
-  /* --- Geometry: 6px matches iOS continuous curve --- */
-  --radius: 6px;
-  --radius-tight: 4px;
-  --radius-loose: 8px;
-
-  --interactive-hover: #d4a438;
-  --interactive-active: #a87822;
-  --focus-ring: #c49428;
-
-  /* --- Shadows: stronger blacks + iOS-aligned gold backlight --- */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6);
-  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 40px rgba(196, 148, 40, 0.04);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 80px rgba(196, 148, 40, 0.06);
-
+  --foreground: #ffffff;
+  --foreground-muted: #b3b3b3;
+  --foreground-subtle: #808080;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --accent-primary: #1969dc;
+  --accent-secondary: #d4aa2c;
+  --accent-tertiary: #4c8eeb;
+  --accent-muted: rgba(25, 105, 220, 0.15);
+  --success: #0fdf9c;
+  --warning: #ff9519;
+  --error: #fe473c;
+  --info: #199cff;
+  --grid-color: rgba(255, 255, 255, 0.045);
+  --surface-fill: rgba(255, 255, 255, 0.03);
+  --surface-fill-strong: rgba(255, 255, 255, 0.045);
+  --surface-fill-muted: rgba(255, 255, 255, 0.018);
+  --radius: 10px;
+  --radius-tight: 8px;
+  --radius-loose: 14px;
+  --interactive-hover: #4c8eeb;
+  --interactive-active: #1457b5;
+  --focus-ring: #1969dc;
+  --shadow-sm: 0 0 0 rgba(0, 0, 0, 0);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --shadow-lg: 0 16px 42px rgba(0, 0, 0, 0.24);
   --rail-width: 240px;
 }
 
@@ -70,16 +47,9 @@ html {
 body {
   color: var(--foreground);
   background-color: var(--background);
-  background-image:
-    radial-gradient(ellipse at 10% 40%, rgba(78, 205, 196, 0.018) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 25%, rgba(196, 149, 42, 0.012) 0%, transparent 55%);
-  background-attachment: fixed;
   font-size: 14px;
-  line-height: 1.6;
-  font-family: var(--font-sans, 'Space Grotesk'), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -95,32 +65,9 @@ textarea {
 }
 
 ::selection {
-  background: rgba(196, 149, 42, 0.28);
+  background: rgba(25, 105, 220, 0.28);
   color: var(--foreground);
 }
-
-/* --- Scrollbar --- */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(130, 155, 200, 0.1);
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(130, 155, 200, 0.2);
-}
-
-/* ============================================================
-   SURFACES & PANELS
-   ============================================================ */
 
 .tech-border,
 .tech-card,
@@ -130,75 +77,60 @@ textarea {
   border-radius: var(--radius);
 }
 
-/* Card */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-muted);
+}
+
 .tech-card {
-  background: var(--background-surface);
+  background: var(--surface-fill);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .tech-card:hover {
+  background: rgba(255, 255, 255, 0.04);
   border-color: var(--border-strong);
-  box-shadow: var(--shadow-md), 0 0 24px rgba(196, 149, 42, 0.03);
 }
 
-/* Command Panel — with HUD corner brackets */
 .command-panel {
-  background: var(--background-surface);
+  background: var(--surface-fill);
   border: 1px solid var(--border);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-}
-
-.command-panel::before,
-.command-panel::after {
-  content: '';
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.command-panel::before {
-  top: 0;
-  left: 0;
-  border-top: 1px solid var(--accent-primary);
-  border-left: 1px solid var(--accent-primary);
-  opacity: 0.45;
-}
-
-.command-panel::after {
-  bottom: 0;
-  right: 0;
-  border-bottom: 1px solid var(--accent-primary);
-  border-right: 1px solid var(--accent-primary);
-  opacity: 0.45;
 }
 
 .command-panel-muted {
   background: var(--surface-fill-muted);
 }
 
-/* Tech border */
 .tech-border {
-  background: var(--background-surface);
+  background: var(--surface-fill);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.2s ease;
 }
 
 .tech-border:hover {
   border-color: var(--border-strong);
 }
 
-/* Gold gradient strip */
 .surface-strip {
-  background: linear-gradient(90deg, rgba(196, 149, 42, 0.12), rgba(196, 149, 42, 0));
+  background: linear-gradient(90deg, rgba(25, 105, 220, 0.18), rgba(25, 105, 220, 0));
 }
 
-/* Left accent rule */
 .surface-rule {
   position: relative;
 }
@@ -208,68 +140,75 @@ textarea {
   position: absolute;
   inset: 0 auto 0 0;
   width: 2px;
-  background: var(--accent-primary);
+  background: var(--accent-secondary);
 }
 
-/* Control surface */
-.control-surface {
-  background: var(--background-elevated);
-  border: 1px solid var(--border);
-  box-shadow: none;
-}
-
-/* ============================================================
-   TYPOGRAPHY
-   ============================================================ */
-
-/* Classification-stamp kicker with gold bar prefix */
 .section-kicker {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--foreground-subtle);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.section-kicker::before {
-  content: '';
-  display: inline-block;
-  width: 2px;
-  height: 10px;
-  background: var(--accent-primary);
-  border-radius: 1px;
-  flex-shrink: 0;
-}
-
-.section-kicker-sm {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--foreground-subtle);
 }
 
 .screen-title {
-  font-size: clamp(1.5rem, 1.8vw, 2rem);
-  line-height: 1.1;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: clamp(1.6rem, 1.8vw, 2.1rem);
+  line-height: 1;
+  font-weight: 760;
+  letter-spacing: -0.03em;
 }
 
 .page-title {
-  font-size: clamp(1.15rem, 1.35vw, 1.5rem);
-  line-height: 1.1;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: clamp(1.2rem, 1.35vw, 1.6rem);
+  line-height: 1;
+  font-weight: 680;
+  letter-spacing: -0.02em;
 }
 
 .data-value {
-  font-family: var(--font-mono, 'JetBrains Mono'), ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-weight: 700;
+}
+
+.control-surface {
+  background: var(--surface-fill-muted);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 105, 220, 0.3);
+  border-color: var(--focus-ring);
+}
+
+.subtle-scroll {
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-secondary);
+  display: inline-block;
+  flex-shrink: 0;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.app-progress {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.app-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--accent-primary);
+  transition: width 180ms ease-out;
 }
 
 .panel-header {
@@ -277,161 +216,66 @@ textarea {
 }
 
 .panel-title {
-  font-size: 14px;
-  line-height: 1.3;
-  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 600;
   color: var(--foreground);
 }
 
 .panel-subtitle {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--foreground-muted);
 }
 
-/* iOS-aligned micro label — monospaced, uppercase, 9px */
-.label-micro {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--foreground-subtle);
-  font-family: var(--font-mono, 'JetBrains Mono'), ui-monospace, monospace;
-}
-
-/* Elevation tier surfaces */
-.card-elevated {
-  background: var(--background-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-.card-panel {
-  background: var(--background-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-/* iOS-style left-bar row status indicators */
-.status-bar-active   { box-shadow: inset 3px 0 0 var(--success); }
-.status-bar-inactive { box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.08); }
-.status-bar-running  { box-shadow: inset 3px 0 0 var(--accent-primary); }
-.status-bar-error    { box-shadow: inset 3px 0 0 var(--error); }
-
-/* ============================================================
-   INTERACTIVE ELEMENTS
-   ============================================================ */
-
-.focus-ring {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(196, 149, 42, 0.25), 0 0 12px rgba(196, 149, 42, 0.08);
-  border-color: var(--accent-primary);
-}
-
-.subtle-scroll {
-  scrollbar-color: var(--border-strong) transparent;
-}
-
-/* Status diamond — rotated square, not a circle */
-.status-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--accent-primary);
-  display: inline-block;
-  flex-shrink: 0;
-  transform: rotate(45deg);
-  animation: pulse-dot 2.5s ease-in-out infinite;
-}
-
-/* Segmented progress bar — threat-level indicator */
-.app-progress {
-  height: 3px;
-  overflow: hidden;
-  border-radius: 0;
-  border: none;
-  background: var(--surface-fill-strong);
-}
-
-.app-progress > span {
-  display: block;
-  height: 100%;
-  background: repeating-linear-gradient(
-    90deg,
-    var(--accent-primary) 0px,
-    var(--accent-primary) 6px,
-    transparent 6px,
-    transparent 8px
-  );
-  border-radius: 0;
-  transition: width 300ms ease-out;
-}
-
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
+  50% { opacity: 0.3; }
 }
-
-/* ============================================================
-   BUTTONS — military command aesthetic
-   ============================================================ */
 
 @layer components {
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.375rem;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    gap: 0.5rem;
+    font-size: 12px;
+    font-family: var(--font-mono, monospace);
     text-transform: uppercase;
-    padding: 7px 14px;
+    letter-spacing: 0.16em;
+    padding: 0.5rem 0.75rem;
     border-radius: var(--radius-tight);
-    transition: all 0.2s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     cursor: pointer;
-    border: 1px solid transparent;
+    border: 1px solid var(--border);
     white-space: nowrap;
-    font-family: var(--font-sans, inherit);
   }
 
-  /* Primary — presidential gold with dimension */
   .btn-command {
-    background: linear-gradient(180deg, #d4a53a 0%, #b08025 100%);
-    color: #06080c;
-    border-color: #c4952a;
-    box-shadow: 0 1px 4px rgba(196, 149, 42, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    background: var(--accent-primary);
+    color: var(--foreground);
+    border-color: var(--accent-primary);
   }
 
   .btn-command:hover {
-    background: linear-gradient(180deg, #e0b040 0%, #c4952a 100%);
-    box-shadow: 0 2px 12px rgba(196, 149, 42, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    background: var(--interactive-hover);
+    border-color: var(--interactive-hover);
   }
 
-  .btn-command:active {
-    background: linear-gradient(180deg, #b08025 0%, #946a1e 100%);
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Secondary — cyan intel action */
   .btn-tactical {
-    background: rgba(78, 205, 196, 0.06);
+    background: transparent;
     color: var(--accent-secondary);
-    border-color: rgba(78, 205, 196, 0.22);
+    border-color: rgba(212, 170, 44, 0.5);
   }
 
   .btn-tactical:hover {
-    background: rgba(78, 205, 196, 0.12);
-    border-color: rgba(78, 205, 196, 0.38);
-    box-shadow: 0 0 16px rgba(78, 205, 196, 0.08);
+    background: rgba(212, 170, 44, 0.12);
     color: var(--foreground);
   }
 
-  /* Ghost */
   .btn-ghost {
-    background: transparent;
+    background: var(--surface-fill-muted);
     color: var(--foreground-muted);
     border-color: var(--border);
   }
@@ -442,29 +286,23 @@ textarea {
     border-color: var(--border-strong);
   }
 
-  /* Destructive — crimson alert */
   .btn-destructive {
     background: transparent;
     color: var(--error);
-    border-color: rgba(231, 76, 60, 0.25);
+    border-color: rgba(254, 71, 60, 0.35);
   }
 
   .btn-destructive:hover {
-    background: rgba(231, 76, 60, 0.08);
-    border-color: rgba(231, 76, 60, 0.45);
-    box-shadow: 0 0 16px rgba(231, 76, 60, 0.08);
+    background: rgba(254, 71, 60, 0.08);
   }
 
-  /* Input */
   .input-shell {
     width: 100%;
-    background: var(--background-elevated);
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border);
     color: var(--foreground);
     border-radius: var(--radius-tight);
-    padding: 7px 12px;
-    font-size: 13px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    padding: 0.5rem 0.75rem;
   }
 
   .input-shell::placeholder {
@@ -473,14 +311,10 @@ textarea {
 
   .input-shell:focus {
     outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px rgba(196, 149, 42, 0.12), 0 0 16px rgba(196, 149, 42, 0.05);
+    box-shadow: 0 0 0 2px rgba(25, 105, 220, 0.25);
+    border-color: var(--focus-ring);
   }
 }
-
-/* ============================================================
-   TABLES — intelligence briefing density
-   ============================================================ */
 
 .table-dense {
   width: 100%;
@@ -489,12 +323,13 @@ textarea {
 
 .table-dense thead th {
   height: 32px;
-  padding: 0 14px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  padding: 0 12px;
+  font-size: 9px;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--foreground-subtle);
+  font-weight: 600;
   white-space: nowrap;
   text-align: left;
   border-bottom: 1px solid var(--border-strong);
@@ -503,8 +338,8 @@ textarea {
 }
 
 .table-dense tbody td {
-  padding: 0 14px;
-  height: 40px;
+  padding: 0 12px;
+  height: 36px;
   vertical-align: middle;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
@@ -518,35 +353,35 @@ textarea {
 }
 
 .table-dense tbody tr {
-  transition: background-color 0.1s ease, box-shadow 0.1s ease;
+  transition: background-color 0.1s ease;
 }
 
-.table-dense tbody tr:hover {
-  background: var(--surface-fill);
+.section-kicker-sm {
+  font-size: 9px;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--foreground-subtle);
 }
 
 .table-dense td.cell-tight {
   padding: 0 8px;
 }
 
-/* ============================================================
-   FILTER PILLS — angular intel tags
-   ============================================================ */
-
 .filter-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
+  min-height: 28px;
   padding: 0 10px;
-  border-radius: var(--radius-tight);
+  border-radius: 8px;
   border: 1px solid var(--border);
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   text-transform: uppercase;
+  letter-spacing: 0.18em;
   color: var(--foreground-muted);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
   white-space: nowrap;
   background: transparent;
 }
@@ -554,61 +389,10 @@ textarea {
 .filter-pill:hover {
   border-color: var(--border-strong);
   color: var(--foreground);
-  background: var(--surface-fill);
 }
 
 .filter-pill.active {
   border-color: var(--accent-primary);
-  background: var(--accent-muted);
-  color: var(--accent-primary);
-  box-shadow: 0 0 0 1px rgba(196, 148, 40, 0.15);
-}
-
-/* ============================================================
-   UTILITY: Gold viewport stripe
-   ============================================================ */
-
-.viewport-stripe {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent-primary), rgba(196, 149, 42, 0.3));
-  z-index: 60;
-  pointer-events: none;
-}
-
-/* ============================================================
-   UTILITY: HUD corner brackets (opt-in)
-   ============================================================ */
-
-.hud-corners {
-  position: relative;
-}
-
-.hud-corners::before,
-.hud-corners::after {
-  content: '';
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.hud-corners::before {
-  top: 0;
-  left: 0;
-  border-top: 1px solid var(--accent-primary);
-  border-left: 1px solid var(--accent-primary);
-  opacity: 0.35;
-}
-
-.hud-corners::after {
-  bottom: 0;
-  right: 0;
-  border-bottom: 1px solid var(--accent-primary);
-  border-right: 1px solid var(--accent-primary);
-  opacity: 0.35;
+  background: rgba(25, 105, 220, 0.12);
+  color: var(--foreground);
 }

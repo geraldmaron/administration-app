@@ -48,15 +48,20 @@ export function defaultOr(envVar: string | undefined, openRouterDefault: string,
  * OpenRouter defaults: cost/quality tuned stack.
  *
  * Phase assignments (2026-04):
- *   - Architect / Concept / Blueprint / NarrativeReview: gemini-2.5-flash — creative prose + consistent scoring
- *   - Drafter (effects JSON): gemini-2.5-flash — replaced qwen3.6-plus which was returning 0-token responses
- *   - Advisor (short role feedback): gemini-2.0-flash-001 — 20× cheaper than flash, task is 1-2 sentences
- *   - Repair (JSON surgery): gemini-2.5-flash — stronger fix application reduces re-generation churn
- *   - ContentQuality (rubric scoring): gemini-2.5-flash — unified with NarrativeReview for consistent calibration
+ *   - Architect / Concept / Blueprint: gemini-2.5-flash — creative prose, best coherence-per-dollar at this tier
+ *   - Drafter (effects JSON): gpt-4.1-mini — highest structured-JSON compliance among budget models; fewer parse
+ *     errors → fewer 3× retry cycles, making it cheaper in practice than flash despite comparable per-token cost
+ *   - Advisor (short role feedback): gemini-2.0-flash-001 — task is 1-2 sentences; flash is overkill here
+ *   - Repair (JSON surgery): gpt-4.1-mini — surgical fix application on structured data; same rationale as drafter
+ *   - ContentQuality / NarrativeReview (rubric scoring): gemini-2.0-flash-001 — eval-only, no creativity needed;
+ *     33% cheaper than flash, output is a structured score + comment not free prose
+ *   - NarrativeReview: gemini-2.5-flash — needs deeper narrative comprehension than a numeric rubric check
  * OR_HAIKU retained for ActionResolution / PartialRegen where reasoning depth still matters.
  */
 const OR_FAST = 'google/gemini-2.5-flash';
 const OR_ADVISOR = 'google/gemini-2.0-flash-001';
+const OR_EVAL = 'google/gemini-2.0-flash-001';
+const OR_JSON = 'openai/gpt-4.1-mini';
 const OR_HAIKU = 'anthropic/claude-haiku-4.5';
 const OR_GAIA = 'google/gemini-2.5-pro';
 
@@ -69,7 +74,7 @@ export function getDefaultArchitectModel(): string {
 }
 
 export function getDefaultDrafterModel(): string {
-  return defaultOr(process.env.DRAFTER_MODEL, OR_FAST, 'gpt-4.1');
+  return defaultOr(process.env.DRAFTER_MODEL, OR_JSON, 'gpt-4.1-mini');
 }
 
 export function getDefaultAdvisorModel(): string {
@@ -77,11 +82,11 @@ export function getDefaultAdvisorModel(): string {
 }
 
 export function getDefaultRepairModel(): string {
-  return defaultOr(process.env.REPAIR_MODEL, OR_FAST, 'gpt-4.1-mini');
+  return defaultOr(process.env.REPAIR_MODEL, OR_JSON, 'gpt-4.1-mini');
 }
 
 export function getDefaultContentQualityModel(): string {
-  return defaultOr(process.env.CONTENT_QUALITY_MODEL, OR_FAST, 'gpt-4.1-mini');
+  return defaultOr(process.env.CONTENT_QUALITY_MODEL, OR_EVAL, 'gpt-4.1-mini');
 }
 
 export function getDefaultNarrativeReviewModel(): string {
@@ -329,10 +334,10 @@ export function resolvePhaseModel(
 export function buildCloudFullSendModelConfig(): GenerationModelConfig {
   return {
     architectModel: defaultOr(process.env.FULL_SEND_ARCHITECT_MODEL, OR_FAST, 'gpt-4.1-mini'),
-    drafterModel: defaultOr(process.env.FULL_SEND_DRAFTER_MODEL, OR_FAST, 'gpt-4.1'),
+    drafterModel: defaultOr(process.env.FULL_SEND_DRAFTER_MODEL, OR_JSON, 'gpt-4.1-mini'),
     advisorModel: defaultOr(process.env.FULL_SEND_ADVISOR_MODEL, OR_ADVISOR, 'gpt-4.1-mini'),
-    repairModel: defaultOr(process.env.FULL_SEND_REPAIR_MODEL, OR_FAST, 'gpt-4.1-mini'),
-    contentQualityModel: defaultOr(process.env.FULL_SEND_CONTENT_QUALITY_MODEL, OR_FAST, 'gpt-4.1-mini'),
+    repairModel: defaultOr(process.env.FULL_SEND_REPAIR_MODEL, OR_JSON, 'gpt-4.1-mini'),
+    contentQualityModel: defaultOr(process.env.FULL_SEND_CONTENT_QUALITY_MODEL, OR_EVAL, 'gpt-4.1-mini'),
     narrativeReviewModel: defaultOr(process.env.FULL_SEND_NARRATIVE_REVIEW_MODEL, OR_FAST, 'gpt-4.1-mini'),
     embeddingModel: defaultOr(process.env.FULL_SEND_EMBEDDING_MODEL, 'openai/text-embedding-3-small', 'text-embedding-3-small'),
   };

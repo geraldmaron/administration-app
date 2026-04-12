@@ -172,6 +172,8 @@ export interface ScenarioMetadata {
 export interface RepairMetadata {
   lastRepairedAt: string;
   repairCount: number;
+  confirmedClean?: boolean;
+  confirmedAt?: string;
 }
 
 export type { FieldChange, RepairAnalysis, ApprovedRepair } from '@shared/scenario-repair';

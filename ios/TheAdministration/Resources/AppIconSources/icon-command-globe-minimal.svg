@@ -7,12 +7,13 @@
   <path d="M240 512H784" stroke="rgba(196,148,40,0.12)" stroke-width="2"/>
   <path d="M512 240V784" stroke="rgba(196,148,40,0.10)" stroke-width="2"/>
 
-  <path d="M402 694L438 404H586L622 694" stroke="url(#mark)" stroke-width="36" stroke-linecap="square" stroke-linejoin="round"/>
-  <path d="M462 404L512 308L562 404" stroke="url(#mark)" stroke-width="36" stroke-linecap="square" stroke-linejoin="round"/>
-  <rect x="474" y="436" width="76" height="192" rx="32" fill="url(#core)"/>
-  <rect x="420" y="722" width="184" height="28" rx="14" fill="#B88718"/>
+  <!-- A: pen-nib apex, missile silhouette, resolute weight -->
+  <path d="M390 710L436 396H588L634 710" stroke="url(#mark)" stroke-width="50" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M476 396L512 282L548 396" stroke="url(#mark)" stroke-width="50" stroke-linecap="square" stroke-linejoin="miter"/>
+  <rect x="466" y="432" width="92" height="166" rx="8" fill="url(#core)"/>
+  <rect x="414" y="720" width="196" height="30" rx="4" fill="#B88718"/>
 
-  <path d="M320 780H704" stroke="url(#base)" stroke-width="12" stroke-linecap="square"/>
+  <path d="M308 784H716" stroke="url(#base)" stroke-width="14" stroke-linecap="square"/>
 
   <path d="M176 232H236V172" stroke="rgba(196,148,40,0.36)" stroke-width="8" stroke-linecap="square"/>
   <path d="M848 172H788V232" stroke="rgba(196,148,40,0.36)" stroke-width="8" stroke-linecap="square"/>
@@ -25,16 +26,16 @@
       <stop offset="0.56" stop-color="#C49428"/>
       <stop offset="1" stop-color="#8B6313"/>
     </linearGradient>
-    <linearGradient id="mark" x1="420" y1="316" x2="612" y2="706" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#E9D8A7"/>
-      <stop offset="0.55" stop-color="#C49428"/>
-      <stop offset="1" stop-color="#8A6214"/>
+    <linearGradient id="mark" x1="420" y1="286" x2="608" y2="714" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EDE0B3"/>
+      <stop offset="0.45" stop-color="#C49428"/>
+      <stop offset="1" stop-color="#7A5612"/>
     </linearGradient>
-    <linearGradient id="core" x1="512" y1="436" x2="512" y2="628" gradientUnits="userSpaceOnUse">
+    <linearGradient id="core" x1="512" y1="432" x2="512" y2="598" gradientUnits="userSpaceOnUse">
       <stop stop-color="#F4E8CA"/>
       <stop offset="1" stop-color="#C49428"/>
     </linearGradient>
-    <linearGradient id="base" x1="320" y1="780" x2="704" y2="780" gradientUnits="userSpaceOnUse">
+    <linearGradient id="base" x1="308" y1="784" x2="716" y2="784" gradientUnits="userSpaceOnUse">
       <stop stop-color="#735311"/>
       <stop offset="0.5" stop-color="#C49428"/>
       <stop offset="1" stop-color="#735311"/>

@@ -70,6 +70,8 @@ export const TOKEN_CATEGORIES = {
 
   security: [
     'intelligence_agency',
+    'domestic_intelligence',
+    'security_council',
     'police_force',
   ] as const,
 
@@ -120,6 +122,8 @@ export const TOKEN_CATEGORIES = {
     'the_press_role',
     'the_prosecutor_role',
     'the_intelligence_agency',
+    'the_domestic_intelligence',
+    'the_security_council',
     'the_police_force',
     'the_central_bank',
     'the_judicial_role',

@@ -3,7 +3,8 @@
  *
  * LLM-powered editorial review for generated scenarios. Evaluates narrative
  * quality dimensions beyond mechanical grammar/tone — engagement, strategic
- * depth, option differentiation, consequence realism, and replay value.
+ * depth, option differentiation, consequence realism, replay value, and
+ * political realism.
  *
  * Runs as a pipeline step after audit + content quality gate.
  * Model: configurable (defaults to the phase model for narrativeReview).
@@ -24,6 +25,7 @@ export interface NarrativeReviewResult {
   optionDifferentiation: NarrativeQualityDimension;
   consequenceQuality: NarrativeQualityDimension;
   replayValue: NarrativeQualityDimension;
+  politicalRealism: NarrativeQualityDimension;
   overallScore: number;
   editorialNotes: string[];
 }
@@ -34,6 +36,7 @@ interface NarrativeReviewLLMResponse {
   option_differentiation: { score: number; reasoning: string };
   consequence_quality: { score: number; reasoning: string };
   replay_value: { score: number; reasoning: string };
+  political_realism: { score: number; reasoning: string };
   editorial_notes: string[];
 }
 
@@ -80,13 +83,21 @@ const NARRATIVE_REVIEW_SCHEMA = {
       },
       required: ['score', 'reasoning'],
     },
+    political_realism: {
+      type: 'object',
+      properties: {
+        score: { type: 'integer', minimum: 1, maximum: 5, description: '1=options are things no real government would do or consequences don\'t follow from the described actions, 5=all options are plausible state actions grounded in how ministries, courts, and cabinets actually operate' },
+        reasoning: { type: 'string', description: 'Are the options things a real government could implement through normal institutional channels? Do the metric consequences follow logically from the mechanisms described in the option text?' },
+      },
+      required: ['score', 'reasoning'],
+    },
     editorial_notes: {
       type: 'array',
       items: { type: 'string' },
       description: 'Specific actionable suggestions to improve the scenario narrative quality. Empty array if none.',
     },
   },
-  required: ['engagement', 'strategic_depth', 'option_differentiation', 'consequence_quality', 'replay_value', 'editorial_notes'],
+  required: ['engagement', 'strategic_depth', 'option_differentiation', 'consequence_quality', 'replay_value', 'political_realism', 'editorial_notes'],
 };
 
 function buildNarrativeReviewPrompt(scenario: BundleScenario): string {
@@ -106,7 +117,7 @@ function buildNarrativeReviewPrompt(scenario: BundleScenario): string {
 
 Players face scenarios and choose from 3 options, each with real metric consequences. Good scenarios create genuine dilemmas where reasonable players disagree on the best path.
 
-Evaluate this scenario on five narrative quality dimensions. Content uses {token} placeholders that resolve to country-specific values at runtime — treat these as proper nouns.
+Evaluate this scenario on six narrative quality dimensions. Content uses {token} placeholders that resolve to country-specific values at runtime — treat these as proper nouns.
 
 WHAT MAKES A GREAT SCENARIO:
 - The dilemma is SPECIFIC (not "economy is struggling" but "a major employer is threatening to relocate unless given tax breaks that would gut the education budget")
@@ -114,6 +125,7 @@ WHAT MAKES A GREAT SCENARIO:
 - Outcomes have SECOND-ORDER EFFECTS that players didn't fully anticipate
 - Reasonable players with different values (liberty vs security, growth vs equality) would genuinely disagree
 - The scenario teaches something about real governance tradeoffs
+- Institutionally grounded: options represent things real ministries, courts, and cabinets actually do — procurement decisions, emergency decrees, coalition negotiations, regulatory actions, criminal investigations
 
 WHAT MAKES A BAD SCENARIO:
 - Generic: could apply to any country at any time without specificity
@@ -121,6 +133,7 @@ WHAT MAKES A BAD SCENARIO:
 - Options are just "do nothing / do a little / do a lot"
 - Outcomes are vague platitudes instead of concrete consequences
 - No emotional stakes — the player doesn't care what happens
+- Unrealistic: options include things governments cannot actually do (resolve a crisis with a speech alone, pass major legislation overnight without any political cost) or metric consequences that don't follow from the mechanism described in the option text
 
 Scenario:
 Title: ${scenario.title}
@@ -156,6 +169,7 @@ export async function evaluateNarrativeQuality(
       optionDifferentiation: { score: 3, reasoning: 'Review unavailable' },
       consequenceQuality: { score: 3, reasoning: 'Review unavailable' },
       replayValue: { score: 3, reasoning: 'Review unavailable' },
+      politicalRealism: { score: 3, reasoning: 'Review unavailable' },
       overallScore: 3,
       editorialNotes: [],
     };
@@ -170,10 +184,12 @@ export async function evaluateNarrativeQuality(
   const optionDifferentiation: NarrativeQualityDimension = { score: clamp(r.option_differentiation?.score), reasoning: r.option_differentiation?.reasoning ?? '' };
   const consequenceQuality: NarrativeQualityDimension = { score: clamp(r.consequence_quality?.score), reasoning: r.consequence_quality?.reasoning ?? '' };
   const replayValue: NarrativeQualityDimension = { score: clamp(r.replay_value?.score), reasoning: r.replay_value?.reasoning ?? '' };
+  const politicalRealism: NarrativeQualityDimension = { score: clamp(r.political_realism?.score), reasoning: r.political_realism?.reasoning ?? '' };
 
-  const overallScore = (engagement.score + strategicDepth.score + optionDifferentiation.score + consequenceQuality.score + replayValue.score) / 5;
+  const allDimensions = [engagement, strategicDepth, optionDifferentiation, consequenceQuality, replayValue, politicalRealism];
+  const overallScore = allDimensions.reduce((sum, d) => sum + d.score, 0) / allDimensions.length;
 
-  const hardFail = [engagement, strategicDepth, optionDifferentiation, consequenceQuality, replayValue].some(d => d.score < 2);
+  const hardFail = allDimensions.some(d => d.score < 2) || overallScore < 2.5;
 
   return {
     pass: !hardFail,
@@ -182,6 +198,7 @@ export async function evaluateNarrativeQuality(
     optionDifferentiation,
     consequenceQuality,
     replayValue,
+    politicalRealism,
     overallScore,
     editorialNotes: r.editorial_notes ?? [],
   };

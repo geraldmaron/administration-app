@@ -458,6 +458,48 @@ struct ScenarioCondition: Codable {
     let max: Double?
 }
 
+struct MetricGate: Codable {
+    let metric: String
+    let min: Double?
+    let max: Double?
+
+    init(metric: String, min: Double?, max: Double?) {
+        self.metric = metric
+        self.min = min
+        self.max = max
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let metric = try container.decodeIfPresent(String.self, forKey: .metric) {
+            self.metric = metric
+        } else if let metricId = try container.decodeIfPresent(String.self, forKey: .metricId) {
+            self.metric = metricId
+        } else if let metricId = try container.decodeIfPresent(String.self, forKey: .metricIdSnake) {
+            self.metric = metricId
+        } else {
+            throw DecodingError.keyNotFound(CodingKeys.metric, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "MetricGate requires a metric field"))
+        }
+        self.min = try container.decodeIfPresent(Double.self, forKey: .min)
+        self.max = try container.decodeIfPresent(Double.self, forKey: .max)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(metric, forKey: .metric)
+        try container.encodeIfPresent(min, forKey: .min)
+        try container.encodeIfPresent(max, forKey: .max)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case metric
+        case metricId
+        case metricIdSnake = "metric_id"
+        case min
+        case max
+    }
+}
+
 struct RelationshipCondition: Codable {
     let relationshipId: String
     let min: Double?
@@ -474,6 +516,99 @@ struct RelationshipGate: Codable {
     let kind: String
     let state: String
     let targetId: String?
+
+    init(kind: String, state: String = "any", targetId: String? = nil) {
+        self.kind = kind
+        self.state = state
+        self.targetId = targetId
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try container.decode(String.self, forKey: .kind)
+        state = try container.decodeIfPresent(String.self, forKey: .state) ?? "any"
+        if let explicitTargetId = try container.decodeIfPresent(String.self, forKey: .targetId) {
+            targetId = explicitTargetId
+        } else if let countryTargetId = try container.decodeIfPresent(String.self, forKey: .countryId) {
+            targetId = countryTargetId
+        } else {
+            targetId = try container.decodeIfPresent(String.self, forKey: .targetIdSnake)
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(kind, forKey: .kind)
+        if state != "any" {
+            try container.encode(state, forKey: .state)
+        }
+        try container.encodeIfPresent(targetId, forKey: .countryId)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case kind
+        case state
+        case targetId
+        case targetIdSnake = "target_id"
+        case countryId = "country_id"
+    }
+}
+
+struct ScenarioApplicability: Codable {
+    let archetypes: [String]?
+    let requires: ScenarioRequirements?
+    let metricGates: [MetricGate]
+    let relationshipGates: [RelationshipGate]?
+    let applicableCountryIds: [String]?
+
+    init(
+        archetypes: [String]? = nil,
+        requires: ScenarioRequirements? = nil,
+        metricGates: [MetricGate] = [],
+        relationshipGates: [RelationshipGate]? = nil,
+        applicableCountryIds: [String]? = nil
+    ) {
+        self.archetypes = archetypes
+        self.requires = requires
+        self.metricGates = metricGates
+        self.relationshipGates = relationshipGates
+        self.applicableCountryIds = applicableCountryIds
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case archetypes
+        case requires
+        case metricGates = "metric_gates"
+        case metricGatesCamel = "metricGates"
+        case relationshipGates = "relationship_gates"
+        case relationshipGatesCamel = "relationshipGates"
+        case applicableCountryIds = "applicable_country_ids"
+        case applicableCountryIdsCamel = "applicableCountryIds"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        archetypes = try container.decodeIfPresent([String].self, forKey: .archetypes)
+        requires = try container.decodeIfPresent(ScenarioRequirements.self, forKey: .requires)
+        metricGates = try container.decodeIfPresent([MetricGate].self, forKey: .metricGates)
+            ?? container.decodeIfPresent([MetricGate].self, forKey: .metricGatesCamel)
+            ?? []
+        relationshipGates = try container.decodeIfPresent([RelationshipGate].self, forKey: .relationshipGates)
+            ?? container.decodeIfPresent([RelationshipGate].self, forKey: .relationshipGatesCamel)
+        applicableCountryIds = try container.decodeIfPresent([String].self, forKey: .applicableCountryIds)
+            ?? container.decodeIfPresent([String].self, forKey: .applicableCountryIdsCamel)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(archetypes, forKey: .archetypes)
+        try container.encodeIfPresent(requires, forKey: .requires)
+        if !metricGates.isEmpty {
+            try container.encode(metricGates, forKey: .metricGates)
+        }
+        try container.encodeIfPresent(relationshipGates, forKey: .relationshipGates)
+        try container.encodeIfPresent(applicableCountryIds, forKey: .applicableCountryIds)
+    }
 }
 
 struct ScenarioRequirements: Codable {
@@ -634,6 +769,7 @@ struct Scenario: Identifiable, Codable {
     let id: String
     let title: String
     let description: String
+    let applicability: ScenarioApplicability?
     let conditions: [ScenarioCondition]?
     let relationshipConditions: [RelationshipCondition]?
     let phase: String?
@@ -664,6 +800,7 @@ struct Scenario: Identifiable, Codable {
 
     init(
         id: String, title: String, description: String,
+        applicability: ScenarioApplicability? = nil,
         conditions: [ScenarioCondition]? = nil, relationshipConditions: [RelationshipCondition]? = nil, phase: String? = nil,
         actIndex: Int? = nil,
         severity: SeverityLevel? = nil, chainId: String? = nil,
@@ -681,6 +818,7 @@ struct Scenario: Identifiable, Codable {
         dynamicProfile: ScenarioDynamicProfile? = nil
     ) {
         self.id = id; self.title = title; self.description = description
+        self.applicability = applicability
         self.conditions = conditions; self.relationshipConditions = relationshipConditions; self.phase = phase; self.actIndex = actIndex; self.severity = severity
         self.chainId = chainId; self.options = options; self.chainsTo = chainsTo
         self.actor = actor; self.location = location; self.tags = tags
@@ -695,7 +833,7 @@ struct Scenario: Identifiable, Codable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, title, description, conditions, phase
+        case id, title, description, applicability, conditions, phase
         case actIndex = "act_index"
         case severity
         case relationshipConditions = "relationship_conditions"
@@ -2080,6 +2218,59 @@ struct CountryGameplayProfile: Codable {
         case neighborEventChance = "neighbor_event_chance"
         case metricSensitivities = "metric_sensitivities"
         case crisisProbabilities = "crisis_probabilities"
+    }
+
+    private enum AliasCodingKeys: String, CodingKey {
+        case startingMetrics
+        case metricEquilibria
+        case bundleWeightOverrides
+        case priorityTags
+        case suppressedTags
+        case neighborEventChance
+        case metricSensitivities
+        case crisisProbabilities
+    }
+
+    init(
+        startingMetrics: [String: Double]? = nil,
+        metricEquilibria: [String: Double]? = nil,
+        bundleWeightOverrides: [String: Double]? = nil,
+        priorityTags: [String]? = nil,
+        suppressedTags: [String]? = nil,
+        neighborEventChance: Double? = nil,
+        metricSensitivities: [String: Double]? = nil,
+        crisisProbabilities: [String: Double]? = nil
+    ) {
+        self.startingMetrics = startingMetrics
+        self.metricEquilibria = metricEquilibria
+        self.bundleWeightOverrides = bundleWeightOverrides
+        self.priorityTags = priorityTags
+        self.suppressedTags = suppressedTags
+        self.neighborEventChance = neighborEventChance
+        self.metricSensitivities = metricSensitivities
+        self.crisisProbabilities = crisisProbabilities
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let aliasContainer = try decoder.container(keyedBy: AliasCodingKeys.self)
+
+        startingMetrics = try container.decodeIfPresent([String: Double].self, forKey: .startingMetrics)
+            ?? aliasContainer.decodeIfPresent([String: Double].self, forKey: .startingMetrics)
+        metricEquilibria = try container.decodeIfPresent([String: Double].self, forKey: .metricEquilibria)
+            ?? aliasContainer.decodeIfPresent([String: Double].self, forKey: .metricEquilibria)
+        bundleWeightOverrides = try container.decodeIfPresent([String: Double].self, forKey: .bundleWeightOverrides)
+            ?? aliasContainer.decodeIfPresent([String: Double].self, forKey: .bundleWeightOverrides)
+        priorityTags = try container.decodeIfPresent([String].self, forKey: .priorityTags)
+            ?? aliasContainer.decodeIfPresent([String].self, forKey: .priorityTags)
+        suppressedTags = try container.decodeIfPresent([String].self, forKey: .suppressedTags)
+            ?? aliasContainer.decodeIfPresent([String].self, forKey: .suppressedTags)
+        neighborEventChance = try container.decodeIfPresent(Double.self, forKey: .neighborEventChance)
+            ?? aliasContainer.decodeIfPresent(Double.self, forKey: .neighborEventChance)
+        metricSensitivities = try container.decodeIfPresent([String: Double].self, forKey: .metricSensitivities)
+            ?? aliasContainer.decodeIfPresent([String: Double].self, forKey: .metricSensitivities)
+        crisisProbabilities = try container.decodeIfPresent([String: Double].self, forKey: .crisisProbabilities)
+            ?? aliasContainer.decodeIfPresent([String: Double].self, forKey: .crisisProbabilities)
     }
 }
 

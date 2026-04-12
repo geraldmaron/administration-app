@@ -9,7 +9,7 @@ final class CandidateGeneratorTests: XCTestCase {
     // MARK: - Role Affinity
 
     func testRoleAffinityIsPopulated() {
-        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), seed: 42, count: 3, gender: nil, config: nil)
+        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), count: 3, gender: nil, config: nil)
         for candidate in candidates {
             XCTAssertNotNil(candidate.roleAffinity, "roleAffinity should be set for all candidates")
             XCTAssertEqual(candidate.roleAffinity?.count, 3, "roleAffinity should contain top 3 roles")
@@ -18,7 +18,7 @@ final class CandidateGeneratorTests: XCTestCase {
 
     func testRoleAffinityContainsValidRoles() {
         let validRoles = ["defense", "diplomacy", "economy", "executive", "social", "justice"]
-        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), seed: 99, count: 5, gender: nil, config: nil)
+        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), count: 5, gender: nil, config: nil)
         for candidate in candidates {
             for affinity in candidate.roleAffinity ?? [] {
                 XCTAssertTrue(validRoles.contains(affinity), "Unexpected role affinity value: \(affinity)")
@@ -60,7 +60,7 @@ final class CandidateGeneratorTests: XCTestCase {
     // MARK: - Cost
 
     func testCostIsAlwaysSet() {
-        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), seed: 12, count: 5, gender: nil, config: nil)
+        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), count: 5, gender: nil, config: nil)
         for candidate in candidates {
             XCTAssertNotNil(candidate.cost, "Cost should be set for all generated candidates")
         }
@@ -85,7 +85,7 @@ final class CandidateGeneratorTests: XCTestCase {
     // MARK: - Stats
 
     func testGeneratedCandidatesHaveReasonableStats() {
-        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), seed: 33, count: 10, gender: nil, config: nil)
+        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), count: 10, gender: nil, config: nil)
         for candidate in candidates {
             XCTAssertGreaterThanOrEqual(candidate.stats.diplomacy, 10)
             XCTAssertLessThanOrEqual(candidate.stats.diplomacy, 100)
@@ -97,31 +97,31 @@ final class CandidateGeneratorTests: XCTestCase {
     }
 
     func testAllCandidatesHaveNames() {
-        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), seed: 77, count: 5, gender: nil, config: nil)
+        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), count: 5, gender: nil, config: nil)
         for candidate in candidates {
             XCTAssertFalse(candidate.name.isEmpty, "Candidate should have a non-empty name")
         }
     }
 
     func testCandidateSortedByName() {
-        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), seed: 88, count: 8, gender: nil, config: nil)
-        let names = candidates.map(\.name)
+        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), count: 8, gender: nil, config: nil)
+        let names = candidates.map { $0.name }
         XCTAssertEqual(names, names.sorted(), "Candidates should be sorted by name")
     }
 
     // MARK: - Gender
 
     func testMaleGenderIsRespected() {
-        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), seed: 101, count: 5, gender: .male, config: nil)
+        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), count: 5, gender: .male, config: nil)
         for candidate in candidates {
-            XCTAssertEqual(candidate.gender, .male, "All candidates should be male when gender is specified")
+            XCTAssertEqual(candidate.gender, PersonGender.male, "All candidates should be male when gender is specified")
         }
     }
 
     func testFemaleGenderIsRespected() {
-        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), seed: 202, count: 5, gender: .female, config: nil)
+        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), count: 5, gender: .female, config: nil)
         for candidate in candidates {
-            XCTAssertEqual(candidate.gender, .female, "All candidates should be female when gender is specified")
+            XCTAssertEqual(candidate.gender, PersonGender.female, "All candidates should be female when gender is specified")
         }
     }
 
@@ -129,7 +129,7 @@ final class CandidateGeneratorTests: XCTestCase {
 
     func testGeneratesExactCount() {
         let count = 7
-        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), seed: 3, count: count, gender: nil, config: nil)
+        let candidates = CandidateGenerator.generateCandidates(country: makeCountry(), count: count, gender: nil, config: nil)
         XCTAssertEqual(candidates.count, count)
     }
 

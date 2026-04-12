@@ -307,6 +307,7 @@ export default async function ScenarioDetailPage({
                 id={scenario.id}
                 isActive={scenario.is_active}
                 isGolden={scenario.isGolden ?? false}
+                isConfirmed={scenario.metadata?.repairMetadata?.confirmedClean ?? false}
                 bundle={scenario.metadata?.bundle}
               />
             </div>

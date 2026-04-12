@@ -31,6 +31,7 @@ export interface RepairAnalysis {
   auditIssues: string[];
   changes: FieldChange[];
   hasChanges: boolean;
+  confirmedClean?: boolean;
 }
 
 export interface ApprovedRepair {

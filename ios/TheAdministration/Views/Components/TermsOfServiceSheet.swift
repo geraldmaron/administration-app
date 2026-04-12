@@ -99,7 +99,7 @@ struct TermsOfServiceSheet: View {
                 .font(.system(size: 22, weight: .black))
                 .foregroundColor(AppColors.foreground)
 
-            Text("Last updated: March 2025")
+            Text("Last updated: April 2026")
                 .font(AppTypography.caption)
                 .foregroundColor(AppColors.foregroundSubtle)
         }

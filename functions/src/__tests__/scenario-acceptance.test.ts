@@ -39,6 +39,7 @@ function makeNarrativeReviewResult(overrides: Partial<NarrativeReviewResult> = {
         optionDifferentiation: { score: 4 as const, reasoning: 'good' },
         consequenceQuality: { score: 4 as const, reasoning: 'good' },
         replayValue: { score: 4 as const, reasoning: 'good' },
+        politicalRealism: { score: 4 as const, reasoning: 'good' },
         overallScore: 4,
         editorialNotes: [],
         ...overrides,

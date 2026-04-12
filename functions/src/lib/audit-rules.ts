@@ -272,6 +272,93 @@ function getStanceFeedback(stance: string, roleId: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Title repair: description-mining for formulaic titles
+// ---------------------------------------------------------------------------
+
+/**
+ * Patterns that mark a title as formulaic per the audit rules.
+ * Kept in sync with scenario-audit.ts formulaicPatterns.
+ */
+const FORMULAIC_TITLE_PATTERNS: RegExp[] = [
+    /\b(crisis|crises)\s*(response|options|management)?\s*$/i,
+    /^managing\s+/i,
+    /^(balancing|handling|navigating)\s+/i,
+    /\b(debate|decision|dilemma|challenge|conflict)\s*$/i,
+    /\b(response|response\s+options)\s*$/i,
+];
+
+function isFormulaic(title: string): boolean {
+    return FORMULAIC_TITLE_PATTERNS.some(p => p.test(title.trim()));
+}
+
+/**
+ * Mines `description` for a verb-containing headline when the current title is formulaic.
+ *
+ * Strategy:
+ *  1. Extract the first sentence of the description (up to the first full stop).
+ *  2. Strip token placeholders so they don't confuse the verb search.
+ *  3. Look for the first strong subject+verb pair (e.g. "Regulators have frozen…").
+ *  4. Capitalise, trim to 4-8 words, verify it passes the formulaic check.
+ *  5. If no usable verb phrase is found, fall back to the original title — the
+ *     LLM repair path in context-repair.ts will handle it on the next pass.
+ */
+export function mineDescriptionForTitle(
+    currentTitle: string,
+    description: string | undefined,
+): string {
+    if (!description) return currentTitle;
+
+    // Take only the first sentence
+    const firstSentence = description.split(/(?<=[.!?])\s+/)[0] ?? description;
+
+    // Strip token placeholders — treat them as generic nouns for subject detection
+    const plain = firstSentence.replace(/\{[a-z_]+\}/gi, 'Officials');
+
+    // Split into words and search for a strong action verb
+    const words = plain.replace(/[^\w\s'-]/g, ' ').split(/\s+/).filter(Boolean);
+
+    // Common auxiliary / weak verbs to skip over when looking for the headline verb
+    const WEAK_VERBS = new Set([
+        'is', 'are', 'was', 'were', 'be', 'been', 'being',
+        'has', 'have', 'had', 'do', 'does', 'did',
+        'will', 'would', 'shall', 'should', 'may', 'might', 'must', 'can', 'could',
+        'get', 'got', 'gotten', 'seem', 'seems', 'appear', 'appears',
+    ]);
+
+    // Find the first word that looks like a conjugated strong verb (ends in -ed, -s, or is all-alpha past-tense)
+    const STRONG_VERB_RE = /^(froze|seized|blocked|rejected|passed|approved|collapsed|declared|imposed|suspended|launched|triggered|ordered|warned|demanded|threatened|leaked|uncovered|exposed|halted|raided|announced|signed|deployed|escalated|withdrew|confirmed|denied|dismissed|replaced|resigned|arrested|indicted|convicted|recalled|canceled|cancelled|frozen|seized|cut|raised|lifted|granted|revoked|abolished|proposed|backed|defied|challenged|forced|pressured|refused|accepted|endorsed|vetoed|reversed|extended|disbanded|restructured|nationalized|privatized|reformed|redirected|diverted|diverts|seizes|blocks|rejects|passes|approves|collapses|declares|imposes|suspends|launches|triggers|orders|warns|demands|threatens|leaks|uncovers|exposes|halts|raids|announces|signs|deploys|escalates|withdraws|confirms|denies|dismisses|replaces|resigns|arrests|indicts|convicts|recalls|cuts|raises|lifts|grants|revokes|abolishes|proposes|backs|defies|challenges|forces|pressures|refuses|accepts|endorses|vetoes|reverses|extends|disbands|restructures|nationalizes|privatizes|reforms|redirects)$/i;
+
+    let verbIdx = -1;
+
+    for (let i = 0; i < Math.min(words.length, 12); i++) {
+        const w = words[i].toLowerCase();
+        if (WEAK_VERBS.has(w)) continue;
+        if (STRONG_VERB_RE.test(words[i]) || (w.endsWith('s') && w.length > 3 && /^[a-z]+$/.test(w))) {
+            verbIdx = i;
+            break;
+        }
+        // Past tense: ends in -ed
+        if (w.endsWith('ed') && w.length > 4 && /^[a-z]+$/.test(w) && !WEAK_VERBS.has(w)) {
+            verbIdx = i;
+            break;
+        }
+    }
+
+    if (verbIdx === -1) return currentTitle;
+
+    // Grab up to 3 words after the verb as the object
+    const headline = words.slice(0, Math.min(verbIdx + 4, 8)).join(' ');
+    const wordCount = headline.split(/\s+/).length;
+    if (wordCount < 4 || wordCount > 8) return currentTitle;
+
+    // Capitalise first letter, verify it doesn't re-trigger formulaic patterns
+    const candidate = headline.charAt(0).toUpperCase() + headline.slice(1);
+    if (isFormulaic(candidate)) return currentTitle;
+
+    return candidate;
+}
+
+// ---------------------------------------------------------------------------
 // deterministicFix
 // ---------------------------------------------------------------------------
 
@@ -563,25 +650,12 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         }
     }
 
-    const formulaicEndings = /\s+(Crisis|Debate|Decision|Dilemma|Challenge|Conflict|Response|Response Options|Choices|Options)\s*$/i;
-    const gerundOpeners = /^(Managing|Balancing|Handling|Navigating|Addressing)\s+/i;
-    if (formulaicEndings.test(scenario.title)) {
+    if (isFormulaic(scenario.title)) {
         const before = scenario.title;
-        scenario.title = scenario.title.replace(formulaicEndings, '').trim();
-        if (scenario.title.split(/\s+/).length < 4) {
-            scenario.title = before;
-        } else {
-            fixes.push(`title: stripped formulaic ending "${before}" → "${scenario.title}"`);
-            fixed = true;
-        }
-    }
-    if (gerundOpeners.test(scenario.title)) {
-        const before = scenario.title;
-        scenario.title = scenario.title.replace(gerundOpeners, '').trim();
-        if (scenario.title.split(/\s+/).length < 4) {
-            scenario.title = before;
-        } else {
-            fixes.push(`title: stripped gerund opener "${before}" → "${scenario.title}"`);
+        const mined = mineDescriptionForTitle(scenario.title, scenario.description);
+        if (mined !== before) {
+            scenario.title = mined;
+            fixes.push(`title: rewrote formulaic title "${before}" → "${mined}"`);
             fixed = true;
         }
     }
@@ -676,8 +750,14 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
 
     // Hardcoded institution phrase repair (culture minister → {education_role}, etc.)
     {
-        const dedupeArticle = (t: string | undefined): string | undefined =>
-            t?.replace(/\bThe the\b/g, 'The').replace(/\bthe the\b/gi, 'the');
+        const dedupeArticle = (t: string | undefined): string | undefined => {
+            if (!t) return t;
+            return t
+                .replace(/\b(a|an)\s+(the)\s+(\{[a-z_]+\})/gi, 'the $3')
+                .replace(/\b(a|an)\s+(\w+)\s+(the)\s+(\{[a-z_]+\})/gi, 'the $2 $4')
+                .replace(/\bThe the\b/g, 'The')
+                .replace(/\bthe the\b/gi, 'the');
+        };
         const scrubPhrases = (text: string | undefined): string | undefined => {
             if (!text) return text;
             let result = applyPhraseRules(text, INSTITUTION_PHRASE_RULES);
@@ -975,6 +1055,13 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
                     }
                 }
             }
+            for (const field of ['outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+                if ((scenario as any)[field]) {
+                    const before = (scenario as any)[field] as string;
+                    const after = fixOutcomeVoice(before) ?? before;
+                    if (before !== after) { (scenario as any)[field] = after; fixes.push(`scenario: fixed second-person voice in ${field}`); fixed = true; }
+                }
+            }
         }
 
         if (issue.rule === 'inverse-positive') {
@@ -1034,6 +1121,16 @@ export function heuristicFix(scenario: BundleScenario, issues: Issue[], bundle?:
             for (const p of previews) newDesc = newDesc.replace(p, '');
             newDesc = newDesc.replace(/\s\s+/g, ' ').replace(/\.\.+/g, '.').trim();
             if (newDesc !== before) { scenario.description = newDesc; fixes.push('removed option preview from description'); fixed = true; }
+        }
+
+        if (issue.rule === 'formulaic-title') {
+            const before = scenario.title;
+            const mined = mineDescriptionForTitle(scenario.title, scenario.description);
+            if (mined !== before) {
+                scenario.title = mined;
+                fixes.push(`title: rewrote formulaic title "${before}" → "${mined}"`);
+                fixed = true;
+            }
         }
     }
 

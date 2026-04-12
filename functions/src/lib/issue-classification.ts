@@ -53,10 +53,14 @@ const RULE_TO_ACTION: Record<string, RepairActionType> = {
     'hardcoded-gov-structure': 'tone-fix',
     'informal-tone': 'tone-fix',
     'jargon-use': 'tone-fix',
+    'option-hedge-phrase': 'tone-fix',
 
     'option-metric-overlap': 'option-differentiation-fix',
     'option-domain-missing-primary': 'option-differentiation-fix',
     'option-domain-duplicate-primary': 'option-differentiation-fix',
+
+    'universal-relationship-token': 'token-fix',
+    'country-relationship-token-mismatch': 'token-fix',
 };
 
 export function classifyRepairActions(issues: Issue[]): RepairAction[] {
@@ -125,6 +129,7 @@ export const HEURISTIC_FIXABLE_RULE_IDS = new Set([
     'dangling-ending',
     'headline-fragment',
     'missing-direct-object',
+    'option-hedge-phrase',
     'option-metric-overlap',
     'option-domain-missing-primary',
     'option-domain-duplicate-primary',

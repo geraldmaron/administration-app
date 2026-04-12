@@ -7,7 +7,7 @@ struct OnboardingOverlay: View {
     private let steps: [OnboardingStep] = [
         OnboardingStep(
             title: "Your Executive Desk",
-            body: "Command center for your administration. Track 27 national metrics and respond to scenarios each turn.",
+            body: "Command center for your administration. Track 27 metrics across your nation and respond to scenarios each turn.",
             icon: "rectangle.grid.2x2"
         ),
         OnboardingStep(
@@ -22,7 +22,7 @@ struct OnboardingOverlay: View {
         ),
         OnboardingStep(
             title: "Trust Your Gut",
-            body: "Want a different scenario? Use Trust Your Gut to request a custom directive. You have limited uses per campaign.",
+            body: "When none of the authored options fit, write your own policy directive. The AI resolves it into real consequences. You have limited uses for the entire run — spend them where they count.",
             icon: "brain.head.profile"
         ),
         OnboardingStep(

@@ -97,9 +97,9 @@ describe('generation-models', () => {
       architect: 'google/gemini-2.5-flash',
       advisor: 'google/gemini-2.0-flash-001',
       blueprint: 'google/gemini-2.5-flash',
-      drafter: 'google/gemini-2.5-flash',
-      repair: 'google/gemini-2.5-flash',
-      contentQuality: 'google/gemini-2.5-flash',
+      drafter: 'openai/gpt-4.1-mini',
+      repair: 'openai/gpt-4.1-mini',
+      contentQuality: 'google/gemini-2.0-flash-001',
       narrativeReview: 'google/gemini-2.5-flash',
       embedding: 'openai/text-embedding-3-small',
     });

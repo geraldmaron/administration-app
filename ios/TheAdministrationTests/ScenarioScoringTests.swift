@@ -32,7 +32,9 @@ final class ScenarioScoringTests: XCTestCase {
             bundleWeightOverrides: bundleOverrides,
             priorityTags: [],
             suppressedTags: [],
-            neighborEventChance: 0.0
+            neighborEventChance: 0.0,
+            metricSensitivities: nil,
+            crisisProbabilities: nil
         )
 
         return Country(
@@ -73,7 +75,8 @@ final class ScenarioScoringTests: XCTestCase {
         baseWeight: Double = 1.0,
         bundle: String? = nil,
         regionalBoost: [String: Double]? = nil,
-        regionTags: [String]? = nil
+        regionTags: [String]? = nil,
+        applicability: ScenarioApplicability? = nil
     ) -> Scenario {
         let metadata = ScenarioMetadata(
             applicableCountries: nil,
@@ -93,6 +96,7 @@ final class ScenarioScoringTests: XCTestCase {
             id: id,
             title: "Test Scenario",
             description: "Description",
+            applicability: applicability,
             conditions: nil,
             phase: nil,
             severity: nil,
@@ -241,6 +245,57 @@ final class ScenarioScoringTests: XCTestCase {
 
         XCTAssertGreaterThan(ScenarioNavigator.shared.scoreScenario(displayTagged, for: country, gameState: state), 0.0)
         XCTAssertGreaterThan(ScenarioNavigator.shared.scoreScenario(canonicalTagged, for: country, gameState: state), 0.0)
+    }
+
+    func testApplicabilityCountryAllowListGatesScenarioEligibility() {
+        let country = makeCountry(region: "Europe", bundleOverrides: ["economy": 2.0])
+        let state = makeDummyState()
+        let applicability = ScenarioApplicability(
+            archetypes: nil,
+            requires: nil,
+            metricGates: [],
+            relationshipGates: nil,
+            applicableCountryIds: ["other_country"]
+        )
+        let scenario = makeScenario(baseWeight: 1.0, bundle: "economy", applicability: applicability)
+
+        let score = ScenarioNavigator.shared.scoreScenario(scenario, for: country, gameState: state)
+
+        XCTAssertEqual(score, 0.0, accuracy: 0.0001, "Scenario should be ineligible when the player country is not allow-listed in applicability.applicableCountryIds")
+    }
+
+    func testApplicabilityMetricGatesControlScenarioEligibility() {
+        let country = makeCountry(region: "Europe", bundleOverrides: ["economy": 2.0])
+        let failingState = makeDummyState()
+        let passingState = GameState(
+            isSetup: false,
+            countryId: "test_country",
+            turn: 1,
+            maxTurns: 10,
+            phase: .early,
+            status: .active,
+            gameLength: "short",
+            metrics: ["metric_approval": 50, "metric_economy": 20],
+            metricHistory: ["metric_approval": [50], "metric_economy": [20]],
+            cabinet: [],
+            activeEffects: []
+        )
+        let applicability = ScenarioApplicability(
+            archetypes: nil,
+            requires: nil,
+            metricGates: [
+                MetricGate(metric: "metric_economy", min: nil, max: 30)
+            ],
+            relationshipGates: nil,
+            applicableCountryIds: nil
+        )
+        let scenario = makeScenario(baseWeight: 1.0, bundle: "economy", applicability: applicability)
+
+        let failingScore = ScenarioNavigator.shared.scoreScenario(scenario, for: country, gameState: failingState)
+        let passingScore = ScenarioNavigator.shared.scoreScenario(scenario, for: country, gameState: passingState)
+
+        XCTAssertEqual(failingScore, 0.0, accuracy: 0.0001, "Scenario should be ineligible when a metric gate fails")
+        XCTAssertGreaterThan(passingScore, 0.0, "Scenario should remain eligible when applicability.metricGates pass")
     }
 }
 
