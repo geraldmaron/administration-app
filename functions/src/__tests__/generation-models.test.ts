@@ -95,11 +95,11 @@ describe('generation-models', () => {
     delete process.env.USE_OPENROUTER_DEFAULTS;
     expect(getResolvedGenerationModels()).toEqual({
       architect: 'google/gemini-2.5-flash',
-      advisor: 'google/gemini-2.5-flash',
+      advisor: 'google/gemini-2.0-flash-001',
       blueprint: 'google/gemini-2.5-flash',
-      drafter: 'qwen/qwen3.6-plus',
-      repair: 'mistralai/mistral-small-2603',
-      contentQuality: 'mistralai/mistral-small-2603',
+      drafter: 'google/gemini-2.5-flash',
+      repair: 'google/gemini-2.5-flash',
+      contentQuality: 'google/gemini-2.5-flash',
       narrativeReview: 'google/gemini-2.5-flash',
       embedding: 'openai/text-embedding-3-small',
     });
