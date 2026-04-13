@@ -19,6 +19,7 @@ import {
     countWords,
     condenseSentences,
     repairUnsupportedScaleTokenArtifacts,
+    repairTokenContextGrammar,
     type AuditConfig,
     type Issue,
     type BundleScenario,
@@ -609,18 +610,6 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
             }
         }
     }
-
-    const repairTokenContextGrammar = (text: string | undefined): string | undefined => {
-        if (!text) return text;
-        let result = text;
-        result = result.replace(/\b(Your|your)\s+the\s+(\{[a-z_]+\})/g, '$1 $2');
-        result = result.replace(/\bYou\s+the\s+(\{[a-z_]+\})/g, 'Your $1');
-        result = result.replace(/\byou\s+the\s+(\{[a-z_]+\})/g, 'your $1');
-        result = result.replace(/\bYou\s+(\{(?!the_)[a-z_]+_role\})/g, 'Your $1');
-        result = result.replace(/\byou\s+(\{(?!the_)[a-z_]+_role\})/g, 'your $1');
-        result = result.replace(/\b(?:a|an|the)\s+(\{the_[a-z_]+\})/gi, '$1');
-        return result;
-    };
 
     for (const field of ['title', 'description'] as const) {
         const before = scenario[field] as string | undefined;

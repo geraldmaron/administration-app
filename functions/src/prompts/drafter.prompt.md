@@ -18,6 +18,7 @@ Write valid JSON only.
   ❌ `You {health_role} must respond` → ✅ `Your {health_role} must respond` (possessive, not "You bare-role")
   ❌ `the {the_finance_role} briefed` → ✅ `{the_finance_role} briefed` (no article before article-form token)
   ❌ `a the {defense_role}` → ✅ `the {defense_role}` (one article only)
+  ❌ `Your {the_health_role} warned` → ✅ `Your {health_role} warned` (never use {the_X} form after "your" — it resolves to "your the X")
 - Write foreign actors and international bodies as natural language, never as tokens.
 - Metric IDs are for effects/conditions only — never in prose.
 - Title: 4-8 words, concrete headline style, no tokens.

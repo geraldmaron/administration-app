@@ -952,37 +952,64 @@ export const UNSUPPORTED_SCALE_TOKEN_TEXT_REPLACEMENTS: ReadonlyArray<{
     },
 ];
 
-export const TOKEN_CONTEXT_QUALITY_RULES: ReadonlyArray<{
+export interface TokenContextRule {
     pattern: RegExp;
     rule: string;
     message: (fieldName: string) => string;
-}> = [
+    repair: (text: string) => string;
+}
+
+export const TOKEN_CONTEXT_QUALITY_RULES: ReadonlyArray<TokenContextRule> = [
     {
         pattern: /\byou\s+the\s+\{[a-z_]+\}/i,
         rule: 'token-context-you-the',
-        message: (f) => `${f} contains "you the {token}" — missing verb or should use article-form token`,
+        message: (f) => `${f} contains "you the {token}" — missing verb`,
+        repair: (t) => t
+            .replace(/\bYou\s+the\s+(\{[a-z_]+\})/g, 'Your $1')
+            .replace(/\byou\s+the\s+(\{[a-z_]+\})/g, 'your $1'),
     },
     {
         pattern: /\byour\s+the\s+\{[a-z_]+\}/i,
         rule: 'token-context-double-determiner',
         message: (f) => `${f} contains "your the {token}" — double determiner`,
+        repair: (t) => t.replace(/\b(Your|your)\s+the\s+(\{[a-z_]+\})/g, '$1 $2'),
     },
     {
         pattern: /\b(?:a|an|the)\s+(?:a|an|the)\s+\{[a-z_]+\}/i,
         rule: 'token-context-double-article',
         message: (f) => `${f} has consecutive articles before a token`,
+        repair: (t) => t.replace(/\b(?:a|an|the)\s+((?:a|an|the)\s+\{[a-z_]+\})/gi, '$1'),
     },
     {
         pattern: /\b(?:a|an|the)\s+\{the_[a-z_]+\}/i,
         rule: 'token-context-article-before-article-form',
         message: (f) => `${f} has an article before an article-form token — produces double article after resolution`,
+        repair: (t) => t.replace(/\b(?:a|an|the)\s+(\{the_[a-z_]+\})/gi, '$1'),
     },
     {
         pattern: /\byou\s+\{(?!the_)[a-z_]+_role\}/i,
         rule: 'token-context-you-bare-role',
         message: (f) => `${f} uses "You {role_token}" without a verb`,
+        repair: (t) => t
+            .replace(/\bYou\s+(\{(?!the_)[a-z_]+_role\})/g, 'Your $1')
+            .replace(/\byou\s+(\{(?!the_)[a-z_]+_role\})/g, 'your $1'),
+    },
+    {
+        pattern: /\b[Yy]our\s+\{the_[a-z_]+\}/,
+        rule: 'token-context-possessive-article-form',
+        message: (f) => `${f} uses possessive "your" with article-form token {the_X} — resolves to "your the X"`,
+        repair: (t) => t.replace(/\b(Your|your)\s+\{the_([a-z_]+)\}/g, '$1 {$2}'),
     },
 ];
+
+export function repairTokenContextGrammar(text: string | undefined): string | undefined {
+    if (!text) return text;
+    let result = text;
+    for (const rule of TOKEN_CONTEXT_QUALITY_RULES) {
+        result = rule.repair(result);
+    }
+    return result;
+}
 
 export function repairUnsupportedScaleTokenArtifacts(text: string | undefined): string | undefined {
     if (!text) return text;

@@ -51,6 +51,7 @@ export const BLOCKING_AUDIT_RULE_IDS = new Set([
     'token-context-double-article',
     'token-context-article-before-article-form',
     'token-context-you-bare-role',
+    'token-context-possessive-article-form',
 ]);
 
 export interface EvaluatorDecisionInput<TResult> {

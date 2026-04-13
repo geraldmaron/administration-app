@@ -10,6 +10,7 @@ import {
   INSTITUTION_PHRASE_RULES,
   GOV_STRUCTURE_RULES,
   repairUnsupportedScaleTokenArtifacts,
+  repairTokenContextGrammar,
   collapseRepeatedSentences,
   type PhraseRule,
   type ScenarioRequirements,
@@ -281,12 +282,7 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
 
     // Repair token-context grammar errors before any other fixes.
     const beforeGrammar = updated;
-    updated = updated.replace(/\b(Your|your)\s+the\s+(\{[a-z_]+\})/g, '$1 $2');
-    updated = updated.replace(/\bYou\s+the\s+(\{[a-z_]+\})/g, 'Your $1');
-    updated = updated.replace(/\byou\s+the\s+(\{[a-z_]+\})/g, 'your $1');
-    updated = updated.replace(/\bYou\s+(\{(?!the_)[a-z_]+_role\})/g, 'Your $1');
-    updated = updated.replace(/\byou\s+(\{(?!the_)[a-z_]+_role\})/g, 'your $1');
-    updated = updated.replace(/\b(?:a|an|the)\s+(\{the_[a-z_]+\})/gi, '$1');
+    updated = repairTokenContextGrammar(updated) ?? updated;
     if (updated !== beforeGrammar) changed = true;
 
     const trillionPattern = /\$\d{5,}\s+trillion/gi;

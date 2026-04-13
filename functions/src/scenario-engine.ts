@@ -3030,6 +3030,9 @@ async function expandConceptToLoop(
           if (contextIssueRules.has('token-context-article-before-article-form')) {
             drafterPrompt += `❌ "the {the_finance_role}" → ✅ "{the_finance_role}" (never place an article before an article-form token — or use the bare form: "the {finance_role}")\n`;
           }
+          if (contextIssueRules.has('token-context-possessive-article-form') || contextIssueRules.has('rendered-output-your-the')) {
+            drafterPrompt += `❌ "Your {the_health_role} warned" → ✅ "Your {health_role} warned" (never use {the_X} form after "your" — the article is already implied by the possessive, and it resolves to "your the X")\n`;
+          }
           drafterPrompt += `Fix all token-context grammar in this attempt.\n`;
         } else if (failureCategory === 'readability-violation') {
           drafterPrompt += `\n**READABILITY FAILURE**: Rewrite for non-expert players.

@@ -380,6 +380,27 @@ describe('token-context prose quality', () => {
         expect(issues.some((issue) => issue.rule === 'token-context-you-bare-role')).toBe(true);
     });
 
+    test('flags "Your {the_health_role}" — possessive with article-form token', () => {
+        const scenario = makeScenario();
+        scenario.description = 'Your {the_health_role} warned that the shortage would worsen within months.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((issue) => issue.rule === 'token-context-possessive-article-form')).toBe(true);
+    });
+
+    test('flags "your {the_finance_role}" — lowercase possessive with article-form token', () => {
+        const scenario = makeScenario();
+        scenario.options[0].text = 'You order your {the_finance_role} to mandate continued production through emergency regulations.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((issue) => issue.rule === 'token-context-possessive-article-form')).toBe(true);
+    });
+
+    test('repairs "Your {the_health_role}" to "Your {health_role}"', () => {
+        const scenario = makeScenario();
+        scenario.description = 'Your {the_health_role} warned that the shortage would worsen.';
+        deterministicFix(scenario);
+        expect(scenario.description).toBe('Your {health_role} warned that the shortage would worsen.');
+    });
+
     test('does not flag valid token usage', () => {
         const scenario = makeScenario();
         scenario.description = '{the_finance_role} briefed parliament. Your {health_role} warned of shortages. You directed {the_defense_role} to respond.';
