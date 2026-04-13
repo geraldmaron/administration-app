@@ -72,6 +72,7 @@ export interface FailureAnalysis {
 
 export type FailureCategory =
   | 'token-violation'
+  | 'token-context-violation'
   | 'adjacency-token-violation'
   | 'banned-phrase-violation'
   | 'hardcoded-gov-structure'
@@ -191,6 +192,14 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   if (errorCodes.some(code => code === 'adjacency-token-mismatch')) {
     return 'adjacency-token-violation';
   }
+  if (errorCodes.some(code =>
+    code.startsWith('token-context-') ||
+    code === 'rendered-output-you-the' ||
+    code === 'rendered-output-your-the' ||
+    code === 'rendered-output-double-article'
+  )) {
+    return 'token-context-violation';
+  }
   if (errorCodes.some(code => code.includes('token') || code === 'invalid-country-name')) {
     return 'token-violation';
   }
@@ -254,6 +263,12 @@ export function categorizeFailure(auditIssues: Array<any>): FailureCategory {
   }
   if (warningCodes.some(code => code === 'informal-tone')) {
     return 'tonal-violation';
+  }
+  if (errorCodes.some(code =>
+    code === 'short-summary' || code === 'short-article' ||
+    code === 'missing-headline' || code === 'missing-summary' || code === 'missing-context'
+  )) {
+    return 'shallow-content';
   }
   if (warningCodes.includes('shallow-description') || warningCodes.includes('shallow-outcome')) {
     return 'shallow-content';

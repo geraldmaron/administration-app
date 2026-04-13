@@ -12,6 +12,12 @@ Write valid JSON only.
 - Use only tokens from the Token Context provided. If unsure a token exists, rewrite without it.
 - Write "the {finance_role}" or "your {defense_role}" naturally — no special {the_*} prefix tokens.
 - Never invent tokens not in the approved list.
+- **TOKEN GRAMMAR — these patterns are hard-rejected:**
+  ❌ `You the {finance_role} announced` → ✅ `You asked the {finance_role} to announce` (add verb)
+  ❌ `Your the {health_role} warned` → ✅ `Your {health_role} warned` (drop "the")
+  ❌ `You {health_role} must respond` → ✅ `Your {health_role} must respond` (possessive, not "You bare-role")
+  ❌ `the {the_finance_role} briefed` → ✅ `{the_finance_role} briefed` (no article before article-form token)
+  ❌ `a the {defense_role}` → ✅ `the {defense_role}` (one article only)
 - Write foreign actors and international bodies as natural language, never as tokens.
 - Metric IDs are for effects/conditions only — never in prose.
 - Title: 4-8 words, concrete headline style, no tokens.
@@ -43,6 +49,12 @@ Write valid JSON only.
 - outcomeHeadline: 3-15 words.
 - outcomeSummary: 2-3 sentences, at least 200 characters.
 - outcomeContext: 4-6 sentences, 70-100 words, at least 350 characters. MUST name at least 2 specific institutional actors beyond {leader_title} (use role tokens or named bodies like "the {finance_role}", "the {judicial_role}", "international creditors"). MUST include at least 1 second-order consequence — a consequence triggered by the first consequence, not directly by the decision itself. Each option's outcomeContext must be unique to that option: if swapping two contexts wouldn't change the scenario, rewrite them.
+- **OUTCOME FIELDS LENGTH — violations are hard-rejected:**
+  outcomeSummary must be ≥200 characters. outcomeContext must be ≥350 characters. Short fields are rejected regardless of quality.
+  Example for option "Raise the corporate tax rate by 8%":
+  outcomeHeadline: `Tax Revenue Surpasses Projections` (5 words ✓)
+  outcomeSummary: `The administration's corporate tax increase generated 23% more revenue than projected, though manufacturing lobbies filed legal challenges in three courts within weeks. Consumer prices on imported goods rose 2% in the first quarter, prompting ministers to fast-track a cost-of-living review.` (≥200 chars ✓)
+  outcomeContext: `The {finance_role} celebrated the revenue windfall and allocated funds to infrastructure, fulfilling a coalition commitment. Manufacturing groups warned of capital flight and cited 15% higher compliance costs in formal submissions to the {commerce_role}. Unexpectedly, rising import prices triggered demand for retailer subsidies — a second-order pressure the administration had not anticipated. The {labor_role} opened consultations with union federations about wage indexing, further complicating the fiscal outlook. International investors monitored the situation closely, with equity indices declining 3% in the first week after the announcement.` (≥350 chars, 5 sentences, 2 named roles, 1 second-order consequence ✓)
 - Outcome fields must stay grounded in the listed effects.
 - Every option must include 5-9 advisorFeedback entries. Always include role_executive + 2-3 domain-relevant roles + at least 1 opposing voice.
 - ADVISOR QUALITY (REJECTION RISK): Each advisor must argue from their specific portfolio — not generic phrases. The role_economy must cite fiscal, trade, or employment impact. The role_defense must cite security or readiness. The role_labor must name workers, wages, or unions. ALL of these phrases trigger audit rejection and will cause the scenario to be regenerated: "This aligns well with our [X] priorities", "Our department supports this course of action", "This could undermine our [X] objectives", "This has limited direct impact on [X] operations", "We see both risks and potential benefits for [X]", "This warrants careful monitoring from our department", "The risks outweigh the benefits", "This is a measured approach", "We must monitor the situation", "This warrants careful consideration". The opposing voice must name a specific institutional concern, constituency, or second-order risk — not just register opposition.

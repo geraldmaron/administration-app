@@ -610,6 +610,54 @@ export function deterministicFix(scenario: BundleScenario): { fixed: boolean; fi
         }
     }
 
+    const repairTokenContextGrammar = (text: string | undefined): string | undefined => {
+        if (!text) return text;
+        let result = text;
+        result = result.replace(/\b(Your|your)\s+the\s+(\{[a-z_]+\})/g, '$1 $2');
+        result = result.replace(/\bYou\s+the\s+(\{[a-z_]+\})/g, 'Your $1');
+        result = result.replace(/\byou\s+the\s+(\{[a-z_]+\})/g, 'your $1');
+        result = result.replace(/\bYou\s+(\{(?!the_)[a-z_]+_role\})/g, 'Your $1');
+        result = result.replace(/\byou\s+(\{(?!the_)[a-z_]+_role\})/g, 'your $1');
+        result = result.replace(/\b(?:a|an|the)\s+(\{the_[a-z_]+\})/gi, '$1');
+        return result;
+    };
+
+    for (const field of ['title', 'description'] as const) {
+        const before = scenario[field] as string | undefined;
+        const after = repairTokenContextGrammar(before);
+        if (after && after !== before) {
+            (scenario as any)[field] = after;
+            fixed = true;
+            fixes.push(`${field}: repaired token-context grammar`);
+        }
+    }
+    for (const opt of scenario.options) {
+        for (const field of ['text', 'outcomeHeadline', 'outcomeSummary', 'outcomeContext'] as const) {
+            if (typeof opt[field] === 'string') {
+                const before = opt[field] as string;
+                const after = repairTokenContextGrammar(before);
+                if (after && after !== before) {
+                    (opt[field] as string) = after;
+                    fixed = true;
+                    fixes.push(`${opt.id}: repaired token-context grammar in ${field}`);
+                }
+            }
+        }
+        if (Array.isArray(opt.advisorFeedback)) {
+            for (const fb of opt.advisorFeedback as any[]) {
+                if (typeof fb.feedback === 'string') {
+                    const before = fb.feedback;
+                    const after = repairTokenContextGrammar(before);
+                    if (after && after !== before) {
+                        fb.feedback = after;
+                        fixed = true;
+                        fixes.push(`${opt.id}: repaired token-context grammar in advisor ${fb.roleId}`);
+                    }
+                }
+            }
+        }
+    }
+
     if (scenario.metadata?.scopeTier === 'universal') {
         const scrubUniversalRelationshipTokens = (text: string | undefined): string | undefined => {
             if (!text) return text;

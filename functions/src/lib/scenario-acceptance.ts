@@ -46,6 +46,11 @@ export const BLOCKING_AUDIT_RULE_IDS = new Set([
     'hardcoded-gov-structure',
     'hardcoded-institution-phrase',
     'advisor-boilerplate',
+    'token-context-you-the',
+    'token-context-double-determiner',
+    'token-context-double-article',
+    'token-context-article-before-article-form',
+    'token-context-you-bare-role',
 ]);
 
 export interface EvaluatorDecisionInput<TResult> {

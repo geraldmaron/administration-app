@@ -3012,6 +3012,25 @@ async function expandConceptToLoop(
             drafterPrompt += `\n**TOKEN VIOLATION**: You used incorrect tokens or casing. Use only allowed tokens and ensure they are ALL LOWERCASE (e.g., {finance_role}).\n`;
           }
           }
+        } else if (failureCategory === 'token-context-violation') {
+          const contextIssueRules = new Set(lastAuditResult.issues.map((i: any) => i.rule));
+          drafterPrompt += `\n**TOKEN GRAMMAR ERROR**: Your prose had an invalid structure around a token. These patterns are hard-rejected:\n`;
+          if (contextIssueRules.has('token-context-you-the') || contextIssueRules.has('rendered-output-you-the')) {
+            drafterPrompt += `❌ "You the {finance_role} announced" → ✅ "You asked the {finance_role} to announce" (add a verb between 'you' and the token)\n`;
+          }
+          if (contextIssueRules.has('token-context-double-determiner') || contextIssueRules.has('rendered-output-your-the')) {
+            drafterPrompt += `❌ "Your the {health_role} warned" → ✅ "Your {health_role} warned" (remove the duplicate article 'the')\n`;
+          }
+          if (contextIssueRules.has('token-context-you-bare-role')) {
+            drafterPrompt += `❌ "You {health_role} must respond" → ✅ "Your {health_role} must respond" or "You directed the {health_role} to respond"\n`;
+          }
+          if (contextIssueRules.has('token-context-double-article') || contextIssueRules.has('rendered-output-double-article')) {
+            drafterPrompt += `❌ "a the {defense_role}" → ✅ "the {defense_role}" (one article only before a token)\n`;
+          }
+          if (contextIssueRules.has('token-context-article-before-article-form')) {
+            drafterPrompt += `❌ "the {the_finance_role}" → ✅ "{the_finance_role}" (never place an article before an article-form token — or use the bare form: "the {finance_role}")\n`;
+          }
+          drafterPrompt += `Fix all token-context grammar in this attempt.\n`;
         } else if (failureCategory === 'readability-violation') {
           drafterPrompt += `\n**READABILITY FAILURE**: Rewrite for non-expert players.
 - Replace policy jargon with simple words.
@@ -3032,7 +3051,16 @@ async function expandConceptToLoop(
         } else if (failureCategory === 'effect-count-violation') {
           drafterPrompt += `\n**EFFECT COUNT ERROR**: Each option must have 2–4 effects. You used more than 4 on at least one option. Remove or merge effects so every option has exactly 2, 3, or 4 effects.\n`;
         } else if (failureCategory === 'shallow-content') {
-          drafterPrompt += `\n**CONTENT TOO SHALLOW**: Add more depth and detail to outcome summaries and context. Keep description and option text to exactly 2 sentences each.\n`;
+          const shallowIssueRules = new Set(lastAuditResult.issues.map((i: any) => i.rule));
+          const hasShortSummary = shallowIssueRules.has('short-summary') || shallowIssueRules.has('missing-summary');
+          const hasShortContext = shallowIssueRules.has('short-article') || shallowIssueRules.has('missing-context');
+          const hasMissingHeadline = shallowIssueRules.has('missing-headline');
+          drafterPrompt += `\n**OUTCOME FIELDS TOO SHORT OR MISSING**:`;
+          if (hasMissingHeadline) drafterPrompt += `\n- outcomeHeadline is MISSING. Write a 3-15 word news headline for every option.`;
+          if (hasShortSummary) drafterPrompt += `\n- outcomeSummary is below 200 characters. Write 2-3 full sentences (wire-service style, third person, past tense) covering the immediate result and one named group affected.`;
+          if (hasShortContext) drafterPrompt += `\n- outcomeContext is below 350 characters. Write 4-6 sentences. MUST name at least 2 institutional actors (use role tokens: "the {finance_role}", "the {labor_role}"). MUST include at least 1 second-order consequence — something triggered by the first result, not directly by the decision.`;
+          if (!hasShortSummary && !hasShortContext && !hasMissingHeadline) drafterPrompt += `\n- Add more depth and detail to outcome summaries and context.`;
+          drafterPrompt += `\n`;
         } else if (failureCategory === 'inverse-metric-confusion') {
           drafterPrompt += `\n**YOU MISHANDLED INVERSE METRICS**. ALL values for corruption/inflation/crime/bureaucracy MUST be NEGATIVE. Example: { "targetMetricId": "metric_corruption", "value": -1.5 }. Any positive value on these metrics = REJECTED.\n`;
         } else if (failureCategory === 'missing-advisor-feedback') {

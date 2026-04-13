@@ -113,4 +113,58 @@ describe('evaluateRenderedOutputQuality', () => {
     expect(result.pass).toBe(false);
     expect(result.issues.some((item) => item.rule === 'rendered-output-fallback-heavy')).toBe(true);
   });
+
+  describe('post-resolution prose quality', () => {
+    test('fails when token resolves to produce "you the [Role]"', () => {
+      // "you {finance_role}" where finance_role = "Treasury Secretary" → "you Treasury Secretary" is caught pre-resolution
+      // "You the {finance_role}" → "You the Treasury Secretary" is caught post-resolution as well
+      const scenario = makeScenario({
+        description: 'You the {finance_role} announced new measures.',
+      });
+      const result = evaluateRenderedOutputQuality(scenario, countries);
+      expect(result.pass).toBe(false);
+      expect(result.issues.some((item) => item.rule === 'rendered-output-you-the')).toBe(true);
+    });
+
+    test('fails when token resolves to produce "your the [Role]"', () => {
+      const scenario = makeScenario({
+        description: 'Your the {finance_role} warned of a recession.',
+      });
+      const result = evaluateRenderedOutputQuality(scenario, countries);
+      expect(result.pass).toBe(false);
+      expect(result.issues.some((item) => item.rule === 'rendered-output-your-the')).toBe(true);
+    });
+
+    test('fails when consecutive articles appear after resolution', () => {
+      // "a {the_finance_role}" → "a the Treasury Secretary" after resolution
+      const scenario = makeScenario({
+        description: 'Officials appointed a {the_finance_role} to lead negotiations.',
+      });
+      const result = evaluateRenderedOutputQuality(scenario, countries);
+      expect(result.pass).toBe(false);
+      expect(result.issues.some((item) => item.rule === 'rendered-output-double-article')).toBe(true);
+    });
+
+    test('passes for grammatically valid token usage', () => {
+      const scenario = makeScenario({
+        description: '{the_finance_role} announced new measures. The {finance_role} briefed {the_leader_title}.',
+      });
+      const result = evaluateRenderedOutputQuality(scenario, countries);
+      const proseIssues = result.issues.filter((item) =>
+        item.rule === 'rendered-output-you-the' || item.rule === 'rendered-output-your-the' || item.rule === 'rendered-output-double-article'
+      );
+      expect(proseIssues).toHaveLength(0);
+    });
+
+    test('passes for "You, the [Role]," with commas (grammatically correct appositive)', () => {
+      const scenario = makeScenario({
+        description: 'You, the {finance_role}, must decide quickly.',
+      });
+      const result = evaluateRenderedOutputQuality(scenario, countries);
+      const proseIssues = result.issues.filter((item) =>
+        item.rule === 'rendered-output-you-the' || item.rule === 'rendered-output-your-the'
+      );
+      expect(proseIssues).toHaveLength(0);
+    });
+  });
 });

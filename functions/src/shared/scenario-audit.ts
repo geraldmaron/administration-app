@@ -952,6 +952,38 @@ export const UNSUPPORTED_SCALE_TOKEN_TEXT_REPLACEMENTS: ReadonlyArray<{
     },
 ];
 
+export const TOKEN_CONTEXT_QUALITY_RULES: ReadonlyArray<{
+    pattern: RegExp;
+    rule: string;
+    message: (fieldName: string) => string;
+}> = [
+    {
+        pattern: /\byou\s+the\s+\{[a-z_]+\}/i,
+        rule: 'token-context-you-the',
+        message: (f) => `${f} contains "you the {token}" — missing verb or should use article-form token`,
+    },
+    {
+        pattern: /\byour\s+the\s+\{[a-z_]+\}/i,
+        rule: 'token-context-double-determiner',
+        message: (f) => `${f} contains "your the {token}" — double determiner`,
+    },
+    {
+        pattern: /\b(?:a|an|the)\s+(?:a|an|the)\s+\{[a-z_]+\}/i,
+        rule: 'token-context-double-article',
+        message: (f) => `${f} has consecutive articles before a token`,
+    },
+    {
+        pattern: /\b(?:a|an|the)\s+\{the_[a-z_]+\}/i,
+        rule: 'token-context-article-before-article-form',
+        message: (f) => `${f} has an article before an article-form token — produces double article after resolution`,
+    },
+    {
+        pattern: /\byou\s+\{(?!the_)[a-z_]+_role\}/i,
+        rule: 'token-context-you-bare-role',
+        message: (f) => `${f} uses "You {role_token}" without a verb`,
+    },
+];
+
 export function repairUnsupportedScaleTokenArtifacts(text: string | undefined): string | undefined {
     if (!text) return text;
     let result = text;
@@ -2089,6 +2121,11 @@ export function auditScenario(
                     add('warn', 'run-on-sentence', scenario.id, `${fieldName} has a run-on sentence (~${sentenceWordCount} words)`);
                 sentenceWordCount = 0;
             }
+        }
+
+        for (const rule of TOKEN_CONTEXT_QUALITY_RULES) {
+            if (rule.pattern.test(text))
+                add('error', rule.rule, scenario.id, rule.message(fieldName));
         }
     };
 

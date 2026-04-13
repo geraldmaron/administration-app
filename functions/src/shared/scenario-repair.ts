@@ -279,6 +279,16 @@ export function applyDeterministicTextFixes<T extends RepairableScenario>(
     if (!text) return text;
     let updated = text;
 
+    // Repair token-context grammar errors before any other fixes.
+    const beforeGrammar = updated;
+    updated = updated.replace(/\b(Your|your)\s+the\s+(\{[a-z_]+\})/g, '$1 $2');
+    updated = updated.replace(/\bYou\s+the\s+(\{[a-z_]+\})/g, 'Your $1');
+    updated = updated.replace(/\byou\s+the\s+(\{[a-z_]+\})/g, 'your $1');
+    updated = updated.replace(/\bYou\s+(\{(?!the_)[a-z_]+_role\})/g, 'Your $1');
+    updated = updated.replace(/\byou\s+(\{(?!the_)[a-z_]+_role\})/g, 'your $1');
+    updated = updated.replace(/\b(?:a|an|the)\s+(\{the_[a-z_]+\})/gi, '$1');
+    if (updated !== beforeGrammar) changed = true;
+
     const trillionPattern = /\$\d{5,}\s+trillion/gi;
     if (trillionPattern.test(updated)) {
       updated = updated.replace(trillionPattern, 'a massive share of the national budget');

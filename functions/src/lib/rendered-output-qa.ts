@@ -6,6 +6,12 @@ import { ALL_TOKENS } from './token-registry';
 const TOKEN_PATTERN = /\{([a-z_]+)\}/gi;
 const VALID_TOKEN_SET = new Set(ALL_TOKENS.map((t) => t.toLowerCase()));
 
+const RENDERED_PROSE_QUALITY_PATTERNS: ReadonlyArray<{ pattern: RegExp; rule: string; description: string }> = [
+  { pattern: /\b(?:a|an|the)\s+(?:a|an|the)\s+\w/i, rule: 'rendered-output-double-article', description: 'consecutive articles' },
+  { pattern: /\b[Yy]ou\s+the\s+[A-Z]/, rule: 'rendered-output-you-the', description: '"You the [Role]" — pronoun plus article without verb' },
+  { pattern: /\b[Yy]our\s+the\s+[A-Z]/, rule: 'rendered-output-your-the', description: '"Your the [Role]" — double determiner after resolution' },
+];
+
 const EXPLICIT_FALLBACKS: Record<string, string> = {
   player_country: 'the country',
   the_player_country: 'the country',
@@ -255,6 +261,17 @@ export function evaluateRenderedOutputQuality(
 
     if (/\{[a-z_]+\}/i.test(title)) {
       issues.push(issue('error', 'rendered-output-token-leak', `${scenario.id}/${country.id}`, `Rendered title still contains raw token syntax for ${country.id}.`));
+    }
+
+    const seenProseRules = new Set<string>();
+    for (const part of renderParts) {
+      for (const { pattern, rule, description } of RENDERED_PROSE_QUALITY_PATTERNS) {
+        if (seenProseRules.has(rule)) continue;
+        if (pattern.test(part.text)) {
+          seenProseRules.add(rule);
+          issues.push(issue('error', rule, `${scenario.id}/${country.id}`, `Rendered output for ${country.id} contains ${description}.`));
+        }
+      }
     }
   }
 

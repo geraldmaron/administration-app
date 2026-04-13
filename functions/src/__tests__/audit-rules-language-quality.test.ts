@@ -335,3 +335,68 @@ describe('hardcoded role-title repair', () => {
         expect(issues.some((issue) => issue.rule === 'hardcoded-institution-phrase' && issue.message.includes('outcomeContext'))).toBe(true);
     });
 });
+
+describe('token-context prose quality', () => {
+    beforeEach(() => {
+        setAuditConfigForTests(makeAuditConfig());
+    });
+
+    afterEach(() => {
+        setAuditConfigForTests(null);
+    });
+
+    test('flags "you the {token}" in description', () => {
+        const scenario = makeScenario();
+        scenario.description = 'You the {health_role} warned that a shortage would develop within months.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((issue) => issue.rule === 'token-context-you-the')).toBe(true);
+    });
+
+    test('flags "Your the {token}" double determiner', () => {
+        const scenario = makeScenario();
+        scenario.description = 'Your the {finance_role} reported that deficits had widened significantly.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((issue) => issue.rule === 'token-context-double-determiner')).toBe(true);
+    });
+
+    test('flags consecutive articles before a token', () => {
+        const scenario = makeScenario();
+        scenario.description = 'Officials appointed a the {defense_role} to oversee the response.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((issue) => issue.rule === 'token-context-double-article')).toBe(true);
+    });
+
+    test('flags article before an article-form token', () => {
+        const scenario = makeScenario();
+        scenario.description = 'a {the_finance_role} briefed parliament on the shortfall.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((issue) => issue.rule === 'token-context-article-before-article-form')).toBe(true);
+    });
+
+    test('flags "You {role_token}" without verb', () => {
+        const scenario = makeScenario();
+        scenario.options[0].text = 'You {health_role} must respond before the shortage worsens.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        expect(issues.some((issue) => issue.rule === 'token-context-you-bare-role')).toBe(true);
+    });
+
+    test('does not flag valid token usage', () => {
+        const scenario = makeScenario();
+        scenario.description = '{the_finance_role} briefed parliament. Your {health_role} warned of shortages. You directed {the_defense_role} to respond.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        const tokenContextIssues = issues.filter((issue) =>
+            issue.rule.startsWith('token-context-')
+        );
+        expect(tokenContextIssues).toHaveLength(0);
+    });
+
+    test('does not flag "You, the {token}," with commas (valid appositive)', () => {
+        const scenario = makeScenario();
+        scenario.description = 'You, the {health_role}, must act before the shortage worsens.';
+        const issues = auditScenario(scenario, 'bundle_economy');
+        const tokenContextIssues = issues.filter((issue) =>
+            issue.rule.startsWith('token-context-')
+        );
+        expect(tokenContextIssues).toHaveLength(0);
+    });
+});
