@@ -1,0 +1,603 @@
+# Stated ideologies of the Factbook's seated parties, matched by name or abbreviation, vendored by scripts/vendor-nation-wikidata.mjs — do not edit by hand.
+# fetched: 2026-09-22
+# source: Wikidata (query.wikidata.org), CC0
+iso3	rank	factbook_name	qid	wikidata_name	ideologies
+AGO	1	Popular Movement for the Liberation of Angola	Q28551	People's Movement for the Liberation of Angola	social democracy|Marxism–Leninism|democratic socialism|communism
+AGO	2	National Union for the Total Independence of Angola	Q28699	National Union for the Total Independence of Angola	Christian democracy|anti-communism|social democracy|Maoism|left-wing nationalism|social liberalism|populism|anti-imperialism|African socialism|Angola|conservatism|nationalism
+ALB	1	Socialist Party of Albania	Q642882	Socialist Party of Albania	social democracy|democratic socialism|pro-Europeanism|left-wing populism
+ALB	2	Democratic Party - Alliance for a Greater Albania			
+AND	1	Democrats for Andorra (DA) and its allies			
+AND	2	Concordia (Concòrdia) and its allies			
+AND	3	Andorra Forward	Q116465504	Andorra Forward	euroscepticism|conservatism
+AND	4	Social Democrat Party (PS) - Social Democracy and Progress	Q19843090	Social Democracy and Progress	social democracy
+ARG	1	Union for the Homeland			
+ARG	2	Freedom Advances	Q108454548	Freedom Advances	libertarianism|economic liberalism
+ARG	3	Together for Change			
+ARM	1	Civil Contract Party			
+ARM	2	Armenia Alliance	Q106833126	Armenia Alliance	Armenian nationalism|left-wing nationalism|left-wing populism|social democracy
+ARM	3	I Have the Honour Alliance			
+ATG	1	Antigua and Barbuda Labour Party	Q1277738	Antigua and Barbuda Labour Party	
+ATG	2	United Progressive Party	Q1285399	United Progressive Party	social democracy
+ATG	3	Barbuda People's Movement	Q3038017	Barbuda People's Movement	
+ATG	4				
+ATG	5	Republican Force			
+AUS	1	Australian Labor Party	Q216082	Australian Labor Party	social democracy
+AUS	2	Liberal National coalition	Q1065320	Liberal-National Coalition	liberal conservatism|liberalism|conservatism|agrarianism
+AUT	1	Freedom Party	Q131692	Austrian Freedom Party	anti-globalization movement|euroscepticism|opposition to immigration|social conservatism|German nationalism in Austria|right-wing populism|national liberalism|national conservatism|Traditionalist School
+AUT	2	People's Party	Q186867	Austrian People's Party	Christian democracy|conservatism
+AUT	3	Social Democratic Party	Q179111	Social Democratic Party of Austria	social democracy|austromarxism
+AUT	4	NEOS	Q13564543	NEOS – The New Austria	pro-Europeanism|liberalism
+AUT	5	Greens			
+AZE	1	New Azerbaidjan Party	Q876402	New Azerbaijan Party	social conservatism|euroscepticism|secularism|statism|liberal conservatism|Pan-Turkism|Azerbaijani nationalism|social market economy|economic liberalism
+BDI	1	National Council for the Defense of Democracy - Front for the Defense of Democracy			
+BEL	1	New Flemish Alliance	Q28982	New Flemish Alliance	separatism|euroscepticism|liberal conservatism|Flemish nationalism|economic liberalism
+BEL	2	Vlaams Belang	Q682990	Flemish Interest	social conservatism|separatism|euroscepticism|Flemish nationalism|right-wing populism|neo-fascism|national conservatism
+BEL	3	Movement for Reform	Q533384	Reformist Movement	social liberalism|conservative liberalism|pro-Europeanism|liberalism
+BEL	4	Socialist Party in Wallonia	Q645787	Socialist Party	democratic socialism|social democracy
+BEL	5	Workers' Party of Belgium	Q925616	Workers' Party of Belgium	populism|socialism|communism|Marxism
+BEL	6	LES ENGAGÉS	Q840814	Les Engagés	social liberalism
+BEL	7	Vooruit	Q939354	Vooruit	social democracy
+BEL	8	Christian Democratic and Flemish	Q750673	Christian Democratic and Flemish	Christian democracy
+BEN	1	Progressive Union for Renewal	Q96332854	Progressive Union for Renewal	social democracy
+BEN	2	Republican Block	Q96273366	Republican Bloc	social liberalism
+BEN	3	Democrats			
+BGR	1	Citizens for European Development of Bulgaria Party (GERB) - Union of Democratic Forces			
+BGR	2	We Continue the Change - Democratic Bulgaria			
+BGR	3	Revival	Q28943121	Revival	irredentism|Greater Bulgaria|anti-Western sentiment|homophobia|Russophilia|hard Euroscepticism|anti-gender movement|nationalism|ultranationalism|right-wing populism|national conservatism
+BGR	4	Movement for Rights and Freedoms (DPS) - New Beginning			
+BGR	5	Bulgarian Socialist Party (BSP) - United Left			
+BGR	6	Alliance for Rights and Freedoms	Q130313846	Alliance for Rights and Freedoms	liberalism
+BGR	7	There is Such a People			
+BHS	1	Progressive Liberal Party	Q2566823	Progressive Liberal Party	social liberalism|populism|nationalism|progressivism
+BHS	2	Free National Movement	Q2566343	Free National Movement	populism|conservative liberalism
+BIH	1	Party of Democratic Action	Q1132677	Party of Democratic Action	secularism|social conservatism|Islamic democracy|pro-Europeanism|Bosniak nationalism|Pan-Islamism|national conservatism
+BIH	2	Alliance of Independent Social Democrats	Q1258283	Alliance of Independent Social Democrats	social conservatism|social democracy|Serbian nationalism|euroscepticism
+BIH	3	Social Democratic Party of Bosnia and Herzegovina	Q1143161	Social Democratic Party of Bosnia and Herzegovina	social democracy
+BIH	4	HDZ BiH, HSS, HSP BiH, HKDU, HSPAS, HDU, HSPHB, HRAST			
+BIH	5	Democratic Front (DF) - Civic Alliance			
+BIH	6	People and Justice	Q97515918	People and Justice	secularism|social conservatism|liberal conservatism|pro-Europeanism|Atlanticism
+BIH	7				
+BIH	8	Republican Party of the Social Order			
+BLR	1	Belaya Rus party			
+BLR	2	Republican Party of Labour and Justice	Q2436636	Republican Party of Labour and Justice	social democracy|democratic socialism|Russophilia
+BLR	3	Communist Party of Belarus	Q325413	Communist Party of Belarus	Marxism–Leninism|communism
+BLZ	1	People's United Party	Q1759613	People's United Party	Christian left|social democracy|civic nationalism
+BLZ	2	United Democratic Party	Q1809323	United Democratic Party	
+BOL	1	Christian Democratic Party	Q2605787	Christian Democratic Party	Christian democracy
+BOL	2	LIBRE			
+BOL	3	Unity			
+BOL	4	Popular Alliance	Q135559560	Popular Alliance	
+BRA	1	Liberal Party	Q2653155	Liberal Party	conservatism
+BRA	2	Workers' Party	Q657089	Workers' Party	social democracy|democratic socialism
+BRA	3	Brazil Union	Q108837483	Brazil Union	liberal conservatism|economic liberalism
+BRA	4	Progressive Party	Q17152116	Progressive Party	
+BRA	5	Brazilian Democratic Movement	Q3097751	Brazilian Democratic Movement	social democracy|Third Way
+BRA	6	Social Democratic Party	Q2054750	Social Democratic Party	conservative liberalism
+BRA	7	Republicans	Q66739809	Republicanos	
+BRB	1	Barbados Labour Party	Q740420	Barbados Labour Party	social democracy
+BTN	1	People's Democratic Party	Q2578342	People's Democratic Party	progressivism|social liberalism|monarchism
+BTN	2	Bhutan Tendrel Party	Q116457147	Bhutan Tendrel Party	
+BWA	1	Umbrella for Democratic Change			
+BWA	2	Botswana Congress Party	Q4894021	Botswana Congress Party	social democracy
+BWA	3	Botswana Patriotic Front	Q72976241	Botswana Patriotic Front	populism
+BWA	4	Botswana Democratic Party	Q859825	Botswana Democratic Party	paternalistic conservatism|economic nationalism
+CAF	1	United Hearts Movement	Q104581386	United Hearts Movement	
+CAF	2	National Movement of Independents	Q112098751	National Movement of Independents	
+CAF	3	Union for Central African Renewal	Q23900268	Union for Central African Renewal	
+CAF	4	Movement for the Liberation of the Central African People	Q3326601	Movement for the Liberation of the Central African People	democratic socialism
+CAN	1	Liberal Party			
+CAN	2	Conservative Party			
+CAN	3	Bloc Québécois	Q735105	Bloc Québécois	Quebec sovereignty movement|Quebec nationalism|Republicanism|environmentalism|social democracy
+CHE	1	Swiss People's Party	Q385258	Swiss People's Party	economic liberalism|right-wing populism|euroscepticism|national conservatism|opposition to immigration|agrarianism|non-interventionism
+CHE	2	Socialist Party	Q303745	Social Democratic Party of Switzerland	democratic socialism
+CHE	3	Centre Party			
+CHE	4	FDP/The Liberals	Q202638	FDP.The Liberals	conservative liberalism|classical liberalism
+CHE	5	Green Party			
+CHE	6	Liberal Green Party			
+CHL	1	Chile Podemos			
+CHL	2	New Social Pact			
+CHL	3	Approving Dignity			
+CHL	4	Christian Social Front			
+CIV	1	Rally of Houphouetists for Democracy and Peace	Q1422092	RHDP	social democracy|left-wing nationalism
+CIV	2	te d'Ivoire-African Democratic Rally (PDCI-RDA)-Together for Democracy and Sovereignty			
+CIV	3	te d'Ivoire-African Democratic Rally			
+CMR	1	Cameroon People's Democratic Movement	Q953447	Cameroon People's Democratic Movement	nationalism|Francophile
+COD	1	Union for Democracy and Social Progress/TSHISEKEDI			
+COD	2	Action of Allies and Union for the Congolese Nation			
+COD	3	Alliance of Democratic Forces of Congo and Allies			
+COD	4	Act and Build			
+COD	5	Action of Allies/All for the Development of the Congo			
+COD	6	Alliance of Stakeholders for the People			
+COD	7	Alliance Bloc 50			
+COD	8	Congo Liberation Movement			
+COG	1	Congolese Workers Party	Q1785816	Congolese Party of Labour	Marxism|socialism|democratic socialism|social democracy
+COL	1	Liberal Party			
+COL	2	Historic Pact			
+COL	3	Conservative Party			
+COL	4	Democratic Centre			
+COL	5	Radical Change			
+COL	6	Union Party for the People “Partido de la U”			
+COL	7	Green Alliance - Hope Centre coalition			
+COM	1	Convention for the Renewal of the Comoros	Q5166253	Convention for the Renewal of the Comoros	
+CPV	1	Movement for Democracy	Q1951190	Movement for Democracy	Christian democracy
+CPV	2	African Party for the Independence of Cabo Verde	Q497464	African Party for the Independence of Cape Verde	left-wing nationalism|democratic socialism
+CPV	3	Union for an Independent Democratic Cape Verde			
+CRI	1	National Liberation Party	Q82591	National Liberation Party	Third Way
+CRI	2	Democratic Social Progress Party			
+CRI	3	Christian Social Unity Party			
+CRI	4	New Republic Party	Q61862296	New Republic Party	nationalism|social conservatism
+CRI	5	Broad Front	Q403054	Broad Front	democratic socialism|social democracy
+CRI	6	Progressive Liberal Party	Q60823489	Progressive Liberal Party	classical liberalism
+CYP	1	Democratic Rally	Q644973	Democratic Rally	Christian democracy|liberal conservatism|pro-Europeanism|economic liberalism
+CYP	2	Progressive Party of the Working People			
+CYP	3	Democratic Party			
+CYP	4	National Popular Front	Q2748384	ELAM	Greek Cypriot nationalism|Metaxism|ultranationalism|euroscepticism|neo-fascism
+CYP	5	Movement of Social Democrats			
+CYP	6	Democratic Alignment			
+CYP	7	Cyprus Green Party			
+CZE	1	ANO	Q10728124	ANO 2011	populism|conservative liberalism
+CZE	2	SPOLU	Q104527897	SPOLU	
+CZE	3	Mayors and independents	Q1586610	Mayors and Independents	pro-Europeanism|liberalism
+CZE	4	Czech Pirate Party	Q341085	Czech Pirate Party	progressivism|liberalism
+CZE	5	Freedom and Direct Democracy	Q20058756	Freedom and Direct Democracy	euroscepticism|right-wing populism|Czech nationalism|direct democracy
+CZE	6	Motoristé sobě	Q29789623	Motoristé sobě	euroscepticism|national conservatism|right-wing populism
+DEU	1	Christian Democratic Union	Q49762	Christian Democratic Union	Christian democracy|pro-Europeanism|conservatism|liberal conservatism|economic liberalism
+DEU	2	Alternative for Germany	Q6721203	Alternative for Germany	euroscepticism|Islamophobia|antifeminism|right-wing populism|German nationalism|opposition to immigration|antisemitism|climate change denial|national conservatism|ethnic nationalism|economic liberalism
+DEU	3	Social Democratic Party	Q49768	Social Democratic Party of Germany	anti-fascism|social democracy|Atlanticism|pro-Europeanism
+DEU	4	Green Party			
+DEU	5	Left Party	Q49764	Die Linke	anti-fascism|green politics|pacifism|feminism|Neo-Marxism|democratic socialism
+DEU	6	Christian Social Union of Bavaria	Q49763	Christian Social Union of Bavaria	Bavaria|regionalism|liberal conservatism|social conservatism|Christian democracy
+DJI	1	Union for the Presidential Majority	Q1538413	Union for the Presidential Majority	
+DJI	2	Union for Democracy and Justice			
+DMA	1	Dominica Labor Party			
+DNK	1	Social Democratic Party			
+DNK	2	Liberal Party	Q217321	Venstre	economic liberalism|classical liberalism|agrarianism|conservative liberalism|Nordic agrarian parties
+DNK	3	Moderates	Q107110050	Moderate Party	pro-Europeanism|conservative liberalism|liberalism
+DNK	4	Socialist People's Party	Q615603	Green Left	Popular socialism (Nordic countries)|market socialism|green politics|democratic socialism
+DNK	5	Danish Democrats			
+DNK	6	Liberal Alliance	Q478180	Liberal Alliance	libertarianism|classical liberalism
+DNK	7	Conservative People's Party	Q902619	Conservative People's Party	social conservatism|liberal conservatism
+DNK	8	Unity List-Red-Green Alliance			
+DOM	1	Modern Revolutionary Party (PRM) and its allies			
+DOM	2	People’s Force (FP) and its allies			
+DZA	1	National Liberation Front	Q204543	National Liberation Front	populism|Arab nationalism|anti-imperialism|Algerian nationalism
+DZA	2	Movement of Society for Peace	Q1889454	Movement of Society for Peace	Islamic democracy|Islamism
+DZA	3	National Democratic Rally			
+DZA	4	El-Moustakbel Front			
+DZA	5	El Binaa Movement			
+ECU	1	Citizen Revolution Movement (RC) - Renewal Movement	Q109313311	RETO Movement	liberal democracy|economic liberalism|personalismo
+ECU	2	National Democratic Action	Q120971997	National Democratic Action	left-wing populism|social democracy|nepotism|personalismo
+ECU	3	Pachakutik	Q1972741	Pachakutik	plurinationalism|radical environmentalism|Indigenismo
+EGY	1	Future of the Nation			
+EGY	2	Republican People's party	Q15980860	Republican People's Party	social liberalism
+ESP	1	People's Party	Q185088	People's Party	Christian democracy|liberalism|conservative liberalism|pro-Europeanism|economic liberalism
+ESP	2	Spanish Socialist Workers' Party	Q138198	Spanish Socialist Workers' Party	social democracy|federalism|democratic socialism|progressivism|pro-Europeanism|Republicanism
+ESP	3	Vox	Q15630787	Vox	centralism|economic liberalism|Spanish unionism|antifeminism|national conservatism|ultraconservatism|Spanish nationalism
+ESP	4	SUMAR			
+EST	1	Reform Party			
+EST	2	Conservative People's Party	Q794028	Conservative People's Party of Estonia	social conservatism|euroscepticism|direct democracy|right-wing populism|ethnic nationalism|opposition to immigration|Estonian nationalism|national conservatism
+EST	3	Centre Party			
+EST	4	Estonia 200	Q56249403	Estonia 200	technocracy|liberalism|pro-Europeanism
+EST	5	Social Democratic Party	Q913551	Social Democratic Party	social democracy
+EST	6	Pro Patria	Q163347	Isamaa	Christian democracy|economic liberalism|national conservatism
+ETH	1	Prosperity Party	Q78108696	Prosperity Party	Ethiopian nationalism|federalism|social liberalism
+FIN	1	National Coalition Party	Q304191	National Coalition Party	liberal conservatism|pro-Europeanism
+FIN	2	The Finns Party	Q634277	Finns Party	Finnish nationalism|euroscepticism|social conservatism|right-wing populism|economic nationalism|national conservatism
+FIN	3	Social Democratic Party	Q499029	Social Democratic Party of Finland	social democracy
+FIN	4	Center Party	Q506591	Centre Party	agrarianism
+FIN	5	The Greens			
+FIN	6	Left Alliance	Q385927	Left Alliance	eco-socialism|democratic socialism
+FJI	1	FijiFirst			
+FJI	2	People's Alliance	Q110677493	People's Alliance	
+FJI	3	National Federation Party	Q6972579	National Federation Party	federalism|Third Way|social democracy
+FJI	4	Social Democratic Liberal Party	Q7550539	Social Democratic Liberal Party	protectionism|Christian nationalism|ethnic nationalism|Rhine capitalism
+FRA	1	New Popular Front (NFP)/UG			
+FRA	2	Ensemble	Q109929254	Ensemble	social liberalism
+FRA	3	National Rally	Q205150	National Rally	right-wing antiglobalism|statism|French nationalism|euroscepticism|right-wing populism|protectionism|Russophilia|national conservatism|sovereigntism|Producerism
+FRA	4	The Republicans	Q20012759	The Republicans	gaullism|conservatism
+GBR	1	Labour Party	Q9630	Labour Party	social democracy|democratic socialism
+GBR	2	Conservative Party	Q9626	Conservative Party	neoconservatism|social conservatism|liberal conservatism|unionism in the United Kingdom|Traditionalist School|conservatism|economic liberalism
+GBR	3	Liberal Democrats	Q9624	Liberal Democrats	social liberalism|pro-Europeanism|liberalism
+GEO	1	Georgian Dream	Q16377039	Georgian Dream	
+GEO	2	Coalition for Changes			
+GEO	3	Unity - National Movement	Q130386204	Unity – National Movement	pro-Europeanism|Atlanticism|liberal conservatism|national democracy
+GEO	4	Strong Georgia – Lelo, For people, For Liberty!			
+GEO	5	For Georgia	Q107053787	For Georgia	pro-Europeanism|anti-corruption
+GHA	1	National Democratic Congress	Q200875	National Democratic Congress	social democracy
+GHA	2	New Patriotic Party	Q1148441	New Patriotic Party	liberal conservatism
+GMB	1	National People's Party	Q97180861	National People's Party	
+GMB	2	United Democratic Party	Q2495179	United Democratic Party	constitutionalism|social liberalism|liberal democracy
+GMB	3	National Reconciliation Party	Q1786600	National Reconciliation Party	populism
+GNB	1	Inclusive Alliance Platform/Terra Coalition			
+GNB	2	Movement for Democratic Alternation	Q62258541	Madem G-15	
+GNB	3	Party for Social Renewal	Q461351	Party for Social Renewal	Christian left|social democracy|social liberalism|agrarianism
+GNB	4	Bissau-Guinean Workers’ Party			
+GNQ	1	Democratic Party of Equatorial Guinea (PDGE) and its allies			
+GRC	1	New Democracy	Q223153	New Democracy	Christian democracy|liberal conservatism|pro-Europeanism
+GRC	2	Coalition of the Radical Left	Q222897	SYRIZA	social democracy|democratic socialism|secularism|pro-Europeanism
+GRC	3	Panhellenic Socialist Movement - Movement for Change			
+GRC	4	Communist Party			
+GRD	1	National Democratic Congress	Q1254278	National Democratic Congress	liberalism
+GRD	2	New National Party	Q1288287	New National Party	conservatism
+GTM	1	Let’s Go for a Different Guatemala	Q54263394	Vamos	economic liberalism|conservatism
+GTM	2	National Unity of Hope Party			
+GTM	3	Seed Movement			
+GTM	4	Cabal	Q114602527	Cabal	
+GTM	5	Vision with Values	Q6163926	VIVA	Republicanism|conservative liberalism
+GUY	1	People's Progressive Party/Civic	Q1972521	People's Progressive Party	left-wing nationalism|Marxism
+GUY	2	We Invest in Nationhood			
+GUY	3	A Partnership for National Unity			
+HND	1	Liberty and Refoundation Party			
+HND	2	National Party			
+HND	3	Liberal Party			
+HND	4	Salvador de Honduras Party			
+HRV	1	Croatian Democratic Union	Q738439	Croatian Democratic Union	Christian democracy|Croatian nationalism|Atlanticism|national conservatism
+HRV	2	Social Democratic Party of Croatia	Q830323	Social Democratic Party of Croatia	anti-fascism|social democracy|Atlanticism|Third Way|pro-Europeanism
+HRV	3	Homeland Movement	Q86756923	Homeland Movement	
+HRV	4	We Can! – Political Platform			
+HRV	5	Bridge	Q16116415	The Bridge (Croatia)	
+HTI	1	Haitian Tet Kale Party	Q21207600	Haitian Tèt Kale Party	conservatism
+HTI	2	Konvansyon Inite Demokratik	Q108120253	Konvansyon Inite Demokratik	populism
+HTI	3	People's Struggle Party			
+HTI	4	Ayiti an aksyon			
+HTI	5	Fanmi Lavalas	Q1395689	Fanmi Lavalas	populism|social democracy
+HTI	6	Patriotic Unity Party			
+HUN	1	Hungarian Civic Union-Christian Democratic People's Party	Q50583624	Fidesz–KDNP	social conservatism|Christian democracy|right-wing populism|national conservatism
+HUN	2	Democratic Coalition	Q847504	Democratic Coalition	social liberalism|pro-Europeanism
+HUN	3	Movement for a Better Hungary	Q633442	Jobbik	Hungarian nationalism|pro-Europeanism|conservatism
+HUN	4	Hungarian Socialist Party	Q1162996	Hungarian Socialist Party	communism
+HUN	5	Momentum	Q28563736	Momentum Movement	liberalism|civic nationalism|pro-Europeanism|progressivism
+IDN	1	Indonesian Democratic Party - Struggle	Q1186306	Indonesian Democratic Party – Struggle	Pancasila|populism|left-wing nationalism|progressivism|economic nationalism
+IDN	2	Party of Functional Groups	Q1536552	Golkar	Pancasila|national conservatism|economic liberalism|nationalism
+IDN	3	Great Indonesia Movement	Q4261459	Great Indonesia Movement Party	Pancasila|anti-communism|nationalism|national conservatism|right-wing populism
+IDN	4	National Democratic Party	Q4207219	NasDem Party	Pancasila|corporatism|secularism|nationalism
+IDN	5	National Awakening Party	Q1257317	Partai Kebangkitan Bangsa	social conservatism|Islamic democracy|Pancasila
+IDN	6	Prosperous Justice Party	Q1511101	Prosperous Justice Party	Pancasila|Islamism
+IDN	7	National Mandate Party	Q2434365	Partai Amanat Nasional	Pancasila|Islamic democracy
+IDN	8	Democratic Party	Q1186227	Democratic Party	Pancasila|economic liberalism
+IND	1	Bharatiya Janata Party	Q10230	Bharatiya Janata Party	Hindutva|cultural nationalism|Hindu nationalism|right-wing populism|conservatism|Integral humanism
+IND	2	Indian National Congress	Q10225	Indian National Congress	secularism|Third Way|civic nationalism
+IND	3	Samajwadi Party	Q1546941	Samajwadi Party	democratic socialism
+IND	4	All India Trinamool Congress	Q912899	All India Trinamool Congress	secularism|anti-capitalism|nationalism|socialism
+IRL	1	Fianna Fáil	Q216517	Fianna Fáil	Christian democracy|pro-Europeanism|Irish republicanism
+IRL	2	Sinn Féin	Q76382	Sinn Féin	left-wing nationalism|populist socialism|linguistic nationalism|Irish republicanism|Republicanism
+IRL	3	Fine Gael	Q247135	Fine Gael	liberal conservatism|pro-Europeanism|Christian democracy|economic liberalism
+IRL	4	Social Democratic Party			
+IRL	5	Labour Party	Q503614	Labour Party	social democracy
+ISL	1	Social Democratic Alliance	Q1141127	Social Democratic Alliance	social democracy|pro-Europeanism
+ISL	2	Independence Party	Q218303	Independence Party	euroscepticism|liberal conservatism|economic liberalism|conservative liberalism|classical liberalism
+ISL	3	Liberal Reform Party	Q23789296	Liberal Reform Party	pro-Europeanism|environmentalism|liberalism
+ISL	4	People’s Party	Q27273216	People's Party	opposition to immigration|populism|Christian democracy|euroscepticism|nationalism
+ISL	5	Center Party			
+ISL	6	Progressive Party			
+ISR	1	Likud	Q187009	Likud	Revisionist Zionism|right-wing populism|conservatism|national liberalism
+ISR	2	Yesh Atid			
+ISR	3	Religious Zionism	Q2665610	Religious Zionism	religious Zionism|judicial restraint|national conservatism|Greater Israel
+ISR	4	National Unity			
+ISR	5	Shas	Q904635	Shas	conservatism
+ISR	6	United Torah Judaism	Q1466053	United Torah Judaism	religious conservatism|Non-Zionism
+ISR	7	Yisrael Beiteinu			
+ITA	1	Coalition Brothers of Italy (FdI) - Lega - Forza Italia - Us Moderates			
+ITA	2	Democratic Party - Democratic and Progressive Italy (PD-IDP) - Greens and Left Alliance (AVS) - +EUROPA" - Civic Commitment	Q16943621	I Change	
+ITA	3	Five Star Movement	Q47817	Five Star Movement	environmentalism|euroscepticism|populism|green politics|direct democracy|anti-corruption|e-democracy|degrowth
+ITA	4	Action - Italia Viva			
+JAM	1	Jamaica Labour Party	Q1539301	Jamaica Labour Party	conservatism
+JAM	2	People's National Party	Q1162691	People's National Party	social democracy|Republicanism
+JPN	1	Liberal Democratic Party	Q232595	Liberal Democratic Party	conservatism
+JPN	2	Constitutional Democratic Party of Japan	Q99233271	Constitutional Democratic Party of Japan	left-wing populism|social liberalism|progressivism|liberalism
+JPN	3	Nippon Ishin	Q1993324	Japan Innovation Party	
+JPN	4	Democratic Party for the People	Q99527550	Democratic Party For the People	moderate conservatism|conservatism
+JPN	5	Komeito	Q1061354	Komeito	social conservatism|social liberalism|Engaged Buddhism
+KAZ	1	Amanat party			
+KAZ	2	Auyl party			
+KAZ	3	Ak Zhol Democratic Party of Kazakhstan			
+KAZ	4	Respublica	Q116686278	Respublica	
+KAZ	5	People's Party of Kazakhstan			
+KEN	1	United Democratic Alliance	Q105637541	United Democratic Alliance	
+KEN	2	Orange Democratic Movement	Q1640905	Orange Democratic Movement	Third Way|civic nationalism|social liberalism
+KEN	3	Jubilee Party			
+KEN	4	Wiper Democratic Movement-Kenya	Q5251223	Wiper Democratic Movement	
+KGZ	1	Ata-Jurt Kyrgyzstan	Q109905386	Ata-Jurt Kyrgyzstan	
+KGZ	2	Ishenim	Q109975362	Ishenim	
+KGZ	3	Yntymak	Q110094656	Yntymak	
+KGZ	4	Alyans	Q110094669	Alliance	liberalism|populism
+KGZ	5	Butun Kyrgyzstan	Q42187322	Butun Kyrgyzstan	nationalism|ethnic nationalism
+KGZ	6	Yiman Nuru			
+KHM	1	Cambodian People's Party	Q769308	Cambodian People's Party	Khmer nationalism|authoritarianism|populism
+KHM	2	United National Front for an Independent, Neutral, Peaceful and Co-operative Cambodia	Q117815	National United Front for an Independent, Neutral, Peaceful and Cooperative Cambodia	monarchism|conservatism
+KNA	1	St. Kitts-Nevis Labour Party			
+KNA	2	Concerned Citizens' Movement	Q4115484	Concerned Citizens' Movement	
+KNA	3	Peoples Labour Party			
+KNA	4	People's Action Movement	Q3102757	People's Action Movement	conservatism
+KOR	1	Democratic Party of Korea	Q15978686	Democratic Party of Korea	liberalism
+KOR	2	People Power Party	Q85412437	People Power Party	anti-communism|right-wing populism|social conservatism|national conservatism|economic liberalism
+KOR	3	People Future Party	Q125055993	People Future Party	
+LAO	1	Lao People's Revolutionary Party	Q756180	Lao People's Revolutionary Party	left-wing nationalism
+LBN	1	Strong Republic			
+LBN	2	Strong Lebanon			
+LBN	3	Development and Liberation			
+LBN	4	Loyalty to the Resistance			
+LBN	5	Democratic Gathering			
+LBR	1	Congress for Democratic Change	Q1125914	Congress for Democratic Change	populism
+LBR	2	Unity Party	Q550159	Unity Party	economic liberalism
+LBR	3	Collaborating Political Parties	Q124371644	Collaborating Political Parties	
+LBR	4	Movement for Democracy and Reconstruction	Q123631082	Movement for Democracy and Reconstruction	
+LCA	1	Saint Lucia Labour Party	Q1292804	Saint Lucia Labour Party	social democracy
+LCA	2	United Workers Party	Q1292795	United Workers Party	Christian democracy
+LIE	1	Patriotic Union	Q49673	Fatherland Union	economic liberalism|liberal conservatism|Christian democracy
+LIE	2	Progressive Citizens' Party	Q49670	Progressive Citizens' Party	economic liberalism|national conservatism|monarchism
+LIE	3	Democrats for Liechtenstein	Q64441611	Democrats for Liechtenstein	economic liberalism|social conservatism|right-wing populism
+LIE	4	Free List	Q49668	Free List	green politics|social democracy
+LKA	1	National People's Power	Q104901719	National People's Power	left-wing populism|democratic socialism
+LKA	2	Samagi Jana Balawegaya			
+LSO	1	Revolution for Prosperity	Q114562488	Revolution for Prosperity	
+LSO	2	Democratic Congress	Q1185836	Democratic Congress	
+LSO	3	All Basotho Convention	Q1346132	All Basotho Convention	
+LSO	4	Basotho Action Party	Q114577239	Basotho Action Party	
+LTU	1	Lithuanian Social Democratic Party	Q4362	Social Democratic Party of Lithuania	social democracy
+LTU	2	Homeland Union - Lithuanian Christian Democrats	Q81556	Homeland Union – Lithuanian Christian Democrats	Christian democracy|liberal conservatism
+LTU	3	Political Party "The Dawn of Nemunas"			
+LTU	4	Union of Democrats “For Lithuania”	Q110966457	Union of Democrats "For Lithuania"	green politics
+LTU	5	Liberals Movement of the Republic of Lithuania			
+LTU	6	Lithuanian Farmers and Greens Union			
+LUX	1	Christian Social People's Party	Q1344670	Christian Social People's Party	Christian democracy
+LUX	2	Democratic Party	Q1029792	Democratic Party	economic liberalism|pro-Europeanism|liberalism
+LUX	3	Socialist Workers' Party			
+LUX	4	Alternative Democratic Reform Party	Q339280	Alternative Democratic Reform Party	national conservatism|economic liberalism
+LUX	5	Greens			
+LUX	6	Pirate Party	Q3079953	Pirate Party Luxembourg	Pirate Party
+LVA	1	New Unity			
+LVA	2	Union of Farmers and Greens			
+LVA	3	United List - Latvian Green Party, Latvian Regional Alliance, Liepāja Party			
+LVA	4	National Alliance of All for Latvia!" - "For Fatherland and Freedom / LNNK"			
+LVA	5	For Stability!	Q112227296	For Stability!	euroscepticism|Russophilia|populism
+LVA	6	Progressives			
+LVA	7	Latvia First	Q108096403	Latvia First	populism|social conservatism
+MAR	1	National Rally of Independents	Q1630297	National Rally of Independents	classical liberalism|liberal conservatism|monarchism|economic liberalism
+MAR	2	Authenticity and Modernity Party	Q784586	Authenticity and Modernity Party	social liberalism|progressivism|monarchism
+MAR	3	Istiqlal Party	Q477273	Istiqlal Party	conservatism|monarchism|nationalism|social conservatism
+MAR	4	Socialist Union of Popular Forces	Q2297130	Socialist Union of Popular Forces	social liberalism|social democracy
+MAR	5	Popular Movement	Q1471276	Popular Movement	conservative liberalism|agrarianism|Berberism|royalism
+MAR	6	Progress and Socialism Party			
+MCO	1	Monegasque National Union - l’Union			
+MDA	1	Action and Solidarity Party	Q24909066	Party of Action and Solidarity	liberalism|anti-corruption|pro-Europeanism
+MDA	2	Electoral Bloc “Patriotic of Socialists, Communists, Heart and Future of Moldova”			
+MDA	3	Alternative Bloc			
+MDA	4	Our Party	Q7314695	Our Party	social conservatism|left-wing populism|Russophilia|economic nationalism|euroscepticism|Moldovenism|Christian socialism
+MDA	5	Democracy at Home Party	Q4345957	Democracy at Home Party	Popolarismo
+MDG	1	Isika Rehetra Miaraka Amin’i Andry Rajoelina			
+MDG	2	Firaisankina	Q126943026	Firaisankina	
+MDV	1	People's National Congress	Q61750742	People's National Congress	conservatism|religious nationalism
+MDV	2	Maldivian Democratic Party	Q1778600	Maldivian Democratic Party	environmentalism|liberal conservatism|liberal democracy
+MEX	1	National Regeneration Movement	Q15717618	Morena	economic nationalism|left-wing populism|left-wing nationalism|social democracy|post-neoliberalism|non-interventionism
+MEX	2	Ecologist Green Party of Mexico			
+MEX	3	National Action Party	Q851087	National Action Party	humanism|liberal conservatism
+MEX	4	Labour Party			
+MEX	5	Institutional Revolutionary Party	Q682969	Institutional Revolutionary Party	secularism|import substitution industrialization|social democracy|civic nationalism|constitutionalism|corporatism|democratic socialism|liberalism
+MEX	6	Citizens' Movement	Q10920094	Citizens' Movement	wing half|environmentalism|social democracy|federalism
+MKD	1	Coalition "Your Macedonia"			
+MKD	2	Coalition "European Front"			
+MKD	3	Coalition "For a European Future"			
+MKD	4	Coalition VLEN			
+MKD	5	ZNAM			
+MKD	6	The Left	Q25553804	The Left	anti-imperialism|left-wing nationalism|socialism|secularism
+MLT	1	Labour Party	Q684886	Labour Party	social democracy
+MLT	2	Nationalist Party	Q594056	Nationalist Party	conservatism|pro-Europeanism|Christian democracy
+MNE	1	Europe now!	Q113453660	Europe Now	social liberalism|populism|pro-Europeanism|Atlanticism|anti-corruption|economic liberalism
+MNE	2	Together! For the future that belongs to you			
+MNE	3	Democratic People’s Party of Montenegro, Labour Party)			
+MNE	4	Bravery counts!			
+MNE	5	It’s clear! (Jasno je!) – Bosniak Party			
+MNG	1	Mongolian People's Party	Q1127178	Mongolian People's Party	communism|left-wing populism|Left conservatism|social democracy|left-wing nationalism|statism|democratic socialism|progressivism|Marxism–Leninism
+MNG	2	Democratic Party	Q1186234	Democratic Party	nationalism|liberal conservatism|economic liberalism
+MNG	3	HUN Party	Q17028413	Hun Party	liberalism
+MOZ	1	Mozambique Liberation Front	Q504564	FRELIMO	Marxism–Leninism|democratic socialism
+MOZ	2	Optimist Party for the Development of Mozambique	Q64657923	Optimist Party for the Development of Mozambique	Machelism|democratic socialism
+MOZ	3	Mozambican National Resistance	Q1425821	RENAMO	anti-communism|conservatism|nationalism|populism|Christian democracy
+MRT	1	El Insaf	Q112939010	Equity Party	
+MRT	2	Tawassoul			
+MUS	1	Alliance Du Changement	Q131314612	Alliance du Changement	
+MWI	1	Democratic Progressive Party	Q1185876	Democratic Progressive Party	
+MWI	2	Malawi Congress Party	Q1037389	Malawi Congress Party	ubuntu|conservatism|African nationalism
+MYS	1	Pakatan Harapan	Q21004257	Pakatan Harapan	progressivism|social democracy|social liberalism
+MYS	2	National Alliance			
+MYS	3	National Front			
+MYS	4	Sarawak Parties Alliance			
+MYS	5	Pan-Malaysian Islamic Party	Q1547025	Malaysian Islamic Party	Pan-Islamism|Islamism|Islamic democracy|unionism
+NAM	1	SWAPO Party	Q467711	SWAPO Party	social democracy|anti-imperialism|left-wing nationalism|democratic socialism|African nationalism
+NAM	2	Affirmative Repositioning			
+NAM	3	Landless People's Movement	Q60518792	Landless People's Movement	social democracy|left-wing populism|environmentalism|agrarian reform|land reform
+NAM	4	Popular Democratic Movement			
+NGA	1	All Progressives Congress	Q4729266	All Progressives Congress	populism|social conservatism|social democracy|federalism|African socialism|progressivism
+NGA	2	People's Democratic Party	Q1551163	Peoples Democratic Party	economic liberalism|social conservatism
+NGA	3	Labour Party	Q6467449	Labour Party	social democracy
+NGA	4	New Nigeria Peoples Party	Q113485137	New Nigeria Peoples Party	
+NIC	1	Sandinista National Liberation Front	Q27389	Sandinista National Liberation Front	Sandinism|Christian socialism|left-wing populism|anti-imperialism|Bolivarianism|left-wing nationalism|Marxism
+NIC	2	Liberal and Constitutionalist Party	Q1422066	Constitutionalist Liberal Party	liberal conservatism
+NLD	1	Democrats 66			
+NLD	2	Party for Freedom			
+NLD	3	People's Party for Freedom and Democracy			
+NLD	4	Green Left - Labour Party			
+NLD	5	Christian Democratic Appeal			
+NLD	6	JA21			
+NOR	1	Labour Party			
+NOR	2	Progress Party	Q485665	Progress Party	liberalism
+NOR	3	Conservative Party			
+NOR	4	Socialist Left Party	Q488418	Socialist Left Party	democratic socialism
+NOR	5	Center Party			
+NOR	6	Red Party	Q1512994	Red Party	Marxism|anti-capitalism|euroscepticism|feminism|Republicanism|eco-socialism|revolutionary socialism
+NPL	1	Nepali Congress	Q216660	Nepali Congress	social democracy|democratic socialism|Third Way
+NPL	2	Communist Party of Nepal	Q15980864	Communist Party of Nepal	Marxism–Leninism–Maoism
+NPL	3	Communist Party of Nepal-Maoist Centre			
+NPL	4	Rastriya Swatantra Party	Q112895056	Rastriya Swatantra Party	
+NPL	5	Rastriya Prajatantra Party Nepal	Q1782937	Rastriya Prajatantra Party Nepal	conservatism
+NPL	6	People's Socialist Party, Nepal			
+NPL	7	Communist Party of Nepal	Q15980864	Communist Party of Nepal	Marxism–Leninism–Maoism
+NPL	8	Janamat Party	Q96384180	Janamat Party	
+NPL	9	Democratic Socialist Party, Nepal			
+NPL	10	People's Freedom Party	Q111023640	People's Freedom Party	
+NPL	11	Nepal Workers Peasants Party	Q1800560	Nepal Workers Peasants Party	Juche|Maoism
+NPL	12	Rastriya Janamorcha			
+NZL	1	National Party			
+NZL	2	Labour Party			
+NZL	3	Green Party			
+NZL	4	ACT New Zealand	Q288838	ACT New Zealand	right-libertarianism|libertarian conservatism|classical liberalism
+NZL	5	New Zealand First	Q180059	New Zealand First	populism|protectionism|social conservatism|nationalism
+NZL	6	Te Pāti Māori	Q1375170	Te Pāti Māori	liberalism|indigenous rights
+PAK	1	Pakistan Muslim League-Nawaz	Q799577	Pakistan Muslim League (N)	economic liberalism|conservatism
+PAK	2	Pakistan People's Party Parliamentarians			
+PAK	3	Muttahida Quami Movement Pakistan	Q28129076	Muttahida Quami Movement Pakistan	
+PAN	1	Realizing Goals	Q106319619	Realizing Goals	
+PAN	2	Democratic Revolutionary Party	Q1630365	Democratic Revolutionary Party	populism|social democracy
+PAN	3	Democratic Change	Q5255581	Democratic Change	civic nationalism|liberal conservatism|populism
+PAN	4	Panamenista Party	Q628468	Panameñista Party	populism|national conservatism
+PER	1	Free Peru	Q102333715	Free Peru	anti-imperialism|social conservatism|Mariáteguism|Antifujimorism|Marxism|communism|sovereigntism
+PER	2	Popular Force			
+PER	3	Popular Action	Q599149	Popular Action	populism|neoliberalism|conservatism
+PER	4	Alliance for Progress	Q4732394	Alliance for Progress	populism
+PER	5	Go on Country - Social Integration Party			
+PER	6	Popular Renewal	Q101116021	Popular Renewal	social conservatism|anti-communism|Christian fundamentalism|antifeminism|right-wing populism
+PER	7	We Are Peru" (SP) - Purple Party			
+PNG	1	Niugini Union Pati			
+PNG	2	People's National Congress Party	Q24708	People's National Congress Party	
+PNG	3	United Resource Party			
+POL	1	Law and Justice	Q156874	Law and Justice	Christian right|social conservatism|euroscepticism|anti-communism|solidarism|Polish nationalism|right-wing populism|economic nationalism|statism|national conservatism
+POL	2	Civic Coalition	Q136735839	Civic Coalition	
+POL	3	The Third Way			
+POL	4	The New Left			
+PRT	1	Social Democratic Party (PPD/PSD) - Democratic and Social Centre - People's Party	Q1054298	CDS - Partido Popular	Christian democracy|conservatism
+PRT	2	Chega	Q63645885	Chega	social conservatism|anti-establishment|right-wing populism|economic liberalism|nationalism|national conservatism
+PRT	3	Socialist Party	Q847263	Socialist Party	social democracy|pro-Europeanism|labourism
+PRY	1	National Republican Association/Colorado Party			
+PRY	2	Authentic Radical Liberal Party (PLRA) - Alliances			
+PRY	3	National Crusade Party	Q60902519	National Crusade Party	populism|nationalism
+ROU	1	Social Democratic Party	Q752435	Social Democratic Party	left-wing nationalism|left-wing populism|social democracy|social conservatism|socialism|communitarianism
+ROU	2	Alliance for the Union of Romanians	Q97193048	Alliance for the Union of Romanians	Christian right|social conservatism|euroscepticism|economic liberalism|nationalism|revolutionary nationalism|opposition to immigration|unification of Moldova and Romania|national conservatism
+ROU	3	National Liberal Party	Q686228	National Liberal Party	Christian democracy|liberal conservatism|economic liberalism|pro-Europeanism|national liberalism|conservative liberalism
+ROU	4	Save Romania Union	Q27108508	Save Romania Union	liberal conservatism|Pro-ukrainian|secularism|Christian democracy|anti-corruption|pro-Europeanism|liberalism|economic liberalism
+ROU	5	S.O.S. Romania			
+ROU	6	Party of Young People	Q130612277	Partidul Oamenilor Tineri	
+ROU	7	Democratic Union of Hungarians in Romania	Q266582	Democratic Union of Hungarians in Romania	Transylvanianism|Christian democracy|regionalism|conservatism
+RUS	1	United Russia	Q151469	United Russia	Russian nationalism|Putinism|social conservatism|statism
+RUS	2	Communist Party			
+RUS	3	A Just Russia	Q210692	A Just Russia	social conservatism|left-wing populism|social democracy|Russian nationalism|left-wing nationalism|populism|liberal socialism|democratic socialism
+RUS	4	Liberal Democratic Party of Russia	Q212115	Liberal Democratic Party of Russia	social conservatism|anti-communism|populism|Russian irredentism|pan-slavism|euroscepticism|Russian nationalism|ultranationalism|right-wing populism|statism|neo-fascism
+RWA	1	Rwandan Patriotic Front (FPR) and its allies			
+RWA	2	Liberal Party	Q3043218	Liberal Party	liberalism
+RWA	3	Social Democratic Party	Q3366714	Social Democratic Party	social democracy
+SEN	1	Pastef Party			
+SEN	2	Coalition Takku Wallu Sénégal			
+SGP	1	People's Action Party	Q371395	People's Action Party	civic nationalism|multiculturalism|secularism|communitarianism|economic liberalism|social conservatism
+SGP	2	Workers' Party			
+SLB	1	Ownership Unity and Responsibility			
+SLB	2	Solomon Islands Democratic Party			
+SLB	3	Solomon Islands United Party	Q7558648	Solomon Islands United Party	
+SLB	4	Solomon Islands People First Party	Q59071669	Solomon Islands People First Party	
+SLE	1	Sierra Leone People's Party	Q2033938	Sierra Leone People's Party	Third Way|nationalism
+SLE	2	All People's Congress	Q385749	All People's Congress	democratic socialism
+SLV	1	New Ideas			
+SMR	1	Christian Democratic Party of San Marino			
+SMR	2	Free (Libera) – Socialist Party			
+SMR	3	Future Republic	Q39056971	Future Republic	pro-Europeanism|liberalism
+SMR	4	Party of Socialists and Democrats	Q44102	Party of Socialists and Democrats	social democracy|democratic socialism
+SMR	5	Tomorrow - Motus Liberi			
+SMR	6	Reformist Alliance	Q139566408	Reformist Alliance	
+SMR	7	R.E.T.E. Citizens' Movement			
+SRB	1	Aleksandar Vucic – Serbia Must Not Stop			
+SRB	2	Serbia Against Violence	Q123212013	Serbia Against Violence	pro-Europeanism|anti-corruption
+SRB	3	Ivica Dacic - Prime Minister of Serbia			
+SRB	4	Dr Miloš Jovanović - Hope for Serbia			
+SRB	5	We – Voice of the People, Prof. Dr. Branimir Nestorovic			
+STP	1	Sao Tome and Principe Liberation Movement/Social Democratic Party			
+STP	2	Movement of Independent Citizens - Socialist Party (MCI - PS) - National Unity Party			
+SUR	1	National Democratic Party	Q2420320	National Democratic Party	left-wing populism|left-wing nationalism
+SUR	2	Progressive Reform Party	Q2188402	Progressive Reform Party	Third Way|populism|social democracy
+SUR	3	National Party of Suriname	Q2564279	National Party of Suriname	social democracy
+SUR	4	General Liberation and Development Party	Q3634106	General Liberation and Development Party	
+SVK	1	Smer - Social Democracy			
+SVK	2	Progressive Slovakia			
+SVK	3	Hlas (“Voice”) - SD			
+SVK	4	Coalition OĽaNO and Friends, 'For the People' and 'Christian Union'			
+SVK	5	Christian Democratic Movement	Q904070	Christian Democratic Movement	Christian democracy|pro-Europeanism|social conservatism
+SVK	6	Freedom and Solidarity	Q220847	Freedom and Solidarity	liberalism|economic liberalism|libertarianism
+SVK	7	Slovak National Party	Q221480	Slovak National Party	right-wing populism|national conservatism|Slovak nationalism|Euro-Slavism
+SVN	1	Freedom Movement	Q106704283	Freedom Movement	environmentalism|green liberalism|social liberalism
+SVN	2	Slovenian Democratic Party	Q526294	Slovenian Democratic Party	right-wing populism|Slovenian nationalism|national conservatism|anti-communism
+SVN	3	New Slovenia - Christian Democrats			
+SVN	4	Social Democrats	Q917211	Social Democrats	social democracy
+SVN	5	Left			
+SWE	1	Social Democratic Party			
+SWE	2	Sweden Democrats	Q504069	Sweden Democrats	national conservatism|right-wing populism|anti-Islam|anti-gender movement|Swedish nationalism|social conservatism|euroscepticism|opposition to immigration
+SWE	3	Moderate Party	Q110843	Moderate Party	liberal conservatism|economic liberalism|pro-Europeanism|conservative liberalism|Atlanticism
+SWE	4	Left Party	Q110837	Left Party	democratic socialism|euroscepticism|feminism
+SWE	5	Centre Party	Q110832	Centre Party	agrarianism|decentralization|green liberalism
+SWE	6	Christian Democrats	Q213654	Christian Democrats	conservatism|Christian democracy|anti-gender movement
+SWE	7	Green Party	Q213451	Green Party	environmentalism|green politics
+SYC	1	United Seychelles			
+SYC	2	Seychelles Democratic Alliance			
+TCD	1	Patriotic Salvation Movement	Q1576278	Patriotic Salvation Movement	nationalism
+TCD	2	veil)			
+TGO	1	Union for the Republic	Q22080618	Union for the Republic	authoritarianism|African nationalism
+THA	1	Move Forward			
+THA	2	Pheu Thai			
+THA	3	Bhumjaithai			
+THA	4	Palang Pracharath			
+THA	5	United Thai Nation			
+THA	6	Democrat Party	Q1186248	Democrat Party	classical liberalism|conservative liberalism
+TJK	1	People's Democratic Party of Tajikistan	Q1045162	People's Democratic Party of Tajikistan	statism|nationalism|secularism|national conservatism|authoritarianism|anti-communism|anti-clericalism|Traditionalist School
+TJK	2	Agrarian Party of Tajikistan			
+TJK	3	Party of Economic Reforms of Tajikistan			
+TKM	1	Democratic Party of Turkmenistan	Q1152752	Democratic Party of Turkmenistan	statism|nationalism|authoritarianism|anti-clericalism|totalitarianism|secularism|social conservatism
+TKM	2	Groups of citizens of Turkmenistan			
+TKM	3	Agrarian Party	Q23697366	Agrarian Party	
+TKM	4	Party of Industrialists and Entrepreneurs			
+TLS	1	National Congress for the Reconstruction of Timor-Leste	Q1126036	National Congress for Timorese Reconstruction	democratic socialism|social democracy
+TLS	2	Revolutionary Front for an independent East Timor	Q935996	Revolutionary Front for an Independent East Timor	democratic socialism|social democracy|Marxism–Leninism|left-wing nationalism
+TLS	3	Democratic Party	Q523216	Democratic Party	
+TLS	4	Kmanek Haburas Unidade Nasional Timor Oan	Q1571660	Kmanek Haburas Unidade Nasional Timor Oan	
+TLS	5	People's Liberation Party	Q25379578	People's Liberation Party	fiscal conservatism
+TTO	1	United National Congress	Q1024804	United National Congress	social democracy|Christian left
+TTO	2	People's National Movement	Q3326740	People's National Movement	nationalism|liberalism
+TUR	1	Justice and Development Party	Q19077	Justice and Development Party	euroscepticism|right-wing populism|economic liberalism|national conservatism|centralism|Traditionalist School|economic nationalism|neo-Ottomanism|conservatism in Turkey|social conservatism|Conservative democracy|Erdoğanism
+TUR	2	Republican People's Party	Q19079	Republican People's Party	pro-Europeanism|secularism|Kemalism|social democracy
+TUR	3	Green and the Left Party of the Future			
+TUR	4	Nationalist Action Party	Q251077	Nationalist Movement Party	Turanism|anti-communism|nationalism|Turkish nationalism|cultural nationalism|euroscepticism|national conservatism|Idealism (Turkey)|social conservatism|right-wing populism|Pan-Turkism
+TUR	5	Good Party	Q42313794	İYİ Party	pro-Europeanism|liberal conservatism|Turkish nationalism|Kemalism
+TZA	1	Revolutionary Party of Tanzania	Q652091	Party of the Revolution	social democracy
+TZA	2	ACT-Wazalendo			
+UGA	1	National Resistance Movement	Q382674	National Resistance Movement	neoliberalism|conservatism|Ugandan nationalism
+UGA	2	National Unity Platform	Q97627856	National Unity Platform	progressivism|constitutionalism|social liberalism
+UGA	3	Forum for Democratic Change	Q5473101	Forum for Democratic Change	secularism|liberal conservatism
+UKR	1	Servant of the People	Q52292915	Servant of the People	direct democracy|liberalism|pro-Europeanism|populism|radical centrism
+UKR	2	Opposition Platform - For Life	Q4127627	Opposition Platform — For Life	regionalism|euroscepticism|Russophilia|social conservatism
+UKR	3	Fatherland			
+UKR	4	European Solidarity	Q4349891	European Solidarity	civic nationalism|liberal conservatism|pro-Europeanism
+URY	1	Broad Front	Q1066799	Broad Front	democratic socialism|communism|socialism
+URY	2	National Party	Q1549793	National Party	Christian democracy|civic nationalism|economic liberalism
+URY	3	Colorado Party	Q1430823	Colorado Party	Republicanism
+USA	1	Republican Party	Q29468	Republican Party	conservatism in the United States|Christian right|anti-communism|paleoconservatism|neoliberalism|social conservatism|Trumpism|Christian democracy|communitarianism|isolationism|anti-abortion movement|neoconservatism|libertarian conservatism|opposition to immigration|American nationalism|antifeminism|economic liberalism|national liberalism|anti-environmentalism|conservatism|national conservatism|ultraconservatism|federalism in the United States|American exceptionalism
+USA	2	Democratic Party	Q29552	Democratic Party	social liberalism|modern liberalism in the United States
+UZB	1	Movement of Entrepreneurs and Businesspeople - Liberal Democratic Party			
+UZB	2	Milliy Tiklanish Democratic Party			
+UZB	3	Social Democratic Party			
+UZB	4	People's Democratic Party			
+UZB	5	Ecological Party			
+VCT	1	United Labour Party			
+VCT	2	New Democratic Party	Q1255291	New Democratic Party	conservatism
+VNM	1	Communist Party			
+VUT	1	Leaders Party of Vanuatu	Q24907935	Leaders Party of Vanuatu	
+VUT	2	Vanua'aku Pati	Q31373	Vanua'aku Pati	nationalism|Melanesian socialism
+VUT	3	Iauko Group	Q24661025	Iauko Group	
+VUT	4	Union of Moderate Parties	Q31360	Union of Moderate Parties	conservative liberalism
+VUT	5	Rural Development Party	Q114839951	Rural Development Party	
+VUT	6	Graon mo Jastis Pati			
+VUT	7	Reunification Movement for Change	Q94249083	Reunification Movement for Change	
+WSM	1	Faatuatua ile Atua Samoa ua Tasi	Q104853338	Faʻatuatua i le Atua Samoa ua Tasi	
+WSM	2	Human Rights Protection Party (HRPP) (22), Sāmoa Uniting Party (SUP) (3), Independents			
+XKX	1	Self-Determination Movement (LVV) (58), Democratic Party of Kosovo (PDK) (19), Democratic League of Kosovo (LDK) (15), Serb List (10), Alliance for the Future of Kosovo (AAK) (8), other			
+YEM	1	General People's Congress	Q1460677	General People's Congress	Arab nationalism
+YEM	2	Yemeni Congregation for Reform			
+ZMB	1	United Party for National Development	Q1781632	United Party for National Development	liberalism|social liberalism|economic liberalism
+ZMB	2	Patriotic Front	Q2058159	Patriotic Front	social democracy
+ZWE	1	ZANU-PF	Q1910161	Zimbabwe African National Union – Patriotic Front	conservatism|African socialism|left-wing populism|African nationalism|Pan-Africanism|social conservatism|nationalism
+ZWE	2	Citizens Coalition for Change	Q110664645	Citizens Coalition For Change	

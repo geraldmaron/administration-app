@@ -1,0 +1,55 @@
+name: Deploy player to GitHub Pages
+
+# Publishes the universal player's web export at https://<owner>.github.io/<repo>/.
+# Pushes in this repository carry [skip ci], so a deploy is usually started by
+# hand from the Actions tab (workflow_dispatch) once main holds what should ship.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only the newest deploy matters; an older one still uploading is superseded.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The player imports the workspace packages' compiled dist/, so build
+      # them from source rather than trusting the committed output.
+      - run: pnpm run build
+      - name: Export the player under the repository's path
+        run: pnpm --filter @admin/player run export:web
+        env:
+          PLAYER_WEB_BASE_URL: /${{ github.event.repository.name }}
+      # The export is a single-page app; Pages answers an unknown path with
+      # 404.html, so a reload or a shared deep link still boots the router.
+      - run: cp apps/player/dist/index.html apps/player/dist/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/player/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

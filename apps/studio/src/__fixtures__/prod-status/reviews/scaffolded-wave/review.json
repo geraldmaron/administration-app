@@ -1,0 +1,176 @@
+{
+  "runId": "scaffolded-wave",
+  "reviewedAt": "2026-08-08T00:00:00.000Z",
+  "reviewer": "",
+  "reviewerIsAuthor": null,
+  "ownerAuthorization": null,
+  "sampleRate": 1,
+  "decisions": [
+    {
+      "scenarioId": "scaffolded-wave-scenario-1",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0001.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "flagged",
+      "flags": [
+        "placeholder flag"
+      ]
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-2",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0001.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "flagged",
+      "flags": [
+        "placeholder flag"
+      ]
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-3",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0002.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "flagged",
+      "flags": [
+        "placeholder flag"
+      ]
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-4",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0002.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-5",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0003.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-6",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0003.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-7",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0004.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-8",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0004.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-9",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0005.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-10",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0005.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-11",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0006.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-12",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0006.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-13",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0007.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-14",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0007.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-15",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0008.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-16",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0008.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-17",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0009.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-18",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0009.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-19",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0010.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    },
+    {
+      "scenarioId": "scaffolded-wave-scenario-20",
+      "sourcePath": "content/jobs/work/scaffolded-wave/scaffolded-wave-0010.out.json",
+      "decision": "pending",
+      "note": "",
+      "tier": "sampled",
+      "flags": []
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+import type { Nation } from "../schemas/nation.js";
+import { Cradle, Organization } from "../schemas/org-cradle-charter.js";
+export declare const CRADLE_POTOMAC: Cradle["id"];
+export declare const ORG_NATO: Organization["id"];
+export declare const ORG_EU: Organization["id"];
+export declare const ORG_CSTO: Organization["id"];
+export declare const ORG_BRICS: Organization["id"];
+export declare const ORG_GCC: Organization["id"];
+export declare const ORG_AU: Organization["id"];
+export declare const ORG_CPTPP: Organization["id"];
+export declare const ORG_MERCOSUR: Organization["id"];
+export declare const ORG_OPEC_PLUS: Organization["id"];
+export declare const ORG_G7: Organization["id"];
+export declare const ORG_ASEAN: Organization["id"];
+export declare const ORG_US_JAPAN: Organization["id"];
+export declare const ORG_US_KOREA: Organization["id"];
+export declare const ORG_US_PHILIPPINES: Organization["id"];
+export declare const ORG_ANZUS: Organization["id"];
+export type OrganizationSource = {
+    readonly source: string;
+    readonly asOf: string;
+};
+export declare const ORGANIZATION_SOURCES: Readonly<Record<string, OrganizationSource>>;
+export declare const organizations: Organization[];
+export declare const cradles: Cradle[];
+export declare function applyMemberships<T extends Pick<Nation, "id">>(nations: readonly T[]): (T & {
+    memberships: Organization["id"][];
+})[];
+export declare const organizationById: ReadonlyMap<string, Organization>;
+export declare const cradleById: ReadonlyMap<string, Cradle>;

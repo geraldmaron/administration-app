@@ -1,0 +1,112 @@
+[
+  {
+    "ref": "refs/heads/codex/reconcile-worktrees-2026-10-14",
+    "sha": "91fa79d72b5c82f431c9d22b012b1e93b999ffd2",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-codex-reconcile-worktrees-2026-10-14"
+  },
+  {
+    "ref": "refs/heads/codex/simulation-depth-completion",
+    "sha": "cc761041784b1cda2d8d73b01d2f085094315ce6",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-codex-simulation-depth-completion"
+  },
+  {
+    "ref": "refs/heads/feat/bloc-electorate",
+    "sha": "c70c915c2c9996c3681f58c71d63f387a81d868c",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-bloc-electorate"
+  },
+  {
+    "ref": "refs/heads/feat/blockade-smaller",
+    "sha": "e447f4b2430e16c82ed26c5bac3e9148f94f17b7",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-blockade-smaller"
+  },
+  {
+    "ref": "refs/heads/feat/casting-pin-pilot",
+    "sha": "beb4e4b4dcf562398f511aaff8394de5e380df5d",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-casting-pin-pilot"
+  },
+  {
+    "ref": "refs/heads/feat/coercion-followups",
+    "sha": "0837ea4eae02f3b43722c28c2d745985562e73f9",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-coercion-followups"
+  },
+  {
+    "ref": "refs/heads/feat/electorate-surfaces",
+    "sha": "14ce11a746892904e7a5f48ff2d312a5a147b9e6",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-electorate-surfaces"
+  },
+  {
+    "ref": "refs/heads/feat/grounded-casting",
+    "sha": "b6b51703fe56b9fdd511ac67d73d2f40d7d93e1a",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-grounded-casting"
+  },
+  {
+    "ref": "refs/heads/feat/map-first",
+    "sha": "337e080bd54f0cecd3ac63fc540089266ccc7a6e",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-map-first"
+  },
+  {
+    "ref": "refs/heads/feat/regime-change",
+    "sha": "ccd9707577e7cd34c36ed1fdc0c7dfd347c4865b",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-regime-change"
+  },
+  {
+    "ref": "refs/heads/feat/registry-r2",
+    "sha": "09abe6ccaca8aa980afd99b2f45d82b504edb288",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-registry-r2"
+  },
+  {
+    "ref": "refs/heads/feat/scenario-cost-model",
+    "sha": "d53e2a776c3f2b4e3395ab27afe188a8663dff0c",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-scenario-cost-model"
+  },
+  {
+    "ref": "refs/heads/feat/war-losses",
+    "sha": "ed520c71d2b18a3312c3aabab4645644a392f578",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-feat-war-losses"
+  },
+  {
+    "ref": "refs/heads/fix/corpus-close-index",
+    "sha": "0d64c3a6c4089c2bc9c5c1d62a7ab24c57a1d0d4",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-fix-corpus-close-index"
+  },
+  {
+    "ref": "refs/heads/main",
+    "sha": "83306cad113f082513640efb7ebd6ad89d553a47",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-main"
+  },
+  {
+    "ref": "refs/heads/staging",
+    "sha": "0dd4ef7bf7c187a20d1e32198faf99a81c2261de",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-staging"
+  },
+  {
+    "ref": "refs/heads/worktree-agent-acfa663d2ad5b81fa",
+    "sha": "48b17f321b96f44cab11f4de27ceb58fd5c40dd4",
+    "safetyRef": "refs/safety/publish-prune-20261014/heads-worktree-agent-acfa663d2ad5b81fa"
+  },
+  {
+    "ref": "refs/remotes/origin/HEAD",
+    "sha": "83306cad113f082513640efb7ebd6ad89d553a47",
+    "safetyRef": "refs/safety/publish-prune-20261014/remotes-origin-HEAD"
+  },
+  {
+    "ref": "refs/remotes/origin/claude/admiring-shannon-xxw7vb",
+    "sha": "96cb39969f8ba86fdfdc96f53159d51b273351d9",
+    "safetyRef": "refs/safety/publish-prune-20261014/remotes-origin-claude-admiring-shannon-xxw7vb"
+  },
+  {
+    "ref": "refs/remotes/origin/feat/map-first",
+    "sha": "73ecda316b0bad6a18cc14860962b0bb694b826c",
+    "safetyRef": "refs/safety/publish-prune-20261014/remotes-origin-feat-map-first"
+  },
+  {
+    "ref": "refs/remotes/origin/main",
+    "sha": "83306cad113f082513640efb7ebd6ad89d553a47",
+    "safetyRef": "refs/safety/publish-prune-20261014/remotes-origin-main"
+  },
+  {
+    "ref": "refs/remotes/origin/staging",
+    "sha": "3561b6670061f358b68590c8571699809047072e",
+    "safetyRef": "refs/safety/publish-prune-20261014/remotes-origin-staging"
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "$comment": "Sites the typed walk cannot resolve to the fields they write, by declaration: `opaque` hands an effect a payload typed as the whole patch type, `computed` builds a patch with computed keys and no dotted path in scope. Written by `node scripts/verify-metric-registry.mjs --update-baseline`; it may only shrink. Type the payload by the keys it sends to take a site out.",
+  "entries": {
+    "opaque  packages/engine/src/appointments.ts#dismissMinister: MetricSet": 1,
+    "opaque  packages/engine/src/budget.ts#budgetPhase: MetricSet": 1,
+    "opaque  packages/engine/src/cabinet-agenda-acts.ts#answerResignationOffer: MetricSet": 1,
+    "opaque  packages/engine/src/cabinet-agenda-acts.ts#proposalEffects: MetricSet": 1,
+    "opaque  packages/engine/src/cabinet-faction.ts#reconcileFaction: MetricSet": 1,
+    "opaque  packages/engine/src/commitments.ts#commitmentPhase: MetricSet": 1,
+    "opaque  packages/engine/src/commodity-levers.ts#issueFuelWaiver: MetricSet": 1,
+    "opaque  packages/engine/src/conversations.ts#positionPacket: MetricSet": 1,
+    "opaque  packages/engine/src/god.ts#grantMetrics: MetricSet": 1,
+    "opaque  packages/engine/src/instruments-economic.ts#actorMetrics: MetricSet": 1,
+    "opaque  packages/engine/src/judicial-review.ts#finalEffects: MetricSet": 1,
+    "opaque  packages/engine/src/legislation.ts#enactmentEffects: MetricSet": 1,
+    "opaque  packages/engine/src/lobbying.ts#issueLobbying: MetricSet": 1,
+    "opaque  packages/engine/src/lobbying.ts#resolveFromProjection: MetricSet": 1,
+    "opaque  packages/engine/src/monetary-acts.ts#leanOnTheFed: MetricSet": 1,
+    "opaque  packages/engine/src/orders.ts#signOrder: MetricSet": 1,
+    "opaque  packages/engine/src/policy-draft.ts#enactPolicyDraft: MetricSet": 1,
+    "opaque  packages/engine/src/press-issued.ts#issuePressAction: MetricSet": 1,
+    "opaque  packages/engine/src/press-issued.ts#resolveFromProjection: MetricSet": 1,
+    "opaque  packages/engine/src/resolution.ts#metricEffects: MetricSet": 1
+  }
+}

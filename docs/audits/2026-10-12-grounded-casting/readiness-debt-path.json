@@ -1,0 +1,193 @@
+{
+  "method": "Same shipped shipyard reply, original quoted booking versus separate commit outturn; controlled debt-path regression, not calibration",
+  "corpus": {
+    "scenarios": 322,
+    "bases": 0
+  },
+  "rows": [
+    {
+      "seed": "account-a",
+      "estimate": 75.99748779746577,
+      "receipt": [
+        {
+          "estimated": 75.99748779746577,
+          "booked": 88,
+          "variance": 12.002512202534234,
+          "source": "Comparable federal discretionary appropriation; case-specific cost breakdown unavailable",
+          "method": "band",
+          "calibration": "planning"
+        }
+      ],
+      "subjects": [
+        {
+          "key": "entityA",
+          "id": "entity:voss-shipyard",
+          "kind": "organization",
+          "name": "Voss Shipyard",
+          "description": "shipbuilding organization",
+          "nation": "USA",
+          "state": "WA",
+          "city": "CITY-USA-seattle",
+          "originCase": "scenario:the-yard-that-builds-the-boats",
+          "originScenario": "the-yard-that-builds-the-boats",
+          "originTurn": 1
+        }
+      ],
+      "path": [
+        {
+          "week": 0,
+          "quotedBooking": 27773911,
+          "outturnBooking": 27773923
+        },
+        {
+          "week": 13,
+          "quotedBooking": 28256801,
+          "outturnBooking": 28256813
+        },
+        {
+          "week": 26,
+          "quotedBooking": 28747127,
+          "outturnBooking": 28747139
+        }
+      ]
+    },
+    {
+      "seed": "account-b",
+      "estimate": 221.4965518183294,
+      "receipt": [
+        {
+          "estimated": 221.4965518183294,
+          "booked": 434,
+          "variance": 212.5034481816706,
+          "source": "Comparable federal discretionary appropriation; case-specific cost breakdown unavailable",
+          "method": "band",
+          "calibration": "planning"
+        }
+      ],
+      "subjects": [
+        {
+          "key": "entityA",
+          "id": "entity:voss-shipyard",
+          "kind": "organization",
+          "name": "Voss Shipyard",
+          "description": "shipbuilding organization",
+          "nation": "USA",
+          "state": "NY",
+          "city": "CITY-USA-new-york",
+          "originCase": "scenario:the-yard-that-builds-the-boats",
+          "originScenario": "the-yard-that-builds-the-boats",
+          "originTurn": 1
+        }
+      ],
+      "path": [
+        {
+          "week": 0,
+          "quotedBooking": 27774056,
+          "outturnBooking": 27774269
+        },
+        {
+          "week": 13,
+          "quotedBooking": 28257155,
+          "outturnBooking": 28257368
+        },
+        {
+          "week": 26,
+          "quotedBooking": 28751258,
+          "outturnBooking": 28751471
+        }
+      ]
+    },
+    {
+      "seed": "account-c",
+      "estimate": 83.9695053028999,
+      "receipt": [
+        {
+          "estimated": 83.9695053028999,
+          "booked": 113,
+          "variance": 29.030494697100096,
+          "source": "Comparable federal discretionary appropriation; case-specific cost breakdown unavailable",
+          "method": "band",
+          "calibration": "planning"
+        }
+      ],
+      "subjects": [
+        {
+          "key": "entityA",
+          "id": "entity:voss-shipyard",
+          "kind": "organization",
+          "name": "Voss Shipyard",
+          "description": "shipbuilding organization",
+          "nation": "USA",
+          "state": "AL",
+          "city": "CITY-USA-mobile",
+          "originCase": "scenario:the-yard-that-builds-the-boats",
+          "originScenario": "the-yard-that-builds-the-boats",
+          "originTurn": 1
+        }
+      ],
+      "path": [
+        {
+          "week": 0,
+          "quotedBooking": 27773919,
+          "outturnBooking": 27773948
+        },
+        {
+          "week": 13,
+          "quotedBooking": 28255994,
+          "outturnBooking": 28256023
+        },
+        {
+          "week": 26,
+          "quotedBooking": 28750356,
+          "outturnBooking": 28750385
+        }
+      ]
+    },
+    {
+      "seed": "account-d",
+      "estimate": 102.08122545140324,
+      "receipt": [
+        {
+          "estimated": 102.08122545140324,
+          "booked": 72,
+          "variance": -30.081225451403242,
+          "source": "Comparable federal discretionary appropriation; case-specific cost breakdown unavailable",
+          "method": "band",
+          "calibration": "planning"
+        }
+      ],
+      "subjects": [
+        {
+          "key": "entityA",
+          "id": "entity:voss-shipyard",
+          "kind": "organization",
+          "name": "Voss Shipyard",
+          "description": "shipbuilding organization",
+          "nation": "USA",
+          "state": "TX",
+          "city": "CITY-USA-houston",
+          "originCase": "scenario:the-yard-that-builds-the-boats",
+          "originScenario": "the-yard-that-builds-the-boats",
+          "originTurn": 1
+        }
+      ],
+      "path": [
+        {
+          "week": 0,
+          "quotedBooking": 27773937,
+          "outturnBooking": 27773907
+        },
+        {
+          "week": 13,
+          "quotedBooking": 28255746,
+          "outturnBooking": 28255716
+        },
+        {
+          "week": 26,
+          "quotedBooking": 28746598,
+          "outturnBooking": 28746568
+        }
+      ]
+    }
+  ]
+}

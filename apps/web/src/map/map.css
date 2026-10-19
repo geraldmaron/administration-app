@@ -1,0 +1,682 @@
+@layer rooms {
+  /* The map's lens colors point at design tokens. The renderer reads the
+     resolved values from these properties, so a palette is a pointer swap
+     and the map never names a color itself. */
+  .map-layer {
+    --map-lens-ground: var(--color-ground-abyss);
+    --map-lens-neutral: var(--map-board-neutral);
+    --map-lens-nodata: var(--map-board-no-data);
+    --map-lens-land: var(--map-board-land);
+    --map-lens-border: var(--map-board-border);
+    --map-lens-line: var(--map-board-line);
+    --map-lens-sea-glow: var(--map-board-sea-glow);
+    --map-lens-coast: var(--map-board-coast);
+    --map-lens-graticule: var(--map-board-graticule);
+    --map-lens-seq-1: var(--map-seq-1);
+    --map-lens-seq-2: var(--map-seq-2);
+    --map-lens-seq-3: var(--map-seq-3);
+    --map-lens-seq-4: var(--map-seq-4);
+    --map-lens-seq-5: var(--map-seq-5);
+    --map-lens-seq-6: var(--map-seq-6);
+    --map-lens-seq-7: var(--map-seq-7);
+    --map-lens-standing-1: var(--map-standing-1);
+    --map-lens-standing-2: var(--map-standing-2);
+    --map-lens-standing-3: var(--map-standing-3);
+    --map-lens-standing-4: var(--map-standing-4);
+    --map-lens-standing-5: var(--map-standing-5);
+    --map-lens-standing-6: var(--map-standing-6);
+    --map-lens-standing-7: var(--map-standing-7);
+    --map-lens-div-n3: var(--map-div-n3);
+    --map-lens-div-n2: var(--map-div-n2);
+    --map-lens-div-n1: var(--map-div-n1);
+    --map-lens-div-0: var(--map-div-0);
+    --map-lens-div-p1: var(--map-div-p1);
+    --map-lens-div-p2: var(--map-div-p2);
+    --map-lens-div-p3: var(--map-div-p3);
+    --map-lens-democrat: var(--map-party-democrat);
+    --map-lens-republican: var(--map-party-republican);
+    --map-lens-independent: var(--map-party-independent);
+    --map-lens-favorable: var(--map-div-n3);
+    --map-lens-steady: var(--map-div-0);
+    --map-lens-caution: var(--map-div-p1);
+    --map-lens-adverse: var(--map-div-p3);
+    --map-lens-unread: var(--color-text-disabled);
+    --map-lens-own: var(--color-gold);
+    --map-lens-for-strong: var(--map-div-n3);
+    --map-lens-for-lean: var(--map-div-n1);
+    --map-lens-against-lean: var(--map-div-p1);
+    --map-lens-against-strong: var(--map-div-p3);
+    --map-lens-selection: var(--color-blue);
+    --map-lens-shadow: var(--color-ground-abyss);
+
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: var(--color-ground-abyss);
+  }
+
+  /* Color-vision-safe: no lens leans on red against blue alone. Stance and
+     call already sit on the diverging ramp, which the root's data-vision
+     swaps for the player's palette; the party pair moves onto it too, so the
+     two separate in lightness as well as hue. */
+  .map-layer[data-palette="color-vision"] {
+    --map-lens-democrat: var(--map-div-n3);
+    --map-lens-republican: var(--map-div-p2);
+  }
+
+  /* High contrast: brighter neutral land, the ramps pushed toward their ends,
+     and the focus color for selection. Dots also thicken and the detach fade
+     lightens; the renderer does those. */
+  .map-layer[data-contrast="high"] {
+    --map-lens-neutral: var(--color-border-strong);
+    --map-lens-border: var(--color-border-strong);
+    --map-lens-line: var(--color-white);
+    --map-lens-nodata: var(--color-text-disabled);
+    --map-lens-seq-1: var(--map-seq-2);
+    --map-lens-seq-2: var(--map-seq-3);
+    --map-lens-div-n1: var(--map-div-n2);
+    --map-lens-div-p1: var(--map-div-p2);
+    --map-lens-democrat: var(--map-div-n3);
+    --map-lens-republican: var(--color-red);
+    --map-lens-for-lean: var(--map-div-n2);
+    --map-lens-against-lean: var(--map-div-p2);
+    --map-lens-selection: var(--color-focus);
+  }
+
+  .map-layer__canvas,
+  .map-layer__hex {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  .map-layer__canvas {
+    cursor: grab;
+  }
+
+  .map-layer__canvas--dim {
+    opacity: 0.25;
+  }
+
+  .map-layer__hex {
+    cursor: pointer;
+  }
+
+  .map-layer[data-paused="true"] .map-layer__canvas {
+    cursor: default;
+  }
+
+  .map-layer__status,
+  .map-data:not(.map-data--open) .map-data__panel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Insets: Alaska and Hawaii on the US home view. */
+  .map-inset {
+    position: absolute;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-card);
+    background: var(--color-ground-abyss);
+    box-shadow: var(--shadow-float), var(--glass-edge);
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .map-inset:hover {
+    box-shadow: var(--shadow-float), 0 0 0 1px var(--color-blue);
+  }
+
+  .map-inset__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .map-inset__label {
+    position: absolute;
+    left: var(--space-xs);
+    top: var(--space-2xs);
+    color: var(--color-text-tertiary);
+    font-size: var(--size-caption);
+  }
+
+  /* Arcs: the ties of a detached country, drawn over the dots and under the pins. Blue for trade, gold for a partner, red for a rival. */
+  .map-arcs {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+    pointer-events: none;
+    transition: opacity 120ms ease-out;
+  }
+
+  .map-arc {
+    stroke: var(--color-blue);
+    stroke-linecap: round;
+    stroke-width: 1.5;
+    opacity: 0.85;
+  }
+
+  .map-arc--ally { stroke: var(--color-gold); }
+  .map-arc--rival { stroke: var(--color-red); stroke-dasharray: 5 4; }
+  .map-arc[data-weight="2"] { stroke-width: 2.5; }
+  .map-arc[data-weight="3"] { stroke-width: 3.5; }
+
+  /* Locale names: set like an atlas, countries and states in tracked capitals, districts in plain text,
+     each with a dark halo so it reads on any fill, and hidden while the camera flies. */
+  .map-labels {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transition: opacity 160ms ease-out;
+  }
+
+  /* Hidden the instant the camera moves: names are placed for a still view, and a fade would show them over the wrong place. */
+  .map-labels[data-moving="true"] {
+    opacity: 0;
+    transition-duration: 0ms;
+  }
+
+  .map-labels__leaders {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+  }
+
+  .map-labels__leaders path {
+    fill: none;
+    stroke: var(--map-lens-line);
+    stroke-width: 1;
+    stroke-opacity: 0.7;
+  }
+
+  .map-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: var(--weight-strong);
+    line-height: 1;
+    white-space: nowrap;
+    text-shadow:
+      0 0 1px var(--color-ground-abyss), 0 0 2px var(--color-ground-abyss), 0 0 4px var(--color-ground-abyss),
+      1px 1px 0 var(--color-ground-abyss), -1px -1px 0 var(--color-ground-abyss), 1px -1px 0 var(--color-ground-abyss), -1px 1px 0 var(--color-ground-abyss);
+  }
+
+  .map-label[data-tier="nation"],
+  .map-label[data-tier="state"] {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* A seat or a callout is a place's name, so it is set like a pin's: on a small navy chip, legible on any party fill. */
+  .map-label[data-tier="district"],
+  .map-label[data-callout="true"] {
+    padding: 2px var(--space-2xs);
+    border-radius: var(--radius-chip);
+    background: var(--color-ground-overlay);
+    font-weight: var(--weight-medium);
+    line-height: 1.3;
+    text-shadow: none;
+  }
+
+  /* A government's provinces: geography under its own name, so quieter than any place the game tracks. */
+  .map-label[data-tier="province"] {
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    font-weight: var(--weight-medium);
+    letter-spacing: 0.04em;
+  }
+
+  .map-label[data-dim="true"] {
+    color: var(--color-text-tertiary);
+    font-weight: var(--weight-medium);
+  }
+
+  .map-label[data-callout="true"] {
+    color: var(--color-text-secondary);
+  }
+
+  /* Marks: real buttons projected over the canvas. */
+  .map-marks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease-out;
+  }
+
+  /* Pins ride the land in flight, but a click lands only once the camera has. */
+  .map-marks[data-moving="true"] .map-mark {
+    pointer-events: none;
+  }
+
+  .map-mark {
+    position: absolute;
+    top: -14px;
+    left: -14px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .map-mark::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--color-ground-abyss);
+    border-radius: var(--radius-pill);
+    background: var(--color-red);
+    box-shadow: 0 0 0 2px var(--color-red-fill);
+  }
+
+  .map-mark--force::before {
+    border-radius: var(--radius-chip);
+    transform: rotate(45deg);
+    background: var(--color-text-primary);
+    box-shadow: 0 0 0 2px var(--color-red-fill);
+  }
+
+  /* Something happening outranks the place it happens in: an incident at the
+     capitol's own point draws over the capitol pin, never under it. */
+  .map-mark--incident,
+  .map-mark--force {
+    z-index: 1;
+  }
+
+  /* A detached state's seat of government: gold, the institution's own color. */
+  .map-mark--capitol::before {
+    width: 14px;
+    height: 14px;
+    border: 3px solid var(--color-gold);
+    background: var(--color-ground-abyss);
+    box-shadow: 0 0 0 2px var(--color-ground-abyss);
+  }
+
+  /* Its largest metros: small, quiet, and under anything happening there. */
+  .map-mark--metro::before {
+    width: 8px;
+    height: 8px;
+    border-width: 1px;
+    background: var(--color-text-primary);
+    box-shadow: 0 0 0 2px var(--color-ground-abyss);
+  }
+
+  .map-mark__label {
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0 var(--space-2xs);
+    border-radius: var(--radius-chip);
+    background: var(--color-ground-overlay);
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+    line-height: 1.4;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .map-mark--capitol .map-mark__label {
+    color: var(--color-text-primary);
+    font-weight: var(--weight-strong);
+  }
+
+  /* An office at its headquarters: gold where the chair is confirmed, a hollow gold ring where an acting signs for it, red where it is empty. */
+  .map-mark--office::before {
+    border-radius: var(--radius-chip);
+    background: var(--color-gold);
+    box-shadow: 0 0 0 2px var(--color-ground-abyss);
+  }
+
+  .map-mark--office[data-staffing="acting"]::before {
+    border-color: var(--color-gold);
+    background: var(--color-ground-abyss);
+  }
+
+  .map-mark--office[data-staffing="vacant"]::before {
+    background: var(--color-red);
+  }
+
+  .map-mark--office[data-alert="true"]::before {
+    box-shadow: 0 0 0 2px var(--color-ground-abyss), 0 0 0 4px var(--color-red);
+  }
+
+  .map-mark--office[data-focus="true"]::before {
+    width: 16px;
+    height: 16px;
+    box-shadow: 0 0 0 2px var(--color-ground-abyss), 0 0 0 5px var(--color-blue);
+  }
+
+  .map-mark__count {
+    position: absolute;
+    top: -2px;
+    right: -6px;
+    min-width: 16px;
+    padding: 0 var(--space-2xs);
+    border-radius: var(--radius-pill);
+    background: var(--color-ground-overlay);
+    color: var(--color-text-primary);
+    font-size: var(--size-caption);
+    line-height: 16px;
+  }
+
+  .map-marks__more {
+    position: absolute;
+    left: var(--space-sm);
+    top: var(--space-sm);
+    min-height: var(--control-compact);
+    padding: 0 var(--space-sm);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background: var(--color-ground-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--size-caption);
+    pointer-events: auto;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .map-mark--incident::before {
+      animation: map-pulse 2.4s ease-out infinite;
+    }
+  }
+
+  @keyframes map-pulse {
+    0% { box-shadow: 0 0 0 2px var(--color-red-fill); }
+    70% { box-shadow: 0 0 0 9px transparent; }
+    100% { box-shadow: 0 0 0 2px var(--color-red-fill); }
+  }
+
+  .map-tooltip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    margin: 14px 0 0 14px;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+    color: var(--color-text-primary);
+    font-size: var(--size-caption);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .map-tooltip__value {
+    color: var(--color-text-secondary);
+  }
+
+  /* The lens as text. The toggle shows only when it has focus. */
+  .map-data__toggle {
+    position: absolute;
+    top: var(--space-sm);
+    left: var(--space-sm);
+    z-index: 2;
+    min-height: var(--control-compact);
+    padding: 0 var(--space-sm);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .map-data:not(.map-data--open) .map-data__toggle:not(:focus-visible) {
+    clip-path: inset(50%);
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+  }
+
+  .map-data__panel {
+    position: absolute;
+    top: calc(var(--space-sm) * 2 + var(--control-compact));
+    left: var(--space-sm);
+    z-index: 2;
+    width: min(26rem, calc(100% - var(--space-sm) * 2));
+    max-height: calc(100% - var(--space-3xl) * 2);
+    overflow: auto;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+    color: var(--color-text-primary);
+  }
+
+  .map-data__title,
+  .map-data__subtitle {
+    margin: 0 0 var(--space-xs);
+    font-size: var(--size-label);
+  }
+
+  .map-data__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-md);
+    margin: 0 0 var(--space-sm);
+    padding: 0;
+    list-style: none;
+    font-size: var(--size-caption);
+  }
+
+  .map-data__swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: var(--space-xs);
+    border-radius: var(--radius-pill);
+  }
+
+  .map-data__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--size-caption);
+  }
+
+  .map-data__caption {
+    text-align: left;
+    color: var(--color-text-secondary);
+  }
+
+  .map-data__table th,
+  .map-data__table td {
+    padding: var(--space-2xs) var(--space-xs);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  .map-data__table tbody button,
+  .map-data__marks button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-blue);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .map-data__marks {
+    margin: 0;
+    padding-left: var(--space-lg);
+    font-size: var(--size-caption);
+  }
+
+  /* Forced colors: the dots cannot carry meaning, so the list is the map. */
+  @media (forced-colors: active) {
+    .map-layer__canvas,
+    .map-layer__hex,
+    .map-insets {
+      display: none;
+    }
+
+    .map-data .map-data__panel,
+    .map-data:not(.map-data--open) .map-data__panel {
+      position: absolute;
+      width: auto;
+      height: auto;
+      clip-path: none;
+      white-space: normal;
+    }
+  }
+}
+
+@layer rooms {
+  /* Cards: opaque surfaces laid on the map at a place, with a leader to it. */
+  /* Cards are read over the map, so they sit above its names and pins; below the map's own controls (z-index 2). */
+  .map-cards,
+  .map-cards__leaders {
+    z-index: 1;
+  }
+
+  .map-cards {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .map-cards[data-hidden="true"],
+  .map-cards__leaders[data-hidden="true"] {
+    display: none;
+  }
+
+  .map-cards__leaders {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .map-card__leader {
+    stroke: var(--color-border-strong);
+    stroke-width: 1;
+    fill: none;
+  }
+
+  .map-card__anchor {
+    fill: var(--color-blue);
+    stroke: var(--color-ground-abyss);
+    stroke-width: 1.5;
+  }
+
+  .map-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    inline-size: max-content;
+    max-inline-size: 280px;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+    box-shadow: var(--shadow-overlay);
+    color: var(--color-text-primary);
+    pointer-events: auto;
+  }
+
+  .map-card[data-tone="urgent"] { border-inline-start: 3px solid var(--color-red); }
+  .map-card[data-tone="gold"] { border-inline-start: 3px solid var(--color-gold); }
+
+  /* The words a card carries: what kind of thing, its name, one line more. */
+  .map-card__eyebrow {
+    margin: 0;
+    color: var(--color-text-tertiary);
+    font-size: var(--size-caption);
+  }
+
+  .map-card__title {
+    margin: var(--space-2xs) 0 0;
+    font-size: var(--size-small);
+    font-weight: var(--weight-strong);
+  }
+
+  .map-card__note {
+    margin: var(--space-2xs) 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+  }
+
+  .map-card[data-placed="false"] {
+    visibility: hidden;
+  }
+
+  /* A phone: the cards are a swipeable rail along the bottom of the map strip. */
+  .map-cards[data-rail="true"] {
+    inset: auto var(--space-sm) auto var(--space-sm);
+    display: flex;
+    gap: var(--space-sm);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    pointer-events: auto;
+    scrollbar-width: none;
+  }
+
+  .map-cards[data-rail="true"] .map-card {
+    position: static;
+    flex: 0 0 min(260px, 78vw);
+    scroll-snap-align: start;
+    transform: none;
+  }
+}
+
+@layer rooms {
+  .delta-card {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    margin: 0;
+  }
+
+  .delta-card__move {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .delta-card__move[data-up="true"] { color: var(--color-blue); }
+  .delta-card__move[data-up="false"] { color: var(--color-red); }
+}
+
+@layer rooms {
+  /* The air over the table: the edges fall into shadow and a fine grain
+     keeps the flat fills from reading as vector art. Over the canvas, under
+     every pin, card and line. */
+  .map-layer__atmosphere {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 75% 70% at 55% 45%, transparent 55%, color-mix(in srgb, var(--color-ground-abyss) 70%, transparent) 100%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  @media (prefers-contrast: more) {
+    .map-layer__atmosphere { display: none; }
+  }
+}

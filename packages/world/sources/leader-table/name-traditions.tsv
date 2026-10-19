@@ -1,0 +1,201 @@
+# The naming traditions each government's people carry, and the one its lead chair's holder comes from where there are several.
+# A research record, as of 2026-09-23, kept outside the name banks it holds them to: the leader-fidelity test and gate read every drawn
+# name back into one of the traditions listed here for its nation, and a nation's lead chair into its lead tradition. Tradition ids
+# are the name groups' own (packages/world/src/dataset/name-banks*.ts). A change to which tradition a nation draws from changes this
+# file in the same change, or fails.
+nation_id	traditions	lead_tradition	note
+AFG	afghan
+AGO	lusophone
+ALB	albanian
+AND	hispanic
+ARE	gulf-arabic		Gulf; the lead chair is the royal house
+ARG	hispanic
+ARM	armenian
+ATG	anglo
+AUS	anglo
+AUT	germanic
+AZE	azerbaijani
+BDI	great-lakes
+BEL	dutch
+BEN	gbe-speaking
+BFA	burkinabe
+BGD	south-asian-hindu;south-asian-muslim		Muslim and Hindu by population share
+BGR	bulgarian
+BHR	gulf-arabic		Gulf; the lead chair is the royal house
+BHS	anglo
+BIH	serbo-croatian
+BLR	russian		officials carry Russian forms
+BLZ	anglo
+BOL	hispanic
+BRA	lusophone
+BRB	anglo
+BRN	malay		Malay; the lead chair is the royal house
+BTN	bhutanese
+BWA	sotho-tswana
+CAF	centrafrican		Central African
+CAN	anglo
+CHE	germanic
+CHL	hispanic
+CHN	han		family name first
+CIV	ivorian
+CMR	cameroonian
+COD	central-african
+COG	congolese		Congolese
+COL	hispanic
+COM	comorian		Swahili-Arabic, father's name second
+CPV	lusophone
+CRI	hispanic
+CUB	hispanic
+CYP	greek
+CZE	czech-slovak
+DEU	germanic
+DJI	somali
+DMA	anglo
+DNK	dano-norwegian
+DOM	hispanic
+DZA	maghrebi		Maghreb, French romanization
+ECU	hispanic
+EGY	arabic
+ERI	tigrinya		Tigrinya, father's name second
+ESP	hispanic
+EST	estonian
+ETH	ethiopian		Ethiopian given names, father's name second
+FIN	finnish
+FJI	melanesian
+FRA	french
+FSM	micronesian
+GAB	gabonese		Gabonese
+GBR	anglo
+GEO	georgian
+GHA	ghanaian
+GIN	mande
+GMB	senegambian
+GNB	lusophone
+GNQ	equatoguinean		Equatoguinean, Fang and Bubi
+GRC	greek
+GRD	anglo
+GTM	hispanic
+GUY	anglo
+HND	hispanic
+HRV	serbo-croatian
+HTI	french
+HUN	hungarian
+IDN	indonesian
+IND	south-asian-hindu;south-asian-muslim;south-asian-sikh		Hindu, Muslim and Sikh by population share
+IRL	anglo
+IRN	persian
+IRQ	arabic
+ISL	icelandic		patronymics
+ISR	hebrew
+ITA	italian
+JAM	anglo
+JOR	arabic		Levantine; the lead chair is the royal house
+JPN	japanese
+KAZ	kazakh		Kazakh
+KEN	kenyan
+KGZ	kyrgyz		Kyrgyz
+KHM	khmer		family name first
+KIR	micronesian
+KNA	anglo
+KOR	korean		family name first
+KWT	gulf-arabic		Gulf; the lead chair is the royal house
+LAO	lao
+LBN	arabic
+LBR	upper-guinea-coast
+LBY	maghrebi		Maghreb and Libyan tribal names
+LCA	anglo
+LIE	germanic
+LKA	sinhalese
+LSO	sotho-tswana
+LTU	lithuanian
+LUX	germanic
+LVA	latvian
+MAR	maghrebi		Maghreb, French romanization; the lead chair is the royal house
+MCO	french
+MDA	romanian
+MDG	malagasy
+MDV	maldivian		Dhivehi Arabic names, father's name second
+MEX	hispanic
+MHL	micronesian
+MKD	macedonian;albanian		Macedonian, and the Albanian quarter
+MLI	mande
+MLT	maltese
+MMR	burmese		Burmese personal names, no family name
+MNE	serbo-croatian
+MNG	mongolian
+MOZ	lusophone
+MRT	mauritanian		Moorish names with Ould or Mint
+MUS	south-asian-hindu;south-asian-muslim		Hindu and Muslim by population share
+MWI	zambian-malawian
+MYS	malay;han	malay	Malays by father's name, a quarter Chinese family-name-first; the lead chair Malay
+NAM	namibian
+NER	nigerien
+NGA	hausa;yoruba;igbo	yoruba	Hausa-Fulani north, Yoruba southwest, Igbo southeast; the lead chair Yoruba
+NIC	hispanic
+NLD	dutch
+NOR	dano-norwegian
+NPL	nepali
+NRU	micronesian
+NZL	anglo
+OMN	gulf-arabic		Gulf; the lead chair is the royal house
+PAK	south-asian-muslim		Muslim
+PAN	hispanic
+PER	hispanic
+PHL	hispanic
+PLW	micronesian
+PNG	melanesian
+POL	polish
+PRK	korean		family name first
+PRT	lusophone
+PRY	hispanic
+PSE	arabic
+QAT	gulf-arabic		Gulf; the lead chair is the royal house
+ROU	romanian
+RUS	russian		Russian forms; Ukrainian family names are a small minority
+RWA	great-lakes
+SAU	gulf-arabic		Gulf tribal and family names; the lead chair is the royal house
+SDN	arabic
+SEN	senegambian
+SGP	han		Chinese family name first
+SLB	melanesian
+SLE	upper-guinea-coast
+SLV	hispanic
+SMR	italian
+SOM	somali
+SRB	serbian		Serbian
+SSD	south-sudanese
+STP	lusophone
+SUR	dutch
+SVK	czech-slovak
+SVN	slovene
+SWE	swedish
+SWZ	southern-african
+SYC	french
+SYR	arabic
+TCD	chadian		the Arabic-speaking north, father's name second
+TGO	gbe-speaking
+THA	thai
+TJK	tajik		Tajik, -zoda and -ov family names
+TKM	turkmen		Turkmen, -ow family names
+TLS	lusophone
+TON	polynesian
+TTO	anglo
+TUN	maghrebi		Maghreb, French romanization
+TUR	turkish
+TUV	polynesian
+TWN	han		family name first
+TZA	tanzanian
+UGA	ugandan
+UKR	ukrainian		Ukrainian forms of given names and family names
+URY	hispanic
+UZB	uzbek		Uzbek
+VCT	anglo
+VEN	hispanic
+VNM	vietnamese		family name first
+VUT	melanesian
+WSM	polynesian
+XKX	albanian
+YEM	gulf-arabic		Arabian tribal names
+ZAF	nguni;sotho-tswana;afrikaans;anglo	nguni	Nguni, Sotho-Tswana, Afrikaans and English speakers by population share; the lead chair Nguni
+ZMB	zambian-malawian
+ZWE	zimbabwean

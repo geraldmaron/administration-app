@@ -1,0 +1,477 @@
+[
+  {
+    "id": "the-assembly-will-not-sit",
+    "class": "institution",
+    "severity": "serious",
+    "dilemmaShape": "containment",
+    "subject": "The chamber will not sit",
+    "cast": {
+      "pick": "band",
+      "powerTier": 3
+    },
+    "conditions": [],
+    "weight": 1,
+    "locus": {
+      "site": "capital",
+      "ground": "counterpart",
+      "descriptor": "the chamber that will not sit before the week is out"
+    },
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "interior"
+        },
+        "text": "The National Assembly will not sit before Thursday, and Germany has already said what it thinks of that."
+      }
+    ],
+    "replies": [
+      {
+        "id": "wait-them-out",
+        "tone": "evasive",
+        "text": "Wait them out, and say nothing at all before the chamber sits on Thursday.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "standing": -0.02
+          },
+          "remembered": "The chamber was left to sit on its hands, and nobody was ever asked to explain why.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "interior"
+            },
+            "text": "The chamber met on the Friday instead, with four seats empty and nobody willing to say whose they were."
+          }
+        }
+      },
+      {
+        "id": "force-the-session",
+        "tone": "firm",
+        "text": "Force the session tonight, and take the vote before anyone can leave the building.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "stability": -0.03
+          },
+          "remembered": "The session was forced and the vote taken in one night, with the doors held shut.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "narrator"
+            },
+            "text": "The clerks stayed until the small hours and the record of it runs to a single line nobody will read."
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "the-plant-with-no-route",
+    "class": "economy",
+    "severity": "serious",
+    "dilemmaShape": "allocation",
+    "subject": "The plant that never routes",
+    "cast": {
+      "pick": "none"
+    },
+    "conditions": [],
+    "weight": 1,
+    "locus": {
+      "site": "interior",
+      "ground": "home",
+      "state": "PA",
+      "city": "CITY-USA-pittsburgh",
+      "sector": "steel-heavy",
+      "descriptor": "the mill yards along the river through {{city}}"
+    },
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "interior"
+        },
+        "text": "Four thousand jobs wait on a holiday in {{city}}, and every week without a signature is a week they look elsewhere."
+      }
+    ],
+    "replies": [
+      {
+        "id": "approve",
+        "tone": "firm",
+        "text": "Give them the holiday and tell {{city}} the plants are coming.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "treasury": -40
+          },
+          "remembered": "The holiday was signed and the plants were promised to {{city}}.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "narrator"
+            },
+            "text": "The first firm asked for the exemption in writing before dusk."
+          }
+        }
+      },
+      {
+        "id": "refuse",
+        "tone": "principled",
+        "text": "Refuse the holiday and keep the tax books whole.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "standing": -0.02
+          },
+          "remembered": "The holiday was refused and the yards stayed empty.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "interior"
+            },
+            "text": "The union hall called before the file closed. That is the line the room will keep when the week is asked about later."
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "the-callback-to-a-scare-nobody-wrote",
+    "class": "public-health",
+    "severity": "serious",
+    "dilemmaShape": "credulity-bet",
+    "subject": "The scare nobody stamped",
+    "cast": {
+      "pick": "none"
+    },
+    "conditions": [
+      {
+        "kind": "stateGrievance",
+        "scope": "any",
+        "signature": "water-scare:never-written",
+        "atMost": -0.2
+      }
+    ],
+    "weight": 1,
+    "locus": {
+      "site": "interior",
+      "ground": "home",
+      "state": "CA",
+      "descriptor": "the catchment that still remembers a scare that was never filed"
+    },
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "interior"
+        },
+        "text": "The catchment is asking what we did last time, and we have no mark that says we did anything."
+      }
+    ],
+    "replies": [
+      {
+        "id": "acknowledge",
+        "tone": "firm",
+        "text": "Tell them we hear it and will send the lab trucks again.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "treasury": -12
+          },
+          "remembered": "The lab trucks went out again and the catchment was told it had been heard.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "narrator"
+            },
+            "text": "The trucks left before noon and the county commission waited for a result."
+          },
+          "domestic": {
+            "sectors": [
+              "agriculture"
+            ],
+            "magnitude": "light",
+            "signature": "other-scare:written",
+            "reason": "A different scare was filed so the week routes but not the gate."
+          }
+        }
+      },
+      {
+        "id": "defer",
+        "tone": "evasive",
+        "text": "Hold the file another week and say nothing that can be quoted.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "standing": -0.02
+          },
+          "remembered": "The file was held and nobody in the catchment was given a line they could quote.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "interior"
+            },
+            "text": "The commissioners called before the week was out anyway. That is the line the room will keep when the week is asked about later."
+          },
+          "domestic": {
+            "sectors": [
+              "agriculture"
+            ],
+            "magnitude": "light",
+            "signature": "other-scare:written",
+            "reason": "A different scare was filed so the week routes but not the gate."
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "the-group-nobody-named",
+    "class": "hostage",
+    "severity": "serious",
+    "dilemmaShape": "containment",
+    "subject": "The group with no name",
+    "cast": {
+      "pick": "none"
+    },
+    "conditions": [],
+    "weight": 1,
+    "locus": {
+      "site": "interior",
+      "ground": "home",
+      "descriptor": "the room where the families waited"
+    },
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "interior"
+        },
+        "text": "Four people are still held and the country wants to know which group this government is willing to leave behind."
+      }
+    ],
+    "replies": [
+      {
+        "id": "leave-them",
+        "tone": "principled",
+        "text": "Say we will not pay and live with the four who stay behind.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "stability": -0.07,
+            "standing": 0.04
+          },
+          "remembered": "The government refused to buy them back and named no group as the ones who paid for the rule.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "narrator"
+            },
+            "text": "One family sat for an interview that evening and said nobody had called."
+          },
+          "impact": {
+            "human": {
+              "lives": "isolated",
+              "borneBy": "one-group"
+            },
+            "agency": "our-doing",
+            "divisive": true
+          }
+        }
+      },
+      {
+        "id": "pay-quietly",
+        "tone": "evasive",
+        "text": "Pay quietly and bring them home this week.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "treasury": -80,
+            "standing": -0.04
+          },
+          "remembered": "The price was paid quietly and four citizens came home.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "foreign"
+            },
+            "text": "They are home. The next price will arrive before the week is out."
+          },
+          "impact": {
+            "institutional": [
+              "legal-authority-spent"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "the-mass-toll-on-a-sliver",
+    "class": "tragedy",
+    "severity": "critical",
+    "dilemmaShape": "containment",
+    "subject": "A mass toll on a sliver",
+    "cast": {
+      "pick": "none"
+    },
+    "conditions": [],
+    "weight": 1,
+    "locus": {
+      "site": "interior",
+      "ground": "home",
+      "descriptor": "the barracks yard after the blast"
+    },
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "interior"
+        },
+        "text": "The blast took a generation of retirees in uniform and the country is asking what this government will say about it."
+      }
+    ],
+    "replies": [
+      {
+        "id": "name-the-dead",
+        "tone": "firm",
+        "text": "Name the dead tonight and say the government failed them.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "stability": -0.08,
+            "standing": -0.05
+          },
+          "remembered": "The government named the dead and took the blame in public the same night.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "narrator"
+            },
+            "text": "The list ran past midnight and the last name was read by a clerk whose voice broke."
+          },
+          "impact": {
+            "human": {
+              "lives": "mass",
+              "borneBy": "one-group",
+              "cohorts": [
+                "public-and-uniformed",
+                "age-65-plus"
+              ]
+            },
+            "agency": "on-our-watch",
+            "divisive": true
+          }
+        }
+      },
+      {
+        "id": "hold-the-line",
+        "tone": "evasive",
+        "text": "Hold the briefing until morning and say nothing that can be quoted tonight.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "standing": -0.03
+          },
+          "remembered": "The briefing was held until morning and nothing was quoted that night.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "interior"
+            },
+            "text": "By morning the list was already in the papers under someone else's byline."
+          },
+          "impact": {
+            "institutional": [
+              "civil-service-strained"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "the-callback-to-a-cohort-scare-nobody-wrote",
+    "class": "public-health",
+    "severity": "serious",
+    "dilemmaShape": "credulity-bet",
+    "subject": "The cohort scare nobody stamped",
+    "cast": {
+      "pick": "none"
+    },
+    "conditions": [
+      {
+        "kind": "cohortStrain",
+        "cohort": "rural",
+        "cause": "water-scare:never-written",
+        "atMost": -0.2
+      }
+    ],
+    "weight": 1,
+    "locus": {
+      "site": "interior",
+      "ground": "home",
+      "state": "CA",
+      "descriptor": "the catchment that still remembers a scare that was never filed"
+    },
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "interior"
+        },
+        "text": "The catchment is asking what we did last time, and no cohort strain says we did anything."
+      }
+    ],
+    "replies": [
+      {
+        "id": "acknowledge",
+        "tone": "firm",
+        "text": "Tell them we hear it and will send the lab trucks again.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "treasury": -12
+          },
+          "remembered": "The lab trucks went out again and the catchment was told it had been heard.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "narrator"
+            },
+            "text": "The trucks left before noon and the county commission waited for a result."
+          },
+          "domestic": {
+            "sectors": [
+              "agriculture"
+            ],
+            "magnitude": "light",
+            "signature": "other-scare:written",
+            "reason": "A different scare was filed so the week routes but not the gate."
+          }
+        }
+      },
+      {
+        "id": "defer",
+        "tone": "evasive",
+        "text": "Hold the file another week and say nothing that can be quoted.",
+        "commitment": {
+          "kind": "position",
+          "cost": {
+            "standing": -0.02
+          },
+          "remembered": "The file was held and nobody in the catchment was given a line they could quote.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "interior"
+            },
+            "text": "The commissioners called before the week was out anyway. That is the line the room will keep when the week is asked about later."
+          },
+          "domestic": {
+            "sectors": [
+              "agriculture"
+            ],
+            "magnitude": "light",
+            "signature": "other-scare:written",
+            "reason": "A different scare was filed so the week routes but not the gate."
+          }
+        }
+      }
+    ]
+  }
+]

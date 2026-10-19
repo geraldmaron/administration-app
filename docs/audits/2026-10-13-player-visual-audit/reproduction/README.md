@@ -1,0 +1,1 @@
+One-off audit probes retained for provenance, not supported project tooling. Paths point to the original temporary output and isolated checkout. states.cjs has a known dark-search timing miss; do not treat it as a passed interaction test. Use existing repository scripts for future capture and crawl work.

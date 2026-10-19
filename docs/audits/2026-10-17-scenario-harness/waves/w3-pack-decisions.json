@@ -1,0 +1,196 @@
+{
+  "wave": "W3-pack",
+  "decisions": [
+    {
+      "id": "the-crowd-at-the-gate",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The blockade is the incident: six thousand people sit across the only road into the allied airfield and turn the fuel convoy back, creating the standing protest the week reports."
+      },
+      "presumes": "A crowd has held the road into the airfield since Tuesday and the host government has sent no police; no earlier decision or unrest condition is presumed.",
+      "evidence": "Reasoned from prose: the standing paragraph dates the crowd to Tuesday, says the host did not organize it, and names no prior scenario. The only condition is the arming flag lease-talks-opened false, which is not an unrest reading. Unrest class readings (209-week sample): conditionActive unrest 22.6% of weeks (10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%; stateGrievance any <=-0.2 12.5%; crimeTrend rising 2.7%. All of them read the player's own streets; the crowd here is on a foreign road, so a gate on them would deal the week on boards where our own streets are the unrest and not the host's, and would not make the prose true.",
+      "risk": "Same standard as the campus occupation (a few days old, nothing earlier creates it). Separate defect, not a premise one: the week presumes a United States airfield in the closest ally, which no dataset reading establishes; that is a BL-251 locus/capability item."
+    },
+    {
+      "id": "the-deal-the-government-was-not-in",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The let-the-strike-run flag (aged 4 or more) is the state it presumes: the government stayed out of a strike, and a wage top-up it was never asked about is the bill that settlement leaves. A settlement top-up is a budget question that deals the same in a boom or a slump."
+      },
+      "presumes": "The government stayed out of a strike; the two sides settled on their own and the deal assumes a federal top-up.",
+      "evidence": "Reasoned from prose and the corpus: let-the-strike-run is set by the-morning-the-country-stopped (pack) and by the-strike-that-crossed-three-industries (corpus), and the standing paragraph says outright that the government chose not to enter the strike. The W1 review approved the same pairing for the-fund-that-outlasted-the-chair-who-built-it. The prose names no unemployment, inflation or cycle state.",
+      "risk": "The flag is set in two places, so the strike the prose describes may not be the one the player stayed out of; the prose does not name the industry, which is why it stays true to either."
+    },
+    {
+      "id": "the-line-item-with-two-names",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "Two cabinet secretaries writing the same budget money into next year is an accounting collision the Treasury finds at reconciliation; it deals the same in any phase of the cycle, and the finance-competence gate only means someone competent would catch it."
+      },
+      "presumes": "One shared account pays for only one of two programs; the Treasury's reconciliation found it this week.",
+      "evidence": "Reasoned from prose: the shortfall is internal to the budget and the prose names no recession, revenue shortfall, or rate. The conditions are turn >=2 and a finance competence bound, neither a class reading.",
+      "risk": "The 'shortfall' could be read as a fiscal-stress claim; the context says it is double-booking, not a lack of receipts, which is why cyclePhase would not fit."
+    },
+    {
+      "id": "the-lot-numbers-on-the-recall",
+      "class": "public-health",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The lab result is the incident: routine testing finds a carcinogenic contaminant in four lots of the country's most common blood-pressure pill this week, creating the recall decision the week reports."
+      },
+      "presumes": "Four lots of a common generic pill failed a lab test this week; no outbreak or pandemic is presumed.",
+      "evidence": "Reasoned from prose: the standing paragraph says 'routine testing found the contaminant in four lots this week'. The class reading for public-health is conditionActive pandemic only, and a drug contaminant is not an outbreak, so a pandemic gate would be false to the prose (and pandemic is a standing condition, not a lab finding). W2 approved the same shape for the-bottling-plant-that-failed-its-own-test (Friday sample is the incident).",
+      "risk": "A reviewer could prefer universal ('a product-safety week deals anywhere'); introduces is chosen because the prose dates the finding to this week, which is the doctrine's test."
+    },
+    {
+      "id": "the-morning-the-country-stopped",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The stoppage is the incident: a winter-pay dispute at the depots has built over three days into closed depots and thin port crews, with the power workers voting tonight, creating the strike the week reports."
+      },
+      "presumes": "A national transport and port stoppage over winter pay is in its third day.",
+      "evidence": "Reasoned from prose: nothing earlier creates the strike (conditions are turn >=3 and a calendar of November through March). Unrest readings (209-week sample): conditionActive unrest 22.6% of weeks; operatorPressure protest >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; crimeTrend rising 2.7%. A gate on unrest would deal this labor week only on a board that already has street unrest and starve calm boards of a plain wage dispute, the same reasoning W2 recorded for the-pier-stands-empty and approved for the-transport-stops (third-day stoppage).",
+      "risk": "Day three, not 'this morning'; accepted on the W2 standard that an incident reported a few days after onset is still the week's own. The sentence 'This stopped being about winter pay this morning' is the escalation, which the week also owns."
+    },
+    {
+      "id": "the-run-on-the-currency",
+      "class": "economy",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The run is the incident: withdrawals at two regional banks that began on Thursday have become lines that spread to banks holding none of the same bonds, creating the bank panic the week reports."
+      },
+      "presumes": "Savers are withdrawing faster than banks can sell assets; two regional banks may not open Monday.",
+      "evidence": "Reasoned from prose. The paid-the-winter-wages flag is set by the-morning-the-country-stopped and is kept as the arming gate; it establishes that the strike was settled with unscheduled borrowing, which is the stated cause. No banking-stress reading exists in CLASS_GATES (cyclePhase, bands, tradeMeasure, treasury, economic conditions), and the economic conditions are recession, inflation-shock, unemployment-shock, fiscal-crisis, energy-shortage and housing-crunch; none is a bank run. Same ruling as W1's the-branch-with-the-line-outside-it and the-run-that-started-at-one-counter, both approved.",
+      "risk": "The standing paragraph also says 'the bond sale that followed went badly', a state the flag does not carry; if the reviewer reads that as a presumed board state, the fix is a prose edit, not a gate. Least certain of the introduces calls."
+    },
+    {
+      "id": "the-sentence-in-the-stump-speech",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The plank-balanced-budget ticket gate establishes the promise, and a budget that does not close with the promise in it is an annual fact of government; the week deals the same in any phase of the cycle."
+      },
+      "presumes": "The administration promised a balanced budget in four years and this year's gap is large enough to need nine cuts.",
+      "evidence": "Reasoned from prose: the standing state is a promise (carried by the ticket plank gate) and an arithmetic gap, not a boom or a slump. The conditions are turn >=6 and the ticket plank. cyclePhase measured 69.8% for expansion/peak and 52.5% expansion, but the gap is not tied to a phase in the prose, so a cycle gate would assert something the week does not say.",
+      "risk": "The three-hundred-ten-billion figure is an authored number, not read from the treasury; a reviewer could say the gap is an unestablished board fact. If so the remedy is to name no figure (BL-251), not a gate: the treasury metric is dollars, not 0..1."
+    },
+    {
+      "id": "the-water-they-both-claim",
+      "class": "war",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The shooting is the incident: a patrol pass on a contested crossing ends in gunfire this morning, kills one crew member and leaves another in the water, creating the crisis the week reports. It is a pre-war clash with the other fleet and planes held back, not a war state."
+      },
+      "presumes": "An armed clash this morning on a border crossing; the relationship was already tense, and no war is presumed.",
+      "evidence": "Reasoned from prose: the opening says 'their fleet has not moved and their planes are on the ground; they want this small', so warState any and coalition would be false (no war runs), and a warState none gate would deal the week while some other war runs elsewhere. The tension >=0.35 relationship bound on the tensest cast already carries the months of tension the standing paragraph describes. Same ruling as W1's the-column-on-the-border-road (pre-war, approved).",
+      "risk": "The clash is not a war state by design; if the reviewer wants a war-class reading the only honest ones (warState, coalition) contradict the prose."
+    },
+    {
+      "id": "the-clause-both-governments-signed",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The sharedMembership gate establishes the compact both governments signed, and a subsidy that breaches one of its clauses is a treaty-compliance question that deals the same in a boom or a slump."
+      },
+      "presumes": "The player's government subsidizes a plant that competes with the counterpart's, and the shared compact forbids it.",
+      "evidence": "Reasoned from prose and source: the conditions are sharedMembership present with a closest cast, which carries the compact and the counterpart. The prose names no unemployment, inflation, or cycle state. The W1 review approved the same shape for the-tax-break-for-new-factories and the-quota-that-emptied-the-docks (a week that needs a counterpart and an agreement, not a cycle).",
+      "risk": "The plant subsidy is an authored fact, not read from any ledger; it is the week's own claim, not a board state. Nothing here makes the gate non-reachable: sharedMembership boards are in the preview set."
+    },
+    {
+      "id": "the-half-hull-in-the-shed",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The split-the-hull-order flag (aged 4 or more), set when the player split a hull order between home and foreign yards, is the state it presumes, and the year-later bill for that split is a budget choice that deals the same in any phase."
+      },
+      "presumes": "A shipbuilding order split between a home yard and foreign yards has come due; the program can finish one or the other.",
+      "evidence": "Reasoned from prose and source: split-the-hull-order is set by the reply split-the-order in the pilot pack's hull-order scenario (packages/content/src/packs/pilot.ts), and the week carries it as a gate aged at least 4. W1 approved the same pairing for the-fleet-that-limped-on-half.",
+      "risk": "Low. The scenario is `once`, so it deals at most one time per campaign."
+    },
+    {
+      "id": "the-water-came-over-the-yard-wall",
+      "class": "disaster",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The surge is the incident: on the second night the sea came over the harbor wall and flooded the slipways and machine halls of the yards the player reopened, creating the loss the week reports. The kept-the-yards-on-naval-orders flag (aged 2) supplies the yards, not the hazard."
+      },
+      "presumes": "A coastal surge flooded the reopened naval yards; nobody drowned.",
+      "evidence": "Reasoned from prose: the opening reports the surge as the night's event. Hazard readings (209-week sample, from W2): flood 13.7% of weeks, cyclone 5.1%, wildfire 11.8%, earthquake 7.8%. A surge over a harbor wall is a coastal storm; cyclone is under the 10% floor, and flood (13.7%) is a river-flood reading, so it does not fit the prose and, ANDed with a coastal geography gate and a flag set by one pilot reply, it would reach far fewer than the 13.7% on its own. The week creating the incident is the doctrine's own case (W2 approved the-span-they-reopened-too-soon on the same ground).",
+      "risk": "A reviewer could ask for a flood gate; I rejected it because the measured combined liveness with the flag is small and the hazard is a different mechanism than the prose."
+    },
+    {
+      "id": "plant-holiday-pittsburgh",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "Four firms asking for a ten-year tax holiday in exchange for jobs in one city is an investment-incentive request any government gets in any year; the prose names no unemployment or cycle state."
+      },
+      "presumes": "Four companies will bring four thousand jobs to Pittsburgh for a tax holiday; the city has empty yards.",
+      "evidence": "Reasoned from prose and source: conditions are empty and the class reads no state. W1 approved the same reason for the-tax-break-for-new-factories. The fixture is a test (packages/content/src/__fixtures__/plant-holiday.ts, plant-holiday.test.ts): its first test asserts auditScenario returns no error findings, and the others assert city binding and CityEffect output, none of which reads `premise`. PREMISE_DEBT is consumed in auditPremiseDeclared and in the debt-list test, so a fixture left in the list makes 'PREMISE_DEBT empty' impossible. Recommendation: do not exempt it; add the one-key premise to the TS object (it is built with ScenarioDef.parse, which accepts it). This leaves the fixture's purpose, a city-effect binding test, untouched. No other treatment is better: removing the audit assertion would weaken a test, and leaving the id in a shrink-only list contradicts the done-when.",
+      "risk": "Calling a fixture 'universal' is true but unreviewable in the sense that it is not published content; the reviewer only needs to confirm the TS edit and that plant-holiday.test.ts still passes."
+    },
+    {
+      "id": "the-plant-that-everyone-represents",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A firm asking for a federal guarantee while announcing one plant closure is a local-employment-versus-precedent week that any government meets in any year; it names no unemployment or cycle level, and its finance voice argues the closure is the firm's choice, not the economy's."
+      },
+      "presumes": "One plant in one county announced a closure in eleven weeks and asks for a federal guarantee; two thousand jobs.",
+      "evidence": "Reasoned from prose: the opening and context are firm-level (eleven months of cash in the filings, one county, the second-largest employer), with no macro claim. Same as W1's the-mill-that-cannot-make-payroll (approved universal) and the-yard-that-builds-the-boats. Reference exemplar (content/reference/reference-01-05.jsonl): not among the three QUOTED in studio-cli/src/scenarios/reference.ts, so the brief does not print it; it is parsed and audited by packages/content/src/reference-set.test.ts. Adding a premise changes nothing a writer sees and keeps the set audit-clean when PREMISE_DEBT goes.",
+      "risk": "Low. Gating this on a cycle reading would assert a slump the prose goes out of its way to deny ('a decision they have made, not a thing that is happening to them')."
+    },
+    {
+      "id": "the-number-that-will-be-wrong-on-friday",
+      "class": "economy",
+      "decision": "gate",
+      "conditions": [
+        {
+          "kind": "cyclePhase",
+          "in": [
+            "expansion",
+            "peak"
+          ]
+        }
+      ],
+      "presumes": "Friday's employment figure will be strong, and the agency believes it is overstated.",
+      "evidence": "Measured on the balance harness (playCampaign, 209 weeks, democrat/republican/independent x prudent/reckless, seeds balance-0 and balance-1, 12 campaigns, 1,750 weeks because reckless runs end early) with scenarioLive on the gate: cyclePhase expansion or peak holds in 69.8% of weeks and in 12/12 campaigns (expansion alone 52.5%, peak alone 17.4%); unemploymentBand tight is 12.7% (6/12 campaigns) and tight or normal 71.1% (12/12). The cycle reading is chosen over a unemployment band: a strong employment print is a rising-cycle fact, and tight alone would strand half the campaigns. auditReachability on the gated def (reference scenario with the condition appended) returns no findings.",
+      "risk": "A strong print can occur in a recovery from a trough, which this excludes; the prose never says recovery. Reference exemplar (content/reference/reference-06-10.jsonl, not among the three QUOTED), so the brief does not print it; the gate adds a pulse condition, which the brief already teaches. If the owner would rather not alter reference conditions, universal is the fallback, but then the 'good print' sentence is an unestablished claim."
+    },
+    {
+      "id": "the-yards-and-the-money-that-runs-out",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The appropriation gate (weeksLeftAtMost 4) establishes the funding clock the week turns on, and a lapsing appropriation is a budget week that deals the same in any phase of the cycle; no economic reading is presumed."
+      },
+      "presumes": "A barge and lock appropriation has about three weeks left and the river yards stop buying steel.",
+      "evidence": "Reasoned from prose and source: conditions are appropriation weeksLeftAtMost 4 and metric approval atMost 0.6, neither an economy class reading (CLASS_GATES: bands, cycle, commodity, trade, treasury, economic conditions). The prose is firm- and program-level. Kit effect: studio-cli/src/scenarios/reference.ts QUOTED prints this scenario in full in every generation brief (the 'routine week bound to the funding clock'), through exemplars() in brief.ts. Adding a `premise` key changes what the kit shows: a writer will see a universal declaration on an exemplar, and the BRIEF's own rule ('at most a third of this batch may claim it', 'the honest exception') could be read as endorsing it. That is desirable on balance: without it the exemplar would fail the rule the brief teaches (the audit now errors on any new economy week that reads no class state and declares nothing), so a writer copying its shape would be refused; with it the exemplar shows the exact declaration and its reason. The mitigation is the existing batch cap, which the validator enforces.",
+      "risk": "Anchoring risk: a generator may copy 'universal' onto too many weeks. Alternative that keeps the exemplar gate-only: add a cyclePhase gate, rejected because the prose asserts no cycle state and it would starve calm boards of a funding-clock week. A tiny rise in brief length; a regenerated TEMPLATE/BRIEF needs no change."
+    }
+  ],
+  "summary": {
+    "gate": 1,
+    "universal": 8,
+    "introduces": 6,
+    "hold": 0
+  }
+}

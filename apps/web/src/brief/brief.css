@@ -1,0 +1,857 @@
+/* The Brief, the digest, the clock and scandal screens, and the Record. The decision's own parts are in decision/decision.css. */
+@layer rooms {
+  .brief,
+  .decision,
+  .digest,
+  .case,
+  .scandal,
+  .record,
+  .record-entry {
+    display: grid;
+    gap: var(--space-xl);
+    max-inline-size: 75rem;
+    padding-block-end: var(--space-xl);
+  }
+
+  /* The Desk takes the workspace measure, and the two lists that answer "what now" sit side by side where there is room. */
+  .brief {
+    max-inline-size: none;
+  }
+
+  :is(.brief, .digest, .case, .record, .record-entry) > section,
+  :is(.desk__main, .desk__side) > section {
+    padding: var(--panel-pad);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .brief section,
+  .desk section,
+  .decision section,
+  .digest section,
+  .case section,
+  .record section,
+  .record-entry section {
+    display: grid;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  .brief-section__title,
+  .situation__label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-snug);
+  }
+
+  .brief-section__count {
+    min-inline-size: 1.5rem;
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-pill);
+    background: var(--status-info-fill);
+    color: var(--status-info-ink);
+    font-size: var(--size-label);
+    text-align: center;
+  }
+
+  .brief-section__note,
+  .moves__none,
+  .matter__later,
+  .record__when {
+    margin: 0;
+    color: var(--color-text-tertiary);
+    font-size: var(--size-label);
+  }
+
+  .brief__said,
+  .last-run__sentence {
+    margin: 0;
+    font-size: var(--size-body);
+  }
+
+  /* While time ran: the run's own sentence and the doors to what stopped it. */
+  .brief > .last-run {
+    border-inline-start: 4px solid var(--status-info-ink);
+  }
+
+  .last-run__stops {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .last-run__stops li {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: baseline;
+  }
+
+  .moves,
+  .now__drag {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+
+  .standing__calm {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  /* One reading's move per row, so the meters share a width and the figures line up. */
+  ul.moves {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .time__horizon,
+  .time__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  /* Digest, wire and the Record. */
+  .wire li {
+    padding-block: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-size: var(--size-small);
+  }
+
+  .wire__mark {
+    margin-inline-end: var(--space-xs);
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .timeline {
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .timeline__day {
+    position: relative;
+    display: grid;
+    gap: var(--space-xs);
+    padding-inline-start: var(--space-lg);
+    border-inline-start: 2px solid var(--color-border-subtle);
+  }
+
+  .timeline__date {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-strong);
+  }
+
+  .timeline__dot {
+    position: absolute;
+    inset-inline-start: calc(-1 * var(--space-lg) - 7px);
+    inset-block-start: 0.2em;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--color-border-strong);
+    border-radius: 50%;
+    background: var(--color-ground-base);
+  }
+
+  .timeline__count {
+    color: var(--color-text-tertiary);
+    font-weight: var(--weight-regular);
+  }
+
+  .timeline__entries {
+    display: grid;
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .timeline__entry {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+  }
+
+  .timeline__entry[data-actor="player"] {
+    border-color: var(--color-border-subtle);
+    background: var(--color-ground-raised);
+  }
+
+  .timeline__body {
+    display: grid;
+    gap: var(--space-2xs);
+    min-width: 0;
+  }
+
+  .timeline__who {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-tertiary);
+    font-size: var(--size-label);
+  }
+
+  .timeline__nation {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    color: var(--color-text-secondary);
+  }
+
+  .timeline__what {
+    font-weight: var(--weight-medium);
+  }
+
+  .timeline__moves {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    font-size: var(--size-label);
+  }
+
+  .timeline__move {
+    padding: var(--space-2xs) var(--space-xs);
+    border-radius: var(--radius-chip);
+    background: var(--color-ground-sunken);
+  }
+
+  .timeline__move[data-direction="up"] {
+    color: var(--color-blue);
+  }
+
+  .timeline__move[data-direction="down"] {
+    color: var(--status-danger-ink);
+  }
+
+  .impact-report {
+    display: grid;
+    gap: var(--space-xs);
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+  }
+
+  .impact-report__title,
+  .impact-report__meta {
+    margin: 0;
+  }
+
+  .impact-report__meta {
+    color: var(--color-text-tertiary);
+    font-size: var(--size-label);
+  }
+
+  .trace {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  }
+
+  /* The case, the clock and the scandal. */
+  .case__reason,
+  .case__held {
+    margin: 0;
+  }
+
+  .case__figure {
+    font-size: var(--size-title);
+    font-variant-numeric: tabular-nums;
+  }
+
+
+}
+
+@layer rooms {
+}
+
+@layer rooms {
+  .desk {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .desk__main,
+  .desk__side {
+    display: grid;
+    gap: var(--space-xl);
+    align-content: start;
+    min-inline-size: 0;
+  }
+
+  /* Queue and deadlines sit side by side where the canvas is wide enough for both. */
+  @media (min-width: 64em) {
+    .desk {
+      grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+      align-items: start;
+    }
+  }
+
+  /* The leading matter: severity bar on its edge, then what, when, and what waiting costs. */
+  .alert {
+    gap: var(--space-md);
+    border-inline-start: 4px solid var(--status-warning-ink);
+  }
+
+  .alert[data-stance="adverse"] {
+    border-inline-start-color: var(--status-danger-ink);
+  }
+
+  .alert[data-stance="neutral"] {
+    border-inline-start-color: var(--color-border-strong);
+  }
+
+  .alert__kicker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    margin: 0;
+    font-size: var(--size-small);
+  }
+
+  .alert__kind,
+  .alert__holds {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    color: var(--color-text-secondary);
+  }
+
+  .alert__holds {
+    color: var(--status-warning-ink);
+    font-weight: var(--weight-strong);
+  }
+
+  .alert__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--size-heading);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-snug);
+  }
+
+  .alert__title a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .alert__reason {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .clock-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--size-small);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .clock-line[data-closing="true"] {
+    color: var(--status-danger-ink);
+  }
+
+  .clock-line__label {
+    font-weight: var(--weight-strong);
+  }
+
+  /* The queue: one grid for the head and every row, so the columns line up. The head carries the row's padding and bar width so its names sit over the cells. */
+  .queue__head,
+  .queue__row {
+    display: grid;
+    /* A fixed action track: an auto one sizes to each row's own buttons, so the head and the rows would disagree. */
+    grid-template-columns: minmax(0, 2.4fr) minmax(8rem, 0.9fr) minmax(0, 1.5fr) 10.5rem;
+    gap: var(--space-md);
+    align-items: center;
+  }
+
+  .queue__head {
+    padding-inline: calc(var(--space-md) + 1px) calc(var(--space-md) + 1px);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-weight: var(--weight-strong);
+  }
+
+  .queue__head > :last-child {
+    text-align: end;
+  }
+
+  .queue__list {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .queue__row {
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .queue__row[data-valence="neutral"] {
+    box-shadow: inset 4px 0 0 var(--color-border-strong);
+  }
+
+  .queue__row[data-valence="good"],
+  .queue__row[data-valence="watch"],
+  .queue__row[data-valence="bad"] {
+    box-shadow: inset 4px 0 0 var(--valence-ink);
+  }
+
+  .queue__cell {
+    display: grid;
+    gap: var(--space-2xs);
+    align-content: center;
+    min-inline-size: 0;
+  }
+
+  .queue__title,
+  .queue__reason {
+    margin: 0;
+  }
+
+  .queue__title {
+    font-size: var(--size-body);
+    font-weight: var(--weight-strong);
+  }
+
+  .queue__reason,
+  .queue__clamp {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .queue__reason {
+    color: var(--color-text-secondary);
+  }
+
+  .queue__clamp {
+    -webkit-line-clamp: 3;
+  }
+
+  .queue__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .queue__acts {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    justify-content: flex-end;
+    white-space: nowrap;
+  }
+
+  .queue__later {
+    color: var(--color-text-secondary);
+    white-space: normal;
+    text-align: end;
+  }
+
+  .queue__problem {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--status-danger-ink);
+  }
+
+  /* The column names are in the head on a wide screen and on each cell when the row stacks. */
+  .queue__label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 63.99em) {
+    .queue__head {
+      display: none;
+    }
+
+    .queue__row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-sm);
+      align-items: start;
+    }
+
+    .queue__acts {
+      justify-content: flex-start;
+    }
+
+    .queue__label {
+      position: static;
+      inline-size: auto;
+      block-size: auto;
+      overflow: visible;
+      clip-path: none;
+      color: var(--color-text-secondary);
+      font-weight: var(--weight-strong);
+    }
+  }
+
+  /* The condition summary: five readings in one surface, aligned on figure, unit and move. */
+  .now__list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .now__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 4.5rem 6rem 5.5rem 5rem;
+    gap: var(--space-md);
+    align-items: center;
+    padding: var(--space-sm) var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-size: var(--size-small);
+  }
+
+  .now__row:last-child {
+    border-block-end: 0;
+  }
+
+  .now__name {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-inline-size: 0;
+    font-weight: var(--weight-strong);
+  }
+
+  .now__figure {
+    justify-self: end;
+    font-size: var(--size-body);
+    font-weight: var(--weight-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .now__week {
+    justify-self: end;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .now__label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  @media (max-width: 47.99em) {
+    .now__row {
+      grid-template-columns: minmax(0, 1fr) 4.5rem 4.5rem;
+      gap: var(--space-xs) var(--space-sm);
+    }
+
+    .now__row .ui-bar {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .now__row .ui-sparkline {
+      display: none;
+    }
+  }
+
+  .clocks__list {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .clock-row {
+    display: grid;
+    gap: var(--space-2xs);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 3px solid var(--color-border-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+  }
+
+  .clock-row[data-urgency="due"] {
+    border-inline-start-color: var(--status-danger-ink);
+  }
+
+  .clock-row[data-urgency="closing"] {
+    border-inline-start-color: var(--status-warning-ink);
+  }
+
+  .clock-row__title {
+    font-weight: var(--weight-strong);
+  }
+
+  .clock-row__due,
+  .clock-row__line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .quiet {
+    border-inline-start: 4px solid var(--status-success-ink);
+  }
+
+  .quiet p {
+    margin: 0;
+  }
+}
+
+/* The weekly digest: a bar per week for approval's move, and the states that moved most either way. */
+@layer rooms {
+  .movers__pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .movers {
+    display: grid;
+    gap: var(--space-xs);
+    align-content: start;
+  }
+
+  .movers__title {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label, 0.875rem);
+    font-weight: var(--weight-strong);
+  }
+
+  .movers__list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .movers__row {
+    display: grid;
+    grid-template-columns: minmax(0, 8rem) minmax(0, 1fr) 3.5rem;
+    align-items: center;
+    gap: var(--space-sm);
+    min-block-size: 2.75rem;
+    padding-inline: var(--space-xs);
+    border-radius: var(--radius-control);
+    color: var(--color-text-primary);
+    text-decoration: none;
+  }
+
+  .movers__row:hover {
+    background: var(--color-ground-raised);
+  }
+
+  .movers__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .movers__bar {
+    block-size: 0.5rem;
+    border-radius: 999px;
+    background: var(--color-border-subtle);
+    overflow: hidden;
+  }
+
+  .movers__bar > span {
+    display: block;
+    block-size: 100%;
+    border-radius: inherit;
+  }
+
+  .movers__bar > [data-direction="up"] {
+    background: var(--status-success-ink);
+  }
+
+  .movers__bar > [data-direction="down"] {
+    background: var(--status-danger-ink);
+  }
+
+  .movers__figure {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-strong);
+  }
+
+  .movers__figure[data-direction="up"] {
+    color: var(--status-success-ink);
+  }
+
+  .movers__figure[data-direction="down"] {
+    color: var(--status-danger-ink);
+  }
+
+}
+
+@layer rooms {
+  .last-week .movers__row {
+    grid-template-columns: minmax(0, 1fr) 0 3.5rem;
+  }
+
+  .last-week__line {
+    margin: 0;
+    font-size: var(--size-body);
+    font-weight: var(--weight-strong);
+  }
+
+  .last-week > .ui-button,
+  .last-week > a {
+    justify-self: start;
+  }
+}
+
+/* The Desk's alert, queue and standing layouts around the shared drawn readings. */
+@layer rooms {
+  .alert__glance {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: var(--space-lg);
+    padding-block: var(--space-md);
+    border-block: 1px solid var(--color-border-subtle);
+  }
+
+  .alert__fact {
+    display: grid;
+    gap: var(--space-xs);
+    align-content: start;
+    min-inline-size: 0;
+  }
+
+  .alert__label {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-weight: var(--weight-strong);
+  }
+
+  .alert__wait {
+    margin: 0;
+    font-size: var(--size-body);
+  }
+
+  @media (max-width: 36em) {
+    .alert__glance {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-md);
+    }
+  }
+
+  .queue__subject {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--space-sm);
+    align-items: start;
+  }
+
+  .queue__subject > .queue__glyph {
+    grid-row: 1 / span 3;
+  }
+
+  .queue__subject > :not(.queue__glyph) {
+    grid-column: 2;
+  }
+
+  .queue__deadline .ui-countdown {
+    max-inline-size: 11rem;
+  }
+
+  .clock-row .ui-countdown__num {
+    font-size: var(--size-title);
+  }
+
+  .brief > .standing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+
+  .standing__fold .ui-bar-rows {
+    padding-block-start: var(--space-xs);
+  }
+}
+
+@layer rooms {
+  .now-history { padding: var(--space-md); margin-block: var(--space-md); background: var(--color-ground-raised); border-radius: var(--radius-control); display: grid; gap: var(--space-md); }
+  .now-history__choices { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+  .now-history > a { font-size: var(--size-small); }
+  .desk { container-type: inline-size; }
+  .desk > * { min-inline-size: 0; }
+  .now__row { grid-template-columns: minmax(0, 1fr) 4.5rem minmax(2rem, 6rem) 5.5rem 5rem; }
+  @container (max-width: 48rem) { .now__row { grid-template-columns: minmax(0, 1fr) 4.5rem 5rem; } .now__row .ui-bar { grid-column: 1 / -1; grid-row: 2; } .now__row .ui-sparkline { display: none; } }
+}
+
+/* The national condition is a responsive set of readings, not a cramped ledger. */
+@layer rooms {
+  .now { border-color: transparent; background: transparent; box-shadow: none; padding-inline: 0; }
+  .now__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--space-md); }
+  .now__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-md); align-content: start; padding: var(--space-lg); border: 0; border-radius: var(--radius-card); background: var(--color-ground-base); }
+  .now__row .now__label { grid-column: 1 / -1; }
+  .now__row .now__figure { grid-column: 1 / -1; font-size: 2rem; letter-spacing: var(--tracking-display); text-align: start; }
+  .now__row .ui-bar { grid-column: 1 / -1; grid-row: auto; }
+  .now__row .ui-sparkline { display: block; inline-size: 100%; max-inline-size: 100%; }
+  .now__row .now__week { align-self: center; }
+  .now-history { border-radius: var(--radius-card); padding: var(--space-xl); background: var(--color-ground-base); }
+  .now-history__choices [aria-pressed="true"] { background: var(--color-blue-fill); color: var(--color-white); }
+}
+
+@layer rooms {
+  .now .now__row { background: var(--color-ground-raised); }
+  .now .now__row .now__figure { text-align: start; }
+}
+
+@layer rooms {
+  .now-history__evidence { display: grid; gap: var(--space-sm); color: var(--color-text-primary); text-decoration: none; border-radius: var(--radius-control); padding: var(--space-sm); }
+  .now-history__evidence:hover { background: var(--color-ground-raised); }
+  .now-history__destination { display: flex; align-items: center; gap: var(--space-xs); font-size: var(--size-label); color: var(--color-text-secondary); }
+  .standing__fold h3 { display: flex; gap: var(--space-sm); align-items: center; margin-block: 0 var(--space-md); font-size: var(--size-body); }
+}

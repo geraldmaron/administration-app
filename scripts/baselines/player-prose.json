@@ -1,0 +1,11 @@
+{
+  "$comment": "Player-text findings forgiven per file and rule (docs/CONTENT_DOCTRINE.md §10.2). A ratchet: it may only shrink. Rewrite the line, then run node scripts/verify-player-prose.mjs --update-baseline",
+  "entries": {
+    "apps/web/src/brief/CaseScreen.tsx :: colon-joins-clauses": 2,
+    "apps/web/src/brief/ScandalScreen.tsx :: colon-joins-clauses": 1,
+    "apps/web/src/nation/electorate/Memory.tsx :: colon-joins-clauses": 1,
+    "apps/web/src/nation/state/LocaleActDesk.tsx :: colon-joins-clauses": 1,
+    "apps/web/src/world/overview/MapPanel.tsx :: colon-joins-clauses": 1,
+    "apps/web/src/world/war/WarPowers.tsx :: colon-joins-clauses": 1
+  }
+}

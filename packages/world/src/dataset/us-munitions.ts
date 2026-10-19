@@ -1,0 +1,26 @@
+// US munitions by class: `seed/us-munitions.tsv`, cell for cell. No stock count
+// for these systems is published, so a class opens as an index, and a row
+// whose opening is not sourced says "planning value" in its provenance.
+
+export type MunitionsProvenance = "sourced" | "planning value";
+
+export type UsMunitionsRow = {
+  readonly munitionClass: string;
+  readonly systems: readonly string[];
+  /** 0..1 on a notional full stock; null where no stock is sourced. */
+  readonly openingIndex: number | null;
+  readonly productionRate?: string;
+  readonly leadTime?: string;
+  readonly provenance: MunitionsProvenance;
+  readonly source: string;
+  readonly opened: string;
+};
+
+// prettier-ignore
+export const US_MUNITIONS: readonly UsMunitionsRow[] = [
+  { munitionClass: "air-defense", systems: ["thaad", "patriot"], openingIndex: 0.55, productionRate: "THAAD 96 a year; PAC-3 about 600 a year", leadTime: "about 24 months historically, 36 or more now (general, every class)", provenance: "planning value", source: "CSIS, Last Rounds? Status of Key Munitions at the Iran War Ceasefire, https://www.csis.org/analysis/last-rounds-status-key-munitions-iran-war-ceasefire", opened: "2026-09-24" },
+  { munitionClass: "naval-interceptors", systems: ["sm-3", "sm-6"], openingIndex: 0.8, productionRate: "not given", leadTime: "about 24 months historically, 36 or more now (general, every class)", provenance: "planning value", source: "CSIS, Last Rounds? Status of Key Munitions at the Iran War Ceasefire, https://www.csis.org/analysis/last-rounds-status-key-munitions-iran-war-ceasefire", opened: "2026-09-24" },
+  { munitionClass: "cruise-standoff", systems: ["tomahawk", "jassm"], openingIndex: 0.55, productionRate: "not given", leadTime: "about 24 months historically, 36 or more now (general, every class)", provenance: "planning value", source: "CSIS, Last Rounds? Status of Key Munitions at the Iran War Ceasefire, https://www.csis.org/analysis/last-rounds-status-key-munitions-iran-war-ceasefire", opened: "2026-09-24" },
+  { munitionClass: "precision-fires", systems: ["prsm", "atacms"], openingIndex: 0.45, productionRate: "PrSM about 400 a year", leadTime: "about 24 months historically, 36 or more now (general, every class)", provenance: "planning value", source: "CSIS, Last Rounds? Status of Key Munitions at the Iran War Ceasefire, https://www.csis.org/analysis/last-rounds-status-key-munitions-iran-war-ceasefire", opened: "2026-09-24" },
+  { munitionClass: "artillery-155", systems: ["155mm"], openingIndex: 0.85, productionRate: "about 36,000 rounds a month", leadTime: "about 24 months historically, 36 or more now (general, every class)", provenance: "planning value", source: "Military Times, Manufacturing woes hamper US 155-mm ammo production, https://www.militarytimes.com/news/your-military/2026/07/14/manufacturing-woes-hamper-us-155-mm-ammo-production/; CSIS, Last Rounds? Status of Key Munitions at the Iran War Ceasefire, https://www.csis.org/analysis/last-rounds-status-key-munitions-iran-war-ceasefire", opened: "2026-09-24" },
+];

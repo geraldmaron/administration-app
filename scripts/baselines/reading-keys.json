@@ -1,0 +1,9 @@
+{
+  "$comment": "Uses of a drawn-reading primitive in apps/player outside a ReadingFrame and without help=. Written by `node scripts/verify-reading-keys.mjs --update-baseline`; it may only shrink.",
+  "entries": {
+    "apps/player/src/executive/DeliveryBar.tsx::StackBar": 1,
+    "apps/player/src/nation/choice.tsx::Diverging": 1,
+    "apps/player/src/nation/home/Course.tsx::Sparkline": 1,
+    "apps/player/src/nation/state/locale-acts.tsx::TrackRow": 1
+  }
+}

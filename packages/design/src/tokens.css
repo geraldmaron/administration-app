@@ -1,0 +1,370 @@
+/* The web projection of the TypeScript tokens in ./tokens. Every value here is
+   compared with its TS source by tokens/parity.test.ts; edit both together.
+
+   Two settings rewrite tokens from the root element, so no component reads a
+   preference itself: data-contrast="high" (and the system's own "more
+   contrast") swaps the quiet inks and hairlines for louder ones, and
+   data-vision="protan|deutan|tritan" swaps the party and diverging palettes. */
+
+@layer tokens {
+
+:root {
+  color-scheme: light;
+
+  --color-ground-abyss: #E8EDF5;
+  --color-ground-sunken: #F1F5FB;
+  --color-ground-base: #FFFFFF;
+  --color-ground-raised: #F5F8FD;
+  --color-ground-raised-hover: #EAF0FA;
+  --color-ground-overlay: #FFFFFF;
+  --color-ground-overlay-hover: #EDF2FC;
+
+  --color-text-primary: #14223B;
+  --color-text-secondary: #485971;
+  --color-text-tertiary: #52627A;
+  --color-text-disabled: #8A9099;
+  --color-text-on-light: #14223B;
+
+  --color-blue: #2457D6;
+  --color-blue-fill: #2457D6;
+  --color-blue-fill-hover: #1944B0;
+  --color-gold: #76571E;
+  --color-gold-deep: #C6AA72;
+  --color-red: #B42346;
+  --color-red-fill: #B42346;
+  --color-red-fill-hover: #941C39;
+  --color-white: #FFFFFF;
+
+  --color-border-subtle: #D9E2F0;
+  --color-border-strong: #718097;
+  --color-focus: #2457D6;
+
+  --color-paper: #F8F6EF;
+  --color-paper-ink: #1B1B1B;
+  --color-paper-rule: #C9C0A8;
+
+  --color-chrome-navy: #0B1424;
+  --color-chrome-navy-hover: #172D4F;
+  --color-chrome-text: #FFFFFF;
+  --color-chrome-secondary: #C4CFDA;
+  --color-chrome-border: #6B839C;
+  --color-chrome-focus: #9CC4FF;
+
+  --color-theater-surface: #14273E;
+  --color-theater-text: #F2F5F7;
+  --color-theater-secondary: #C4CFDA;
+  --color-theater-interactive: #73B3F4;
+  --color-theater-border: #6B839C;
+
+  --status-info-ink: #2457D6;
+  --status-info-fill: #EAF0FF;
+  --status-pending-ink: #485971;
+  --status-pending-fill: #EDF1F7;
+  --status-success-ink: #176544;
+  --status-success-fill: #E9F5EE;
+  --status-warning-ink: #795016;
+  --status-warning-mark: #B07A00;
+  --status-warning-fill: #FFF4DD;
+  --status-danger-ink: #B42346;
+  --status-danger-fill: #FCEAF0;
+  --status-unknown-ink: #485971;
+  --status-unknown-fill: #EDF1F7;
+
+  --color-party-democrat: #1F6FB5;
+  --color-party-republican: #C0352B;
+  --color-party-independent: #6F6A5E;
+
+  --map-party-democrat: #55B4F2;
+  --map-party-republican: #F0625C;
+  --map-party-independent: #B9B2A3;
+
+  --map-seq-1: #3A58CC;
+  --map-seq-2: #3268DA;
+  --map-seq-3: #2A82E0;
+  --map-seq-4: #1AA3C4;
+  --map-seq-5: #2DB889;
+  --map-seq-6: #C9AE22;
+  --map-seq-7: #F0C02A;
+
+  /* Standing: a share of the public behind the President, never a party. Slate where it is thin, presidential gold where it is broad. */
+  --map-standing-1: #3B3F5C;
+  --map-standing-2: #4D4D66;
+  --map-standing-3: #6A5E68;
+  --map-standing-4: #8C7560;
+  --map-standing-5: #B28E4E;
+  --map-standing-6: #D6AA45;
+  --map-standing-7: #F2C84B;
+  --map-div-n3: #5294F8;
+  --map-div-n2: #3A76EA;
+  --map-div-n1: #3360D4;
+  --map-div-0: #665B93;
+  --map-div-p1: #C2392E;
+  --map-div-p2: #E04B37;
+  --map-div-p3: #F0644A;
+
+  --map-cat-1: #55B4F2;
+  --map-cat-2: #E5BC62;
+  --map-cat-3: #F0625C;
+  --map-cat-4: #7CD6A8;
+  --map-cat-5: #B79CF0;
+  --map-cat-6: #F09BC8;
+  --map-cat-7: #9AD0E0;
+  --map-cat-8: #D9A27A;
+
+  --map-board-land: #16244E;
+  --map-board-neutral: #3B4E7E;
+  --map-board-no-data: #2A3760;
+  --map-board-border: #050C1E;
+  --map-board-line: #8FA3D1;
+  --map-board-sea-glow: #0D2456;
+  --map-board-coast: #3F8CFF;
+  --map-board-graticule: #1A3470;
+
+  /* Translucent mixes of the anchors, for washes and rings. */
+  --color-blue-wash: color-mix(in srgb, var(--color-blue) 16%, transparent);
+  --color-gold-wash: color-mix(in srgb, var(--color-gold) 14%, transparent);
+  --color-red-wash: color-mix(in srgb, var(--color-red) 14%, transparent);
+  --color-scrim: color-mix(in srgb, #0B1B33 56%, transparent);
+
+  --font-display: "Source Sans 3", system-ui, sans-serif;
+  --font-sans: "Source Sans 3", system-ui, sans-serif;
+  --font-serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --font-mono: ui-monospace, Menlo, Consolas, monospace;
+
+  --weight-regular: 400;
+  --weight-medium: 600;
+  --weight-strong: 700;
+
+  --size-caption: 0.75rem;
+  --size-label: 0.875rem;
+  --size-small: 0.875rem;
+  --size-body: 1rem;
+  --size-title: 1.125rem;
+  --size-heading: 1.375rem;
+  --size-figure: 2.25rem;
+  --size-document: 1.125rem;
+  --size-display: clamp(1.75rem, 1.25rem + 1.5vw, 2.5rem);
+  --size-hero: clamp(2.25rem, 1.75rem + 1.5vw, 3rem);
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-body: 1.5;
+  --leading-compact: 1.4286;
+  --leading-control: 1.25;
+  --leading-document: 1.5556;
+
+  --tracking-display: -0.025em;
+  --tracking-normal: 0em;
+  --tracking-eyebrow: 0.04em;
+
+  --space-2xs: 2px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+
+  --radius-chip: 8px;
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-sheet: 16px;
+  --radius-pill: 999px;
+
+  --bar-phone: 44px;
+  --bar-desktop: 56px;
+  --tab-bar: 50px;
+  --nav: 224px;
+  --rail: 88px;
+  --inspector: 344px;
+  --panel-min: 420px;
+  --panel-max: 640px;
+  --panel-wide: 960px;
+  --panel-landscape: 340px;
+  --detent-peek: 168px;
+  --detent-half: 334px;
+  --hit-min: 44px;
+  --control-height: 44px;
+  --control-compact: 36px;
+  --measure: 640px;
+
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-detach: 280ms;
+  --duration-settle: 400ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* A panel lifts off the map; an overlay lifts off everything. */
+  /* Glass: the layers that float over the map. Mostly opaque, so text never
+     sits on the map, blurred so the map's color still reaches through. */
+  --glass-fill: color-mix(in srgb, var(--color-ground-base) 84%, transparent);
+  --glass-fill-deep: color-mix(in srgb, var(--color-ground-sunken) 78%, transparent);
+  --glass-blur: blur(24px) saturate(1.6);
+  --glass-edge: inset 0 1px 0 color-mix(in srgb, var(--color-white) 8%, transparent), 0 0 0 1px color-mix(in srgb, var(--color-border-strong) 26%, transparent);
+  --shadow-rest: 0 1px 2px rgb(11 27 51 / 0.06);
+  --shadow-rest-strong: 0 1px 2px rgb(11 27 51 / 0.12);
+  --shadow-dock: 0 0 24px rgb(11 27 51 / 0.12);
+  --shadow-float: 0 12px 32px -12px rgb(11 27 51 / 0.28), 0 1px 3px rgb(11 27 51 / 0.12);
+  --frame-gap: 12px;
+  /* The star, the government's oldest mark: masks, colored by whatever token
+     paints them, never an image with its own color. */
+  --motif-star: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1.6l2.95 6.66 7.25.68-5.48 4.8 1.62 7.1L12 17.1l-6.34 3.74 1.62-7.1L1.8 8.94l7.25-.68z'/></svg>");
+  /* The canton: stars in the flag's staggered rows, one tile of two offset rows. */
+  --motif-canton: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 14'><path transform='translate(4 3.5) scale(0.3) translate(-12 -12)' d='M12 1.6l2.95 6.66 7.25.68-5.48 4.8 1.62 7.1L12 17.1l-6.34 3.74 1.62-7.1L1.8 8.94l7.25-.68z'/><path transform='translate(12 10.5) scale(0.3) translate(-12 -12)' d='M12 1.6l2.95 6.66 7.25.68-5.48 4.8 1.62 7.1L12 17.1l-6.34 3.74 1.62-7.1L1.8 8.94l7.25-.68z'/></svg>");
+  --shadow-panel: 0 0 0 1px var(--color-border-subtle), 0 1px 2px rgb(11 27 51 / 0.06);
+  --shadow-overlay: 0 0 0 1px var(--color-border-subtle), 0 16px 40px -12px rgb(11 27 51 / 0.32);
+  --edge-gold: inset 0 1px 0 color-mix(in srgb, var(--color-gold) 30%, transparent);
+}
+
+:root[data-vision="protan"],
+:root[data-vision="deutan"] {
+  --color-party-republican: #A35200;
+  --map-party-democrat: #5AA9F5;
+  --map-party-republican: #F0943C;
+  --map-party-independent: #C9C3B6;
+  --map-div-n3: #5294F8;
+  --map-div-n2: #3A76EA;
+  --map-div-n1: #3360D4;
+  --map-div-p1: #98591A;
+  --map-div-p2: #B06E1C;
+  --map-div-p3: #CC8626;
+}
+
+:root[data-vision="tritan"] {
+  --color-party-democrat: #00737F;
+  --map-party-democrat: #3FC6D6;
+  --map-party-independent: #C9C3B6;
+  --map-div-n3: #20A0BC;
+  --map-div-n2: #1A8CA8;
+  --map-div-n1: #167A94;
+}
+
+:root[data-contrast="high"] {
+  --color-text-secondary: #14223B;
+  --color-text-tertiary: #3D4249;
+  --color-border-subtle: #718097;
+  --color-border-strong: #14223B;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --color-text-secondary: #14223B;
+    --color-text-tertiary: #3D4249;
+    --color-border-subtle: #718097;
+    --color-border-strong: #14223B;
+  }
+}
+
+/* The dark set: the dark theme for the whole page, and, in either theme, the
+   map theater, the title screen and whatever is laid over the map. Every
+   semantic token resolves to its dark value inside, so a component drawn
+   there needs no second stylesheet. data-theme on the root is always the
+   resolved theme, never "system": the boot script and the display settings
+   resolve the player's choice against the system before writing it. */
+:root[data-theme="dark"],
+[data-surface="dark"] {
+  color-scheme: dark;
+  color: var(--color-text-primary);
+  --color-ground-abyss: #040811;
+  --color-ground-sunken: #080E18;
+  --color-ground-base: #101B2B;
+  --color-ground-raised: #19283E;
+  --color-ground-raised-hover: #223651;
+  --color-ground-overlay: #1D2E46;
+  --color-ground-overlay-hover: #283E5B;
+  --color-text-primary: #F3F6FC;
+  --color-text-secondary: #C3CDE4;
+  --color-text-tertiary: #98A8CC;
+  --color-text-disabled: #5F6C8C;
+  --color-text-on-light: #101B2B;
+  --color-blue: #94B8FF;
+  --color-blue-fill: #315FD5;
+  --color-blue-fill-hover: #284FBB;
+  --color-gold: #E4C58A;
+  --color-gold-deep: #A9843A;
+  --color-red: #FF9AB1;
+  --color-red-fill: #C42F3C;
+  --color-red-fill-hover: #AE2734;
+  --status-info-ink: #94B8FF;
+  --status-info-fill: #16305E;
+  --status-pending-ink: #B5C0D8;
+  --status-pending-fill: #1A2747;
+  --status-success-ink: #6FD69B;
+  --status-success-fill: #123A2C;
+  --status-warning-ink: #F2C66D;
+  --status-warning-mark: #F2C66D;
+  --status-warning-fill: #3A2E12;
+  --status-danger-ink: #FF9AB1;
+  --status-danger-fill: #3D1A2A;
+  --status-unknown-ink: #B5C0D8;
+  --status-unknown-fill: #1A2747;
+  --color-border-subtle: #30435E;
+  --color-border-strong: #6B80B6;
+  --color-focus: #9CC4FF;
+  --color-party-democrat: var(--map-party-democrat);
+  --color-party-republican: var(--map-party-republican);
+  --color-party-independent: var(--map-party-independent);
+  /* Tokens derived from others are computed where they are declared, so the scope declares them again. */
+  --color-blue-wash: color-mix(in srgb, var(--color-blue) 16%, transparent);
+  --color-gold-wash: color-mix(in srgb, var(--color-gold) 14%, transparent);
+  --color-red-wash: color-mix(in srgb, var(--color-red) 14%, transparent);
+  --glass-fill: color-mix(in srgb, var(--color-ground-base) 84%, transparent);
+  --glass-fill-deep: color-mix(in srgb, var(--color-ground-sunken) 78%, transparent);
+  --glass-edge: inset 0 1px 0 color-mix(in srgb, var(--color-white) 8%, transparent), 0 0 0 1px color-mix(in srgb, var(--color-border-strong) 26%, transparent);
+  --shadow-float: 0 28px 64px -20px color-mix(in srgb, var(--color-ground-abyss) 92%, transparent), 0 2px 8px color-mix(in srgb, var(--color-ground-abyss) 60%, transparent);
+  --shadow-panel: 0 0 0 1px var(--color-border-subtle), 0 18px 48px -20px color-mix(in srgb, var(--color-ground-abyss) 90%, transparent);
+  --shadow-overlay: 0 0 0 1px var(--color-border-strong), 0 28px 64px -24px color-mix(in srgb, var(--color-ground-abyss) 95%, transparent);
+  --edge-gold: inset 0 1px 0 color-mix(in srgb, var(--color-gold) 30%, transparent);
+}
+
+/* High contrast on the dark theme. The light swap above darkens inks; on navy
+   that would sink them, so these lighten quiet inks and brighten hairlines. */
+:root[data-theme="dark"][data-contrast="high"] {
+  --color-text-secondary: #F3F6FC;
+  --color-text-tertiary: #C3CDE4;
+  --color-border-subtle: #6B80B6;
+  --color-border-strong: #B5C3E6;
+}
+
+@media (prefers-contrast: more) {
+  :root[data-theme="dark"] {
+    --color-text-secondary: #F3F6FC;
+    --color-text-tertiary: #C3CDE4;
+    --color-border-subtle: #6B80B6;
+    --color-border-strong: #B5C3E6;
+  }
+}
+
+/* The navy chrome: the masthead and the navigation. */
+[data-surface="chrome"] {
+  color-scheme: dark;
+  color: var(--color-chrome-text);
+  --color-ground-base: #0B1424;
+  --color-ground-raised: #172D4F;
+  --color-ground-raised-hover: #26487A;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #C4CFDA;
+  --color-text-tertiary: #C4CFDA;
+  --color-blue: #73B3F4;
+  --color-gold: #E5C88E;
+  --color-red-fill: #D83933;
+  --color-border-subtle: #2D4A73;
+  --color-border-strong: #6B839C;
+  --color-focus: #9CC4FF;
+  --color-blue-wash: color-mix(in srgb, var(--color-blue) 16%, transparent);
+  --color-gold-wash: color-mix(in srgb, var(--color-gold) 14%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-detach: 0ms;
+    --duration-settle: 0ms;
+  }
+}
+
+}

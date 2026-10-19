@@ -1,0 +1,4 @@
+{
+  "$comment": "Files that draw a public judgment's level (or approval) without any of its causes. Written by `node scripts/verify-opinion-causes.mjs --update-baseline`; it may only shrink.",
+  "entries": {}
+}

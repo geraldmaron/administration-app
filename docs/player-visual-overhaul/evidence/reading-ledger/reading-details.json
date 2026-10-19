@@ -1,0 +1,83 @@
+{
+  "records": [
+    {
+      "name": "country",
+      "path": "/world/nation/CAN",
+      "width": 845,
+      "theme": "light",
+      "layout": {
+        "document": 0,
+        "surface": 0,
+        "title": "Canada"
+      },
+      "boxed": 6,
+      "axe": []
+    },
+    {
+      "name": "country",
+      "path": "/world/nation/CAN",
+      "width": 845,
+      "theme": "dark",
+      "layout": {
+        "document": 0,
+        "surface": 0,
+        "title": "Canada"
+      },
+      "boxed": 6,
+      "axe": []
+    },
+    {
+      "name": "security",
+      "path": "/world/security",
+      "width": 845,
+      "theme": "light",
+      "layout": {
+        "document": 0,
+        "surface": 0,
+        "title": "Security"
+      },
+      "boxed": 0,
+      "axe": []
+    },
+    {
+      "name": "security",
+      "path": "/world/security",
+      "width": 845,
+      "theme": "dark",
+      "layout": {
+        "document": 0,
+        "surface": 0,
+        "title": "Security"
+      },
+      "boxed": 0,
+      "axe": []
+    },
+    {
+      "name": "state",
+      "path": "/nation/state/CO?view=people",
+      "width": 845,
+      "theme": "light",
+      "layout": {
+        "document": 0,
+        "surface": 0,
+        "title": "Colorado"
+      },
+      "boxed": 3,
+      "axe": []
+    },
+    {
+      "name": "state",
+      "path": "/nation/state/CO?view=people",
+      "width": 845,
+      "theme": "dark",
+      "layout": {
+        "document": 0,
+        "surface": 0,
+        "title": "Colorado"
+      },
+      "boxed": 3,
+      "axe": []
+    }
+  ],
+  "errors": []
+}

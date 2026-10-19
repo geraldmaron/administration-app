@@ -1,0 +1,148 @@
+# Extra cities beyond each nation's capital. Capitals are assembled from
+# worldNations identity + geo and must not be repeated here. 2–5 extras for
+# large/relevant nations; Iceland, Singapore, and Rwanda may be capital-only.
+# Population is metro or city-proper, game-plausible, circa 2023.
+# columns: nation	slug	name	kind	lat	lon	population
+CHN	shanghai	Shanghai	port	31.23	121.47	26900000
+CHN	guangzhou	Guangzhou	port	23.13	113.26	18680000
+CHN	shenzhen	Shenzhen	financial	22.54	114.06	17620000
+CHN	chengdu	Chengdu	interior	30.67	104.07	16330000
+CHN	chongqing	Chongqing	industrial	29.56	106.55	16380000
+DEU	hamburg	Hamburg	port	53.55	9.99	1900000
+DEU	munich	Munich	interior	48.14	11.58	2600000
+DEU	frankfurt	Frankfurt	financial	50.11	8.68	2700000
+DEU	cologne	Cologne	industrial	50.94	6.96	2000000
+NGA	lagos	Lagos	port	6.45	3.40	15490000
+NGA	kano	Kano	interior	12.00	8.52	4200000
+NGA	port-harcourt	Port Harcourt	port	4.82	7.05	3200000
+POL	krakow	Krakow	interior	50.06	19.94	1500000
+POL	gdansk	Gdansk	port	54.35	18.65	940000
+SAU	jeddah	Jeddah	port	21.49	39.19	4800000
+SAU	dammam	Dammam	industrial	26.43	50.10	2800000
+IRQ	basra	Basra	port	30.51	47.78	2900000
+IRQ	mosul	Mosul	interior	36.34	43.13	1700000
+IRQ	erbil	Erbil	interior	36.19	44.01	1600000
+PRK	hamhung	Hamhung	industrial	39.92	127.54	770000
+BLR	gomel	Gomel	interior	52.43	30.98	510000
+VNM	ho-chi-minh-city	Ho Chi Minh City	port	10.78	106.70	14000000
+VNM	da-nang	Da Nang	port	16.05	108.20	1200000
+VNM	hai-phong	Hai Phong	port	20.86	106.68	2100000
+BRA	sao-paulo	Sao Paulo	financial	-23.55	-46.63	22400000
+BRA	rio-de-janeiro	Rio de Janeiro	port	-22.91	-43.17	13500000
+BRA	salvador	Salvador	port	-12.97	-38.50	3900000
+BRA	recife	Recife	port	-8.05	-34.90	4100000
+COL	medellin	Medellin	interior	6.24	-75.57	4000000
+COL	cali	Cali	interior	3.45	-76.53	2800000
+COL	barranquilla	Barranquilla	port	10.96	-74.80	2400000
+VEN	maracaibo	Maracaibo	industrial	10.64	-71.64	2300000
+VEN	valencia	Valencia	industrial	10.16	-68.00	1600000
+CUB	santiago-de-cuba	Santiago de Cuba	port	20.02	-75.83	510000
+CAN	toronto	Toronto	financial	43.65	-79.38	6400000
+CAN	montreal	Montreal	port	45.50	-73.57	4300000
+CAN	vancouver	Vancouver	port	49.28	-123.12	2700000
+CAN	calgary	Calgary	interior	51.04	-114.07	1600000
+MEX	guadalajara	Guadalajara	interior	20.67	-103.35	5400000
+MEX	monterrey	Monterrey	industrial	25.67	-100.31	5300000
+MEX	tijuana	Tijuana	border	32.51	-117.04	2100000
+IND	mumbai	Mumbai	financial	19.08	72.88	20600000
+IND	kolkata	Kolkata	port	22.57	88.36	15100000
+IND	bengaluru	Bengaluru	interior	12.97	77.59	13100000
+IND	chennai	Chennai	port	13.08	80.27	11500000
+IND	hyderabad	Hyderabad	interior	17.39	78.49	10500000
+PAK	karachi	Karachi	port	24.86	67.01	16800000
+PAK	lahore	Lahore	interior	31.58	74.33	13500000
+PAK	faisalabad	Faisalabad	industrial	31.42	73.08	3700000
+BGD	chittagong	Chittagong	port	22.36	91.78	5400000
+AFG	kandahar	Kandahar	interior	31.62	65.72	650000
+AFG	herat	Herat	interior	34.35	62.20	580000
+KAZ	almaty	Almaty	financial	43.24	76.95	2200000
+IRN	mashhad	Mashhad	interior	36.30	59.61	3400000
+IRN	isfahan	Isfahan	industrial	32.65	51.68	2200000
+IRN	bandar-abbas	Bandar Abbas	port	27.18	56.28	680000
+ISR	tel-aviv	Tel Aviv	financial	32.08	34.78	4100000
+ISR	haifa	Haifa	port	32.79	34.99	280000
+ARE	dubai	Dubai	financial	25.20	55.27	3600000
+ARE	sharjah	Sharjah	port	25.35	55.39	1800000
+TUR	istanbul	Istanbul	port	41.01	28.98	15900000
+TUR	izmir	Izmir	port	38.42	27.14	4400000
+TUR	bursa	Bursa	industrial	40.18	29.07	3200000
+YEM	aden	Aden	port	12.79	45.04	860000
+SYR	aleppo	Aleppo	industrial	36.20	37.16	1900000
+EGY	alexandria	Alexandria	port	31.20	29.92	5400000
+EGY	port-said	Port Said	port	31.27	32.30	760000
+ZAF	johannesburg	Johannesburg	financial	-26.20	28.05	5800000
+ZAF	cape-town	Cape Town	port	-33.93	18.42	4800000
+ZAF	durban	Durban	port	-29.86	31.02	3700000
+ETH	dire-dawa	Dire Dawa	interior	9.59	41.87	450000
+COD	lubumbashi	Lubumbashi	industrial	-11.66	27.48	2600000
+MAR	casablanca	Casablanca	port	33.57	-7.59	3800000
+MAR	marrakech	Marrakech	interior	31.63	-8.01	1400000
+MAR	fes	Fes	interior	34.04	-5.00	1300000
+DZA	oran	Oran	port	35.70	-0.63	1600000
+DZA	constantine	Constantine	interior	36.37	6.61	940000
+GBR	manchester	Manchester	industrial	53.48	-2.24	2800000
+GBR	birmingham	Birmingham	industrial	52.49	-1.90	2600000
+GBR	glasgow	Glasgow	port	55.86	-4.25	1800000
+GBR	liverpool	Liverpool	port	53.41	-2.98	910000
+GBR	edinburgh	Edinburgh	financial	55.95	-3.19	540000
+FRA	lyon	Lyon	interior	45.76	4.84	2300000
+FRA	marseille	Marseille	port	43.30	5.37	1800000
+FRA	toulouse	Toulouse	interior	43.60	1.44	1400000
+FRA	lille	Lille	industrial	50.63	3.06	1500000
+ITA	milan	Milan	financial	45.46	9.19	3200000
+ITA	naples	Naples	port	40.85	14.27	3100000
+ITA	turin	Turin	industrial	45.07	7.69	1800000
+ITA	genoa	Genoa	port	44.41	8.93	840000
+ESP	barcelona	Barcelona	port	41.39	2.17	5600000
+ESP	valencia	Valencia	port	39.47	-0.38	1800000
+ESP	seville	Seville	interior	37.39	-5.99	1500000
+ESP	bilbao	Bilbao	port	43.26	-2.93	1030000
+UKR	kharkiv	Kharkiv	industrial	49.99	36.23	1400000
+UKR	odesa	Odesa	port	46.48	30.73	1010000
+UKR	lviv	Lviv	interior	49.84	24.03	720000
+RUS	saint-petersburg	Saint Petersburg	port	59.93	30.33	5600000
+RUS	novosibirsk	Novosibirsk	interior	55.03	82.92	1600000
+RUS	yekaterinburg	Yekaterinburg	industrial	56.84	60.61	1500000
+RUS	vladivostok	Vladivostok	port	43.12	131.89	600000
+SWE	gothenburg	Gothenburg	port	57.71	11.97	1050000
+SWE	malmo	Malmo	interior	55.61	13.00	740000
+CHE	zurich	Zurich	financial	47.38	8.54	1400000
+CHE	geneva	Geneva	financial	46.20	6.14	620000
+HUN	debrecen	Debrecen	interior	47.53	21.63	200000
+JPN	osaka	Osaka	port	34.69	135.50	19100000
+JPN	nagoya	Nagoya	industrial	35.18	136.91	9100000
+JPN	fukuoka	Fukuoka	port	33.59	130.40	2600000
+JPN	sapporo	Sapporo	interior	43.06	141.35	1900000
+KOR	busan	Busan	port	35.18	129.08	3400000
+KOR	incheon	Incheon	port	37.46	126.71	3000000
+KOR	daegu	Daegu	interior	35.87	128.60	2400000
+TWN	kaohsiung	Kaohsiung	port	22.63	120.30	2700000
+TWN	taichung	Taichung	industrial	24.15	120.67	2800000
+AUS	sydney	Sydney	port	-33.87	151.21	5300000
+AUS	melbourne	Melbourne	financial	-37.81	144.96	5100000
+AUS	brisbane	Brisbane	port	-27.47	153.03	2600000
+AUS	perth	Perth	port	-31.95	115.86	2200000
+IDN	surabaya	Surabaya	port	-7.26	112.75	3000000
+IDN	medan	Medan	port	3.59	98.67	2500000
+IDN	bandung	Bandung	interior	-6.91	107.61	2700000
+NLD	rotterdam	Rotterdam	port	51.92	4.48	1350000
+NLD	the-hague	The Hague	interior	52.08	4.31	1050000
+NLD	eindhoven	Eindhoven	industrial	51.44	5.48	780000
+BEL	antwerp	Antwerp	port	51.22	4.40	1200000
+BEL	ghent	Ghent	industrial	51.05	3.72	550000
+IRL	cork	Cork	port	51.90	-8.47	300000
+NOR	bergen	Bergen	port	60.39	5.32	290000
+NOR	trondheim	Trondheim	interior	63.43	10.40	210000
+DNK	aarhus	Aarhus	port	56.16	10.20	350000
+THA	chiang-mai	Chiang Mai	interior	18.79	98.98	1200000
+THA	nakhon-ratchasima	Nakhon Ratchasima	interior	14.98	102.10	450000
+THA	hat-yai	Hat Yai	border	7.01	100.47	400000
+PHL	cebu	Cebu	port	10.32	123.89	3000000
+PHL	davao	Davao	port	7.19	125.46	1800000
+MYS	george-town	George Town	port	5.41	100.34	2500000
+MYS	johor-bahru	Johor Bahru	border	1.49	103.74	1700000
+ARG	cordoba	Cordoba	interior	-31.42	-64.18	1600000
+ARG	rosario	Rosario	port	-32.95	-60.64	1400000
+ARG	mendoza	Mendoza	interior	-32.89	-68.84	1100000
+CHL	valparaiso	Valparaiso	port	-33.05	-71.62	1000000
+CHL	concepcion	Concepcion	industrial	-36.83	-73.05	1000000

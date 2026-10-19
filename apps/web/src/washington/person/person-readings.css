@@ -1,0 +1,18 @@
+@layer rooms {
+  .person-readings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr)); gap: var(--space-sm); list-style: none; margin: 0; padding: 0; }
+  .person-readings > li { min-inline-size: 0; }
+  .person-reading { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-sm); align-content: start; inline-size: 100%; block-size: 100%; min-inline-size: 0; padding: var(--space-md); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-ground-raised); color: var(--color-text-primary); text-align: start; font: inherit; cursor: pointer; }
+  .person-reading:hover { border-color: var(--color-blue); }
+  .person-reading:focus-visible { outline: 2px solid var(--color-blue); outline-offset: 3px; }
+  .person-reading__mark { color: var(--color-text-secondary); }
+  .person-reading > .ui-steps { min-inline-size: 0; }
+  .person-reading__confidence, .person-reading__trend, .person-reading__open { grid-column: 2; min-inline-size: 0; margin: 0; color: var(--color-text-secondary); font-size: var(--size-caption); }
+  .person-reading__confidence .ui-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); min-inline-size: 0; }
+  .person-reading__confidence .ui-steps__track { grid-column: 1; grid-row: 1; max-inline-size: 4.5rem; }
+  .person-reading__confidence .ui-steps__word { grid-column: 1; grid-row: 2; white-space: normal; }
+  .person-reading__open { display: flex; gap: var(--space-xs); align-items: center; }
+  .assessment-evidence { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-md); align-content: start; }
+  .assessment-evidence > * { grid-column: 1; min-inline-size: 0; }
+  .assessment-evidence p, .assessment-evidence h3 { margin: 0; }
+  .assessment-evidence__basis { color: var(--color-text-secondary); }
+}

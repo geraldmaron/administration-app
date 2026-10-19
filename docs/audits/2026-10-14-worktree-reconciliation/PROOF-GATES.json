@@ -1,0 +1,631 @@
+[
+  {
+    "gate": "verify-adhoc-color-lint.mjs",
+    "seconds": 0.87,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-american-spelling-proof.mjs",
+    "seconds": 0.48,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-american-spelling.mjs",
+    "seconds": 3.22,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-attention-anchors-proof.mjs",
+    "seconds": 0.44,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-attention-anchors.mjs",
+    "seconds": 0.09,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-biography-immutability-proof.mjs",
+    "seconds": 1.42,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-biography-immutability.mjs",
+    "seconds": 1.1,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-boundary-lint.mjs",
+    "seconds": 0.93,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-bundled-corpus-current-proof.mjs",
+    "seconds": 1.03,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-bundled-corpus-current.mjs",
+    "seconds": 0.45,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-case-contract-proof.mjs",
+    "seconds": 0.1,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-case-contract.mjs",
+    "seconds": 0.04,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-case-source-unification-proof.mjs",
+    "seconds": 0.09,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-case-source-unification.mjs",
+    "seconds": 0.03,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-counsel-plurality-proof.mjs",
+    "seconds": 17.99,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-counsel-plurality.mjs",
+    "seconds": 18.05,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-css-architecture-proof.mjs",
+    "seconds": 1.24,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-css-architecture.mjs",
+    "seconds": 0.17,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-deed-reachability-proof.mjs",
+    "seconds": 3.82,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-deed-reachability.mjs",
+    "seconds": 0.51,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-disclosure-proof.mjs",
+    "seconds": 0.78,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-disclosure.mjs",
+    "seconds": 0.16,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-disposition-readers.mjs",
+    "seconds": 0.06,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-dist-freshness-proof.mjs",
+    "seconds": 0.56,
+    "initial_exit_code": 1,
+    "final_status": "pass",
+    "final_exit_code": 0,
+    "final_log": "logs/dist-proof-final.log",
+    "initial_block_reason": "Configured signed commit cannot be created until the 1Password agent is restored. No signing or committed-dist check bypass."
+  },
+  {
+    "gate": "verify-dist-freshness.mjs",
+    "seconds": 0.2,
+    "initial_exit_code": 1,
+    "final_status": "pass",
+    "final_exit_code": 0,
+    "final_log": "logs/dist-final.log",
+    "initial_block_reason": "Configured signed commit cannot be created until the 1Password agent is restored. No signing or committed-dist check bypass."
+  },
+  {
+    "gate": "verify-doctrine-metric-alignment.mjs",
+    "seconds": 0.05,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-engine-reachability-proof.mjs",
+    "seconds": 2.83,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-engine-reachability.mjs",
+    "seconds": 1.14,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-family-closure-proof.mjs",
+    "seconds": 0.17,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-family-closure.mjs",
+    "seconds": 0.23,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-file-size-proof.mjs",
+    "seconds": 0.26,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-file-size.mjs",
+    "seconds": 0.12,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-fiscal-authority-proof.mjs",
+    "seconds": 3.59,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-fiscal-authority.mjs",
+    "seconds": 0.1,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-flag-markers-proof.mjs",
+    "seconds": 0.25,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-flag-markers.mjs",
+    "seconds": 0.07,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-foreign-truth-proof.mjs",
+    "seconds": 2.55,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-foreign-truth.mjs",
+    "seconds": 1.46,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-icon-registry-proof.mjs",
+    "seconds": 1.01,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-icon-registry.mjs",
+    "seconds": 0.6,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-incident-places-proof.mjs",
+    "seconds": 3.49,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-incident-places.mjs",
+    "seconds": 0.56,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-kit-current-proof.mjs",
+    "seconds": 2.37,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-kit-current.mjs",
+    "seconds": 0.61,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-leader-fidelity-proof.mjs",
+    "seconds": 34.78,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-leader-fidelity.mjs",
+    "seconds": 10.48,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-locus-ground.mjs",
+    "seconds": 0.04,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-map-registration.mjs",
+    "seconds": 0.36,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-metric-registry-proof.mjs",
+    "seconds": 59.68,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-metric-registry.mjs",
+    "seconds": 9.16,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-no-history-references-proof.mjs",
+    "seconds": 0.76,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-no-history-references.mjs",
+    "seconds": 5.87,
+    "initial_exit_code": 1,
+    "final_status": "pass",
+    "final_exit_code": 0,
+    "resolution": "See logs and DIAGNOSIS.md; exact live audit registration or accessible label correction."
+  },
+  {
+    "gate": "verify-no-silent-skip-proof.mjs",
+    "seconds": 0.13,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-no-silent-skip.mjs",
+    "seconds": 0.03,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-one-day-counter-proof.mjs",
+    "seconds": 0.25,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-one-day-counter.mjs",
+    "seconds": 0.31,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-opinion-causes-proof.mjs",
+    "seconds": 0.71,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-opinion-causes.mjs",
+    "seconds": 0.22,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-person-consequence-alignment-proof.mjs",
+    "seconds": 0.54,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-person-consequence-alignment.mjs",
+    "seconds": 0.03,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-person-relationship-provenance-proof.mjs",
+    "seconds": 6.19,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-person-relationship-provenance.mjs",
+    "seconds": 2.11,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-pin-ledger-proof.mjs",
+    "seconds": 0.4,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-pin-ledger.mjs",
+    "seconds": 0.08,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-player-prose-proof.mjs",
+    "seconds": 2.74,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-player-prose.mjs",
+    "seconds": 0.64,
+    "initial_exit_code": 1,
+    "final_status": "pass",
+    "final_exit_code": 0,
+    "resolution": "See logs and DIAGNOSIS.md; exact live audit registration or accessible label correction."
+  },
+  {
+    "gate": "verify-position-uncertainty-proof.mjs",
+    "seconds": 2.97,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-position-uncertainty.mjs",
+    "seconds": 3.66,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-publish-gate.mjs",
+    "seconds": 11.76,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-resolution-beat-reachability.mjs",
+    "seconds": 0.33,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-rule-seams-proof.mjs",
+    "seconds": 0.68,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-rule-seams.mjs",
+    "seconds": 0.13,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-scenario-arc-families-proof.mjs",
+    "seconds": 1.92,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-scenario-arc-families.mjs",
+    "seconds": 0.32,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-scenario-dc-fallback-proof.mjs",
+    "seconds": 6.47,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-scenario-dc-fallback.mjs",
+    "seconds": 0.88,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-shipped-content-parses.mjs",
+    "seconds": 0.46,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-trade-measure-kinds.mjs",
+    "seconds": 0.2,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-unused-primitives-proof.mjs",
+    "seconds": 0.32,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-unused-primitives.mjs",
+    "seconds": 0.06,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-us-units.mjs",
+    "seconds": 0.22,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-wave-closeout-proof.mjs",
+    "seconds": 0.24,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-wave-closeout.mjs",
+    "seconds": 0.03,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-web-boundary.mjs",
+    "seconds": 0.1,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-willingness-route-proof.mjs",
+    "seconds": 0.28,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-willingness-route.mjs",
+    "seconds": 0.09,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-wire-bank-collapse.mjs",
+    "seconds": 1.58,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-world-coverage-proof.mjs",
+    "seconds": 0.53,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  },
+  {
+    "gate": "verify-world-coverage.mjs",
+    "seconds": 0.19,
+    "initial_exit_code": 0,
+    "final_status": "pass",
+    "final_exit_code": 0
+  }
+]

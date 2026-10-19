@@ -1,0 +1,29 @@
+circuit_no,state,district,vacancy_reason,vacancy_date,nominee_pending
+01,Massachusetts,whole state,Senior,05/31/2025,no
+01,Massachusetts,whole state,Senior,07/31/2025,no
+01,Maine,whole state,Senior,10/11/2025,no
+02,Connecticut,whole state,Deceased,01/12/2025,no
+02,New York,Southern,Senior,01/07/2025,no
+02,New York,Southern,Senior,12/31/2024,no
+02,New York,Southern,Senior,11/03/2025,no
+04,South Carolina,whole state,Senior,10/01/2026,no
+04,Virginia,Eastern,Senior,05/13/2026,no
+05,Louisiana,Eastern,Senior,10/01/2024,yes
+05,Texas,Northern,Senior,10/01/2025,no
+05,Texas,Northern,Senior,09/17/2025,yes
+05,Texas,Southern,Senior,01/02/2025,yes
+05,Texas,Western,Resigned,08/31/2026,no
+06,Kentucky,Eastern,Retired,07/19/2026,yes
+06,Tennessee,Eastern,Senior,10/05/2026,yes
+07,Illinois,Northern,Senior,09/30/2026,no
+08,Minnesota,whole state,Senior,07/01/2026,no
+08,North Dakota,whole state,Elevated,07/23/2026,yes
+09,Alaska,whole state,Resigned,07/08/2024,yes
+09,California,Central,Senior,09/19/2026,no
+09,California,Southern,Senior,08/01/2021,no
+10,New Mexico,whole state,Senior,02/01/2026,no
+10,Oklahoma,Eastern,Senior,01/27/2026,yes
+10,Oklahoma,Northern,Senior,03/01/2025,yes
+11,Alabama,Northern,Senior,01/01/2026,yes
+11,Florida,Middle,Senior,11/02/2024,yes
+11,Georgia,Northern,Retired,05/23/2025,no

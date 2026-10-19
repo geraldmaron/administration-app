@@ -1,0 +1,10 @@
+{
+  "newlyReadFlags": [
+    "park-bridge-county-terms-offered",
+    "park-bridge-replacement-assigned",
+    "park-bridge-temporary-access-study"
+  ],
+  "newlyReadForgivenDeeds": [],
+  "newForgivenDeedEntriesNeeded": [],
+  "note": "All newly introduced ordinary authored flags have setters in the prospective bodies. The deed allowlist applies to engine-emitted deed vocabulary; none is newly read by this subset. Disposition-reader and flag-marker gates scan engine/content source; no source changed in this publication eligibility pass. Parent will run actual gates after bake."
+}

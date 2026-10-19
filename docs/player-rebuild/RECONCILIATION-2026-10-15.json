@@ -1,0 +1,131 @@
+{
+  "featureBranch": "codex/reconcile-worktrees-2026-10-14",
+  "primaryBefore": "5726d30a87500aa2a341edf61506a1955b7eb528",
+  "branches": [
+    {
+      "branch": "codex/fluent-2-migration",
+      "head": "4feba663c03bb18521ef60b1b6098947697ac679",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/fluent-2-migration",
+      "cherry": ""
+    },
+    {
+      "branch": "codex/shadcn-brief-congress",
+      "head": "8541609a2fe09578c1481c3dc1cf7131ba39ad39",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-brief-congress",
+      "cherry": "+ 67c9abecb89d25fe0edd79be1a48cb89ed29eacb\n- cbcafaef639228afd8e9d4ea97df8efc91b712aa\n- 23c172622f43425eec82a4ab3cf5a1f2aa12503c\n+ 8541609a2fe09578c1481c3dc1cf7131ba39ad39"
+    },
+    {
+      "branch": "codex/shadcn-complete-decisions",
+      "head": "663b0446af78518fb2305dc055c3269da20c113d",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-complete-decisions",
+      "cherry": "- 73ac3f71f8964094de9dfca03825842a24ea1062\n- ec59a6ee43097065575263f3c25910622fe96698\n- fe176f86559b7cd5a335c746e5a431166709809a\n- b781eb4003858c05eaf155c2483be9e23ac73119\n- 3416871bf3fd7d88786253b3cf0e2c4a0e69a4be\n- 663b0446af78518fb2305dc055c3269da20c113d"
+    },
+    {
+      "branch": "codex/shadcn-complete-institutions",
+      "head": "e2ceb3038fbfb233824eb3b1c0e08487d8b22873",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-complete-institutions",
+      "cherry": "- 209db997640944559be42e2a01bb1f796b1558d1\n- 98ba22fea50339888aebbf9b014940559df8e482\n- 93d7ae1f26cbc6c560333fadb521522bfd73085e\n- e2ceb3038fbfb233824eb3b1c0e08487d8b22873"
+    },
+    {
+      "branch": "codex/shadcn-complete-nation",
+      "head": "b42571c36cad88bbe72ca2450812c8f6ae9fc79a",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-complete-nation",
+      "cherry": "- 98f293f0ec02a44d215b4024c3db7a8bfaa05f93\n- 7b43dcccf56d37a6824865c34b129f8601bd9239\n- 91e2eace3d4f3945a00ac68f7714179aaf5cfdc5\n- 5cdd0b166bbcbb1f6391d4770607bcca0fb37ac0\n- 8e1528b27ea537f01af5ee1a52015508a13b5144\n- b42571c36cad88bbe72ca2450812c8f6ae9fc79a"
+    },
+    {
+      "branch": "codex/shadcn-complete-system",
+      "head": "473b74734a18154262c9cef421c3e06666102ce9",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-complete-system",
+      "cherry": "+ 42eb29c64da84c4014dcacf386fade6d05489981\n+ 290c5f846f2c33d35f8cc85e79e5367780444b23\n+ 7c7f58799751e1790a903af85e8a128a4bd1368b\n+ e9bfe6bb3a900465e2a6ac9291fb68e08f849453\n+ 5040e6813f01cb48bbd475c82fd0786fde6e2ffa\n+ 7c5577fb3ceea8ed1dc008c051cd743a5102cc56\n+ 74f74c11c49bb0c635fbc1b7d8ffeeba375d8e8d\n+ b213fad6644cea9b4026cc4cc61a001e64408c7a\n+ 70801ef8322b2541e4bb49a12a6d12b4732e2b3d\n- c0f5b0f3d76104a8582ff86e8f012c843a6377ec\n+ 89a97a3e700aba6a4c5e631f533930d70123513f\n- 51163e7707bb56126f3e7d6a6b0afa83473cf9a5\n- 473b74734a18154262c9cef421c3e06666102ce9"
+    },
+    {
+      "branch": "codex/shadcn-complete-world",
+      "head": "0605f25badb72af2201b0815e1f4ba28f9f5a65b",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-complete-world",
+      "cherry": "- 22494128c406067d58868cc7b005959defc4831b\n- 7f212c89e450d343d489622031a6db800fb3c8bd\n- 9baef2b9c8561459a870e84988b6c0916b5d71cb\n- 2717e2bc3d04c0b847001d164c5f501a7269b5e8\n- 556b8c4a4692de37840f0e1e6d0ce47b9464add2\n- 60bfdba7f37f1f1c9db99fa672bc964eeac24e7b\n- 0605f25badb72af2201b0815e1f4ba28f9f5a65b"
+    },
+    {
+      "branch": "codex/shadcn-foundations",
+      "head": "1aa6a77f8c2f6a23461ed7b79b404ad4b664d9f3",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-foundations",
+      "cherry": "- ebd8e332158256835ce4740cfb6db48ee750a844\n- 3b7ba7b10d93c79959e2798e7c8ee5a21fe7b361\n- 12d04baf1006efbbb2b7135fbd7b28ba8436285c\n- 51eb6695d6bda395ba977cf87a0125c1c2dfdb7d\n+ 1aa6a77f8c2f6a23461ed7b79b404ad4b664d9f3"
+    },
+    {
+      "branch": "codex/shadcn-justice",
+      "head": "81083dfd15a8678381bd652dbff896b69f01e52a",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-justice",
+      "cherry": "- bfea1442ab9abd22acf7b3d44f473e0fc500f08a\n- c11d309ccc591ece5714b884dbc39e32d55c7625\n- 64813e8dacf8e8aa07bf5a2e85695b015f7539e0\n- 55d6c421474866f21e02d5b2ad17debdd3cbc70d\n- 17c198765b9e21d67d23edbaf89db7bdd5725882\n- 81083dfd15a8678381bd652dbff896b69f01e52a"
+    },
+    {
+      "branch": "codex/shadcn-nation",
+      "head": "6a627f8cf25184385cbdd47bd2fffbcc26785289",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-nation",
+      "cherry": "- 8c29893232c495d0c7f182b3a4779c58c0c0ebcd\n- de9ad5da2d493e7d15a46f65ea1eb0c0e309a40e\n- 6a627f8cf25184385cbdd47bd2fffbcc26785289"
+    },
+    {
+      "branch": "codex/shadcn-world",
+      "head": "680244bc867174f23403cd306feabd625fc97b79",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-world",
+      "cherry": "- d9135dd97399200abe352adfefc3c1bb9355e7bf\n- d047f5d900e34e278ffadb8e79ed9a9fc5000639\n- 4db434cd3255e565d61a412f6469ec9dbb875c6e\n- 78f1480f526b8170be79c15eced6c37bfaf004f5\n- dc9e165d6e342bc4df231698dfba0e6b9b44b044\n- e6ed11ec233a98e1219a2295a6963a9f11ce6f6d\n- 7ee92adaa0cd9329df5d8064fdca375c2c6471de\n- f15baf51538c0f872b2b9f0b34a4ce7bfcf0ec58\n- 4f8513a4d454d0bb275807e20b167bda3a5ab4d5\n- 680244bc867174f23403cd306feabd625fc97b79"
+    }
+  ],
+  "snapshots": [
+    {
+      "worktree": ".worktrees/shadcn-brief-congress",
+      "base": "8541609a2fe09578c1481c3dc1cf7131ba39ad39",
+      "snapshot": "d87bc52e9f36563ccd251e4bea0913446a9ab2a0",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-brief-congress-working",
+      "verifiedPaths": [
+        "packages/player-core/dist/navigation/places.js"
+      ]
+    },
+    {
+      "worktree": ".worktrees/shadcn-justice",
+      "base": "81083dfd15a8678381bd652dbff896b69f01e52a",
+      "snapshot": "d639bfe7df7c009da7c997ee413137aba5693d01",
+      "recoveryRef": "refs/safety/closeout-2026-10-15/shadcn-justice-working",
+      "verifiedPaths": [
+        "apps/web/tests/helpers.ts",
+        "apps/web/src/help/AuthorityHelp.tsx",
+        "apps/web/src/help/authorities.ts",
+        "apps/web/src/help/authority-help.css"
+      ]
+    }
+  ],
+  "dispositions": {
+    "67c9abecb": "Integrated via152f0f049;29of30 changed paths identical at integration, Vite includes later Tailwind lines.",
+    "8541609a2": "Integrated via2fc4faf66; original Record/legacy/fixture work retained, later shared inspector deduplication.",
+    "1aa6a77f8": "Folded into12501c852; SaveStatus/ThemeControl identical, later Sheet/control extensions retained.",
+    "complete-system unmatched10": "All paths identical except stale child dist/Field.js superseded by primary first-enabled-radio focus fix. Read-only specialist path comparison found no missing work.",
+    "brief-congress dirty": "Compiled legacy digest redirect superseded by canonical primary compiled navigation.",
+    "justice dirty": "Helpers already include exact changes plus newer card targets; legal-helper drafts superseded by shared Card and sourced refusal language. Preserved snapshot, not replayed."
+  },
+  "prunedWorktrees": [
+    ".worktrees/shadcn-brief-congress",
+    ".worktrees/shadcn-complete-decisions",
+    ".worktrees/shadcn-complete-institutions",
+    ".worktrees/shadcn-complete-nation",
+    ".worktrees/shadcn-complete-system",
+    ".worktrees/shadcn-complete-world",
+    ".worktrees/shadcn-foundations",
+    ".worktrees/shadcn-justice",
+    ".worktrees/shadcn-nation",
+    ".worktrees/shadcn-world",
+    "~/.codex/worktrees/presidential-workspace-recovery/admin-app"
+  ],
+  "prunedBranches": [
+    "codex/fluent-2-migration",
+    "codex/shadcn-brief-congress",
+    "codex/shadcn-complete-decisions",
+    "codex/shadcn-complete-institutions",
+    "codex/shadcn-complete-nation",
+    "codex/shadcn-complete-system",
+    "codex/shadcn-complete-world",
+    "codex/shadcn-foundations",
+    "codex/shadcn-justice",
+    "codex/shadcn-nation",
+    "codex/shadcn-world"
+  ],
+  "status": "Reconciled onto one local feature branch;11 redundant worktrees and11 feature branches removed. Existing recovery references retained; no recovery or replay attempted.",
+  "validationDisposition": "Final source build/typecheck/lint passed; focused browser checks passed with recorded corrective reruns. Full workspace and old-source balance runs interrupted for the owner-requested stable handoff at2026-10-15 23:52:32UTC; no aggregate-green claim."
+}

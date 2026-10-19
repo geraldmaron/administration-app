@@ -1,0 +1,72 @@
+[
+  {
+    "command": "node scripts/verify-bundled-corpus-current.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/bundled-corpus-current.log"
+  },
+  {
+    "command": "node scripts/verify-kit-current.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/kit-current.log"
+  },
+  {
+    "command": "node scripts/verify-shipped-content-parses.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/shipped-content-parses.log"
+  },
+  {
+    "command": "node scripts/verify-deed-reachability.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/deed-reachability.log"
+  },
+  {
+    "command": "node scripts/verify-scenario-arc-families.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/scenario-arc-families.log"
+  },
+  {
+    "command": "node scripts/verify-scenario-arc-families-proof.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/scenario-arc-families-proof.log"
+  },
+  {
+    "command": "node scripts/verify-family-closure.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/family-closure.log"
+  },
+  {
+    "command": "node scripts/verify-scenario-dc-fallback.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/scenario-dc-fallback.log"
+  },
+  {
+    "command": "node scripts/verify-scenario-dc-fallback-proof.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/scenario-dc-fallback-proof.log"
+  },
+  {
+    "command": "node scripts/verify-disposition-readers.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/disposition-readers.log"
+  },
+  {
+    "command": "node scripts/verify-flag-markers.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/flag-markers.log"
+  },
+  {
+    "command": "node scripts/verify-publish-gate.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/publish-gate.log"
+  },
+  {
+    "command": "node scripts/verify-doctrine-metric-alignment.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/doctrine-metric-alignment.log"
+  },
+  {
+    "command": "node scripts/verify-wave-closeout.mjs",
+    "exitCode": 0,
+    "log": "/private/tmp/publish-gates-final/wave-closeout.log"
+  }
+]

@@ -1,0 +1,54 @@
+# The seat of government of each state and DC: the capitol building, read from its Wikidata item's coordinate location.
+# Every source is listed in packages/world/sources/founding-data/federal-sites-sources.md.
+state	capitol	city	lat	lon	source	opened
+AL	Alabama State Capitol	Montgomery	32.3774	-86.3009	https://www.wikidata.org/wiki/Q473393 (coordinate location)	2026-10-10
+AK	Alaska State Capitol	Juneau	58.3022	-134.4105	https://www.wikidata.org/wiki/Q2095370 (coordinate location)	2026-10-10
+AZ	Arizona State Capitol	Phoenix	33.4481	-112.0964	https://www.wikidata.org/wiki/Q670442 (coordinate location)	2026-10-10
+AR	Arkansas State Capitol	Little Rock	34.7467	-92.2892	https://www.wikidata.org/wiki/Q673076 (coordinate location)	2026-10-10
+CA	California State Capitol	Sacramento	38.5766	-121.493	https://www.wikidata.org/wiki/Q1026860 (coordinate location)	2026-10-10
+CO	Colorado State Capitol	Denver	39.7391	-104.9849	https://www.wikidata.org/wiki/Q1111402 (coordinate location)	2026-10-10
+CT	Connecticut State Capitol	Hartford	41.7642	-72.6822	https://www.wikidata.org/wiki/Q1126213 (coordinate location)	2026-10-10
+DE	Delaware Legislative Hall	Dover	39.1573	-75.5197	https://www.wikidata.org/wiki/Q1183954 (coordinate location)	2026-10-10
+DC	District government building (city hall)	Washington	38.895	-77.0314	https://www.wikidata.org/wiki/Q3180858 (coordinate location)	2026-10-10
+FL	Florida State Capitol	Tallahassee	30.4381	-84.2814	https://www.wikidata.org/wiki/Q1430074 (coordinate location)	2026-10-10
+GA	Georgia State Capitol	Atlanta	33.7491	-84.3881	https://www.wikidata.org/wiki/Q1509326 (coordinate location)	2026-10-10
+HI	Hawaii State Capitol	Honolulu	21.3075	-157.8575	https://www.wikidata.org/wiki/Q1290002 (coordinate location)	2026-10-10
+ID	Idaho State Capitol	Boise	43.6178	-116.1997	https://www.wikidata.org/wiki/Q1491417 (coordinate location)	2026-10-10
+IL	Illinois State Capitol	Springfield	39.7983	-89.6547	https://www.wikidata.org/wiki/Q1658839 (coordinate location)	2026-10-10
+IN	Indiana Statehouse	Indianapolis	39.7686	-86.1625	https://www.wikidata.org/wiki/Q1661319 (coordinate location)	2026-10-10
+IA	Iowa State Capitol	Des Moines	41.5912	-93.6038	https://www.wikidata.org/wiki/Q2977124 (coordinate location)	2026-10-10
+KS	Kansas State Capitol	Topeka	39.048	-95.6782	https://www.wikidata.org/wiki/Q2613943 (coordinate location)	2026-10-10
+KY	Kentucky State Capitol	Frankfort	38.1867	-84.8754	https://www.wikidata.org/wiki/Q3696032 (coordinate location)	2026-10-10
+LA	Louisiana State Capitol	Baton Rouge	30.4571	-91.1874	https://www.wikidata.org/wiki/Q1783159 (coordinate location)	2026-10-10
+ME	Maine State House	Augusta	44.3072	-69.7817	https://www.wikidata.org/wiki/Q2985164 (coordinate location)	2026-10-10
+MD	Maryland State House	Annapolis	38.9789	-76.4911	https://www.wikidata.org/wiki/Q1858066 (coordinate location)	2026-10-10
+MA	Massachusetts State House	Boston	42.3586	-71.0639	https://www.wikidata.org/wiki/Q1150259 (coordinate location)	2026-10-10
+MI	Michigan State Capitol	Lansing	42.7336	-84.5556	https://www.wikidata.org/wiki/Q1579713 (coordinate location)	2026-10-10
+MN	Minnesota State Capitol	Saint Paul	44.9543	-93.1022	https://www.wikidata.org/wiki/Q1789816 (coordinate location)	2026-10-10
+MS	Mississippi State Capitol	Jackson	32.3039	-90.1822	https://www.wikidata.org/wiki/Q3696020 (coordinate location)	2026-10-10
+MO	Missouri State Capitol	Jefferson City	38.5791	-92.173	https://www.wikidata.org/wiki/Q2749733 (coordinate location)	2026-10-10
+MT	Montana State Capitol	Helena	46.5858	-112.0184	https://www.wikidata.org/wiki/Q2985180 (coordinate location)	2026-10-10
+NE	Nebraska State Capitol	Lincoln	40.8081	-96.6997	https://www.wikidata.org/wiki/Q1683354 (coordinate location)	2026-10-10
+NV	Nevada State Capitol	Carson City	39.1641	-119.7663	https://www.wikidata.org/wiki/Q2781160 (coordinate location)	2026-10-10
+NH	New Hampshire State House	Concord	43.2067	-71.5381	https://www.wikidata.org/wiki/Q3269508 (coordinate location)	2026-10-10
+NJ	New Jersey State House	Trenton	40.2204	-74.7699	https://www.wikidata.org/wiki/Q3695455 (coordinate location)	2026-10-10
+NM	New Mexico State Capitol	Santa Fe	35.6823	-105.94	https://www.wikidata.org/wiki/Q3694507 (coordinate location)	2026-10-10
+NY	New York State Capitol	Albany	42.6526	-73.7574	https://www.wikidata.org/wiki/Q1510431 (coordinate location)	2026-10-10
+NC	North Carolina State Capitol	Raleigh	35.7803	-78.6392	https://www.wikidata.org/wiki/Q3694520 (coordinate location)	2026-10-10
+ND	North Dakota State Capitol	Bismarck	46.8208	-100.783	https://www.wikidata.org/wiki/Q3696010 (coordinate location)	2026-10-10
+OH	Ohio Statehouse	Columbus	39.9613	-82.9991	https://www.wikidata.org/wiki/Q2281225 (coordinate location)	2026-10-10
+OK	Oklahoma State Capitol	Oklahoma City	35.4922	-97.5033	https://www.wikidata.org/wiki/Q2937492 (coordinate location)	2026-10-10
+OR	Oregon State Capitol	Salem	44.9385	-123.0304	https://www.wikidata.org/wiki/Q2419314 (coordinate location)	2026-10-10
+PA	Pennsylvania State Capitol	Harrisburg	40.2644	-76.8836	https://www.wikidata.org/wiki/Q2915393 (coordinate location)	2026-10-10
+RI	Rhode Island State House	Providence	41.8309	-71.415	https://www.wikidata.org/wiki/Q2281281 (coordinate location)	2026-10-10
+SC	South Carolina State House	Columbia	34.0004	-81.0331	https://www.wikidata.org/wiki/Q2915276 (coordinate location)	2026-10-10
+SD	South Dakota State Capitol	Pierre	44.3672	-100.346	https://www.wikidata.org/wiki/Q2919981 (coordinate location)	2026-10-10
+TN	Tennessee State Capitol	Nashville	36.1658	-86.7842	https://www.wikidata.org/wiki/Q2570396 (coordinate location)	2026-10-10
+TX	Texas State Capitol	Austin	30.2747	-97.7406	https://www.wikidata.org/wiki/Q2078042 (coordinate location)	2026-10-10
+UT	Utah State Capitol	Salt Lake City	40.7772	-111.8881	https://www.wikidata.org/wiki/Q2627661 (coordinate location)	2026-10-10
+VT	Vermont State House	Montpelier	44.2625	-72.5806	https://www.wikidata.org/wiki/Q723549 (coordinate location)	2026-10-10
+VA	Virginia State Capitol	Richmond	37.5388	-77.4336	https://www.wikidata.org/wiki/Q2537798 (coordinate location)	2026-10-10
+WA	Washington State Capitol	Olympia	47.0358	-122.9049	https://www.wikidata.org/wiki/Q2620186 (coordinate location)	2026-10-10
+WV	West Virginia State Capitol	Charleston	38.3361	-81.6119	https://www.wikidata.org/wiki/Q2920261 (coordinate location)	2026-10-10
+WI	Wisconsin State Capitol	Madison	43.0747	-89.3842	https://www.wikidata.org/wiki/Q2915273 (coordinate location)	2026-10-10
+WY	Wyoming State Capitol	Cheyenne	41.1403	-104.8197	https://www.wikidata.org/wiki/Q723806 (coordinate location)	2026-10-10

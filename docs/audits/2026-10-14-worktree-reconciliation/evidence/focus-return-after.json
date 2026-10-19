@@ -1,0 +1,171 @@
+{
+  "events": [
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Opening the administration",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:37:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Opening the administration",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:15\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:519"
+    },
+    {
+      "kind": "focus",
+      "tag": "H1",
+      "cls": "screen-head__title",
+      "text": "Opening the administration",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Opening the administration",
+      "stack": "Error\n    at HTMLElement.focus (<anonymous>:2:299)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:50\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:9411:163)\n    at commitHookP"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Opening the administration",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:37:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:15\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:519"
+    },
+    {
+      "kind": "focus",
+      "tag": "H1",
+      "cls": "screen-head__title",
+      "text": "Economy",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at HTMLElement.focus (<anonymous>:2:299)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:50\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:9411:163)\n    at commitHookP"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:37:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:15\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:519"
+    },
+    {
+      "kind": "focus",
+      "tag": "H1",
+      "cls": "screen-head__title",
+      "text": "Economy",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at HTMLElement.focus (<anonymous>:2:299)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:50\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:9411:163)\n    at commitHookP"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:37:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/world/nation/SAU",
+      "title": "Saudi Arabia",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:15\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:519"
+    },
+    {
+      "kind": "focus",
+      "tag": "H1",
+      "cls": "screen-head__title",
+      "text": "Saudi Arabia",
+      "url": "http://127.0.0.1:5190/world/nation/SAU",
+      "title": "Saudi Arabia",
+      "stack": "Error\n    at HTMLElement.focus (<anonymous>:2:299)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:50\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:9411:163)\n    at commitHookP"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/world/nation/SAU",
+      "title": "Saudi Arabia",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:37:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/world/nation/SAU",
+      "title": "Saudi Arabia",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:15\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:519"
+    },
+    {
+      "kind": "focus",
+      "tag": "H1",
+      "cls": "screen-head__title",
+      "text": "Saudi Arabia",
+      "url": "http://127.0.0.1:5190/world/nation/SAU",
+      "title": "Saudi Arabia",
+      "stack": "Error\n    at HTMLElement.focus (<anonymous>:2:299)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:50\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:9411:163)\n    at commitHookP"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/world/nation/SAU",
+      "title": "Saudi Arabia",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:37:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/world/nation/SAU",
+      "title": "Saudi Arabia",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:37:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:15\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:519"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:37:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:15\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:519"
+    },
+    {
+      "kind": "focus",
+      "tag": "H1",
+      "cls": "screen-head__title",
+      "text": "Economy",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at HTMLElement.focus (<anonymous>:2:299)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:16:50\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:9411:163)\n    at commitHookP"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:37:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190"
+    },
+    {
+      "kind": "queryBody",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at Document.querySelector (<anonymous>:2:607)\n    at restoreArrival (http://127.0.0.1:5190/src/shell/return-context.ts:12:25)\n    at http://127.0.0.1:5190/src/shell/Screen.tsx?t=1792015429111:37:5\n    at Object.react_stack_bottom_frame (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:18567:20)\n    at runWithFiberInDEV (http://127.0.0.1:5190/node_modules/.vite/deps/react-dom_client.js?v=0c680548:997:72)\n    at commitHookEffectListMount (http://127.0.0.1:5190"
+    },
+    {
+      "kind": "focus",
+      "tag": "A",
+      "cls": "market-supplier__name",
+      "text": "Saudi Arabia",
+      "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5",
+      "title": "Economy",
+      "stack": "Error\n    at HTMLElement.focus (<anonymous>:2:299)\n    at http://127.0.0.1:5190/src/shell/return-context.ts:25:32"
+    }
+  ],
+  "active": "<a href=\"/world/nation/SAU\" class=\"market-supplier__name\"><span class=\"ui-flag\" style=\"block-size: 16px; inline-size: 24px;\"><img class=\"ui-flag__image\" alt=\"\" draggable=\"false\" src=\"/@fsscripts/vendor/nation-flags/sa.svg?no-inline\"></span>Saudi Arabia</a>",
+  "url": "http://127.0.0.1:5190/nation/economy?view=markets&measure=crude&observation=5"
+}

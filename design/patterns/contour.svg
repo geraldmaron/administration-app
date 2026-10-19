@@ -1,0 +1,12 @@
+<!-- Topographic contour field: two hills of nested isolines, one centered and one split across the four corners so the tile repeats without a seam. Drawn for The Administration. Shipped as a CSS mask tile in packages/design/src/patterns.css. -->
+<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'>
+<defs>
+<path id='r' vector-effect='non-scaling-stroke' d='M100 0C100 45 60 95 5 98C-50 101 -98 60 -96 5C-94 -48 -55 -102 0 -97C52 -92 100 -45 100 0Z'/>
+<g id='h'><use href='#r'/><use href='#r' transform='rotate(9) scale(0.8)'/><use href='#r' transform='rotate(18) scale(0.62)'/><use href='#r' transform='rotate(27) scale(0.45)'/><use href='#r' transform='rotate(36) scale(0.3)'/><use href='#r' transform='rotate(45) scale(0.16)'/></g>
+<g id='k'><use href='#r' transform='scale(0.58)'/><use href='#r' transform='rotate(-12) scale(0.43)'/><use href='#r' transform='rotate(-24) scale(0.28)'/><use href='#r' transform='rotate(-36) scale(0.14)'/></g>
+</defs>
+<g fill='none' stroke='black' stroke-width='0.7'>
+<use href='#h' transform='translate(160 160)'/>
+<use href='#k'/><use href='#k' transform='translate(320 0)'/><use href='#k' transform='translate(0 320)'/><use href='#k' transform='translate(320 320)'/>
+</g>
+</svg>

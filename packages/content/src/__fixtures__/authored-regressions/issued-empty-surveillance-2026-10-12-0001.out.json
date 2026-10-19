@@ -1,0 +1,157 @@
+[
+  {
+    "id": "issued-surveillance-no-result",
+    "class": "technology",
+    "severity": "routine",
+    "dilemmaShape": "credulity-bet",
+    "subject": "Surveillance of {{reportTarget}} returns no usable result",
+    "cast": {
+      "pick": "collectionReport",
+      "bind": "target"
+    },
+    "locus": {
+      "site": "capital",
+      "ground": "home",
+      "descriptor": "the secure briefing room where the issued report is on the desk"
+    },
+    "conditions": [
+      {
+        "kind": "collectionReport",
+        "targetKind": "foreign-nation",
+        "status": "no-result",
+        "shared": false,
+        "activeTasking": true
+      }
+    ],
+    "weight": 1,
+    "particulars": [
+      {
+        "label": "Report age",
+        "value": "{{reportAgeDays}} days"
+      },
+      {
+        "label": "Findings",
+        "value": "{{reportFindingCount}}"
+      },
+      {
+        "label": "Status",
+        "value": "{{reportSummary}}"
+      },
+      {
+        "label": "Source exposure",
+        "value": "{{reportExposure}}"
+      }
+    ],
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "intelligence"
+        },
+        "text": "The surveillance return cannot support a judgment about {{reportTarget}}. The President can send a new collection question or close the first request. {{reportSummary}}"
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "intelligence"
+        },
+        "text": "The gaps are recorded too: {{reportGaps}} That limit belongs on any answer the administration gives from this desk."
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "intelligence"
+        },
+        "text": "There is no finding to put to their government. A new tasking keeps the question alive; closing it ends this collection path without settling the matter."
+      }
+    ],
+    "replies": [
+      {
+        "id": "retask-signals-collection",
+        "tone": "principled",
+        "text": "Task a separate search of foreign communications about {{reportTarget}} and keep the empty return out of any public claim.",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "collection": {
+            "action": "task",
+            "element": "IC-NSA",
+            "discipline": "sigint",
+            "question": "What foreign communications bear on this government’s current posture?"
+          },
+          "remembered": "The President tasked a separate search of foreign communications after the issued surveillance return supplied no usable result.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "intelligence"
+            },
+            "text": "The new tasking is recorded. It gives us another route to an answer, but no new finding comes with the order."
+          }
+        }
+      },
+      {
+        "id": "retask-all-source-comparison",
+        "tone": "firm",
+        "text": "Task an all-source comparison of existing reporting about {{reportTarget}} before deciding whether to approach its government.",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "collection": {
+            "action": "task",
+            "element": "IC-DIA",
+            "discipline": "all-source",
+            "question": "What existing reporting bears on this government’s current posture?"
+          },
+          "remembered": "The President ordered an all-source comparison after the issued surveillance return supplied no usable result.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "intelligence"
+            },
+            "text": "Analysts can compare what is already held. If the sources have the same blind spot, the comparison will preserve it."
+          }
+        }
+      },
+      {
+        "id": "close-empty-tasking",
+        "tone": "evasive",
+        "text": "Close this collection tasking and say only that the return supplied no usable result.",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "collection": {
+            "action": "close"
+          },
+          "remembered": "The President closed the surveillance tasking without claiming its empty return had cleared the target.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "intelligence"
+            },
+            "text": "The original tasking closes. Its recorded gaps remain with the issued report; they do not become a finding."
+          }
+        }
+      }
+    ],
+    "topics": [
+      "intelligence",
+      "diplomacy"
+    ],
+    "context": {
+      "standing": "An issued surveillance report reached the President through the secure channel. It returned no usable result about {{reportTarget}}. The original tasking remains on the collection ledger.",
+      "precedent": "An empty collection return can mean the operation saw nothing or could not see enough. A new tasking changes what the intelligence community is asked to collect; closing the first ends that request.",
+      "pressures": [
+        {
+          "source": "cabinet",
+          "want": "The intelligence community wants a fresh collection question because the issued return could not answer the first."
+        },
+        {
+          "source": "cabinet",
+          "want": "The Secretary of State wants the President to avoid treating an empty return as evidence of safety or grounds for an accusation."
+        }
+      ],
+      "inaction": "The original tasking stays open without a new question. The President receives no assurance from the absence of usable reporting, and the recorded gap remains.",
+      "unknown": "The issued return cannot establish whether activity beyond the operation’s view exists, because the operation never supplied a usable observation."
+    }
+  }
+]

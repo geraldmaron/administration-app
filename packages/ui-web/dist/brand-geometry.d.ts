@@ -1,0 +1,4 @@
+/** Canonical geometry for runtime chrome and generated platform artwork. */
+export declare const BRAND_VIEW_BOX = "0 0 64 64";
+export declare const BRAND_PORTAL_PATH = "M8 8H56V56H48V16H16V56H8Z";
+export declare const BRAND_DESK_PATH = "M24 40H40V48H24Z";

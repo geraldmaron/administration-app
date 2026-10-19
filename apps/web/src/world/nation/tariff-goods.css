@@ -1,0 +1,12 @@
+@layer rooms {
+  .tariff-selection { display: grid; gap: var(--space-md); min-inline-size: 0; }
+  .tariff-selection__evidence { display: grid; gap: var(--space-sm); }
+  .tariff-selection__identity { display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap; }
+  .tariff-selection__identity > span { margin-inline-start: auto; color: var(--color-text-secondary); font-size: var(--size-small); }
+  .tariff-selection__flows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); margin: 0; }
+  .tariff-selection__flows > div { min-inline-size: 0; }
+  .tariff-selection__flows dt, .tariff-selection__basis { color: var(--color-text-secondary); font-size: var(--size-small); }
+  .tariff-selection__flows dd { margin: 0; font-size: var(--size-heading); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .tariff-selection__basis { margin: 0; }
+  @media (max-width: 24em) { .tariff-selection__flows { grid-template-columns: 1fr; } }
+}

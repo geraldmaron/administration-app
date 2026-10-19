@@ -1,0 +1,447 @@
+[
+  {
+    "command": "node scripts/verify-adhoc-color-lint.mjs",
+    "exit": 0,
+    "seconds": 1.4
+  },
+  {
+    "command": "node scripts/verify-american-spelling-proof.mjs",
+    "exit": 0,
+    "seconds": 1.1
+  },
+  {
+    "command": "node scripts/verify-american-spelling.mjs",
+    "exit": 0,
+    "seconds": 5.6
+  },
+  {
+    "command": "node scripts/verify-attention-anchors-proof.mjs",
+    "exit": 1,
+    "seconds": 0.9
+  },
+  {
+    "command": "node scripts/verify-attention-anchors.mjs",
+    "exit": 1,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-biography-immutability-proof.mjs",
+    "exit": 0,
+    "seconds": 2.8
+  },
+  {
+    "command": "node scripts/verify-biography-immutability.mjs",
+    "exit": 0,
+    "seconds": 1.9
+  },
+  {
+    "command": "node scripts/verify-boundary-lint.mjs",
+    "exit": 0,
+    "seconds": 1.6
+  },
+  {
+    "command": "node scripts/verify-bundled-corpus-current-proof.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-bundled-corpus-current.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-case-contract-proof.mjs",
+    "exit": 0,
+    "seconds": 0.2
+  },
+  {
+    "command": "node scripts/verify-case-contract.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-case-source-unification-proof.mjs",
+    "exit": 0,
+    "seconds": 0.2
+  },
+  {
+    "command": "node scripts/verify-case-source-unification.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-counsel-plurality-proof.mjs",
+    "exit": 0,
+    "seconds": 28.0
+  },
+  {
+    "command": "node scripts/verify-counsel-plurality.mjs",
+    "exit": 0,
+    "seconds": 26.0
+  },
+  {
+    "command": "node scripts/verify-css-architecture-proof.mjs",
+    "exit": 0,
+    "seconds": 2.5
+  },
+  {
+    "command": "node scripts/verify-css-architecture.mjs",
+    "exit": 0,
+    "seconds": 0.2
+  },
+  {
+    "command": "node scripts/verify-deed-reachability-proof.mjs",
+    "exit": 0,
+    "seconds": 5.5
+  },
+  {
+    "command": "node scripts/verify-deed-reachability.mjs",
+    "exit": 0,
+    "seconds": 0.6
+  },
+  {
+    "command": "node scripts/verify-disclosure-proof.mjs",
+    "exit": 0,
+    "seconds": 1.3
+  },
+  {
+    "command": "node scripts/verify-disclosure.mjs",
+    "exit": 0,
+    "seconds": 0.2
+  },
+  {
+    "command": "node scripts/verify-disposition-readers.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-dist-freshness-proof.mjs",
+    "exit": 0,
+    "seconds": 1.0
+  },
+  {
+    "command": "node scripts/verify-dist-freshness.mjs",
+    "exit": 1,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-doctrine-metric-alignment.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-engine-reachability-proof.mjs",
+    "exit": 0,
+    "seconds": 4.4
+  },
+  {
+    "command": "node scripts/verify-engine-reachability.mjs",
+    "exit": 0,
+    "seconds": 1.0
+  },
+  {
+    "command": "node scripts/verify-family-closure-proof.mjs",
+    "exit": 0,
+    "seconds": 0.4
+  },
+  {
+    "command": "node scripts/verify-family-closure.mjs",
+    "exit": 0,
+    "seconds": 0.2
+  },
+  {
+    "command": "node scripts/verify-file-size-proof.mjs",
+    "exit": 0,
+    "seconds": 0.4
+  },
+  {
+    "command": "node scripts/verify-file-size.mjs",
+    "exit": 0,
+    "seconds": 0.2
+  },
+  {
+    "command": "node scripts/verify-fiscal-authority-proof.mjs",
+    "exit": 0,
+    "seconds": 3.8
+  },
+  {
+    "command": "node scripts/verify-fiscal-authority.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-flag-markers-proof.mjs",
+    "exit": 0,
+    "seconds": 0.5
+  },
+  {
+    "command": "node scripts/verify-flag-markers.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-foreign-truth-proof.mjs",
+    "exit": 0,
+    "seconds": 3.3
+  },
+  {
+    "command": "node scripts/verify-foreign-truth.mjs",
+    "exit": 0,
+    "seconds": 1.3
+  },
+  {
+    "command": "node scripts/verify-icon-registry-proof.mjs",
+    "exit": 0,
+    "seconds": 1.4
+  },
+  {
+    "command": "node scripts/verify-icon-registry.mjs",
+    "exit": 0,
+    "seconds": 0.6
+  },
+  {
+    "command": "node scripts/verify-incident-places-proof.mjs",
+    "exit": 0,
+    "seconds": 3.5
+  },
+  {
+    "command": "node scripts/verify-incident-places.mjs",
+    "exit": 0,
+    "seconds": 0.6
+  },
+  {
+    "command": "node scripts/verify-kit-current-proof.mjs",
+    "exit": 0,
+    "seconds": 2.5
+  },
+  {
+    "command": "node scripts/verify-kit-current.mjs",
+    "exit": 0,
+    "seconds": 0.6
+  },
+  {
+    "command": "node scripts/verify-leader-fidelity-proof.mjs",
+    "exit": 0,
+    "seconds": 32.5
+  },
+  {
+    "command": "node scripts/verify-leader-fidelity.mjs",
+    "exit": 0,
+    "seconds": 11.4
+  },
+  {
+    "command": "node scripts/verify-locus-ground.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-map-registration.mjs",
+    "exit": 0,
+    "seconds": 0.4
+  },
+  {
+    "command": "node scripts/verify-metric-registry-proof.mjs",
+    "exit": 1,
+    "seconds": 35.6
+  },
+  {
+    "command": "node scripts/verify-metric-registry.mjs",
+    "exit": 1,
+    "seconds": 10.2
+  },
+  {
+    "command": "node scripts/verify-no-history-references-proof.mjs",
+    "exit": 0,
+    "seconds": 2.0
+  },
+  {
+    "command": "node scripts/verify-no-history-references.mjs",
+    "exit": 0,
+    "seconds": 1.1
+  },
+  {
+    "command": "node scripts/verify-no-silent-skip-proof.mjs",
+    "exit": 0,
+    "seconds": 0.3
+  },
+  {
+    "command": "node scripts/verify-no-silent-skip.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-one-day-counter-proof.mjs",
+    "exit": 0,
+    "seconds": 0.6
+  },
+  {
+    "command": "node scripts/verify-one-day-counter.mjs",
+    "exit": 0,
+    "seconds": 0.4
+  },
+  {
+    "command": "node scripts/verify-opinion-causes-proof.mjs",
+    "exit": 0,
+    "seconds": 1.2
+  },
+  {
+    "command": "node scripts/verify-opinion-causes.mjs",
+    "exit": 0,
+    "seconds": 0.2
+  },
+  {
+    "command": "node scripts/verify-person-consequence-alignment-proof.mjs",
+    "exit": 0,
+    "seconds": 1.0
+  },
+  {
+    "command": "node scripts/verify-person-consequence-alignment.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-person-relationship-provenance-proof.mjs",
+    "exit": 0,
+    "seconds": 6.8
+  },
+  {
+    "command": "node scripts/verify-person-relationship-provenance.mjs",
+    "exit": 0,
+    "seconds": 2.9
+  },
+  {
+    "command": "node scripts/verify-pin-ledger-proof.mjs",
+    "exit": 0,
+    "seconds": 1.3
+  },
+  {
+    "command": "node scripts/verify-pin-ledger.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-player-prose-proof.mjs",
+    "exit": 0,
+    "seconds": 4.0
+  },
+  {
+    "command": "node scripts/verify-player-prose.mjs",
+    "exit": 0,
+    "seconds": 1.8
+  },
+  {
+    "command": "node scripts/verify-position-uncertainty-proof.mjs",
+    "exit": 0,
+    "seconds": 8.1
+  },
+  {
+    "command": "node scripts/verify-position-uncertainty.mjs",
+    "exit": 0,
+    "seconds": 8.4
+  },
+  {
+    "command": "node scripts/verify-publish-gate.mjs",
+    "exit": 0,
+    "seconds": 25.4
+  },
+  {
+    "command": "node scripts/verify-resolution-beat-reachability.mjs",
+    "exit": 0,
+    "seconds": 0.6
+  },
+  {
+    "command": "node scripts/verify-rule-seams-proof.mjs",
+    "exit": 0,
+    "seconds": 1.8
+  },
+  {
+    "command": "node scripts/verify-rule-seams.mjs",
+    "exit": 0,
+    "seconds": 0.2
+  },
+  {
+    "command": "node scripts/verify-scenario-arc-families-proof.mjs",
+    "exit": 0,
+    "seconds": 3.2
+  },
+  {
+    "command": "node scripts/verify-scenario-arc-families.mjs",
+    "exit": 0,
+    "seconds": 0.5
+  },
+  {
+    "command": "node scripts/verify-scenario-dc-fallback-proof.mjs",
+    "exit": 0,
+    "seconds": 10.8
+  },
+  {
+    "command": "node scripts/verify-scenario-dc-fallback.mjs",
+    "exit": 0,
+    "seconds": 1.4
+  },
+  {
+    "command": "node scripts/verify-shipped-content-parses.mjs",
+    "exit": 0,
+    "seconds": 0.7
+  },
+  {
+    "command": "node scripts/verify-trade-measure-kinds.mjs",
+    "exit": 0,
+    "seconds": 0.4
+  },
+  {
+    "command": "node scripts/verify-unused-primitives-proof.mjs",
+    "exit": 0,
+    "seconds": 1.0
+  },
+  {
+    "command": "node scripts/verify-unused-primitives.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-us-units.mjs",
+    "exit": 0,
+    "seconds": 0.5
+  },
+  {
+    "command": "node scripts/verify-wave-closeout-proof.mjs",
+    "exit": 0,
+    "seconds": 0.9
+  },
+  {
+    "command": "node scripts/verify-wave-closeout.mjs",
+    "exit": 0,
+    "seconds": 0.1
+  },
+  {
+    "command": "node scripts/verify-web-boundary.mjs",
+    "exit": 0,
+    "seconds": 0.2
+  },
+  {
+    "command": "node scripts/verify-willingness-route-proof.mjs",
+    "exit": 0,
+    "seconds": 0.8
+  },
+  {
+    "command": "node scripts/verify-willingness-route.mjs",
+    "exit": 0,
+    "seconds": 0.2
+  },
+  {
+    "command": "node scripts/verify-wire-bank-collapse.mjs",
+    "exit": 0,
+    "seconds": 3.0
+  },
+  {
+    "command": "node scripts/verify-world-coverage-proof.mjs",
+    "exit": 0,
+    "seconds": 1.3
+  },
+  {
+    "command": "node scripts/verify-world-coverage.mjs",
+    "exit": 0,
+    "seconds": 0.3
+  }
+]

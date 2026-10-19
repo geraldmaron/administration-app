@@ -1,0 +1,14 @@
+/* The Nation screen's headline band: three country readings, then the four portfolio doors (styled in state.css). */
+@layer rooms {
+  .nkpis {
+    display: grid;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  .nkpi { min-inline-size: 0; }
+
+  .nkpis .nation-doors {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+  }
+}

@@ -1,0 +1,15 @@
+commodity	series	period	value	unit	kind	source_id	opened	note
+crude_oil	Brent spot, annual average	2025	69	usd_per_barrel	historical	EIA-STEO-2026-09	2026-09-24	EIA Short-Term Energy Outlook released 2026-09-09; the last full year before the 2026 Iran war; the proposed founding anchor (index 1.0). Read through the fetch tool
+crude_oil	Brent spot, monthly average	2026-08	91	usd_per_barrel	historical	EIA-STEO-2026-09	2026-09-24	up $7 from July; the STEO cites constrained Middle East exports and a renewed US blockade of Iran's oil exports after attacks on tankers in the Strait of Hormuz
+crude_oil	Brent spot, annual average	2026	91	usd_per_barrel	forecast	EIA-STEO-2026-09	2026-09-24	forecast, not a measurement
+crude_oil	Brent spot, annual average	2027	74	usd_per_barrel	forecast	EIA-STEO-2026-09	2026-09-24	forecast; the latest official view of the post-shock path; 74 over 69 is about 1.07 (the proposed opening index under D3's frozen-front default, a planning value)
+gasoline	US regular retail, annual average	2025	3.10	usd_per_gallon	historical	EIA-GASEXPLAINED	2026-09-24	the pump price's founding anchor; shares in price-shares.tsv
+gasoline	US regular retail, monthly	2026-05	4.48	usd_per_gallon	historical	EIA-GASDIESEL	2026-09-24	the May 2026 breakdown's retail price (crude 52, refining 22, distribution 15, taxes 12 percent)
+wheat	US season-average farm price	2024/25	5.52	usd_per_bushel	historical	USDA-WASDE-675	2026-09-24	marketing year from June 1; the last completed year, matching commodities.tsv's 2024/25 vintage; the proposed founding anchor
+wheat	US season-average farm price	2025/26	5.06	usd_per_bushel	estimate	USDA-WASDE-675	2026-09-24	estimate
+wheat	US season-average farm price	2026/27	6.40	usd_per_bushel	projection	USDA-WASDE-675	2026-09-24	September projection, raised $0.20 from August; 6.40 over 5.52 is about 1.16
+corn	US season-average farm price	2024/25	4.24	usd_per_bushel	historical	USDA-WASDE-675	2026-09-24	marketing year from September 1; the proposed founding anchor
+corn	US season-average farm price	2025/26	4.15	usd_per_bushel	estimate	USDA-WASDE-675	2026-09-24	estimate
+corn	US season-average farm price	2026/27	4.80	usd_per_bushel	projection	USDA-WASDE-675	2026-09-24	September projection, raised $0.30 from August; 4.80 over 4.24 is about 1.13
+soybeans	US season-average farm price	2024/25	10.00	usd_per_bushel	historical	USDA-WASDE-675	2026-09-24	marketing year from September 1; only if D11 widens past crude and grains
+soybeans	US season-average farm price	2026/27	12.00	usd_per_bushel	projection	USDA-WASDE-675	2026-09-24	September projection

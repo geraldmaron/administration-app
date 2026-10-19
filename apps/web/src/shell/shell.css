@@ -1,0 +1,408 @@
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  body {
+    background: var(--color-ground-abyss);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--size-body);
+    line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
+    text-size-adjust: 100%;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: var(--leading-snug);
+  }
+
+  a {
+    color: var(--color-blue);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  img,
+  svg {
+    max-inline-size: 100%;
+  }
+}
+
+@layer rooms {
+  .bar-home {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--hit-min);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .bar-status__date {
+    color: var(--color-text-primary);
+    font-weight: var(--weight-medium);
+  }
+
+  .bar-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    min-inline-size: var(--hit-min);
+    min-block-size: var(--hit-min);
+    padding: 0 var(--space-xs);
+    border: 0;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: var(--size-label);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .bar-button:hover {
+    color: var(--color-blue);
+    background: var(--color-blue-wash);
+  }
+
+  .theme-switch {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .ui-nav__drawer-foot .theme-switch {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ui-nav__drawer-foot .theme-switch__option {
+    min-inline-size: 0;
+    justify-content: center;
+  }
+
+  .theme-switch__option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-block-size: var(--hit-min);
+    min-inline-size: 10rem;
+    padding: 0 var(--space-sm);
+    border: 0;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: var(--size-label);
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .theme-switch__option:hover {
+    background: var(--color-ground-raised-hover);
+  }
+
+  .theme-switch__option[aria-pressed="true"] {
+    background: var(--color-blue-wash);
+    color: var(--color-blue);
+    font-weight: var(--weight-medium);
+  }
+
+  .bar-button__word,
+  .save-status__word {
+    display: none;
+  }
+
+  .continue {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .continue[data-held="true"] {
+    gap: var(--space-xs);
+  }
+
+  .continue__held {
+    display: inline-flex;
+    gap: var(--space-2xs);
+    align-items: center;
+    color: var(--color-text-primary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-strong);
+  }
+
+  .continue__held-word {
+    display: inline;
+  }
+
+  .save-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .save-status__door {
+    font-size: var(--size-label);
+  }
+
+  /* The date stays in the masthead at every width; a phone drops the week, the theme and Settings, which More holds. */
+  .bar-status__week,
+  .bar-status__long,
+  .bar-button--theme,
+  .bar-button--settings {
+    display: none;
+  }
+
+  .ui-top-bar__status {
+    flex: none;
+    overflow: visible;
+  }
+
+  @media (min-width: 40em) {
+    .bar-status__week,
+    .bar-status__long {
+      display: inline;
+    }
+
+    .bar-button--theme,
+    .bar-button--settings {
+      display: inline-flex;
+    }
+
+    .bar-status__short {
+      display: none;
+    }
+  }
+
+  @media (min-width: 64em) {
+    .bar-button__word,
+    .save-status__word {
+      display: inline;
+    }
+  }
+
+  /* One federal visual identity across entry screens and working files. */
+  .screen-head {
+    position: relative;
+    display: grid;
+    gap: var(--space-2xs);
+    isolation: isolate;
+  }
+
+
+  .screen-head__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-medium);
+  }
+
+  .screen-head__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--size-display);
+    font-weight: var(--weight-strong);
+    line-height: 1.2857;
+    letter-spacing: var(--tracking-display);
+    outline: none;
+    text-wrap: balance;
+  }
+
+  .screen-head__title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    min-inline-size: 0;
+  }
+
+  .screen-head__title-row > .screen-head__title {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .screen-head__badge.ui-icon-badge {
+    inline-size: 36px;
+    block-size: 36px;
+  }
+
+  .screen-head__badge .ui-icon { inline-size: 22px; block-size: 22px; }
+
+  /* A phone's title is smaller, so its mark steps down with it rather than outweighing the name. */
+  @media (max-width: 47.99em) {
+    .screen-head__badge.ui-icon-badge {
+      inline-size: 32px;
+      block-size: 32px;
+    }
+  }
+
+  .screen-head__emblem {
+    display: none;
+    margin-block-end: var(--space-sm);
+  }
+
+  @media (min-width: 48em) {
+    .screen-head__emblem {
+      display: block;
+    }
+  }
+
+  .screen-head[data-hero="true"] .screen-head__title {
+    font-size: var(--size-hero);
+    line-height: var(--leading-tight);
+  }
+
+  .screen-head__lede {
+    margin: 0;
+    max-inline-size: var(--measure);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  /* A landscape phone has height for the work or for a large title, not both. */
+  @media (max-height: 30em) and (orientation: landscape) {
+    .screen-head__eyebrow,
+    .screen-head__lede,
+    .screen-head__badge {
+      display: none;
+    }
+
+    .screen-head__title,
+    .screen-head[data-hero="true"] .screen-head__title {
+      font-size: var(--size-heading);
+    }
+  }
+
+  .stage-note {
+    margin: 0;
+    max-inline-size: var(--measure);
+    color: var(--color-text-tertiary);
+    font-size: var(--size-label);
+  }
+
+  .notice {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0 0 var(--space-md);
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+  }
+
+  .notice[data-tone="risk"] {
+    border-color: var(--status-danger-ink);
+    background: var(--status-danger-fill);
+    color: var(--status-danger-ink);
+  }
+
+  .notice p {
+    margin: 0;
+  }
+
+  .title__mark {
+    color: var(--color-gold);
+  }
+
+  .field-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .field-row > .ui-input {
+    flex: 1 1 12rem;
+    inline-size: auto;
+  }
+}
+
+@layer rooms {
+  /* A chapter title's glyph reads as part of the title, not as identity gold. */
+  :is(.brief-section__title, .set-section__title, .nation-section__title, .hill-section__title, .situation__label) {
+    --icon-ink: var(--color-text-secondary);
+  }
+
+  :is(.country-group__heading, .world-watch__heading):has(> .ui-icon) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  :is(.country-group__heading, .world-watch__heading) {
+    --icon-ink: var(--color-text-secondary);
+  }
+}
+
+@layer rooms {
+  /* At phone width retain date, Continue, save and search. The standalone held marker repeats the button and Brief attention context; its full reason remains described on Continue. */
+  @media (max-width: 29.99em) {
+    .continue__held {
+      display: none;
+    }
+
+    .ui-top-bar {
+      gap: var(--space-xs);
+      padding-inline: var(--space-sm);
+    }
+  }
+
+  /* The narrowest phones compact Continue to its named icon while keeping calendar, save and search available. */
+  @media (max-width: 23em) {
+    .continue > .ui-button { min-inline-size: var(--hit-min); min-block-size: var(--hit-min); }
+
+    .continue .ui-button__label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+    .ui-top-bar__status {
+      font-size: var(--size-caption);
+    }
+  }
+}
+
+/* A state named with its flag; the flag never shrinks and the name can still truncate. */
+@layer rooms {
+  .state-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-inline-size: 0;
+    vertical-align: middle;
+  }
+
+  .state-name > .ui-flag {
+    flex: none;
+  }
+
+  .state-name__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@layer rooms {
+  .save-status__recovery { display: none; }
+  .save-status__quick-retry { display: inline-flex; align-items: center; gap: var(--space-xs); }
+  @media (max-width: 29.99em) {
+    .save-status__quick-retry { display: none; }
+    .save-status__recovery { display: inline-flex; min-inline-size: var(--hit-min); min-block-size: var(--hit-min); padding: 0; }
+  }
+}
+
+@layer rooms {
+  a.bar-status__date { display: inline-flex; align-items: center; min-block-size: 44px; color: inherit; text-decoration: none; border-radius: var(--radius-control); padding-inline: var(--space-xs); }
+  a.bar-status__date:hover { background: var(--color-ground-raised-hover); }
+}

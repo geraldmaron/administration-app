@@ -1,0 +1,44 @@
+chamber,committee_code,committee_name,type,senate_rule_xxv_class,majority_party_seats,minority_party_seats,subcommittees
+Senate,SLET,Select Committee on Ethics,select,C,3,3,0
+Senate,SLIA,Committee on Indian Affairs,select,B,6,5,0
+Senate,SLIN,Select Committee on Intelligence,select,A,11,10,0
+Senate,SPAG,Special Committee on Aging,special,B,7,6,0
+Senate,SSAF,"Committee on Agriculture, Nutrition, and Forestry",standing,A,12,11,5
+Senate,SSAP,Committee on Appropriations,standing,A,15,14,12
+Senate,SSAS,Committee on Armed Services,standing,A,14,13,7
+Senate,SSBK,"Committee on Banking, Housing, and Urban Affairs",standing,A,13,11,6
+Senate,SSBU,Committee on the Budget,standing,B,11,10,0
+Senate,SSCM,"Committee on Commerce, Science, and Transportation",standing,A,15,13,6
+Senate,SSEG,Committee on Energy and Natural Resources,standing,A,11,9,4
+Senate,SSEV,Committee on Environment and Public Works,standing,A,10,9,4
+Senate,SSFI,Committee on Finance,standing,A,14,13,6
+Senate,SSFR,Committee on Foreign Relations,standing,A,12,10,7
+Senate,SSGA,Committee on Homeland Security and Governmental Affairs,standing,A,8,7,3
+Senate,SSHR,"Committee on Health, Education, Labor, and Pensions",standing,A,12,11,3
+Senate,SSJU,Committee on the Judiciary,standing,A,12,10,7
+Senate,SSRA,Committee on Rules and Administration,standing,B,9,8,0
+Senate,SSSB,Committee on Small Business and Entrepreneurship,standing,B,10,9,0
+Senate,SSVA,Committee on Veterans' Affairs,standing,B,10,9,0
+House,AG00,Committee on Agriculture,standing,,29,25,6
+House,AP00,Committee on Appropriations,standing,,35,28,12
+House,AS00,Committee on Armed Services,standing,,30,27,7
+House,BA00,Committee on Financial Services,standing,,30,24,6
+House,BU00,Committee on the Budget,standing,,21,16,0
+House,ED00,Committee on Education and Workforce,standing,,21,16,4
+House,FA00,Committee on Foreign Affairs,standing,,28,25,7
+House,GO00,Committee on Oversight and Government Reform,standing,,26,21,7
+House,HA00,Committee on House Administration,standing,,8,4,2
+House,HM00,Committee on Homeland Security,standing,,18,15,6
+House,IF00,Committee on Energy and Commerce,standing,,30,24,6
+House,II00,Committee on Natural Resources,standing,,25,20,5
+House,JU00,Committee on the Judiciary,standing,,25,19,6
+House,PW00,Committee on Transportation and Infrastructure,standing,,36,31,6
+House,RU00,Committee on Rules,standing,,9,4,2
+House,SM00,Committee on Small Business,standing,,15,12,5
+House,SO00,Committee on Ethics,standing,,5,5,0
+House,SY00,"Committee on Science, Space, and Technology",standing,,22,18,5
+House,VR00,Committee on Veterans' Affairs,standing,,14,11,5
+House,WM00,Committee on Ways and Means,standing,,26,19,6
+House,IG00,Permanent Select Committee on Intelligence,select,,15,12,6
+House,QJ00,"Select Subcommittee to Investigate the Remaining Questions Surrounding January 6, 2021",select,,5,3,0
+House,ZS00,Select Committee on the Strategic Competition Between the United States and the Chinese Communist Party,select,,13,11,0

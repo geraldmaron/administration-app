@@ -1,0 +1,10 @@
+{
+  "comment": [
+    "The questions and temperament reads that have not yet been routed through weigh and liveTemperament, each with the build key that owns the routing.",
+    "Read by scripts/verify-willingness-route.mjs. It may only shrink: an owner removes its line in the same change that lands the builder and its test, or the liveTemperament read. `--closing` requires both lists empty.",
+    "The questions are the W5 contract's new members of willingness.ts's Question union. The temperament reads are the two actor modules that read the traits directly on the W5 base; 5A routes both through liveTemperament, byte-identical while no leader offset is seated.",
+    "The person-behavior wave's five questions sit here from the contract wave until each workstream lands its builder and test: certify-order and carry-out with WS-A, aim-leak with WS-C, minister-initiative with WS-D in W1, and steer-contracts with WS-D in W2."
+  ],
+  "questions": {},
+  "temperamentReads": {}
+}

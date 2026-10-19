@@ -1,0 +1,23 @@
+@layer rooms {
+  .institutional-file { max-inline-size: none; }
+  .institutional-file__columns { display: grid; gap: var(--space-lg); align-items: start; min-inline-size: 0; }
+  .institutional-file__columns > div, .institutional-file__columns > aside { display: grid; gap: var(--space-lg); min-inline-size: 0; align-content: start; }
+  .institutional-file__identity-link { display: flex; align-items: center; gap: var(--space-sm); min-block-size: 44px; padding: var(--space-sm); color: inherit; text-decoration: none; }
+  .institutional-file__holder-link { display: inline-flex; gap: var(--space-xs); align-items: center; min-block-size: 44px; padding-inline: var(--space-xs); color: inherit; text-decoration: none; border-radius: var(--radius-card); }
+  .institutional-file__holder-link:hover { background: var(--color-ground-raised); }
+  .institutional-file__identity-link > strong { flex: 1; }
+  .institutional-file__action-panel { padding: var(--panel-pad); display: grid; gap: var(--space-md); }
+  .institutional-file .dossier__tags .ui-tag { display: inline-flex; align-items: center; gap: var(--space-xs); }
+  .institutional-file .dossier__plate { padding: var(--panel-pad); }
+  .institutional-file .dossier__vitals { margin: 0; }
+  .institutional-file .dossier__section { padding: var(--panel-pad); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-ground-base); }
+  .institutional-file .dossier__number { display: none; }
+  .institutional-file .dossier__head { align-items: center; }
+  .institutional-file .dossier__section > p { max-inline-size: 75ch; }
+  .public-connection { padding: var(--space-sm); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-ground-base); }
+  .public-connection__people { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: center; }
+  .public-connection__people a { min-block-size: 44px; display: inline-flex; align-items: center; padding-inline: var(--space-xs); border-radius: var(--radius-card); font-weight: 600; text-decoration: none; }
+  .public-connection p { margin: var(--space-xs) 0 0; color: var(--color-text-secondary); }
+  @media (min-width: 22.5em) { .institutional-file .dossier__plate { grid-template-columns: auto minmax(0, 1fr); } }
+  @container (min-width: 58rem) { .institutional-file__columns { grid-template-columns: minmax(0, 1.8fr) minmax(17rem, 1fr); } }
+}

@@ -1,0 +1,4 @@
+# Foreign public debt stocks rebased to a sourced ratio, where the vendored stock is wrong.
+# nation: a nation id. ratio: public debt over GDP. The vendored nation-fiscal.tsv is never hand-edited; a row here overrides it.
+# source: the page the row was read from. opened: the day it was read.
+nation	ratio	source	opened

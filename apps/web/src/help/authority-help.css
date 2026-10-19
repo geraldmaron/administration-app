@@ -1,0 +1,10 @@
+@layer rooms {
+  .authority-help { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); margin-block: var(--space-sm); }
+  .authority-help__identity { display: inline-flex; align-items: center; gap: var(--space-xs); color: var(--color-text-secondary); font-size: var(--size-label); }
+  .authority-reference { display: grid; gap: var(--space-lg); }
+  .authority-reference :is(p,h3) { margin: 0; }
+  .authority-reference section { display: grid; gap: var(--space-xs); }
+  .authority-reference h3 { font-size: var(--size-body); }
+  .authority-reference nav { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
+  .authority-reference__source { color: var(--color-text-secondary); font-size: var(--size-label); }
+}

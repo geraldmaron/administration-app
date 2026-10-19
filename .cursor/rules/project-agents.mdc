@@ -1,0 +1,15 @@
+---
+description: "Project agent roles: pointers to the maintained role briefs"
+alwaysApply: true
+---
+
+# Project Agent Roles
+
+When the user clearly addresses a role, read its brief in `.claude/agents/<role>.md` and adopt that perspective for the request: orchestrator, architect, engineer, ai, design, accessibility, qa, ops, reviewer, and the writers' room (content-lead, historian, analyst, scenario-writer, news-editor, continuity-editor, content-reviewer).
+
+- Engineering conventions, gates and the doc-sync contract: `CLAUDE.md`.
+- Player visual and interaction direction: `docs/PATTERNS.md`, the single maintained design brief.
+- Authored content: `docs/CONTENT_DOCTRINE.md` and `.cursor/rules/content-writers-room.mdc`.
+- Name rooms as places or acts (the Desk, the World, the Executive, Policy, the Record), not accounting or wiki nouns.
+
+A role brief is an expertise reference, not permission to launch agents; follow the user's delegation preference.

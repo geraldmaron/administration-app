@@ -1,0 +1,825 @@
+THE ADMINISTRATION
+Current-checkout audit, visual redesign, and implementation prompt for Claude
+Prepared 11 October 2026 UTC
+
+HOW TO USE
+Paste this entire document into the Claude session that has the latest local Administration checkout and work history. It is a complete execution brief, including the research, source-audit leads, design decisions, screen specifications, and verification criteria. It does not require the intermediate research notes.
+
+ACCESS AND EVIDENCE
+The preparatory researcher inspected the private repository geraldmaron/administration-app at 96cb39969f8ba86fdfdc96f53159d51b273351d9, dated 1 October 2026, on claude/admiring-shannon-xxw7vb. This was the newest accessible remote branch, not the latest local application. Source components for 48 catalogued route entries were read, together with shared shell, design, document, icon, decision, and map code. These entries include developer galleries, a recovery redirect, and the catch-all; they are not 48 distinct gameplay screens or all possible workflow states. Selected actual SVG assets were rendered at their display sizes. There was no live walkthrough of the latest local build.
+
+The owner confirmed that newer work exists only in the local thread referenced as codex://threads/01a1285c-d247-7510-bb68-2d34d40df6d7. That thread could not be opened by the preparatory researcher. Do not claim this preparatory audit verified the newer local screens. You must perform that verification in your current session. The dated findings below are concrete inspection leads, not assertions that the latest local work still contains those defects.
+
+BEGIN CLAUDE EXECUTION PROMPT
+
+1. MISSION AND AUTHORITY
+
+Act as the lead product designer, front-end architect, information designer, and adversarial reviewer for The Administration. Take responsibility for the current-build audit, the revised plan, implementation, and evidence-based closeout.
+
+Redesign the game as a modern presidential operations application. The player should be able to understand national conditions, inspect people and institutions, compare options, exercise the powers actually modeled by the game, authorize consequential actions, and follow their implementation and outcomes from a coherent interface.
+
+The owner wants a complete challenge to the current presentation and interaction design: every screen from top to bottom; every navigation surface; every banner, button, tab, icon, chart, document, dossier, decision control, and responsive state. Improve the actual application. Do not stop after proposing a plan, producing a design document, refreshing a landing screen, or changing tokens.
+
+Treat the owner's latest instructions as controlling:
+- The dotted map has been removed. Do not restore it or let an obsolete dotted-map proposal influence this redesign.
+- Read the recent commits AND the latest uncommitted work. Historical design precedent is not a constraint.
+- Existing typefaces, colors, navigation groupings, card bans, map doctrines, and desktop-only assumptions are subject to challenge.
+- Use research about comparable games to evaluate tasks and interaction patterns. Do not preserve an old design because another game, an old plan, or a previous agent preferred it.
+- Make concrete decisions and execute without requesting approval for routine reversible design and implementation choices.
+- Preserve the current simulation's truth, saves, and legitimate user work. Do not invent game mechanics or rewrite simulation balance merely to populate a more impressive interface.
+- Do not publish, deploy, perform destructive repository operations, or run unrelated paid content generation as part of this UI task.
+
+The detailed specification below is the proposed direction. You may improve a proposed number or composition when current source, rendered evidence, data size, accessibility, or task analysis demonstrates a better result. Record the reason in the decision log and implement the coherent alternative. The user's goals and honest model representation are mandatory; aesthetic precedent is not.
+
+2. ESTABLISH THE ACTUAL BASELINE BEFORE REDESIGNING IT
+
+Start in the current local checkout. Do not replace it with the October 1 snapshot or blindly pull, switch branches, reset, stash, or overwrite work.
+
+Record:
+- Checkout path, branch, exact HEAD, worktree status, modified/untracked files relevant to this task, and the active task/plan locations.
+- Recent commit history and the changes since the accessible October 1 snapshot where that ancestor is available. Read the actual diffs and changed implementation, not just commit subjects.
+- Current AGENTS.md, CLAUDE.md, README, package scripts, design rules, architecture contracts, route registry, design catalogue, and relevant plans.
+- Which earlier requirements have been superseded by this request, particularly the map and breakpoint requirements.
+- What the latest local work already fixed, what should be retained because it succeeds, and what remains weak.
+
+The inspected repository used a pnpm monorepo with apps/web, packages/ui-web, packages/design, packages/player-core, packages/engine, apps/desktop, and an internal studio. Verify the current architecture. The player experience is the scope; also check the Electron host if it remains supported. Do not redesign an internal authoring studio as if it were a presidential screen.
+
+At the inspected snapshot, docs/PLAN.md existed, root plan.md was referenced but not tracked, and no .beads or .bd directory was present in the remote tree. Locate the real local plan and task store. Update those rather than inventing an absent task database, imaginary task IDs, or a competing parallel plan.
+
+Run the current application using its actual scripts and existing fixtures/saves. Inspect the rendered UI through the available browser workflow. A source read cannot prove layout, overflow, focus behavior, visual hierarchy, or usability. If the runtime is blocked, resolve the ordinary local issue when possible; otherwise identify the specific blocker and keep the affected evidence unverified. Never substitute a mockup or the old snapshot for a current-build screenshot.
+
+3. AUDIT METHOD AND REQUIRED EVIDENCE
+
+Create or update the repository's established audit location. Use one linked set of artifacts, not a proliferation of overlapping plans:
+- Baseline and findings register.
+- Current route and workflow coverage matrix.
+- Design decisions and component contracts.
+- Data-size and presentation inventory.
+- Before/after visual evidence and task walkthroughs.
+- Implementation tasks and verification closeout.
+
+For each route and embedded workflow, inspect:
+1. Entry and orientation: where am I, who/what is selected, current date, current state, and why this matters?
+2. Above-fold hierarchy: the main task, urgent obligation, and leading evidence. Do not require every row of data above the fold.
+3. Full page: middle sections, lower sections, footer, side rails, scrolling, disclosures, related records, and exit paths.
+4. Every tab, drawer, dialog, popover, menu, tooltip, filter, selection, comparison mode, and nested dossier.
+5. Zero, one, typical, and large collections; long names and copy; unavailable, unknown, stale, loading, error, and partial-data states.
+6. The complete action path, including draft, changed terms, review, authorization, acknowledgment, simulation processing where modeled, and observed outcome.
+7. Keyboard, screen-reader semantics, text enlargement, narrow widths, short viewports, pointer/touch input, and reduced motion.
+
+Each finding must contain: ID; severity; route/component; exact current source reference; screenshot or reproducible interaction evidence; user task affected; concrete failure; proposed correction; dependency; acceptance condition; and verification status. Identify whether the evidence is current rendered UI, current source only, historical source, or a hypothesis.
+
+Severity:
+- P0: loss/corruption of user state, accidental repeated consequential action, or a primary task impossible to complete.
+- P1: misleading terms or state, hidden material consequences, unreachable actionable data, inaccessible primary controls, or serious navigation/context loss.
+- P2: substantial hierarchy, semantic, density, responsive, or institutional-language problems.
+- P3: polish and minor consistency defects.
+
+For each screen, score 0–3 on orientation, decision comprehension, semantic clarity, data presentation, institutional credibility, consistency, responsive/accessibility behavior, and model truth:
+0 = task-blocking or misleading; 1 = materially deficient; 2 = usable with specific weaknesses; 3 = clear and verified.
+This is an explicit reviewer rubric, not a user-study result. Do not invent participant metrics, claim improved comprehension percentages, or average away a P1 defect.
+
+Challenge core patterns through actual presidential tasks:
+- Find the most urgent decision, understand inaction, act or explicitly defer, then advance time.
+- Compare candidates, nominate one, follow confirmation, and distinguish acting service from confirmed appointment.
+- Change a policy or tariff and distinguish draft settings, authorized settings, assessed effects, and realized effects.
+- Allocate funding while seeing the fiscal constraint and legislative implications.
+- Select a force package, inspect reserves, authorize it, and find the same quantities and assets in the receipt and subsequent inventory.
+- Inspect a country or emergency geographically, open its dossier, act, and return without losing selection or draft.
+- Review and issue an order, then follow execution, challenge, or expiration only where the model supports those states.
+- Respond to a developing story and compare coverage, allegations, verified facts, and official response.
+- Find an old act and compare its original assessment with later recorded results.
+
+Measure action count, backtracking, hidden critical terms, loss of selection, and required scrolling to understand the decision. These are diagnostic observations; do not optimize a click count at the expense of informed authorization.
+
+4. HISTORICAL SOURCE FINDINGS TO REVALIDATE
+
+All references in this section are relative to geraldmaron/administration-app at 96cb39969f8ba86fdfdc96f53159d51b273351d9. Check the current implementation before creating a fix. Close already-resolved leads with current evidence.
+
+| ID | Inspected source evidence | Why to check it and the intended correction |
+| --- | --- | --- |
+| H01 | apps/web/src/decision/DecisionBrief.tsx, LONG_FIELDS, lines 18–25 and 83–89, places inaction and unknown behind closed details. | Material consequences of delay and uncertainty should be visible before authorization. Background and annexes can remain disclosed. |
+| H02 | apps/web/src/components/ActionTerms.tsx, around line 267, uses terms.ripples.slice(0, 4) without a full-set path. | Show leading affected parties plus the true total and an accessible way to inspect all material reactions. |
+| H03 | apps/web/src/nation/Trade.tsx, lines 82–103, shows only eight sectors and says smaller sectors are not listed. | Rank the initial view, but provide all sectors and keep a selected tariff sector visible in the comparison. |
+| H04 | apps/web/src/routes/person.$id.tsx, lines 130–134, and office.$id.tsx show exact projected confirmation tallies; nation/Trade.tsx, lines 158–193, displays point forecasts. | Visually distinguish observed results, known allocations, and staff projections. Do not manufacture uncertainty bands or expose hidden random outcomes. |
+| H05 | apps/web/src/components/ForcePackagePicker.tsx, lines 51–81, and ActionTerms.tsx, lines 141–149, use text/counts without unit glyphs. | Add typed asset identity through selection, costs, review, receipts, inventory, and records. A fighter aircraft must look like a fighter aircraft where that asset is modeled. |
+| H06 | apps/web/src/routes/order.$id.tsx, instrument(), lines 58–63, creates a generic short body. The route already has letterhead, seal, date, state, authority, executor, and stamps. | Strengthen the operative document structure and workflow. Do not falsely report that official document components are absent. |
+| H07 | apps/web/src/campaign/useCommitAction.ts defaults after to record, around lines 48–70; callers inconsistently opt to stay. | Standardize in-context acknowledgment and explicit record navigation. Preserve existing double-click, stale-price, and applied-act/save-failed protections. |
+| H08 | apps/web/src/routes/conversation.tsx, lines 189–216, gives reply cards independent commit buttons. | Where actions are consequential, select and compare options before using one stable authorization area. Avoid repeated equally dominant buttons. |
+| H09 | nation.$id.tsx, security.tsx, press.tsx, economy.tsx, and congress.tsx stack many substantial topics. | Recompose around the primary task, useful scoped tabs, and readable information density. Source stacking alone does not prove visible overflow. |
+| H10 | apps/web/src/routes/budget.tsx, lines 219–324, places draft totals, forecast, and submission after a long work area. | Keep the current constraint, draft totals, and specific submission action coordinated with editing; subordinate historical analysis. |
+| H11 | order.$id.tsx, hill.$post.tsx, security.tsx, government.tsx, and instrument.$id.tsx include “Sign it,” “Its clocks,” “How to move them,” and resolver/roll terminology. | Use clear institutional labels and remove implementation language from normal play. Preserve natural adviser dialogue. |
+| H12 | Different components use bare top-N slices, show-more disclosures, and progressive lists inconsistently. | Establish a shared full-data-access contract based on actual collection sizes and comparison tasks. |
+| H13 | ContinueControl.tsx, CaseDetail.tsx, useClockRunner.ts, docket-hold.ts, and store clock handling already contain holds, explicit dispositions, and pause behavior. | Test timing and inaction end to end. Static inspection did not establish an automatic-skip defect. Seeing an item must not silently count as approving it. |
+| H14 | packages/ui-web/src/Icon.tsx renders a 64-unit viewBox at 20 px with a 3.5-unit stroke; generated icon-data.ts contains 141 glyphs. | Existing icons are present but many become optically small and thin. Normalize geometry and rendered stroke rather than adding a second inconsistent pack. |
+| H15 | apps/web/src/glyphs.ts maps winter-storm to eventFlood, heat-wave to eventDrought, and tornado to eventCyclone. | Replace misleading aliases with separate event symbols and audit all semantic mappings. |
+| H16 | packages/design/src/tokens.css uses a 14.5 px body and several 10–13 px roles; page-header.css uses a large seal/title; multiple CSS files affect shared components. | Consolidate role-based typography and component ownership. Inspect actual inheritance and visual results before claiming a specific contrast or clipping failure. |
+| H17 | The inspected playwright.config.ts tests desktop widths; repository prose says mobile is no longer a composition constraint. | Reconcile this with the owner's explicit breakpoint request and cover narrow/touch layouts in the current plan. |
+| H18 | Current map source in the inspected web app uses geographic SVG shapes, with safeguards against invented war fronts or unsupported precise incident locations. | Continue from the latest actual map. Preserve geographic honesty, not an obsolete dotted background. |
+
+5. RESEARCH THAT INFORMS THE DESIGN
+
+Use these sources as evidence for specific principles. They do not dictate the Administration's art direction or prove the quality of a game's current release.
+
+| Reference | Documented principle | Application here |
+| --- | --- | --- |
+| USWDS typography, icons, alerts, and tables [R1, R4, R6, R7] | Government design guidance supports consistent typographic roles, semantic symbols, clear feedback, and structured data. Its documented default families are Source Sans Pro and Merriweather. | Adopt disciplined roles and semantics. Our selected families are Source Sans 3 and Source Serif 4; do not mislabel them as mandated federal fonts. |
+| USWDS official-site banner [R5] | The banner identifies official government sites and should not be used on nongovernment domains. | Use the game's institutional masthead and original insignia. Do not add a false “official U.S. government website” claim. |
+| National Archives presidential documents [R9] | Executive orders, proclamations, and administrative documents are distinct categories. | Give modeled instruments the right document family, authority, operative structure, and issuance status. |
+| ODNI ICD 203 [R10] | Analytic judgment distinguishes likelihood from confidence in the evidence and identifies assumptions and alternatives. | Label assessments, uncertainty, basis, and alternative interpretations without leaking hidden simulation truth. |
+| Victoria 3 UX diaries #29 and #74 [R18, R19] | The designers describe linked map/list inspection, contextual action entry, sortable and grouped trade data, relevance-based alerts, discoverable blockers, and pinning. | Support both entity-first and action-first tasks, full trade data, contextual geography, and an actionable attention queue. |
+| Democracy 4 policy and simulation documentation [R20, R21] | Policy controls express defined intensity, costs, prerequisites, implementation time, and effects that can lag settings. | Match each control to the actual Administration model and separate authorization from implementation and outcome. |
+| Suzerain developer guidance [R22] | Leadership involves advisers with agendas, political relationships, competing priorities, and consequences. | Put people, counsel, institutional interests, and explicit tradeoffs alongside data. Avoid reducing every political decision to a bare slider. |
+| Hearts of Iron IV developer diary on battle plans [R23] | High-level plans can be delegated while execution remains inspectable. | Keep presidential authorization and operational follow-up coherent. Do not import tactical micromanagement or fabricate a military command simulation. |
+| W3C/WAI standards and patterns [R11–R17, R24–R28] | Accessible controls, focus, status, contrast, reflow, and text enlargement have specific requirements. | Make visual richness operable through keyboard, touch, enlarged text, and accessible text alternatives. |
+
+Record a pattern choice in a short form: task → current friction → model/data constraint → options considered → chosen pattern → reason → test. Use a benchmark only where it changes a concrete decision. Do not spend the task collecting attractive reference images while the application remains unchanged.
+
+6. ART DIRECTION AND INFORMATION HIERARCHY
+
+Selected direction: a presidential operations workspace with institutional navy chrome, clear light analytical work surfaces, restrained paper documents, and dedicated geographic workspaces. It should feel authoritative through identity, structure, precision, provenance, and control.
+
+The default analytical canvas is light. Navy belongs in the masthead/navigation and selected institutional emphasis. Maps may use a dark theater treatment when it improves overlay readability. A dossier or formal instrument uses a paper surface. These are intentional surface roles within one system, not unrelated themes per route. If the current product already has a supported dark mode, bring it to the same semantic and contrast standard; do not create a second incomplete theme as incidental scope.
+
+Use one original game insignia at the product level and, when justified, in a document issuer header. Distinguish the game from a real federal service discreetly in welcome/about/export context. Do not repeat large seals on every section, invent security classifications, or make every page a ceremony. Department identity should be conveyed by its name and semantic icon; use an actual logo only when it is appropriate, legible, and already supported.
+
+A visual-first screen should let the player locate the subject, urgency, main comparison, and available action before reading long prose. It still needs readable explanations, accessible labels, and meaningful detail. Prioritize silhouettes, aligned comparisons, status, relevant geography, portraits, clear document structure, and evidence charts. Do not merely add more decorative cards.
+
+Shared reading order:
+1. Product/time/attention context.
+2. Route or subject identity and current status.
+3. Urgent local obligation when present.
+4. Primary task or leading decision.
+5. Supporting comparison, assessment, and relevant operational data.
+6. Evidence, related records, and history.
+
+Do not repeat the same metric in masthead, header, rail, and first card without a task-specific reason. The screen needs one leading title and one clear primary work area. Historical detail can sit lower or in a labeled tab. A deadline and the cost of doing nothing cannot depend on a closed disclosure.
+
+7. EXACT DESIGN SYSTEM
+
+7.1 Typography
+
+Use Source Sans 3 for application UI and analytical data. Retain Source Serif 4 for formal document titles and formal reading text where its longer measure remains readable. These Adobe families were designed to complement each other and have OFL licensing [R2, R3]. This is the selected pairing, not a claim of federal endorsement.
+
+Self-host WOFF2 through the existing application build. Use @fontsource/source-sans-3 and the existing @fontsource/source-serif-4 package through the current dependency and lockfile workflow; verify the actual available versions and weight import paths instead of copying an unverified latest version. Fontsource provides both families for self-hosting [R30, R31]. Load only used scripts/weights. Start with Sans 400/600/700 and Serif 400/600/700 only where needed. Preserve license notices. Remove superseded Geist imports once consumers are migrated. Do not load a new remote font service.
+
+Use tabular numerals in Sans for data. Monospace is reserved for necessary reference IDs/debugging and can use the system stack; it is not the general government style.
+
+Implement a single role scale in rem, with these starting CSS-pixel equivalents at a 16 px root:
+
+| Role | Size / line height | Use |
+| --- | --- | --- |
+| Metadata | 12 / 16 | Secondary timestamps and reference IDs, never sole presentation of cost, deadline, risk, or action. |
+| Compact data | 14 / 20 | Dense tables, chart labels, compact secondary rows. |
+| Body and controls | 16 / 24 body; 16 / 20 controls | Main explanations, field values, labels, normal buttons, tabs. |
+| Subheading | 18 / 24 | Subsections and short assessment leads. |
+| Panel heading | 22 / 28 | Major work areas. |
+| Page/document title | 28 / 36 | One main title; 24 / 32 on narrow screens. |
+| Primary figure | 36 / 40 | A few genuinely primary metrics, with units and period visible. |
+| Formal document reading | 18 / 28 | Issued instruments and sustained formal prose, about 65ch maximum measure. |
+
+Use sentence case. Restrict uppercase and tracking to brief document kickers or small institutional labels. Do not combine tiny type, muted color, uppercase, and wide tracking. Keep ordinary reading measures around 55–75 characters. Do not shrink table text to squeeze in extra columns.
+
+7.2 Palette and material tokens
+
+| Token role | Initial value | Contract |
+| --- | --- | --- |
+| Institutional navy | #162E51 | Masthead/nav, white foreground. |
+| Main canvas | #F3F5F7 | Analytical background. |
+| Primary surface | #FFFFFF | Work areas and data. |
+| Paper | #F8F6EF | Formal documents, using dark ink. |
+| Main ink | #1B1B1B | Primary light-surface text. |
+| Secondary ink | #565C65 | Secondary text on light surfaces. |
+| Primary action | #005EA2 | Blue with white label; selected/action semantics. |
+| Functional border, light | #71767A | Boundaries that must remain distinguishable. |
+| Decorative divider | #DFE1E2 | Nonessential separation only. |
+| Gold identity accent | #C9A86C | Insignia/rules/selected ceremonial detail, not warning text. |
+| Dark geographic surface | #14273E | Operational maps/overlays when used. |
+| Dark foreground | #F2F5F7 | Main text on dark surfaces. |
+| Dark secondary text | #C4CFDA | Supporting text on dark surfaces. |
+| Dark interactive color | #73B3F4 | Links/selected interaction on dark. |
+| Functional border, dark | #6B839C | Meaningful control/overlay boundaries. |
+
+Create named status tokens with these initial foreground/background pairs: information #005EA2/#E8F2F8; pending #565C65/#F0F0F0; success #216E39/#ECF3EC; warning #7A4D00/#FFF3CD; danger #B50909/#FDE7E9; unknown #565C65/#F0F0F0. Pending and unknown have different labels/icons despite sharing neutral color. Give disabled controls a distinct visual state while keeping their explanation readable. Verify all resulting rendered pairs and dark-surface equivalents. Use a visible 3 px focus outline with a separating gap; start with blue on light surfaces and #FFBE2E on navy, then test actual adjacency. Red means danger, failure, or a clearly labeled domain category; it is not the universal color of presidential action. Gold is not a substitute for a warning. Favorable/unfavorable change, party identity, alliance, and emergency severity are separate semantic scales. Labels and shapes must resolve ambiguity.
+
+Measure contrast in rendered states, including overlays, selected rows, focus rings, disabled explanations, map controls, and text on paper. Hex tables alone are not proof.
+
+Use a 4 px base spacing system: 4, 8, 12, 16, 24, 32, 48. Use 4 px control corners and 8 px panel corners as defaults. Larger rounding needs a specific role. Default analytical panel padding is 24 px, compact rows 12–16 px, narrow-screen outer gutters 16 px. Avoid a separate rounded card for every number.
+
+7.3 Semantic icon family: one native pack
+
+Use the existing Administration OS UI and domain glyph system as the sole selected icon family. At the inspected snapshot it had 141 generated glyphs across 16 categories, including commodities, sectors, and departments. This choice is based on its actual coverage and native pipeline, not a requirement to preserve weak drawing.
+
+Authoritative locations to verify:
+- design/os-ui
+- design/domain-glyphs
+- scripts/bake-os-icons.mjs
+- packages/ui-web/src/icon-data.ts
+- packages/ui-web/src/Icon.tsx
+- apps/web/src/glyphs.ts
+- the current icon registry verification script
+
+Do not install Lucide, Phosphor, Material Symbols, and custom SVGs together. Lucide's optical design guidance is a useful benchmark [R29], but it is not a selected additional runtime dependency. If current rendered testing proves the native family cannot meet the contract, record that evidence and replace the family coherently with one alternative plus matching custom domain extensions. Do not allow permanent mixed families.
+
+Selected native normalization:
+- Keep the 64 × 64 master grid.
+- Redraw the principal silhouette to occupy about 48–52 units with optical centering, adjusting naturally narrow forms by eye.
+- Target rendered strokes of 1.5 px at 16 px, 1.75 px at 20 px, 2 px at 24 px, and 2.25 px at 32 px. Derive the equivalent viewBox stroke as 64 × intended rendered stroke / rendered size.
+- Inspect child-level strokes and gaps. Do not globally thicken intricate paths until they merge.
+- Use 24 px for principal asset/commodity rows, 20 px for compact labeled controls, 32 px for section identity, and 16 px only for simple secondary cues.
+- Simplify small silhouettes and dense internal detail. Compare at actual size on light and dark surfaces.
+- Use currentColor, consistent cap/join behavior, and a coherent outline vocabulary.
+- Edit source masters and regenerate generated data. Do not hand-edit icon-data.ts.
+
+Extend the typed semantic mapping to every real commodity, sector, force asset, department, emergency condition, action family, document state, and map layer. Derive the coverage set from current domain definitions. Use exhaustive typed mappings where appropriate and an explicit honest fallback for future unknown data, with a development warning. Do not mask missing mappings with a generic shield everywhere.
+
+| Domain meaning | Required visual identity | Placement |
+| --- | --- | --- |
+| Crude oil | Oil barrel; use a pumpjack only for extraction/production specifically. | Commodity rows, trade, costs, detail heading, map legend where applicable. |
+| Refined fuel | Fuel pump, distinct from crude oil. | Fuel supply, logistics, inventories, forecasts. |
+| Natural gas | Gas flame/pipe treatment distinct from liquid fuel. | Current modeled gas entities and related controls. |
+| Steel / aluminum / grain | I-beam / ingot / grain head. | Resource comparisons and production/trade. |
+| Semiconductors | Chip with legible pins at actual size. | Modeled chip/electronics resource or industry. |
+| Fighter aircraft | Recognizable military jet silhouette. | Force selection, review, deployed/remaining counts, inventory, records. |
+| Bomber / transport aircraft / helicopter | Separate silhouettes if those types actually exist. | The corresponding typed force records, never guessed from prose alone. |
+| Carrier / surface ship / submarine | Distinct ship profiles, only for modeled classes. | Naval capacity, deployments, orders, theater inspector. |
+| Armored vehicles / ground formations | Tank or armored vehicle for those assets; formation/personnel symbol for personnel units. | Unit-specific rows with exact unit labels. |
+| Missile / drone / satellite | Separate silhouettes where modeled; no generic aircraft substitution. | Related capacity, operation, and assessment rows. |
+| Winter storm / heat wave / tornado | Snow/cloud / thermometer-sun / funnel. | Incident cards, declarations, geography and history. |
+| Budget / Treasury / Congress / court / executive office | Consistent institutional marks already in the native registry, redrawn if weak. | Navigation and section identity, with visible labels. |
+| Pending / issued / blocked / expired / challenged | Shared state vocabulary with appropriate clock/check/lock/expiry/legal marks. | Status rows, receipts, documents, timelines. |
+
+Proposed new asset filenames, if the current registry needs them: unit/fighter-jet.svg, unit/bomber.svg, unit/transport-aircraft.svg, unit/helicopter.svg, unit/aircraft-carrier.svg, unit/surface-ship.svg, unit/submarine.svg, unit/armored-vehicle.svg, unit/ground-formation.svg, event/winter-storm.svg, event/heat-wave.svg, event/tornado.svg. Align names to real domain IDs and existing conventions before creating them. Do not create unsupported military mechanics or portray all air assets as individually counted jets if the engine actually allocates squadrons.
+
+A displayed asset count is icon + name + number + unit, with relevant available/committed capacity beside it. Carry the same identity through configuration, review, receipt, and record. Icons belong at scan points and controls, not before every noun in a paragraph. Decorative icons are hidden from assistive technology; icon-only controls have accessible names and focus-visible explanations. No emoji or raster-generated UI icon family.
+
+Maintain a gallery at 16/20/24/32 px, light/dark, with every semantic mapping and edge case. Visually inspect the gallery and the real routes. A registry count is not a legibility test.
+
+7.4 Shared component contracts
+
+Use these responsibilities in current components or coherent replacements. Avoid duplicate old/new versions lingering in production.
+
+| Component role | Required contents and behavior |
+| --- | --- |
+| Masthead | Game identity, current administration/date, pause/time controls, attention count, save status where meaningful. Stable placement; compact on narrow screens. |
+| Workspace header | One title/subject identity, concise contextual status, only relevant key figures, local tabs or action. No large generic marketing banner. |
+| National priority alert | One leading urgent matter, severity, deadline/consequence, action, and a count/link for additional matters. Consolidate duplicates. |
+| Local advisory | Context-specific information/warning in the affected workspace. It does not masquerade as a global crisis. |
+| Inline validation | Field-specific issue plus a nearby correction path; summary when multiple fields fail. Preserve entries. |
+| Action receipt | Exact authorized act, resources/terms, issuance time, save condition, next modeled state, and explicit View record action. Durable in context. |
+| Toast | Supplemental transient feedback for low-stakes updates. Never the only record of an order, deadline, failure, or changed authority. |
+| Status badge | Icon/label plus optional date; clearly distinguish state, severity, and category. A colored dot alone is insufficient. |
+| Entity row | Semantic identity, primary fact, relevant secondary fact, state, and a consistent detail/action affordance. |
+| Metric presentation | Name, current value, unit, period/as-of, meaningful comparison, direction interpretation, and access to evidence. |
+| Inspector | Selected entity/context, relevant details/actions, explicit close/back, preserved selection and focus. |
+| Decision workbench | Baseline, options, selected terms, tradeoffs, validation, review, authorization, and subsequent receipt. |
+| Document viewer | Issuer, type, reference, date, status, readable structured body, related acts, and separate coordinated action region. |
+
+Use four button roles: primary, secondary, tertiary, danger. The primary button identifies the main action in a decision region; it is not repeated on every selectable option. Use specific verbs such as “Review deployment,” “Authorize deployment,” “Submit budget proposal,” “Nominate candidate,” or “Issue memorandum.” Secondary controls cancel/edit/compare. Danger styling is reserved for dangerous or destructive actions as defined by their actual effect.
+
+A disabled action remains understandable: show the blocking requirement and how it can change. Do not hide every unavailable diplomatic or legislative act. Do not make low-contrast disabled text the only explanation. Urgent obligations do not auto-dismiss; acknowledging a notification and resolving its underlying matter are separate states. Keep priority ordering stable unless a material change warrants movement, so the queue does not jump under the pointer.
+
+Tabs switch views of the same subject. Navigation links change location. Segmented controls switch 2–5 mutually exclusive modes or values. Filter chips narrow a dataset. Status badges describe state. Give each a distinct appearance and correct semantics. Implement keyboard behavior according to the WAI tab pattern when it is actually a tablist [R16]. Do not use one pill style for all five concepts.
+
+Tooltips explain brief secondary information; they are available on focus and never contain the only actionable terms. Rich contextual inspection uses a persistent popover, drawer, or linked dossier, with an explicit close path and manageable nesting. Avoid hover-only chains that fail on touch.
+
+8. NAVIGATION, MAPS, AND BREAKPOINTS
+
+8.1 Information architecture
+
+Audit the current route registry and task entry paths before changing navigation. The old five-group taxonomy is not sacred.
+
+Proposed desktop grouping:
+- Desk: presidential overview, obligations, urgent matters.
+- Government: executive staffing, Congress, courts, oversight.
+- Domestic policy: policy portfolio, budget, economy, emergency response.
+- World and security: world/states geography, country relations, national security, operations.
+- Communications: press preparation, coverage, running stories.
+- Record: acts, obligations/history, legacy.
+- Utilities: administrations/saves, reference, settings.
+
+Use group headings and labeled destinations instead of forcing all routes into a long flat list. Press/communications, emergency response, and operations must have an obvious entry path. A contextual alert can lead directly to a specific crisis, but it is not the only navigation path. Names should match what the player is trying to do and remain consistent between navigation, page titles, documents, and help.
+
+On phones use a compact route header and drawer for the full hierarchy. If the existing product uses bottom navigation successfully, retain only 4–5 stable top destinations with labels and an obvious “More”; do not force every desktop group into tiny targets. Preserve the same information architecture and all primary tasks.
+
+Support entity-first entry (open country/person/office, then choose an action) and action-first entry (choose a presidential instrument, then select its target) through the same underlying action model. Do not fork different pricing/validation behavior for the two paths.
+
+8.2 Map purpose and placement
+
+The removed dotted map stays removed. Inspect the current geographic renderer and recent commits. Do not mandate a permanent background map or a particular projection merely from precedent.
+
+Use geography when location, adjacency, jurisdiction, distribution, reach, exposure, or theater context helps the decision.
+
+| Context | Map contract |
+| --- | --- |
+| World/states geographic workspace | Map fills the available work canvas beneath compact controls, with layer legend, selection, filter summary, accessible roster, and inspector. Provide an explicit focus/full-canvas mode. |
+| War/theater detail | A major contextual map when actual modeled geography supports it, coordinated with objectives, resources, assessment, and authority. Do not fabricate fronts, precise units, or targeting coordinates. |
+| Emergency overview | Linked incident map and prioritized list when geography helps compare affected places; incident details retain the same selection. |
+| State/country dossier | Relevant location/context in overview or geography tab. Trade/policy/personnel reading does not require a permanent competing map. |
+| Trade/resource analysis | Map only for actual partner distribution or supported flow questions; comparisons remain available as complete tables. |
+| Person, court case, order, bill, budget, settings | No default large map. A small locator is allowed only when it answers a concrete question. |
+
+Layer changes preserve selection where meaningful. A map and its roster share the same filtered data, units, date, and assessment basis. Hover/focus highlights the corresponding entity; selected styling survives pointer movement. Legend, reset-view, zoom, and layer controls have stable positions and keyboard access. Any fullscreen geographic mode keeps pause/time/attention reachable and provides a clear exit.
+
+Use markers only for supported locations. A regional incident is not a precisely located city pin. War intensity by nation is not a frontline. Distinguish no data, zero activity, and filtered out. Choropleths identify whether values are rates, totals, or categories; population totals must not masquerade as per-capita risk. Do not allow area size alone to determine perceived importance.
+
+On narrow screens use Map / List / Details as explicit views with retained selection, filters, map position, and any action draft. Do not compress a map, list, and dossier into three unusable columns. Offer a complete non-map path to every relevant entity and action.
+
+8.3 Layout rules
+
+Choose breakpoints when content ceases to fit, using component/container constraints where appropriate. Start from this layout contract and adjust with evidence:
+
+| Width | Composition |
+| --- | --- |
+| 1440 px and wider | Approximately 224 px labeled navigation, flexible work area, optional 320–360 px inspector. Keep the primary work area at least about 640 px before adding an inspector; do not blindly force three columns. |
+| 1024–1439 px | Compact navigation around 80–96 px with clear access to labels, or a drawer. Use a side inspector only if the main task still fits; otherwise use a proper detail view or overlay. |
+| 768–1023 px | Navigation drawer, one primary work area. Split view only when both panes remain useful. Detail entry and return are explicit. |
+| 320–767 px | Single column, visible control labels, touch targets, stacked comparison summaries, full-page or well-behaved sheet for detail, and a concise sticky action region when useful. |
+
+Do not use an always-open rail to cover fields. A sticky action summary must leave enough bottom padding and must remain visible with the virtual keyboard, safe-area insets, and short heights. Reserve scrolling within an area only when it improves the task; avoid unintentional nested-scroll traps. Browser back, Escape, focus restoration, filter state, and selected entity must remain predictable.
+
+Test representative 1920×1080, 1440×900, 1280×800, 1024×768, 768×1024, 390×844, 360×800, and 320×568 viewports. Cover intermediate widths around actual breakpoints, 200% text enlargement, and reflow at 400% zoom from an appropriate desktop viewport. Two-dimensional maps and necessary tables can have their own pan/scroll area; the whole application must not acquire horizontal overflow [R13, R14].
+
+The project target is 44×44 CSS px for primary interactive hit areas on touch. A compact desktop control may be smaller if usable and accessible; 44 is this project's preference, not the WCAG 2.2 AA minimum, which is 24×24 with specified exceptions [R15]. Preserve readable type instead of shrinking the whole interface.
+
+9. DECISIONS, INLINE CONTROL, AND TIME
+
+9.1 A coherent action lifecycle
+
+Use the existing action/pricing/validation system as the source of truth. Normalize the visible lifecycle:
+
+Inspect the situation → compare options → configure supported terms → review the selected act → authorize once → receive acknowledgment → follow modeled implementation → inspect observed results and record.
+
+These are interaction responsibilities, not a demand to add eight clicks or fabricate eight engine states. Combine steps for simple actions. Separate them when the user needs a stable review of consequential terms.
+
+Before a consequential authorization, show:
+- Exact action and target, recipient or responsible institution.
+- Scope and quantity with units; current baseline and requested change.
+- Authority and important constraints represented by the game.
+- Upfront and recurring costs when actually modeled, available capacity, and remaining reserve.
+- Effective timing, implementation delay, deadline, expiry/review conditions when supported.
+- Main tradeoffs, leading affected parties, and a path to the complete relevant set.
+- Material uncertainty and the cost of waiting, declining, or allowing the default.
+- Whether the action is reversible, replaceable, or immediately committed according to the real model.
+
+Inline interaction rules:
+- Filters, sorting, map layers, expansion, candidate comparison, and draft changes are immediate and reversible; no confirmation modal.
+- A small low-impact modeled adjustment can commit inline with a clear resulting state and undo only if a true reverse operation exists.
+- A consequential action uses an explicit selected summary/review region. A drawer is suitable when context and comparison must remain visible.
+- An irreversible or unusually high-impact action gets a dedicated review stage with specific authorization wording. Do not invent a universal modal for every click.
+- Text/numeric inputs have labels, units, supported range, meaningful step size, validation, and a reset-to-current action.
+- A continuous slider is allowed only when the model supports continuous or sufficiently granular values. Pair it with a numeric input. If the model offers four named stances, use four named choices.
+- Use radio choices for a few discrete policy options, searchable selection for many candidates/targets, steppers for discrete quantities, and tables for comparative allocations.
+- Do not hide meaningful configuration inside a tooltip or require opening unrelated routes merely to adjust an allowed parameter.
+
+9.2 Known facts, assessments, and forecasts
+
+Classify values before formatting them:
+- Authorized input: the exact amount/setting the player is committing.
+- Known current fact: what the President can know now.
+- Observed historical result: what happened and when.
+- Staff forecast: an estimate with a horizon and a defensible basis.
+- Confidence: quality/strength of evidence behind the assessment.
+- Unknown, unavailable, withheld, or stale: separate explicit states.
+
+Likelihood and confidence are different concepts [R10]. Do not expose exact hidden vote rolls, future outcomes, or secret preferences to satisfy a prettier forecast. Do not add arbitrary probability ranges when the engine provides no basis. A deterministic projection may be presented as a current-model projection with its assumptions; it is not a guarantee of later conditions.
+
+Use recorded exact vote totals for completed votes. Use assessed commitments or clearly labeled projections before a vote, according to the game's knowledge model. Show actual-versus-forecast comparisons in the record when both are available. Distinguish the policy setting, its implementation status, and measured consequences.
+
+9.3 Commit, persistence, and time behavior
+
+Retain or improve duplicate-submit guards, stale-preview detection, validation against changed resources, and save-failure handling. Do not apply a stale action because the visual draft still looks valid. Preserve unsent drafts by administration/campaign, subject, and action type; they must never leak between saved administrations. If time or another action changes available resources or terms while review is open, retain the draft, explain the changed facts, and refresh its assessment before commitment. Specify draft retention on navigation, reload, withdrawal, and switching campaigns.
+
+After authorization, keep the user in context by default and display a durable receipt with the committed terms. “View record” is an explicit secondary action. Remain in context only while it is still valid: honor modeled mandatory transitions, including a concluded conversation, expired matter, campaign ending, recovery, or changed administration. After a successful act, clear or retire its draft and remove obsolete authorization controls. Show the committed receipt or navigate to the required next state; browser Back must not reactivate an already issued draft. If the act applied but saving failed, say that accurately and offer the real recovery/retry path without issuing the act twice. Do not present a failed save as a failed act or a successful save as completed implementation.
+
+Animate acknowledgment only to communicate a real transition. State updates must not wait for a fake transmission, signature performance, processing percentage, or dramatic timer. Keep ordinary transitions roughly 120–250 ms, with motion reduced or removed according to user preference. A long ceremony belongs only to an actual opening/ending event and must be skippable.
+
+Audit time controls together with decisions:
+- Ready matter followed by Play, fast-forward, repeated Resume, and route changes.
+- A new urgent matter arriving during time advance.
+- Last-call deadline and lapse/default consequences.
+- Explicit defer, decline, allow default, and authorized delegation.
+- Stale preview while time advances.
+- Background tab, reload, save recovery, and term transition.
+
+Show why time paused and what action will resume it. Reading a matter is not authorization. A deliberate defer/default choice should clearly say what can happen next. Preserve the existing simulation's intended time model; change behavior only where the audit proves it contradicts the visible contract, and update tests/documentation together.
+
+10. OFFICIAL DOSSIERS AND PRESIDENTIAL INSTRUMENTS
+
+10.1 Dossiers
+
+A dossier is a structured institutional record, not a generic card with a large title and unrelated scores.
+
+Default dossier order:
+1. Issuer/record family, as-of date, and honest reference identifier.
+2. Subject identity, role/jurisdiction, current state, and a restrained portrait or semantic emblem when available.
+3. “Why this requires attention” or a concise current assessment.
+4. The few facts needed for the immediate task.
+5. Role-specific capabilities, positions, constraints, relationships, or commitments.
+6. Relevant actions with their eligibility and terms.
+7. Source/evidence, history, related entities, and other details.
+
+Use a consistent identity block; portraits can start around 72×90 px on desktop and reduce sensibly on phone. Do not invent photographic evidence or let large portraits crowd out status. Dense personnel comparisons use aligned rows and a detail view.
+
+Adapt the body to the subject:
+- Person: role, portfolio, eligibility, assessed positions, relevant relationship/record, current nomination or assignment.
+- Office/department: mandate, incumbent/acting/vacancy, responsibilities, workload, nomination/oversight state.
+- Country/state/district: place and jurisdiction, leadership, conditions, interests, commitments, relevant policy/trade/security.
+- Judge/court case: judicial office or procedural record, actual decisions and assessed jurisprudence; preserve institutional independence.
+- Incident/story: geography/source, allegations versus verified facts, current stage, people affected, response options, history.
+
+Do not invent “classified,” “eyes only,” clearance levels, seals, legal citations, or objective psychological scores merely to make a dossier look official. If a confidence rating, reference number, or source field is not modeled, either derive it transparently from valid existing data or omit it.
+
+10.2 Orders and other instruments
+
+Use document families appropriate to the game's actual acts: executive order, presidential memorandum, proclamation, budget proposal, legislative action, diplomatic instrument, military authorization, or administrative direction where supported [R9]. Do not relabel every instrument an executive order.
+
+A modeled executive instrument should be readable as:
+- Issuing office and document type.
+- Simulated reference/number when one exists; otherwise a transparent game record ID.
+- Subject/title, issuance date, and state.
+- Purpose and authority represented in the model.
+- Numbered operative sections expressing actual scope, directives, authorized resources, responsible executor, and timing.
+- Effective date/trigger, review/expiration, and related constraints where supported.
+- Signature/issuance state.
+- Linked implementation, legal challenge, superseding act, and historical record where those exist.
+
+Separate the draft workbench from the issued document. Configuration controls edit a draft; an official preview exposes its operative content; the authorization control commits it. The signed/issued document must reflect the committed terms rather than silently changing when a new draft is edited. Do not invent legal authority or fabricated U.S. Code citations. Real archival forms are presentation references, not authorization to change game powers.
+
+Show only lifecycle stages actually modeled. UI draft/review states can be added without pretending they are simulation states. If a missing simulation distinction is essential, document the narrow proposed model change and its compatibility requirements before implementing it; do not invent fields merely to complete a stage rail. Signing, issuance, implementation, in-effect status, a stay, expiration, and invalidation are not synonyms. A seal/checkmark cannot imply a deployment arrived or a policy succeeded.
+
+On a wide screen, use readable paper in the main column and a coordinated terms/status/action rail. On a narrow screen, put identity and critical terms before the document body, with an anchored review/authorization control that does not obscure content. Provide print/export only if already supported or clearly justified by the workflow; do not create a new publishing project.
+
+10.3 Institutional language
+
+Keep labels precise and plain:
+- “Authorization,” not “Sign it.”
+- “Effective dates and review,” not “Its clocks.”
+- “Responsible department,” not “Who carries it out.”
+- “Legislative outreach,” not “How to move them.”
+- “Collection priorities,” not “What it is collecting.”
+- “Federal executive” or the correct institution, not an improvised administrative category.
+- “Estimated fiscal effect” or the actual assessment, not “the numbers the resolver rolls against.”
+
+Use correct U.S. titles for modeled offices, and distinguish federal, state, congressional, judicial, and foreign roles. Do not invent exact legal procedures the simulation does not implement. Keep adviser speech human and allow news sources their editorial voice. The institutional interface, quoted speech, journalism, intelligence analysis, and developer/debug text must remain visibly different genres.
+
+11. DATA SIZE, DENSITY, AND VISUALIZATION
+
+Inventory actual current datasets and saves before choosing a collection component. For each class record: source/model, available fields, observed minimum/typical/large count, expected growth, filter/sort needs, update rate, confidentiality/knowledge rules, and comparison task. Do not assume older prose about the number of countries or campaign length is still correct.
+
+Cover people, offices, departments, legislators, nominations, court cases, states/districts, countries, commodities, sectors, bilateral relations, forces, operations, policy proposals, orders, bills, events, stories, obligations, and accumulated records.
+
+Presentation defaults:
+- Use rich option cards for a small set of materially different choices. Roughly 3–12 is a diagnostic range, not a rigid universal threshold.
+- Use rows/tables for repeated comparable entities, especially when sorting and scanning matter.
+- Use master/detail for a substantial collection where opening individual subjects is common.
+- Use scoped tabs when the subject has genuinely different tasks; do not hide critical terms in a generic “More.”
+- Use a digest/priority queue for heterogeneous incoming matters.
+- Use a structured reading surface for formal prose.
+- Never use a bare top-N truncation to make the layout pass. Show total/filtered count and provide access to the omitted items.
+- Preserve the selected target and draft through filters, sort changes, paging, and detail navigation.
+- Show around 5–7 useful comparison columns by default when feasible; expose additional fields through a meaningful detail or column view. Column count is subordinate to the task.
+- Align numerical values and units; use tabular numerals and shared comparison scales.
+- Distinguish percent change from percentage-point change, stocks from flows, appropriated from spent funds, annual from monthly amounts, and number of assets from number of formations.
+- Use zero, unknown, unavailable, not applicable, and stale deliberately; never display an unexplained dash for all five.
+
+Stress with valid representative saves and isolated development fixtures. Include zero data, one row, many simultaneous urgent matters, long labels, and a long presidential record. If the model plausibly grows to 1,000 or 10,000 records, test those scales. Do not invent 10,000 countries or corrupt a real save to manufacture a benchmark.
+
+Do not add virtualization merely because a list has 50 states. Profile real rendering and interaction costs. Prefer pagination or incremental loading for long histories when it preserves reading and navigation. If virtualization is necessary, verify keyboard traversal, focus retention, row semantics, selected items, and full-record retrieval.
+
+| Question | Preferred visual | Required support |
+| --- | --- | --- |
+| How has a measure changed? | Line chart over a labeled period. | Units, current value, comparison baseline, actual/forecast distinction, accessible data. |
+| Which entities have more/less? | Sorted horizontal bars or aligned table. | Shared scale, full labels, sorting/filtering, no misleading cropped axis. |
+| What does the budget allocate? | Editable fiscal table, concise composition view, waterfall only if components truly reconcile. | Fiscal period, totals, deficit/funding constraint, requested/current difference. |
+| How does support stand in a chamber? | Hemicycle or compact seat graphic coordinated with a table. | Threshold, vacancies if modeled, party versus vote position, projected versus recorded counts. |
+| How much capacity can be committed? | Available/committed/remaining bar or bullet display plus numeric fields. | Exact asset unit, readiness/sustainment/deployment timing only where modeled. |
+| Which goods/partners drive trade? | Grouped goods/partner table and paired import/export bars. | Direction, period, unit, selected sector, full dataset access. |
+| Where are conditions concentrated? | Appropriate geographic layer with a ranked list. | Rate/count/category legend, no-data treatment, actual geographic scope. |
+| What has happened to an order? | Timeline of actual recorded state changes. | Dates, actor, action, present state, links to evidence. |
+| Why did an outcome change? | Ranked contributing factors with a clear basis. | Separate model attribution, staff interpretation, and correlation. |
+| What could happen? | Scenario comparison or forecast chart only when valid output exists. | Assumptions, horizon, uncertainty/basis, no invented probability distribution. |
+
+Use direct labels when practical, stable categorical colors, and symbols/patterns as needed. A chart has a title that states the question, a short interpretation, units and period, and a text/data alternative [R8]. Avoid decorative gauges for arbitrary scores, unnecessary donuts, radial charts for unrelated units, unreadable network hairballs, and motion that disguises missing information. Add a visualization because it improves a task, not because every card needs one.
+
+12. EVERY-SCREEN COMPOSITION SPECIFICATION
+
+The following is the complete 48-entry route inventory from the inspected snapshot. It is a starting checklist, not a cap. Regenerate the current inventory; include added, renamed, merged, and removed routes and all embedded workflows. Preserve valid deep links when reorganizing. “Catch-all” below describes routes/$.tsx and is not a literal /+not-found URL. The summons index was registered as /summons/ while catalogue links used /summons; verify current trailing-slash behavior and count it once. Distinguish state and District of Columbia institutions correctly where domestic geography includes both; do not invent a fifty-first governor.
+
+For every row apply the shared typography, icons, data, decision, accessibility, and responsive contracts. Each ordered composition is the intended top-to-bottom reading order, adjusted only with a documented task-based reason.
+
+A. PRESIDENTIAL DESK AND OBLIGATIONS
+
+| Route | Ordered composition and interaction specification | Geography/detail behavior |
+| --- | --- | --- |
+| / | Date/time/attention context → leading actionable matter with deadline and inaction → compact national condition summary → prioritized decision queue → near-term obligations → recent meaningful outcomes. A quiet day has an honest quiet state and a clear time-advance action; many crises expose counts and prioritization. | No automatic full-screen map. A small situation view belongs here only if it improves current triage. |
+| /conversation | Decision identity/participants → visible issue, deadline, inaction and uncertainty → selectable options with comparable tradeoffs → selected terms and authorization → counsel/evidence/history. Maintain one clear commitment area and preserve the selected option while inspecting people or facts. | Open related dossiers without losing the draft. A relevant locator can accompany a geographically specific decision. |
+| /digest | Why time stopped and current date → decisions now requiring action → material national changes → meaningful outcomes/news → security/other detail → continue or return to Desk. A recap animation must be skippable and its information revisitable. | Link relevant changes to the same entity/map selection; no decorative map requirement. |
+| /summons | Obligations summary → urgent and approaching deadlines → sortable obligations list → completed/standing obligations as separate view. Show due date, remaining time, authority, responsible institution, and consequence. | List/calendar choice only if actual date density justifies it. Detail stays linked to the originating matter. |
+| /summons/$id | Official obligation identity/status → due date and consequence → required act/available dispositions → related instrument and responsible institution → procedural history/evidence. A completed obligation is a record, not an active action prompt. | Readable obligation dossier; no default map. |
+
+B. GOVERNMENT, PEOPLE, CONGRESS, AND COURTS
+
+| Route | Ordered composition and interaction specification | Geography/detail behavior |
+| --- | --- | --- |
+| /government | Executive status and vacancies → urgent staffing/confirmation matters → Cabinet/White House/Departments scope → comparable roster with role, incumbent/acting state, assessment and workload → nominations/calendar/history. Candidate comparison and nomination use real eligibility. | Default roster/workspace; state executive context can use a state list and optional linked geography. |
+| /office/$id | Office identity and mandate → incumbent/acting/vacancy state → nomination stage and relevant deadline → candidate/nominee assessment and projected support → permissible actions → history and institution record. Acting service and confirmation must not visually collapse into one state. | Open person dossier in context; no large background map. |
+| /person/$id | Personnel record header/portrait/role → reason for attention → eligibility/current appointment/nomination → portfolio and assessed positions → relevant advice/relationships → record/background. Actions are role-specific; a bulk list of every imaginable office does not dominate the dossier. | Back returns to the same roster/candidate selection and comparison. |
+| /congress | Chamber balance and urgent floor business → chamber/workload tabs → prioritized bills/nominations/votes → leadership and outreach → committees/elections/history. Visually separate a known completed tally from an assessment of future support. | A chamber graphic supports a full list. District geography belongs in relevant representation views. |
+| /hill/$post | Officeholder and chamber role → issue/request under discussion → current assessed position and constraints → outreach options with specific concessions/costs → selected review → pending response/history. Do not make all persuasion appear deterministic. | Preserve the originating bill/nomination context. |
+| /judiciary | Court/bench status → urgent vacancies/nominations or active cases → Bench/Docket/Nominations views → judicial record and institutional detail. Review a batch of nominations before submission; a nomination is not an instant appointment. The President does not control judicial rulings. | Docket list plus case detail; no map unless jurisdiction is relevant. |
+| /judge/$id | Judicial identity/appointment → current role and relevant case context → assessed jurisprudence → actual decisions, majority/dissent and record → background. Do not substitute a generic loyalty meter for meaningful judicial information. | Link cases and office context while preserving return state. |
+| /case/$id | Case identity, court and procedural state → issue and immediate effect on government action → holding/order if decided or pending question if not → reasoning/bench positions → related acts → procedural history. A stay, pending case, and final invalidation remain distinct. | Paper reading surface and coordinated procedural rail; single-column reading on phone. |
+
+C. POLICY, LEGISLATION, AND ECONOMIC MANAGEMENT
+
+| Route | Ordered composition and interaction specification | Geography/detail behavior |
+| --- | --- | --- |
+| /policy | Portfolio condition/urgent matters → active policy domains → Proposals/Orders/Implementation views → current stance, pending change and observed results → searchable catalogue/history. Separate the ability to propose from enacted authority. | Master/detail where data size warrants it. No map competing with general portfolio comparison. |
+| /brief/$id | Policy memorandum identity/purpose → current baseline and problem → comparable supported alternatives → selected intensity/scope/costs/timing → authorization → supporting analysis/history. Do not commit immediately merely because the user selected a stance to compare. | Affected places/people can be inspected without resetting the selected alternative. |
+| /order/$id | Document family/issuer/state → critical operative terms → formal structured draft or issued document → coordinated authorization or implementation status → related legal/administrative record. Use the order contract in section 10. | Wide paper + rail; phone identity/terms before body and a nonobscuring action region. |
+| /bill/$id | Legislative identity/stage → presidential decision and deadline when applicable → key provisions/fiscal effects → legislative record and assessed next stage → sign/veto/other modeled disposition → history/related laws. Show what a default would do only as implemented by the game. | Formal document with a stage rail, not a generic policy card. |
+| /budget | Fiscal period/funding state → total constraint and current draft summary → editable allocation workbench with current/requested/difference → material tradeoffs and assessed congressional response → review/submission → historical books. Keep totals and the specific action coordinated with editing. | Full comparative table on desktop; narrow-screen category editing retains totals and a complete comparison view. |
+| /economy | National condition and a few leading measures → meaningful change/drivers → Overview/Markets/Trade/Public finances or other evidence-based task tabs → distribution and forecasts → history. Remove duplicate driver blocks and arbitrary walls of KPI cards. | Maps only for geographic distribution questions; main overview uses trends and comparisons. |
+| /metric/$id | Measure/commodity identity → value/unit/period/as-of → trend and meaningful baseline → drivers/basis → distribution or related markets → history and relevant actions. Support the current polymorphic metric types without treating every number as a percentage or “up is good.” | Commodity uses its real icon; geography appears only where underlying data supports it. |
+
+D. GEOGRAPHY, COUNTRIES, AND DOMESTIC PLACES
+
+| Route | Ordered composition and interaction specification | Geography/detail behavior |
+| --- | --- | --- |
+| /world | Workspace title/scope → compact layer/filter controls → full available geographic canvas with persistent legend → selected entity inspector and complete roster → relevant contextual actions. Preserve selection on layer changes and make counts/filter state visible. | Dedicated map-led workspace with focus mode. Phone Map/List/Details share state. |
+| /nation/$id | Country identity/current relationship → priority assessment/active commitments → Overview/Diplomacy/Economy and trade/Security/Intelligence/Activity views as supported → selected task/actions → evidence/history. Trade exposes every relevant sector and tariff draft, with complete costs and forecast labeling. | Relevant locator/region context; do not place twelve topics and an unrelated large map in one long stack. |
+| /state/$id | State identity/governor/current condition → urgent federal matter and affected population → Overview/Conditions/Federal response/Representation views where data warrants → scope, consent/authority and resources for the selected response → history. | Linked state map/list; district detail remains discoverable with counts and filters. |
+| /district/$id | District and representative identity → location/jurisdiction → actual constituency conditions and relevant political context → related matters and record. Keep a sparse dossier honest instead of fabricating statistics to fill space. | Show supported district geography, or an honest state locator when precise boundaries are unavailable. |
+
+E. NATIONAL SECURITY, OPERATIONS, AND EMERGENCIES
+
+| Route | Ordered composition and interaction specification | Geography/detail behavior |
+| --- | --- | --- |
+| /ops | Active commitments and approaching obligations → prioritized operation list → deployed/available capacity → supported join/withdraw/adjust actions → pending results and history. Separate strategic authorization from operational tracking. | Optional linked theater view; all operations remain accessible in the list. |
+| /security | Urgent legal/security obligations → national assessment/readiness → Theaters/Forces/Intelligence/Operations task views → relevant controls → evidence/history. Do not bury a statutory clock below a long intelligence feed. | Major geography in Theaters; resource and intelligence workspaces get appropriate lists/assessments. |
+| /service/$id | Service identity/mandate → operational readiness and relevant constraint → inventory with exact asset icons/units → available/committed/remaining capacity → current deployments → supporting history. Sustainment and movement times appear only if modeled. | Asset comparison is primary; locator links for real deployments. |
+| /instrument/$id | Instrument family/target → objective and supported options → configuration with discrete or continuous controls matching the model → exact costs/resources/authority → selected review and authorization → pending/history. Diplomatic, economic, and military acts receive suitable terms, not one unexplained escalation meter. | Target dossier and relevant geography remain in context. |
+| /war/$id | Theater/parties/current state → objectives and leading assessment → supported geographic view → capacity, losses, sustainment and authority → escalation/entry/settlement options → history. Distinguish assessed prospects from hidden exact outcomes. | A major theater map only to the precision supported by the model; no invented fronts or individual units. |
+| /treaty/$id | Diplomatic instrument identity/parties/status → operative commitments → next supported negotiation/signature/consent/ratification step → assessed or recorded Senate position as appropriate → related acts/history. Do not add absent treaty mechanics to fill a stage rail. | Document-led. Geography appears for the actual territorial/partner question. |
+| /emergency | Active incident summary → urgency and affected population → prioritized incident list linked to geography → selected response scope/authority/resources → declaration/implementation status → recovery and history where modeled. Use distinct disaster symbols. | Map/list coordinated; phone isolates each useful view with retained incident selection. |
+| /oversight | Matter type and urgent obligations → clear separation between oversight of the executive and oversight directed by it → prioritized matters → inspectors/directives/appointments or removals → review of consequential acts → record. Explain the modeled legal/administrative basis. | Dossiers and document detail; no unnecessary map. |
+
+F. COMMUNICATIONS, RECORD, AND TRANSITION
+
+| Route | Ordered composition and interaction specification | Geography/detail behavior |
+| --- | --- | --- |
+| /press | Communications priorities → Prepare response/Coverage/Running stories/Outlets views where supported → selected topic and audience → message options and assessment → review/issue → observed coverage/history. Do not interleave every news genre and drafting control into one endless page. | Link stories to entities/places. A newspaper front page is one coverage view, not the form for issuing an official response. |
+| /scandal/$id | Issue/story identity and current stage → allegations versus verified facts → relevant actors/evidence → inquiry and response choices → selected communication/legal act as supported → timeline. Avoid presenting a rumor as an established fact. | Preserve related press/oversight context; use source-aware dossier treatment. |
+| /dispatch/$id | Source, document genre, publication/date and subject → readable story/report → corroboration/assessment when supplied → related entities and appropriate actions → prior coverage. Journalism, intelligence and official memoranda have distinct headings/status conventions. | Optional relevant locator; not a generic order document. |
+| /record | Search/filter/current scope → counts and chronological acts/outcomes → selected record with original terms and assessment → subsequent observed result/related entities → further history. Full accumulated data remains retrievable. | Master/detail desktop, list-to-detail phone, stable filter and scroll position. |
+| /removal | Constitutional/procedural state → immediate threshold/deadline → assessed support/pressure and actual completed votes → available modeled responses → drivers/history. Do not conflate a forecast with a recorded chamber act. | Procedure-focused workspace; no ornamental crisis map. |
+| /ending | Outcome/transition identity → what happened and why → election/successor/institutional result where supported → key decisions and consequences → continue to legacy/record or new administration. Ceremony is readable and skippable without losing information. | No assumed fixed campaign duration or compulsory map. |
+| /legacy | Inherited baseline versus end state → major policy/institutional changes → timeline of decisions → statutes, commitments, wars and promises → evidence and final record. Distinguish causal attribution from correlation and scoring. | Comparisons and timeline; geography only for meaningful geographic legacy. |
+
+G. ENTRY, SAVES, HELP, AND VERIFICATION SURFACES
+
+| Route | Ordered composition and interaction specification | Geography/detail behavior |
+| --- | --- | --- |
+| /campaigns | Active administration and save state → resume action → saved administrations with scenario/date/last saved → supported rename/export/import/delete actions → recovery information. Destructive deletion names the affected save and uses actual safeguards. | Clear list/card choice based on count; no map requirement. |
+| /welcome | Game identity → resume if available and start new → concise premise/current state → settings/reference access. Official visual language coexists with a clear game identity. Handle first use, saved game, loading, and failure. | A purposeful image is optional, not an excuse to postpone the application redesign. |
+| /founding | Current setup stage/progress → one coherent choice group → implications → back/edit and next → final review → create administration. Preserve draft inputs and distinguish setup ceremony from consequences. | Use geography only if a current scenario choice needs it. |
+| /settings | Grouped actual preferences → current value and effect → accessible controls → storage/attention/time implications → save/recovery feedback. Expose only supported settings; do not make decorative toggles. | Single-column on phone; keyboard shortcuts are documented and editable only if actually supported. |
+| /reference | Search or navigable topic index appropriate to content size → plain-language concepts → contextual mechanics and examples → links back to the relevant workspace. Keep help synchronized with the implementation. | Do not create a huge empty search UI for six entries; scale to real content. |
+| /recovery | Preserve the reason for recovery → identify affected save/state → actual retry/restore/export/return options → outcome. If this remains a redirect, the destination must retain the explanation and relevant choices. | No silent bounce to a generic save list. |
+| Catch-all: routes/$.tsx | Explain missing route or unavailable entity → safe return/contextual alternative → relevant recovery or search. A stale entity ID and an unknown page can need different messages. | Preserve meaningful browser back; no blank screen or redirect loop. |
+| /dev | Clearly separated developer tools → controlled fixtures/state tools → diagnostic information → full semantic icon gallery. Ensure privileged controls do not become ordinary presidential actions. | Include fixture access useful for visual review; do not redesign debug output as official records. |
+| /showcase | Current design-system gallery → all component variants/states → typography/color/icon specimens → decision/document patterns → responsive and large-data examples. Include focus, hover, disabled, error, loading, long labels, and reduced motion. | The gallery verifies the real shared components; it does not replace route-level review. |
+
+13. IMPLEMENTATION ARCHITECTURE AND PLAN UPDATE
+
+Reconcile the actual plan before substantial edits. Use dependencies and verifiable outcomes; do not mark a wave complete because files were written.
+
+Recommended sequence:
+
+Wave 0: Current-checkout reconciliation and audit
+- Read latest commits/diffs, inventory every route and workflow, capture current screenshots, measure representative datasets.
+- Classify historical leads as still present, fixed, changed, or unverified.
+- Update the current plan, outdated design instructions, and task dependencies.
+- Select the implementation boundaries and baseline measurements.
+
+Wave 1: Shared visual foundations
+- Implement typography, palette, spacing, button/tab/banner/status contracts.
+- Normalize the native icon renderer/masters and add real missing semantic mappings.
+- Consolidate duplicated shared styles and establish a complete component gallery.
+- Keep functioning shared APIs where they can serve the new contract; do not add wrappers without a purpose.
+
+Wave 2: Shell and three proving workflows
+- Implement navigation, header/attention/time behavior, responsive layout and map/detail state preservation.
+- Complete Desk decision handling, country trade/tariff work, and an order's draft-to-record lifecycle as representative workflows.
+- Render them at wide, compact, and phone sizes and inspect actual interactions.
+- Correct the shared system before propagating it. This is an internal verification checkpoint, not a request for permission to continue.
+
+Wave 3: Dossiers and domestic institutions
+- Migrate people, offices, executive, Congress, judiciary, case/bill/policy, budget and economic analysis.
+- Normalize assessment versus fact, document families, terms, and related-entity navigation.
+
+Wave 4: Geography, security, communications, and record
+- Complete World, countries/states/districts, operations/services/instruments/war/treaty, emergencies and oversight.
+- Complete press/stories, records, removal, ending and legacy.
+- Verify large collections and selected-state continuity across all these surfaces.
+
+Wave 5: Full coverage, quality gates, and closeout
+- Complete entry/founding/saves/settings/reference/recovery/not-found/dev/showcase.
+- Audit every current route and embedded workflow against the coverage matrix.
+- Fix cross-screen drift, accessibility and responsive defects, data omissions, and misleading states.
+- Run required repository gates and update all authoritative plans/catalogues/evidence.
+
+Reorder tasks where current dependencies warrant it, but do not leave most routes untouched after an attractive proof of concept.
+
+Repository-specific obligations to verify:
+- Keep design tokens in the shared design package, reusable web primitives in the UI package, domain-neutral presentation in player-core, and actual simulation in engine. Preserve deterministic engine behavior.
+- Trace existing state/action selectors and route metadata before adding a second model of the same state.
+- The inspected repository generates icon data from masters; keep that generation authoritative.
+- The inspected Grail uses docs/grail/catalog and authored section sources. Update the source and run node scripts/build-grail.mjs; do not hand-edit generated docs/the-administration-grail.html.
+- Update docs/SCHEMA.md and docs/ARCHITECTURE.md together if public data/action/attention contracts actually change. Do not perform gratuitous engine schema work for a font/color update.
+- Respect current tracked build-output policy. The inspected packages consumed tracked dist output and required build before typecheck; stale incremental build state could conceal outdated outputs.
+- Read and run the current package scripts and required gates, rather than assuming exact commands or versions from this handoff.
+- Stage only files owned by this work if creating commits. Do not use blanket git add -A, destructive cleanup, or stash to conceal another session's work.
+- Update active decisions and guidance when superseded; retain honest historical ADRs rather than rewriting history to imply the new design always existed.
+
+When delegating, give agents nonoverlapping ownership and the same token/component/action contracts. Integrate and inspect the result centrally. No route should invent its own banner, alternate icon package, or save/commit semantics.
+
+14. VERIFICATION AND ACCEPTANCE
+
+14.1 Visual completeness
+
+- Every current route is accounted for, including transitions and conditional paths. The 48 historical entries are reconciled, not blindly treated as the current count.
+- Each route has current before/after evidence at a primary desktop width and a narrow width. Shared layout families receive the full breakpoint/state matrix; unique maps, tables, dialogs, and sticky controls receive their own edge cases.
+- Inspect the whole scrollable page. Above-fold screenshots alone are insufficient.
+- Typography, spacing, banners, controls, tabs, state labels, icon geometry, and document treatment agree across screens.
+- The native icon gallery and actual asset workflows prove semantic coverage and readability. Jets, fuel, crude oil, and other real domain objects have correct identities wherever the player compares or authorizes them.
+- No accidental overflow, obscured primary action, duplicated title hierarchy, unreadable low-contrast metadata, clipped long names, or hidden collection tail remains.
+- The official feel comes through in language, structure, and provenance as well as colors and seals.
+
+14.2 Interaction and simulation truth
+
+Use meaningful end-to-end checks where the risk warrants them:
+- Selecting/comparing a draft option does not accidentally commit it.
+- The issued record preserves the exact authorized quantities, units, costs, and target from the valid final review. Current available/deployed/operational/returned/lost quantities may legitimately change; reconcile those dated changes rather than forcing inventories to match the original order.
+- Double activation causes one act.
+- A stale preview is revalidated or refused with an explanation.
+- Applied act plus failed save is distinguishable from rejected act; retry cannot duplicate execution.
+- Filters/paging/detail navigation, browser Back/Forward, and closing inspectors preserve selection, scroll, focus, and drafts as designed; campaign changes isolate each administration's drafts.
+- Pending-action withdrawal, refusal, retry, and no-longer-available targets have distinct behavior where supported; none invites duplicate execution.
+- All omitted collection items are retrievable.
+- Forecasts and observed results are distinguishable; hidden outcomes are not exposed.
+- Time-control/deadline/default paths obey the documented contract, including reload and background behavior.
+- Disabled actions explain actual blockers.
+- Document statuses represent true modeled transitions, not cosmetic success animations.
+- A consequential workflow can be completed with keyboard and through the non-map alternative.
+
+14.3 Accessibility
+
+Target WCAG 2.2 AA for the implemented UI and document what was actually checked [R11]:
+- Normal text contrast at least 4.5:1; qualifying large text at least 3:1 [R12].
+- Meaningful non-text controls and graphical boundaries meet the applicable 3:1 requirement [R24].
+- Text enlargement and narrow reflow preserve content and functions [R13, R14].
+- Focus is visible and not fully hidden by sticky headers, action bars, or overlays; project preference is to keep the whole focused control visible [R25].
+- Use semantic headings, forms, tables, names, labels, validation, and status announcements [R26].
+- Dialogs manage focus and return it appropriately; tabs follow the correct interaction pattern [R16, R17].
+- Avoid color-only meaning and hover-only essential content.
+- Provide keyboard operation and a click/tap alternative to dragging and map gestures where applicable. Keyboard support alone does not satisfy the single-pointer alternative requirement [R27].
+- Respect reduced motion; don't force unnecessary animated transitions [R28].
+- Verify touch targets and spacing under the project contract, distinguishing it from the standard's exact minimum [R15].
+
+Automated checks complement manual interaction and screenshot review. A clean accessibility scan or a snapshot does not certify the entire experience.
+
+14.4 Performance and data-size proof
+
+Record the current baseline and final behavior on the same representative fixtures/device/runtime. Check route changes, large-list filtering/sorting, map selection/layer changes, draft recalculation, and document opening. Identify long tasks, excessive rendering, and growing DOM costs where observed. Preserve responsiveness without decorative loading theater.
+
+Do not claim universal performance gains from a faster development run. Do not add heavyweight charting/map libraries when existing primitives can meet the requirement. Choose a library only for a concrete missing capability, verify its current API/license, and measure its cost. If dependencies or rendering architecture change, check the production build and supported desktop host.
+
+14.5 Required gates and honest closeout
+
+Run the repository's required build/typecheck/lint/tests/catalogue/registry/visual gates in the correct order. Use focused tests for concrete behavioral risks and the required final gates; do not generate trivial tests that mirror JSX or only count routes/words.
+
+If a current copy-budget test conflicts with the improved hierarchy, assess the actual content. Do not conceal critical terms in disclosures, delete necessary explanations, or loosen every budget merely to pass. Update the intentional budget with the design decision and rendered evidence where justified.
+
+A task is complete only when its implementation, rendered result, affected workflow, and required checks agree. Do not claim tests ran when they were only written. Do not mark blocked or unverified work as done. Do not create fake screenshots, silently skip routes, or report a percentage of coverage without the inventory denominator.
+
+15. FINAL REPORT AND CONTINUATION DISCIPLINE
+
+Continue until the authorized redesign and current-route audit are complete, or until a genuine access/capability blocker prevents a specific remaining portion. Keep the active plan and evidence current so the work can survive a context reset without restarting or losing decisions.
+
+The final report should contain:
+1. Current checkout/commit context and exactly what was redesigned.
+2. The major findings resolved and why the resulting interaction is better.
+3. Font, icon, component, document, density, and map/breakpoint decisions actually implemented.
+4. Current route/workflow coverage, before/after evidence, and representative completed presidential tasks.
+5. Build/test/accessibility/performance checks actually run with results.
+6. Authoritative plans/catalogues/tasks updated.
+7. Any real remaining defects or blocked verification, precisely scoped.
+
+Do not end with an offer to implement the plan. Execute it. Do not describe a partial visual refresh as a complete audit. Do not reopen superseded dotted-map or historical design requirements.
+
+16. SOURCE REGISTER
+
+Sources were checked during the preparatory research on 11 October 2026 UTC. Developer diaries are historical primary evidence of design rationale, not claims about every feature of the games' current releases. The specification's sizes, palette composition, layouts, severity rubric, route recommendations, and implementation sequence are project design judgments.
+
+R1. U.S. Web Design System, Font family
+https://designsystem.digital.gov/design-tokens/typesetting/font-family/
+
+R2. Adobe Fonts, Source Sans 3, official source and license
+https://github.com/adobe-fonts/source-sans
+
+R3. Adobe Fonts, Source Serif 4, official source and license
+https://github.com/adobe-fonts/source-serif
+
+R4. U.S. Web Design System, Icon
+https://designsystem.digital.gov/components/icon/
+
+R5. U.S. Web Design System, Banner
+https://designsystem.digital.gov/components/banner/
+
+R6. U.S. Web Design System, Alert
+https://designsystem.digital.gov/components/alert/
+
+R7. U.S. Web Design System, Table
+https://designsystem.digital.gov/components/table/
+
+R8. U.S. Web Design System, Data visualizations
+https://designsystem.digital.gov/components/data-visualizations/
+
+R9. National Archives, Presidential documents research guide
+https://www.archives.gov/presidential-libraries/research/guide.html
+
+R10. Office of the Director of National Intelligence, ICD 203, Analytic Standards
+https://www.dni.gov/files/documents/ICD/ICD-203.pdf
+
+R11. W3C, Web Content Accessibility Guidelines 2.2
+https://www.w3.org/TR/WCAG22/
+
+R12. W3C/WAI, Understanding 1.4.3 Contrast (Minimum)
+https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html
+
+R13. W3C/WAI, Understanding 1.4.10 Reflow
+https://www.w3.org/WAI/WCAG22/Understanding/reflow.html
+
+R14. W3C/WAI, Understanding 1.4.4 Resize Text
+https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html
+
+R15. W3C/WAI, Understanding 2.5.8 Target Size (Minimum)
+https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html
+
+R16. W3C/WAI ARIA Authoring Practices, Tabs
+https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
+
+R17. W3C/WAI ARIA Authoring Practices, Modal dialog
+https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+
+R18. Paradox, Victoria 3 Dev Diary #29, User Experience, 13 January 2022; official publisher announcement in Steam feed
+https://store.steampowered.com/news/posts/?enddate=1642093944&feed=steam_community_announcements
+
+R19. Paradox, Victoria 3 Dev Diary #74, UX Improvements, 8 February 2023
+https://www.paradoxinteractive.com/games/victoria-3/news/dev-diary-74-ux-improvements
+
+R20. Positech, Democracy 4, official policy modding documentation
+https://www.positech.co.uk/democracy4/mod_policies.html
+
+R21. Positech, Democracy 4, official simulation/modding documentation
+https://www.positech.co.uk/democracy4/modding.html
+
+R22. Jonathan Baker, Torpor Games, Suzerain developer guidance on Xbox Wire, 11 November 2025
+https://news.xbox.com/en-us/2025/11/11/tips-to-help-bring-the-drama-of-governance-to-suzerain/
+
+R23. Paradox, Hearts of Iron IV Dev Diary 45, Battle Plans, 19 February 2016; official Steam news feed
+https://store.steampowered.com/news/posts/?appids=394360&enddate=1456486596
+
+R24. W3C/WAI, Understanding 1.4.11 Non-text Contrast
+https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html
+
+R25. W3C/WAI, Understanding 2.4.11 Focus Not Obscured (Minimum)
+https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html
+
+R26. W3C/WAI, Understanding 4.1.3 Status Messages
+https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html
+
+R27. W3C/WAI, Understanding 2.5.7 Dragging Movements
+https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html
+
+R28. W3C/WAI, Understanding 2.3.3 Animation from Interactions
+https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html
+Note: this criterion is AAA; reduced-motion support is an additional project requirement, not falsely described as an AA criterion.
+
+R29. Lucide, official icon design specification, used as an optical consistency benchmark only
+https://lucide.dev/contribute/icons/specification
+
+R30. Fontsource, Source Sans 3 self-hosted font distribution
+https://fontsource.org/fonts/source-sans-3/use
+
+R31. Fontsource, Source Serif 4 self-hosted font distribution
+https://fontsource.org/fonts/source-serif-4/use
+
+Repository evidence baseline:
+https://github.com/geraldmaron/administration-app/tree/96cb39969f8ba86fdfdc96f53159d51b273351d9
+All H-series file references refer to this SHA. The current local checkout must be inspected and cited separately.
+
+END CLAUDE EXECUTION PROMPT
+

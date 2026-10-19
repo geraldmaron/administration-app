@@ -1,0 +1,134 @@
+/* A card that is one door: its main link stretches over the whole card, so a
+   press anywhere on it opens what it is about. Anything else inside that a
+   player can press (a person's name, a button, a fold) sits above the stretch
+   and keeps its own target. Hover and keyboard focus light the whole card. */
+@layer components {
+  .ui-card-door,
+  .ui-row-target {
+    position: relative;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+  }
+
+  /* Inherent navigation uses the card/row focus and hover affordance. Inline prose links stay underlined. */
+  .ui-card-door a.ui-card-door__link:not(.ui-button),
+  .ui-row-target a.ui-row-link:not(.ui-button) {
+    color: var(--color-text-primary);
+    text-decoration: none;
+  }
+
+  .ui-card-door__link::after,
+  .ui-row-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+  }
+
+  .ui-card-door :is(a, button, summary, input, select, textarea, label):not(.ui-card-door__link),
+  .ui-row-target :is(a, button, summary, input, select, textarea, label):not(.ui-row-link) {
+    position: relative;
+    z-index: 1;
+  }
+
+  .ui-card-door:hover {
+    background-color: var(--color-ground-raised-hover);
+    box-shadow: inset 0 0 0 1px var(--color-blue);
+  }
+
+  /* A row lights without an edge: a table already draws its dividers. */
+  .ui-row-target:hover {
+    background-color: var(--color-ground-raised-hover);
+  }
+
+  .ui-card-door .ui-card-door__link:focus-visible,
+  .ui-row-target .ui-row-link:focus-visible {
+    outline: none;
+  }
+
+  .ui-card-door:has(.ui-card-door__link:focus-visible),
+  .ui-row-target:has(.ui-row-link:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  /* A table row is not a positioning box in every engine; the transform makes it one so the stretched link covers the row. */
+  tr.ui-row-target {
+    transform: scale(1);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ui-card-door:active {
+      transform: scale(0.995);
+    }
+  }
+}
+
+/* A place to go: icon tile, name, a line on what is there, a chevron. The app's one pattern for navigation; actions are buttons. */
+@layer components {
+  .ui-door-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ui-door-tile {
+    inline-size: 100%;
+    block-size: 100%;
+    min-block-size: 80px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-sm);
+    align-items: center;
+    padding: var(--space-sm) var(--space-md) var(--space-sm) var(--space-sm);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+  }
+
+
+  .ui-door-tile__text {
+    display: grid;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+  }
+
+  .ui-door-tile__title {
+    color: var(--color-text-primary);
+    font-family: var(--font-display);
+    font-size: var(--size-body);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-body);
+  }
+
+  .ui-door-tile__title a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .ui-door-tile__description {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-door-tile__status {
+    color: var(--status-warning-ink);
+    font-size: var(--size-label);
+    font-weight: var(--weight-strong);
+  }
+
+  .ui-door-tile__chevron {
+    color: var(--color-text-tertiary);
+    transition: transform var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+  }
+
+  .ui-door-tile:hover .ui-door-tile__chevron {
+    color: var(--color-blue);
+    transform: translateX(3px);
+  }
+}

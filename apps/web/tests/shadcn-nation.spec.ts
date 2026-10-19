@@ -1,0 +1,52 @@
+import { fileURLToPath } from "node:url";
+import { expect, test } from "@playwright/test";
+import { expectNoHorizontalOverflow } from "./helpers";
+
+for (const theme of ["light", "dark"] as const) {
+  test(`economic investigation and opinion drilldown in ${theme}`, async ({ page }, info) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+    await page.goto("/administrations");
+    await page.getByLabel("Import a save exported from this game").setInputFiles(fileURLToPath(new URL("./.fixtures/gulf-oil-shock.json", import.meta.url)));
+    await page.waitForURL("**/brief", { timeout: 60_000 });
+    await page.goto("/nation/economy");
+    await expect(page.getByRole("heading", { name: "Leading measures", exact: true })).toBeVisible();
+    await expect(page.locator(".economy-path")).toHaveCount(4);
+    await expectNoHorizontalOverflow(page, "economic overview");
+    await expect(page.getByRole("figure", { name: /^Unemployment, 2017/ })).toBeVisible();
+    await expect(page.locator(".economic-comparison .sc__line[data-tone='played']")).toHaveCount(1);
+    await page.getByRole("button", { name: /Markets & supply/ }).click();
+    await expect(page).toHaveURL(/view=markets/);
+    await expect(page.getByRole("heading", { name: "Across the commodity board" })).toBeVisible();
+    await expect(page.locator("main details")).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, "markets and supply");
+    await page.goto("/nation");
+    await expect(page.locator(".opinion-judgment")).toHaveCount(6);
+    const judgment = page.locator(".opinion-judgment button").first();
+    const name = await judgment.innerText();
+    await judgment.click();
+    const inspector = page.getByRole("dialog", { name, exact: true });
+    await expect(inspector).toBeVisible();
+    await expect(inspector).toContainText("The six weights sum to 100%");
+    await inspector.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(judgment).toBeFocused();
+    await expect(page.getByText(/Electors, this week's call/)).toHaveCount(0);
+    await expect(page.locator(".map-layer")).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, "public opinion");
+    await page.screenshot({ path: `${info.outputDir}/opinion-${theme}.png`, fullPage: true });
+    await page.getByRole("tab", { name: "Groups", exact: true }).click();
+    const category = page.getByRole("combobox", { name: "Compare communities by" });
+    await expect(category).toBeVisible();
+    const last = await category.locator("option").last().getAttribute("value");
+    if (!last) throw new Error("The final community category has no value");
+    await category.selectOption(last);
+    await expect(category).toHaveValue(last);
+    await expect(page).toHaveURL(new RegExp(`group=${last}`));
+    await page.reload();
+    await expect(category).toHaveValue(last);
+    await expect(page.getByText("Support uses the full 0–100% range.", { exact: false })).toBeVisible();
+    await expectNoHorizontalOverflow(page, "selected community comparison");
+    await page.goto("/nation/budget");
+    await expect(page.locator('dl[aria-label="Current spending authority"]')).toBeVisible();
+    await expectNoHorizontalOverflow(page, "budget authority snapshot");
+  });
+}

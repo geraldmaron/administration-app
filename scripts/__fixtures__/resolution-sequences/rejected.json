@@ -1,0 +1,30 @@
+[
+  {
+    "id": "fixture-rejected-terminal-mismatch",
+    "instrument": "military",
+    "rungBands": ["high"],
+    "valence": "failure",
+    "riskAffinity": ["repulsed"],
+    "weight": 1,
+    "steps": [
+      {
+        "kind": "order-given",
+        "line": "The order goes out at four in the morning and is acknowledged by every station on the net within the minute.",
+        "outcome": "held",
+        "particulars": []
+      },
+      {
+        "kind": "loss",
+        "line": "{{unit}} loses its lead company to prepared fire from a ridge nobody had listed as held.",
+        "outcome": "cost",
+        "particulars": ["unit"]
+      },
+      {
+        "kind": "hold",
+        "line": "What is left of {{unit}} digs in on the reverse slope and the line holds there for the rest of the night.",
+        "outcome": "held",
+        "particulars": ["unit"]
+      }
+    ]
+  }
+]

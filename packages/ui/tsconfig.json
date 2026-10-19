@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [],
+    "customConditions": [
+      "react-native"
+    ],
+    "paths": {
+      "phosphor-react-native/src/icons/*": [
+        "../../node_modules/phosphor-react-native/lib/typescript/icons/*.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ]
+}

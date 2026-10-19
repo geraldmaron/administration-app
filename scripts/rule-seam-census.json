@@ -1,0 +1,673 @@
+{
+  "comment": [
+    "The seam census: every site in every family a world rule can cross, classified once, by declaration.",
+    "Written and held by scripts/verify-rule-seams.mjs (clause 4). A site the scan finds that is not here fails the gate.",
+    "Keyed by `path#declaration`, relative to packages/engine/src, and never by line: moving a function must not reopen a decided site.",
+    "Dispositions: `seam` the one declaration a rule reaches the simulation at, or the one writer of a stored field; `clamped` a writer a seam downstream re-books, so a rule set at the seam governs it; `projection` a projector, which must return the ruled outcome with the unruled figure beside it; `reader` a site that reaches a decision through another declaration, and is governed by governing that one; `outside` not reachable by a rule at all.",
+    "A workstream never edits this file. It writes the sites it adds to <WAVE>/census/<ws>.txt as `class path#declaration` lines, runs the gate with --expect, and sends the same lines with a disposition and a reason in integrationNotes.",
+    "Two entries name declarations the W4 contract's own stubs create (appointments.ts#appointActing, founding-dyads.ts#applyFoundingDyads). The gate reports a classified site it cannot find as a NOTE rather than a failure, because the two halves of the contract land in either order.",
+    "Five entries name declarations the W5 contract adds (opening-world.ts#openingWorld, founding.ts#withOpeningWorld, foreign-politics.ts#interregnum, engagement.ts#projectEngagement, opponent.ts#selectOpponent). None is a site the scan finds today; each is classified before its owner fills it, so the owner's first iteration does not reopen it."
+  ],
+  "sites": [
+    {
+      "class": "congressional-decision",
+      "site": "appropriation.ts#projectAppropriation",
+      "disposition": "reader",
+      "reason": "Counts each chamber's floor on an appropriation through countVote, at the ordinary threshold."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "omnibus.ts#projectOmnibus",
+      "disposition": "reader",
+      "reason": "Counts each chamber's floor on a negotiated omnibus through voteOn, at the ordinary threshold, with the minority at the share it gives a book its own appropriators wrote."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "bill-stages.ts#projectPassage",
+      "disposition": "reader",
+      "reason": "The floor count a bill's stage will actually run: countVote for an administration bill, countVoteAgainst for one aimed at the President."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "legislation.ts#passageVotes",
+      "disposition": "reader",
+      "reason": "Reads floorThreshold for the track a law is moving on; the count itself is bill-stages'."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "nomination-stages.ts#clotureWouldSucceed",
+      "disposition": "reader",
+      "reason": "Cloture, read off confirmationVote. No separate count."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "nomination-stages.ts#resolveStage",
+      "disposition": "reader",
+      "reason": "The floor stage's own read of confirmationVote, and the caller of the two gates above it."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "nomination-stages.ts#committeeWouldReport",
+      "disposition": "reader",
+      "reason": "The committee gate. It takes no vote and is still a place a nomination dies, so a rule that fixes confirmations has to hold it."
+    },
+    {
+      "class": "us-debt-writer",
+      "site": "national-books.ts#bookUsDebt",
+      "disposition": "seam",
+      "reason": "The booking step: the one place a debt rule's clamp lands. Every other writer below is measured against it."
+    },
+    {
+      "class": "us-debt-writer",
+      "site": "fiscal.ts#fiscalPhase",
+      "disposition": "seam",
+      "reason": "The weekly books day, and the one declaration that writes the United States' debt stock for the week."
+    },
+    {
+      "class": "us-debt-writer",
+      "site": "national-books.ts#booksEffect",
+      "disposition": "seam",
+      "reason": "The one writer of the national books record the stock is kept beside."
+    },
+    {
+      "class": "us-debt-writer",
+      "site": "fiscal.ts#bookUsWeek",
+      "disposition": "clamped",
+      "reason": "Computes the week the books day writes. It reaches the stock only through fiscalPhase."
+    },
+    {
+      "class": "us-debt-writer",
+      "site": "effects.ts#applyChoiceBorrowing",
+      "disposition": "clamped",
+      "reason": "Books a decision's borrowing through bookUsDebt, so the step governs what it may add."
+    },
+    {
+      "class": "us-debt-writer",
+      "site": "fiscal.ts#projectUsDebt",
+      "disposition": "projection",
+      "reason": "Projects the stock through the same bookUsDebt the week books with, which is what keeps the projection and the week from disagreeing."
+    },
+    {
+      "class": "us-debt-writer",
+      "site": "fiscal.ts#projectFiscalCost",
+      "disposition": "projection",
+      "reason": "Prices a packet against the same booking step."
+    },
+    {
+      "class": "election-settler",
+      "site": "elections.ts#holdElection",
+      "disposition": "seam",
+      "reason": "The one declaration that settles a presidential or midterm result."
+    },
+    {
+      "class": "election-settler",
+      "site": "elections.ts#electionPacket",
+      "disposition": "seam",
+      "reason": "Writes the result, the term clock and the seated chambers in one packet."
+    },
+    {
+      "class": "election-settler",
+      "site": "elections.ts#termLimited",
+      "disposition": "seam",
+      "reason": "Builds the result a term limit produces, where there is no contest to hold."
+    },
+    {
+      "class": "election-settler",
+      "site": "elections.ts#inaugurationPacket",
+      "disposition": "reader",
+      "reason": "Advances the term clock on the oath. It settles no contest and reads no result."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "instrument-records.ts#forceOnTheBoard",
+      "disposition": "seam",
+      "reason": "The one place an instrument act opens or escalates a conflict, for every military rung but the blockade and the invasion."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "instruments-military.ts#blockadeEffects",
+      "disposition": "seam",
+      "reason": "The blockade rung opens its war on the first act rather than going through forceOnTheBoard, so a rule on military paths has to hold it too."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "force-failure.ts#answeredWithForce",
+      "disposition": "seam",
+      "reason": "A failed act of force the target answers opens or heats the war here, for the player and every government alike."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "instruments-military.ts#militaryRungs",
+      "disposition": "seam",
+      "reason": "The expeditionary invasion rung opens the war itself rather than going through forceOnTheBoard, so a rule on military paths has to hold both."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "war-entry.ts#joinConflict",
+      "disposition": "seam",
+      "reason": "The one place a third government joins a war already in progress."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "peace.ts#settleWar",
+      "disposition": "reader",
+      "reason": "Settles a war the board already carries."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "peace.ts#coolFront",
+      "disposition": "reader",
+      "reason": "De-escalates a war the board already carries."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "conversation-conflict.ts#conflictMoveEffects",
+      "disposition": "reader",
+      "reason": "Settles or de-escalates an existing conflict out of a reply. It opens none."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "npc-agent.ts#everyRequest",
+      "disposition": "reader",
+      "reason": "Enumerates every instrument and rung as a candidate. The military rungs get no separate path and no extra weight here."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "god.ts#spawnConflict",
+      "disposition": "outside",
+      "reason": "The DEV editor. Not a path the world takes and not reachable by a rule."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "god.ts#settleConflict",
+      "disposition": "outside",
+      "reason": "The DEV editor, as above."
+    },
+    {
+      "class": "war-outcome-draw",
+      "site": "war-tick.ts#tickConflict",
+      "disposition": "seam",
+      "reason": "The week's war outcome draw."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "cabinet.ts#departureEffects",
+      "disposition": "seam",
+      "reason": "The one writer of a cabinet departure: the seat is vacated and the person's record loses the role in the same packet."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "career-incumbents.ts#removeOfficer",
+      "disposition": "seam",
+      "reason": "The bench's own exit, for an officer who holds no cabinet seat."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "appointments.ts#appointActing",
+      "disposition": "seam",
+      "reason": "Seats an acting officer. Refuses until actings are seated, and is the contract's stub until then."
+    },
+    {
+      "class": "act-price",
+      "site": "resolution.ts#resolveAction",
+      "disposition": "seam",
+      "reason": "The one commit path: every priced act is charged here."
+    },
+    {
+      "class": "act-price",
+      "site": "resolution.ts#projectCost",
+      "disposition": "seam",
+      "reason": "The price of an instrument act."
+    },
+    {
+      "class": "act-price",
+      "site": "legislative-acts.ts#actCost",
+      "disposition": "seam",
+      "reason": "The price of a legislative act."
+    },
+    {
+      "class": "act-price",
+      "site": "resolution.ts#projectAction",
+      "disposition": "projection",
+      "reason": "The projection the player is shown, priced by projectCost so the desk and the commit cannot differ."
+    },
+    {
+      "class": "act-price",
+      "site": "political-promises.ts#reservedFor",
+      "disposition": "projection",
+      "reason": "Reserves what a promised act will cost, off actCost."
+    },
+    {
+      "class": "act-price",
+      "site": "legislation.ts#enactmentEffects",
+      "disposition": "reader",
+      "reason": "Charges actCost when a law is enacted."
+    },
+    {
+      "class": "act-price",
+      "site": "conversations.ts#commitReply",
+      "disposition": "reader",
+      "reason": "Commits a reply through resolveAction."
+    },
+    {
+      "class": "act-price",
+      "site": "npc-turn.ts#runNpcTurn",
+      "disposition": "reader",
+      "reason": "Resolves an NPC's chosen move through the same resolveAction the player commits through, which is what keeps the odds and the price the same for both."
+    },
+    {
+      "class": "act-price",
+      "site": "balance-harness.ts#playCampaign",
+      "disposition": "outside",
+      "reason": "The balance harness. It drives the player's own commit path and no rule reaches it."
+    },
+    {
+      "class": "founding-edge",
+      "site": "relationship-graph.ts#buildInitialRelationships",
+      "disposition": "seam",
+      "reason": "The head of the founding edge pipeline. A posture rule is appended after it, never before, so the offset reads the sourced dyads. The four Pacific defense bodies change inheritedTreaties and compactPull for JPN, KOR, PHL and AUS at the seal, and a sourced dyad pair is a standing link, so pairs with no border, compact or trade get an edge."
+    },
+    {
+      "class": "founding-edge",
+      "site": "founding-dyads.ts#applyFoundingDyads",
+      "disposition": "seam",
+      "reason": "The sourced dyads, applied inside the graph builder: every row carries explicit levels the bounded move targets, hardening only a hostile, rivalrous or cool row and softening only a close or dependent one."
+    },
+    {
+      "class": "founding-edge",
+      "site": "founding.ts#sealFounding",
+      "disposition": "reader",
+      "reason": "Calls the graph builder once, at the seal."
+    },
+    {
+      "class": "npc-actor-slot",
+      "site": "npc-turn.ts#npcActorsThisTurn",
+      "disposition": "seam",
+      "reason": "The slot draw: how many capitals get a turn, never which one's move it is."
+    },
+    {
+      "class": "npc-actor-slot",
+      "site": "npc-turn.ts#npcActionPhase",
+      "disposition": "reader",
+      "reason": "Spends the slots the draw handed out."
+    },
+    {
+      "class": "projection",
+      "site": "fiscal.ts#selectDebtTrajectory",
+      "disposition": "projection",
+      "reason": "The debt trajectory a screen draws. Under a debt rule it must return the ruled stock with the unruled figure beside it."
+    },
+    {
+      "class": "projection",
+      "site": "fiscal.ts#projectFiscalCost",
+      "disposition": "projection",
+      "reason": "A packet's fiscal cost, projected off the booking step."
+    },
+    {
+      "class": "projection",
+      "site": "bill-stages.ts#projectPassage",
+      "disposition": "projection",
+      "reason": "The count the floor stage will run, shown before it runs."
+    },
+    {
+      "class": "projection",
+      "site": "congress.ts#projectConfirmation",
+      "disposition": "projection",
+      "reason": "The Senate's verdict on a nominee, shown before the vote."
+    },
+    {
+      "class": "projection",
+      "site": "elections.ts#projectVote",
+      "disposition": "projection",
+      "reason": "The presidential share, shown before the contest. holdElection reads this and nothing else to decide the count."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "governors.ts#holdGovernorRace",
+      "disposition": "seam",
+      "reason": "An election, not a cabinet exit: it vacates the losing governor's role and seats the winner's in one packet, and it is the only writer of either. The scanner counts it because it carries a person literal that changes the seat held."
+    },
+    {
+      "class": "projection",
+      "site": "governors.ts#projectGovernorWillingness",
+      "disposition": "projection",
+      "reason": "The consent forecast for a disaster request, read off the same terms governorWillingness weighs. Seed-independent and draws nothing."
+    },
+    {
+      "class": "projection",
+      "site": "lobbying.ts#memberWillingness",
+      "disposition": "projection",
+      "reason": "The lobbied member's answer through the one decision model: the card names the leading term before the call, and the answer carries its own stamp."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "force-authorization.ts#projectForceAuthorization",
+      "disposition": "reader",
+      "reason": "A force authorization's count, taken through voteOn at a neutral stance so the routing moved no count. One of VOTE-1's three carve-out call lines."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "legislation.ts#projectOverride",
+      "disposition": "reader",
+      "reason": "The override count, taken through voteOn. An override ignores the Vice President, so the tie-break cannot reach it."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "removal-votes.ts#countRemovalVotes",
+      "disposition": "reader",
+      "reason": "The articles and the conviction count, taken through voteOn. Conviction ignores the Vice President, and the per-caucus tally is what the removal arc reads."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "treaties.ts#projectRatification",
+      "disposition": "reader",
+      "reason": "Senate consent, taken through voteOn at a neutral stance. Consent ignores the Vice President."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "appointments.ts#vacates",
+      "disposition": "seam",
+      "reason": "The one path a chair leaves by: departureEffects, then the chair's deputy acting."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "appointments.ts#dismissMinister",
+      "disposition": "reader",
+      "reason": "Leaves through vacates."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "cabinet-agenda-acts.ts#answerResignationOffer",
+      "disposition": "reader",
+      "reason": "An accepted offer leaves through vacates."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "cabinet-revolt.ts#exitPacket",
+      "disposition": "reader",
+      "reason": "The sweep's quiet resignation or public break, through vacates."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "cabinet-revolt.ts#ordinaryExitPacket",
+      "disposition": "reader",
+      "reason": "The end of an announced ordinary departure with no successor confirmed in time, through vacates."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "confirmation-count.ts#confirmationVote",
+      "disposition": "reader",
+      "reason": "The confirmation question through voteOn, with the nominee's caucus readings; read by the nomination gates, the seal and the appointment card."
+    },
+    {
+      "class": "projection",
+      "site": "minister-will.ts#projectMinister",
+      "disposition": "projection",
+      "reason": "A Secretary's offer, request or break with no draw in it."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "scandal-response.ts#handOver",
+      "disposition": "reader",
+      "reason": "Give-them-someone leaves through dismissMinister and so through vacates; an acting beyond the deputy it seats goes through appointActing."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "opening-world.ts#openingWorld",
+      "disposition": "seam",
+      "reason": "The one writer of the wars a campaign opens with. The United States is never a belligerent at the oath, and every carried war is marked inherited so a rule scoped to wars this administration saw begin can exclude it."
+    },
+    {
+      "class": "founding-edge",
+      "site": "founding.ts#withOpeningWorld",
+      "disposition": "reader",
+      "reason": "Lays the board openingWorld returns onto the sealed campaign. It writes no relationship edge and decides nothing; the harness-only carriedWorld option skips it."
+    },
+    {
+      "class": "founding-edge",
+      "site": "foreign-politics.ts#interregnum",
+      "disposition": "outside",
+      "reason": "Resolves the foreign seats scheduled before the oath. It seats leaders abroad and writes no United States edge, so no rule that crosses a founding edge reaches it."
+    },
+    {
+      "class": "act-price",
+      "site": "engagement.ts#projectEngagement",
+      "disposition": "projection",
+      "reason": "Prices all five engagement kinds (call, envoy, state visit, summit, joint declaration) for the President and every government by one path. It must return the ruled outcome beside the unruled figure once a rule reaches engagement."
+    },
+    {
+      "class": "election-settler",
+      "site": "opponent.ts#selectOpponent",
+      "disposition": "projection",
+      "reason": "Names the other party's candidate and the seeded margin the contest is measured against. It settles nothing; holdElection stays the one declaration that decides the result."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "war-join.ts#allyJoinEffects",
+      "disposition": "seam",
+      "reason": "The join: every government's join-war and answer-call decision through weigh, with JOIN_THRESHOLD and CALL_THRESHOLD as named inputs, so a rule that makes allies rally acts after weigh and the stamp records the bar used."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "war-join.ts#joinDecisionPackets",
+      "disposition": "reader",
+      "reason": "Writes the stamps of the decisions allyJoinEffects took, on the same board. Decides nothing."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "peace.ts#npcSettlementPacket",
+      "disposition": "seam",
+      "reason": "Two governments, neither the President's, end their own war by agreement through accept-peace. Never ends a war the United States is a principal of."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "peace.ts#departurePacket",
+      "disposition": "seam",
+      "reason": "A co-belligerent other than the United States leaves a war on its own accept-peace answer. Can leave a US war with fewer allies; never ends one."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "peace.ts#leaveWar",
+      "disposition": "reader",
+      "reason": "The President's act of leaving a war the country joined. Removes the United States from one side; the war goes on. A US war does not end by it; the US's part in it does."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "compacts.ts#callCompact",
+      "disposition": "reader",
+      "reason": "The President's call on a defense body. Sets the flag the join reads; opens nothing."
+    },
+    {
+      "class": "war-outcome-draw",
+      "site": "war-tick.ts#terminalState",
+      "disposition": "reader",
+      "reason": "Takes the terminal roll tickConflict draws: the decisive-edge ending (roll < 0.25 at intensity >= 0.5 and a strength ratio of 2 or its inverse) and the held-front armistice (roll < 0.04 once both sides are rested). Draws nothing itself. A US defeat can end here."
+    },
+    {
+      "class": "war-outcome-draw",
+      "site": "war-tick.ts#spentEnding",
+      "disposition": "reader",
+      "reason": "The threshold endings: exhaustion 0.85 or support 0.15. Both spent is an armistice; one spent is the other side's victory. A US defeat can end here. Derived, no draw."
+    },
+    {
+      "class": "act-price",
+      "site": "war-entry.ts#joinCost",
+      "disposition": "projection",
+      "reason": "The join's preview, from ownJoinCost, the function joinConflict charges through, plus the unilateral-force price."
+    },
+    {
+      "class": "act-price",
+      "site": "war-entry.ts#joinPriceScale",
+      "disposition": "reader",
+      "reason": "The multiple of the base join price the enemy's strength, the theater's distance and an arsenal set."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "foreign-politics.ts#seatingEffects",
+      "disposition": "seam",
+      "reason": "The one writer of a foreign head of government's chair: seats the successor on the record and clears whoever held it. Not a US cabinet exit; replacing a foreign leader reaches foreign leadership through succeedLeader, which seats through here."
+    },
+    {
+      "class": "act-price",
+      "site": "engagement.ts#engagementPacket",
+      "disposition": "reader",
+      "reason": "The commit: the receiving government's receive-engagement weigh, then exactly the projection's effects. A rule on engagement lands on projectEngagement's figures."
+    },
+    {
+      "class": "act-price",
+      "site": "npc-turn.ts#engagementTurn",
+      "disposition": "reader",
+      "reason": "An NPC's chosen engagement, committed through engagementPacket."
+    },
+    {
+      "class": "act-price",
+      "site": "monetary-acts.ts#projectFedLean",
+      "disposition": "projection",
+      "reason": "Prices leaning on the Fed: the standing it spends and the credibility premium the next meeting carries."
+    },
+    {
+      "class": "act-price",
+      "site": "commodity-levers.ts#projectReserveRelease",
+      "disposition": "projection",
+      "reason": "Prices a Strategic Petroleum Reserve drawdown: refused without a severe supply interruption, otherwise the reserve it draws."
+    },
+    {
+      "class": "act-price",
+      "site": "commodity-levers.ts#projectFuelWaiver",
+      "disposition": "projection",
+      "reason": "Prices an emergency fuel waiver: refused with the pump near the oath's price, otherwise a small standing cost."
+    },
+    {
+      "class": "projection",
+      "site": "household-prices.ts#pumpPriceSeries",
+      "disposition": "projection",
+      "reason": "The pump price by week, with the week the lag has already decided drawn ahead; derived, never stored."
+    },
+    {
+      "class": "projection",
+      "site": "monetary.ts#fedDecision",
+      "disposition": "projection",
+      "reason": "The Fed's decision this week on the inputs the macro drift reads the same day; the record and the rate cannot disagree."
+    },
+    {
+      "class": "us-debt-writer",
+      "site": "sovereign-default.ts#defaultPacket",
+      "disposition": "outside",
+      "reason": "Writes one foreign government's debt stock on a default; weighDefault never weighs the founding nation."
+    },
+    {
+      "class": "election-settler",
+      "site": "elections.ts#presidentialVerdict",
+      "disposition": "reader",
+      "reason": "Decides won for holdElection from the college count, and sends an exact tie to the House. It returns no result; holdElection stays the one declaration the election rule acts on."
+    },
+    {
+      "class": "election-settler",
+      "site": "opponent.ts#contingentHouseVote",
+      "disposition": "reader",
+      "reason": "Counts the state delegations when the college ties 269-269. Read by presidentialVerdict inside holdElection; writes nothing."
+    },
+    {
+      "class": "projection",
+      "site": "cabinet-initiative.ts#projectInitiative",
+      "disposition": "projection",
+      "reason": "A Secretary's willingness to act on their own, forecast off the same terms the weighing reads, with no draw."
+    },
+    {
+      "class": "projection",
+      "site": "cabinet-revolt.ts#projectAimLeak",
+      "disposition": "projection",
+      "reason": "Where a leak from a feuding Secretary would point this week, forecast off the leak's own terms, with no draw."
+    },
+    {
+      "class": "projection",
+      "site": "engagement.ts#projectReceive",
+      "disposition": "projection",
+      "reason": "Whether the other government would take a call, envoy, visit, summit or declaration, forecast off the terms it weighs, with no draw."
+    },
+    {
+      "class": "projection",
+      "site": "peace.ts#projectPeace",
+      "disposition": "projection",
+      "reason": "What a peace move would find, forecast off the terms settleWar holds the counterpart to, with no draw."
+    },
+    {
+      "class": "projection",
+      "site": "treaty-counterpart.ts#counterpartWillingness",
+      "disposition": "projection",
+      "reason": "The counterpart's willingness to sign a treaty, forecast off the acceptance terms, with no draw."
+    },
+    {
+      "class": "projection",
+      "site": "war-join.ts#forecastOf",
+      "disposition": "projection",
+      "reason": "Whether a government would join a war on one side, forecast off its join reading, with no draw."
+    },
+    {
+      "class": "act-price",
+      "site": "instrument-issued.ts#issueAction",
+      "disposition": "reader",
+      "reason": "Commits an immediate act through resolveAction, and reserves a delayed one at the price projectAction gives, so both are priced at the seam."
+    },
+    {
+      "class": "act-price",
+      "site": "instrument-issued.ts#resolveDueInstruments",
+      "disposition": "reader",
+      "reason": "Executes a delayed act through resolveAction on its due day and releases the reserve; it sets no price of its own."
+    },
+    {
+      "class": "act-price",
+      "site": "npc-turn.ts#actOnChoice",
+      "disposition": "reader",
+      "reason": "Commits the move a foreign government chose through resolveAction."
+    },
+    {
+      "class": "npc-military-path",
+      "site": "war-tick.ts#conflictWeek",
+      "disposition": "reader",
+      "reason": "Writes the week's conflict state from the outcome tickConflict computed. It opens nothing."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "bill-stages.ts#legislativeFloor",
+      "disposition": "reader",
+      "reason": "Reads the statutory floor threshold and delegates member voting and paid vote rules to legislativeVoteOn."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "election-seating.ts#reseat",
+      "disposition": "outside",
+      "reason": "Reseats elected Congress members after the election; it does not dismiss an executive cabinet member."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "judicial-vacancies.ts#judicialVacancyPhase",
+      "disposition": "outside",
+      "reason": "Independent judicial mortality and pension retirement clear judicial seats, not executive cabinet offices."
+    },
+    {
+      "class": "act-price",
+      "site": "lobbying-favors.ts#reservedFor",
+      "disposition": "reader",
+      "reason": "Reads the existing actCost price seam to reserve the fiscal substance of a pending bill."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "inability.ts#countInability",
+      "disposition": "reader",
+      "reason": "Counts each chamber on a declaration of inability through voteOn, at two thirds, with the President's caucus breaking by their own identifiers' approval."
+    },
+    {
+      "class": "act-price",
+      "site": "regime-npc.ts#npcRegimeStart",
+      "disposition": "reader",
+      "reason": "Resolves another government's regime operation through the same resolveAction the player commits through, so its gates, odds and price are the player's."
+    },
+    {
+      "class": "us-debt-writer",
+      "site": "scenario-accounting.ts#settleScenarioAccounting",
+      "disposition": "reader",
+      "reason": "Computes a receipt delta through the existing bookUsDebt precision before emitting choiceBorrowing. It does not write the debt stock; applyChoiceBorrowing rebooks the obligation through that same seam."
+    }
+  ]
+}

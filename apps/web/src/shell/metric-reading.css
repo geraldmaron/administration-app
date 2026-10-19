@@ -1,0 +1,68 @@
+/* A national reading on the screen that owns it: figure, series, meaning, and the entries that moved it. */
+@layer rooms {
+  .metric-panel {
+    display: grid;
+    gap: var(--space-md);
+    min-inline-size: 0;
+    padding: var(--panel-pad);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .metric-panel__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    line-height: var(--leading-snug);
+    font-weight: var(--weight-strong);
+  }
+
+  .metric-panel__read {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg) var(--space-xl);
+    align-items: center;
+  }
+
+  .metric-panel__figure {
+    display: grid;
+    flex: 0 1 12rem;
+    gap: var(--space-2xs);
+  }
+
+  .metric-panel__read .ui-series {
+    flex: 1 1 14rem;
+    min-inline-size: 0;
+  }
+
+  .metric-panel__value {
+    margin: 0;
+    font-size: var(--size-figure);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-snug);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .metric-panel__week {
+    margin: 0;
+    font-weight: var(--weight-medium);
+  }
+
+  .metric-panel__period,
+  .metric-panel__source {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-weight: var(--weight-regular);
+  }
+
+  .metric-panel__note {
+    margin: 0;
+    max-inline-size: var(--measure);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+}

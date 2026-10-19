@@ -1,0 +1,52 @@
+import { fileURLToPath } from "node:url";
+import { expect, test } from "@playwright/test";
+import { confirmReview, expectNoHorizontalOverflow } from "./helpers";
+
+for (const theme of ["light", "dark"] as const) {
+  test(`scenario estimate, booked receipt and persistent subject in ${theme}`, async ({ page }, info) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+    await page.goto("/administrations");
+    await page.getByLabel("Import a save exported from this game").setInputFiles(fileURLToPath(new URL("./.fixtures/scenario-accounting.json", import.meta.url)));
+    await page.waitForURL("**/brief");
+    await page.goto("/brief/decision/the-yard-that-builds-the-boats");
+    const walkthrough = page.getByRole("dialog", { name: "The memo says what waiting costs" });
+    if (await walkthrough.isVisible()) await page.getByRole("button", { name: "Skip", exact: true }).click();
+    await expect(page.locator(".ui-choice__borrowing").first()).toContainText("About");
+    await expect(page.locator(".ui-choice__borrowing").first()).toContainText("broad estimate");
+    await expect(page.getByText("No monetary cost for any option", { exact: true })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page, "scenario financing before selection");
+    await page.locator(".ui-choice__borrowing").first().scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath(`estimate-${theme}.png`) });
+    await page.locator("input[type=radio]").nth(1).check();
+    await page.getByRole("button", { name: "Give this answer", exact: true }).click();
+    await confirmReview(page);
+    await page.getByRole("link", { name: "Open the Record entry", exact: true }).click();
+    const accounting = page.getByRole("region", { name: "Financial accounting", exact: true });
+    await expect(accounting).toBeVisible();
+    const estimate = await accounting.getByText("Estimate at decision", { exact: true }).locator("..").locator("dd").innerText();
+    await expect(accounting.getByText("Booked borrowing", { exact: true }).locator("..").locator("dd")).not.toHaveText(estimate);
+    const receipt = await accounting.innerText();
+    await expect(page.getByRole("link", { name: "Voss Shipyard", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Persistent subjects" })).toContainText("Introduced in week 1");
+    await expectNoHorizontalOverflow(page, "scenario financial receipt");
+    await accounting.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath(`receipt-${theme}.png`) });
+    await page.reload();
+    await expect(accounting).toHaveText(receipt, { useInnerText: true });
+    await page.getByRole("link", { name: "Voss Shipyard", exact: true }).click();
+    await expect.poll(() => new URL(page.url()).searchParams.get("subject")).toBe("entity:voss-shipyard");
+    await expect(page.locator(".rec-row")).toHaveCount(1);
+    await page.goBack();
+    await expect(accounting).toHaveText(receipt, { useInnerText: true });
+    const subjects = page.getByRole("region", { name: "Persistent subjects" });
+    expect(await subjects.locator("dd").evaluateAll((items) => items.filter((item) => item.scrollWidth > item.clientWidth + 1).length)).toBe(0);
+    const mayor = subjects.getByText(/Mayor when this subject entered the record/).locator("..").getByRole("link");
+    const history = new URL((await mayor.getAttribute("href"))!, page.url());
+    const personId = history.searchParams.get("subject");
+    expect(personId).toMatch(/^PER-USA-city-mayor-/);
+    await page.goto(`/washington/person/${personId}`);
+    await expect(page.locator("main")).toContainText(/Mayor of/);
+    await page.reload();
+    await expect(page.locator("main")).toContainText(/Mayor of/);
+  });
+}

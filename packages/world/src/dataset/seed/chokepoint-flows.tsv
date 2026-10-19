@@ -1,0 +1,10 @@
+# The share of world supply of a commodity that passes a strait, and how much of that flow can avoid it when the strait is shut.
+# chokepoint: a ChokepointId. commodity: a CommodityId. littoral: the governments on its shores, space-separated.
+# share: 0..1 of world supply. bypass: 0..1 of the strait's own flow that a pipeline or a sea detour can carry instead.
+# basis: the arithmetic from the figures on the page. source: the pages read. opened: the day they were read.
+# A strait with no row has no sourced flow or no sourced bypass, and so no price effect: Malacca, Suez, Panama and the
+# Turkish and Danish straits have flows on the EIA page but no capacity for their alternatives, and are left out.
+chokepoint	commodity	littoral	share	bypass	basis	source	opened
+CP-HORMUZ	crude	IRN OMN	0.2	0.124	20.9 of 104.4 Mb/d world liquids supply (1H25); 2.6 Mb/d of spare Saudi and UAE pipeline capacity over the 20.9	https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/ https://www.eia.gov/todayinenergy/detail.php?id=65504	2026-10-13
+CP-HORMUZ	lng	IRN OMN	0.2	0	about one-fifth of world LNG trade (2024); the bypass pipelines EIA names carry crude and none carries LNG	https://www.eia.gov/todayinenergy/detail.php?id=65504	2026-10-13
+CP-BAB-EL-MANDEB	crude	YEM DJI ERI	0.085	0.68	8.7 Mb/d in 2023 of 102.6 Mb/d world liquids supply; under attack in 2024 the strait lost 4.7 Mb/d and the Cape gained 3.2	https://www.eia.gov/todayinenergy/detail.php?id=63446 https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/	2026-10-13

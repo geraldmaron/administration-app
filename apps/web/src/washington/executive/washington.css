@@ -1,0 +1,642 @@
+/* Washington: the executive tree, an office's file, a person's dossier, and the acts on a chair. */
+@layer rooms {
+  .exec {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xl);
+    max-inline-size: 75rem;
+    padding-block-end: var(--space-xl);
+    container-type: inline-size;
+  }
+  .exec > section {
+    padding: var(--panel-pad);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+  .exec section {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+  .exec__heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-display);
+  }
+  .exec__lead,
+  .exec__note,
+  .exec__when {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+  .exec__when {
+    color: var(--color-text-tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+  .exec__problem {
+    margin: 0;
+    padding: var(--space-sm) var(--space-md);
+    border-inline-start: 3px solid var(--status-danger-ink);
+    border-radius: var(--radius-control);
+    background: var(--status-danger-fill);
+    color: var(--status-danger-ink);
+  }
+  .exec-fill {
+    display: grid;
+    gap: var(--space-sm);
+    justify-items: start;
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+  /* Comparisons on a chair. */
+  .exec-pick {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+  .exec-acts {
+    display: grid;
+    gap: var(--space-md);
+  }
+  .exec-agenda {
+    display: grid;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+  .exec-agenda__said {
+    margin: 0;
+  }
+  /* An office's file. */
+  .exec-office__head {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+  }
+  .exec-office__emblem {
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+    border: 1px solid var(--color-gold);
+    border-radius: var(--radius-pill);
+    background: var(--color-gold-wash);
+    color: var(--color-gold);
+  }
+  .exec-office__site {
+    margin: 0;
+    font-size: var(--size-small);
+  }
+  .exec-office__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin: var(--space-2xs) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .exec-office__chips li {
+    padding: 0 var(--space-xs);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+  .exec-office__holder {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+    padding: var(--space-md);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 3px solid var(--color-gold-deep);
+    background: var(--color-ground-raised);
+  }
+  .exec-office__holder-name {
+    margin: 0;
+    font-size: var(--size-heading);
+    font-weight: var(--weight-strong);
+  }
+  .exec-office__holder-title {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: center;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+  .exec-condition {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-md);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .exec-commands,
+  .exec-record,
+  .person-circle,
+  .person-career {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+  .exec-commands > li {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+    gap: var(--space-sm);
+    align-items: baseline;
+    padding-block: var(--space-2xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+  .exec-commands__posture {
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+  .exec-record > li:not([data-stance]) {
+    display: flex;
+    gap: var(--space-md);
+    align-items: baseline;
+    justify-content: space-between;
+    padding: var(--space-xs) var(--space-sm);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+  .exec-record > li:not([data-stance]) .exec__when {
+    flex: none;
+    white-space: nowrap;
+  }
+  /* A person's dossier. */
+  .person-head {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+  }
+  .person-head__facts {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+  .person-head__role {
+    margin: 0;
+    color: var(--color-gold);
+    font-weight: var(--weight-strong);
+  }
+  .person-circle {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: var(--space-sm);
+  }
+  .person-tie {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-sm);
+    align-items: start;
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 3px solid var(--color-border-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+  }
+  .person-tie[data-tone="favorable"] {
+    border-inline-start-color: var(--status-success-ink);
+  }
+  .person-tie[data-tone="adverse"] {
+    border-inline-start-color: var(--status-danger-ink);
+  }
+  .person-tie__body {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+  }
+  .person-tie__name {
+    font-weight: var(--weight-strong);
+  }
+  .person-tie__why {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+  .person-career {
+    padding-inline-start: var(--space-md);
+    border-inline-start: 2px solid var(--color-border-strong);
+  }
+  /* Each reading carries its mark beside its meter. */
+  .exec-condition {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-sm);
+  }
+  .exec-condition__card {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-sm);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+    text-align: center;
+  }
+  .exec-condition__label { display: flex; align-items: center; gap: var(--space-xs); font-weight: var(--weight-strong); }
+  .exec-condition__mark { color: var(--color-gold); }
+  .exec-condition__card p { margin: 0; color: var(--color-text-secondary); font-size: var(--size-small); }
+  @container (min-width: 44em) {
+    .exec-condition { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  /* Public ties keep their own rows so every face stays legible at phone width. */
+  /* The map sits straight on the workspace ground, so the masks behind its labels must be that ground, not a panel's. */
+  .tie-map {
+    --tie-ground: var(--color-ground-sunken);
+    inline-size: min(100%, 26rem);
+    margin-inline: auto;
+    padding-block: 2rem 5rem;
+  }
+  .tie-map__plot {
+    position: relative;
+  }
+  .tie-map__lines {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+  }
+  .tie-map__line {
+    stroke: var(--color-text-tertiary);
+    vector-effect: non-scaling-stroke;
+  }
+  .tie-map__membership {
+    stroke: var(--color-gold-deep);
+    stroke-width: 0.55;
+    stroke-dasharray: 1 2;
+    opacity: 0.24;
+    vector-effect: non-scaling-stroke;
+  }
+  .tie-map__hub {
+    position: absolute;
+    inset-block-start: -1.5rem;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+  }
+  .tie-map__group-label {
+    position: absolute;
+    inset-inline: 0;
+    z-index: 1;
+    background: var(--tie-ground);
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+    font-weight: var(--weight-strong);
+    text-align: center;
+  }
+  .tie-map__line[data-tone="favorable"] {
+    stroke: var(--status-success-ink);
+  }
+  .tie-map__line[data-tone="adverse"] {
+    stroke: var(--status-danger-ink);
+    stroke-dasharray: 4 3;
+  }
+  .tie-map__subject {
+    position: absolute;
+    inset-inline-start: 50%;
+    padding: 3px;
+    border: 2px solid var(--color-gold-deep);
+    border-radius: 50%;
+    background: var(--tie-ground);
+    transform: translate(-50%, -50%);
+  }
+  .tie-map__node {
+    position: absolute;
+    display: grid;
+    justify-items: center;
+    gap: 1px;
+    inline-size: min(5rem, 23%);
+    color: var(--color-text-primary);
+    text-align: center;
+    text-decoration: none;
+    transform: translate(-50%, -24px);
+  }
+  .tie-map__face {
+    display: grid;
+    padding: 2px;
+    border: 2px solid var(--color-border-strong);
+    border-radius: 50%;
+    background: var(--tie-ground);
+  }
+  .tie-map__node[data-tone="favorable"] .tie-map__face {
+    border-color: var(--status-success-ink);
+  }
+  .tie-map__node[data-tone="adverse"] .tie-map__face {
+    border-color: var(--status-danger-ink);
+  }
+  .tie-map__node:hover .tie-map__name,
+  .tie-map__node:focus-visible .tie-map__name {
+    text-decoration: underline;
+  }
+  .tie-map__name {
+    padding-inline: 2px;
+    background: var(--tie-ground);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+    font-weight: var(--weight-strong);
+  }
+  .tie-map__kind {
+    padding-inline: 2px;
+    background: var(--tie-ground);
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+    line-height: var(--leading-compact);
+  }
+  .person-circle__all > summary {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    cursor: pointer;
+  }
+  .person-circle__all[open] > summary {
+    margin-block-end: var(--space-sm);
+  }
+  /* A career as bands along the years of a life. */
+  .career-bands {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .career-band {
+    display: grid;
+    grid-template-columns: auto minmax(7rem, 11rem) minmax(0, 1fr) auto;
+    gap: var(--space-sm);
+    align-items: center;
+    font-size: var(--size-small);
+  }
+  .career-band__mark {
+    display: grid;
+    place-items: center;
+    inline-size: 28px;
+    block-size: 28px;
+    border-radius: 50%;
+    background: var(--color-ground-raised);
+    color: var(--color-gold);
+  }
+  .career-band__track {
+    position: relative;
+    block-size: 8px;
+    border-radius: var(--radius-control);
+    background: var(--color-ground-abyss);
+  }
+  .career-band__fill {
+    position: absolute;
+    inset-block: 0;
+    border-radius: var(--radius-control);
+    background: var(--color-blue);
+  }
+  .career-band__when {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  @container (max-width: 28rem) {
+    .career-band {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+    .career-band__track {
+      grid-column: 2 / -1;
+    }
+  }
+  .exec-roster__bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+    justify-content: space-between;
+  }
+  /* A filter chip narrows the set; it is not a tab and not a switch. */
+  .exec-chip {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+    min-block-size: 2.75rem;
+    padding: 0 var(--space-md);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background: var(--color-ground-base);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--size-small);
+    cursor: pointer;
+  }
+  .exec-chip[aria-pressed="true"] {
+    border-color: var(--color-blue);
+    background: var(--status-info-fill);
+    color: var(--status-info-ink);
+    font-weight: var(--weight-medium);
+  }
+  .nominee-badge {
+    display: grid;
+    gap: var(--space-2xs);
+    justify-items: start;
+    min-inline-size: 0;
+  }
+  .nominee-badge__who {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+  /* Why this needs attention. */
+  .exec-attention {
+    padding: var(--space-md);
+    border-inline-start: 3px solid var(--status-warning-ink);
+    border-radius: var(--radius-control);
+    background: var(--status-warning-fill);
+  }
+  .exec-attention ul {
+    margin: 0;
+    padding-inline-start: var(--space-lg);
+  }
+  .dossier .exec-attention {
+    display: grid;
+    gap: var(--space-xs);
+  }
+  /* The candidates: every eligible name on the same columns. */
+  .cand {
+    display: grid;
+    gap: var(--space-sm);
+  }
+  .cand__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-snug);
+  }
+  .cand__count {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+  /* Not a scroll box: with the read in one column the table fits, a phone reflows it, and a read's explanation must not be clipped. */
+  .cand__scroll {
+    overflow: visible;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+  }
+  .cand__table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+  .cand__table th,
+  .cand__table td {
+    padding: var(--space-sm) var(--space-md);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: middle;
+  }
+  .cand__table thead th {
+    background: var(--color-ground-sunken);
+    color: var(--color-text-secondary);
+    font-weight: var(--weight-strong);
+  }
+  .cand__row[data-selected="true"] {
+    background: var(--status-info-fill);
+  }
+  .cand__row[data-baseline="true"] {
+    border-block-end: 2px solid var(--color-border-strong);
+  }
+  .cand__pick,
+  .cand__who {
+    display: inline-flex;
+    gap: var(--space-sm);
+    align-items: center;
+    font-weight: var(--weight-medium);
+  }
+  .cand__pick input {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    margin: 0;
+  }
+  .cand__shared {
+    margin: 0;
+    padding: var(--space-sm) var(--space-md);
+    border-inline-start: 3px solid var(--status-danger-ink);
+    border-radius: var(--radius-control);
+    background: var(--status-danger-fill);
+    color: var(--status-danger-ink);
+    font-size: var(--size-small);
+  }
+  .cand__row {
+    cursor: pointer;
+  }
+  .cand__row[data-selected="true"] > :first-child {
+    box-shadow: inset 4px 0 0 var(--color-blue);
+  }
+  .cand__who > span:last-child {
+    white-space: nowrap;
+  }
+  .cand__locked {
+    display: block;
+    color: var(--status-danger-ink);
+    font-weight: 400;
+  }
+  .cand__projection {
+    display: grid;
+    gap: var(--space-2xs);
+    min-inline-size: 9rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .cand__projection-note {
+    color: var(--color-text-secondary);
+  }
+  .cand__terms {
+    display: grid;
+    gap: var(--space-sm);
+    justify-items: start;
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+  .cand__terms h4,
+  .cand__terms dl,
+  .cand__terms dd,
+  .cand__review {
+    margin: 0;
+  }
+  .cand__terms dl {
+    display: grid;
+    gap: var(--space-sm);
+    inline-size: 100%;
+  }
+  .cand__terms dl > div {
+    display: grid;
+    grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr);
+    gap: var(--space-md);
+  }
+  .cand__terms dt {
+    color: var(--color-text-secondary);
+    font-weight: var(--weight-strong);
+  }
+  @media (max-width: 40em) {
+    .cand__terms dl > div {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2xs);
+    }
+    .cand__table thead {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+    .cand__table,
+    .cand__table tbody,
+    .cand__table tfoot,
+    .cand__table tr,
+    .cand__table th,
+    .cand__table td {
+      display: block;
+    }
+    .cand__table td {
+      display: grid;
+      grid-template-columns: 8rem minmax(0, 1fr);
+      gap: var(--space-sm);
+    }
+    .cand__table td::before {
+      content: attr(data-label);
+      color: var(--color-text-secondary);
+      font-weight: var(--weight-strong);
+    }
+  }
+}
+@layer rooms {
+  /* Each row is its own stacking context (the row-link transform), so the open read lifts its whole row above the ones below. */
+  .cand__row:has(.chair-read[open]) {
+    z-index: 5;
+  }
+}

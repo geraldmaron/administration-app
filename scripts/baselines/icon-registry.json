@@ -1,0 +1,14 @@
+{
+  "$comment": "A bare key is a glyph in packages/ui-web's icon set that no production binder hands to the icon surface. An `unknown:<file>` key counts that file's bindings to glyph names the set does not draw. Written by `node scripts/verify-icon-registry.mjs --update-baseline`; it may only shrink.",
+  "entries": {
+    "commodityAluminum": 1,
+    "commodityMachineTools": 1,
+    "commodityShipbuilding": 1,
+    "commoditySteel": 1,
+    "decisionChip": 1,
+    "formatCable": 1,
+    "formatPodcast": 1,
+    "formatRegional": 1,
+    "formatSite": 1
+  }
+}

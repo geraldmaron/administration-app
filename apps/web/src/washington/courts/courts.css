@@ -1,0 +1,95 @@
+/* Case evidence, judicial nominations and qualitative staff assessments. */
+@layer rooms {
+
+  .case-votes li[data-vote="strike"] > :last-child {
+    color: var(--status-danger-ink);
+  }
+
+  .case-effects,
+  .case-timeline,
+  .case-votes {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .case-effects li,
+  .case-votes li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2xs) var(--space-md);
+    padding-block: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-size: var(--size-label);
+  }
+
+  .case-votes {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+    column-gap: var(--space-md);
+  }
+
+  .case-timeline li {
+    display: grid;
+    grid-template-columns: minmax(7rem, auto) 1fr;
+    gap: var(--space-md);
+    font-size: var(--size-label);
+  }
+
+  .case-timeline__date {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nominate {
+    display: grid;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  .cell-quiet {
+    color: var(--color-text-tertiary);
+  }
+
+  .cell-cost {
+    color: var(--status-danger-ink);
+    font-weight: var(--weight-strong);
+  }
+
+  .cell-list {
+    display: grid;
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cell-list li {
+    display: flex;
+    gap: var(--space-2xs);
+    align-items: flex-start;
+  }
+}
+
+/* Operations layout: bench status, docket projections, nomination batch and the case page. */
+@layer rooms {
+
+  .courts .nation-section {
+    padding: var(--panel-pad);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+  .courts .nation-section > .ui-tag { justify-self: start; }
+  .projection { display: grid; gap: var(--space-xs); padding: var(--space-sm); border: 2px dashed var(--color-border-strong); border-radius: var(--radius-control); justify-items: start; }
+  .projection { min-inline-size: 0; }
+  .projection .ui-gauge { inline-size: 100%; min-inline-size: 0; }
+  .case-author { color: var(--color-text-tertiary); font-size: var(--size-small); }
+  .courts { container: courts / inline-size; grid-template-columns: minmax(0, 1fr); }
+  .count-meter { display: grid; gap: var(--space-2xs); min-inline-size: 0; inline-size: 100%; font-size: var(--size-small); }
+  .case-votes li { align-items: center; padding-inline: var(--space-xs); }
+  .projection__word { font-size: var(--size-small); }
+  .data-table tr.ui-row-target:hover th, .data-table tr.ui-row-target:hover td { background: var(--color-ground-raised-hover); }
+}

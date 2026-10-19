@@ -1,0 +1,241 @@
+chamber,party,dim,bin_lo,bin_hi,members
+House,D,dim1,-1.0,-0.9,0
+House,D,dim1,-0.9,-0.8,0
+House,D,dim1,-0.8,-0.7,1
+House,D,dim1,-0.7,-0.6,6
+House,D,dim1,-0.6,-0.5,21
+House,D,dim1,-0.5,-0.4,73
+House,D,dim1,-0.4,-0.3,55
+House,D,dim1,-0.3,-0.2,48
+House,D,dim1,-0.2,-0.1,7
+House,D,dim1,-0.1,0.0,1
+House,D,dim1,0.0,0.1,0
+House,D,dim1,0.1,0.2,0
+House,D,dim1,0.2,0.3,0
+House,D,dim1,0.3,0.4,0
+House,D,dim1,0.4,0.5,0
+House,D,dim1,0.5,0.6,0
+House,D,dim1,0.6,0.7,0
+House,D,dim1,0.7,0.8,0
+House,D,dim1,0.8,0.9,0
+House,D,dim1,0.9,1.0,0
+House,D,dim2,-1.0,-0.9,4
+House,D,dim2,-0.9,-0.8,4
+House,D,dim2,-0.8,-0.7,2
+House,D,dim2,-0.7,-0.6,1
+House,D,dim2,-0.6,-0.5,4
+House,D,dim2,-0.5,-0.4,8
+House,D,dim2,-0.4,-0.3,19
+House,D,dim2,-0.3,-0.2,25
+House,D,dim2,-0.2,-0.1,25
+House,D,dim2,-0.1,0.0,28
+House,D,dim2,0.0,0.1,22
+House,D,dim2,0.1,0.2,21
+House,D,dim2,0.2,0.3,23
+House,D,dim2,0.3,0.4,14
+House,D,dim2,0.4,0.5,5
+House,D,dim2,0.5,0.6,2
+House,D,dim2,0.6,0.7,1
+House,D,dim2,0.7,0.8,1
+House,D,dim2,0.8,0.9,2
+House,D,dim2,0.9,1.0,1
+House,I(caucus R),dim1,-1.0,-0.9,0
+House,I(caucus R),dim1,-0.9,-0.8,0
+House,I(caucus R),dim1,-0.8,-0.7,0
+House,I(caucus R),dim1,-0.7,-0.6,0
+House,I(caucus R),dim1,-0.6,-0.5,0
+House,I(caucus R),dim1,-0.5,-0.4,0
+House,I(caucus R),dim1,-0.4,-0.3,0
+House,I(caucus R),dim1,-0.3,-0.2,0
+House,I(caucus R),dim1,-0.2,-0.1,0
+House,I(caucus R),dim1,-0.1,0.0,0
+House,I(caucus R),dim1,0.0,0.1,0
+House,I(caucus R),dim1,0.1,0.2,1
+House,I(caucus R),dim1,0.2,0.3,0
+House,I(caucus R),dim1,0.3,0.4,0
+House,I(caucus R),dim1,0.4,0.5,0
+House,I(caucus R),dim1,0.5,0.6,0
+House,I(caucus R),dim1,0.6,0.7,0
+House,I(caucus R),dim1,0.7,0.8,0
+House,I(caucus R),dim1,0.8,0.9,0
+House,I(caucus R),dim1,0.9,1.0,0
+House,I(caucus R),dim2,-1.0,-0.9,0
+House,I(caucus R),dim2,-0.9,-0.8,0
+House,I(caucus R),dim2,-0.8,-0.7,0
+House,I(caucus R),dim2,-0.7,-0.6,0
+House,I(caucus R),dim2,-0.6,-0.5,0
+House,I(caucus R),dim2,-0.5,-0.4,0
+House,I(caucus R),dim2,-0.4,-0.3,0
+House,I(caucus R),dim2,-0.3,-0.2,0
+House,I(caucus R),dim2,-0.2,-0.1,0
+House,I(caucus R),dim2,-0.1,0.0,0
+House,I(caucus R),dim2,0.0,0.1,0
+House,I(caucus R),dim2,0.1,0.2,0
+House,I(caucus R),dim2,0.2,0.3,0
+House,I(caucus R),dim2,0.3,0.4,1
+House,I(caucus R),dim2,0.4,0.5,0
+House,I(caucus R),dim2,0.5,0.6,0
+House,I(caucus R),dim2,0.6,0.7,0
+House,I(caucus R),dim2,0.7,0.8,0
+House,I(caucus R),dim2,0.8,0.9,0
+House,I(caucus R),dim2,0.9,1.0,0
+House,R,dim1,-1.0,-0.9,0
+House,R,dim1,-0.9,-0.8,0
+House,R,dim1,-0.8,-0.7,0
+House,R,dim1,-0.7,-0.6,0
+House,R,dim1,-0.6,-0.5,0
+House,R,dim1,-0.5,-0.4,0
+House,R,dim1,-0.4,-0.3,0
+House,R,dim1,-0.3,-0.2,0
+House,R,dim1,-0.2,-0.1,0
+House,R,dim1,-0.1,0.0,0
+House,R,dim1,0.0,0.1,0
+House,R,dim1,0.1,0.2,3
+House,R,dim1,0.2,0.3,15
+House,R,dim1,0.3,0.4,30
+House,R,dim1,0.4,0.5,47
+House,R,dim1,0.5,0.6,47
+House,R,dim1,0.6,0.7,46
+House,R,dim1,0.7,0.8,19
+House,R,dim1,0.8,0.9,10
+House,R,dim1,0.9,1.0,1
+House,R,dim2,-1.0,-0.9,0
+House,R,dim2,-0.9,-0.8,0
+House,R,dim2,-0.8,-0.7,1
+House,R,dim2,-0.7,-0.6,1
+House,R,dim2,-0.6,-0.5,7
+House,R,dim2,-0.5,-0.4,3
+House,R,dim2,-0.4,-0.3,15
+House,R,dim2,-0.3,-0.2,16
+House,R,dim2,-0.2,-0.1,20
+House,R,dim2,-0.1,0.0,23
+House,R,dim2,0.0,0.1,28
+House,R,dim2,0.1,0.2,38
+House,R,dim2,0.2,0.3,24
+House,R,dim2,0.3,0.4,25
+House,R,dim2,0.4,0.5,8
+House,R,dim2,0.5,0.6,4
+House,R,dim2,0.6,0.7,3
+House,R,dim2,0.7,0.8,1
+House,R,dim2,0.8,0.9,1
+House,R,dim2,0.9,1.0,0
+Senate,D,dim1,-1.0,-0.9,0
+Senate,D,dim1,-0.9,-0.8,0
+Senate,D,dim1,-0.8,-0.7,1
+Senate,D,dim1,-0.7,-0.6,0
+Senate,D,dim1,-0.6,-0.5,3
+Senate,D,dim1,-0.5,-0.4,11
+Senate,D,dim1,-0.4,-0.3,17
+Senate,D,dim1,-0.3,-0.2,12
+Senate,D,dim1,-0.2,-0.1,1
+Senate,D,dim1,-0.1,0.0,0
+Senate,D,dim1,0.0,0.1,0
+Senate,D,dim1,0.1,0.2,0
+Senate,D,dim1,0.2,0.3,0
+Senate,D,dim1,0.3,0.4,0
+Senate,D,dim1,0.4,0.5,0
+Senate,D,dim1,0.5,0.6,0
+Senate,D,dim1,0.6,0.7,0
+Senate,D,dim1,0.7,0.8,0
+Senate,D,dim1,0.8,0.9,0
+Senate,D,dim1,0.9,1.0,0
+Senate,D,dim2,-1.0,-0.9,0
+Senate,D,dim2,-0.9,-0.8,0
+Senate,D,dim2,-0.8,-0.7,1
+Senate,D,dim2,-0.7,-0.6,0
+Senate,D,dim2,-0.6,-0.5,0
+Senate,D,dim2,-0.5,-0.4,5
+Senate,D,dim2,-0.4,-0.3,5
+Senate,D,dim2,-0.3,-0.2,5
+Senate,D,dim2,-0.2,-0.1,12
+Senate,D,dim2,-0.1,0.0,2
+Senate,D,dim2,0.0,0.1,6
+Senate,D,dim2,0.1,0.2,1
+Senate,D,dim2,0.2,0.3,3
+Senate,D,dim2,0.3,0.4,2
+Senate,D,dim2,0.4,0.5,2
+Senate,D,dim2,0.5,0.6,0
+Senate,D,dim2,0.6,0.7,0
+Senate,D,dim2,0.7,0.8,1
+Senate,D,dim2,0.8,0.9,0
+Senate,D,dim2,0.9,1.0,0
+Senate,I(caucus D),dim1,-1.0,-0.9,0
+Senate,I(caucus D),dim1,-0.9,-0.8,0
+Senate,I(caucus D),dim1,-0.8,-0.7,0
+Senate,I(caucus D),dim1,-0.7,-0.6,0
+Senate,I(caucus D),dim1,-0.6,-0.5,1
+Senate,I(caucus D),dim1,-0.5,-0.4,0
+Senate,I(caucus D),dim1,-0.4,-0.3,0
+Senate,I(caucus D),dim1,-0.3,-0.2,0
+Senate,I(caucus D),dim1,-0.2,-0.1,1
+Senate,I(caucus D),dim1,-0.1,0.0,0
+Senate,I(caucus D),dim1,0.0,0.1,0
+Senate,I(caucus D),dim1,0.1,0.2,0
+Senate,I(caucus D),dim1,0.2,0.3,0
+Senate,I(caucus D),dim1,0.3,0.4,0
+Senate,I(caucus D),dim1,0.4,0.5,0
+Senate,I(caucus D),dim1,0.5,0.6,0
+Senate,I(caucus D),dim1,0.6,0.7,0
+Senate,I(caucus D),dim1,0.7,0.8,0
+Senate,I(caucus D),dim1,0.8,0.9,0
+Senate,I(caucus D),dim1,0.9,1.0,0
+Senate,I(caucus D),dim2,-1.0,-0.9,0
+Senate,I(caucus D),dim2,-0.9,-0.8,0
+Senate,I(caucus D),dim2,-0.8,-0.7,0
+Senate,I(caucus D),dim2,-0.7,-0.6,0
+Senate,I(caucus D),dim2,-0.6,-0.5,0
+Senate,I(caucus D),dim2,-0.5,-0.4,1
+Senate,I(caucus D),dim2,-0.4,-0.3,0
+Senate,I(caucus D),dim2,-0.3,-0.2,0
+Senate,I(caucus D),dim2,-0.2,-0.1,1
+Senate,I(caucus D),dim2,-0.1,0.0,0
+Senate,I(caucus D),dim2,0.0,0.1,0
+Senate,I(caucus D),dim2,0.1,0.2,0
+Senate,I(caucus D),dim2,0.2,0.3,0
+Senate,I(caucus D),dim2,0.3,0.4,0
+Senate,I(caucus D),dim2,0.4,0.5,0
+Senate,I(caucus D),dim2,0.5,0.6,0
+Senate,I(caucus D),dim2,0.6,0.7,0
+Senate,I(caucus D),dim2,0.7,0.8,0
+Senate,I(caucus D),dim2,0.8,0.9,0
+Senate,I(caucus D),dim2,0.9,1.0,0
+Senate,R,dim1,-1.0,-0.9,0
+Senate,R,dim1,-0.9,-0.8,0
+Senate,R,dim1,-0.8,-0.7,0
+Senate,R,dim1,-0.7,-0.6,0
+Senate,R,dim1,-0.6,-0.5,0
+Senate,R,dim1,-0.5,-0.4,0
+Senate,R,dim1,-0.4,-0.3,0
+Senate,R,dim1,-0.3,-0.2,0
+Senate,R,dim1,-0.2,-0.1,0
+Senate,R,dim1,-0.1,0.0,0
+Senate,R,dim1,0.0,0.1,0
+Senate,R,dim1,0.1,0.2,1
+Senate,R,dim1,0.2,0.3,2
+Senate,R,dim1,0.3,0.4,4
+Senate,R,dim1,0.4,0.5,14
+Senate,R,dim1,0.5,0.6,12
+Senate,R,dim1,0.6,0.7,12
+Senate,R,dim1,0.7,0.8,3
+Senate,R,dim1,0.8,0.9,4
+Senate,R,dim1,0.9,1.0,1
+Senate,R,dim2,-1.0,-0.9,0
+Senate,R,dim2,-0.9,-0.8,0
+Senate,R,dim2,-0.8,-0.7,0
+Senate,R,dim2,-0.7,-0.6,0
+Senate,R,dim2,-0.6,-0.5,1
+Senate,R,dim2,-0.5,-0.4,2
+Senate,R,dim2,-0.4,-0.3,4
+Senate,R,dim2,-0.3,-0.2,1
+Senate,R,dim2,-0.2,-0.1,5
+Senate,R,dim2,-0.1,0.0,8
+Senate,R,dim2,0.0,0.1,5
+Senate,R,dim2,0.1,0.2,8
+Senate,R,dim2,0.2,0.3,5
+Senate,R,dim2,0.3,0.4,7
+Senate,R,dim2,0.4,0.5,2
+Senate,R,dim2,0.5,0.6,1
+Senate,R,dim2,0.6,0.7,2
+Senate,R,dim2,0.7,0.8,1
+Senate,R,dim2,0.8,0.9,1
+Senate,R,dim2,0.9,1.0,0

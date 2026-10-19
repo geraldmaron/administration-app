@@ -1,0 +1,34 @@
+[
+  {
+    "width": 390,
+    "theme": "light",
+    "url": "http://127.0.0.1:5191/nation",
+    "title": "Approval, settled and sampled",
+    "overflow": 0,
+    "surfaceOverflow": 0
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "url": "http://127.0.0.1:5191/nation",
+    "title": "Approval, settled and sampled",
+    "overflow": 0,
+    "surfaceOverflow": 0
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "url": "http://127.0.0.1:5191/nation",
+    "title": "Approval, settled and sampled",
+    "overflow": 0,
+    "surfaceOverflow": 0
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "url": "http://127.0.0.1:5191/nation",
+    "title": "Approval, settled and sampled",
+    "overflow": 0,
+    "surfaceOverflow": 0
+  }
+]

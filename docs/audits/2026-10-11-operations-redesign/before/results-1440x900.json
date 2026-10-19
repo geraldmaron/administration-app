@@ -1,0 +1,406 @@
+[
+ {
+  "route": "/",
+  "files": [
+   "index-1440x900.png"
+  ],
+  "reached": true,
+  "note": "",
+  "errors": []
+ },
+ {
+  "route": "/founding",
+  "files": [
+   "founding-1440x900.png"
+  ],
+  "reached": true,
+  "note": "",
+  "errors": []
+ },
+ {
+  "route": "/administrations",
+  "files": [
+   "administrations-1440x900.png"
+  ],
+  "reached": true,
+  "note": "",
+  "errors": []
+ },
+ {
+  "route": "/settings",
+  "files": [
+   "settings-1440x900.png",
+   "settings-1440x900-part2.png",
+   "settings-1440x900-part3.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 1804/715px",
+  "errors": []
+ },
+ {
+  "route": "/recovery",
+  "files": [
+   "recovery-1440x900.png"
+  ],
+  "reached": true,
+  "note": "",
+  "errors": []
+ },
+ {
+  "route": "/brief",
+  "files": [
+   "brief-index-1440x900.png",
+   "brief-index-1440x900-part2.png",
+   "brief-index-1440x900-part3.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 1841/692px",
+  "errors": []
+ },
+ {
+  "route": "/brief/digest",
+  "files": [
+   "brief-digest-1440x900.png"
+  ],
+  "reached": true,
+  "note": "",
+  "errors": []
+ },
+ {
+  "route": "/brief/metric/approval",
+  "files": [
+   "brief-metric-1440x900.png",
+   "brief-metric-1440x900-part2.png",
+   "brief-metric-1440x900-part3.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 1787/671px",
+  "errors": []
+ },
+ {
+  "route": "/nation",
+  "files": [
+   "nation-index-1440x900.png",
+   "nation-index-1440x900-part2.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 1147/692px",
+  "errors": []
+ },
+ {
+  "route": "/nation/budget",
+  "files": [
+   "nation-budget-1440x900.png",
+   "nation-budget-1440x900-part2.png",
+   "nation-budget-1440x900-part3.png",
+   "nation-budget-1440x900-part4.png",
+   "nation-budget-1440x900-part5.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 2917/671px",
+  "errors": []
+ },
+ {
+  "route": "/nation/economy",
+  "files": [
+   "nation-economy-1440x900.png",
+   "nation-economy-1440x900-part2.png",
+   "nation-economy-1440x900-part3.png",
+   "nation-economy-1440x900-part4.png",
+   "nation-economy-1440x900-part5.png",
+   "nation-economy-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 7082/671px",
+  "errors": []
+ },
+ {
+  "route": "/nation/emergency",
+  "files": [
+   "nation-emergency-1440x900.png"
+  ],
+  "reached": true,
+  "note": "",
+  "errors": []
+ },
+ {
+  "route": "/nation/policy",
+  "files": [
+   "nation-policy-1440x900.png",
+   "nation-policy-1440x900-part2.png",
+   "nation-policy-1440x900-part3.png",
+   "nation-policy-1440x900-part4.png",
+   "nation-policy-1440x900-part5.png",
+   "nation-policy-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 3651/692px",
+  "errors": []
+ },
+ {
+  "route": "/washington",
+  "files": [
+   "washington-index-1440x900.png",
+   "washington-index-1440x900-part2.png",
+   "washington-index-1440x900-part3.png",
+   "washington-index-1440x900-part4.png",
+   "washington-index-1440x900-part5.png",
+   "washington-index-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 3520/692px",
+  "errors": []
+ },
+ {
+  "route": "/washington/congress",
+  "files": [
+   "washington-congress-1440x900.png",
+   "washington-congress-1440x900-part2.png",
+   "washington-congress-1440x900-part3.png",
+   "washington-congress-1440x900-part4.png",
+   "washington-congress-1440x900-part5.png",
+   "washington-congress-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 4612/692px",
+  "errors": []
+ },
+ {
+  "route": "/washington/courts",
+  "files": [
+   "washington-courts-1440x900.png",
+   "washington-courts-1440x900-part2.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 1144/692px",
+  "errors": []
+ },
+ {
+  "route": "/washington/office/OFF-STATE-SEC",
+  "files": [
+   "washington-office-OFF-STATE-SEC-1440x900.png",
+   "washington-office-OFF-STATE-SEC-1440x900-part2.png",
+   "washington-office-OFF-STATE-SEC-1440x900-part3.png",
+   "washington-office-OFF-STATE-SEC-1440x900-part4.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 2040/692px",
+  "errors": []
+ },
+ {
+  "route": "/washington/office/press",
+  "files": [
+   "washington-office-press-1440x900.png",
+   "washington-office-press-1440x900-part2.png",
+   "washington-office-press-1440x900-part3.png",
+   "washington-office-press-1440x900-part4.png",
+   "washington-office-press-1440x900-part5.png",
+   "washington-office-press-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 4594/692px",
+  "errors": []
+ },
+ {
+  "route": "/washington/oversight",
+  "files": [
+   "washington-oversight-1440x900.png",
+   "washington-oversight-1440x900-part2.png",
+   "washington-oversight-1440x900-part3.png",
+   "washington-oversight-1440x900-part4.png",
+   "washington-oversight-1440x900-part5.png",
+   "washington-oversight-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 4155/671px",
+  "errors": []
+ },
+ {
+  "route": "/world",
+  "files": [
+   "world-index-1440x900.png",
+   "world-index-1440x900-part2.png",
+   "world-index-1440x900-part3.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 1368/671px",
+  "errors": []
+ },
+ {
+  "route": "/world/security",
+  "files": [
+   "world-security-1440x900.png",
+   "world-security-1440x900-part2.png",
+   "world-security-1440x900-part3.png",
+   "world-security-1440x900-part4.png",
+   "world-security-1440x900-part5.png",
+   "world-security-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 10395/671px",
+  "errors": []
+ },
+ {
+  "route": "/record",
+  "files": [
+   "record-index-1440x900.png",
+   "record-index-1440x900-part2.png",
+   "record-index-1440x900-part3.png",
+   "record-index-1440x900-part4.png",
+   "record-index-1440x900-part5.png",
+   "record-index-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 7630/715px",
+  "errors": []
+ },
+ {
+  "route": "/dev/map",
+  "files": [
+   "dev-map-1440x900.png"
+  ],
+  "reached": true,
+  "note": "",
+  "errors": []
+ },
+ {
+  "route": "/brief/decision/the-boats-somebody-says-are-being-loaded",
+  "files": [
+   "brief-decision-1440x900.png",
+   "brief-decision-1440x900-part2.png",
+   "brief-decision-1440x900-part3.png",
+   "brief-decision-1440x900-part4.png",
+   "brief-decision-1440x900-part5.png",
+   "brief-decision-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 4732/609px",
+  "errors": []
+ },
+ {
+  "route": "/brief/clock/acting-authority",
+  "files": [
+   "brief-clock-1440x900.png"
+  ],
+  "reached": true,
+  "note": "",
+  "errors": []
+ },
+ {
+  "route": "/nation/state/AL",
+  "files": [
+   "nation-state-1440x900.png",
+   "nation-state-1440x900-part2.png",
+   "nation-state-1440x900-part3.png",
+   "nation-state-1440x900-part4.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 2469/692px",
+  "errors": []
+ },
+ {
+  "route": "/nation/policy/order/order-border-controls",
+  "files": [
+   "nation-policy-order-1440x900.png",
+   "nation-policy-order-1440x900-part2.png",
+   "nation-policy-order-1440x900-part3.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 1515/692px",
+  "errors": []
+ },
+ {
+  "route": "/washington/person/PER-USA-committee-chair-13",
+  "files": [
+   "washington-person-1440x900.png",
+   "washington-person-1440x900-part2.png",
+   "washington-person-1440x900-part3.png",
+   "washington-person-1440x900-part4.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 2522/715px",
+  "errors": []
+ },
+ {
+  "route": "/washington/congress/bill/bill%3Aact-fiscal-responsibility%3A8",
+  "files": [
+   "washington-congress-bill-1440x900.png",
+   "washington-congress-bill-1440x900-part2.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 897/692px",
+  "errors": []
+ },
+ {
+  "route": "/washington/congress/post/post-house-speaker",
+  "files": [
+   "washington-congress-post-1440x900.png",
+   "washington-congress-post-1440x900-part2.png",
+   "washington-congress-post-1440x900-part3.png",
+   "washington-congress-post-1440x900-part4.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 2488/692px",
+  "errors": []
+ },
+ {
+  "route": "/world/nation/CHL",
+  "files": [
+   "world-nation-1440x900.png",
+   "world-nation-1440x900-part2.png",
+   "world-nation-1440x900-part3.png",
+   "world-nation-1440x900-part4.png",
+   "world-nation-1440x900-part5.png",
+   "world-nation-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 3172/623px",
+  "errors": []
+ },
+ {
+  "route": "/world/war/war%3ATHA%3AKHM%3A0",
+  "files": [
+   "world-war-1440x900.png",
+   "world-war-1440x900-part2.png",
+   "world-war-1440x900-part3.png",
+   "world-war-1440x900-part4.png",
+   "world-war-1440x900-part5.png",
+   "world-war-1440x900-part6.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 3374/692px",
+  "errors": []
+ },
+ {
+  "route": "/world/security/command/CCMD-NORTHCOM",
+  "files": [
+   "world-security-command-1440x900.png"
+  ],
+  "reached": true,
+  "note": "",
+  "errors": [
+   "console: WebSocket connection to 'ws://127.0.0.1:4391/?token=EOh1gqD1kfIF' failed: ",
+   "console: Creating a worker from 'blob:http://127.0.0.1:4391/6e8b59f2-84d2-4b67-a374-7f94ba646810' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'worker-src' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+  ]
+ },
+ {
+  "route": "/record/event/ev-31-1693",
+  "files": [
+   "record-event-1440x900.png"
+  ],
+  "reached": true,
+  "note": "",
+  "errors": []
+ },
+ {
+  "route": "/brief/scandal/scandal%3Aleak%3Aev-6-197",
+  "files": [
+   "brief-scandal-1440x900.png",
+   "brief-scandal-1440x900-part2.png",
+   "brief-scandal-1440x900-part3.png"
+  ],
+  "reached": true,
+  "note": "inner scroller .ui-surface__body 1291/573px",
+  "errors": []
+ }
+]

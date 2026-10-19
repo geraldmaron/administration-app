@@ -1,0 +1,739 @@
+{
+  "wave": "BL-267",
+  "job": "bl267-inert-gate-regate",
+  "decisions": [
+    {
+      "id": "the-administration-asks-for-more",
+      "class": "institution",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-CAREER-SERVICE",
+          "field": "delivery",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "Universal routine week: a bureau whose pay formula has fallen behind private employers asks for retention pay in any state of the board. Career-service delivery sits between 0.65 and 0.8 on every preview board, so the bound read nothing; nothing else on the board makes this ask more or less likely."
+    },
+    {
+      "id": "the-border-road-contract",
+      "class": "triumph",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "unemploymentBand",
+          "in": [
+            "normal",
+            "slack",
+            "severe"
+          ]
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "Universal routine week: a deadlocked procurement board over a promised road arrives in any economy. The band list named every band the boards produce, and the week's prose turns on the bids, not on jobs."
+    },
+    {
+      "id": "the-bottling-plant-that-failed-its-own-test",
+      "class": "public-health",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-HHS",
+          "field": "delivery",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The declared introduces premise carries it: the failed sample is the incident. HHS delivery at most 0.8 held on every board; a municipal plant's own failed test is not a reading of federal delivery."
+    },
+    {
+      "id": "the-campus-occupation",
+      "class": "unrest",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "operatorPressure",
+          "field": "protest",
+          "atLeast": 0.15
+        }
+      ],
+      "added": [],
+      "boostsAdded": [
+        {
+          "source": "instability",
+          "factor": 1
+        }
+      ],
+      "premise": null,
+      "why": "The introduces premise (the occupation is the incident) carries the class. Protest at least 0.15 held everywhere (early boards sit near 0.35). An instability boost lets the week rise on an unsettled board without starving a calm one of a campus occupation."
+    },
+    {
+      "id": "the-chair-who-marched-with-them-before-she-worked-here",
+      "class": "unrest",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "operatorPressure",
+          "field": "protest",
+          "atLeast": 0.15
+        }
+      ],
+      "added": [],
+      "boostsAdded": [
+        {
+          "source": "instability",
+          "factor": 1
+        }
+      ],
+      "premise": null,
+      "why": "Same as the campus occupation: the introduces premise names the student gathering as the incident; the protest floor read nothing; the instability boost leans the week toward an unsettled board."
+    },
+    {
+      "id": "the-cluster-in-the-market-district",
+      "class": "public-health",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "metric",
+          "metric": "stability",
+          "atMost": 0.85
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The pandemic gate is the premise. Stability at most 0.85 held on every board the pandemic gate admits."
+    },
+    {
+      "id": "the-contested-mandate",
+      "class": "unrest",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "operatorPressure",
+          "field": "protest",
+          "atLeast": 0.2
+        }
+      ],
+      "added": [],
+      "boostsAdded": [
+        {
+          "source": "instability",
+          "factor": 1
+        }
+      ],
+      "premise": null,
+      "why": "The introduces premise (the chamber sit-in) carries the class; the protest floor read nothing; the instability boost leans a constitutional standoff toward an unsettled board."
+    },
+    {
+      "id": "the-corridor-workers-want-widened",
+      "class": "unrest",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "operatorPressure",
+          "field": "protest",
+          "atLeast": 0.25
+        }
+      ],
+      "added": [],
+      "boostsAdded": [
+        {
+          "source": "instability",
+          "factor": 1
+        }
+      ],
+      "premise": {
+        "kind": "introduces",
+        "what": "The stoppage is the incident: freight drivers park their trucks at the border corridor checkpoint rather than cross it, creating the blockade the week reports."
+      },
+      "why": "Removing the inert protest floor leaves an unrest week reading no unrest state, so it declares the stoppage as its own incident, the standard W2 applied to the other labor stoppages. The instability boost leans it toward an unsettled board."
+    },
+    {
+      "id": "the-dockworkers-who-wont-cross-each-other",
+      "class": "unrest",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "geography",
+          "field": "coastal",
+          "is": true
+        }
+      ],
+      "added": [],
+      "boostsAdded": [
+        {
+          "source": "instability",
+          "factor": 1
+        }
+      ],
+      "premise": null,
+      "why": "The player governs the United States, which always has a coast, so the coastal gate read nothing. The introduces premise (the sympathy line) carries the class; the instability boost leans a labor stoppage toward an unsettled board."
+    },
+    {
+      "id": "the-dormitory-fire-and-the-empty-chair",
+      "class": "tragedy",
+      "severity": "critical",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-CAREER-SERVICE",
+          "field": "delivery",
+          "atMost": 0.7
+        }
+      ],
+      "added": [],
+      "boostsAdded": [
+        {
+          "source": "removalPressure",
+          "factor": 1
+        }
+      ],
+      "premise": null,
+      "why": "Career-service delivery at most 0.7 held on every board, so this critical week was bound to nothing. The week's question is the President's empty seat at the memorial, which costs most when the presidency is already under pressure, so a removalPressure boost is the honest lean; the fire itself can happen on any board."
+    },
+    {
+      "id": "the-ferry-that-failed-the-inspection-nobody-saw",
+      "class": "tragedy",
+      "severity": "critical",
+      "removed": [
+        {
+          "kind": "geography",
+          "field": "coastal",
+          "is": true
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The player's own coast is always true. The stalled-on-the-memo flag (aged 6) with its flagAge boost is the real gate."
+    },
+    {
+      "id": "the-fishing-rights-nobody-wrote-down",
+      "class": "foreign-crisis",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "geography",
+          "field": "coastal",
+          "is": true
+        }
+      ],
+      "added": [
+        {
+          "kind": "geography",
+          "of": "counterpart",
+          "field": "coastal",
+          "is": true
+        }
+      ],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The player's own coast is always true; what the shared shoal needs is a neighbor with a coast. Gating the counterpart's coast reads the premise, and the closest pick then binds a coastal neighbor."
+    },
+    {
+      "id": "the-hand-that-crossed-the-name",
+      "class": "justice",
+      "severity": "critical",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-CAREER-SERVICE",
+          "field": "delivery",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The restored-the-crossed-name-to-clemency flag (aged 6) is the premise. Career-service delivery at most 0.8 held everywhere."
+    },
+    {
+      "id": "the-judge-under-pressure",
+      "class": "justice",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-USMS",
+          "field": "delivery",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "Universal serious week: a threat delivered to a judge's home can come on any board. Marshals delivery at most 0.8 held everywhere; the prose never says protection failed, only that a threat arrived."
+    },
+    {
+      "id": "the-last-signature-on-the-charter",
+      "class": "death",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-VA",
+          "field": "delivery",
+          "atMost": 0.7
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "A death week; the last signer dies on any board. VA delivery at most 0.7 held everywhere. The turn-6 floor stays as the director's pacing."
+    },
+    {
+      "id": "the-letter-asking-why",
+      "class": "justice",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-DOJ",
+          "field": "delivery",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The released-the-amended-clemency-list flag (aged 10) is the premise. DOJ delivery at most 0.8 held everywhere."
+    },
+    {
+      "id": "the-list-longer-than-the-money",
+      "class": "disaster",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "metric",
+          "metric": "treasury",
+          "atLeast": 18
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The flood gate is the premise. Treasury at least 18 is far below every board's treasury, so it read nothing."
+    },
+    {
+      "id": "the-name-the-hunt-for-the-leak-produced",
+      "class": "justice",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-DOJ",
+          "field": "delivery",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The hunted-the-leak flag (aged 8) is the premise. DOJ delivery at most 0.8 held everywhere."
+    },
+    {
+      "id": "the-number-the-stack-returned",
+      "class": "justice",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-DOJ",
+          "field": "delivery",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The reopened-the-old-sentencing-file flag (aged 8) is the premise. DOJ delivery at most 0.8 held everywhere."
+    },
+    {
+      "id": "the-orchestra-choice",
+      "class": "culture",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "metric",
+          "metric": "approval",
+          "atMost": 0.7
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "Universal routine culture week, the case doctrine §6.2 rule 2 names: an orchestra contract lapsing does not depend on the board. Approval at most 0.7 held everywhere and the prose never mentions approval."
+    },
+    {
+      "id": "the-order-they-say-we-ignored-before",
+      "class": "institution",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "metric",
+          "metric": "stability",
+          "atMost": 0.85
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The produced-the-court-file-incomplete flag (aged 6) is the premise. Stability at most 0.85 held everywhere."
+    },
+    {
+      "id": "the-pardon-nobody-is-watching",
+      "class": "justice",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-DOJ",
+          "field": "delivery",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "Universal routine week: the clemency page is routine department business on any board. DOJ delivery at most 0.8 held everywhere."
+    },
+    {
+      "id": "the-pier-stands-empty",
+      "class": "unrest",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "operatorPressure",
+          "field": "protest",
+          "atLeast": 0.1
+        }
+      ],
+      "added": [],
+      "boostsAdded": [
+        {
+          "source": "instability",
+          "factor": 1
+        }
+      ],
+      "premise": null,
+      "why": "The introduces premise (the walkout this morning) carries the class; the protest floor read nothing; the instability boost leans a strike toward an unsettled board."
+    },
+    {
+      "id": "the-premium-the-dealers-kept-charging",
+      "class": "economy",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-TREASURY",
+          "field": "politicization",
+          "atMost": 0.5
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": {
+        "kind": "universal",
+        "reason": "This is the second half of a debt-sale arc the player started: the paid-a-surcharge-to-close flag supplies its state, and no further economy reading is presumed."
+      },
+      "why": "The paid-a-surcharge-to-close flag is the premise. Treasury politicization at most 0.5 held everywhere. The universal reason named the removed bound, so it is restated without it."
+    },
+    {
+      "id": "the-queue-that-doesnt-move",
+      "class": "migration",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "metric",
+          "metric": "stability",
+          "atMost": 0.8
+        },
+        {
+          "kind": "metric",
+          "metric": "treasury",
+          "atLeast": 12
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "Universal routine week: a stalled intake queue at a federal checkpoint is a standing administrative failure on any board. Stability at most 0.8 and treasury at least 12 both held everywhere."
+    },
+    {
+      "id": "the-quota-that-emptied-the-docks",
+      "class": "economy",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "geography",
+          "field": "coastal",
+          "is": true
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": {
+        "kind": "universal",
+        "reason": "A fisheries quota set for the stock, not the cycle, hits coastal towns whatever the macro economy is doing."
+      },
+      "why": "The United States always has a coast, so the coastal gate read nothing. The universal reason leaned on that gate, so it is restated without it."
+    },
+    {
+      "id": "the-request-for-a-neutral-port",
+      "class": "foreign-crisis",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "geography",
+          "field": "coastal",
+          "is": true
+        }
+      ],
+      "added": [
+        {
+          "kind": "geography",
+          "of": "counterpart",
+          "field": "coastal",
+          "is": true
+        }
+      ],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The player's own coast is always true; the week needs a belligerent with a navy, so the gate moves to the counterpart's coast. warState none stays."
+    },
+    {
+      "id": "the-result-the-lab-will-not-repeat",
+      "class": "public-health",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-HHS",
+          "field": "delivery",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The introduces premise (the unrepeatable positive) carries it and the instability boost already leans it. HHS delivery at most 0.8 held everywhere."
+    },
+    {
+      "id": "the-return-on-the-yard-we-stood-behind",
+      "class": "triumph",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "unemploymentBand",
+          "in": [
+            "normal",
+            "slack",
+            "severe"
+          ]
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The guaranteed-the-shipyard-loan flag (aged 10) is the premise. The band list named every band the boards produce."
+    },
+    {
+      "id": "the-schools-the-governor-wants-rebuilt-as-they-were",
+      "class": "disaster",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "metric",
+          "metric": "treasury",
+          "atLeast": 435
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The earthquake gate is the premise. Treasury at least 435 is below every board's treasury."
+    },
+    {
+      "id": "the-second-name-on-the-clemency-list",
+      "class": "justice",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-DOJ",
+          "field": "politicization",
+          "atMost": 0.5
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The granted-the-forgotten-clemency flag (aged 6) is the premise. DOJ politicization at most 0.5 held everywhere."
+    },
+    {
+      "id": "the-second-official-the-dock-halls-asked-for",
+      "class": "institution",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-LABOR",
+          "field": "politicization",
+          "atMost": 0.5
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "The removed-treasury-secretary-to-end-strike flag (aged 7) is the premise. Labor politicization at most 0.5 held everywhere."
+    },
+    {
+      "id": "the-shaft-the-state-crew-cannot-reach",
+      "class": "tragedy",
+      "severity": "critical",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-STATES",
+          "field": "delivery",
+          "atMost": 0.7
+        }
+      ],
+      "added": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-STATES",
+          "field": "delivery",
+          "atMost": 0.62
+        }
+      ],
+      "boostsAdded": [
+        {
+          "source": "institutionStrain",
+          "factor": 1
+        }
+      ],
+      "premise": null,
+      "why": "Revised after review reject. State delivery at most 0.7 held everywhere. INST-STATES delivery starts near 0.645 on 64 of 65 boards, so at most 0.62 reads a state apparatus that has slipped below where it began, which is the premise (the state crew cannot reach in time). Live on the stress board, so reachable; in play it opens as state delivery erodes. The institutionStrain boost raises the week as that strain deepens. The instability boost is dropped. A stateGrievance gate was considered: it needs locus.state, which a regate may not set, and early boards carry no grievance marks."
+    },
+    {
+      "id": "the-surplus-nobody-expected",
+      "class": "triumph",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "metric",
+          "metric": "treasury",
+          "atLeast": 12
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "Universal routine triumph: low road bids leave an underspend in any economy. Treasury at least 12 held everywhere."
+    },
+    {
+      "id": "the-surplus-nobody-planned-for",
+      "class": "triumph",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "metric",
+          "metric": "approval",
+          "atMost": 0.7
+        }
+      ],
+      "added": [],
+      "boostsAdded": [],
+      "premise": null,
+      "why": "Universal routine triumph: a stake sale lands in the Treasury on any board. Approval at most 0.7 held everywhere and the prose never mentions approval."
+    },
+    {
+      "id": "the-veterans-who-came-home-late",
+      "class": "war",
+      "severity": "routine",
+      "removed": [
+        {
+          "kind": "metric",
+          "metric": "stability",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [
+        {
+          "source": "warIntensity",
+          "factor": 1
+        }
+      ],
+      "premise": null,
+      "why": "The introduces premise (the late return) carries the class. Stability at most 0.8 held everywhere. A warIntensity boost leans the week toward a board where this government is fighting, which is when units are held past relief."
+    },
+    {
+      "id": "the-ward-that-ran-out-of-beds",
+      "class": "public-health",
+      "severity": "serious",
+      "removed": [
+        {
+          "kind": "institutionState",
+          "institution": "INST-HHS",
+          "field": "delivery",
+          "atMost": 0.8
+        }
+      ],
+      "added": [],
+      "boostsAdded": [
+        {
+          "source": "conditionSeverity",
+          "factor": 1,
+          "kind": "pandemic"
+        }
+      ],
+      "premise": null,
+      "why": "The introduces premise (the overflow in fever season) carries the class. HHS delivery at most 0.8 held everywhere. A conditionSeverity boost on pandemic leans an overflowing ward toward a board with an outbreak, without making it wait for one."
+    }
+  ],
+  "date": "2026-10-18",
+  "method": "Each listed condition was taken off and, per scenario, the readings that could replace it were measured on the corpus reachability boards (65 boards, cast-only baseline, as scenario-audit-inert-gate.ts asks). Early boards are nearly uniform: institution delivery and politicization, stability, approval and protest each split on one or two boards; treasury never splits (every board holds far more than any bound written); unemployment is 'normal' on 63. A replacement that admits one stress board is a gate in name only, so the default is removal. A week left reading nothing gets a weight boost where one reads the state its story leans on, a counterpart geography gate where the story needs the other country's coast, a premise where its class needs one, and otherwise an explicit universal declaration (doctrine 6.2 rule 2) in its 'why'.",
+  "pilot": [
+    {
+      "id": "the-provinces-the-writ-does-not-reach",
+      "removed": [
+        {
+          "kind": "operatorPressure",
+          "field": "protest",
+          "atLeast": 0.3
+        }
+      ],
+      "why": "Revised after review note. Protest at least 0.3 held on every pilot board. The prose asserts marches in Washington in their third week, so the floor moves to 0.45, which holds on the one pilot board with insurgency at least 0.4 and fails the other nine (real play: protest at least 0.5 in about 31% of weeks per the W2 sample).",
+      "added": [
+        {
+          "kind": "operatorPressure",
+          "field": "protest",
+          "atLeast": 0.45
+        }
+      ]
+    },
+    {
+      "id": "the-water-came-over-the-yard-wall",
+      "removed": [
+        {
+          "kind": "geography",
+          "field": "coastal",
+          "is": true
+        }
+      ],
+      "why": "The player's own coast is always true; the kept-the-yards-on-naval-orders flag and the declared surge carry it. Hand edit in packs/pilot.ts."
+    }
+  ]
+}

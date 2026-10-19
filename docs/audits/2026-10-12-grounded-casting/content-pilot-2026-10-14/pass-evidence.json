@@ -1,0 +1,74 @@
+{
+  "status": "limited pilot; independently approved; not mounted or published",
+  "jobs": {
+    "accountability-readers-2026-10-14": {
+      "drafted": 4,
+      "approved": 0,
+      "rejected": 4
+    },
+    "court-response-pilot-2026-10-14": {
+      "drafted": 1,
+      "approved": 1,
+      "rejected": 0
+    }
+  },
+  "gate": {
+    "command": "node studio-cli/dist/cli.js scenarios run court-response-pilot-2026-10-14 --recheck",
+    "done": 1,
+    "open": 0,
+    "warnings": [
+      "all-downside: static audit does not recognize typed legal actions; independently accepted with explanation"
+    ]
+  },
+  "runtime": {
+    "command": "pnpm --filter @admin/player-core exec vitest run src/court-response-pilot.probe.test.ts",
+    "passed": 1,
+    "branches": [
+      "accept",
+      "seek",
+      "seek-with-stay"
+    ],
+    "saveReload": true,
+    "noAuthoredBorrowing": true,
+    "limits": [
+      "forced deterministic existing preview court phases, not organic campaign or balance proof",
+      "proceeding/order ids remain in typed commands, frozen cases and effect payloads; omitted from conversation event entity index"
+    ]
+  },
+  "browser": {
+    "command": "E2E_ATTACH=1 E2E_PORT=5188 pnpm --filter @admin/web run test:e2e tests/court-response-pilot.probe.spec.ts --workers=4 --output=/private/tmp/court-response-pilot-browser-final",
+    "passed": 12,
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "widths": [
+      320,
+      390,
+      768,
+      1280,
+      1440,
+      1920
+    ],
+    "journey": "Import disposable unpublished fixture; select actual stay action; authorize; Record; reload; native department subject and no horizontal overflow. Actual user saves untouched.",
+    "limitations": [
+      "Record shows Done: in effect and Resolved: in effect despite underlying appeal/stay remaining pending; receipt narration correctly says pending. Needs explicit lifecycle presentation.",
+      "Initial probes failed on sandbox Chromium launch, early walkthrough timing, ordinal radio selection and expecting a cabinet word outside its rendered surface. Corrected probes use named radio/actual visible answer, final pass above."
+    ],
+    "inspectedCaptures": [
+      "decision-desktop-1440-dark.png",
+      "decision-mobile-320-light.png",
+      "record-desktop-1440-light.png",
+      "record-mobile-320-dark.png"
+    ],
+    "captureScope": "Selected-answer and receipt viewports; not a whole-page visual acceptance claim."
+  },
+  "review": {
+    "independent": true,
+    "path": "content/reviews/court-response-pilot-2026-10-14/review.json",
+    "firstBatch": "content/reviews/accountability-readers-2026-10-14/review.json",
+    "minorCorrections": "Dilemma classification; explain additional stay stage and conditional modeled court credibility cost. Gate rechecked."
+  },
+  "cleanup": "Temporary package/web probe files removed after checks. Reproduction inputs retained under content/reviews/court-response-pilot-2026-10-14/probes; copy into original package/test paths before repeating their recorded commands. Fixture remains /private/tmp/court-response-preview-save.json. No source, validator or schema changes.",
+  "publication": "No corpus rewrite, mount, bake, publish, push or deployment. Broader AGENTS.md section 3 hold unchanged. No paid driver spend."
+}

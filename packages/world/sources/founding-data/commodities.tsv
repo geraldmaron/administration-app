@@ -1,0 +1,107 @@
+commodity	metric	country	value	unit	world_share_pct	vintage	source_id	note
+crude_oil	production	United States	21910	thousand_bpd	22	2023	EIA-FAQ709	petroleum and other liquids (broad EIA definition), not crude oil alone
+crude_oil	production	Saudi Arabia	11130	thousand_bpd	11	2023	EIA-FAQ709
+crude_oil	production	Russia	10750	thousand_bpd	11	2023	EIA-FAQ709
+crude_oil	production	Canada	5760	thousand_bpd	6	2023	EIA-FAQ709
+crude_oil	production	China	5260	thousand_bpd	5	2023	EIA-FAQ709
+crude_oil	production	Iraq	4420	thousand_bpd	4	2023	EIA-FAQ709
+crude_oil	production	Brazil	4280	thousand_bpd	4	2023	EIA-FAQ709
+crude_oil	production	United Arab Emirates	4160	thousand_bpd	4	2023	EIA-FAQ709
+crude_oil	production	Iran	3990	thousand_bpd	4	2023	EIA-FAQ709
+crude_oil	production	Kuwait	2910	thousand_bpd	3	2023	EIA-FAQ709
+crude_oil	production_narrow	United States	12900	thousand_bpd	NA	2023	EIA-TIE64125	crude oil only (narrow EIA definition); record year; 6th consecutive year as top producer under this narrower measure
+crude_oil	production_narrow	Russia	10600	thousand_bpd	NA	2023	EIA-TIE64125	crude oil only, approximate
+crude_oil	production_narrow	Saudi Arabia	9700	thousand_bpd	NA	2023	EIA-TIE64125	crude oil only, approximate; the top three combined were 40% of world crude output (32.8 million b/d) in 2023
+lng	exports	United States	11.9	bcf_per_day	NA	2024	EIA-TIE64844	world's top LNG exporter in 2024
+lng	exports	Australia	10.2-10.7	bcf_per_day	NA	2024	EIA-TIE64844	stated as a stable range over 2020-2024, not a single point figure
+lng	exports	Qatar	10.2-10.7	bcf_per_day	NA	2024	EIA-TIE64844	stated as a stable range over 2020-2024, not a single point figure
+lng	exports	Russia	4.4	bcf_per_day	NA	2024	EIA-TIE64844
+lng	exports	Malaysia	3.7	bcf_per_day	NA	2024	EIA-TIE64844
+natural_gas	production	United States	113	bcf_per_day	NA	2024	EIA-TIE65025	primary source, but US-only figure (marketed production); article gives no world ranking or other countries' figures
+natural_gas	production	United States	1073.7	bcm	25.6	2025	SECONDARY-UNVERIFIED	[I] NOT opened at a primary source; secondary aggregator synthesis citing IEA/EIA; treat as directional only
+natural_gas	production	Russia	609.4	bcm	14.5	2025	SECONDARY-UNVERIFIED	[I] NOT opened at a primary source; secondary aggregator synthesis; treat as directional only
+natural_gas	production	rank_order_only	Iran, China, Canada, Qatar, Australia	NA	rank	2024-2025	SECONDARY-UNVERIFIED	[I] widely repeated rank order for positions 3-7 could not be pinned to an opened primary table within this session's budget
+wheat	production	China	140099	thousand_mt	17.5	2024/25	USDA-GRAIN-2026-09	local marketing year (Jun/May region varies by country)
+wheat	production	European Union	121055	thousand_mt	15.2	2024/25	USDA-GRAIN-2026-09
+wheat	production	India	113292	thousand_mt	14.2	2024/25	USDA-GRAIN-2026-09
+wheat	production	Russia	81600	thousand_mt	10.2	2024/25	USDA-GRAIN-2026-09
+wheat	production	United States	53851	thousand_mt	6.7	2024/25	USDA-GRAIN-2026-09
+wheat	production	Canada	35939	thousand_mt	4.5	2024/25	USDA-GRAIN-2026-09
+wheat	production	Australia	34110	thousand_mt	4.3	2024/25	USDA-GRAIN-2026-09
+wheat	production	Pakistan	31814	thousand_mt	4.0	2024/25	USDA-GRAIN-2026-09
+wheat	production	WORLD_TOTAL	799099	thousand_mt	100	2024/25	USDA-GRAIN-2026-09	local marketing years per country, not a common calendar window
+wheat	exports	Russia	43000	thousand_mt	21.0	2024/25	USDA-GRAIN-2026-09	trade year Jul/Jun, uniform across countries for comparability
+wheat	exports	Canada	28586	thousand_mt	13.9	2024/25	USDA-GRAIN-2026-09
+wheat	exports	European Union	27917	thousand_mt	13.6	2024/25	USDA-GRAIN-2026-09
+wheat	exports	United States	22803	thousand_mt	11.1	2024/25	USDA-GRAIN-2026-09
+wheat	exports	Australia	21295	thousand_mt	10.4	2024/25	USDA-GRAIN-2026-09
+wheat	exports	Ukraine	15751	thousand_mt	7.7	2024/25	USDA-GRAIN-2026-09	war-disrupted; Sep 2026 forecast cuts 2026/27 Ukraine exports further on Black Sea maritime constraints (context, not this row's vintage)
+wheat	exports	Argentina	10406	thousand_mt	5.1	2024/25	USDA-GRAIN-2026-09
+wheat	exports	WORLD_TOTAL	204984	thousand_mt	100	2024/25	USDA-GRAIN-2026-09	trade year Jul/Jun
+corn	production	United States	378268	thousand_mt	30.6	2024/25	USDA-GRAIN-2026-09	local marketing year Sep/Aug
+corn	production	China	294917	thousand_mt	23.9	2024/25	USDA-GRAIN-2026-09
+corn	production	Brazil	136000	thousand_mt	11.0	2024/25	USDA-GRAIN-2026-09
+corn	production	European Union	59591	thousand_mt	4.8	2024/25	USDA-GRAIN-2026-09
+corn	production	Argentina	49000	thousand_mt	4.0	2024/25	USDA-GRAIN-2026-09
+corn	production	India	43409	thousand_mt	3.5	2024/25	USDA-GRAIN-2026-09
+corn	production	WORLD_TOTAL	1235033	thousand_mt	100	2024/25	USDA-GRAIN-2026-09	local marketing years per country
+corn	exports	United States	75680	thousand_mt	39.5	2024/25	USDA-GRAIN-2026-09	trade year Oct/Sep
+corn	exports	Brazil	38839	thousand_mt	20.3	2024/25	USDA-GRAIN-2026-09
+corn	exports	Argentina	34024	thousand_mt	17.8	2024/25	USDA-GRAIN-2026-09
+corn	exports	Ukraine	20019	thousand_mt	10.5	2024/25	USDA-GRAIN-2026-09
+corn	exports	WORLD_TOTAL	191438	thousand_mt	100	2024/25	USDA-GRAIN-2026-09	trade year Oct/Sep
+soybean	production	Brazil	172500	thousand_mt	40.3	2024/25	USDA-OILSEEDS-2026-09	local marketing year Jan/Dec
+soybean	production	United States	119047	thousand_mt	27.8	2024/25	USDA-OILSEEDS-2026-09	local marketing year Sep/Aug
+soybean	production	Argentina	51108	thousand_mt	11.9	2024/25	USDA-OILSEEDS-2026-09	local marketing year Apr/Mar
+soybean	production	China	20650	thousand_mt	4.8	2024/25	USDA-OILSEEDS-2026-09	domestic production only; China is the world's largest soybean importer (about 108 million MT that year), not a producer or exporter of consequence
+soybean	production	WORLD_TOTAL	428110	thousand_mt	100	2024/25	USDA-OILSEEDS-2026-09	aggregate of different local marketing years, primarily Oct/Sep
+soybean	exports	Brazil	108181	thousand_mt	58.7	2024/25	USDA-OILSEEDS-2026-09
+soybean	exports	United States	51495	thousand_mt	27.9	2024/25	USDA-OILSEEDS-2026-09
+soybean	exports	Argentina	12406	thousand_mt	6.7	2024/25	USDA-OILSEEDS-2026-09	Argentina crushes most of its soybean crop domestically into meal and oil rather than exporting raw beans, so its export share is far below its production share
+soybean	exports	WORLD_TOTAL	184330	thousand_mt	100	2024/25	USDA-OILSEEDS-2026-09
+potash	production	Canada	15000	thousand_mt_k2o	31.3	2024e	USGS-MCS2025-POTASH	mine production, K2O equivalent; USGS narrative names Canada the leading world exporter in 2024
+potash	production	Russia	9000	thousand_mt_k2o	18.8	2024e	USGS-MCS2025-POTASH
+potash	production	Belarus	7000	thousand_mt_k2o	14.6	2024e	USGS-MCS2025-POTASH	the state potash exporter has been under EU and US sanctions since 2022; 2024 exports moved via Russian ports and rail, mostly to China, after Lithuania ended its port-transit contract
+potash	production	China	6300	thousand_mt_k2o	13.1	2024e	USGS-MCS2025-POTASH
+potash	production	Germany	3000	thousand_mt_k2o	6.3	2024e	USGS-MCS2025-POTASH
+potash	production	Israel	2400	thousand_mt_k2o	5.0	2024e	USGS-MCS2025-POTASH	recovered from the Dead Sea
+potash	production	Jordan	1800	thousand_mt_k2o	3.8	2024e	USGS-MCS2025-POTASH	recovered from the Dead Sea
+potash	production	Laos	1500	thousand_mt_k2o	3.1	2024e	USGS-MCS2025-POTASH
+potash	production	United States	420	thousand_mt_k2o	0.9	2024e	USGS-MCS2025-POTASH	net import reliance about 93% of US apparent consumption; Canada supplied 79% of US potash imports 2020-23
+potash	production	WORLD_TOTAL	48000	thousand_mt_k2o	100	2024e	USGS-MCS2025-POTASH	mine production, K2O equivalent (distinct from the larger 65.2 million ton world production-capacity figure USGS also reports)
+nitrogen_ammonia	production	China	47000	thousand_mt_n	31.3	2024e	USGS-MCS2025-NITROGEN	ammonia plant production, nitrogen content; USGS does not break out urea specifically by country, only its ammonia feedstock
+nitrogen_ammonia	production	India	15000	thousand_mt_n	10.0	2024e	USGS-MCS2025-NITROGEN
+nitrogen_ammonia	production	Russia	14000	thousand_mt_n	9.3	2024e	USGS-MCS2025-NITROGEN
+nitrogen_ammonia	production	United States	14000	thousand_mt_n	9.3	2024e	USGS-MCS2025-NITROGEN	about 55% of US ammonia capacity sits in three states with cheap natural gas feedstock
+nitrogen_ammonia	production	Indonesia	6000	thousand_mt_n	4.0	2024e	USGS-MCS2025-NITROGEN
+nitrogen_ammonia	production	Saudi Arabia	5400	thousand_mt_n	3.6	2024e	USGS-MCS2025-NITROGEN
+nitrogen_ammonia	production	Egypt	5000	thousand_mt_n	3.3	2024e	USGS-MCS2025-NITROGEN
+nitrogen_ammonia	production	Canada	3600	thousand_mt_n	2.4	2024e	USGS-MCS2025-NITROGEN
+nitrogen_ammonia	production	Qatar	3100	thousand_mt_n	2.1	2024e	USGS-MCS2025-NITROGEN
+nitrogen_ammonia	production	WORLD_TOTAL	150000	thousand_mt_n	100	2024e	USGS-MCS2025-NITROGEN	ammonia plant production is feedstock-gas-price sensitive: Henry Hub spot averaged about $2.10/MMBtu in 2024
+copper	production	Chile	5300	thousand_mt	23.0	2024e	USGS-MCS2025-COPPER	mine production, copper content
+copper	production	Congo (Kinshasa)	3300	thousand_mt	14.3	2024e	USGS-MCS2025-COPPER
+copper	production	Peru	2600	thousand_mt	11.3	2024e	USGS-MCS2025-COPPER
+copper	production	China	1800	thousand_mt	7.8	2024e	USGS-MCS2025-COPPER	mine production only; China's refinery production (about 12,000 thousand mt) is the world's largest by a wide margin, built on imported ore and concentrate
+copper	production	Indonesia	1100	thousand_mt	4.8	2024e	USGS-MCS2025-COPPER
+copper	production	United States	1100	thousand_mt	4.8	2024e	USGS-MCS2025-COPPER	Arizona accounts for about 70% of US mine output
+copper	production	Russia	930	thousand_mt	4.0	2024e	USGS-MCS2025-COPPER
+copper	production	Australia	800	thousand_mt	3.5	2024e	USGS-MCS2025-COPPER
+copper	production	Kazakhstan	740	thousand_mt	3.2	2024e	USGS-MCS2025-COPPER
+copper	production	Mexico	700	thousand_mt	3.0	2024e	USGS-MCS2025-COPPER
+copper	production	WORLD_TOTAL	23000	thousand_mt	100	2024e	USGS-MCS2025-COPPER	mine production, copper content; refinery production world total is also about 27,000 thousand mt (China alone refines about 44% of it)
+lithium	production	Australia	88000	mt_li_content	36.7	2024e	USGS-MCS2025-LITHIUM	mine production; world total and share exclude US production (withheld, see note below)
+lithium	production	Chile	49000	mt_li_content	20.4	2024e	USGS-MCS2025-LITHIUM
+lithium	production	China	41000	mt_li_content	17.1	2024e	USGS-MCS2025-LITHIUM
+lithium	production	Zimbabwe	22000	mt_li_content	9.2	2024e	USGS-MCS2025-LITHIUM
+lithium	production	Argentina	18000	mt_li_content	7.5	2024e	USGS-MCS2025-LITHIUM
+lithium	production	Brazil	10000	mt_li_content	4.2	2024e	USGS-MCS2025-LITHIUM
+lithium	production	United States	withheld	mt_li_content	NA	2024e	USGS-MCS2025-LITHIUM	USGS withholds the figure to avoid disclosing company proprietary data (one active Nevada brine operation); US net import reliance was over 50% of apparent consumption
+lithium	production	WORLD_TOTAL_EX_US	240000	mt_li_content	100	2024e	USGS-MCS2025-LITHIUM	excludes United States by USGS's own convention; up 18% from 204,000 in 2023 despite falling prices
+rare_earths	production	China	270000	mt_reo	69.2	2024	USGS-MCS2025-RAREEARTHS	mine production, REO equivalent; China's share of downstream separation and processing is larger still, see note below
+rare_earths	production	United States	45000	mt_reo	11.5	2024	USGS-MCS2025-RAREEARTHS	mined concentrate from a single California mine; the US has almost no separation/refining capacity and imports about 80% of the compounds and metals it consumes, 70% of that from China
+rare_earths	production	Burma	31000	mt_reo	7.9	2024	USGS-MCS2025-RAREEARTHS	estimated from Chinese import data (Burma does not itself report), footnoted by USGS as such
+rare_earths	production	Australia	13000	mt_reo	3.3	2024	USGS-MCS2025-RAREEARTHS
+rare_earths	production	Thailand	13000	mt_reo	3.3	2024	USGS-MCS2025-RAREEARTHS	estimated from Chinese import data
+rare_earths	production	Nigeria	13000	mt_reo	3.3	2024	USGS-MCS2025-RAREEARTHS	estimated from Chinese import data
+rare_earths	production	WORLD_TOTAL	390000	mt_reo	100	2024	USGS-MCS2025-RAREEARTHS	REO equivalent; the choke point for most importing nations is downstream separation capacity, not ore, and that is concentrated in China even more tightly than mining is

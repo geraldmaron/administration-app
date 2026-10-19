@@ -1,0 +1,14 @@
+import type { AppropriationEffect, CapRaiseEffect, CommitmentEffect, ConditionEffect, EmergencyEffect, FundingLapseEffect, OrderFramingEffect, PendingRuleEffect, PursuitEffect } from "./record-effects.js";
+export type { AppropriationEffect, CapRaiseEffect, CommitmentEffect, ConditionEffect, EmergencyEffect, FundingLapseEffect, OrderFramingEffect, PendingRuleEffect, PursuitEffect };
+import { type Campaign } from "./state.js";
+import { type CohortEffect } from "./demos.js";
+import { type TradeEffect } from "./trade-effects.js";
+import { type InstitutionEffect, type NominationEffect } from "./institution-effects.js";
+import { type CausalProvenance, type CausalStamp } from "./causality.js";
+export type { CohortEffect };
+export type { InstitutionEffect, NominationEffect, TradeEffect };
+export type { CausalProvenance, CausalStamp };
+export * from "./effect-types.js";
+import type { EffectPacket, NationStatEffect } from "./effect-types.js";
+export declare function applyNationStat(state: Campaign, effect: NationStatEffect): Campaign;
+export declare function apply(state: Campaign, packet: EffectPacket): Campaign;

@@ -1,0 +1,536 @@
+/* The economy room: leading measures in one surface, tables with right-aligned tabular figures, the cycle loop, the lever outlook cells and the receipt. */
+@layer rooms {
+  .nation-room {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xl);
+    min-inline-size: 0;
+    max-inline-size: 80rem;
+    padding-block-end: var(--space-xl);
+  }
+
+  .nation-room .ui-tabs {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+
+  .eco-panel {
+    display: grid;
+    gap: var(--space-md);
+    min-inline-size: 0;
+    padding: var(--panel-pad);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .compare__peers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-md);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .compare__peers legend {
+    margin-block-end: var(--space-2xs);
+    padding: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .eco-panel + .eco-panel,
+  .ui-tabs__panel > .eco-panel + .eco-panel {
+    margin-block-start: var(--space-xl);
+  }
+
+  .eco-panel__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    line-height: var(--leading-snug);
+    font-weight: var(--weight-strong);
+  }
+
+  /* The shared room vocabulary the Washington and World rooms still draw with. */
+  .nation-room > .nation-section {
+    padding: var(--panel-pad);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .nation-section {
+    display: grid;
+    gap: var(--space-md);
+    min-inline-size: 0;
+    scroll-margin-block-start: var(--space-lg);
+  }
+
+  .nation-section__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    letter-spacing: var(--tracking-display);
+  }
+
+  .nation-jumps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .nation-jumps__link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--control-compact);
+    padding: 0 var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-pill);
+    background: var(--color-ground-base);
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    text-decoration: none;
+  }
+
+  .nation-jumps__link:hover {
+    border-color: var(--color-blue);
+    color: var(--color-blue);
+  }
+
+  .nation-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--space-md);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .nation-cards--two {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  }
+
+  .market-card {
+    display: grid;
+    align-content: start;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .market-card[data-stance="caution"] {
+    border-color: var(--status-warning-ink);
+  }
+
+  .market-card[data-stance="adverse"] {
+    border-color: var(--status-danger-ink);
+  }
+
+  .nation-subtitle {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-strong);
+  }
+
+  .nation-note {
+    margin: 0;
+    max-inline-size: var(--measure);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .nation-problem {
+    margin: 0;
+    color: var(--status-danger-ink);
+  }
+
+  /* A few measures share one surface, divided, rather than a card each. */
+  .eco-measures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-lg) 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .eco-measures > li {
+    display: grid;
+    align-content: start;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+    padding-inline: var(--space-lg);
+    border-inline-start: 1px solid var(--color-border-subtle);
+  }
+
+  .eco-measures > li:first-child {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+
+  .eco-measures > li[data-stance="caution"] {
+    border-inline-start-color: var(--status-warning-ink);
+  }
+
+  .eco-measures > li[data-stance="adverse"] {
+    border-inline-start-color: var(--status-danger-ink);
+  }
+
+  .eco-figure[data-valence] {
+    font-weight: inherit;
+  }
+
+  .eco-measures > li[data-valence="good"] {
+    border-inline-start-color: var(--status-success-ink);
+  }
+
+  /* The measure a door named, such as the rate a release just printed. */
+  .eco-measures > li[data-selected="true"] {
+    padding-block: var(--space-sm);
+    padding-inline: var(--space-lg);
+    border-radius: var(--radius-card);
+    background: var(--color-blue-wash);
+  }
+
+  .eco-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: var(--space-xl);
+    align-items: start;
+  }
+
+  .eco-trade {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-lg);
+    align-items: start;
+  }
+
+  .eco-trade__bars {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .eco-table-wrap {
+    min-inline-size: 0;
+    overflow-x: auto;
+  }
+
+  .eco-table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .eco-table th,
+  .eco-table td {
+    padding: var(--space-sm) var(--space-md);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  .eco-table thead th {
+    border-block-end: 1px solid var(--color-border-strong);
+    color: var(--color-text-secondary);
+    font-weight: var(--weight-medium);
+  }
+
+  .eco-table tbody th {
+    font-weight: var(--weight-medium);
+  }
+
+  .eco-table .eco-table__num {
+    text-align: end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A long column title wraps in its header so a tablet-width table fits instead of scrolling its last column out of view. */
+  .eco-table thead .eco-table__num {
+    white-space: normal;
+  }
+
+  @media (min-width: 40em) {
+    .eco-table--commodities {
+      table-layout: fixed;
+    }
+
+    .eco-table--commodities th:nth-child(1) { inline-size: 32%; }
+    .eco-table--commodities th:nth-child(2) { inline-size: 20%; }
+    .eco-table--commodities th:nth-child(3) { inline-size: 20%; }
+  }
+
+  .eco-table__caption {
+    padding-block-end: var(--space-xs);
+    text-align: start;
+    font-size: var(--size-title);
+    font-weight: var(--weight-medium);
+  }
+
+  .eco-table__sub {
+    display: block;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-weight: var(--weight-regular);
+  }
+
+  /* One commodity opened: causes, suppliers and inputs under its price line. */
+  .eco-table tr[data-selected="true"] > * {
+    background: var(--color-blue-wash);
+  }
+
+  .eco-table__more > td {
+    padding-block-start: 0;
+  }
+
+  .eco-commodity {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-md) var(--space-xl);
+    margin-block-start: var(--space-sm);
+    font-size: var(--size-small);
+  }
+
+  .eco-commodity section {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .eco-commodity__title {
+    margin: 0;
+    font-size: var(--size-body);
+    color: var(--color-text-primary);
+  }
+
+  .eco-commodity__list {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .eco-supplier {
+    display: grid;
+    grid-template-columns: minmax(6rem, 10rem) minmax(0, 1fr) 4rem;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .eco-supplier__share {
+    justify-self: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+
+  .eco-table td[data-low="true"] {
+    color: var(--status-danger-ink);
+  }
+
+  .cycle {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cycle__phase {
+    padding: var(--space-sm) var(--space-xs);
+    border-block-end: 4px solid var(--color-border-subtle);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-weight: var(--weight-medium);
+    text-align: center;
+  }
+
+  .cycle__phase[data-current="true"] {
+    border-block-end-color: var(--color-gold-deep);
+    color: var(--color-text-primary);
+    font-weight: var(--weight-strong);
+  }
+
+  .cycle__phase[data-current="true"][data-valence] {
+    border-block-end-color: var(--valence-ink);
+    color: var(--valence-ink);
+  }
+
+  .lever-outlook {
+    display: grid;
+    gap: var(--space-2xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lever-outlook__move {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .lever-outlook[data-favorable="true"] .lever-outlook__move {
+    color: var(--status-success-ink);
+  }
+
+  .lever-outlook[data-favorable="false"] .lever-outlook__move {
+    color: var(--status-danger-ink);
+  }
+
+  /* Five levers must fit the work area side by side: narrower cards than the shared default. */
+  .economy .ui-compare {
+    --compare-card-min: 10.5rem;
+  }
+
+  .nation-room {
+    container-type: inline-size;
+  }
+
+  .nation-receipt {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  @media (max-width: 40em) {
+    .eco-table--stack thead {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+
+    .eco-table--stack,
+    .eco-table--stack tbody,
+    .eco-table--stack tr,
+    .eco-table--stack th,
+    .eco-table--stack td {
+      display: block;
+    }
+
+    .eco-table--stack tr {
+      padding-block: var(--space-sm);
+      border-block-end: 1px solid var(--color-border-subtle);
+    }
+
+    .eco-table--stack th,
+    .eco-table--stack td {
+      padding: var(--space-2xs) 0;
+      border: 0;
+    }
+
+    .eco-table--stack td[data-label] {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    .eco-table--stack td[data-label]::before {
+      content: attr(data-label);
+      color: var(--color-text-secondary);
+      text-align: start;
+      white-space: normal;
+    }
+
+
+    .eco-measures > li,
+    .eco-measures > li:first-child {
+      padding-inline: 0;
+      border-inline-start: 0;
+      padding-block-end: var(--space-md);
+      border-block-end: 1px solid var(--color-border-subtle);
+    }
+  }
+}
+
+@layer rooms {
+  .eco-table td.eco-table__bar {
+    inline-size: 30%;
+    padding-inline: var(--space-sm);
+  }
+}
+
+@layer rooms {
+  /* Three tiles stack on a phone and sit three across otherwise, never two and one. */
+  @media (min-width: 40em) { .eco-measures:has(> :nth-child(3):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+}
+
+@layer rooms {
+  .economy-brief { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-sm); }
+  .economy-paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--space-md); margin-block: var(--space-lg); }
+  .economy-path { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-md); padding: var(--space-lg); min-block-size: var(--hit-min); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-ground-raised); color: var(--color-text-primary); text-align: start; cursor: pointer; font: inherit; }
+  .economy-path > span { min-inline-size: 0; }
+  .economy-path strong, .economy-path small { display: block; }
+  .economy-path small { color: var(--color-text-secondary); margin-block-start: var(--space-xs); line-height: var(--leading-compact); }
+  .economy-path:hover { border-color: var(--color-blue); background: var(--color-blue-wash); }
+  .economy-path:focus-visible { outline: 2px solid var(--color-blue); outline-offset: 3px; }
+  .economy-projection { display: flex; gap: var(--space-xs); align-items: start; padding: var(--space-sm); margin: 0; border-inline-start: 2px dashed var(--color-blue); background: var(--color-ground-raised); font-size: var(--size-small); color: var(--color-text-secondary); }
+  .economy-projection > svg { flex-shrink: 0; }
+}
+
+@layer rooms {
+  .economic-observatory, .economic-history, .economic-drivers { display: grid; gap: var(--space-md); min-inline-size: 0; align-content: start; }
+  .economic-signals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-sm); padding: 0; margin: 0; list-style: none; }
+  .economic-signal { display: grid; gap: var(--space-sm); align-content: start; min-inline-size: 0; inline-size: 100%; block-size: 100%; padding: var(--space-md); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-ground-raised); color: var(--color-text-primary); text-align: start; font: inherit; cursor: pointer; }
+  .economic-signal:hover, .economic-signal[data-selected] { border-color: var(--color-blue); background: var(--color-blue-wash); }
+  .economic-signal:focus-visible { outline: 2px solid var(--color-blue); outline-offset: 3px; }
+  .economic-signal__name { display: flex; align-items: center; gap: var(--space-xs); font-size: var(--size-small); }
+  .economic-signal__name > svg { flex: none; }
+  .economic-signal__value { font-size: 1.6rem; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .economic-signal__change { font-size: var(--size-caption); color: var(--color-text-secondary); }
+  .economic-investigation__body { display: grid; gap: var(--space-lg); padding-block-start: var(--space-lg); }
+  .economic-history__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-sm); }
+  .economic-history__foot { display: grid; gap: var(--space-sm); align-items: start; }
+  .economic-history__foot > button { justify-self: start; }
+  .economic-drivers { border-block-start: 1px solid var(--color-border-subtle); padding-block-start: var(--space-lg); }
+  .economic-drivers .eco-grid { grid-template-columns: minmax(0, 1fr); }
+  .economic-drivers .eco-table__bar { inline-size: 30%; }
+  .economy-households { display: grid; gap: var(--space-lg); align-items: start; margin-block: var(--space-lg); }
+  .economy-households > .eco-panel + .eco-panel { margin-block-start: 0; }
+  @media (min-width: 64em) {
+    .economic-investigation__body { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+    .economic-drivers { border-block-start: 0; border-inline-start: 1px solid var(--color-border-subtle); padding-block-start: 0; padding-inline-start: var(--space-lg); }
+    .economy-households { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  }
+  @media (max-width: 30em) {
+    .economic-signal { padding: var(--space-sm); gap: var(--space-xs); }
+    .economic-signal__name { flex-direction: column; align-items: start; font-size: var(--size-caption); }
+    .economic-signal__value { font-size: 1.25rem; }
+    .economic-signal__change > span:last-child { display: block; }
+  }
+}
+
+@layer rooms {
+  .economic-evidence, .economic-comparison { display: grid; gap: var(--space-md); min-inline-size: 0; align-content: start; }
+  .economic-comparison__flags { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; }
+  .economic-comparison > button { justify-self: start; }
+  .economic-benchmarks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-sm); margin: 0; }
+  .economic-benchmarks > div { display: grid; align-content: start; gap: var(--space-xs); min-inline-size: 0; border-inline-start: 2px solid var(--color-border-subtle); padding-inline-start: var(--space-sm); }
+  .economic-benchmarks dt, .economic-benchmarks span { color: var(--color-text-secondary); font-size: var(--size-caption); }
+  .economic-benchmarks dd { margin: 0; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; font-size: var(--size-title); }
+  @media (max-width: 22rem) {
+    .economic-signals { grid-template-columns: minmax(0, 1fr); }
+    .economic-signal { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; min-block-size: 4rem; }
+    .economic-signal__name { flex-direction: row; font-size: var(--size-small); }
+    .economic-signal__name > span { white-space: nowrap; }
+    .economic-signal__value { text-align: end; }
+    .economic-signal__change { grid-column: 1 / -1; }
+    .economic-signal__change > span:last-child { display: inline; }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "player-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@admin/web",
+        "run",
+        "dev"
+      ],
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "player-expo",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@admin/player",
+        "run",
+        "web"
+      ],
+      "port": 8081,
+      "autoPort": true
+    },
+    {
+      "name": "studio",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@admin/studio",
+        "run",
+        "dev"
+      ],
+      "port": 4400
+    },
+    {
+      "name": "studio-alt",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd apps/studio && PORT=4401 node launch.mjs"
+      ],
+      "port": 4401
+    }
+  ]
+}

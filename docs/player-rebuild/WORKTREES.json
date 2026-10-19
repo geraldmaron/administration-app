@@ -1,0 +1,170 @@
+{
+  "purpose": "Historical isolation manifest; source reconciled and redundant checkouts pruned for a single-branch handoff.",
+  "worktrees": [
+    {
+      "name": "shadcn-foundations",
+      "path": ".worktrees/shadcn-foundations",
+      "branch": "codex/shadcn-foundations",
+      "base": "4b8cd8241ba56f6fa58b9ded54c88123a5df5572",
+      "checkpoint": "1aa6a77f8c2f6a23461ed7b79b404ad4b664d9f3",
+      "workingChanges": [],
+      "integration": "Integrated or superseded in the primary feature branch; see RECONCILIATION-2026-10-15.json. Do not restore/replay.",
+      "checkoutStatus": "removed after reconciliation; historical path only"
+    },
+    {
+      "name": "shadcn-brief-congress",
+      "path": ".worktrees/shadcn-brief-congress",
+      "branch": "codex/shadcn-brief-congress",
+      "base": "4b8cd8241ba56f6fa58b9ded54c88123a5df5572",
+      "checkpoint": "8541609a2fe09578c1481c3dc1cf7131ba39ad39",
+      "workingChanges": [
+        " M packages/player-core/dist/navigation/places.js"
+      ],
+      "integration": "Integrated or superseded in the primary feature branch; see RECONCILIATION-2026-10-15.json. Do not restore/replay.",
+      "workingChangeDisposition": "places.js compiled redirect matches primary generated output; retained checkpoint copy.",
+      "checkoutStatus": "removed after reconciliation; historical path only"
+    },
+    {
+      "name": "shadcn-justice",
+      "path": ".worktrees/shadcn-justice",
+      "branch": "codex/shadcn-justice",
+      "base": "4b8cd8241ba56f6fa58b9ded54c88123a5df5572",
+      "checkpoint": "81083dfd15a8678381bd652dbff896b69f01e52a",
+      "workingChanges": [
+        " M apps/web/tests/helpers.ts",
+        "?? apps/web/src/help/AuthorityHelp.tsx",
+        "?? apps/web/src/help/authorities.ts",
+        "?? apps/web/src/help/authority-help.css"
+      ],
+      "integration": "Integrated or superseded in the primary feature branch; see RECONCILIATION-2026-10-15.json. Do not restore/replay.",
+      "workingChangeDisposition": "helper changes included in primary; untracked legal-helper draft superseded by primary sourced version. Preserve for recovery, do not reapply.",
+      "checkoutStatus": "removed after reconciliation; historical path only"
+    },
+    {
+      "name": "shadcn-nation",
+      "path": ".worktrees/shadcn-nation",
+      "branch": "codex/shadcn-nation",
+      "base": "4b8cd8241ba56f6fa58b9ded54c88123a5df5572",
+      "checkpoint": "6a627f8cf25184385cbdd47bd2fffbcc26785289",
+      "workingChanges": [],
+      "integration": "Integrated or superseded in the primary feature branch; see RECONCILIATION-2026-10-15.json. Do not restore/replay.",
+      "checkoutStatus": "removed after reconciliation; historical path only"
+    },
+    {
+      "name": "shadcn-world",
+      "path": ".worktrees/shadcn-world",
+      "branch": "codex/shadcn-world",
+      "base": "4b8cd8241ba56f6fa58b9ded54c88123a5df5572",
+      "checkpoint": "680244bc867174f23403cd306feabd625fc97b79",
+      "workingChanges": [],
+      "integration": "Integrated or superseded in the primary feature branch; see RECONCILIATION-2026-10-15.json. Do not restore/replay.",
+      "checkoutStatus": "removed after reconciliation; historical path only"
+    }
+  ],
+  "integrationBranch": "codex/reconcile-worktrees-2026-10-14",
+  "primaryCheckpointBeforeFinalConsolidation": "2fc4faf66bf20e269ec3146b870dd2871e0ec8a8",
+  "integrationCheckpoint": "12501c852fcd2ce83213b6c76fbbf482dba9e7ad",
+  "continuation": [
+    {
+      "name": "shadcn-complete-system",
+      "path": ".worktrees/shadcn-complete-system",
+      "branch": "codex/shadcn-complete-system",
+      "base": "12501c852fcd2ce83213b6c76fbbf482dba9e7ad",
+      "owner": "shared controls, entry, preferences, help and durability",
+      "status": "Source plus Settings restore and enlarged-text regressions integrated; bounded browser checks passed. Preserve checkpoint until final aggregate disposition.",
+      "integratedCheckpoints": [
+        "d5c66a79f",
+        "706a5c414",
+        "71e15524b",
+        "e94233f9f",
+        "2556a4c65",
+        "6454aef28",
+        "bd304b529",
+        "fa510faf1",
+        "8ed988486",
+        "aa56a1b66",
+        "615c40706",
+        "fdddb9d6b",
+        "eed5977b4"
+      ],
+      "checkoutStatus": "removed after reconciliation; historical path only",
+      "integration": "Integrated or superseded in the primary feature branch; see RECONCILIATION-2026-10-15.json. Do not restore/replay."
+    },
+    {
+      "name": "shadcn-complete-decisions",
+      "path": ".worktrees/shadcn-complete-decisions",
+      "branch": "codex/shadcn-complete-decisions",
+      "base": "12501c852fcd2ce83213b6c76fbbf482dba9e7ad",
+      "owner": "Brief, decision/clock/metric/scandal and Congress",
+      "status": "Source and exact concealment/provenance regression integrated. Preserve checkpoint.",
+      "integratedCheckpoints": [
+        "64b2b57e3",
+        "30460dec4",
+        "80935f80a",
+        "bf197aeaa"
+      ],
+      "checkoutStatus": "removed after reconciliation; historical path only",
+      "integration": "Integrated or superseded in the primary feature branch; see RECONCILIATION-2026-10-15.json. Do not restore/replay."
+    },
+    {
+      "name": "shadcn-complete-institutions",
+      "path": ".worktrees/shadcn-complete-institutions",
+      "branch": "codex/shadcn-complete-institutions",
+      "base": "12501c852fcd2ce83213b6c76fbbf482dba9e7ad",
+      "owner": "Executive, office/person, Courts and Oversight",
+      "status": "Source integrated; shared-context root Press/Record code review found no blocker. Preserve checkpoint.",
+      "integratedCheckpoints": [
+        "a1ca6d496",
+        "563813470",
+        "d6e10858e",
+        "bb431549d"
+      ],
+      "checkoutStatus": "removed after reconciliation; historical path only",
+      "integration": "Integrated or superseded in the primary feature branch; see RECONCILIATION-2026-10-15.json. Do not restore/replay."
+    },
+    {
+      "name": "shadcn-complete-nation",
+      "path": ".worktrees/shadcn-complete-nation",
+      "branch": "codex/shadcn-complete-nation",
+      "base": "12501c852fcd2ce83213b6c76fbbf482dba9e7ad",
+      "owner": "Nation, budget, policy, emergency and economy",
+      "status": "All bounded source followups integrated. Worktree clean at handoff; retain checkpoints.",
+      "integratedCheckpoints": [
+        "d36eaf6e1",
+        "b06b15296",
+        "7cb879f64",
+        "bc184940a",
+        "481590bfe"
+      ],
+      "checkoutStatus": "removed after reconciliation; historical path only",
+      "integration": "Integrated or superseded in the primary feature branch; see RECONCILIATION-2026-10-15.json. Do not restore/replay."
+    },
+    {
+      "name": "shadcn-complete-world",
+      "path": ".worktrees/shadcn-complete-world",
+      "branch": "codex/shadcn-complete-world",
+      "base": "12501c852fcd2ce83213b6c76fbbf482dba9e7ad",
+      "owner": "World, foreign action and Security",
+      "status": "Source and receipt-return followup integrated. Worktree clean at handoff; preserve checkpoint.",
+      "integratedCheckpoints": [
+        "e5e39be71",
+        "3c1d5d36c",
+        "4ecb990ab",
+        "2642c8b1a",
+        "60dc7ac63",
+        "196c8792a",
+        "b5bc67ac1"
+      ],
+      "checkoutStatus": "removed after reconciliation; historical path only",
+      "integration": "Integrated or superseded in the primary feature branch; see RECONCILIATION-2026-10-15.json. Do not restore/replay."
+    }
+  ],
+  "latestIntegratedSourceCheckpoint": "eed5977b4",
+  "retention": "Only the primary checkout and feature branch remain, with main/staging and existing safety references. No recovery work planned.",
+  "isolatedServers": "Old5192/5196 previews and redundant5189/5190 listeners stopped after command/CWD inspection. Primary5188 returnsHTTP200.",
+  "closeoutControls": {
+    "balance": "Resumed the three suspended workers at2026-10-15 23:52:32UTC, then stopped the old-source balance run for handoff. No test workers left suspended. No final-source certificate.",
+    "verification": "Final build/types/lint passed; bounded camera4/4 and enlarged-text4/4 passed. Full aggregate interrupted, not passed. CSS/unused-primitives/web-boundary checks passed after cleanup.",
+    "source": "One primary checkout and one local feature branch;11 redundant checkouts and11 feature branches pruned. Main/staging and existing safety refs retained. No push/deployment."
+  }
+}

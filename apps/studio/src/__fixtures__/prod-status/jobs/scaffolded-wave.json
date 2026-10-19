@@ -1,0 +1,37 @@
+{
+  "id": "scaffolded-wave",
+  "kind": "scenario-batch",
+  "driver": "session",
+  "items": [
+    {
+      "id": "scaffolded-wave-0001"
+    },
+    {
+      "id": "scaffolded-wave-0002"
+    },
+    {
+      "id": "scaffolded-wave-0003"
+    },
+    {
+      "id": "scaffolded-wave-0004"
+    },
+    {
+      "id": "scaffolded-wave-0005"
+    },
+    {
+      "id": "scaffolded-wave-0006"
+    },
+    {
+      "id": "scaffolded-wave-0007"
+    },
+    {
+      "id": "scaffolded-wave-0008"
+    },
+    {
+      "id": "scaffolded-wave-0009"
+    },
+    {
+      "id": "scaffolded-wave-0010"
+    }
+  ]
+}

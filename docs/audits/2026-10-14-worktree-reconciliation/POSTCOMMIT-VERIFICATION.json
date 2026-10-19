@@ -1,0 +1,35 @@
+{
+  "contentCommit": "c601bef81",
+  "checks": [
+    {
+      "command": "node scripts/verify-dist-freshness.mjs",
+      "exitCode": 0,
+      "observed": "dist matches source in all 9 tsc projects"
+    },
+    {
+      "command": "node scripts/verify-dist-freshness-proof.mjs",
+      "initial": "sandbox denied .git/index.lock during proof restoration; inspected only __distFreshnessProof perturbation remained",
+      "repair": "Restored exactly three inspected contracts files with escalation; reran proof with escalation",
+      "retryExitCode": 0,
+      "observed": "stale compiled output correctly rejected; proof restored its perturbation"
+    },
+    {
+      "command": "git fsck --full --no-reflogs",
+      "initialExitCode": 16,
+      "initial": "stale split commit-graph entries; no object errors when graph disabled",
+      "control": "git -c core.commitGraph=false fsck --full --no-reflogs exited 0; fresh 223269296-byte pack passed git index-pack --strict",
+      "repair": "Backed up split graph in ignored review recovery storage; git commit-graph write --reachable",
+      "finalExitCode": 0,
+      "observed": "dangling recoverable objects only; no integrity errors"
+    }
+  ],
+  "earlierBalanceCompletion": {
+    "command": "pnpm --filter @admin/engine run test:balance",
+    "log": "/private/tmp/reconcile-balance.log",
+    "filesPassed": 16,
+    "testsPassed": 138,
+    "skipped": 4,
+    "durationSeconds": 13818.18,
+    "scopeLimit": "Process started before the later accountability/content changes and loaded the then-current source. Completion is evidence for that original checkpoint, not a fresh balance certificate for the published corpus."
+  }
+}

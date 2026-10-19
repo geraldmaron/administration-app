@@ -1,0 +1,117 @@
+/* A Record entry as a row: the Record list, the weekly digest and the Brief all draw it the same way. */
+@layer rooms {
+  .rec-rows {
+    display: grid;
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .rec-row__link {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-sm);
+    align-items: start;
+    min-block-size: var(--hit-min);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+    color: var(--color-text-primary);
+    text-decoration: none;
+  }
+
+  .rec-row__link:hover {
+    background: var(--color-ground-raised-hover);
+  }
+
+  .rec-row[data-selected="true"] .rec-row__link {
+    border-color: var(--color-blue);
+    background: var(--color-blue-wash);
+    box-shadow: inset 3px 0 0 var(--color-blue);
+  }
+
+  .rec-row__body {
+    display: grid;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+  }
+
+  .rec-row__meta {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .rec-row__what {
+    font-size: var(--size-body);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-body);
+    overflow-wrap: anywhere;
+  }
+
+  .rec-row__moves {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-md);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .rec-row__move[data-direction="up"] {
+    color: var(--status-success-ink);
+  }
+
+  .rec-row__move[data-direction="down"] {
+    color: var(--status-danger-ink);
+  }
+
+  .rec-row__more {
+    color: var(--color-text-tertiary);
+    font-size: var(--size-small);
+  }
+
+  .rec-row__link:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  /* A summary row reads its moves as one aligned table: name and figure over
+     a bar from zero where the column is narrow, all three on one line where it
+     is wide, so a name is never cut to fit a bar. */
+  .entry-row__moves {
+    display: grid;
+    gap: var(--space-xs);
+    padding-block-start: var(--space-2xs);
+    container-type: inline-size;
+  }
+
+  .entry-row__moves .ui-movement {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "label figure" "track track";
+    row-gap: 4px;
+  }
+
+  .entry-row__moves .ui-movement__label {
+    grid-area: label;
+    font-size: var(--size-small);
+  }
+
+  .entry-row__moves .ui-movement__track {
+    grid-area: track;
+  }
+
+  .entry-row__moves .ui-movement__figure {
+    grid-area: figure;
+    justify-content: end;
+  }
+
+  @container (min-width: 28rem) {
+    .entry-row__moves .ui-movement {
+      grid-template-columns: 11rem minmax(3rem, 1fr) 6rem;
+      grid-template-areas: "label track figure";
+    }
+  }
+}

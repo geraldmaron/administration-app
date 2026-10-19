@@ -1,0 +1,187 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the scenario review's output shape > draws the same audit sample it always has > audit draw 1`] = `
+{
+  "draw": [
+    "sc-0 true false false",
+    "sc-1 true false false",
+    "sc-2 true false false",
+    "sc-3 true false false",
+    "sc-4 true false false",
+    "sc-5 true false false",
+    "sc-6 true false false",
+    "sc-7 true false false",
+    "sc-8 true false false",
+    "sc-9 true false false",
+    "sc-10 true true false",
+    "sc-11 true true false",
+    "sc-12 true true false",
+    "sc-13 true true false",
+    "sc-14 true true false",
+    "sc-15 true true false",
+    "sc-16 true true false",
+    "sc-17 true true false",
+    "sc-18 true true false",
+    "sc-19 true true false",
+    "sc-20 true false false",
+    "sc-21 true false false",
+    "sc-22 true false false",
+    "sc-23 true false false",
+    "sc-24 true false false",
+    "sc-25 true false false",
+    "sc-26 true false false",
+    "sc-27 true false false",
+    "sc-28 true false false",
+    "sc-29 true false false",
+    "sc-30 true false false",
+    "sc-31 true false false",
+    "sc-32 true false false",
+    "sc-33 true false false",
+    "sc-34 true false false",
+    "sc-35 true false false",
+    "sc-36 true false false",
+    "sc-37 true false false",
+    "sc-38 true false false",
+    "sc-39 true false false",
+    "sc-40 true true false",
+    "sc-41 true true false",
+    "sc-42 true true false",
+    "sc-43 true true false",
+    "sc-44 true true false",
+    "sc-45 true true false",
+    "sc-46 true true false",
+    "sc-47 true true false",
+    "sc-48 true true false",
+    "sc-49 true true false",
+    "sc-50 true false false",
+    "sc-51 true false false",
+    "sc-52 true false false",
+    "sc-53 true false false",
+    "sc-54 true false false",
+    "sc-55 true false false",
+    "sc-56 true false false",
+    "sc-57 true false false",
+    "sc-58 true false false",
+    "sc-59 true false false",
+  ],
+  "rates": [
+    [
+      1,
+      1,
+    ],
+    [
+      0.5,
+      0.5,
+    ],
+    [
+      0.1,
+      0.1,
+    ],
+    [
+      0.02,
+      0.02,
+    ],
+  ],
+}
+`;
+
+exports[`the scenario review's output shape > writes the same review.json and shipped.json it always has > README.md 1`] = `
+"# Review protocol
+
+Every scenario below was journaled done by the publish gate. The gate proves shape and
+world-neutrality; it cannot tell you whether the writing is good. That judgment is this file's job.
+
+Each decision carries a tier, because a batch of thousands cannot honestly be read line by line:
+
+- **flagged** — the gate raised a warning, or the corpus says it is a near-duplicate. Its reasons
+  are in \`flags\`. You must decide these.
+- **sampled** — the seeded audit share of everything else. You must decide these too. The draw is
+  deterministic per (runId, scenarioId), so it cannot be rerolled for a friendlier set.
+- **clean** — no warning, not sampled. Ships on the gate alone. Read them if you like; reject one
+  and it stays out. Leaving them pending is not a defect.
+
+For each decision you owe an answer on:
+
+1. Read the scenario in full at its sourcePath — every opening beat, every reply, every
+   remembered line. Skimming one reply and assuming the others match is how a bad one ships.
+2. Judge: is the stake real and specific? Do replies genuinely diverge, or is one choice wearing
+   two hats? Does each remembered line plausibly follow from its reply? If the scenario casts a
+   counterpart, is the counterpart load-bearing in the replies, or decorative?
+3. Set decision to "approve" or "reject", and write a note saying why — either way.
+
+Then fill in reviewer (your identity string) and reviewerIsAuthor. Answer it honestly: true only
+if this same session drafted the batch. Independence here is between sessions, not people — a
+reviewer that did not write the draft has no stake in the draft surviving, and that is the whole
+of what the second pass buys. A batch reviewed by its own author ships marked provisional and
+\`studio corpus publish\` refuses it, because the corpus is what every later batch is judged
+against. Run
+\`studio scenarios review <jobId>\` again. It refuses to emit until every decision is made and
+noted, re-runs the gate on every approved scenario's current content, and writes shipped.json.
+
+If you are the owner and you are accepting a self-reviewed batch deliberately — because the pool
+needs a floor before it can be judged at all, say — run
+\`studio scenarios review <jobId> --owner-review "<why>"\`. That records who authorized it and
+what they were weighing, on the batch, permanently. It does not clear the provisional mark: the
+batch really was reviewed by the session that wrote it, and the corpus keeps saying so. What it
+changes is whether that fact blocks the publish. Prefer it to \`--allow-provisional\`, which
+opens the same door and writes down nothing.
+
+"
+`;
+
+exports[`the scenario review's output shape > writes the same review.json and shipped.json it always has > review.json 1`] = `
+{
+  "decisions": [
+    {
+      "decision": "pending",
+      "flags": [],
+      "note": "",
+      "persona": "the-room",
+      "scenarioId": "the-water-they-both-claim",
+      "sourcePath": "<tmp>/jobs/work/batch-1/batch-1-0001.out.json",
+      "tier": "sampled",
+    },
+    {
+      "decision": "pending",
+      "flags": [],
+      "note": "",
+      "persona": "the-room",
+      "scenarioId": "the-morning-the-country-stopped",
+      "sourcePath": "<tmp>/jobs/work/batch-1/batch-1-0001.out.json",
+      "tier": "sampled",
+    },
+  ],
+  "ownerAuthorization": null,
+  "reviewedAt": "<when>",
+  "reviewer": "",
+  "reviewerIsAuthor": null,
+  "runId": "batch-1",
+  "sampleRate": 1,
+}
+`;
+
+exports[`the scenario review's output shape > writes the same review.json and shipped.json it always has > shipped ids 1`] = `
+[
+  "the-water-they-both-claim",
+]
+`;
+
+exports[`the scenario review's output shape > writes the same review.json and shipped.json it always has > shipped.json envelope 1`] = `
+{
+  "coverage": {
+    "humanRead": 2,
+    "sampleRate": 1,
+    "total": 2,
+  },
+  "ownerAuthorization": null,
+  "personas": {
+    "the-room": {
+      "rejected": 1,
+      "shipped": 1,
+    },
+  },
+  "provisional": false,
+  "reviewer": "second-session",
+  "runId": "batch-1",
+}
+`;

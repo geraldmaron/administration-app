@@ -1,0 +1,63 @@
+/* Tags: a severity, a kind, a state of play, set as a label. Each tone is an ink/fill pair, and the label always says the state. */
+@layer components {
+  /* A status chip: a soft tint, no outline, and a dot in the status ink before the word.
+     The word says the fact; the dot and tint are the at-a-glance cue. */
+  .ui-tag {
+    --tag-ink: var(--status-pending-ink);
+    --tag-fill: var(--status-pending-fill);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-block-size: 22px;
+    padding: 1px 0.5rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--tag-fill);
+    color: var(--tag-ink);
+    font-size: var(--size-caption);
+    font-weight: var(--weight-medium, 500);
+    line-height: var(--leading-control);
+  }
+
+  .ui-tag__dot {
+    flex: none;
+    inline-size: 0.4375rem;
+    block-size: 0.4375rem;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .ui-tag[data-tone="risk"] { --tag-ink: var(--status-danger-ink); --tag-fill: var(--status-danger-fill); }
+  .ui-tag[data-tone="caution"] { --tag-ink: var(--status-warning-ink); --tag-fill: var(--status-warning-fill); }
+  .ui-tag[data-tone="identity"] { --tag-ink: var(--color-gold); --tag-fill: var(--color-gold-wash); }
+  .ui-tag[data-tone="action"] { --tag-ink: var(--status-info-ink); --tag-fill: var(--status-info-fill); }
+  .ui-tag[data-tone="good"] { --tag-ink: var(--status-success-ink); --tag-fill: var(--status-success-fill); }
+
+  /* The one tag that must be seen first: a solid fill. */
+  .ui-tag[data-solid="true"] {
+    font-weight: var(--weight-strong);
+    letter-spacing: 0.02em;
+    background: var(--color-red-fill);
+    color: var(--color-white);
+  }
+
+  .ui-tag[data-solid="true"][data-tone="caution"] {
+    background: var(--status-warning-ink);
+  }
+
+  .ui-tag[data-solid="true"][data-tone="identity"] {
+    background: var(--color-gold);
+  }
+
+  .ui-tag[data-solid="true"][data-tone="action"] {
+    background: var(--color-blue-fill);
+  }
+
+  .ui-tag .ui-icon {
+    flex: none;
+  }
+
+  @media (forced-colors: active) {
+    .ui-tag { border: 1px solid CanvasText; }
+  }
+}

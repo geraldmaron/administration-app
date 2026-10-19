@@ -1,0 +1,52 @@
+{
+  "reference": ".nvmrc = 22",
+  "node22": "v22.23.1",
+  "node25": "v25.9.0",
+  "first_week_digest_node22": "a38fabaa5c750a8c",
+  "first_week_digest_node25": "5dd92baddde936bd",
+  "first_week_differences": [
+    {
+      "path": "/books/ARM/anchor/primaryBalance",
+      "node22": -0.008201471068621347,
+      "node25": -0.008201471068615573
+    },
+    {
+      "path": "/books/ARM/anchor/projected",
+      "node22": 0.5087420125401129,
+      "node25": 0.5087420125400551
+    },
+    {
+      "path": "/books/BRN/anchor/primaryBalance",
+      "node22": 4.5826433799814326e-05,
+      "node25": 4.582643379999474e-05
+    },
+    {
+      "path": "/books/BRN/anchor/projected",
+      "node22": 0.01583753940950519,
+      "node25": 0.015837539409503387
+    },
+    {
+      "path": "/books/LKA/anchor/primaryBalance",
+      "node22": 0.008823690865727762,
+      "node25": 0.008823690865716216
+    },
+    {
+      "path": "/books/LKA/anchor/projected",
+      "node22": 1.0221831817238647,
+      "node25": 1.0221831817239801
+    },
+    {
+      "path": "/nations/ARM/stats/economy/debt",
+      "node22": 12982.504625264235,
+      "node25": 12982.504625264231
+    },
+    {
+      "path": "/nations/BRN/stats/economy/debt",
+      "node22": 241.2683407240178,
+      "node25": 241.26834072401775
+    }
+  ],
+  "explicit_hill_results_changed": 0,
+  "digest_fields_replaced": 120,
+  "engine_or_world_runtime_source_changed": false
+}

@@ -1,0 +1,258 @@
+/* The official file frame: seal banner, identity plate, vitals with marks, numbered sections. Shares the memorandum's language (decision.css). */
+@layer rooms {
+  .dossier {
+    container-type: inline-size;
+    display: grid;
+    gap: var(--space-lg);
+    position: relative;
+    isolation: isolate;
+  }
+
+  .dossier__banner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-sm);
+    align-items: center;
+    padding-block-end: var(--space-sm);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .dossier__seal {
+    color: var(--color-gold);
+  }
+
+  .dossier__house {
+    display: grid;
+    margin: 0;
+  }
+
+  .dossier__kind {
+    color: var(--color-gold);
+    font-size: var(--size-label);
+    font-weight: var(--weight-strong);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+  }
+
+  .dossier__house-name {
+    font-family: var(--font-sans);
+    font-size: var(--size-title);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .dossier__asof {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  /* A face in the identity block is 72 by 90, a portrait's own proportion, so it never crowds the status beside it. */
+  .dossier__mark .ui-portrait--lg {
+    inline-size: 72px;
+    block-size: 90px;
+  }
+
+  .dossier__marking {
+    padding: var(--space-2xs) var(--space-sm);
+    border: 1px solid var(--color-gold-deep);
+    border-radius: var(--radius-chip);
+    color: var(--color-gold);
+    font-size: var(--size-label);
+    font-weight: var(--weight-strong);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .dossier__plate {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-md);
+    align-items: center;
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  /* The photograph or flag set in a frame with corner marks, the way a file mounts its picture. */
+  .dossier__mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding: var(--space-xs);
+  }
+
+  .dossier__mark::before,
+  .dossier__mark::after {
+    content: "";
+    position: absolute;
+    inline-size: 14px;
+    block-size: 14px;
+    border-color: var(--color-gold);
+    border-style: solid;
+    pointer-events: none;
+  }
+
+  .dossier__mark::before {
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    border-width: 2px 0 0 2px;
+  }
+
+  .dossier__mark::after {
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    border-width: 0 2px 2px 0;
+  }
+
+  .dossier__reference {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    margin: 0;
+    padding-block-start: var(--space-xs);
+    border-block-start: 1px dashed var(--color-border-subtle);
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono);
+    font-size: var(--size-caption);
+  }
+
+  .dossier__id {
+    display: grid;
+    gap: var(--space-xs);
+    min-inline-size: 0;
+  }
+
+  .dossier__post {
+    margin: 0;
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+  }
+
+  .dossier__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .dossier__line {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  /* One surface divided by hairlines, not a card per vital. */
+  .dossier__vitals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .dossier__vital {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 var(--space-sm);
+    align-items: start;
+    padding: var(--space-md);
+    /* Each cell draws its own right and bottom hairline and overhangs by one pixel, so the outer edge is clipped and an odd count leaves a plain cell rather than a gap showing the divider color. */
+    margin: 0 -1px -1px 0;
+    border-inline-end: 1px solid var(--color-border-subtle);
+    border-block-end: 1px solid var(--color-border-subtle);
+    background: var(--color-ground-raised);
+  }
+
+  .dossier__vital-mark {
+    grid-row: span 2;
+    color: var(--color-text-secondary);
+  }
+
+  .dossier__vital dt {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-medium);
+  }
+
+  .dossier__vital dd {
+    margin: 0;
+    font-weight: var(--weight-medium);
+  }
+
+  .dossier__section {
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .dossier__head {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    margin: 0;
+    padding-block-end: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+  }
+
+  .dossier__head-mark {
+    color: var(--color-text-secondary);
+  }
+
+  .dossier__number {
+    display: none;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 50%;
+    color: var(--color-text-secondary);
+    font-family: var(--font-sans);
+    font-size: var(--size-label);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dossier__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  @container (max-width: 26rem) {
+    .dossier__banner {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .dossier__marking {
+      grid-column: 1 / -1;
+      justify-self: start;
+    }
+
+    .dossier__plate {
+      grid-template-columns: 1fr;
+      justify-items: start;
+    }
+
+    .dossier__mark .ui-portrait--lg {
+      inline-size: 56px;
+      block-size: 70px;
+    }
+  }
+}
+@layer rooms {
+  .dossier__watermark { position: absolute; inset: 0 0 auto auto; inline-size: min(32%, 260px); opacity: .045; z-index: -1; pointer-events: none; mix-blend-mode: multiply; }
+  .dossier__seal-art { inline-size: 56px; block-size: 56px; object-fit: contain; border-radius: 50%; }
+}
+@layer rooms {
+  .dossier__banner:not(:has(.dossier__seal-art)) { grid-template-columns: minmax(0, 1fr) auto; }
+}
+@layer rooms { .dossier__watermark { border-radius: 50%; } }

@@ -1,0 +1,128 @@
+[
+  {
+    "theme": "light",
+    "path": "/",
+    "heading": [
+      "Office of the President"
+    ]
+  },
+  {
+    "theme": "light",
+    "path": "/founding",
+    "heading": [
+      "The transition"
+    ]
+  },
+  {
+    "theme": "light",
+    "path": "/administrations",
+    "heading": [
+      "Your administrations"
+    ]
+  },
+  {
+    "theme": "light",
+    "path": "/recovery",
+    "heading": [
+      "Recovery"
+    ]
+  },
+  {
+    "theme": "light",
+    "path": "/audit-no-such-route",
+    "heading": [
+      "This page doesn't exist"
+    ]
+  },
+  {
+    "theme": "light",
+    "journey": "country-and-back",
+    "href": "/world/nation/CHL",
+    "text": "Chile",
+    "heading": "Chile",
+    "returned": "/world"
+  },
+  {
+    "theme": "light",
+    "decisionButtons": [
+      "",
+      "",
+      "4 weeks",
+      "13 weeks",
+      "26 weeks",
+      "52 weeks",
+      "Decline to take it up",
+      "Put it off",
+      "Leave it unanswered",
+      "Advisers",
+      "Background and history",
+      "Next",
+      "Skip",
+      "Turn off guidance",
+      "Give this answer"
+    ]
+  },
+  {
+    "theme": "dark",
+    "path": "/",
+    "heading": [
+      "Office of the President"
+    ]
+  },
+  {
+    "theme": "dark",
+    "path": "/founding",
+    "heading": [
+      "The transition"
+    ]
+  },
+  {
+    "theme": "dark",
+    "path": "/administrations",
+    "heading": [
+      "Your administrations"
+    ]
+  },
+  {
+    "theme": "dark",
+    "path": "/recovery",
+    "heading": [
+      "Recovery"
+    ]
+  },
+  {
+    "theme": "dark",
+    "path": "/audit-no-such-route",
+    "heading": [
+      "This page doesn't exist"
+    ]
+  },
+  {
+    "theme": "dark",
+    "journey": "country-and-back",
+    "href": "/world/nation/CHL",
+    "text": "Chile",
+    "heading": "Chile",
+    "returned": "/world"
+  },
+  {
+    "theme": "dark",
+    "decisionButtons": [
+      "",
+      "",
+      "4 weeks",
+      "13 weeks",
+      "26 weeks",
+      "52 weeks",
+      "Decline to take it up",
+      "Put it off",
+      "Leave it unanswered",
+      "Advisers",
+      "Background and history",
+      "Next",
+      "Skip",
+      "Turn off guidance",
+      "Give this answer"
+    ]
+  }
+]

@@ -1,0 +1,1082 @@
+/* The Nation home and a state's dossier, its district and its act desk. Section titles, notes and the problem line are the Brief's (brief/brief.css). */
+@layer rooms {
+  .nation-portfolios__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: var(--space-sm); }
+  .nation,
+  .state,
+  .locale-desk {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xl);
+    max-inline-size: 64rem;
+    padding-block-end: var(--space-xl);
+  }
+
+  .nation section,
+  .state section,
+  .locale-desk section {
+    display: grid;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  /* The country's readings: the dial beside the electors, and the states' spread under them. */
+  .nation-readings__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-lg);
+    align-items: start;
+  }
+
+  .spread {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .spread__caption {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .spread__bars {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .spread__band {
+    display: grid;
+    grid-template-rows: auto 4.5rem auto auto;
+    gap: var(--space-2xs);
+    justify-items: center;
+    text-align: center;
+  }
+
+  .spread__count {
+    font-size: var(--size-body);
+    font-weight: var(--weight-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .spread__track {
+    display: flex;
+    align-items: flex-end;
+    inline-size: 100%;
+    block-size: 100%;
+    border-block-end: 1px solid var(--color-border-strong);
+  }
+
+  .spread__bar {
+    inline-size: 100%;
+    min-block-size: 2px;
+    border-radius: var(--radius-chip) var(--radius-chip) 0 0;
+    background: var(--map-div-0);
+  }
+
+  /* The bands wear the approval lens's colors: high approval at the cool end. */
+  .spread__band[data-band="under-35"] .spread__bar { background: var(--map-div-p3); }
+  .spread__band[data-band="35-45"] .spread__bar { background: var(--map-div-p1); }
+  .spread__band[data-band="55-65"] .spread__bar { background: var(--map-div-n1); }
+  .spread__band[data-band="over-65"] .spread__bar { background: var(--map-div-n3); }
+
+  .spread__label,
+  .spread__votes {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  /* Every state ranked: a door with its flag, and the reading on its meter. */
+  .state-list__rows,
+  .condition-list,
+  .district-list,
+  .request-list,
+  .memory-list,
+  .act-matters,
+  .act-options,
+  .metros__list,
+  .industry__rows,
+  .vitals,
+  .senate-seats {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .state-line {
+    display: grid;
+    grid-template-columns: minmax(8rem, 1fr) minmax(8rem, 1.4fr);
+    gap: var(--space-md);
+    align-items: center;
+    min-block-size: var(--hit-min);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .state-line__door {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    min-block-size: var(--hit-min);
+    color: var(--color-text-primary);
+    text-decoration: none;
+  }
+
+  .state-line__door:hover .state-line__name {
+    text-decoration: underline;
+  }
+
+  .state-line__alert {
+    color: var(--color-red);
+  }
+
+  .condition-line,
+  .request-line,
+  .act-matter {
+    display: grid;
+    gap: var(--space-xs);
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 3px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .condition-line[data-stance="adverse"] { border-inline-start-color: var(--color-red); }
+  .condition-line[data-stance="caution"] { border-inline-start-color: var(--status-warning-ink); }
+
+  .condition-line__title,
+  .act-matter__title {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    margin: 0;
+    font-weight: var(--weight-strong);
+  }
+
+  .condition-line__where,
+  .act-matter__line,
+  .request-line__reason {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .request-line__reason {
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  /* The dossier. */
+  .section-nav {
+    position: sticky;
+    inset-block-start: calc(-1 * var(--space-sm));
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-2xs);
+    padding-block: var(--space-xs);
+    background: var(--color-ground-base);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .section-nav__link {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+    min-block-size: var(--hit-min);
+    padding: 0 var(--space-sm);
+    border-radius: var(--radius-control);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .section-nav__link:hover {
+    background: var(--color-ground-raised-hover);
+    color: var(--color-text-primary);
+  }
+
+  .state-section {
+    scroll-margin-block-start: var(--space-3xl);
+  }
+
+  .state-ident {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+  }
+
+  .state-ident__name,
+  .governor__name {
+    margin: 0;
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+  }
+
+  .state-ident__seat,
+  .governor__role {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .governor {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-md);
+    align-items: start;
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .governor__body {
+    display: grid;
+    gap: var(--space-xs);
+    align-self: center;
+    min-inline-size: 0;
+  }
+
+  .governor__reading {
+    grid-column: 1 / -1;
+    min-inline-size: 0;
+  }
+
+  .governor__party {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-weight: var(--weight-regular);
+  }
+
+  .governor[data-party="democrat"] .governor__party,
+  .senate-seat[data-party="democrat"] .senate-seat__party,
+  .district-line__place {
+    color: var(--color-text-secondary);
+    font-weight: var(--weight-regular);
+  }
+
+  .district-line[data-party="democrat"] .district-line__holder { color: var(--color-party-democrat); }
+
+  .governor[data-party="republican"] .governor__party,
+  .senate-seat[data-party="republican"] .senate-seat__party,
+  .district-line[data-party="republican"] .district-line__holder { color: var(--color-party-republican); }
+
+  .state-approval {
+    display: grid;
+    grid-template-columns: minmax(9rem, 12rem) 1fr;
+    gap: var(--space-lg);
+    align-items: center;
+  }
+
+  .state-approval__trend {
+    display: grid;
+    gap: var(--space-xs);
+    min-inline-size: 0;
+  }
+
+  .state-approval__divergence {
+    margin: 0;
+    padding-inline-start: var(--space-sm);
+    border-inline-start: 3px solid var(--color-border-strong);
+    font-size: var(--size-small);
+  }
+
+  .state-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: var(--space-md);
+  }
+
+  .senate-seats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .senate-seat {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--space-sm);
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 4px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .senate-seat__name {
+    font-weight: var(--weight-strong);
+  }
+
+  .senate-seat__mark {
+    grid-row: span 3;
+    color: var(--color-text-tertiary);
+  }
+
+  .senate-seat[data-party="democrat"] { border-inline-start-color: var(--color-party-democrat); }
+  .senate-seat[data-party="republican"] { border-inline-start-color: var(--color-party-republican); }
+  .senate-seat[data-party="democrat"] .senate-seat__mark { color: var(--color-party-democrat); }
+  .senate-seat[data-party="republican"] .senate-seat__mark { color: var(--color-party-republican); }
+
+  .senate-seat__party {
+    font-weight: var(--weight-strong);
+  }
+
+  .senate-seat__class {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .district-line {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr) 5rem 7rem 5.5rem;
+    gap: var(--space-sm);
+    align-items: center;
+    min-block-size: var(--hit-min);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .district-line:hover {
+    background: var(--color-ground-raised-hover);
+  }
+
+  .district-line[aria-current="true"] {
+    background: var(--color-blue-wash);
+  }
+
+  .district-line__lean,
+  .district-line__people {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .district-line__people {
+    text-align: end;
+  }
+
+  .district-line__holder {
+    white-space: nowrap;
+  }
+
+  /* The holder's party as a square of its color, read down the column before the word. */
+  .district-line__mark {
+    inline-size: 12px;
+    block-size: 12px;
+    border-radius: var(--radius-chip);
+    background: var(--color-text-disabled);
+  }
+
+  .district-line[data-party="democrat"] .district-line__mark { background: var(--color-party-democrat); }
+  .district-line[data-party="republican"] .district-line__mark { background: var(--color-party-republican); }
+
+  .district-line__lean {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .lean-bar {
+    position: relative;
+    inline-size: 3.5rem;
+    block-size: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--color-party-democrat), var(--color-ground-sunken) 50%, var(--color-party-republican));
+  }
+
+  .lean-bar__mid {
+    position: absolute;
+    inset-block: -3px;
+    inset-inline-start: 50%;
+    border-inline-start: 1px solid var(--color-text-tertiary);
+  }
+
+  .lean-bar__dot {
+    position: absolute;
+    inset-block-start: 50%;
+    inline-size: 9px;
+    block-size: 9px;
+    border: 2px solid var(--color-ground-base);
+    border-radius: 50%;
+    background: var(--color-text-primary);
+    transform: translate(-50%, -50%);
+  }
+
+  .district-panel {
+    padding: var(--space-lg);
+    border: 1px solid var(--color-blue);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .district-panel__eyebrow {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    margin: 0;
+    color: var(--color-blue);
+    font-size: var(--size-label);
+    font-weight: var(--weight-strong);
+  }
+
+  .district-panel__title {
+    margin: 0;
+    font-size: var(--size-heading);
+  }
+
+  /* The economy: the state's pulse on a four-step scale, then what it is made of. */
+  .vital {
+    display: grid;
+    grid-template-columns: minmax(6rem, 1fr) 6rem minmax(8rem, 1.4fr);
+    gap: var(--space-sm);
+    align-items: center;
+    font-size: var(--size-small);
+  }
+
+  .vital__caption {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-secondary);
+  }
+
+  .vital__mark {
+    color: var(--color-text-secondary);
+  }
+
+  .industry__row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-sm);
+    align-items: center;
+  }
+
+  .industry__mark {
+    display: grid;
+    place-items: center;
+    inline-size: 30px;
+    block-size: 30px;
+    border-radius: 50%;
+    background: var(--color-ground-raised);
+    color: var(--color-text-secondary);
+  }
+
+  .vital__scale {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    block-size: 8px;
+  }
+
+  .vital__step {
+    border-radius: var(--radius-chip);
+    background: var(--color-border-subtle);
+  }
+
+  .vital[data-stance="adverse"] .vital__step[data-on] { background: var(--color-red); }
+  .vital[data-stance="caution"] .vital__step[data-on] { background: var(--status-warning-ink); }
+  .vital[data-stance="neutral"] .vital__step[data-on] { background: var(--color-text-secondary); }
+  .vital[data-stance="favorable"] .vital__step[data-on] { background: var(--status-success-ink); }
+
+  .vital__word {
+    display: flex;
+    gap: var(--space-2xs);
+    white-space: nowrap;
+  }
+
+  .vital__sign {
+    inline-size: 1.5ch;
+    flex: none;
+  }
+
+  .industry,
+  .metros {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .industry__title {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .metros__list li {
+    display: grid;
+    grid-template-columns: auto minmax(6rem, 10rem) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+    border-block-end: 1px solid var(--color-border-subtle);
+    padding-block: var(--space-2xs);
+  }
+
+  .metros__people {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  .metros__mark {
+    color: var(--color-text-secondary);
+  }
+
+  .metros__bar {
+    block-size: 6px;
+    border-radius: 3px;
+    background: var(--color-border-subtle);
+  }
+
+  .metros__bar > span {
+    display: block;
+    block-size: 100%;
+    border-radius: 3px;
+    background: var(--color-blue);
+  }
+
+  .memory-line {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: baseline;
+    font-size: var(--size-small);
+  }
+
+  .memory-line > svg {
+    color: var(--valence-ink);
+    flex: none;
+  }
+
+  .memory-line__side {
+    font-weight: var(--weight-strong);
+  }
+
+  /* The acts: every locale act's price under each matter, and the comparison it opens. */
+  .act-option {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2xs) var(--space-md);
+    padding-block: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-size: var(--size-small);
+  }
+
+  .act-option__cost {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-strong);
+  }
+
+  .act-option[data-locked="true"] .act-option__name,
+  .act-option[data-locked="true"] .act-option__cost {
+    color: var(--color-text-tertiary);
+  }
+
+  .act-option__why {
+    grid-column: 1 / -1;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .locale-situation__request {
+    margin: 0;
+    font-size: var(--size-body);
+  }
+
+  .cell-good {
+    color: var(--color-blue);
+  }
+
+  @media (max-width: 30em) {
+    .state-approval {
+      grid-template-columns: 1fr;
+    }
+
+    .state-line {
+      grid-template-columns: 1fr;
+      gap: 0;
+      padding-block-end: var(--space-xs);
+    }
+
+    .district-line {
+      grid-template-columns: 12px minmax(0, 1fr) auto;
+      row-gap: 0;
+      padding-block: var(--space-xs);
+    }
+
+    .district-line__holder {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
+    .district-line__lean {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .district-line__people {
+      display: none;
+    }
+
+    .vital {
+      grid-template-columns: 1fr 5rem;
+    }
+
+    .vital__word {
+      grid-column: 1 / -1;
+      color: var(--color-text-tertiary);
+    }
+  }
+
+  .lens-switch__wrap {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  /* What the chosen lens shows, said under the switch: the color is never a guess. */
+  .lens-switch__about {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .district-list {
+    container-type: inline-size;
+  }
+
+  /* A narrow panel stacks each district on two lines: who holds it and where, then its lean and its people. */
+  @container (max-width: 26rem) {
+    .district-line {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      row-gap: var(--space-2xs);
+      padding-block: var(--space-xs);
+    }
+
+    .district-line__lean {
+      grid-column: 2;
+    }
+  }
+
+  /* The US home: doors to the domestic portfolios and the table of every state. */
+  .nation-doors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .nation-doors__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-block-size: var(--hit-min);
+    padding: 0 var(--space-md);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-control);
+    color: var(--color-blue);
+    font-size: var(--size-small);
+    font-weight: var(--weight-medium);
+    text-decoration: none;
+  }
+
+  .nation-doors__link:hover {
+    background: var(--color-blue-wash);
+  }
+
+  .nation-doors__count {
+    color: var(--status-warning-ink);
+    font-weight: var(--weight-regular);
+  }
+
+  .states-table {
+    display: grid;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  .states-table__filters {
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .states-table__locate { inline-size: 2.5rem; padding-inline: 0; text-align: center; }
+
+  .states-table__locate-button {
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--hit-min);
+    block-size: var(--hit-min);
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    background: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+  }
+
+  .states-table__locate-button:hover { border-color: var(--color-border-strong); color: var(--color-text-primary); }
+  .states-table__locate-button[aria-pressed="true"] { border-color: var(--color-blue); background: var(--color-blue); color: var(--color-white); }
+  .states-table tr[data-selected="true"] > * { background: var(--color-ground-raised); }
+
+  /* The state chosen on the map, above the pages so it is in view whatever page the table is on. */
+  .states-table__chosen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    margin: 0;
+    padding: var(--space-xs) var(--space-sm);
+    border-inline-start: 3px solid var(--color-blue);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+    font-size: var(--size-small);
+  }
+
+  .states-table__check {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-block-size: var(--hit-min);
+    font-size: var(--size-small);
+  }
+
+  .states-table__count {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .states-table__clear {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+    color: var(--color-blue);
+    text-decoration: underline;
+  }
+
+  .states-table__wrap {
+    min-inline-size: 0;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .states-table__table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .states-table__table th,
+  .states-table__table td {
+    padding: var(--space-sm);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: middle;
+  }
+
+  .states-table__table thead th {
+    border-block-end: 1px solid var(--color-border-strong);
+    color: var(--color-text-secondary);
+    font-weight: var(--weight-medium);
+  }
+
+  .states-table__table tbody th {
+    font-weight: var(--weight-medium);
+  }
+
+  .states-table__table tbody th a {
+    text-decoration: none;
+  }
+
+  .states-table__table tbody th a:hover {
+    text-decoration: underline;
+  }
+
+  .states-table__table .states-table__num {
+    text-align: end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .states-table__none {
+    color: var(--color-text-secondary);
+  }
+
+  .states-table__flags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2xs);
+    white-space: nowrap;
+  }
+
+  .states-table__party[data-party="democrat"] {
+    color: var(--color-party-democrat);
+  }
+
+  .states-table__party[data-party="republican"] {
+    color: var(--color-party-republican);
+  }
+
+  /* Under this width the full table's columns do not fit, so each state stacks into labeled lines; the compact table beside the map has few enough columns to stay a table. */
+  @container states-full (max-width: 34rem) {
+    .states-table__table thead tr {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+    }
+
+    .states-table__table thead th {
+      padding: 0;
+    }
+
+    .states-table__table,
+    .states-table__table tbody,
+    .states-table__table tbody tr,
+    .states-table__table tbody th,
+    .states-table__table td {
+      display: block;
+    }
+
+    .states-table__table tbody tr {
+      padding-block: var(--space-xs);
+      border-block-end: 1px solid var(--color-border-subtle);
+    }
+
+    .states-table__table tbody th,
+    .states-table__table td {
+      padding: var(--space-2xs) var(--space-sm);
+      border: 0;
+    }
+
+    .states-table__table td[data-label] {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      text-align: end;
+    }
+
+    .states-table__table td[data-empty="true"] {
+      display: none;
+    }
+
+    .states-table__table td[data-label]::before {
+      content: attr(data-label);
+      color: var(--color-text-secondary);
+      text-align: start;
+    }
+  }
+
+  .states-table__wrap {
+    container-type: inline-size;
+    container-name: states-full;
+  }
+
+  .states-table[data-compact="true"] .states-table__wrap {
+    container-name: states-compact;
+    overflow-x: auto;
+  }
+
+  .states-table__move {
+    display: inline-flex;
+    gap: var(--space-sm);
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  /* The matter that needs a federal answer, above the views. */
+  .state-urgent {
+    display: grid;
+    gap: var(--space-xs);
+    padding: var(--space-md);
+    border: 1px solid var(--status-warning-ink);
+    border-inline-start-width: 4px;
+    border-radius: var(--radius-card);
+    background: var(--status-warning-fill);
+  }
+
+  .state-urgent__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    font-size: var(--size-body);
+    line-height: var(--leading-snug);
+  }
+
+  .state-urgent__line {
+    margin: 0;
+    font-size: var(--size-small);
+  }
+}
+
+@layer components {
+  /* The odds of an incident beside what raises them, never overlapping. */
+  .cell-risk {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  /* Force aimed at Americans carries the red of force, not the blue of a door. */
+  .act-power {
+    margin-block-end: var(--space-md);
+    box-shadow: inset 4px 0 0 var(--color-red);
+  }
+
+  .cell-risk__note {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+}
+
+@layer rooms {
+  .states-table__reading {
+    display: grid;
+    justify-items: end;
+    gap: var(--space-xs);
+  }
+
+  .states-table__reading .ui-bar {
+    inline-size: 5.5rem;
+    block-size: 6px;
+  }
+}
+
+@layer rooms {
+  /* Portfolios: a glyph, the one live reading and what it counts, as a grid of equal tiles. */
+  .nation-doors {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-sm);
+  }
+
+  .nation-doors__link {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "icon label" "icon reading" "icon note";
+    align-items: center;
+    justify-content: stretch;
+    gap: var(--space-2xs) var(--space-sm);
+    padding: var(--space-sm) 0;
+    border: 0;
+    border-block-end: 1px solid var(--color-border-subtle);
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-text-primary);
+  }
+
+  .nation-doors__link:hover {
+    border-color: var(--color-blue);
+    background: var(--color-ground-raised);
+  }
+
+  .nation-doors__icon {
+    grid-area: icon;
+    color: var(--color-blue);
+  }
+
+  .nation-doors__label {
+    grid-area: label;
+    font-weight: var(--weight-medium);
+  }
+
+  .nation-doors__reading {
+    grid-area: reading;
+    margin-block-start: var(--space-xs);
+    font-size: var(--size-body);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-tight);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nation-doors__note {
+    grid-area: note;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-weight: var(--weight-regular);
+  }
+}
+
+@layer rooms {
+  .nation-doors__reading[data-valence="neutral"] {
+    color: var(--color-text-primary);
+  }
+
+  /* People view and the Overview strip */
+  .state-people { display: grid; gap: var(--space-xl); min-inline-size: 0; }
+  .state-people__headlines {
+    --stat-row-columns: repeat(2, minmax(0, 1fr));
+    --stat-row-gap: var(--space-md);
+    --stat-row-cell-padding: var(--space-sm) 0;
+    --stat-row-divider: 0;
+  }
+  .state-people__block, .state-people__strip { display: grid; gap: var(--space-md); min-inline-size: 0; }
+  .state-people__strip { margin-block-start: var(--space-lg); padding: var(--space-md); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-ground-base); }
+  .state-people__title { display: flex; align-items: center; gap: var(--space-xs); margin: 0; font-size: var(--size-title); font-weight: var(--weight-strong); }
+  .state-people__note { margin: 0; color: var(--color-text-secondary); font-size: var(--size-small); }
+  .state-people__facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-sm); margin: 0; padding: 0; list-style: none; }
+  .state-people__fact { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-sm); align-items: center; padding: var(--space-sm) var(--space-md); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-ground-raised); }
+  .state-people__fact[data-direction="over"] { border-inline-start: 4px solid var(--color-blue); }
+  .state-people__fact[data-direction="under"] { border-inline-start: 4px solid var(--color-border-strong); }
+  .state-people__fact p { margin: 0; }
+  .state-people__fact-text { display: grid; line-height: var(--leading-compact); }
+  .state-people__fact-detail { color: var(--color-text-secondary); font-size: var(--size-small); }
+  .state-people__fact-gap { font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .state-people__more { justify-self: start; }
+  .state-people__ratings { display: grid; margin: 0; padding: 0; list-style: none; }
+  .state-people__rating { display: grid; gap: var(--space-xs); padding-block: var(--space-sm); border-block-end: 1px solid var(--color-border-subtle); font-size: var(--size-small); }
+  .state-people__rating p { margin: 0; }
+  .state-people__rating-name { display: flex; align-items: center; gap: var(--space-xs); font-weight: var(--weight-medium); }
+  .state-people__rating-weight, .state-people__rating-support { display: grid; grid-template-columns: 9rem minmax(3rem, 1fr) 7.5rem; gap: var(--space-sm); align-items: center; min-inline-size: 0; }
+  .state-people__rating-key { color: var(--color-text-secondary); }
+  .state-people__rating-figure { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: var(--weight-medium); }
+  .state-people__rating-unit { color: var(--color-text-secondary); font-weight: 400; }
+  .state-people__rating-versus { color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+  .state-people__method { margin: var(--space-sm) 0 0; color: var(--color-text-secondary); font-size: var(--size-small); }
+  @media (max-width: 40em) {
+    .state-people__rating-weight, .state-people__rating-support { grid-template-columns: minmax(0, 1fr) auto; }
+    .state-people__rating-key { grid-column: 1 / -1; }
+    .state-people__rating-unit { display: block; white-space: normal; }
+  }
+}
+
+@layer rooms {
+  /* The map and the states table read together: side by side where there is room, the map first on a phone. */
+  .nhome-pair { display: grid; gap: var(--space-lg); min-inline-size: 0; }
+  .nhome-pair__table { min-inline-size: 0; align-content: start; }
+
+  @media (min-width: 80em) {
+    .nhome-pair { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; }
+  }
+}
+
+@layer rooms {
+  /* Beside the map the reading column is narrow: the bar takes the cell's width rather than a fixed one, and the week's figure stands without its sparkline, which the state page draws. */
+  .states-table[data-compact="true"] .states-table__reading .ui-bar { inline-size: 100%; min-inline-size: 4rem; }
+  .states-table[data-compact="true"] .states-table__move .ui-sparkline { display: none; }
+  .states-table[data-compact="true"] .states-table__table th,
+  .states-table[data-compact="true"] .states-table__table td { padding-inline: var(--space-xs); }
+}
+
+
+@layer rooms {
+  .state-people__selected { scroll-margin-block-start: var(--space-lg); padding: var(--space-lg); border: 1px solid var(--color-blue); border-radius: var(--radius-card); background: var(--color-ground-raised); }
+  .state-people__selected:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+}

@@ -1,0 +1,150 @@
+# Node modules
+node_modules/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.cli
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Service account keys
+**/serviceAccountKey*.json
+
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+playwright-report/
+
+# Package manager locks (optional - uncomment if you want to ignore)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Temporary files
+*.temp
+.cache/
+.tmp/
+tmp/
+.agent/
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local databases
+*.db
+
+# Local tooling state (per-developer, should not be committed)
+.codex/
+.playwright-mcp/
+
+# Materialized secrets — should never happen in normal flow; the canonical
+# path is `scripts/with-secrets.sh` resolving `scripts/secrets.env` (which
+# contains only `op://` references) via 1Password at runtime.
+scripts/.env.local
+scripts/secrets.env.local
+apps/studio/.local/
+config.env
+
+# Construct — generated adapters, launcher, and runtime state.
+# Construct's runtime database only. The committed half — project.json,
+# constitution.json, sources.json, registry.lock.json — is source: the
+# constitution states what this project is and what must not be violated, and
+# the lock pins the skill and workflow versions a session resolves against.
+# Ignoring all of `.construct/` threw that away, which is what the blanket rule
+# here used to do.
+/.construct/state/
+# Construct binds to the nearest project walking up from the working directory,
+# so a stale `.construct/` inside an app would capture a session that happened to
+# cd there. This project has exactly one, at the root.
+apps/*/.construct/
+packages/*/.construct/
+.opencode/
+.mcp.json
+.github/prompts/
+.github/agents/
+/plan.md
+
+# Agent configuration. This project's own skills, agents and rules are
+# tracked so a fresh clone briefs every harness the same way. Only local and
+# machine-specific state is ignored here.
+.claude/worktrees/
+.claude/settings.local.json
+.claude/*.local.json
+.cursor/mcp.json
+
+# Agent scratch space — transient per-agent working directories.
+.scratch-*/
+
+# Scenario pipeline output. The corpus is indexed by a ContentManifest and baked
+# into the app — it is a build artifact of `studio corpus publish`, not source,
+# and tracking it made authored content look like code.
+content/corpus/
+content/jobs/
+content/reviews/
+# The content set built by `studio corpus build`. Derived from the corpus and
+# reproducible from it; the app carries the bake, not this directory.
+content/dist/
+# Editor cover drafts and uploaded plates. The versioned house lock stays tracked.
+content/articles-work/
+
+# Web player output. The build, Playwright's per-test results, the fixture saves
+# global setup generates from dist, and the captures and copy-budget reports the
+# suite writes are all regenerated on every run. A baseline a wave is measured
+# against is copied into docs/audits by hand, where it is tracked.
+apps/web/dist/
+apps/web/test-results/
+apps/web/tests/.fixtures/
+apps/web/tests/.results/
+
+apps/desktop/out/
+apps/desktop/dist/
+steam_appid.txt
+
+# The drop-in inbox for scenario files drafted outside the repository from the
+# authoring kit (content/kit/, which is tracked).
+content/inbox/
+
+# Persistent isolated implementation checkouts; each has its own Git branch.
+/.worktrees/

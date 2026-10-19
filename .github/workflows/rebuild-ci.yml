@@ -1,0 +1,128 @@
+name: Rebuild CI (packages/apps/services/studio-cli)
+
+# The workspace's CI pipeline. Fires on every branch push, not just on pull
+# requests, so a long-lived working branch is never silently unguarded.
+#
+# `pull_request` is deliberately NOT a trigger. Every PR head commit is pushed to
+# a branch this workflow already watches, so the PR event only ever re-ran a
+# commit `push` had tested minutes earlier: 15 of September's 35 runs were that
+# duplicate, 666 billed minutes spent re-learning a result the repo already had.
+# Nothing depended on the event — required status checks need branch protection,
+# which a private repo on this plan cannot enable at all (the API returns 403).
+# Add it back only for fork PRs, which `push` genuinely cannot see.
+on:
+  push:
+    branches: ["**"]
+
+# One run per branch, newest wins. Without this a 45-minute job lets three
+# pushes in an afternoon buy three full runs of which only the last is read.
+concurrency:
+  group: rebuild-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    # GitHub's default is 360 minutes. This suite's slowest honest run is 59, so
+    # a job still alive at 75 is hung rather than slow — and on a private repo a
+    # hung job bills the whole six hours before the runner is reaped.
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      # No `version:` here on purpose. package.json's `packageManager` field
+      # (pnpm@9.15.0) is the single source of truth, and action-setup v4 fails
+      # outright when both are given — which is how every run on every branch
+      # died in the setup step, before a single check had run. A pinned version
+      # here would also drift from the one the workspace actually installs with.
+      - uses: pnpm/action-setup@v4
+      # 22, not 20: undici 8 (pulled in through jsdom, which the player's tests
+      # run in) declares `node >=22.19.0` and calls `webidl.util.markAsUncloneable`,
+      # which Node 20 does not have. On 20 that throws while the test file is
+      # still loading, so the file never runs and vitest reports a load error
+      # rather than a failure — three of the player's suites disappeared from
+      # the run that way instead of going red.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Build FIRST, before anything that runs tsc. Every package sets
+      # `composite: true`, and `tsc --noEmit` on a composite project still
+      # writes its .tsbuildinfo — recording a program that was checked but never
+      # emitted. A `tsc -b` run afterwards trusts that file, emits incrementally
+      # from it, and produces declaration bytes that differ from a full emit for
+      # the schema-heavy modules (zod enums and objects reorder their keys). The
+      # committed dist/ is what a cold build produces, so the warm-after-
+      # typecheck build looked like five stale files on every run and the
+      # freshness gate reported dirt it had not caused. Proven by bisecting the
+      # step order on a clean Linux checkout: cold build clean, warm-from-its-
+      # own-buildinfo clean, typecheck-then-build dirty every time.
+      - run: pnpm run build
+      - run: pnpm run typecheck
+      - run: pnpm run lint
+      # Every proof gate, found by glob rather than listed. The hand list this
+      # replaces had drifted to 21 of 45 gates, and eleven ran nowhere at all:
+      # a gate nobody runs protects nothing, and a new one now runs the moment
+      # it lands. They need only the build above, not the tests below, so they
+      # run first and a red gate stops the run before it has paid for the
+      # engine suite.
+      #
+      # Every gate runs even after one fails, and the step fails at the end
+      # naming each one, so a single push reports the whole picture. A gate
+      # whose input is gitignored (the authored corpus) says it skipped rather
+      # than passing silently; verify-dist-freshness compares the committed
+      # dist/ against a clean build, which is exactly what this checkout is.
+      - name: Proof gates (every scripts/verify-*.mjs)
+        run: |
+          failed=""
+          count=0
+          for gate in scripts/verify-*.mjs; do
+            count=$((count + 1))
+            echo "::group::${gate}"
+            if ! node "${gate}"; then
+              failed="${failed} ${gate}"
+              echo "::error title=Proof gate failed::${gate}"
+            fi
+            echo "::endgroup::"
+          done
+          if [ "${count}" -eq 0 ]; then
+            echo "::error::no scripts/verify-*.mjs matched; a run that checked nothing is not a pass"
+            exit 1
+          fi
+          if [ -n "${failed}" ]; then
+            echo "Failed gates:${failed}"
+            exit 1
+          fi
+          echo "All ${count} proof gates passed."
+      # Split by cost, cheapest first, so a red run stops before it has paid for
+      # the expensive suites. `pnpm -r run test` walks the graph topologically,
+      # which put engine (22 min) ahead of studio-cli — so the two failing
+      # session-driver cases cost 48 minutes to reach on every September run
+      # instead of the ~11 the first two tiers take to get there.
+      #
+      # `--workspace-concurrency=1` is the other half, and the reason those two
+      # cases fail here at all. pnpm's default runs four packages at once; the
+      # runner backing a private repo on this plan has two cores. Serializing
+      # costs about two minutes on a green run and buys back every red one.
+      #
+      # Tier 3 is written as exclusions, not a list, so a package added later
+      # lands there and runs rather than being silently dropped from CI.
+      - name: Test (fast suites — seconds)
+        run: pnpm --workspace-concurrency=1 --filter @admin/contracts --filter @admin/api --filter @admin/studio --filter @admin/world --filter @admin/design --filter @admin/ui-web run test
+      - name: Test (mid-weight suites — minutes)
+        run: pnpm --workspace-concurrency=1 --filter @admin/content --filter @admin/studio-cli --filter @admin/player-core run test
+      - name: Test (heavy suites — engine, web, desktop, and anything added later)
+        run: pnpm -r --workspace-concurrency=1 --filter '!@admin/contracts' --filter '!@admin/api' --filter '!@admin/studio' --filter '!@admin/world' --filter '!@admin/design' --filter '!@admin/ui-web' --filter '!@admin/content' --filter '!@admin/studio-cli' --filter '!@admin/player-core' run test
+      # The browser suite is empty while the player is rebuilt. test:e2e passes
+      # --pass-with-no-tests, so this step still proves the fixture saves build
+      # from the engine (the global setup runs with no specs; the web server
+      # does not), and it goes red the day a spec lands and fails.
+      - name: Playwright e2e
+        run: |
+          pnpm --filter @admin/web exec playwright install --with-deps chromium
+          pnpm --filter @admin/web run test:e2e
+      # The balance harness used to run here, gated to main and staging. It moved to
+      # .github/workflows/balance-harness.yml, whose weekly schedule fires only once that file
+      # is on main. ~12 billable minutes on every protected push was ~520 a month, and what
+      # it measures is a distribution that drifts over many commits rather than breaking on
+      # one. That file carries the full reasoning and the cost of the trade.

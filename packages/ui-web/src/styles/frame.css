@@ -1,0 +1,447 @@
+/* The frame: the navy masthead across the top, the navigation down the side
+   (a bar along the bottom on a phone), and the light work canvas. The map
+   sits in the canvas only while a spatial screen is open; a workspace screen
+   hides it and takes the whole canvas. Phone first: the drawer arrives at
+   48em, the labeled rail at 64em, the full navigation at 90em. */
+@layer components {
+  .ui-frame {
+    --frame-top: calc(var(--bar-phone) + env(safe-area-inset-top, 0px));
+    --frame-bottom: 0px;
+    --frame-start: 0px;
+    position: relative;
+    min-block-size: 100dvh;
+    overflow: hidden;
+    background: var(--color-ground-sunken);
+  }
+
+  .ui-frame[data-nav="true"] {
+    --frame-bottom: calc(var(--tab-bar) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .ui-frame__skip {
+    position: fixed;
+    z-index: 40;
+    inset-block-start: var(--space-sm);
+    inset-inline-start: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-control);
+    background: var(--color-blue-fill);
+    color: var(--color-white);
+    transform: translateY(-200%);
+  }
+
+  .ui-frame__skip:focus {
+    transform: none;
+  }
+
+  .ui-frame__map {
+    position: fixed;
+    z-index: 0;
+    inset-block: var(--frame-top) var(--frame-bottom);
+    inset-inline: var(--frame-start) 0;
+    background: var(--color-theater-surface);
+  }
+
+  /* A workspace screen has no geography to show: the map stays loaded, paused and out of sight. */
+  :root[data-screen="workspace"] .ui-frame__map {
+    visibility: hidden;
+  }
+
+  .ui-frame__bar {
+    position: fixed;
+    z-index: 20;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: var(--frame-top);
+    padding-block-start: env(safe-area-inset-top, 0px);
+  }
+
+  .ui-frame__nav {
+    position: fixed;
+    z-index: 20;
+    inset-block-end: 0;
+    inset-inline: 0;
+    block-size: var(--frame-bottom);
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+    background: var(--color-ground-sunken);
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .ui-frame__work {
+    position: fixed;
+    z-index: 10;
+    inset-block: var(--frame-top) var(--frame-bottom);
+    inset-inline: var(--frame-start) 0;
+    pointer-events: none;
+    outline: none;
+  }
+
+  .ui-frame__work > * {
+    pointer-events: auto;
+  }
+
+  .ui-top-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    block-size: 100%;
+    padding-inline: var(--space-md);
+    background: var(--color-ground-sunken);
+    border-block-end: 1px solid color-mix(in srgb, var(--color-text-secondary) 16%, transparent);
+    box-shadow: none;
+  }
+
+  .ui-top-bar__home {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+
+  .ui-top-bar__status {
+    min-inline-size: 0;
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ui-top-bar__actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-inline-start: auto;
+  }
+
+  .ui-wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: var(--color-text-primary);
+    font-weight: var(--weight-strong);
+    letter-spacing: var(--tracking-display);
+  }
+
+  .ui-wordmark__glyph {
+    color: var(--color-text-primary);
+  }
+
+  .ui-wordmark__name {
+    display: none;
+    line-height: 1.15;
+  }
+
+  .ui-wordmark__office,
+  .ui-wordmark__holder {
+    display: block;
+  }
+
+  .ui-wordmark__holder {
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+    font-weight: var(--weight-regular);
+    letter-spacing: normal;
+  }
+
+  /* Navigation. Each presentation is drawn from the same groups; only one shows at a width. */
+  .ui-nav {
+    block-size: 100%;
+  }
+
+  .ui-nav__bar,
+  .ui-nav__rail {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ui-nav > .ui-nav__full,
+  .ui-nav > .ui-nav__rail {
+    display: none;
+  }
+
+  .ui-nav__bar {
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    block-size: 100%;
+  }
+
+  .ui-nav__group-link {
+    position: relative;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: var(--space-2xs);
+    inline-size: 100%;
+    block-size: 100%;
+    min-block-size: var(--hit-min);
+    padding: var(--space-xs) var(--space-2xs);
+    border: 0;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: var(--size-caption);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-snug);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .ui-nav__group-link:hover {
+    color: var(--color-text-primary);
+    background: var(--status-info-fill);
+  }
+
+  .ui-nav__group-link[aria-current="page"],
+  .ui-nav__group-link[data-current="true"] {
+    color: var(--color-text-primary);
+  }
+
+  .ui-nav__group-link[aria-current="page"]::before,
+  .ui-nav__group-link[data-current="true"]::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 20%;
+    block-size: 3px;
+    background: var(--color-blue);
+  }
+
+  .ui-nav__glyph {
+    position: relative;
+    display: inline-grid;
+  }
+
+  .ui-nav__badge {
+    position: absolute;
+    inset-block-start: -6px;
+    inset-inline-end: -12px;
+    min-inline-size: 20px;
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-pill);
+    background: var(--color-red-fill);
+    color: var(--color-white);
+    font-size: var(--size-caption);
+    font-weight: var(--weight-strong);
+    line-height: 20px;
+    text-align: center;
+  }
+
+  /* Everything here has been seen and still waits: a count without the alarm. */
+  .ui-nav__badge--quiet {
+    background: var(--color-ground-base);
+    color: var(--color-text-secondary);
+    box-shadow: inset 0 0 0 1.5px currentColor;
+  }
+
+  .ui-nav__link .ui-nav__badge {
+    position: static;
+    margin-inline-start: auto;
+  }
+
+  .ui-nav__full {
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+  }
+
+  .ui-nav__heading {
+    margin: 0 0 var(--space-2xs);
+    padding-inline: var(--space-md);
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+    font-weight: var(--weight-strong);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+  }
+
+  .ui-nav__list {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ui-nav__list--utilities {
+    margin-block-start: auto;
+    padding-block-start: var(--space-sm);
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .ui-nav__link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    min-block-size: 40px;
+    padding: 7px var(--space-lg);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-secondary);
+    font-size: var(--size-body);
+    line-height: var(--leading-control);
+    text-decoration: none;
+  }
+
+  .ui-nav__link:hover {
+    color: var(--color-text-primary);
+    background: var(--status-info-fill);
+  }
+
+  .ui-nav__link[aria-current="page"] {
+    color: var(--color-text-primary);
+    font-weight: var(--weight-medium);
+    background: var(--status-info-fill);
+    box-shadow: none;
+  }
+
+  .ui-nav__drawer .ui-sheet__body { padding: 0; }
+  .ui-nav__drawer-foot { inline-size: 100%; }
+  .ui-nav__drawer[data-state="open"] .ui-nav__full { display: flex; }
+
+  .ui-nav__menu {
+    display: grid;
+    place-items: center;
+    inline-size: var(--hit-min);
+    block-size: var(--hit-min);
+    border: 0;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--color-text-primary);
+    cursor: pointer;
+  }
+
+  .ui-nav__menu:hover {
+    background: var(--status-info-fill);
+  }
+
+  /* The menu control belongs to the tablet width only; the shared rule above sets its shape. */
+  .ui-nav > .ui-nav__menu {
+    display: none;
+  }
+
+  .ui-nav__menu-label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .ui-frame[data-nav="true"] {
+    --frame-bottom: calc(var(--tab-bar) + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (min-width: 30em) {
+    .ui-wordmark__name {
+      display: block;
+    }
+  }
+
+  /* Tablet: one work area; the full list opens as a drawer from the masthead. */
+  @media (min-width: 48em) {
+    .ui-frame {
+      --frame-top: calc(var(--bar-desktop) + env(safe-area-inset-top, 0px));
+    }
+
+    .ui-frame[data-nav="true"] {
+      --frame-bottom: 0px;
+    }
+
+    .ui-frame[data-nav="true"] .ui-top-bar {
+      padding-inline-start: calc(var(--hit-min) + var(--space-md) * 2);
+    }
+
+    .ui-frame__nav {
+      inset-block: env(safe-area-inset-top, 0px) auto;
+      inset-inline: var(--space-sm) auto;
+      inline-size: auto;
+      block-size: var(--bar-desktop);
+      padding: 0;
+      border: 0;
+      background: transparent;
+      display: grid;
+      align-items: center;
+    }
+
+    .ui-nav > .ui-nav__bar {
+      display: none;
+    }
+
+    .ui-nav > .ui-nav__menu {
+      display: grid;
+    }
+  }
+
+  /* Laptop: a labeled rail with one entry per group. */
+  @media (min-width: 64em) {
+    .ui-frame[data-nav="true"] {
+      --frame-start: var(--rail);
+    }
+
+    .ui-frame[data-nav="true"] .ui-top-bar {
+      padding-inline-start: var(--space-lg);
+    }
+
+    .ui-frame__nav {
+      inset-block: var(--frame-top) 0;
+      inset-inline: 0 auto;
+      inline-size: var(--rail);
+      block-size: auto;
+      align-items: start;
+      background: var(--color-ground-sunken);
+      border-inline-end: 1px solid var(--color-border-subtle);
+      overflow-y: auto;
+    }
+
+    .ui-nav > .ui-nav__menu {
+      display: none;
+    }
+
+    .ui-nav > .ui-nav__rail {
+      display: grid;
+      grid-auto-rows: minmax(64px, auto);
+      padding-block: var(--space-sm);
+    }
+
+    .ui-nav__rail .ui-nav__group-link[aria-current="page"]::before {
+      inset-block: 12%;
+      inset-inline: 0 auto;
+      inline-size: 3px;
+      block-size: auto;
+    }
+  }
+
+  /* Wide: every destination, labeled, under its group. */
+  @media (min-width: 90em) {
+    .ui-frame[data-nav="true"] {
+      --frame-start: var(--nav);
+    }
+
+    .ui-frame__nav {
+      inline-size: var(--nav);
+    }
+
+    .ui-nav > .ui-nav__rail {
+      display: none;
+    }
+
+    .ui-frame__nav .ui-nav > .ui-nav__full {
+      display: flex;
+      min-block-size: 100%;
+    }
+  }
+}
+
+@layer components {
+  .ui-nav__list { gap: var(--space-xs); }
+  .ui-nav__link[aria-current="page"] { color: var(--color-blue); }
+  .ui-nav__group-link:is([aria-current="page"], [data-current="true"]) { background: var(--status-info-fill); color: var(--color-blue); border-radius: var(--radius-pill); }
+  .ui-nav__group-link:is([aria-current="page"], [data-current="true"])::before { display: none; }
+  .ui-nav__heading { padding-block: var(--space-xs); font-weight: var(--weight-medium); text-transform: none; letter-spacing: 0; }
+  @media (min-width: 64em) { .ui-frame__nav { border-inline-end: 0; } .ui-nav__rail { gap: var(--space-sm); padding-inline: var(--space-sm); } }
+}

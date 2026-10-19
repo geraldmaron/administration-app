@@ -1,0 +1,10 @@
+import type { Charter } from "@admin/world";
+import type { ConstitutionalGround } from "./legislative-acts.js";
+import type { ExecutiveOrder } from "./orders.js";
+import type { CourtHolding, CourtMatter, CourtProceeding, CourtStage } from "./state-judiciary.js";
+export declare function openedProceeding(recordId: string, orderId: string, filedTurn: number, dueTurn: number, matter?: CourtMatter): CourtProceeding;
+export declare function courtStep(proceeding: CourtProceeding, stage: CourtStage, turn: number, account: string, extra?: Partial<CourtProceeding>): CourtProceeding;
+export declare function thresholdPasses(charter: Charter, order: ExecutiveOrder, ground: ConstitutionalGround, draw: number): boolean;
+export declare function lowerMerits(charter: Charter, order: ExecutiveOrder, ground: ConstitutionalGround, draw: number): CourtHolding;
+export declare function appealGrantChance(ground: ConstitutionalGround, lower: CourtHolding, adjustment?: number): number;
+export declare function appealGranted(ground: ConstitutionalGround, lower: CourtHolding, draw: number, adjustment?: number): boolean;

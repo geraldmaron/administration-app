@@ -1,0 +1,350 @@
+/* The weekly digest drawn as one report: the week picked on a signed chart,
+   the readings it closed on, what moved and where, then who acted and what
+   the wire filed. Marks use the solid status inks; the printed figure carries
+   every exact value. */
+@layer rooms {
+  .dg {
+    display: grid;
+    gap: var(--space-lg);
+    min-inline-size: 0;
+    max-inline-size: 80rem;
+    padding-block-end: var(--space-xl);
+  }
+
+  .dg-band,
+  .dg-cols,
+  .dg-states {
+    display: grid;
+    gap: var(--space-lg);
+    min-inline-size: 0;
+  }
+
+  @media (min-width: 64em) {
+    .dg-band { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); align-items: stretch; }
+  }
+
+  .dg-panel {
+    display: grid;
+    align-content: start;
+    gap: var(--space-md);
+    min-inline-size: 0;
+    padding: var(--panel-pad);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .dg-panel__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-snug);
+  }
+
+  .dg-panel__note,
+  .dg-none {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .dg-sub {
+    margin: 0 0 var(--space-xs);
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-strong);
+  }
+
+  .dg-plain { margin: 0; padding-inline-start: var(--space-lg); }
+
+  .dg-run__acknowledge {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  /* The week picker: up for a rise, down for a fall, from one zero line. */
+  .dg-weeks { display: grid; gap: var(--space-sm); }
+
+  .dg-weeks__head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .dg-weeks__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    text-align: center;
+  }
+
+  .dg-weeks__title span {
+    display: block;
+    color: var(--color-text-secondary);
+    font-family: var(--font-sans);
+    font-size: var(--size-caption);
+    font-weight: var(--weight-regular);
+  }
+
+  .dg-weeks__step {
+    display: grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-base);
+    color: var(--color-text-primary);
+  }
+
+  .dg-weeks__step[data-disabled="true"] { opacity: 0.4; }
+  .dg-weeks__older { transform: rotate(180deg); }
+
+  .dg-weeks__bars {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dg-weeks__bar {
+    position: relative;
+    display: grid;
+    grid-template-rows: 4rem 4rem auto;
+    justify-items: center;
+    padding-block: 2px;
+    border-radius: var(--radius-control);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+  }
+
+  .dg-weeks__bar:hover { background: var(--color-ground-raised); }
+
+  .dg-weeks__bar[aria-current="page"] {
+    background: var(--color-gold-wash);
+    box-shadow: inset 0 -2px 0 var(--color-gold);
+    color: var(--color-text-primary);
+    font-weight: var(--weight-strong);
+  }
+
+  .dg-weeks__bar:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+
+  /* The zero line runs through every column, so a short bar is still read from it. */
+  .dg-weeks__bar::before {
+    content: "";
+    position: absolute;
+    inset: calc(2px + 4rem) 0 auto 0;
+    block-size: 1px;
+    background: var(--color-border-strong);
+  }
+
+  .dg-weeks__bar[data-known="false"]::before { background: repeating-linear-gradient(90deg, var(--color-border-strong) 0 2px, transparent 2px 4px); }
+
+  .dg-weeks__half {
+    display: flex;
+    justify-content: center;
+    inline-size: 100%;
+    min-block-size: 0;
+  }
+
+  .dg-weeks__half[data-side="up"] { align-items: flex-end; }
+  .dg-weeks__half[data-side="down"] { align-items: flex-start; }
+
+  .dg-weeks__half > span {
+    inline-size: min(1rem, 70%);
+    min-block-size: 3px;
+  }
+
+  .dg-weeks__half[data-side="up"] > span { border-radius: 2px 2px 0 0; background: var(--status-success-ink); }
+  .dg-weeks__half[data-side="down"] > span { border-radius: 0 0 2px 2px; background: var(--status-danger-ink); }
+
+  .dg-weeks__label { font-size: var(--size-caption); font-variant-numeric: tabular-nums; }
+
+  /* The five readings at the week's close. */
+  .dg-kpis {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dg-kpis li + li { border-block-start: 1px solid var(--color-border-subtle); }
+
+  .dg-kpi {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) auto minmax(4rem, 1fr) minmax(7rem, auto);
+    align-items: center;
+    gap: var(--space-sm) var(--space-md);
+    min-block-size: var(--hit-min);
+    padding: var(--space-xs) var(--space-xs);
+    border-radius: var(--radius-control);
+    color: var(--color-text-primary);
+    text-decoration: none;
+  }
+
+  .dg-kpi:hover { background: var(--color-ground-raised); }
+  .dg-kpi:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+
+  .dg-kpi__name { display: flex; align-items: center; gap: var(--space-xs); min-inline-size: 0; font-size: var(--size-small); }
+
+  .dg-kpi__figure {
+    font-size: var(--size-title);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-strong);
+    text-align: end;
+  }
+
+  .dg-kpi__delta { font-size: var(--size-small); font-variant-numeric: tabular-nums; text-align: end; }
+
+  .dg-range {
+    position: relative;
+    display: block;
+    block-size: 0.5rem;
+    border-radius: 999px;
+    background: var(--color-border-subtle);
+  }
+
+  .dg-range__fill { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; background: var(--color-blue); }
+
+  .dg-range__before {
+    position: absolute;
+    inset-block: -3px;
+    inline-size: 2px;
+    margin-inline-start: -1px;
+    background: var(--color-text-primary);
+  }
+
+  @media (max-width: 47.99em) {
+    .dg-kpi { grid-template-columns: minmax(0, 1fr) auto auto; }
+    .dg-kpi .dg-range { grid-column: 1 / -1; grid-row: 2; }
+  }
+
+
+  /* Where approval moved: the map, then the largest movers beside it. */
+
+  @media (min-width: 80em) {
+    .dg-states { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: stretch; }
+  }
+
+  .dg-movers__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: var(--space-md); min-inline-size: 0; }
+  .dg-movers { display: grid; align-content: start; gap: var(--space-xs); min-inline-size: 0; }
+  .dg-movers__title { margin: 0; color: var(--color-text-secondary); font-size: var(--size-label); font-weight: var(--weight-strong); }
+  .dg-movers__list { display: grid; margin: 0; padding: 0; list-style: none; }
+
+  .dg-movers__row {
+    display: grid;
+    grid-template-columns: minmax(0, 7rem) minmax(0, 1fr) 3.25rem;
+    align-items: center;
+    gap: var(--space-sm);
+    min-block-size: var(--hit-min);
+    padding-inline: var(--space-xs);
+    border-radius: var(--radius-control);
+    color: var(--color-text-primary);
+    font-size: var(--size-small);
+    text-decoration: none;
+  }
+
+  .dg-movers__row:hover { background: var(--color-ground-raised); }
+  .dg-movers__row:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+  .dg-movers__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dg-movers__bar { block-size: 0.5rem; border-radius: 999px; background: var(--color-border-subtle); overflow: hidden; }
+  .dg-movers__bar > span { display: block; block-size: 100%; border-radius: inherit; }
+  .dg-movers__bar > [data-dir="up"] { background: var(--status-success-ink); }
+  .dg-movers__bar > [data-dir="down"] { background: var(--status-danger-ink); }
+  .dg-movers__figure { font-variant-numeric: tabular-nums; font-weight: var(--weight-strong); text-align: end; }
+
+  /* Acts, world entries and the wire, grouped by domain. */
+  .dg-groups { display: grid; gap: var(--space-lg); min-inline-size: 0; }
+
+  .dg-groups--wire { grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); align-items: start; }
+
+  .dg-group { display: grid; align-content: start; gap: var(--space-sm); min-inline-size: 0; }
+
+  .dg-group__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    margin: 0;
+    padding-block-end: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-size: var(--size-body);
+    font-weight: var(--weight-strong);
+  }
+
+  .dg-group__count {
+    min-inline-size: 1.5rem;
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-pill);
+    background: var(--status-info-fill);
+    color: var(--status-info-ink);
+    font-size: var(--size-label);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  .dg-group__cue { margin-inline-start: auto; font-size: var(--size-small); font-weight: var(--weight-medium); }
+  .dg-group__cue + .dg-group__cue { margin-inline-start: 0; }
+
+  .dg-wire { display: grid; margin: 0; padding: 0; list-style: none; }
+
+  .dg-wire li {
+    display: grid;
+    gap: var(--space-2xs);
+    padding-block: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-size: var(--size-small);
+  }
+
+  .dg-wire__text { overflow-wrap: anywhere; }
+
+  .dg-wire__door {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    justify-self: start;
+    min-block-size: var(--hit-min);
+    color: var(--color-blue);
+    font-size: var(--size-label);
+  }
+
+  /* The last run: what stopped time and what waits. */
+  .dg-run { border-inline-start: 4px solid var(--color-gold-deep); }
+  .dg-run__body { display: grid; gap: var(--space-md); }
+  .dg-run__body[data-read="true"] { opacity: 0.85; }
+
+  @media (min-width: 64em) {
+    .dg-run__body { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
+    .dg-run__body > .dg-stops { grid-row: span 2; }
+  }
+
+  .dg-stops { display: grid; gap: var(--space-xs); margin: 0; padding: 0; list-style: none; }
+
+  .dg-stops li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "tag title" "reason reason";
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 3px solid var(--status-warning-ink);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+  }
+
+  .dg-stops li[data-urgency="hard"] { border-inline-start-color: var(--status-danger-ink); }
+  .dg-stops li > :nth-child(1) { grid-area: tag; }
+  .dg-stops__title { grid-area: title; color: var(--color-text-primary); font-weight: var(--weight-strong); }
+  .dg-stops__reason { grid-area: reason; color: var(--color-text-secondary); font-size: var(--size-small); }
+}

@@ -1,0 +1,25 @@
+{
+  "$comment": "Expert and abstract words the doctrine replaces with everyday ones (docs/CONTENT_DOCTRINE.md §10.2, Plain language), forgiven per file. A ratchet: it may only shrink toward zero as the plain-language wave lands. Run node scripts/verify-player-prose.mjs --update-baseline after rewriting.",
+  "entries": {
+    "apps/web/src/help/authorities.ts :: jargon-word": 1,
+    "apps/web/src/map/lenses/set-lenses.ts :: jargon-word": 2,
+    "apps/web/src/nation/state/LocaleActDesk.tsx :: jargon-word": 1,
+    "apps/web/src/washington/congress/AisleView.tsx :: jargon-word": 5,
+    "apps/web/src/washington/congress/CongressSystemView.tsx :: jargon-word": 3,
+    "apps/web/src/washington/congress/PostScreen.tsx :: jargon-word": 1,
+    "apps/web/src/washington/courts/CaseProcessView.tsx :: jargon-word": 6,
+    "apps/web/src/washington/courts/CaseScreen.tsx :: jargon-word": 12,
+    "apps/web/src/washington/courts/CourtBench.tsx :: jargon-word": 1,
+    "apps/web/src/washington/courts/Docket.tsx :: jargon-word": 2,
+    "apps/web/src/washington/person/PersonScreen.tsx :: jargon-word": 2,
+    "apps/web/src/washington/person/RelationshipNavigator.tsx :: jargon-word": 1,
+    "apps/web/src/world/org/OrgScreen.tsx :: jargon-word": 2,
+    "apps/web/src/world/overview/Kpis.tsx :: jargon-word": 1,
+    "apps/web/src/world/overview/MapPanel.tsx :: jargon-word": 1,
+    "apps/web/src/world/security/CollectionActs.tsx :: jargon-word": 1,
+    "apps/web/src/world/security/CommandActs.tsx :: jargon-word": 1,
+    "apps/web/src/world/treaty/TreatyScreen.tsx :: jargon-word": 1,
+    "packages/player-core/src/glossary/government.ts :: jargon-word": 8,
+    "packages/player-core/src/glossary/world.ts :: jargon-word": 2
+  }
+}

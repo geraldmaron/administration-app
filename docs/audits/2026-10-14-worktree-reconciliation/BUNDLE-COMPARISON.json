@@ -1,0 +1,137 @@
+{
+  "base": "f49f99197180296c404186520813e85b3d17c79e",
+  "before": 322,
+  "after": 327,
+  "revisions": 20,
+  "additions": 5,
+  "unchanged": 302,
+  "removed": [],
+  "comparison": "Every changed decoded generated body equals its independently approved shipped body; every other decoded body equals HEAD",
+  "bodies": [
+    {
+      "id": "issued-surveillance-no-result",
+      "operation": "added",
+      "sha256": "2b9bc7432eb2ca0d3167c235f04f14a7b295753adcdb89ce85910fcb4fa5cbc6"
+    },
+    {
+      "id": "issued-warning-private-demarche",
+      "operation": "added",
+      "sha256": "9ad6034cb8ae91d13d9725b6795930161e4b50ea9b5709a1b071e183bee11793"
+    },
+    {
+      "id": "shared-warning-recipient-support",
+      "operation": "added",
+      "sha256": "6f3b37edb752f4692f6dfea8c2ea480d399fba7fe04a267d53299865c1a4d3b6"
+    },
+    {
+      "id": "the-administration-asks-for-more",
+      "operation": "revised",
+      "sha256": "40d9bdb68f1f6300faf5fdb387b3a8d3b54debca7a173e32a5424804952191a4"
+    },
+    {
+      "id": "the-appropriation-the-assembly-never-signed",
+      "operation": "revised",
+      "sha256": "cc5f75108580555a3de45b5fc1afb45e378a08d39db4e671e0a5be0cfc8b91fc"
+    },
+    {
+      "id": "the-chief-justice-seat-and-two-records",
+      "operation": "added",
+      "sha256": "cb9a03f43c09e8938cb2183efffce641f25c65cdcd15d57901cd2060f43b62d5"
+    },
+    {
+      "id": "the-file-the-defense-has-now-asked-for",
+      "operation": "revised",
+      "sha256": "3feded08c34dcd4c982fc817f9f75a409e83902beb726a7d9496dfc9a196533b"
+    },
+    {
+      "id": "the-honor-guard-that-drew-the-wrong-flag",
+      "operation": "revised",
+      "sha256": "5a5cf9a2efb1da7e298462fca3787a4e069f868bbd622e876d3f8fca09d7be07"
+    },
+    {
+      "id": "the-judgment-on-the-order-you-signed",
+      "operation": "added",
+      "sha256": "14bb6cdcd16c967c0eb91ede8fcf4a385788fb82b943fab05d5b7d7a890ae29a"
+    },
+    {
+      "id": "the-last-signature-on-the-charter",
+      "operation": "revised",
+      "sha256": "beae5d10cdc114e69ea3ba6ba5afa641081258a49489659b1f2de78824058722"
+    },
+    {
+      "id": "the-list-longer-than-the-money",
+      "operation": "revised",
+      "sha256": "bc620607408d87ea8436319bcba6c0a117b0b028bf69bff6b8725c344093ee87"
+    },
+    {
+      "id": "the-loyal-bench-hears-their-case",
+      "operation": "revised",
+      "sha256": "6fd2dedcf2c96febd148baf3c27cd61807941cd4465f633fbd6c430e9df137ad"
+    },
+    {
+      "id": "the-officer-who-answers-to-two-flags",
+      "operation": "revised",
+      "sha256": "c03d043712c943d0c79d3d2a3ca082d13d4a849bb2d4a46ba55fddfeae0f3b54"
+    },
+    {
+      "id": "the-orchestra-choice",
+      "operation": "revised",
+      "sha256": "25341e608d13407e25803e98842a13db911f93dd90fe268b84f946ab731fb903"
+    },
+    {
+      "id": "the-order-they-say-we-ignored-before",
+      "operation": "revised",
+      "sha256": "26e063df88f691c612dbe0a2a240a068407e3adde9860f31ae48c9b0e3895a81"
+    },
+    {
+      "id": "the-queue-that-doesnt-move",
+      "operation": "revised",
+      "sha256": "06ff05a401f2431833798f1a59000f00e9ad22cfe6be647230904e45b55d4899"
+    },
+    {
+      "id": "the-registrar-who-wont-sign",
+      "operation": "revised",
+      "sha256": "1181e1554cd0d1fe33dd707f7d36d9409b9b6c1afdc379abe1eae977b288c7bd"
+    },
+    {
+      "id": "the-river-over-the-levee",
+      "operation": "revised",
+      "sha256": "be7b50f82f7eaf77c4462044f80ec0a318ff99e2ac749162ddc0c95d1345a935"
+    },
+    {
+      "id": "the-schools-the-governor-wants-rebuilt-as-they-were",
+      "operation": "revised",
+      "sha256": "07020d8a89765cc06864c185e6b024ebe430ecc348f535b6549ef3d6f3474673"
+    },
+    {
+      "id": "the-surplus-nobody-expected",
+      "operation": "revised",
+      "sha256": "4b688e2726a82237e6938e9f7b0b11151e7e09f16bc5f3150d6edb81f8a17766"
+    },
+    {
+      "id": "the-surplus-nobody-planned-for",
+      "operation": "revised",
+      "sha256": "71d447c81baae5820a031c213a8efda1cd07411aaadfc2bc813899cd0d9d4a4f"
+    },
+    {
+      "id": "the-tariff-in-response",
+      "operation": "revised",
+      "sha256": "7ce068a781152247f267d278a6e0a2a2aafea400fd9b25b5ef0e1d291f694846"
+    },
+    {
+      "id": "the-terms-relayed-through-a-third-capital",
+      "operation": "revised",
+      "sha256": "2afdfabb50a89d6df87e28627f4daf6fea149acf60779ebed6490d75790db86f"
+    },
+    {
+      "id": "the-veterans-who-came-home-late",
+      "operation": "revised",
+      "sha256": "197cee012f18422437e252d47395264ba0dc1170d202d1686316c23aae350721"
+    },
+    {
+      "id": "the-ward-that-was-patched-and-not-repaired",
+      "operation": "revised",
+      "sha256": "df7cd76ce1bc363bf01faf3b7ab33cbdc59b58abbe01e8d9fe7158a8fa93bd07"
+    }
+  ]
+}

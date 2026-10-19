@@ -1,0 +1,115 @@
+[
+  {
+    "id": "p1",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 840,
+    "images": []
+  },
+  {
+    "id": "p2",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 1022,
+    "images": []
+  },
+  {
+    "id": "p3",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 1089,
+    "images": []
+  },
+  {
+    "id": "p4",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 1124,
+    "images": []
+  },
+  {
+    "id": "p5",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 858,
+    "images": [
+      {
+        "src": "evidence/core/brief-1440x900-light-part1.png",
+        "loaded": true
+      },
+      {
+        "src": "evidence/core/brief-1440x900-dark-part1.png",
+        "loaded": true
+      }
+    ]
+  },
+  {
+    "id": "p6",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 810,
+    "images": [
+      {
+        "src": "evidence/markets/nation-economy-view-markets-measure-crude-1440x900-light-part2.png",
+        "loaded": true
+      },
+      {
+        "src": "evidence/markets/nation-economy-view-markets-measure-crude-1440x900-dark-part2.png",
+        "loaded": true
+      }
+    ]
+  },
+  {
+    "id": "p7",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 810,
+    "images": [
+      {
+        "src": "evidence/core/world-security-1440x900-light-part1.png",
+        "loaded": true
+      },
+      {
+        "src": "evidence/core/world-security-1440x900-dark-part1.png",
+        "loaded": true
+      }
+    ]
+  },
+  {
+    "id": "p8",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 810,
+    "images": [
+      {
+        "src": "evidence/details/washington-office-OFF-ENERGY-SEC-office-actions-1440x900-light-part1.png",
+        "loaded": true
+      },
+      {
+        "src": "evidence/details/washington-office-OFF-ENERGY-SEC-office-actions-1440x900-dark-part1.png",
+        "loaded": true
+      }
+    ]
+  },
+  {
+    "id": "p9",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 698,
+    "images": []
+  },
+  {
+    "id": "p10",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 849,
+    "images": []
+  },
+  {
+    "id": "p11",
+    "width": 1160,
+    "scrollWidth": 1160,
+    "height": 719,
+    "images": []
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "format": "construct-constitution",
+  "formatVersion": 2,
+  "name": "The Administration",
+  "purpose": "A multi-platform political simulation game in which the player is President of the United States among 50 real countries, built on a pure deterministic TypeScript engine with an Expo client for web, iOS and Android.",
+  "scale": "solo",
+  "lifecycleStage": null,
+  "primaryOutcome": "Close ship cycle A — live corpus — then get a first native build onto iOS and Android, with the Grail as the single self-auditing specification a fresh session can act from.",
+  "successMeasures": [],
+  "principles": [],
+  "constraints": [
+    "The design system in packages/ui/src/tokens is the only palette; no ad-hoc colors, spacing, radii or type.",
+    "Never git add -A and never git stash in this repo: parallel agents share one working tree.",
+    "Committed dist/ must match what src compiles to; never run typecheck before build when committing dist.",
+    "packages/engine stays pure and deterministic: no I/O, no UI, no network, enforced by the dependency-direction lint."
+  ],
+  "nonGoals": [],
+  "canonicalArtifacts": [],
+  "owners": [],
+  "boundaries": [],
+  "riskPosture": null,
+  "reviewCadence": null,
+  "glossary": [],
+  "unknowns": [
+    "primary outcome",
+    "risk posture",
+    "success measures",
+    "ownership and decision rights",
+    "review cadence"
+  ]
+}

@@ -1,0 +1,140 @@
+[
+  {
+    "id": "shared-warning-recipient-support",
+    "class": "foreign-crisis",
+    "severity": "serious",
+    "dilemmaShape": "foot-in-the-door",
+    "subject": "A shared warning leaves {{reportRecipient}} without an assurance",
+    "cast": {
+      "pick": "collectionReport",
+      "bind": "recipient"
+    },
+    "locus": {
+      "site": "capital",
+      "ground": "home",
+      "descriptor": "the secure briefing room where the receipt and report are read together"
+    },
+    "conditions": [
+      {
+        "kind": "collectionReport",
+        "targetKind": "foreign-nation",
+        "topic": "external-intent",
+        "confidence": "moderate",
+        "shared": true,
+        "basis": "pursuit",
+        "recipientAffected": true
+      }
+    ],
+    "weight": 1,
+    "particulars": [
+      {
+        "label": "Findings",
+        "value": "{{reportFindingCount}}"
+      },
+      {
+        "label": "Report age",
+        "value": "{{reportAgeDays}} days"
+      },
+      {
+        "label": "Confidence",
+        "value": "{{reportConfidence}}"
+      },
+      {
+        "label": "Exposure",
+        "value": "{{reportExposure}}"
+      }
+    ],
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "foreign"
+        },
+        "text": "{{reportRecipient}} has the warning. The share record proves delivery, not a request for help. The finding says: {{reportFinding}}"
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "intelligence"
+        },
+        "text": "The source is {{reportSource}}; confidence is {{reportConfidence}}. The gaps remain {{reportGaps}}. A new tasking might narrow them, but it has no result tonight."
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "foreign"
+        },
+        "text": "An arms transfer would be immediate support for the government touched by the reported pursuit. It would also commit us before they have asked."
+      }
+    ],
+    "replies": [
+      {
+        "id": "offer-contingent-assistance",
+        "tone": "conciliatory",
+        "text": "Transfer arms to {{reportRecipient}} now, before its government asks for support.",
+        "commitment": {
+          "kind": "instrument",
+          "instrument": "assistance",
+          "rung": 4
+        }
+      },
+      {
+        "id": "request-joint-review",
+        "tone": "principled",
+        "text": "Task another assessment of the reported pursuit before committing material support.",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "remembered": "The President tasked further collection against the report target before committing material support to the recipient.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "intelligence"
+            },
+            "text": "The new tasking is recorded. It supplies no new finding tonight, so the recipient must plan with the warning it already has."
+          },
+          "collection": {
+            "action": "task",
+            "element": "IC-DIA",
+            "discipline": "all-source",
+            "question": "What further reporting bears on the pursuit named in this warning?"
+          }
+        }
+      },
+      {
+        "id": "decline-follow-on",
+        "tone": "conciliatory",
+        "text": "Send a relief shipment to {{reportRecipient}} now, without treating the shared warning as a request for aid.",
+        "commitment": {
+          "kind": "instrument",
+          "instrument": "assistance",
+          "rung": 1
+        }
+      }
+    ],
+    "topics": [
+      "intelligence",
+      "diplomacy",
+      "security"
+    ],
+    "context": {
+      "standing": "The administration shared an issued warning with {{reportRecipient}}. The delivery is recorded. No answer or request for assistance appears in that record.",
+      "precedent": "A government that shares a warning may later be asked what it meant to offer. A bounded offer can help a partner plan without promising a larger commitment.",
+      "pressures": [
+        {
+          "source": "cabinet",
+          "want": "The Secretary of State wants the recipient to know whether this administration will actually transfer support now."
+        },
+        {
+          "source": "cabinet",
+          "want": "The intelligence community wants another collection effort before the warning becomes a wider claim."
+        }
+      ],
+      "inaction": "The recipient has the warning, but this administration sends no support or fresh tasking while its government weighs what to do.",
+      "unknown": "The share record does not say whether the recipient has corroborating evidence or wants our help."
+    },
+    "binding": {
+      "mechanisms": []
+    }
+  }
+]

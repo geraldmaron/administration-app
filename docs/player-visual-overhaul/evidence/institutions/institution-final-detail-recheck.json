@@ -1,0 +1,101 @@
+{
+  "records": [
+    {
+      "width": 320,
+      "theme": "light",
+      "view": "roster",
+      "overflow": false,
+      "axe": []
+    },
+    {
+      "width": 320,
+      "theme": "light",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    },
+    {
+      "width": 320,
+      "theme": "dark",
+      "view": "roster",
+      "overflow": false,
+      "axe": []
+    },
+    {
+      "width": 320,
+      "theme": "dark",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    },
+    {
+      "width": 845,
+      "theme": "light",
+      "view": "roster",
+      "overflow": false,
+      "axe": []
+    },
+    {
+      "width": 845,
+      "theme": "light",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    },
+    {
+      "width": 845,
+      "theme": "dark",
+      "view": "roster",
+      "overflow": false,
+      "axe": []
+    },
+    {
+      "width": 845,
+      "theme": "dark",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "view": "roster",
+      "overflow": false,
+      "axe": []
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "view": "roster",
+      "overflow": false,
+      "axe": []
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    }
+  ],
+  "errors": []
+}

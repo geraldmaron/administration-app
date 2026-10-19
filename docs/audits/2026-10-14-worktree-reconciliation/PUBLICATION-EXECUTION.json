@@ -1,0 +1,104 @@
+[
+  {
+    "command": "node studio-cli/dist/cli.js scenarios upgrade-publish publication-eligibility-2026-10-14/chronology-six-current-subset",
+    "ids": [
+      "the-last-signature-on-the-charter",
+      "the-list-longer-than-the-money"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js scenarios upgrade-publish publication-eligibility-2026-10-14/bridge-hospital-current-subset",
+    "ids": [
+      "four-counties-quoting-the-flood-bridge",
+      "the-bridge-the-flood-took-with-it",
+      "the-crossing-we-decided-not-to-rebuild",
+      "the-night-the-exits-were-chained",
+      "whose-name-goes-on-the-bridge"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js corpus publish chief-justice-vacancy-2026-10-12",
+    "ids": [
+      "the-chief-justice-seat-and-two-records"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js scenarios upgrade-publish chronology-six-high-impact-full-repair-2026-10-12",
+    "ids": [
+      "the-officer-who-answers-to-two-flags",
+      "the-orchestra-choice",
+      "the-queue-that-doesnt-move",
+      "the-surplus-nobody-expected",
+      "the-surplus-nobody-planned-for",
+      "the-veterans-who-came-home-late"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js scenarios upgrade-publish chronology-six-institution-full-repair-2026-10-12",
+    "ids": [
+      "the-administration-asks-for-more",
+      "the-appropriation-the-assembly-never-signed",
+      "the-loyal-bench-hears-their-case",
+      "the-order-they-say-we-ignored-before",
+      "the-registrar-who-wont-sign"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js scenarios upgrade-publish corpus-chronology-full-repair-r2-2026-10-12",
+    "ids": [
+      "the-honor-guard-that-drew-the-wrong-flag",
+      "the-terms-relayed-through-a-third-capital"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js scenarios upgrade-publish grounded-financial-repairs-r2-2026-10-12",
+    "ids": [
+      "the-file-the-defense-has-now-asked-for",
+      "the-ward-that-was-patched-and-not-repaired"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js scenarios upgrade-publish grounded-financial-repairs-r4-2026-10-12",
+    "ids": [
+      "the-tariff-in-response"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js corpus publish issued-empty-surveillance-2026-10-12",
+    "ids": [
+      "issued-surveillance-no-result"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js corpus publish issued-report-decisions-2026-10-12",
+    "ids": [
+      "issued-warning-private-demarche",
+      "shared-warning-recipient-support",
+      "wildfire-public-report-federal-offer"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js scenarios upgrade-publish mounted-serious-repairs-2026-10-12",
+    "ids": [
+      "the-schools-the-governor-wants-rebuilt-as-they-were"
+    ],
+    "exitCode": 0
+  },
+  {
+    "command": "node studio-cli/dist/cli.js scenarios upgrade-publish river-reported-toll-pilot-2026-10-12",
+    "ids": [
+      "the-river-over-the-levee"
+    ],
+    "exitCode": 0
+  }
+]

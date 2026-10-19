@@ -1,0 +1,130 @@
+1440x900 week-30 /brief
+  links=15 /brief/decision/the-boats-somebody-says-are-being-loaded /brief/decision/the-boats-somebody-says-are-being-loaded /brief/clock/acting-authority /brief/clock/acting-authority
+1440x900 week-30 /brief/digest
+  links=7 
+1440x900 week-30 /nation
+  links=58 /nation/state/AL /nation/state/AK /nation/state/AZ /nation/state/AR
+1440x900 week-30 /nation/policy
+  links=20 /nation/policy/order/order-border-controls /nation/policy/order/order-relief-program /nation/policy/order/order-entry-suspension /nation/policy/order/order-force-protection
+1440x900 week-30 /nation/emergency
+  links=7 
+1440x900 week-30 /nation/budget
+  links=7 
+1440x900 week-30 /washington
+  links=136 /washington/office/OFF-CHIEF-OF-STAFF /washington/person/PER-USA-committee-chair-13 /washington/office/OFF-NSA-ADVISOR /washington/person/PER-USA-intelligence-director-5
+1440x900 week-30 /washington/congress
+  links=10 /washington/congress/bill/bill%3Aact-fiscal-responsibility%3A8 /washington/congress/post/post-house-speaker /washington/congress/post/post-house-majority-leader /washington/congress/post/post-house-minority-leader
+1440x900 week-30 /washington/courts
+  links=16 
+1440x900 week-30 /washington/oversight
+  links=7 
+1440x900 week-30 /world
+  links=12 /world/nation/CHL /world/nation/THA /world/nation/IND /world/war/war%3ATHA%3AKHM%3A0
+1440x900 week-30 /world/security
+  links=13 /world/security/command/CCMD-NORTHCOM /world/security/command/CCMD-EUCOM /world/security/command/CCMD-CENTCOM /world/security/command/CCMD-INDOPACOM
+1440x900 week-30 /record
+  links=42 /record/event/ev-31-1693 /record/event/ev-31-1692 /record/event/ev-31-1690 /record/event/ev-31-1689
+1440x900 case-families /brief
+  links=26 /brief/decision/the-border-mobilization /brief/decision/the-file-the-court-wants-produced /brief/decision/the-border-mobilization /brief/decision/the-file-the-court-wants-produced
+1440x900 case-families /brief/digest
+  links=7 
+1440x900 case-families /nation
+  links=58 /nation/state/AL /nation/state/AK /nation/state/AZ /nation/state/AR
+1440x900 case-families /nation/policy
+  links=20 /nation/policy/order/order-border-controls /nation/policy/order/order-relief-program /nation/policy/order/order-entry-suspension /nation/policy/order/order-force-protection
+1440x900 case-families /nation/emergency
+  links=7 
+1440x900 case-families /nation/budget
+  links=7 
+1440x900 case-families /washington
+  links=136 /washington/office/OFF-CHIEF-OF-STAFF /washington/person/PER-USA-committee-chair-2 /washington/office/OFF-NSA-ADVISOR /washington/person/PER-USA-intelligence-director-3
+1440x900 case-families /washington/congress
+  links=10 /washington/congress/bill/bill%3Aact-tax-relief-and-growth%3A3 /washington/congress/post/post-house-speaker /washington/congress/post/post-house-majority-leader /washington/congress/post/post-house-minority-leader
+1440x900 case-families /washington/courts
+  links=16 
+1440x900 case-families /washington/oversight
+  links=7 
+1440x900 case-families /world
+  links=13 /world/nation/QAT /world/nation/HTI /world/nation/IRN /world/war/war%3ARUS%3APOL%3A3
+1440x900 case-families /world/security
+  links=13 /world/security/command/CCMD-NORTHCOM /world/security/command/CCMD-EUCOM /world/security/command/CCMD-CENTCOM /world/security/command/CCMD-INDOPACOM
+1440x900 case-families /record
+  links=42 /record/event/ev-3-80 /record/event/ev-3-79 /record/event/ev-3-78 /record/event/ev-3-77
+1440x900 scandal-live /brief
+  links=20 /brief/decision/the-ally-asking-for-more-than-words /brief/decision/the-ally-asking-for-more-than-words /brief/scandal/scandal%3Aleak%3Aev-6-197 /brief/scandal/scandal%3Aact%3Aev-3-67
+1440x900 scandal-live /brief/digest
+  links=7 
+1440x900 scandal-live /nation
+  links=57 /nation/state/AL /nation/state/AK /nation/state/AZ /nation/state/AR
+1440x900 scandal-live /nation/policy
+  links=20 /nation/policy/order/order-border-controls /nation/policy/order/order-relief-program /nation/policy/order/order-entry-suspension /nation/policy/order/order-force-protection
+1440x900 scandal-live /nation/emergency
+  links=7 
+1440x900 scandal-live /nation/budget
+  links=7 
+1440x900 scandal-live /washington
+  links=136 /washington/office/OFF-CHIEF-OF-STAFF /washington/person/PER-USA-committee-chair-36 /washington/office/OFF-NSA-ADVISOR /washington/person/PER-USA-intelligence-director-4
+1440x900 scandal-live /washington/congress
+  links=9 /washington/congress/post/post-house-speaker /washington/congress/post/post-house-majority-leader /washington/congress/post/post-house-minority-leader /washington/congress/post/post-senate-majority-leader
+1440x900 scandal-live /washington/courts
+  links=16 
+1440x900 scandal-live /washington/oversight
+  links=7 
+1440x900 scandal-live /world
+  links=11 /world/nation/BGR /world/nation/BWA /world/nation/DOM /world/nation/BGR
+1440x900 scandal-live /world/security
+  links=13 /world/security/command/CCMD-NORTHCOM /world/security/command/CCMD-EUCOM /world/security/command/CCMD-CENTCOM /world/security/command/CCMD-INDOPACOM
+1440x900 scandal-live /record
+  links=42 /record/event/ev-6-222 /record/event/ev-6-221 /record/event/ev-6-219 /record/event/ev-6-218
+1440x900 decision-critical /brief
+  links=14 /brief/decision/the-water-they-both-claim /brief/decision/the-water-they-both-claim /brief/clock/acting-authority /brief/clock/appropriation
+1440x900 decision-critical /brief/digest
+  links=7 
+1440x900 decision-critical /nation
+  links=57 /nation/state/AL /nation/state/AK /nation/state/AZ /nation/state/AR
+1440x900 decision-critical /nation/policy
+  links=20 /nation/policy/order/order-border-controls /nation/policy/order/order-relief-program /nation/policy/order/order-entry-suspension /nation/policy/order/order-force-protection
+1440x900 decision-critical /nation/emergency
+  links=7 
+1440x900 decision-critical /nation/budget
+  links=7 
+1440x900 decision-critical /washington
+  links=136 /washington/office/OFF-CHIEF-OF-STAFF /washington/person/PER-USA-committee-chair-32 /washington/office/OFF-NSA-ADVISOR /washington/person/PER-USA-intelligence-director-7
+1440x900 decision-critical /washington/congress
+  links=9 /washington/congress/post/post-house-speaker /washington/congress/post/post-house-majority-leader /washington/congress/post/post-house-minority-leader /washington/congress/post/post-senate-majority-leader
+1440x900 decision-critical /washington/courts
+  links=16 
+1440x900 decision-critical /washington/oversight
+  links=7 
+1440x900 decision-critical /world
+  links=12 /world/nation/SVN /world/nation/RUS /world/nation/UKR /world/war/war%3ARUS%3AUKR%3A0
+1440x900 decision-critical /world/security
+  links=13 /world/security/command/CCMD-NORTHCOM /world/security/command/CCMD-EUCOM /world/security/command/CCMD-CENTCOM /world/security/command/CCMD-INDOPACOM
+1440x900 decision-critical /record
+  links=42 /record/event/ev-3-101 /record/event/ev-3-100 /record/event/ev-3-98 /record/event/ev-3-97
+1440x900 war-own /brief
+  links=19 /brief/decision/the-medical-school-question /brief/decision/the-medical-school-question /world/war/war%3AIRN%3AUSA%3A1 /brief/clock/acting-authority
+1440x900 war-own /brief/digest
+  links=7 
+1440x900 war-own /nation
+  links=57 /nation/state/AL /nation/state/AK /nation/state/AZ /nation/state/AR
+1440x900 war-own /nation/policy
+  links=20 /nation/policy/order/order-border-controls /nation/policy/order/order-asset-seizure /nation/policy/order/order-relief-program /nation/policy/order/order-entry-suspension
+1440x900 war-own /nation/emergency
+  links=7 
+1440x900 war-own /nation/budget
+  links=7 
+1440x900 war-own /washington
+  links=136 /washington/office/OFF-CHIEF-OF-STAFF /washington/person/PER-USA-committee-chair-13 /washington/office/OFF-NSA-ADVISOR /washington/person/PER-USA-intelligence-director-3
+1440x900 war-own /washington/congress
+  links=9 /washington/congress/post/post-house-speaker /washington/congress/post/post-house-majority-leader /washington/congress/post/post-house-minority-leader /washington/congress/post/post-senate-majority-leader
+1440x900 war-own /washington/courts
+  links=16 
+1440x900 war-own /washington/oversight
+  links=7 
+1440x900 war-own /world
+  links=11 /world/war/war%3AIRN%3AUSA%3A1 /world/war/war%3APAK%3AAFG%3A0 /world/war/war%3ATHA%3AKHM%3A0
+1440x900 war-own /world/security
+  links=13 /world/security/command/CCMD-NORTHCOM /world/security/command/CCMD-EUCOM /world/security/command/CCMD-CENTCOM /world/security/command/CCMD-INDOPACOM
+1440x900 war-own /record
+  links=8 /record/event/ev-1-1

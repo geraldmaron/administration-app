@@ -1,0 +1,378 @@
+/* The decision: its situation, the comparison's cells drawn as readings, the aftermath, and the first-run walkthrough. */
+@layer rooms {
+  .situation__transmission {
+    margin: 0;
+    padding-inline-start: var(--space-md);
+    border-inline-start: 2px solid var(--color-border-strong);
+    font-family: var(--font-serif);
+  }
+
+  /* One surface divided by hairlines, not a card per figure. */
+  .particulars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    gap: 1px;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-border-subtle);
+  }
+
+  .particulars > div {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-ground-raised);
+  }
+
+  .particulars dt {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .particulars dd {
+    margin: 0;
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .actors,
+  .voices,
+  .counsel__voices,
+  .dispositions__list,
+  .aftermath,
+  .wire,
+  .impacts,
+  .timeline {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .actors {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  }
+
+  .actor {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-2xs) var(--space-sm);
+    align-content: start;
+    align-items: center;
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+  }
+
+  .actor__mark {
+    display: grid;
+    grid-row: span 2;
+    align-self: start;
+    place-items: center;
+    min-inline-size: 28px;
+  }
+
+  .actor__name {
+    font-weight: var(--weight-strong);
+  }
+
+  .actor__want {
+    grid-column: 2;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .voice,
+  .counsel__voice {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-md);
+    align-items: start;
+  }
+
+  .voice__who,
+  .counsel__who,
+  .voice__text,
+  .counsel__line {
+    margin: 0;
+  }
+
+  .voice__name {
+    font-weight: var(--weight-strong);
+  }
+
+  .voice__role,
+  .counsel__label {
+    color: var(--color-text-tertiary);
+    font-size: var(--size-label);
+  }
+
+  .counsel__line {
+    font-size: var(--size-small);
+  }
+
+  .counsel__voice[data-voice="dissent"] {
+    padding-inline-start: var(--space-md);
+    border-inline-start: 2px solid var(--color-border-strong);
+  }
+
+  .decision__problem {
+    margin: 0;
+    color: var(--status-danger-ink);
+  }
+
+  .dispositions__list {
+    gap: 0;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .disposition {
+    display: grid;
+    grid-template-columns: 14rem minmax(0, 1fr);
+    gap: var(--space-sm) var(--space-lg);
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .disposition:last-child {
+    border-block-end: 0;
+  }
+
+  .disposition > .ui-button {
+    justify-content: center;
+    inline-size: 100%;
+    white-space: nowrap;
+  }
+
+  .disposition__detail {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  @media (max-width: 40em) {
+    .disposition {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Comparison cells drawn as readings. */
+  .impact {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  .impact__steps {
+    display: inline-flex;
+    gap: 2px;
+  }
+
+  .impact__step {
+    inline-size: 10px;
+    block-size: 8px;
+    border-radius: 2px;
+    background: var(--color-border-subtle);
+  }
+
+  .impact__step[data-on="true"] {
+    background: var(--color-text-secondary);
+  }
+
+  .impact[data-favorable="true"] .impact__step[data-on="true"] {
+    background: var(--color-blue);
+  }
+
+  .impact[data-favorable="true"] .impact__arrow {
+    color: var(--color-blue);
+  }
+
+  .impact[data-favorable="false"] .impact__step[data-on="true"] {
+    background: var(--color-red);
+  }
+
+  .impact[data-favorable="false"] .impact__arrow {
+    color: var(--color-red);
+  }
+
+  .impact__word {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  /* A price is the one figure a card leads its readings with. */
+  .cell-money {
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-display);
+    /* A bare price has no spaces to break at; a labeled cost ("International
+       Standing −2 pts") has to wrap to fit a phone's card. */
+    text-wrap: balance;
+  }
+
+  .cell-money[data-stance="adverse"] {
+    color: var(--status-danger-ink);
+  }
+
+  .cell-money[data-stance="favorable"] {
+    color: var(--status-success-ink);
+  }
+
+  .cell-price {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .cell-moves {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cell-none {
+    color: var(--color-text-tertiary);
+  }
+
+  /* What the President would say, in the voice of a spoken line. */
+  .cell-said {
+    display: block;
+    padding-inline-start: var(--space-sm);
+    border-inline-start: 3px solid var(--color-gold-deep);
+    font-family: var(--font-serif);
+    font-size: var(--size-body);
+    line-height: var(--leading-body);
+  }
+
+  .cell-lines {
+    display: grid;
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cell-lines li {
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .cell-counsel {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  .cell-counsel > span {
+    display: grid;
+  }
+
+  .cell-counsel__word {
+    color: var(--color-text-tertiary);
+    font-size: var(--size-label);
+  }
+
+  .cell-counsel[data-stance="for"] .cell-counsel__word {
+    color: var(--status-success-ink);
+  }
+
+  .cell-counsel[data-stance="wary"] .cell-counsel__word {
+    color: var(--status-warning-ink);
+  }
+
+  .cell-counsel[data-stance="against"] .cell-counsel__word {
+    color: var(--status-danger-ink);
+  }
+
+  .aftermath li {
+    padding-inline-start: var(--space-md);
+    border-inline-start: 2px solid var(--color-border-strong);
+    font-family: var(--font-serif);
+  }
+
+  /* The first-run walkthrough, docked at the foot of the work surface. */
+  /* Inline in the page, not pinned over it: guidance must never cover the terms it explains. */
+  .first-run {
+    display: grid;
+    gap: var(--space-sm);
+    max-inline-size: 32rem;
+    margin-block-start: var(--space-lg);
+    padding: var(--space-lg);
+    border: 1px solid var(--status-info-ink);
+    border-radius: var(--radius-card);
+    background: var(--status-info-fill);
+  }
+
+  .first-run__count {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .first-run__title {
+    margin: 0;
+    font-size: var(--size-title);
+  }
+
+  .first-run__body,
+  .first-run__term {
+    margin: 0;
+    font-size: var(--size-small);
+  }
+
+  .first-run__term {
+    color: var(--color-text-secondary);
+  }
+
+  .first-run__acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .status__list {
+    display: grid;
+    gap: var(--space-md);
+    margin: 0;
+  }
+
+  .status__list dt {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    margin-block-end: var(--space-2xs);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-weight: var(--weight-strong);
+  }
+
+  .status__list dd {
+    margin: 0;
+    font-size: var(--size-small);
+  }
+
+  .decision__legend {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    max-inline-size: var(--measure);
+  }
+
+  .background {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .background p {
+    margin: 0;
+  }
+}

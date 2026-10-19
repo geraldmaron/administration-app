@@ -1,0 +1,10 @@
+subset,n,pearson_r_dim1_vs_trump_minus_harris_margin
+House all scored,431,0.828
+House R only,218,0.324
+House D only (incl I caucusing D in Senate),212,0.514
+Senate all scored,100,0.826
+Senate R only,53,0.057
+Senate D only (incl I caucusing D in Senate),47,0.45
+"House all, excl. 9 states with new lines",261,0.853
+"House R only, excl. 9 states with new lines",125,0.35
+"House D only, excl. 9 states with new lines",136,0.567

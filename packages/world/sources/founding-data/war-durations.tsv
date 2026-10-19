@@ -1,0 +1,27 @@
+# war-durations.tsv: real-world war-duration distributions for D14 (owner sets the band; W5/5C tunes SEC-7 against it)
+# Built 2026-09-24. Every row is [F] fact from an opened source or [I] inference, marked in the label column.
+# Units: weeks, rounded to the nearest whole week. Sources are short IDs resolved in wars-sources.md.
+# Read alongside carried-conflicts.tsv (candidate opening wars) and wars-sources.md (full citations + open/not-opened status).
+type	subtype	n	min_wk	p50_median_wk	mean_wk	max_wk	years_covered	source	label	confidence	note
+interstate	all	~95 total in COW v4.0; this duration figure drawn from a COW-based subset	1	20	58	533	1823-2003	D1	F	high	median 139 days, mean 408 days, min 4 days (1969 "Football War"), max 3734 days (Vietnam War Phase II); COW Inter-State War data v4.0 covers 1816-2007 with 95 wars total, this specific duration analysis used a 1823-2003 subset of that list
+intervention	all_major_power	126	1	30	110	520+	1945-2003	D3	F	high	median 211 days; source states mean is "just over two years" in prose (~110wk, an [I] conversion, not an exact day count); shortest interventions ran a few days (a 1-day move into East Germany in 1953, a 4-day move into the Congo in 1963); longest ran over a decade (three examples spanning multiple decades each); "major power" = the five states that were permanent UN Security Council members in this dataset's window, acting as the intervening (not target) state
+intervention	maintain_foreign_regime	36	NA	44	NA	NA	1945-2003	D3	F	high	median 309 days; primary political objective (PPO) = keep an existing friendly government in power
+intervention	remove_foreign_regime	12	NA	26	NA	NA	1945-2003	D3	F	high	median 184 days; highest success rate of any PPO category in the source (92%)
+intervention	policy_change	16	NA	28	NA	NA	1945-2003	D3	F	high	median 195 days; lowest success rate of any PPO category (25-29%); coercive policy-change interventions are quick AND usually fail
+intervention	acquire_or_defend_territory	35	NA	17	NA	NA	1945-2003	D3	F	high	median 118 days, the shortest median of any PPO category; includes defending an allied state's territory (100% success in-sample) and seizing territory
+intervention	maintain_empire	16	NA	127	NA	NA	1945-2003	D3	F	high	median 890 days, the longest median of any PPO category; always involved ground combat; highest troop-commitment and casualty medians of any category
+intervention	social_protection_or_order	11	NA	42	NA	NA	1945-2003	D3	F	high	median 296 days
+civil_war	all_raw_uncorrected	128	NA	287	459	NA	1945-1999	D4	F	high	simple/uncorrected median 5.5y, mean 8.8y; UNDERSTATES true duration because 25 of the 128 wars were still ongoing (right-censored) at the time of coding
+civil_war	all_weibull_corrected	128	NA	370	579	NA	1945-1999	D4	F	high	Weibull survival-model estimate correcting for the 25 right-censored/ongoing cases; the source author's own preferred summary figure for "typical" civil-war duration
+civil_war	coup_or_popular_revolution	22	NA	110	157	NA	1945-1999	D4	F	high	short end of the distribution: wars arising from coup attempts (19 cases) or mass urban revolutions against a sitting government (3 cases)
+civil_war	non_coup_non_revolution	106	NA	470	673	NA	1945-1999	D4	F	high	long end of the distribution: "big classical" civil wars, secessionist wars, and peripheral/rural insurgencies
+civil_war	anti_colonial	13	NA	245	381	NA	1945-1999	D4	F	high	wars against a formal colonial administration; relatively brief despite the popular assumption that they drag on
+civil_war	region_eastern_europe	13	NA	120	167	NA	1945-1999	D4	F	medium	mostly wars tied to the Soviet/Yugoslav breakups; the single shortest-duration region in the sample
+civil_war	region_north_africa_mideast	17	NA	245	350	NA	1945-1999	D4	F	medium	regional estimate, Weibull-based
+civil_war	region_mixed_west_bloc	15	NA	313	444	NA	1945-1999	D4	F	medium	an odd-basket region in the source: anti-colonial wars fought by Western European powers plus two long Cold-War-era insurgencies fought on Western-aligned soil
+civil_war	region_latin_america	15	NA	360	511	NA	1945-1999	D4	F	medium	regional estimate, Weibull-based
+civil_war	region_subsaharan_africa	34	NA	475	684	NA	1945-1999	D4	F	medium	regional estimate, Weibull-based
+civil_war	region_asia	34	NA	637	913	NA	1945-1999	D4	F	medium	the single longest-duration region in the sample
+civil_war	with_foreign_involvement	NA	NA	NA	NA	NA	1944-1999 (D5) / 1820-1992 (D6)	D5,D6	I	low	DIRECTION ONLY. No weeks-level percentile was found in a source opened this session; both cited studies were only reachable through search-engine summaries, not opened directly (see wars-sources.md). Both report that third-party/foreign military intervention is associated with LONGER civil-war duration, not shorter, especially when the intervention favors one side alone or when interveners split evenly across both sides. Recommendation: treat a civil war seeded with active foreign troop involvement as sitting at or above the non_coup_non_revolution median (row above, ~470wk), not below it, until a harder number is sourced.
+game_measured	5seed_104turn	4	5	6.5	NA	8	engine measurement, turns 1-104	D7	F	high	all 4 measured wars ended in defender victory; 0 aggressor victories recorded
+game_measured	25seed_104turn	13	5	7	NA	9	engine measurement, turns 1-104	D7	F	high	all 13 measured wars ended in defender victory; 0 aggressor victories recorded; p90 reported as 8 in the source JSON despite a max of 9; the source computes p90 by rank, not by the literal maximum

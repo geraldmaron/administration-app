@@ -1,0 +1,255 @@
+{
+  "id": "the-river-over-the-levee",
+  "class": "disaster",
+  "severity": "critical",
+  "dilemmaShape": "containment",
+  "subject": "River over the levee",
+  "cast": {
+    "pick": "none"
+  },
+  "conditions": [
+    {
+      "kind": "conditionActive",
+      "condition": "flood"
+    }
+  ],
+  "weight": 1,
+  "boosts": [
+    {
+      "source": "conditionSeverity",
+      "factor": 1.6
+    }
+  ],
+  "locus": {
+    "site": "interior",
+    "ground": "home",
+    "descriptor": "the river bend below {{city}} where the levee crest disappears under brown water",
+    "city": "CITY-USA-st-louis",
+    "state": "MO"
+  },
+  "context": {
+    "standing": "The levee was raised a generation ago to a standard the river has now exceeded twice in eleven years, and the last inspection recommended a rebuild that was deferred in three consecutive budgets.",
+    "precedent": "Governments that put every boat in the water and left the defenses to chance were forgiven the first week and prosecuted in the inquiry. Governments that repaired the works first were vindicated by the maps and never by the families.",
+    "pressures": [
+      {
+        "source": "military",
+        "want": "The engineer regiments want a single task tonight, because splitting them between roofs and the breach delivers neither before the crest."
+      },
+      {
+        "source": "street",
+        "want": "{{city}}'s neighborhood associations want boats and helicopters counted publicly, hour by hour, and they are already reading the absence of them as a decision."
+      },
+      {
+        "source": "business",
+        "want": "The river commerce and the plants downstream want the channel defended, because a second breach shuts a corridor that feeds several regions."
+      },
+      {
+        "source": "press",
+        "want": "Reporters are on the water with the volunteer boats and will have the roofs on camera before any official count exists."
+      }
+    ],
+    "inaction": "Volunteers in private boats are already working the roofs without coordination, and by tomorrow night the crest arrives regardless. Every hour without a task order is an hour of engineer plant sitting idle that cannot be recovered before the water returns.",
+    "unknown": "How many people stayed. The districts were told to leave two days ago and nobody can say what fraction did, which is the difference between a rescue and a recovery."
+  },
+  "particulars": [
+    {
+      "label": "Levee breached at",
+      "value": "04:10"
+    },
+    {
+      "label": "Districts under water",
+      "value": "3"
+    },
+    {
+      "label": "Second crest due",
+      "value": "Tomorrow night"
+    },
+    {
+      "label": "Confirmed dead",
+      "value": "7"
+    }
+  ],
+  "opening": [
+    {
+      "speaker": {
+        "kind": "cabinet",
+        "roleHint": "interior"
+      },
+      "text": "Water came over the levee crest at ten past four this morning and took four hundred feet of it out. Three river districts in {{city}} are under to the second-floor windows. Seven confirmed dead, and that is a guess until boats reach the roofs. A second crest arrives tomorrow night, and it will find the city with a hole where its main defense was."
+    },
+    {
+      "speaker": {
+        "kind": "cabinet",
+        "roleHint": "finance"
+      },
+      "text": "The contingency fund covers the boats and the shelters, or the levee repair before the crest — not both at full strength. I need to know which half of this disaster I'm funding first."
+    }
+  ],
+  "replies": [
+    {
+      "id": "everything-to-the-rescue",
+      "tone": "principled",
+      "text": "People first, all of it. Empty the fund into boats, shelters, and airlift crews, and let the levee take the second crest as it comes.",
+      "sets": [
+        "put-rescue-before-the-levee"
+      ],
+      "press": "City emptied and the whole flood fund spent on boats before the second crest",
+      "commitment": {
+        "kind": "position",
+        "cost": {
+          "stability": -0.04,
+          "standing": 0.05
+        },
+        "remembered": "Every coin went to the boats and the shelters, and the second crest was met by a city that had been emptied rather than defended.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "cabinet",
+            "roleHint": "interior"
+          },
+          "text": "The boats took nine hundred off the roofs before the second crest came through. It went straight through the breach and took {{city}}'s water plant with it, and the shelters we just filled have nothing clean to drink."
+        },
+        "impact": {
+          "human": {
+            "lives": "isolated",
+            "displaced": "regional",
+            "borneBy": "one-region"
+          },
+          "financial": {
+            "scale": "emergency",
+            "horizon": "one-off"
+          },
+          "institutional": [
+            "forces-committed",
+            "civil-service-strained"
+          ],
+          "agency": "on-our-watch",
+          "divisive": true
+        }
+      }
+    },
+    {
+      "id": "hold-the-levee-line",
+      "tone": "firm",
+      "text": "Order army engineers onto the breach tonight and close it before the second crest, with rescue running on whatever is left.",
+      "sets": [
+        "held-the-levee-line"
+      ],
+      "commitment": {
+        "kind": "position",
+        "cost": {
+          "stability": 0.03,
+          "militaryReadiness": -0.05
+        },
+        "remembered": "The engineers were sent to the breach while people still waited on roofs, and the arithmetic of that night was never spoken out loud in the room again.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "narrator"
+          },
+          "text": "The breach closed six hours ahead of the crest and the city behind it stayed dry. Four of the seven confirmed dead were found on roofs that boats reached the following afternoon, and the crews who found them had asked for those roofs on the first night."
+        },
+        "impact": {
+          "human": {
+            "lives": "isolated",
+            "displaced": "regional",
+            "borneBy": "one-region",
+            "accounting": "already-reported"
+          },
+          "financial": {
+            "scale": "emergency",
+            "horizon": "one-off"
+          },
+          "institutional": [
+            "forces-committed"
+          ],
+          "agency": "on-our-watch",
+          "divisive": true
+        },
+        "domestic": {
+          "magnitude": "heavy",
+          "signature": "levee-breach-closed-before-the-crest",
+          "sectors": [
+            "public-infrastructure"
+          ],
+          "reason": "Army engineers were put on the breach to close four hundred feet of levee before the second crest, so the state's flood defense was rebuilt while the rescue ran on what was left."
+        }
+      }
+    },
+    {
+      "id": "call-for-outside-help",
+      "tone": "conciliatory",
+      "text": "Open the country to international relief teams and say plainly that this is bigger than us.",
+      "sets": [
+        "opened-the-flood-to-relief"
+      ],
+      "commitment": {
+        "kind": "position",
+        "cost": {
+          "stability": 0.04,
+          "standing": -0.04
+        },
+        "remembered": "The government asked the world for help on the second day, and traded the pride of self-reliance for pumps that arrived working.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "cabinet",
+            "roleHint": "foreign"
+          },
+          "text": "Nine governments answered and the pumps work. Two of the teams arrived with their own press officers, and pictures of our districts are running in appeals we did not write and cannot correct."
+        },
+        "impact": {
+          "human": {
+            "lives": "isolated",
+            "displaced": "regional",
+            "borneBy": "one-region"
+          },
+          "financial": {
+            "scale": "supplemental",
+            "horizon": "one-off"
+          },
+          "institutional": [
+            "alliance-credit-spent"
+          ],
+          "agency": "on-our-watch",
+          "divisive": false
+        }
+      }
+    }
+  ],
+  "topics": [
+    "disaster",
+    "environment"
+  ],
+  "binding": {
+    "mechanisms": [
+      {
+        "reply": "everything-to-the-rescue",
+        "metric": "stability",
+        "because": "the rescue priority leaves the levee breach open for the second crest, which takes the district water plant out"
+      },
+      {
+        "reply": "everything-to-the-rescue",
+        "metric": "standing",
+        "because": "the administration demonstrates that it will commit its full rescue capacity to getting residents off the roofs"
+      },
+      {
+        "reply": "hold-the-levee-line",
+        "metric": "stability",
+        "because": "closing the breach before the second crest keeps the city behind it dry and its basic services working"
+      },
+      {
+        "reply": "hold-the-levee-line",
+        "metric": "militaryReadiness",
+        "because": "army engineers are diverted from military availability to close the civilian levee breach before the crest"
+      },
+      {
+        "reply": "call-for-outside-help",
+        "metric": "stability",
+        "because": "the arriving foreign pumps drain the flooded districts and let local services begin working again"
+      },
+      {
+        "reply": "call-for-outside-help",
+        "metric": "standing",
+        "because": "asking other governments to supply relief gives up the administration’s claim that it can handle the flood alone"
+      }
+    ]
+  }
+}

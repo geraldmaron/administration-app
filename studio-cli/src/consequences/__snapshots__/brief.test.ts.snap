@@ -1,0 +1,319 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the consequence brief > pins the brief under a director 1`] = `
+"Generate 2 consequence card(s) for a political simulation game, as a JSON array of ConsequenceDef objects.
+Cell: instrument "military", rung band "mid", valence "partial".
+Every card must carry instrument "military", valence "partial", and "mid" among its rungBands.
+
+The director below sets taste and emphasis only: what to notice, what register to write in, and
+where the pressure sits. It cannot loosen anything. The gates that follow it are non-negotiable and
+win every conflict — where the director's instinct and a gate disagree, the gate is right, and the
+validator enforces it regardless of what was asked for here. If a scenario cannot be written in this
+director's register without breaking a gate, write it in the register and keep the gate.
+
+Director for this batch: THE EMBED. Procedural realism. You are writing from inside the
+operations room while it is still happening, not from the history written afterward.
+
+1. Write from inside the machine. The reader learns what the room learns, in the order the room
+   learns it: the first report, partial and wrong; then the correction; then the confirmation. If
+   the opening has more than one beat, let the second beat revise the first. Never open with the
+   omniscient summary of an event that nobody in the room has yet been told.
+2. Competence is character. The people speaking are professionals executing craft under pressure.
+   Their sentences are operational and carry the feeling underneath them without stating it — "we
+   lose the window at first light" does the work that "I am frightened" would ruin. Nobody in this
+   batch explains how they feel, and nobody makes a speech.
+3. The clock must be earned by the fiction. A critical scenario's deadline exists for physical
+   reasons — a refueling window, a tide, a vote already scheduled — and you name the instrument
+   panel: what the room is watching, at what interval, and what it will read next. A serious one
+   may have no deadline at all: urgency without a clock is tension, and tension is cheaper than
+   adrenaline. Never bolt a countdown onto a week that does not physically carry one.
+3b. The room speaks like real colleagues. Short plain sentences, contractions allowed, and nobody
+   narrates their own dread — a professional says "we lose the window at first light" and moves on.
+4. Institutions fail procedurally, not theatrically. The defect is a handoff missed, an authority
+   nobody can name, a channel that has gone quiet, two agencies each certain the other has it. Never
+   a villain, never incompetence written as stupidity.
+5. Scale is geometry, not adjectives. When the situation is large, render distance, formation,
+   direction, and speed — what is moving, how far out, how fast, what it passes on the way. Hold the
+   restraint register while you do it: no gore, no body count as spectacle, no camera on the wound.
+
+Replies under this director are courses of action a professional would recognize as a real option,
+including the option to hold and watch, and each one has an operational cost the room would name.
+
+Every consequence card must clear these gates or it is discarded (the validator enforces all of them):
+1. Shape. instrument is one of diplomatic, economic, covert, military, assistance; rungBands is a non-empty subset of
+   low, mid, high; valence is one of success, partial, failure; weight is positive;
+   beats is one to three lines. Anything outside those enums does not parse at all.
+2. The only placeholders are {{actor}} and {{target}}. Any other token is refused — a card cannot reach
+   the charter, the cabinet, or the counterpart's title, because it speaks about an act, not a country.
+3. None of these words anywhere in player-facing text: rung, instrument, metric, delta, effect, packet, projection, rng, seed, roll, modifier, stat.
+4. American spelling — automatic rejections: colour, favour, honour, harbour, neighbour, rumour, labour, armour, behaviour, defence, offence, organisation, and similar, in every
+   form they inflect into.
+5. Name no real country, demonym, or capital, and no real news organization
+   (Agence France-Presse, Al Jazeera, Associated Press, BBC, Bloomberg, CNBC, and similar). The two parties are placeholders and nothing else.
+6. Write every number as words, and use no digits and no currency marks anywhere in player-facing text:
+   "nine dead", never "9 dead". Counting an ordinary detail out in words is right and wanted; it is the
+   digits that are refused.
+7. Effects may only be: { kind: "metric", deltas } over treasury/stability/militaryReadiness/standing, optionally
+   scaleBySeverity; { kind: "relationship", direction, deltas } over trust/alignment/tension/tradeDependence/
+   militaryThreat; { kind: "grudge", cause, weight }; { kind: "feed", headline }. Nothing else exists. A card
+   cannot touch nation stats, the cabinet, or the removal arc — those change the shape of a campaign.
+8. A card must leave a mark: effects, or "sets" flags, or something remembered. All three empty is refused.
+9. A success or partial card is not a victory lap. It must carry at least one of: a cost (any
+   harmful metric movement, or a harmful relationship delta), a "sets" flag, or a remembered line. Pure gain
+   with no forward hook is refused — the room got something, so name what it paid or what it now owes.
+10. Valence has to match the arithmetic. A success card may take at most 0.06 off the board and
+    a partial at most 0.18, measured across every harmful movement on one normalized scale.
+    Past that the player is told it worked while the numbers say otherwise, which is a lie the gate refuses.
+11. riskAffinity names a failure branch of its own instrument, and only a failure card may carry one —
+    an outcome that did not fail has no branch to match, so such a card could never be drawn.
+12. A flag in conditions.flagsSet must be one that something writes: another card's "sets", a scenario
+    reply's "sets", or the card's own fired flag. A card waiting on a flag nothing stamps is unreachable.
+13. Coverage is judged over the whole pool, not over this batch: every cell of the
+    5 instruments × 3 bands ×
+    3 valences matrix needs at least one card with no conditions, no
+    riskAffinity and no "once" — the floor has to be there on every campaign, whatever the board looks
+    like. 3 cards per cell is the depth at which a player stops recognizing the line.
+14. Two cards in one cell that share phrasing are one template wearing two hats. Vary the image, not
+    just the wording around it.
+15. Length, in characters. Ceilings — over these the document is refused: beat 400,
+    feed headline 130, remembered 220. Floors — under these it does not parse:
+    beat 60, headline 40, remembered 50. Write to these targets, not to the
+    floors: beat 90, headline 50, remembered 80.
+16. "sets" flags are how an aftermath is remembered; name them as deeds ("burned-the-network"), and
+    only when a later scenario or card would plausibly gate on them.
+
+Write the aftermath the way the best political drama writes the morning after:
+- The resolver has already decided whether the act worked. A card never argues with that verdict; it
+  tells the room what the verdict looked like from inside the building.
+- Concrete detail over adjectives. "The note is read in the car," never "a diplomatic setback."
+- One image per beat, and the image carries the cost. The narrator states; it does not perform.
+- Hard subjects (dead soldiers, dead civilians, ruined people) get restraint and dignity: what it costs
+  the room to know, never the spectacle.
+- American English spelling throughout.
+- A card is drawn for whichever two nations the act happened between, so it may only ever say
+  {{actor}} and {{target}}. It knows nothing else about the world and must not pretend to.
+
+Conditions make a card conditional on the board it is drawn against — scenarioClass, the tone of the
+reply that led here, flags set or clear, minTension, maxTrust. Use them for the cards that earn their
+specificity, and leave the cell's floor card unconditioned so the draw can never come back empty.
+
+These two shipped cards are the quality bar. Match their register exactly:
+[
+  {
+    "id": "cq-diplomatic-low-success-note-read-in-the-car",
+    "instrument": "diplomatic",
+    "rungBands": [
+      "low"
+    ],
+    "valence": "success",
+    "weight": 1,
+    "beats": [
+      "{{target}}'s deputy takes the note without reading it and reads it in the car. By the time he reaches his own building he has drafted the reply that gives {{actor}} what it asked for and not one line more."
+    ],
+    "effects": [
+      {
+        "kind": "relationship",
+        "direction": "target-to-actor",
+        "deltas": {
+          "trust": 0.03
+        }
+      },
+      {
+        "kind": "metric",
+        "deltas": {
+          "standing": 0.01
+        }
+      },
+      {
+        "kind": "relationship",
+        "direction": "actor-to-target",
+        "deltas": {
+          "tension": 0.02
+        }
+      }
+    ]
+  },
+  {
+    "id": "cq-military-high-failure-the-second-decision-of-the-night",
+    "instrument": "military",
+    "rungBands": [
+      "high"
+    ],
+    "valence": "failure",
+    "weight": 1,
+    "beats": [
+      "The package is engaged on egress and an aircrew goes down inside {{target}}'s territory, alive. The recovery attempt is the second decision of the night, and there is no version of it that is not worse than the first."
+    ],
+    "effects": [
+      {
+        "kind": "metric",
+        "deltas": {
+          "standing": -0.12,
+          "militaryReadiness": -0.08,
+          "stability": -0.06
+        }
+      },
+      {
+        "kind": "relationship",
+        "direction": "target-to-actor",
+        "deltas": {
+          "tension": 0.1
+        }
+      },
+      {
+        "kind": "grudge",
+        "cause": "the crew taken on egress",
+        "weight": 0.6
+      },
+      {
+        "kind": "feed",
+        "headline": "An aircrew is down inside {{target}} and the recovery is the second decision of the night"
+      }
+    ]
+  }
+]
+
+Return ONLY the JSON array. No commentary."
+`;
+
+exports[`the consequence brief > pins the brief with no director 1`] = `
+"Generate 3 consequence card(s) for a political simulation game, as a JSON array of ConsequenceDef objects.
+Cell: instrument "covert", rung band "high", valence "failure". Steer: a method seen twice
+Every card must carry instrument "covert", valence "failure", and "high" among its rungBands.
+
+Every consequence card must clear these gates or it is discarded (the validator enforces all of them):
+1. Shape. instrument is one of diplomatic, economic, covert, military, assistance; rungBands is a non-empty subset of
+   low, mid, high; valence is one of success, partial, failure; weight is positive;
+   beats is one to three lines. Anything outside those enums does not parse at all.
+2. The only placeholders are {{actor}} and {{target}}. Any other token is refused — a card cannot reach
+   the charter, the cabinet, or the counterpart's title, because it speaks about an act, not a country.
+3. None of these words anywhere in player-facing text: rung, instrument, metric, delta, effect, packet, projection, rng, seed, roll, modifier, stat.
+4. American spelling — automatic rejections: colour, favour, honour, harbour, neighbour, rumour, labour, armour, behaviour, defence, offence, organisation, and similar, in every
+   form they inflect into.
+5. Name no real country, demonym, or capital, and no real news organization
+   (Agence France-Presse, Al Jazeera, Associated Press, BBC, Bloomberg, CNBC, and similar). The two parties are placeholders and nothing else.
+6. Write every number as words, and use no digits and no currency marks anywhere in player-facing text:
+   "nine dead", never "9 dead". Counting an ordinary detail out in words is right and wanted; it is the
+   digits that are refused.
+7. Effects may only be: { kind: "metric", deltas } over treasury/stability/militaryReadiness/standing, optionally
+   scaleBySeverity; { kind: "relationship", direction, deltas } over trust/alignment/tension/tradeDependence/
+   militaryThreat; { kind: "grudge", cause, weight }; { kind: "feed", headline }. Nothing else exists. A card
+   cannot touch nation stats, the cabinet, or the removal arc — those change the shape of a campaign.
+8. A card must leave a mark: effects, or "sets" flags, or something remembered. All three empty is refused.
+9. A success or partial card is not a victory lap. It must carry at least one of: a cost (any
+   harmful metric movement, or a harmful relationship delta), a "sets" flag, or a remembered line. Pure gain
+   with no forward hook is refused — the room got something, so name what it paid or what it now owes.
+10. Valence has to match the arithmetic. A success card may take at most 0.06 off the board and
+    a partial at most 0.18, measured across every harmful movement on one normalized scale.
+    Past that the player is told it worked while the numbers say otherwise, which is a lie the gate refuses.
+11. riskAffinity names a failure branch of its own instrument, and only a failure card may carry one —
+    an outcome that did not fail has no branch to match, so such a card could never be drawn.
+12. A flag in conditions.flagsSet must be one that something writes: another card's "sets", a scenario
+    reply's "sets", or the card's own fired flag. A card waiting on a flag nothing stamps is unreachable.
+13. Coverage is judged over the whole pool, not over this batch: every cell of the
+    5 instruments × 3 bands ×
+    3 valences matrix needs at least one card with no conditions, no
+    riskAffinity and no "once" — the floor has to be there on every campaign, whatever the board looks
+    like. 3 cards per cell is the depth at which a player stops recognizing the line.
+14. Two cards in one cell that share phrasing are one template wearing two hats. Vary the image, not
+    just the wording around it.
+15. Length, in characters. Ceilings — over these the document is refused: beat 400,
+    feed headline 130, remembered 220. Floors — under these it does not parse:
+    beat 60, headline 40, remembered 50. Write to these targets, not to the
+    floors: beat 90, headline 50, remembered 80.
+16. "sets" flags are how an aftermath is remembered; name them as deeds ("burned-the-network"), and
+    only when a later scenario or card would plausibly gate on them.
+
+Write the aftermath the way the best political drama writes the morning after:
+- The resolver has already decided whether the act worked. A card never argues with that verdict; it
+  tells the room what the verdict looked like from inside the building.
+- Concrete detail over adjectives. "The note is read in the car," never "a diplomatic setback."
+- One image per beat, and the image carries the cost. The narrator states; it does not perform.
+- Hard subjects (dead soldiers, dead civilians, ruined people) get restraint and dignity: what it costs
+  the room to know, never the spectacle.
+- American English spelling throughout.
+- A card is drawn for whichever two nations the act happened between, so it may only ever say
+  {{actor}} and {{target}}. It knows nothing else about the world and must not pretend to.
+
+Conditions make a card conditional on the board it is drawn against — scenarioClass, the tone of the
+reply that led here, flags set or clear, minTension, maxTrust. Use them for the cards that earn their
+specificity, and leave the cell's floor card unconditioned so the draw can never come back empty.
+
+These two shipped cards are the quality bar. Match their register exactly:
+[
+  {
+    "id": "cq-diplomatic-low-success-note-read-in-the-car",
+    "instrument": "diplomatic",
+    "rungBands": [
+      "low"
+    ],
+    "valence": "success",
+    "weight": 1,
+    "beats": [
+      "{{target}}'s deputy takes the note without reading it and reads it in the car. By the time he reaches his own building he has drafted the reply that gives {{actor}} what it asked for and not one line more."
+    ],
+    "effects": [
+      {
+        "kind": "relationship",
+        "direction": "target-to-actor",
+        "deltas": {
+          "trust": 0.03
+        }
+      },
+      {
+        "kind": "metric",
+        "deltas": {
+          "standing": 0.01
+        }
+      },
+      {
+        "kind": "relationship",
+        "direction": "actor-to-target",
+        "deltas": {
+          "tension": 0.02
+        }
+      }
+    ]
+  },
+  {
+    "id": "cq-military-high-failure-the-second-decision-of-the-night",
+    "instrument": "military",
+    "rungBands": [
+      "high"
+    ],
+    "valence": "failure",
+    "weight": 1,
+    "beats": [
+      "The package is engaged on egress and an aircrew goes down inside {{target}}'s territory, alive. The recovery attempt is the second decision of the night, and there is no version of it that is not worse than the first."
+    ],
+    "effects": [
+      {
+        "kind": "metric",
+        "deltas": {
+          "standing": -0.12,
+          "militaryReadiness": -0.08,
+          "stability": -0.06
+        }
+      },
+      {
+        "kind": "relationship",
+        "direction": "target-to-actor",
+        "deltas": {
+          "tension": 0.1
+        }
+      },
+      {
+        "kind": "grudge",
+        "cause": "the crew taken on egress",
+        "weight": 0.6
+      },
+      {
+        "kind": "feed",
+        "headline": "An aircrew is down inside {{target}} and the recovery is the second decision of the night"
+      }
+    ]
+  }
+]
+
+Return ONLY the JSON array. No commentary."
+`;

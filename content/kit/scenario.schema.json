@@ -1,0 +1,3535 @@
+{
+  "title": "The Administration scenario batch",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "administration-scenario-batch"
+    },
+    "kitVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "author": {
+      "type": "string"
+    },
+    "scenarios": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "class": {
+            "type": "string",
+            "enum": [
+              "tragedy",
+              "terror",
+              "unrest",
+              "disaster",
+              "public-health",
+              "migration",
+              "foreign-crisis",
+              "war",
+              "espionage",
+              "hostage",
+              "technology",
+              "economy",
+              "scandal",
+              "justice",
+              "institution",
+              "culture",
+              "death",
+              "triumph"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "routine",
+              "serious",
+              "critical"
+            ]
+          },
+          "dilemmaShape": {
+            "type": "string",
+            "enum": [
+              "credulity-bet",
+              "containment",
+              "retaliation",
+              "allocation",
+              "disclosure",
+              "loyalty-test",
+              "exposure",
+              "foot-in-the-door"
+            ]
+          },
+          "topics": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "trade",
+                "war",
+                "intelligence",
+                "judiciary",
+                "disaster",
+                "labor",
+                "health",
+                "immigration",
+                "energy",
+                "tech",
+                "scandal",
+                "fiscal",
+                "diplomacy",
+                "security",
+                "environment",
+                "culture",
+                "civil-rights",
+                "public-safety"
+              ]
+            }
+          },
+          "entities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "voss-shipyard",
+                "restwell-cemetery",
+                "national-orchestra",
+                "capital-theater",
+                "library-quarter-trust",
+                "provincial-touring-company"
+              ]
+            }
+          },
+          "subjects": {
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z]{2,24}$"
+                    },
+                    "source": {
+                      "type": "string",
+                      "const": "entity"
+                    },
+                    "entity": {
+                      "type": "string",
+                      "enum": [
+                        "voss-shipyard",
+                        "restwell-cemetery",
+                        "national-orchestra",
+                        "capital-theater",
+                        "library-quarter-trust",
+                        "provincial-touring-company"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "source",
+                    "entity"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z]{2,24}$"
+                    },
+                    "source": {
+                      "type": "string",
+                      "const": "governor"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "source"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z]{2,24}$"
+                    },
+                    "source": {
+                      "type": "string",
+                      "const": "mayor"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "source"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z]{2,24}$"
+                    },
+                    "source": {
+                      "type": "string",
+                      "const": "member"
+                    },
+                    "chamber": {
+                      "type": "string",
+                      "enum": [
+                        "house",
+                        "senate"
+                      ]
+                    },
+                    "scope": {
+                      "type": "string",
+                      "enum": [
+                        "state",
+                        "nation"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "source",
+                    "chamber",
+                    "scope"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z]{2,24}$"
+                    },
+                    "source": {
+                      "type": "string",
+                      "const": "institution"
+                    },
+                    "institution": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "source",
+                    "institution"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z]{2,24}$"
+                    },
+                    "source": {
+                      "type": "string",
+                      "const": "inherit"
+                    },
+                    "scenario": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "slot": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z]{2,24}$"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "source",
+                    "scenario",
+                    "slot"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "eraAssumption": {
+            "type": "string",
+            "enum": [
+              "evergreen",
+              "dated"
+            ]
+          },
+          "staleAfter": {
+            "type": "string",
+            "minLength": 1
+          },
+          "motifs": {
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "uncorroborated-source",
+                "agency-non-confirmation",
+                "broken-chain-of-custody",
+                "border-crossing",
+                "quiet-transfer",
+                "divided-public-perception",
+                "closing-claim-of-ownership"
+              ]
+            }
+          },
+          "intelConfidence": {
+            "type": "string",
+            "enum": [
+              "single-sourced",
+              "disputed",
+              "confirmed"
+            ]
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 12
+          },
+          "cast": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "tensest"
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "closest"
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "band"
+                  },
+                  "archetype": {
+                    "type": "string"
+                  },
+                  "powerTier": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "militaryTier": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "stabilityBand": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "nation"
+                  },
+                  "nation": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "pick",
+                  "nation"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "warCounterpart"
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "belligerent"
+                  },
+                  "side": {
+                    "type": "string",
+                    "enum": [
+                      "aggressor",
+                      "defender"
+                    ]
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "none"
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "stricken"
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "outlet"
+                  },
+                  "outlet": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "collectionReport"
+                  },
+                  "bind": {
+                    "type": "string",
+                    "enum": [
+                      "target",
+                      "recipient",
+                      "home"
+                    ]
+                  }
+                },
+                "required": [
+                  "pick",
+                  "bind"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "tradeMeasure"
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "liveBill"
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "judicialVacancy"
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pick": {
+                    "type": "string",
+                    "const": "pendingOrderCase"
+                  }
+                },
+                "required": [
+                  "pick"
+                ]
+              }
+            ]
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "metric"
+                    },
+                    "metric": {
+                      "type": "string",
+                      "enum": [
+                        "approval",
+                        "treasury",
+                        "stability",
+                        "militaryReadiness",
+                        "standing"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "metric"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "alignment"
+                    },
+                    "axis": {
+                      "type": "string",
+                      "enum": [
+                        "economicLeftRight",
+                        "authLibertarian",
+                        "nationalistGlobalist"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "axis"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "relationship"
+                    },
+                    "field": {
+                      "type": "string",
+                      "enum": [
+                        "trust",
+                        "alignment",
+                        "tension",
+                        "tradeDependence",
+                        "militaryThreat"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "field"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "counterpartTrait"
+                    },
+                    "trait": {
+                      "type": "string",
+                      "enum": [
+                        "aggression",
+                        "opportunism",
+                        "legalism",
+                        "isolationism",
+                        "riskTolerance",
+                        "vengefulness",
+                        "reliability",
+                        "transparency"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "trait"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "cabinetAttribute"
+                    },
+                    "roleHint": {
+                      "type": "string",
+                      "enum": [
+                        "foreign",
+                        "finance",
+                        "defense",
+                        "justice",
+                        "interior",
+                        "agriculture",
+                        "commerce",
+                        "labor",
+                        "health",
+                        "housing",
+                        "transportation",
+                        "energy",
+                        "education",
+                        "veterans",
+                        "homeland",
+                        "intelligence",
+                        "lead"
+                      ]
+                    },
+                    "attribute": {
+                      "type": "string",
+                      "enum": [
+                        "competence",
+                        "loyalty",
+                        "ambition",
+                        "integrity",
+                        "charisma"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "roleHint",
+                    "attribute"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "flag"
+                    },
+                    "flag": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "is": {
+                      "type": "boolean"
+                    },
+                    "agedAtLeast": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "flag",
+                    "is"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "turn"
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "removalPressure"
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "charterInstitution"
+                    },
+                    "institution": {
+                      "type": "string",
+                      "enum": [
+                        "assembly",
+                        "executive",
+                        "judiciary"
+                      ]
+                    },
+                    "present": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "institution",
+                    "present"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "warState"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "any",
+                        "aggressor",
+                        "defender",
+                        "none"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "role"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "conditionActive"
+                    },
+                    "condition": {
+                      "type": "string",
+                      "enum": [
+                        "earthquake",
+                        "flood",
+                        "drought",
+                        "cyclone",
+                        "wildfire",
+                        "pandemic",
+                        "tornado",
+                        "winter-storm",
+                        "heat-wave",
+                        "unrest",
+                        "recession",
+                        "inflation-shock",
+                        "unemployment-shock",
+                        "fiscal-crisis",
+                        "energy-shortage",
+                        "housing-crunch"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "coalition"
+                    },
+                    "against": {
+                      "type": "string",
+                      "enum": [
+                        "player",
+                        "counterpart"
+                      ]
+                    },
+                    "present": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "against",
+                    "present"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "tradeMeasure"
+                    },
+                    "origin": {
+                      "type": "string",
+                      "const": "retaliation"
+                    },
+                    "responseSector": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "responseRate": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "origin",
+                    "responseSector",
+                    "responseRate"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "liveBill"
+                    },
+                    "stage": {
+                      "type": "string",
+                      "enum": [
+                        "markup",
+                        "conference"
+                      ]
+                    },
+                    "act": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "responseText": {
+                      "type": "string",
+                      "enum": [
+                        "base",
+                        "targeted",
+                        "both"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "stage"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "judicialVacancy"
+                    },
+                    "seat": {
+                      "type": "string",
+                      "enum": [
+                        "chief",
+                        "associate"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "pendingOrderCase"
+                    },
+                    "posture": {
+                      "type": "string",
+                      "const": "adverse-lower"
+                    },
+                    "ruleState": {
+                      "type": "string",
+                      "enum": [
+                        "unimplemented",
+                        "operative"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "sharedMembership"
+                    },
+                    "present": {
+                      "type": "boolean"
+                    },
+                    "orgKind": {
+                      "type": "string",
+                      "enum": [
+                        "defense",
+                        "economic",
+                        "political"
+                      ]
+                    },
+                    "tradeCompetence": {
+                      "type": "string",
+                      "enum": [
+                        "customs-union",
+                        "fta"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "present"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "sharesBorder"
+                    },
+                    "present": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "present"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "tariffInForce"
+                    },
+                    "present": {
+                      "type": "boolean"
+                    },
+                    "of": {
+                      "type": "string",
+                      "enum": [
+                        "answered",
+                        "response"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "present"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "policyStance"
+                    },
+                    "domain": {
+                      "type": "string",
+                      "enum": [
+                        "fiscal",
+                        "industry",
+                        "trade",
+                        "civil",
+                        "security",
+                        "defense"
+                      ]
+                    },
+                    "stance": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "active": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "domain",
+                    "stance",
+                    "active"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "press"
+                    },
+                    "measure": {
+                      "type": "string",
+                      "enum": [
+                        "standing",
+                        "silenceWeeks",
+                        "hostileShare",
+                        "outlet"
+                      ]
+                    },
+                    "outlet": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "measure"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "operatorPressure"
+                    },
+                    "field": {
+                      "type": "string",
+                      "enum": [
+                        "insurgency",
+                        "protest"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "field"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "geography"
+                    },
+                    "field": {
+                      "type": "string",
+                      "enum": [
+                        "coastal",
+                        "landlocked",
+                        "bordered",
+                        "chokepoint"
+                      ]
+                    },
+                    "is": {
+                      "type": "boolean"
+                    },
+                    "of": {
+                      "type": "string",
+                      "enum": [
+                        "player",
+                        "counterpart"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "field",
+                    "is"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "revealedPreference"
+                    },
+                    "trait": {
+                      "type": "string",
+                      "enum": [
+                        "concedesUnderPressure",
+                        "escalatesWhenTested",
+                        "honorsFriends"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "trait"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "stateGrievance"
+                    },
+                    "signature": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "scope": {
+                      "type": "string",
+                      "enum": [
+                        "locus",
+                        "any"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "scope"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "cohortStrain"
+                    },
+                    "cohort": {
+                      "type": "string",
+                      "enum": [
+                        "age-under-35",
+                        "age-35-64",
+                        "age-65-plus",
+                        "income-struggling",
+                        "income-comfortable",
+                        "income-affluent",
+                        "no-degree",
+                        "degree",
+                        "urban",
+                        "suburban",
+                        "rural",
+                        "goods-producing",
+                        "frontline-services",
+                        "professional-technical",
+                        "public-and-uniformed",
+                        "not-in-the-workforce",
+                        "race-hispanic",
+                        "race-black",
+                        "race-asian",
+                        "race-white",
+                        "race-other",
+                        "sex-female",
+                        "sex-male",
+                        "foreign-born",
+                        "us-born",
+                        "with-disability",
+                        "no-disability",
+                        "veteran",
+                        "non-veteran"
+                      ]
+                    },
+                    "cause": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "cohort"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "calendar"
+                    },
+                    "months": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 12
+                      }
+                    },
+                    "season": {
+                      "type": "string",
+                      "enum": [
+                        "winter",
+                        "spring",
+                        "summer",
+                        "fall"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "ticket"
+                    },
+                    "party": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "background": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "route": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "plank": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "legislationAvailable"
+                    },
+                    "act": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "act"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "collectionReport"
+                    },
+                    "targetKind": {
+                      "type": "string",
+                      "enum": [
+                        "foreign-nation",
+                        "domestic-state"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "findings",
+                        "no-result"
+                      ]
+                    },
+                    "topic": {
+                      "type": "string",
+                      "enum": [
+                        "military-readiness",
+                        "external-intent",
+                        "domestic-security",
+                        "financial-pressure",
+                        "stability"
+                      ]
+                    },
+                    "basis": {
+                      "type": "string",
+                      "enum": [
+                        "pursuit",
+                        "state-condition",
+                        "governor-request"
+                      ]
+                    },
+                    "condition": {
+                      "type": "string",
+                      "enum": [
+                        "earthquake",
+                        "flood",
+                        "drought",
+                        "cyclone",
+                        "wildfire",
+                        "pandemic",
+                        "tornado",
+                        "winter-storm",
+                        "heat-wave",
+                        "unrest",
+                        "recession",
+                        "inflation-shock",
+                        "unemployment-shock",
+                        "fiscal-crisis",
+                        "energy-shortage",
+                        "housing-crunch"
+                      ]
+                    },
+                    "confidence": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "moderate",
+                        "high"
+                      ]
+                    },
+                    "exposed": {
+                      "type": "boolean"
+                    },
+                    "shared": {
+                      "type": "boolean"
+                    },
+                    "recipientAffected": {
+                      "type": "boolean"
+                    },
+                    "activeTasking": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "targetKind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "inflationBand"
+                    },
+                    "in": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "below-target",
+                          "near-target",
+                          "elevated",
+                          "high"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "in"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "unemploymentBand"
+                    },
+                    "in": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "tight",
+                          "normal",
+                          "slack",
+                          "severe"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "in"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "costOfLivingBand"
+                    },
+                    "in": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "easing",
+                          "steady",
+                          "rising",
+                          "straining"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "in"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "crimeTrend"
+                    },
+                    "in": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "falling",
+                          "steady",
+                          "rising"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "in"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "cyclePhase"
+                    },
+                    "in": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "expansion",
+                          "peak",
+                          "contraction",
+                          "trough"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "in"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "commodityBand"
+                    },
+                    "commodity": {
+                      "type": "string",
+                      "enum": [
+                        "crude",
+                        "natural-gas",
+                        "lng",
+                        "wheat",
+                        "corn",
+                        "soybeans",
+                        "potash",
+                        "nitrogen",
+                        "copper",
+                        "lithium",
+                        "rare-earths"
+                      ]
+                    },
+                    "in": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "slumped",
+                          "normal",
+                          "elevated",
+                          "spiking"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "commodity",
+                    "in"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "institutionState"
+                    },
+                    "institution": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "field": {
+                      "type": "string",
+                      "enum": [
+                        "delivery",
+                        "politicization",
+                        "backlog",
+                        "vacantDays",
+                        "openMatters"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    },
+                    "atMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "institution",
+                    "field"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "oversightMatter"
+                    },
+                    "origin": {
+                      "type": "string",
+                      "enum": [
+                        "inspector-general",
+                        "committee",
+                        "special-counsel"
+                      ]
+                    },
+                    "institution": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "stage": {
+                      "type": "string",
+                      "enum": [
+                        "opened",
+                        "gathering",
+                        "reported"
+                      ]
+                    },
+                    "public": {
+                      "type": "boolean"
+                    },
+                    "obstructed": {
+                      "type": "boolean"
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "shutdown"
+                    },
+                    "is": {
+                      "type": "boolean"
+                    },
+                    "weeksAtLeast": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "appropriation"
+                    },
+                    "onPriorYear": {
+                      "type": "boolean"
+                    },
+                    "weeksLeftAtMost": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "pendingRule"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "stayed",
+                        "in-effect",
+                        "canceled",
+                        "struck-down",
+                        "disapproved"
+                      ]
+                    },
+                    "atLeast": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                }
+              ]
+            }
+          },
+          "weight": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "boosts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "tension",
+                    "distrust",
+                    "instability",
+                    "removalPressure",
+                    "conditionSeverity",
+                    "warIntensity",
+                    "flagAge",
+                    "institutionStrain"
+                  ]
+                },
+                "factor": {
+                  "type": "number"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "earthquake",
+                    "flood",
+                    "drought",
+                    "cyclone",
+                    "wildfire",
+                    "pandemic",
+                    "tornado",
+                    "winter-storm",
+                    "heat-wave",
+                    "unrest",
+                    "recession",
+                    "inflation-shock",
+                    "unemployment-shock",
+                    "fiscal-crisis",
+                    "energy-shortage",
+                    "housing-crunch"
+                  ]
+                }
+              },
+              "required": [
+                "source",
+                "factor"
+              ]
+            }
+          },
+          "once": {
+            "type": "boolean"
+          },
+          "retired": {
+            "type": "boolean"
+          },
+          "family": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "opener",
+                  "beat",
+                  "close"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "role"
+            ]
+          },
+          "setPiece": {
+            "type": "object",
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "owner": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reason",
+              "owner"
+            ]
+          },
+          "locus": {
+            "type": "object",
+            "properties": {
+              "site": {
+                "type": "string",
+                "enum": [
+                  "capital",
+                  "city",
+                  "coast",
+                  "border",
+                  "interior",
+                  "chokepoint"
+                ]
+              },
+              "ground": {
+                "type": "string",
+                "enum": [
+                  "home",
+                  "counterpart"
+                ]
+              },
+              "descriptor": {
+                "type": "string",
+                "minLength": 20
+              },
+              "city": {
+                "type": "string",
+                "minLength": 1
+              },
+              "settlement": {
+                "type": "string",
+                "enum": [
+                  "small",
+                  "commercial-port",
+                  "road-border"
+                ]
+              },
+              "settlementId": {
+                "type": "string",
+                "pattern": "^SETTLEMENT-USA-[A-Z]{2}-[a-z0-9-]+$"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DE",
+                  "DC",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "sector": {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "aerospace",
+                  "semiconductors",
+                  "steel-heavy",
+                  "defense-industrial",
+                  "ports-shipping",
+                  "telecom-cyber",
+                  "finance",
+                  "housing-construction",
+                  "public-infrastructure",
+                  "energy-oil",
+                  "energy-gas",
+                  "energy-nuclear",
+                  "energy-renewables",
+                  "agriculture",
+                  "textiles",
+                  "mining",
+                  "chemicals",
+                  "food-processing",
+                  "tourism-hospitality",
+                  "healthcare",
+                  "pharma",
+                  "utilities"
+                ]
+              },
+              "bind": {
+                "type": "string",
+                "const": "condition"
+              },
+              "frontier": {
+                "type": "string",
+                "const": "home"
+              }
+            },
+            "required": [
+              "site",
+              "ground",
+              "descriptor"
+            ]
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "standing": {
+                "type": "string",
+                "minLength": 60
+              },
+              "precedent": {
+                "type": "string",
+                "minLength": 60
+              },
+              "pressures": {
+                "minItems": 2,
+                "maxItems": 4,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "cabinet",
+                        "legislature",
+                        "street",
+                        "press",
+                        "military",
+                        "business",
+                        "ally",
+                        "adversary",
+                        "court"
+                      ]
+                    },
+                    "want": {
+                      "type": "string",
+                      "minLength": 40
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "want"
+                  ]
+                }
+              },
+              "inaction": {
+                "type": "string",
+                "minLength": 60
+              },
+              "unknown": {
+                "type": "string",
+                "minLength": 40
+              }
+            },
+            "required": [
+              "standing",
+              "precedent",
+              "pressures",
+              "inaction",
+              "unknown"
+            ],
+            "additionalProperties": false
+          },
+          "premise": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "universal"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 40
+                  }
+                },
+                "required": [
+                  "kind",
+                  "reason"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "introduces"
+                  },
+                  "what": {
+                    "type": "string",
+                    "minLength": 40
+                  }
+                },
+                "required": [
+                  "kind",
+                  "what"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "responsibleOffice": {
+            "type": "string",
+            "enum": [
+              "foreign",
+              "finance",
+              "defense",
+              "justice",
+              "interior",
+              "agriculture",
+              "commerce",
+              "labor",
+              "health",
+              "housing",
+              "transportation",
+              "energy",
+              "education",
+              "veterans",
+              "homeland",
+              "intelligence"
+            ]
+          },
+          "particulars": {
+            "minItems": 1,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 24
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 36
+                }
+              },
+              "required": [
+                "label",
+                "value"
+              ]
+            }
+          },
+          "scene": {
+            "type": "object",
+            "properties": {
+              "register": {
+                "type": "string",
+                "enum": [
+                  "intact",
+                  "strained",
+                  "damaged",
+                  "ceremonial"
+                ]
+              }
+            },
+            "required": [
+              "register"
+            ]
+          },
+          "opening": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "speaker": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "cabinet"
+                        },
+                        "roleHint": {
+                          "type": "string",
+                          "enum": [
+                            "foreign",
+                            "finance",
+                            "defense",
+                            "justice",
+                            "interior",
+                            "agriculture",
+                            "commerce",
+                            "labor",
+                            "health",
+                            "housing",
+                            "transportation",
+                            "energy",
+                            "education",
+                            "veterans",
+                            "homeland",
+                            "intelligence"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "roleHint"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "player"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "narrator"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ]
+                    }
+                  ]
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 60
+                }
+              },
+              "required": [
+                "text"
+              ]
+            }
+          },
+          "transmission": {
+            "type": "object",
+            "properties": {
+              "domesticSubject": {
+                "type": "string",
+                "pattern": "^[a-zA-Z]{2,24}$"
+              },
+              "relay": {
+                "type": "string",
+                "enum": [
+                  "letter",
+                  "cable",
+                  "readout",
+                  "broadcast",
+                  "intercept",
+                  "communique"
+                ]
+              },
+              "attribution": {
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 48
+              },
+              "text": {
+                "type": "string",
+                "minLength": 60
+              },
+              "voice": {
+                "type": "string",
+                "enum": [
+                  "state",
+                  "nonstate"
+                ]
+              }
+            },
+            "required": [
+              "relay",
+              "attribution",
+              "text"
+            ]
+          },
+          "replies": {
+            "minItems": 2,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "tone": {
+                  "type": "string",
+                  "enum": [
+                    "conciliatory",
+                    "firm",
+                    "principled",
+                    "evasive",
+                    "coercive"
+                  ]
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 40
+                },
+                "sets": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "press": {
+                  "type": "string",
+                  "minLength": 40
+                },
+                "resolves": {
+                  "type": "string",
+                  "enum": [
+                    "held",
+                    "lost"
+                  ]
+                },
+                "commitment": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "position"
+                        },
+                        "importSuspensionDays": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 365
+                        },
+                        "cost": {
+                          "type": "object",
+                          "properties": {
+                            "treasury": {
+                              "type": "number"
+                            },
+                            "stability": {
+                              "type": "number"
+                            },
+                            "militaryReadiness": {
+                              "type": "number"
+                            },
+                            "standing": {
+                              "type": "number"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "pull": {
+                          "type": "object",
+                          "properties": {
+                            "economicLeftRight": {
+                              "type": "number"
+                            },
+                            "authLibertarian": {
+                              "type": "number"
+                            },
+                            "nationalistGlobalist": {
+                              "type": "number"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "remembered": {
+                          "type": "string",
+                          "minLength": 50
+                        },
+                        "rejoinder": {
+                          "type": "object",
+                          "properties": {
+                            "speaker": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "cabinet"
+                                    },
+                                    "roleHint": {
+                                      "type": "string",
+                                      "enum": [
+                                        "foreign",
+                                        "finance",
+                                        "defense",
+                                        "justice",
+                                        "interior",
+                                        "agriculture",
+                                        "commerce",
+                                        "labor",
+                                        "health",
+                                        "housing",
+                                        "transportation",
+                                        "energy",
+                                        "education",
+                                        "veterans",
+                                        "homeland",
+                                        "intelligence"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "roleHint"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "narrator"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ]
+                                }
+                              ]
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 60
+                            }
+                          },
+                          "required": [
+                            "text"
+                          ]
+                        },
+                        "impact": {
+                          "type": "object",
+                          "properties": {
+                            "human": {
+                              "type": "object",
+                              "properties": {
+                                "lives": {
+                                  "type": "string",
+                                  "enum": [
+                                    "none",
+                                    "isolated",
+                                    "dozens",
+                                    "hundreds",
+                                    "thousands",
+                                    "mass"
+                                  ]
+                                },
+                                "accounting": {
+                                  "type": "string",
+                                  "enum": [
+                                    "new",
+                                    "already-reported"
+                                  ]
+                                },
+                                "displaced": {
+                                  "type": "string",
+                                  "enum": [
+                                    "none",
+                                    "local",
+                                    "regional",
+                                    "national"
+                                  ]
+                                },
+                                "borneBy": {
+                                  "type": "string",
+                                  "enum": [
+                                    "diffuse",
+                                    "one-region",
+                                    "one-group",
+                                    "the-services",
+                                    "abroad"
+                                  ]
+                                },
+                                "cohorts": {
+                                  "minItems": 1,
+                                  "maxItems": 3,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "enum": [
+                                      "age-under-35",
+                                      "age-35-64",
+                                      "age-65-plus",
+                                      "income-struggling",
+                                      "income-comfortable",
+                                      "income-affluent",
+                                      "no-degree",
+                                      "degree",
+                                      "urban",
+                                      "suburban",
+                                      "rural",
+                                      "goods-producing",
+                                      "frontline-services",
+                                      "professional-technical",
+                                      "public-and-uniformed",
+                                      "not-in-the-workforce",
+                                      "race-hispanic",
+                                      "race-black",
+                                      "race-asian",
+                                      "race-white",
+                                      "race-other",
+                                      "sex-female",
+                                      "sex-male",
+                                      "foreign-born",
+                                      "us-born",
+                                      "with-disability",
+                                      "no-disability",
+                                      "veteran",
+                                      "non-veteran"
+                                    ]
+                                  }
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "financial": {
+                              "type": "object",
+                              "properties": {
+                                "scale": {
+                                  "type": "string",
+                                  "enum": [
+                                    "none",
+                                    "discretionary",
+                                    "supplemental",
+                                    "emergency",
+                                    "structural"
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "string",
+                                  "enum": [
+                                    "national",
+                                    "city"
+                                  ]
+                                },
+                                "horizon": {
+                                  "type": "string",
+                                  "enum": [
+                                    "one-off",
+                                    "multi-year",
+                                    "permanent"
+                                  ]
+                                },
+                                "basis": {
+                                  "type": "object",
+                                  "properties": {
+                                    "quantity": {
+                                      "type": "number",
+                                      "exclusiveMinimum": 0
+                                    },
+                                    "unit": {
+                                      "type": "string",
+                                      "minLength": 2,
+                                      "maxLength": 40
+                                    },
+                                    "unitCostUSD": {
+                                      "type": "number",
+                                      "exclusiveMinimum": 0
+                                    },
+                                    "weeks": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 520
+                                    },
+                                    "source": {
+                                      "type": "string",
+                                      "minLength": 12,
+                                      "maxLength": 300
+                                    },
+                                    "coverage": {
+                                      "type": "string",
+                                      "minLength": 30,
+                                      "maxLength": 600
+                                    },
+                                    "components": {
+                                      "minItems": 1,
+                                      "maxItems": 12,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "label": {
+                                            "type": "string",
+                                            "minLength": 3,
+                                            "maxLength": 80
+                                          },
+                                          "quantity": {
+                                            "type": "number",
+                                            "exclusiveMinimum": 0
+                                          },
+                                          "unit": {
+                                            "type": "string",
+                                            "minLength": 2,
+                                            "maxLength": 40
+                                          },
+                                          "unitCostUSD": {
+                                            "type": "number",
+                                            "exclusiveMinimum": 0
+                                          },
+                                          "weeks": {
+                                            "type": "integer",
+                                            "minimum": 1,
+                                            "maximum": 520
+                                          },
+                                          "source": {
+                                            "type": "string",
+                                            "minLength": 12,
+                                            "maxLength": 300
+                                          }
+                                        },
+                                        "required": [
+                                          "label",
+                                          "quantity",
+                                          "unit",
+                                          "unitCostUSD",
+                                          "source"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "quantity",
+                                    "unit",
+                                    "unitCostUSD",
+                                    "source"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "institutional": {
+                              "minItems": 1,
+                              "maxItems": 3,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "forces-committed",
+                                  "intelligence-source-burned",
+                                  "legal-authority-spent",
+                                  "alliance-credit-spent",
+                                  "alliance-credit-earned",
+                                  "legislative-capital-spent",
+                                  "civil-service-strained",
+                                  "emergency-powers-invoked",
+                                  "conduct-in-question"
+                                ]
+                              }
+                            },
+                            "agency": {
+                              "type": "string",
+                              "enum": [
+                                "our-doing",
+                                "on-our-watch",
+                                "inherited",
+                                "acted-upon"
+                              ]
+                            },
+                            "divisive": {
+                              "type": "boolean"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "relationship": {
+                          "type": "object",
+                          "properties": {
+                            "trust": {
+                              "type": "number",
+                              "minimum": -0.15,
+                              "maximum": 0.15
+                            },
+                            "tension": {
+                              "type": "number",
+                              "minimum": -0.15,
+                              "maximum": 0.15
+                            },
+                            "militaryThreat": {
+                              "type": "number",
+                              "minimum": -0.15,
+                              "maximum": 0.15
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "conflictMove": {
+                          "type": "string",
+                          "enum": [
+                            "offerTerms",
+                            "acceptTerms",
+                            "deescalate"
+                          ]
+                        },
+                        "collection": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "action": {
+                                  "type": "string",
+                                  "const": "close"
+                                }
+                              },
+                              "required": [
+                                "action"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "action": {
+                                  "type": "string",
+                                  "const": "task"
+                                },
+                                "element": {
+                                  "type": "string",
+                                  "enum": [
+                                    "IC-ODNI",
+                                    "IC-CIA",
+                                    "IC-NSA",
+                                    "IC-DIA",
+                                    "IC-NGA",
+                                    "IC-NRO",
+                                    "IC-AF",
+                                    "IC-SPACE",
+                                    "IC-ARMY",
+                                    "IC-USMC",
+                                    "IC-NAVY",
+                                    "IC-FBI",
+                                    "IC-DEA",
+                                    "IC-DHS",
+                                    "IC-USCG",
+                                    "IC-INR",
+                                    "IC-TREASURY",
+                                    "IC-DOE"
+                                  ]
+                                },
+                                "discipline": {
+                                  "type": "string",
+                                  "enum": [
+                                    "humint",
+                                    "sigint",
+                                    "geoint",
+                                    "masint",
+                                    "osint",
+                                    "finint",
+                                    "all-source"
+                                  ]
+                                },
+                                "question": {
+                                  "type": "string",
+                                  "minLength": 12,
+                                  "maxLength": 180
+                                }
+                              },
+                              "required": [
+                                "action",
+                                "element",
+                                "discipline",
+                                "question"
+                              ]
+                            }
+                          ]
+                        },
+                        "relief": {
+                          "type": "boolean",
+                          "const": true
+                        },
+                        "localeAct": {
+                          "type": "string",
+                          "enum": [
+                            "relief",
+                            "review"
+                          ]
+                        },
+                        "tariff": {
+                          "type": "object",
+                          "properties": {
+                            "sector": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "rate": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "maximum": 1
+                            }
+                          },
+                          "required": [
+                            "sector",
+                            "rate"
+                          ]
+                        },
+                        "tariffLift": {
+                          "type": "object",
+                          "properties": {
+                            "theirs": {
+                              "type": "boolean"
+                            },
+                            "which": {
+                              "type": "string",
+                              "enum": [
+                                "answered",
+                                "response"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "theirs"
+                          ]
+                        },
+                        "directive": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "investigation"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "enforcement-posture"
+                                },
+                                "subject": {
+                                  "type": "string",
+                                  "minLength": 12,
+                                  "maxLength": 180
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "subject"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "inspector-removal-notice"
+                                },
+                                "reason": {
+                                  "type": "string",
+                                  "minLength": 12,
+                                  "maxLength": 180
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "reason"
+                              ]
+                            }
+                          ]
+                        },
+                        "transmit": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "billText": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "action": {
+                                  "type": "string",
+                                  "const": "propose"
+                                }
+                              },
+                              "required": [
+                                "action"
+                              ]
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "action": {
+                                  "type": "string",
+                                  "const": "recommend"
+                                },
+                                "text": {
+                                  "type": "string",
+                                  "enum": [
+                                    "base",
+                                    "targeted",
+                                    "house",
+                                    "senate"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "action",
+                                "text"
+                              ]
+                            }
+                          ]
+                        },
+                        "judicialNomination": {
+                          "type": "object",
+                          "properties": {
+                            "action": {
+                              "type": "string",
+                              "const": "submit"
+                            },
+                            "candidate": {
+                              "type": "string",
+                              "enum": [
+                                "first",
+                                "alternate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "action",
+                            "candidate"
+                          ]
+                        },
+                        "orderRescission": {
+                          "type": "object",
+                          "properties": {
+                            "action": {
+                              "type": "string",
+                              "const": "rescind"
+                            }
+                          },
+                          "required": [
+                            "action"
+                          ]
+                        },
+                        "orderReview": {
+                          "type": "object",
+                          "properties": {
+                            "choice": {
+                              "type": "string",
+                              "enum": [
+                                "accept",
+                                "seek",
+                                "seek-with-stay"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "choice"
+                          ]
+                        },
+                        "gazetteer": {
+                          "type": "object",
+                          "properties": {
+                            "cityEmployment": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "taxBase": {
+                              "type": "number"
+                            },
+                            "adminLean": {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            "taxHolidayYears": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 15
+                            },
+                            "stateLean": {
+                              "type": "number",
+                              "minimum": -0.15,
+                              "maximum": 0.15
+                            },
+                            "sectorEmployment": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "sectorLaborPressure": {
+                              "type": "number",
+                              "minimum": -0.2,
+                              "maximum": 0.2
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "domestic": {
+                          "type": "object",
+                          "properties": {
+                            "axes": {
+                              "type": "object",
+                              "properties": {
+                                "industrial": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "agricultural": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "energy": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "tech": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "services": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "defense": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "sectors": {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "auto",
+                                  "aerospace",
+                                  "semiconductors",
+                                  "steel-heavy",
+                                  "defense-industrial",
+                                  "ports-shipping",
+                                  "telecom-cyber",
+                                  "finance",
+                                  "housing-construction",
+                                  "public-infrastructure",
+                                  "energy-oil",
+                                  "energy-gas",
+                                  "energy-nuclear",
+                                  "energy-renewables",
+                                  "agriculture",
+                                  "textiles",
+                                  "mining",
+                                  "chemicals",
+                                  "food-processing",
+                                  "tourism-hospitality",
+                                  "healthcare",
+                                  "pharma",
+                                  "utilities"
+                                ]
+                              }
+                            },
+                            "urban": {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            "federal": {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            "values": {
+                              "type": "object",
+                              "properties": {
+                                "economicLeftRight": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "authLibertarian": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "nationalistGlobalist": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "channels": {
+                              "type": "object",
+                              "properties": {
+                                "civilRights": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "immigration": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "healthAccess": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "disabilityPrograms": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "veterans": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "magnitude": {
+                              "type": "string",
+                              "enum": [
+                                "light",
+                                "moderate",
+                                "heavy"
+                              ]
+                            },
+                            "signature": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "magnitude",
+                            "signature",
+                            "reason"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "remembered",
+                        "rejoinder"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "instrument"
+                        },
+                        "instrument": {
+                          "type": "string",
+                          "enum": [
+                            "diplomatic",
+                            "economic",
+                            "covert",
+                            "military",
+                            "assistance"
+                          ]
+                        },
+                        "rung": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "const": 1
+                            },
+                            {
+                              "type": "number",
+                              "const": 2
+                            },
+                            {
+                              "type": "number",
+                              "const": 3
+                            },
+                            {
+                              "type": "number",
+                              "const": 4
+                            },
+                            {
+                              "type": "number",
+                              "const": 5
+                            }
+                          ]
+                        },
+                        "domestic": {
+                          "type": "object",
+                          "properties": {
+                            "axes": {
+                              "type": "object",
+                              "properties": {
+                                "industrial": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "agricultural": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "energy": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "tech": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "services": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "defense": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "sectors": {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "auto",
+                                  "aerospace",
+                                  "semiconductors",
+                                  "steel-heavy",
+                                  "defense-industrial",
+                                  "ports-shipping",
+                                  "telecom-cyber",
+                                  "finance",
+                                  "housing-construction",
+                                  "public-infrastructure",
+                                  "energy-oil",
+                                  "energy-gas",
+                                  "energy-nuclear",
+                                  "energy-renewables",
+                                  "agriculture",
+                                  "textiles",
+                                  "mining",
+                                  "chemicals",
+                                  "food-processing",
+                                  "tourism-hospitality",
+                                  "healthcare",
+                                  "pharma",
+                                  "utilities"
+                                ]
+                              }
+                            },
+                            "urban": {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            "federal": {
+                              "type": "number",
+                              "minimum": -1,
+                              "maximum": 1
+                            },
+                            "values": {
+                              "type": "object",
+                              "properties": {
+                                "economicLeftRight": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "authLibertarian": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "nationalistGlobalist": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "channels": {
+                              "type": "object",
+                              "properties": {
+                                "civilRights": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "immigration": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "healthAccess": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "disabilityPrograms": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                },
+                                "veterans": {
+                                  "type": "number",
+                                  "minimum": -1,
+                                  "maximum": 1
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "magnitude": {
+                              "type": "string",
+                              "enum": [
+                                "light",
+                                "moderate",
+                                "heavy"
+                              ]
+                            },
+                            "signature": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "reason": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "magnitude",
+                            "signature",
+                            "reason"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "rejoinder": {
+                          "type": "object",
+                          "properties": {
+                            "speaker": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "cabinet"
+                                    },
+                                    "roleHint": {
+                                      "type": "string",
+                                      "enum": [
+                                        "foreign",
+                                        "finance",
+                                        "defense",
+                                        "justice",
+                                        "interior",
+                                        "agriculture",
+                                        "commerce",
+                                        "labor",
+                                        "health",
+                                        "housing",
+                                        "transportation",
+                                        "energy",
+                                        "education",
+                                        "veterans",
+                                        "homeland",
+                                        "intelligence"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "roleHint"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "narrator"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ]
+                                }
+                              ]
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 60
+                            }
+                          },
+                          "required": [
+                            "text"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "instrument",
+                        "rung"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "join"
+                        },
+                        "side": {
+                          "type": "string",
+                          "enum": [
+                            "beside",
+                            "against"
+                          ]
+                        },
+                        "rejoinder": {
+                          "type": "object",
+                          "properties": {
+                            "speaker": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "cabinet"
+                                    },
+                                    "roleHint": {
+                                      "type": "string",
+                                      "enum": [
+                                        "foreign",
+                                        "finance",
+                                        "defense",
+                                        "justice",
+                                        "interior",
+                                        "agriculture",
+                                        "commerce",
+                                        "labor",
+                                        "health",
+                                        "housing",
+                                        "transportation",
+                                        "energy",
+                                        "education",
+                                        "veterans",
+                                        "homeland",
+                                        "intelligence"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "roleHint"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "narrator"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ]
+                                }
+                              ]
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 60
+                            }
+                          },
+                          "required": [
+                            "text"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "side"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "tone",
+                "text",
+                "commitment"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "class",
+          "severity",
+          "dilemmaShape",
+          "subject",
+          "cast",
+          "conditions",
+          "weight",
+          "locus",
+          "opening",
+          "replies"
+        ]
+      }
+    }
+  },
+  "required": [
+    "kind",
+    "kitVersion",
+    "scenarios"
+  ]
+}

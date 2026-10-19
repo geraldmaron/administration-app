@@ -1,0 +1,521 @@
+{
+  "mode": "Read-only prospective replacements/additions, each step checked against its prior prospective state; no corpus writes",
+  "knownFlags": "CORE_FLAG_VOCABULARY only; audit recomputes scenario setters from prospective bodies, avoids masking removed setters with stale on-disk flag vocabulary. No consequence corpus is installed.",
+  "schema": "Current compiled ScenarioDef strict parse of every shipped candidate body",
+  "steps": [
+    {
+      "reviewId": "publication-eligibility-2026-10-14/chronology-six-current-subset",
+      "ids": [
+        "the-last-signature-on-the-charter",
+        "the-list-longer-than-the-money"
+      ],
+      "beforeCount": 323,
+      "afterCount": 323,
+      "beforeErrors": 86,
+      "afterErrors": 84,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "publication-eligibility-2026-10-14/bridge-hospital-current-subset",
+      "ids": [
+        "four-counties-quoting-the-flood-bridge",
+        "the-bridge-the-flood-took-with-it",
+        "the-crossing-we-decided-not-to-rebuild",
+        "the-night-the-exits-were-chained",
+        "whose-name-goes-on-the-bridge"
+      ],
+      "beforeCount": 323,
+      "afterCount": 323,
+      "beforeErrors": 84,
+      "afterErrors": 82,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "chief-justice-vacancy-2026-10-12",
+      "ids": [
+        "the-chief-justice-seat-and-two-records"
+      ],
+      "beforeCount": 323,
+      "afterCount": 324,
+      "beforeErrors": 82,
+      "afterErrors": 82,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "chronology-six-high-impact-full-repair-2026-10-12",
+      "ids": [
+        "the-officer-who-answers-to-two-flags",
+        "the-orchestra-choice",
+        "the-queue-that-doesnt-move",
+        "the-surplus-nobody-expected",
+        "the-surplus-nobody-planned-for",
+        "the-veterans-who-came-home-late"
+      ],
+      "beforeCount": 324,
+      "afterCount": 324,
+      "beforeErrors": 82,
+      "afterErrors": 70,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "chronology-six-institution-full-repair-2026-10-12",
+      "ids": [
+        "the-administration-asks-for-more",
+        "the-appropriation-the-assembly-never-signed",
+        "the-loyal-bench-hears-their-case",
+        "the-order-they-say-we-ignored-before",
+        "the-registrar-who-wont-sign"
+      ],
+      "beforeCount": 324,
+      "afterCount": 324,
+      "beforeErrors": 70,
+      "afterErrors": 63,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "corpus-chronology-full-repair-r2-2026-10-12",
+      "ids": [
+        "the-honor-guard-that-drew-the-wrong-flag",
+        "the-terms-relayed-through-a-third-capital"
+      ],
+      "beforeCount": 324,
+      "afterCount": 324,
+      "beforeErrors": 63,
+      "afterErrors": 61,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "grounded-financial-repairs-r2-2026-10-12",
+      "ids": [
+        "the-file-the-defense-has-now-asked-for",
+        "the-ward-that-was-patched-and-not-repaired"
+      ],
+      "beforeCount": 324,
+      "afterCount": 324,
+      "beforeErrors": 61,
+      "afterErrors": 60,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "grounded-financial-repairs-r4-2026-10-12",
+      "ids": [
+        "the-tariff-in-response"
+      ],
+      "beforeCount": 324,
+      "afterCount": 324,
+      "beforeErrors": 60,
+      "afterErrors": 60,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "issued-empty-surveillance-2026-10-12",
+      "ids": [
+        "issued-surveillance-no-result"
+      ],
+      "beforeCount": 324,
+      "afterCount": 325,
+      "beforeErrors": 60,
+      "afterErrors": 60,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "issued-report-decisions-2026-10-12",
+      "ids": [
+        "issued-warning-private-demarche",
+        "shared-warning-recipient-support",
+        "wildfire-public-report-federal-offer"
+      ],
+      "beforeCount": 325,
+      "afterCount": 328,
+      "beforeErrors": 60,
+      "afterErrors": 60,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "mounted-serious-repairs-2026-10-12",
+      "ids": [
+        "the-schools-the-governor-wants-rebuilt-as-they-were"
+      ],
+      "beforeCount": 328,
+      "afterCount": 328,
+      "beforeErrors": 60,
+      "afterErrors": 60,
+      "introducedErrors": []
+    },
+    {
+      "reviewId": "river-reported-toll-pilot-2026-10-12",
+      "ids": [
+        "the-river-over-the-levee"
+      ],
+      "beforeCount": 328,
+      "afterCount": 328,
+      "beforeErrors": 60,
+      "afterErrors": 60,
+      "introducedErrors": []
+    }
+  ],
+  "finalCount": 328,
+  "finalErrors": [
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-library-quarter",
+      "message": "the rejoinder for \"clear-and-rebuild\" is shown the moment the decision is made, and \"within a month\" narrates about 30 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "regional-theater-divide",
+      "message": "the remembered for \"renovate-the-capital-theater\" is shown the moment the decision is made, and \"that summer\" narrates a season or more as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-archive-access-question",
+      "message": "the rejoinder for \"keep-it-sealed\" is shown the moment the decision is made, and \"Eleven weeks later\" narrates about 77 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-festival-that-outgrew-its-tent",
+      "message": "the context.inaction is shown the moment the decision is made, and \"in the spring\" narrates a season or more as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-mural-the-council-wants-painted-over",
+      "message": "the context.inaction is shown the moment the decision is made, and \"within two weeks\" narrates about 14 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-last-building-on-the-block",
+      "message": "the context.inaction is shown the moment the decision is made, and \"within a year\" narrates about 365 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-ground-families-know",
+      "message": "the rejoinder for \"open-memorial-garden\" is shown the moment the decision is made, and \"in spring\" narrates a season or more as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-seat-that-outlived-the-judge-who-filled-it",
+      "message": "the rejoinder for \"seat-an-independent-jurist\" is shown the moment the decision is made, and \"inside a month\" narrates about 30 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-negotiator-they-remember-and-we-forgot",
+      "message": "the rejoinder for \"attend-quietly-without-honors\" is shown the moment the decision is made, and \"within eight days\" narrates about 8 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-generators-that-failed",
+      "message": "the rejoinder for \"investigated-first\" is shown the moment the decision is made, and \"Eleven days later\" narrates about 11 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-generators-that-failed",
+      "message": "the rejoinder for \"blamed-the-director\" is shown the moment the decision is made, and \"in spring\" narrates a season or more as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-frost-that-took-the-belt",
+      "message": "the rejoinder for \"let-the-co-ops-carry-it\" is shown the moment the decision is made, and \"in spring\" narrates a season or more as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-span-that-was-built-for-two-weeks",
+      "message": "the context.inaction is shown the moment the decision is made, and \"Within the season\" narrates about 91 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-span-that-was-built-for-two-weeks",
+      "message": "the rejoinder for \"build-the-permanent-crossing\" is shown the moment the decision is made, and \"next month\" narrates about 30 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "generic-place",
+      "severity": "error",
+      "scenario": "the-rearmament-line-draws-on-the-clinics-again",
+      "message": "domestic copy names the stand-in metro \"the district\" — bind a dataset city and write {{city}}; these phrases are unauthorable"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-final-assignment",
+      "message": "the remembered for \"keep-her-in-place\" is shown the moment the decision is made, and \"Months later\" narrates about 60 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-officer-offering-to-walk-across",
+      "message": "the rejoinder for \"decline-and-report-the-approach\" is shown the moment the decision is made, and \"inside three weeks\" narrates about 21 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-tape-nobody-will-authenticate",
+      "message": "the context.inaction is shown the moment the decision is made, and \"Within a few weeks\" narrates about 21 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-morning-the-pictures-came",
+      "message": "the rejoinder for \"deny-and-circle\" is shown the moment the decision is made, and \"eleven days later\" narrates about 11 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "locus-ground-mismatch",
+      "severity": "error",
+      "scenario": "the-border-mobilization",
+      "message": "the locus declares ground \"home\" and then describes the counterpart's ground (\"{{counterpart}}\"), so the map datelines the player's own capital for an event on somebody else's soil. Drop the ground (a cast scenario defaults to the counterpart) or rewrite the descriptor for home"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-tape-they-say-we-doctored",
+      "message": "the rejoinder for \"hold-the-tape-for-full-authentication\" is shown the moment the decision is made, and \"eleven days later\" narrates about 11 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "locus-ground-mismatch",
+      "severity": "error",
+      "scenario": "six-at-the-checkpoint",
+      "message": "the locus declares ground \"home\" and then describes the counterpart's ground (\"occupation\"), so the map datelines the player's own capital for an event on somebody else's soil. Drop the ground (a cast scenario defaults to the counterpart) or rewrite the descriptor for home"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-accounts-that-would-not-close",
+      "message": "the rejoinder for \"replaced-the-auditor\" is shown the moment the decision is made, and \"next year\" narrates about 365 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-people-with-no-way-to-be-identified",
+      "message": "the context.inaction is shown the moment the decision is made, and \"within a year\" narrates about 365 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-file-the-defense-wants-unsealed",
+      "message": "the rejoinder for \"keep-the-file-sealed-and-proceed\" is shown the moment the decision is made, and \"came in eleven days\" narrates about 11 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-checkpoint-roof-or-the-resettlement-stipend",
+      "message": "the rejoinder for \"fund-the-roof\" is shown the moment the decision is made, and \"in spring\" narrates a season or more as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-camp-built-for-half-this-many",
+      "message": "the context.inaction is shown the moment the decision is made, and \"in under three weeks\" narrates about 21 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-boats-somebody-says-are-being-loaded",
+      "message": "the rejoinder for \"wait-for-corroboration\" is shown the moment the decision is made, and \"eleven days later\" narrates about 11 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-overtime-ward-runs-on",
+      "message": "the rejoinder for \"let-the-rate-lapse\" is shown the moment the decision is made, and \"inside a month\" narrates about 30 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-clinic-the-audit-already-named",
+      "message": "the rejoinder for \"redirect-to-smaller-sites\" is shown the moment the decision is made, and \"ran out of beds in nine days\" narrates about 9 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-cluster-in-the-market-district",
+      "message": "the rejoinder for \"seal-the-hall-without-warning\" is shown the moment the decision is made, and \"inside two weeks\" narrates about 14 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-cordon-they-swore-never-again",
+      "message": "the rejoinder for \"hold-the-line-on-the-promise\" is shown the moment the decision is made, and \"found the cluster in nine days\" narrates about 9 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-clinics-that-stopped-charging",
+      "message": "the context.inaction is shown the moment the decision is made, and \"within a month\" narrates about 30 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "manufactured-clock",
+      "severity": "error",
+      "scenario": "the-inspectors-take-the-reassignment",
+      "message": "a routine scenario puts the decision on a countdown — context.pressures[1] says \"the clock is\". A routine week does not get an ultimatum: either the fiction earns the clock (raise the severity) or the prose drops it"
+    },
+    {
+      "kind": "manufactured-clock",
+      "severity": "error",
+      "scenario": "the-same-firm-bids-again",
+      "message": "a routine scenario puts the decision on a countdown — rejoinder for \"award-it-to-the-lowest\" says \"by the weekend\". A routine week does not get an ultimatum: either the fiction earns the clock (raise the severity) or the prose drops it"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "intrusions-in-the-command-net",
+      "message": "the context.inaction is shown the moment the decision is made, and \"inside a month\" narrates about 30 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-substation-that-keeps-almost-failing",
+      "message": "the context.inaction is shown the moment the decision is made, and \"next spring\" narrates about 91 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-access-we-were-told-was-once",
+      "message": "the context.inaction is shown the moment the decision is made, and \"next month\" narrates about 30 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-access-we-were-told-was-once",
+      "message": "the rejoinder for \"shut-the-access-down-as-promised\" is shown the moment the decision is made, and \"seven months later\" narrates about 210 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "nation-name-in-generic",
+      "severity": "error",
+      "scenario": "the-cargo-fire-at-dawn",
+      "message": "rejoinder for \"restrict-their-cargo-pending-findings\" names \"American\" but the scenario casts by board state — use the binder's tokens"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-medical-school-question",
+      "message": "the remembered for \"build-in-the-east\" is shown the moment the decision is made, and \"the next year\" narrates about 365 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-medical-school-question",
+      "message": "the rejoinder for \"build-in-the-west\" is shown the moment the decision is made, and \"broke ground in nine weeks\" narrates about 63 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-medical-school-question",
+      "message": "the rejoinder for \"defer-to-commission\" is shown the moment the decision is made, and \"inside the month\" narrates about 30 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-broadcasting-choice",
+      "message": "the rejoinder for \"fund-the-rural\" is shown the moment the decision is made, and \"by spring\" narrates a season or more as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-broadcasting-choice",
+      "message": "the rejoinder for \"split-the-grant\" is shown the moment the decision is made, and \"inside four months\" narrates about 120 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-pier-stands-empty",
+      "message": "the remembered for \"authorize-the-raise\" is shown the moment the decision is made, and \"a month afterward\" narrates about 30 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-pier-stands-empty",
+      "message": "the remembered for \"hold-the-line\" is shown the moment the decision is made, and \"collapsed after two weeks\" narrates about 14 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-pier-stands-empty",
+      "message": "the rejoinder for \"hold-the-line\" is shown the moment the decision is made, and \"broke in two weeks\" narrates about 14 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-harvest-fails",
+      "message": "the context.inaction is shown the moment the decision is made, and \"within the month\" narrates about 30 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-contested-mandate",
+      "message": "the remembered for \"certify-and-enforce\" is shown the moment the decision is made, and \"Six months later\" narrates about 180 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-provinces-the-writ-no-longer-reaches",
+      "message": "the remembered for \"reassert-uplands-by-force\" is shown the moment the decision is made, and \"rest of the year\" narrates about 365 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-square-that-would-not-empty-by-dark",
+      "message": "the rejoinder for \"compensate-the-shops-and-wait\" is shown the moment the decision is made, and \"six weeks later\" narrates about 42 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-panels-everyone-wants-now",
+      "message": "the rejoinder for \"close-the-window\" is shown the moment the decision is made, and \"inside two weeks\" narrates about 14 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-quartermasters-arithmetic",
+      "message": "the rejoinder for \"divert-domestic-production\" is shown the moment the decision is made, and \"in under five weeks\" narrates about 35 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-ally-asking-for-more-than-words",
+      "message": "the rejoinder for \"aid-without-arming\" is shown the moment the decision is made, and \"inside three weeks\" narrates about 21 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "family-without-opener",
+      "severity": "error",
+      "scenario": "the-negotiator-they-remember-and-we-forgot",
+      "message": "nothing opens family \"arc-the-water-they-both-claim\", so this beat binds to no country and can never be dealt. Ship the opener in the same batch, or point this at a family that is already installed."
+    },
+    {
+      "kind": "family-without-opener",
+      "severity": "error",
+      "scenario": "the-academic-seized",
+      "message": "nothing opens family \"arc-the-water-they-both-claim\", so this beat binds to no country and can never be dealt. Ship the opener in the same batch, or point this at a family that is already installed."
+    },
+    {
+      "kind": "family-without-opener",
+      "severity": "error",
+      "scenario": "the-tape-they-say-we-doctored",
+      "message": "nothing opens family \"arc-the-water-they-both-claim\", so this beat binds to no country and can never be dealt. Ship the opener in the same batch, or point this at a family that is already installed."
+    },
+    {
+      "kind": "family-without-opener",
+      "severity": "error",
+      "scenario": "the-figure-they-are-asking-for-again",
+      "message": "nothing opens family \"arc-the-station-past-the-road\", so this beat binds to no country and can never be dealt. Ship the opener in the same batch, or point this at a family that is already installed."
+    },
+    {
+      "kind": "family-without-opener",
+      "severity": "error",
+      "scenario": "the-cooperation-agreement-that-stalled",
+      "message": "nothing opens family \"arc-the-water-they-both-claim\", so this beat binds to no country and can never be dealt. Ship the opener in the same batch, or point this at a family that is already installed."
+    }
+  ],
+  "newErrorCount": 0
+}

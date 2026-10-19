@@ -1,0 +1,473 @@
+{
+  "wave": "W1",
+  "decisions": [
+    {
+      "id": "the-audit-that-found-two-ledgers",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A customs agency keeping a second ledger, and a director who reported it, is an accountability week that deals the same in a boom, a slump or a steady year."
+      },
+      "presumes": "An agency has kept two sets of books and its director reported it; nothing about the macro economy.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-auditor-who-found-the-gap-in-the-harbor-fund",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A missing-money finding that leads back to your own appointee turns on the appointment and the audit, not on the business cycle, so it deals on any board."
+      },
+      "presumes": "A harbor fund has a gap that traces to the director the player appointed; a personnel and integrity week.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-branch-with-the-line-outside-it",
+      "class": "economy",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The run itself is the incident: a queue at one branch draws a second line of people who came only because the first was there, creating the financial panic the week describes."
+      },
+      "presumes": "A panic is spreading by sight between branches; no standing economic condition is presumed.",
+      "evidence": "Reasoned: the prose says withdrawals began at one branch and spread by sight, not by news. No standing condition (recession, fiscal-crisis) is named and none of the six onset in the first 52 weeks of harness play.",
+      "risk": "A reviewer may want a banking-stress reading; none exists in CLASS_GATES, so introduces is the accurate declaration."
+    },
+    {
+      "id": "the-clinics-that-never-got-the-difference-back",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week closes an arc the player opened: its state is the drew-the-clinics-line-for-rearmament flag already in its conditions, and a second draw on the same account needs no particular economy."
+      },
+      "presumes": "The earlier rearmament draw on the clinics account (a flag set by the opener) and an unprotected account that can move without a vote.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-difference-is-a-real-number",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A contract rebid that exceeds its appropriation, with one fund covering two promises, is a budget squeeze that happens in any year; the rebid flag already supplies the prior event."
+      },
+      "presumes": "A rebid came in above the appropriation (flag rebid-the-contract) and one training appropriation cannot carry both items.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-fuel-price-spike",
+      "class": "economy",
+      "decision": "gate",
+      "conditions": [
+        {
+          "kind": "commodityBand",
+          "commodity": "crude",
+          "in": [
+            "elevated",
+            "spiking"
+          ]
+        }
+      ],
+      "presumes": "A critical fuel supplier reopens a signed contract at a third higher, citing its own costs and export tightening, so the fuel market is running high.",
+      "evidence": "Measured on the balance harness (playCampaign, 209 weeks, democrat/republican/independent x prudent/reckless, seeds balance-0 and balance-1, 12 campaigns, 2,508 weeks); crude elevated or spiking holds in 30.5% of weeks and in 12/12 campaigns (natural-gas 28.7%, lng 19.1%, so crude is the broadest honest fuel reading). Reachability: auditReachability on the gated def returns zero unreachable findings. The existing turn>=2 condition is kept.",
+      "risk": "Crude does not cover a gas or LNG supplier; a reviewer could prefer natural-gas, but narrowing further drops frequency. The ~70% of weeks with normal crude will never see this week, which is the intended effect."
+    },
+    {
+      "id": "the-fleet-that-limped-on-half",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is the delayed result of a budget line the player split instead of deciding; its state is the split-the-budget-line flag, and a half-funded fleet slipping needs no specific economy."
+      },
+      "presumes": "The earlier decision to split a budget line (flag split-the-budget-line, aged 10) left the patrol fleet half-funded.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-fund-that-outlasted-the-chair-who-built-it",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A pension fund running short against a recent labor settlement is a budget and promises week that deals on any board once the let-the-strike-run flag has aged."
+      },
+      "presumes": "A pension fund projected to empty within the decade, set against a dock settlement the player let run (flag let-the-strike-run).",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-mill-that-cannot-make-payroll",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A single state-owned mill missing a payroll is a local firm failure the government owns directly, and it can happen in any phase of the cycle."
+      },
+      "presumes": "One state-owned mill cannot make payroll in a one-employer town.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-north-gets-roads-or-the-south-gets-schools",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "Two regional claims on one appropriation, forced by the first snow, is an ordinary budget squabble that a government faces in any year."
+      },
+      "presumes": "One appropriation cannot fund both a northern pass rebuild and a promised southern school.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-pension-recalculation",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "An actuarial finding that retirees live longer than projected is demographic, not cyclical; it lands the same in a boom or a slump."
+      },
+      "presumes": "Trustees redid an actuarial study and the pension fund drains faster than projected because people live longer.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-port-development-or-the-farming-subsidy",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A time-limited cost-share offer competing with a promised subsidy is a choice between two budget lines that needs no particular economic state; the flag and the trust bound already shape who deals it."
+      },
+      "presumes": "A partner offers cost-shared port development that competes with a promised farming subsidy.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-premium-the-dealers-kept-charging",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "This is the second half of a debt-sale arc the player started: the paid-a-surcharge-to-close flag and the politicization bound supply its state, and no further economy reading is presumed."
+      },
+      "presumes": "The Treasury paid a surcharge to close a ten-year sale after a correction (flag paid-a-surcharge-to-close) and dealers are pricing the same premium again.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Medium: the prose speaks of a ratings review, which could be read as fiscal-crisis. That condition does not onset in harness play (0 of 12 campaigns), so a gate on it would make a shipped week unreachable."
+    },
+    {
+      "id": "the-price-of-bread-in-the-north",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A subsidy renewal that has drifted from its purpose comes up with the budget in any year; the prose names no price spike."
+      },
+      "presumes": "A nine-year-old bread subsidy comes up for renewal with the budget and has drifted to the mills.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-quota-that-emptied-the-docks",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A fisheries quota set for the stock, not the cycle, hits coastal towns whatever the macro economy is doing, and the coastal geography gate already limits it to a coastline."
+      },
+      "presumes": "A fishing quota cut already in force for a season, falling on the coastal towns.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-revenue-shortfall",
+      "class": "economy",
+      "decision": "gate",
+      "conditions": [
+        {
+          "kind": "cyclePhase",
+          "in": [
+            "peak",
+            "contraction",
+            "trough"
+          ]
+        }
+      ],
+      "presumes": "Receipts run eight percent behind forecast and the cabinet asks whether the economy is weakening, so a slowing economy must be a live possibility.",
+      "evidence": "Measured on the balance harness (playCampaign, 209 weeks, democrat/republican/independent x prudent/reckless, seeds balance-0 and balance-1, 12 campaigns, 2,508 weeks); cyclePhase peak/contraction/trough holds in 47.5% of weeks and in 12/12 campaigns (contraction/trough alone 30.2% of weeks, 11/12 campaigns). Excluding expansion keeps the week from dealing in a clean boom. Reachability: auditReachability on the gated def returns zero unreachable findings. A treasury metric bound was rejected: the treasury metric is a dollar figure (median about 359,000 in the harness), not 0..1.",
+      "risk": "The prose also allows a collection failure, so a purist could call it universal; the cycle gate is the narrowest reading that does not contradict \"is the economy actually weakening\"."
+    },
+    {
+      "id": "the-rearmament-line-draws-on-the-clinics-again",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A budget squeeze between a defense request and a domestic account depends on the counterpart request and the tension bound already in the conditions, not on a business-cycle state."
+      },
+      "presumes": "A partner wants the shared defense line raised again and only the clinics account can move without a vote.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-rearmament-line-that-ate-the-clinics",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is gated on the defense-rearmament policy stance, which is exactly the state it presumes; a draw on a domestic line is a budget week, not a cycle week."
+      },
+      "presumes": "Rearmament is drawing over its budget and the difference comes from rural clinics.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-run-that-started-at-one-counter",
+      "class": "economy",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The run is the incident: one branch has a bad morning and three more have queues by noon, creating a confidence panic on a bank that is solvent on every figure."
+      },
+      "presumes": "A bank run is beginning from one bad morning at one branch; the bank is solvent.",
+      "evidence": "Reasoned: prose states the panic is not rational and nothing is wrong with the bank. No standing condition is presumed. Same declaration as the sibling branch-with-the-line week.",
+      "risk": "The two bank-run weeks are near-duplicates in premise; a continuity pass may want one retired or a family linking them."
+    },
+    {
+      "id": "the-second-charter-no-underwriter-will-cover",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The war it needs is already gated by warState none, and the insurance refusal is the aftermath of the escort the flag records; no further economy state is presumed."
+      },
+      "presumes": "Relief hulls cannot get war-risk cover after the player escorted the first convoy (flag escorted-the-evacuation-convoy), during a war the player is not part of.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Medium: the week is economy class but turns on a war; the warState condition already present is a war reading, not an economy reading, so the premise has to be declared."
+    },
+    {
+      "id": "the-surplus-that-came-back-to-argue",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "Two claims on a reserve the player created is a budget week whose state is the capped-the-withdrawals flag, and it needs no particular phase of the cycle."
+      },
+      "presumes": "A reserve exists because the player capped withdrawals (flag capped-the-withdrawals), and two claimants now want it.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-tax-break-for-new-factories",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A tax-holiday request for jobs is an investment-incentive week that any government gets in any year; the prose names no unemployment level."
+      },
+      "presumes": "Four companies ask for a ten-year tax holiday for factories that would employ four thousand people.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-trade-terms-our-neighbor-wants",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A negotiated grain and textile concession is a trade-terms week that depends on the counterpart (trust bound, band cast) rather than a board economic state."
+      },
+      "presumes": "A partner brings written tariff concession terms trading grain access for textile access.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-two-facilities-that-came-back",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is the market response to a disclosure the player made, whose state is the admitted-the-deficit flag; renewal terms need no standing economic condition."
+      },
+      "presumes": "Two credit facilities renew on harder terms after the player admitted a deficit (flag admitted-the-deficit).",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-two-reviews-that-disagree",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A disagreement between two reviews the player commissioned is an accountability week whose state is the ordered-a-second-ledger-review flag."
+      },
+      "presumes": "Two audit teams reached opposite findings on one ledger after the player ordered a second review (flag ordered-a-second-ledger-review).",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-yard-that-builds-the-boats",
+      "class": "economy",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "A single strategic shipyard failing its payroll is a firm-level crisis with a supply argument, and it can arise in any phase of the cycle."
+      },
+      "presumes": "One patrol-boat yard cannot make its payroll and its bank stopped lending.",
+      "evidence": "Reasoned from prose: no accepted economy reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-accounts-frozen-in-both-directions",
+      "class": "war",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The freeze itself is the escalation: a counterpart freezes four working-balance accounts and the exchange stops trading their currency, opening an economic confrontation with no war yet."
+      },
+      "presumes": "The counterpart freezes four state accounts, with no shot fired; tension and trade dependence already in the conditions.",
+      "evidence": "Reasoned: prose says nobody has fired a shot, so a warState or coalition gate would contradict it; the tension>=0.4 and tradeDependence bounds already cover the relationship.",
+      "risk": "Does not assert any war state; acceptable because the week is pre-war."
+    },
+    {
+      "id": "the-ally-asking-for-more-than-words",
+      "class": "war",
+      "decision": "gate",
+      "conditions": [
+        {
+          "kind": "warState",
+          "role": "none"
+        }
+      ],
+      "presumes": "The ally is fighting a war that is entirely theirs, so a war must be running that the player is not part of.",
+      "evidence": "Measured on the balance harness (playCampaign, 209 weeks, democrat/republican/independent x prudent/reckless, seeds balance-0 and balance-1, 12 campaigns, 2,508 weeks); warState none holds in 18.6% of weeks, in 6/12 campaigns (war depends on the world seed, so 6 of the 12 campaigns share one world; the other world has no war at all in the first four years). With the existing trust>=0.45 closest-friend cast it is live in the same 18.6% of weeks. Reachability: auditReachability on the gated def returns zero unreachable findings (preview-7 third-party war board).",
+      "risk": "warState none means some war exists that the player is not in, not specifically the closest friend's war; a closest friend at peace elsewhere would still get this week during a distant war. The stronger reading (the counterpart is a belligerent) is not expressible."
+    },
+    {
+      "id": "the-capitals-that-stopped-answering",
+      "class": "war",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The incident is the capitals convening a session about the player without telling it, the diplomatic gathering-against that the week then answers."
+      },
+      "presumes": "Three capitals have convened an emergency session about the player: a formal gathering against the player.",
+      "evidence": "Measured as a gate and rejected. Measured on the balance harness (playCampaign, 209 weeks, democrat/republican/independent x prudent/reckless, seeds balance-0 and balance-1, 12 campaigns, 2,508 weeks); coalition against player holds in 9.5% of weeks and in 6/12 campaigns; combined with the existing standing<=0.35 and trust<=0.3 bounds the week would be live in 6.5% of weeks and 3/12 campaigns (the existing bounds alone: 19.6%, 6/12). Pick the permissive reading rather than strand a critical week.",
+      "risk": "The coalition engine reading is the true match; if the owner prefers it, the cost is a roughly two-thirds cut in dealing weeks. Also the existing standing and trust bounds may carry the state on their own."
+    },
+    {
+      "id": "the-column-on-the-border-road",
+      "class": "war",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The column is the incident: armor moving on a border road, filmed and on every feed, creates the confrontation the week asks the player to answer."
+      },
+      "presumes": "An armored column is on the border road and neither government has spoken; no war yet.",
+      "evidence": "Reasoned: the prose says the exercise story and the broadcast disagree and nobody has said a word; a warState or coalition gate would contradict that. Tension>=0.4 already gates the relationship.",
+      "risk": "Does not assert a war; acceptable because the fiction is the lead-up to one."
+    },
+    {
+      "id": "the-convoy-they-want-us-to-escort",
+      "class": "war",
+      "decision": "gate",
+      "conditions": [
+        {
+          "kind": "warState",
+          "role": "none"
+        }
+      ],
+      "presumes": "Underwriters withdrew war-risk cover for the water the relief convoy must cross, so a war or blockade is in progress that the player has not entered.",
+      "evidence": "Measured on the balance harness (playCampaign, 209 weeks, democrat/republican/independent x prudent/reckless, seeds balance-0 and balance-1, 12 campaigns, 2,508 weeks); warState none holds in 18.6% of weeks and 6/12 campaigns (one of the two sampled worlds has the war, the other none). With the existing trust>=0.5 closest cast the week is live in the same 18.6%. Reachability: auditReachability on the gated def returns zero unreachable findings.",
+      "risk": "Like the ally week, this reads any war the player is not part of; the prose does not say the war is the friend's, but it does say war-risk cover was withdrawn, which needs one. The sibling the-second-charter week sets its sequel on this convoy flag."
+    },
+    {
+      "id": "the-cooperation-agreement-that-stalled",
+      "class": "war",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is a beat of a dispute arc the player started: its state is the named-the-shootdown flag, and the stalled signing is a diplomatic delay, not a shooting war."
+      },
+      "presumes": "A fisheries agreement stalled after the player named a shootdown (flag named-the-shootdown), part of the water-they-both-claim arc.",
+      "evidence": "Reasoned from prose: no accepted war reading is presumed by the fiction.",
+      "risk": "Low: a universal declaration changes no dealing; the reviewer should confirm the reason is true of the prose."
+    },
+    {
+      "id": "the-fuel-stockpiled-at-the-rail-head",
+      "class": "war",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The stockpile is the incident: a rail-head yard holds many times its winter allocation and services read it as preparation, creating the pre-war warning the week answers."
+      },
+      "presumes": "Fuel is being stockpiled at a rail head that services read as preparation; no unit has crossed anything.",
+      "evidence": "Reasoned: the prose says no unit has crossed and the tanks are parked, so a warState gate would contradict it. militaryThreat and aggression bounds already gate the relationship.",
+      "risk": "Does not assert a war; acceptable because the fiction is the warning."
+    },
+    {
+      "id": "the-massing-past-the-ridge",
+      "class": "war",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The buildup is the incident: armor arriving six nights up a rail spur with fuel trucks forward creates the warning the week asks the player to answer."
+      },
+      "presumes": "An armored buildup on a rail spur is read in satellite passes; no shots.",
+      "evidence": "Reasoned: the prose is satellite imagery of a buildup, the pre-war state; militaryThreat>=0.4 and tension>=0.3 already gate the relationship.",
+      "risk": "Does not assert a war; acceptable because the fiction is the lead-up."
+    },
+    {
+      "id": "the-pause-that-was-never-offered",
+      "class": "war",
+      "decision": "gate",
+      "conditions": [
+        {
+          "kind": "warState",
+          "role": "any"
+        }
+      ],
+      "presumes": "The administration said half a year ago it would consider a pause, and the services want no pause while positions are consolidated in the field, so the player is a party to a war now.",
+      "evidence": "Measured on the balance harness (playCampaign, 209 weeks, democrat/republican/independent x prudent/reckless, seeds balance-0 and balance-1, 12 campaigns, 2,508 weeks); warState any (player is a party) holds in 8.6% of weeks and in 6/12 campaigns; it needs a war the player fights, which the prudent proxies avoided, so these figures come mostly from reckless runs. Reachability: auditReachability on the gated def returns zero unreachable findings (preview-6 at-war board). The existing turn>=4 is kept.",
+      "risk": "Dealing weeks are few, but a pause offer in a country at peace is nonsense. A third-party mediation reading (warState none) is possible but contradicts \"our positions in the field\"."
+    },
+    {
+      "id": "the-tariff-that-answered-a-tariff",
+      "class": "war",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "Their doubled rate is the incident: a retaliation drafted before the player announced its own, creating the trade confrontation and the fruit stranded at the terminal."
+      },
+      "presumes": "The counterpart doubled its rate in answer to ours: a trade retaliation, not a shooting war.",
+      "evidence": "Reasoned: war-class gates (warState, coalition) would contradict a week where nobody has said the word retaliation aloud. The tradeDependence and trust bounds already gate the relationship. A tradeMeasure condition is not an accepted war reading.",
+      "risk": "The class label is war for a trade week; a continuity pass may want it reclassified economy, in which case a tradeMeasure gate would be accepted."
+    },
+    {
+      "id": "the-veterans-who-came-home-late",
+      "class": "war",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "Back-pay and referral backlogs among units that came home after their relief dates are a personnel-administration week that any government with a deployed force can have, in peace or war."
+      },
+      "presumes": "Units returned after their written relief dates and about eight thousand service members have unresolved back-pay and referral queues.",
+      "evidence": "Reasoned from prose: no accepted war reading is presumed by the fiction.",
+      "risk": "Medium: the fiction presumes a past deployment that no accepted reading can express (warState reads only a current war). Low frequency risk, but a purist may call this a hold."
+    }
+  ],
+  "summary": {
+    "gate": 5,
+    "universal": 24,
+    "introduces": 8,
+    "hold": 0
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "method": "Existing orderCaseBoards signs an actual order and runs court/rule/service phases with deterministic forced preview RNG. All three replies execute independently after save/reload. Not an organic campaign or balance result.",
+  "scenario": "the-judgment-on-the-order-you-signed",
+  "subject": "Court rejects Tighten border controls; your response is pending",
+  "rows": [
+    {
+      "choice": "accept",
+      "proceeding": "case:order-border-controls:1",
+      "record": "order-border-controls:1",
+      "stage": "final",
+      "lowerEnforcement": "in-force",
+      "review": "struck-down",
+      "stay": null,
+      "subjects": [
+        {
+          "key": "counselDepartment",
+          "id": "INST-DOJ",
+          "kind": "institution",
+          "name": "Department of Justice",
+          "institution": "INST-DOJ",
+          "description": "Institution named in the decision",
+          "nation": "USA",
+          "originCase": "scenario:the-judgment-on-the-order-you-signed@court:case:order-border-controls:1",
+          "originScenario": "the-judgment-on-the-order-you-signed",
+          "originTurn": 9
+        }
+      ],
+      "provenance": {
+        "origin": "decision",
+        "confidence": "observed",
+        "visibility": "public",
+        "entities": [
+          "USA",
+          "INST-DOJ"
+        ],
+        "systems": [
+          "statecraft",
+          "conversation",
+          "institution"
+        ],
+        "marks": [
+          "deed:order:mid:failed",
+          "scenario:the-judgment-on-the-order-you-signed",
+          "scenario-answer:the-judgment-on-the-order-you-signed:accept-the-lower-judgment",
+          "staged:institution:9",
+          "staged-severity:serious:9",
+          "desk:closed:9"
+        ]
+      }
+    },
+    {
+      "choice": "seek",
+      "proceeding": "case:order-border-controls:1",
+      "record": "order-border-controls:1",
+      "stage": "appeal",
+      "lowerEnforcement": "in-force",
+      "review": "pending",
+      "stay": null,
+      "subjects": [
+        {
+          "key": "counselDepartment",
+          "id": "INST-DOJ",
+          "kind": "institution",
+          "name": "Department of Justice",
+          "institution": "INST-DOJ",
+          "description": "Institution named in the decision",
+          "nation": "USA",
+          "originCase": "scenario:the-judgment-on-the-order-you-signed@court:case:order-border-controls:1",
+          "originScenario": "the-judgment-on-the-order-you-signed",
+          "originTurn": 9
+        }
+      ],
+      "provenance": {
+        "origin": "decision",
+        "confidence": "observed",
+        "visibility": "public",
+        "entities": [
+          "USA",
+          "INST-DOJ"
+        ],
+        "systems": [
+          "statecraft",
+          "conversation",
+          "institution"
+        ],
+        "marks": [
+          "scenario:the-judgment-on-the-order-you-signed",
+          "scenario-answer:the-judgment-on-the-order-you-signed:seek-review-while-complying",
+          "staged:institution:9",
+          "staged-severity:serious:9",
+          "desk:closed:9"
+        ]
+      }
+    },
+    {
+      "choice": "seek-with-stay",
+      "proceeding": "case:order-border-controls:1",
+      "record": "order-border-controls:1",
+      "stage": "appeal",
+      "lowerEnforcement": "in-force",
+      "review": "pending",
+      "stay": "pending",
+      "subjects": [
+        {
+          "key": "counselDepartment",
+          "id": "INST-DOJ",
+          "kind": "institution",
+          "name": "Department of Justice",
+          "institution": "INST-DOJ",
+          "description": "Institution named in the decision",
+          "nation": "USA",
+          "originCase": "scenario:the-judgment-on-the-order-you-signed@court:case:order-border-controls:1",
+          "originScenario": "the-judgment-on-the-order-you-signed",
+          "originTurn": 9
+        }
+      ],
+      "provenance": {
+        "origin": "decision",
+        "confidence": "observed",
+        "visibility": "public",
+        "entities": [
+          "USA",
+          "INST-DOJ"
+        ],
+        "systems": [
+          "statecraft",
+          "conversation",
+          "institution"
+        ],
+        "marks": [
+          "scenario:the-judgment-on-the-order-you-signed",
+          "scenario-answer:the-judgment-on-the-order-you-signed:seek-review-and-a-stay",
+          "staged:institution:9",
+          "staged-severity:serious:9",
+          "desk:closed:9"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "records": [
+    {
+      "name": "congress",
+      "path": "/washington/congress",
+      "width": 845,
+      "theme": "light",
+      "layout": {
+        "document": 0,
+        "surface": 0,
+        "title": "Congress"
+      },
+      "boxed": 0,
+      "axe": []
+    },
+    {
+      "name": "congress",
+      "path": "/washington/congress",
+      "width": 845,
+      "theme": "dark",
+      "layout": {
+        "document": 0,
+        "surface": 0,
+        "title": "Congress"
+      },
+      "boxed": 0,
+      "axe": []
+    },
+    {
+      "name": "congress",
+      "path": "/washington/congress",
+      "width": 1440,
+      "theme": "light",
+      "layout": {
+        "document": 0,
+        "surface": 0,
+        "title": "Congress"
+      },
+      "boxed": 0,
+      "axe": []
+    },
+    {
+      "name": "congress",
+      "path": "/washington/congress",
+      "width": 1440,
+      "theme": "dark",
+      "layout": {
+        "document": 0,
+        "surface": 0,
+        "title": "Congress"
+      },
+      "boxed": 0,
+      "axe": []
+    }
+  ],
+  "errors": []
+}

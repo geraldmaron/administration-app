@@ -1,0 +1,234 @@
+import { MILITARY_BRANCHES } from "../schemas/force-asset.js";
+import { IDEOLOGY_AXIS_POLES, type IdeologyAxis } from "../schemas/person.js";
+
+// The authored half of the metric registry: what each figure means, and for a
+// reading with no natural unit, what its two ends mean.
+//
+// Everything else about a metric is derived — type and bounds from the schema,
+// unit from units.ts, readers from stat-consumers.ts — so this file is the
+// only place a person writes about a metric, and the paired test holds it to
+// the schema: a field without a description fails the build, and a description
+// for a field the schema no longer has fails it too. Keyed by record path:
+// `stats.economy.gdp`, `geo.lat`, `traits.aggression`, `person.age`.
+//
+// Scale words are magnitude words, never quality words. Half the indexed
+// readings are ones where a large number is bad news, and a ladder that judged
+// would invert on every one of them; "low" and "high" here say what the number
+// is *of*, and leave the surface around it to say whether that is good.
+
+export type MetricCopy = {
+  /** A display label where the key's own words would mislead. */
+  readonly label?: string;
+  readonly description: string;
+  /** What the low and high ends of a relative scale mean. */
+  readonly scale?: { readonly low: string; readonly high: string };
+};
+
+const BRANCH_WORD = { army: "army", navy: "navy", air: "air force", marines: "marines", space: "space force", cyber: "cyber force" } as const;
+
+function orderOfBattleCopy(): Record<string, MetricCopy> {
+  return Object.fromEntries(
+    MILITARY_BRANCHES.flatMap((branch) => [
+      [
+        `stats.military.orderOfBattle.${branch}.headcount`,
+        { description: `People serving in the ${BRANCH_WORD[branch]}. The six services' headcounts must sum to within 3% of the national active headcount.` },
+      ],
+      [
+        `stats.military.orderOfBattle.${branch}.capabilities`,
+        { description: `What the ${BRANCH_WORD[branch]} is, as named formations from the force-asset catalog with a count of each: what a player reads when they ask what the service consists of.` },
+      ],
+      [
+        `stats.military.orderOfBattle.${branch}.units`,
+        { description: `What the ${BRANCH_WORD[branch]} can send: countable holdings from the force-asset catalog, each with how many are on the books and the share ready to move this month. The finite bench a deployment draws down.` },
+      ],
+    ]),
+  );
+}
+
+const IDX = (low: string, high: string): MetricCopy["scale"] => ({ low, high });
+// The axis ends come from the one table every screen reads, so this registry
+// cannot print a world view running the other way from the dossier.
+const POLES = (axis: IdeologyAxis): MetricCopy["scale"] =>
+  IDX(IDEOLOGY_AXIS_POLES[axis].negative.toLowerCase(), IDEOLOGY_AXIS_POLES[axis].positive.toLowerCase());
+
+export const METRIC_COPY: Readonly<Record<string, MetricCopy>> = {
+  // --- The record itself --------------------------------------------------
+  id: { label: "Nation id", description: "The three- or four-letter code every other record keys off: relationships, memberships, content casts and overlay edits. Changing it is a rename across the whole dataset, not a field edit." },
+  playable: { description: "Whether a campaign can be founded in this seat. Only the United States is playable; the flag stays per nation so another seat can be opened by authoring rather than by architecture." },
+  sectors: { description: "The closed industrial mix: each sector's share of output (summing to 1), its employment and its labor pressure. Read by the sector runtime, embargoes, and the unemployment and protest rollups." },
+  memberships: { description: "The compacts this nation belongs to, mirrored from the organization registry at assembly. Edit the organization's member list, never this field." },
+  "partySystem.contest": { label: "Political contest", description: "How power is actually contested: several tickets that can win, one dominant ticket, a single party that is the state, or no party system at all." },
+  "partySystem.parties": { description: "The tickets a national politician can carry, with their belief vectors and cohesion. Empty where the contest is none." },
+
+  // --- Identity -----------------------------------------------------------
+  "identity.name": { description: "The English short name, as a sentence uses it." },
+  "identity.adjective": { description: "The demonym adjective — American, Indonesian — for prose that names the people or the government." },
+  "identity.capital": { description: "The seat of government. Must match the one city record of kind capital, within half a degree of the nation's coordinates." },
+  "identity.government": { description: "The charter this government runs under: the constitution or its nearest shape in the catalog, which decides removal mechanism, cabinet chairs and institutions." },
+  "identity.languages": { description: "Working languages, first one primary. Presentation only." },
+  "identity.currency": { description: "ISO 4217 code of the national currency. Every money field is stored in USD millions; this is the code a display can restate them in." },
+  "identity.currencyPerUsd": { label: "Currency per USD", description: "Units of the national currency per one US dollar, for restating treasury figures in local money. Required on the playable nation only." },
+  "identity.definiteArticle": { description: "Whether the short name is said with \"the\": the United States, the Netherlands. Absent means no article." },
+
+  // --- Geography ----------------------------------------------------------
+  "geo.region": { description: "The region id this nation sits in. The grouping scenario targeting and the situation map both read; nothing is authored about a region except its membership." },
+  "geo.lat": { label: "Latitude", description: "Latitude of the nation's reference point, in degrees. Read by great-circle distance for force projection and trade gravity." },
+  "geo.lon": { label: "Longitude", description: "Longitude of the nation's reference point, in degrees." },
+  "geo.neighbors": { description: "Land neighbors, from the geography table. Symmetric by construction; read by border checks, projection cost and trade gravity." },
+  "geo.coastline": { description: "Whether the nation has a coast. A landlocked state cannot be reached by sea or depend on a chokepoint directly." },
+  "geo.chokepoints": { description: "The maritime chokepoints this nation's trade depends on, from the geography table. A closure of one of these is a closure of this economy." },
+  "geo.chokepointDependence": { description: "How badly each of those chokepoints closing would hurt this nation, 0.05 to 1. Authored for some sixty nations and taken from the region's lanes for the rest." },
+  "geo.disasterExposure.earthquake": { description: "How exposed the nation is to a major earthquake; weights how often the disaster condition can start here.", scale: IDX("never", "expected") },
+  "geo.disasterExposure.flood": { description: "Exposure to catastrophic flooding.", scale: IDX("never", "expected") },
+  "geo.disasterExposure.drought": { description: "Exposure to a crop-killing drought.", scale: IDX("never", "expected") },
+  "geo.disasterExposure.cyclone": { description: "Exposure to a hurricane, typhoon or cyclone landfall.", scale: IDX("never", "expected") },
+  "geo.disasterExposure.wildfire": { description: "Exposure to a wildfire season that reaches settlements.", scale: IDX("never", "expected") },
+  "geo.disasterExposure.pandemic": { description: "Exposure to an epidemic taking hold — density, connectivity and public-health reach together.", scale: IDX("never", "expected") },
+  "geo.disasterExposure.tornado": { description: "Exposure to a tornado outbreak reaching settlements.", scale: IDX("never", "expected") },
+  "geo.disasterExposure.winter-storm": { description: "Exposure to a winter storm that stops a region for days.", scale: IDX("never", "expected") },
+  "geo.disasterExposure.heat-wave": { description: "Exposure to a heat wave severe enough to strain the grid and kill.", scale: IDX("never", "expected") },
+
+  // --- Demography ---------------------------------------------------------
+  "stats.demography.population": { description: "Resident population at the dataset snapshot. For the playable nation it is the sum of its states, written at assembly." },
+  "stats.demography.urbanization": { description: "Share of the population living in cities. Reads into the trading-hub archetype test." },
+  "stats.demography.medianAge": { description: "Median age of the population in years. An older country has a higher death baseline and a lower birth baseline." },
+  "stats.demography.growthRate": { description: "Net population change per person per year: births minus deaths plus net migration, written at assembly and held to that identity by the validator." },
+  "stats.demography.literacy": { description: "Share of adults who can read. Reads into the birth-rate baseline." },
+  "stats.demography.birthRate": { description: "Births per person per year, stored as a fraction and shown per 1,000. Held above the rate law's clamp because several countries on the roster are above it." },
+  "stats.demography.deathRate": { description: "Deaths per person per year, stored as a fraction and shown per 1,000." },
+  "stats.demography.netMigration": { description: "Net arrivals per person per year; negative for a country being emptied by war or emigration." },
+
+  // --- Economy ------------------------------------------------------------
+  "stats.economy.gdp": { label: "GDP", description: "Gross domestic product in USD millions, the canonical money unit of the dataset. For the playable nation it is the sum of state output, written at assembly." },
+  "stats.economy.gdpPerCapita": { label: "GDP per capita", description: "Output per person in raw US dollars, not millions. Authored, and checked against GDP and population within 15% so a unit slip is caught." },
+  "stats.economy.growth": { description: "Real annual growth rate. Feeds the rising-power archetype and the effects of conditions and policy." },
+  "stats.economy.inflation": { description: "Annual rise in the price level. Strains stability above 8% and shapes what the purse can honestly fund." },
+  "stats.economy.unemployment": { description: "Share of the labor force without work. Strains stability above 8% and drives what the government is under pressure to legislate." },
+  "stats.economy.costOfLiving": { description: "The price level indexed to the dataset snapshot, 1.000 for every nation by definition; inflation is the rate that moves it. Read by the housing and cost-of-living conditions, the fiscal deflator and the crime baseline.", scale: IDX("half the snapshot price level", "five times it") },
+  "stats.economy.debt": { description: "Nominal government debt stock in USD millions, not a ratio. The ratio a rule wants is derived, so the stock and its denominator can never disagree." },
+  "stats.economy.reserves": { description: "Foreign-exchange reserves in USD millions. A cushion under the wealth tier." },
+  "stats.economy.sovereignRating": { description: "The credit rating on sovereign debt, on the AAA-to-D ladder. Discounts paper wealth a state cannot borrow against." },
+
+  // --- Trade --------------------------------------------------------------
+  "stats.trade.exports": { description: "Annual goods and services exports, USD millions." },
+  "stats.trade.imports": { description: "Annual goods and services imports, USD millions." },
+  "stats.trade.balance": { description: "Exports minus imports, USD millions. A surplus is leverage to withhold; a deficit is exposure." },
+  "stats.trade.topExports": { description: "Up to ten sector ids, most important first, from the closed sector list. What an embargo actually bites on." },
+  "stats.trade.topPartners": { description: "Up to forty partner nation ids ranked by modeled trade attraction, written at assembly by the gravity model. The list every trade gate reads." },
+  "stats.trade.tradeDependence": { description: "Partner nation id to the share of this nation's trade that runs through it, written at assembly. Sums to at most the nation's trade exposure." },
+
+  // --- Energy -------------------------------------------------------------
+  "stats.energy.production": { description: "Annual primary energy production in terawatt-hours, so production and consumption can be subtracted." },
+  "stats.energy.consumption": { description: "Annual primary energy consumption in terawatt-hours." },
+  "stats.energy.importDependence": { description: "Share of consumption that is imported. What an energy shock or an embargo can reach." },
+  "stats.energy.mix.energy-oil": { label: "Oil and coal share", description: "Share of supply from fossil thermal fuel: oil and coal burned as fuel both map here. Coal as a mined commodity is the mining sector instead." },
+  "stats.energy.mix.energy-gas": { label: "Gas share", description: "Share of supply from natural gas." },
+  "stats.energy.mix.energy-nuclear": { label: "Nuclear share", description: "Share of supply from nuclear power." },
+  "stats.energy.mix.energy-renewables": { label: "Renewables share", description: "Share of supply from hydro, wind, solar and other renewables." },
+
+  // --- Military -----------------------------------------------------------
+  "stats.military.budget": { description: "Annual defense spending in USD millions. Held under 35% of GDP by the validator, because a heavier burden than any real garrison state is a unit error." },
+  "stats.military.activeHeadcount": { description: "People on active service across all services. The order of battle's branch headcounts must sum to within 3% of it." },
+  "stats.military.reserveHeadcount": { description: "Trained reserves who can be called up. Counted at three-tenths of active weight in the military score." },
+  "stats.military.readiness": { description: "How much of a country's armed force could actually move this month. It is separate from how large that force is on paper: equipment in maintenance and people on leave are not available.", scale: IDX("nothing could deploy", "everything could") },
+  "stats.military.doctrineQuality": { description: "How well what a country has is organized to be used — command, training, and whether the services can fight as one thing rather than three.", scale: IDX("incoherent", "world class") },
+  "stats.military.branchStrength.land": { description: "The quality of the ground force — equipment, training and doctrine, not its size. Answers for the army and the marines together. Checked against the order of battle, never derived from it.", scale: IDX("token", "world class") },
+  "stats.military.branchStrength.air": { description: "How much of this country's military weight sits in the air domain — aircraft, crews, and the air defense that contests the same sky.", scale: IDX("token", "world class") },
+  "stats.military.branchStrength.naval": { description: "How much of this country's military weight sits at sea — hulls, crews, and the reach to keep them supplied away from home.", scale: IDX("token", "world class") },
+  "stats.military.branchStrength.cyber": { description: "How much of this country's military weight sits in networks — what it can reach, and what it can turn off, without firing anything.", scale: IDX("token", "world class") },
+  "stats.military.branchStrength.space": { description: "How much of this country's military weight sits in orbit — what it can see from there, and what its forces would lose if it stopped working.", scale: IDX("token", "world class") },
+  "stats.military.airliftCapacity": { description: "How much this country can move by air, and how far. It is the difference between a force that exists and a force that can arrive.", scale: IDX("none", "global") },
+  "stats.military.sealiftCapacity": { description: "How much this country can move by sea. Heavy forces travel by ship or they do not travel, so sealift is what decides whether armor arrives at all.", scale: IDX("none", "global") },
+  "stats.military.arsenal.warheads": { description: "Nuclear warheads held. The threat saturates rather than scaling with the count." },
+  "stats.military.arsenal.deliveryTriad": { description: "Whether the arsenal can be delivered from land, sea and air. A triad survives a first strike; a single leg may not." },
+  "stats.military.arsenal.declared": { description: "Whether the government admits to its arsenal. An undeclared arsenal is shown with no count." },
+  "stats.military.basesAbroad": { description: "Military installations on other countries' territory. The reach layer of a contest, and a term in the military score." },
+  ...orderOfBattleCopy(),
+
+  // --- Security -----------------------------------------------------------
+  "stats.security.crimeIndex": { description: "How much of ordinary life the state has stopped policing. It is a reading on enforcement failing, not on how lawful the population is.", scale: IDX("negligible", "pervasive") },
+  "stats.security.corruptionIndex": { description: "How much of a decision inside this government is bought rather than argued. It covers both the everyday bribe and the capture of whole ministries.", scale: IDX("clean", "captured") },
+  "stats.security.insurgencyPressure": { description: "How much of the country's territory is contested by somebody with guns who is not the government. It measures armed opposition holding ground, not political opposition.", scale: IDX("none", "civil war") },
+  "stats.security.borderControl": { description: "How much of what crosses a country's borders the state actually sees and can stop. It covers people, goods and anyone sent in quietly.", scale: IDX("open", "sealed") },
+  "stats.security.intelCapability": { description: "What this country's own foreign intelligence collection can actually reach — satellites, intercepts, people. Capability, not conduct: it says nothing about what they choose to do with it.", scale: IDX("blind", "sees everything") },
+  "stats.security.counterIntel": { label: "Counter-intelligence", description: "What stands between a foreign intelligence officer and this government. It is the defensive half of the same trade as intelligence reach.", scale: IDX("porous", "impenetrable") },
+
+  // --- Politics -----------------------------------------------------------
+  "stats.politics.regimeStability": { description: "How secure the people running the government expect to remain in place. It is a reading on the elite rather than on the street — the army, the ministries, the party — and it can be high in a country full of protest and low in a quiet one.", scale: IDX("about to fall", "entrenched") },
+  "stats.politics.legitimacy": { description: "How far the people of a country accept that the government has the right to govern them. It is separate from whether the government is strong: a state can hold every weapon and still be one the population has stopped consenting to.", scale: IDX("none", "unquestioned") },
+  "stats.politics.factionalism": { description: "How much of a government's effort goes into fighting itself. High factionalism means ministries, services and factions inside the ruling group work against each other rather than against the country's problems.", scale: IDX("united", "at war with itself") },
+  "stats.politics.pressFreedom": { description: "Whether the country's own press can report on its government while events are still happening, or whether what the public may read is decided by the government being reported on.", scale: IDX("state media only", "unrestricted") },
+  "stats.politics.protestPressure": { description: "How much of the population is currently in the streets against the government — strikes, marches, demonstrations. It measures mobilization now, not grievance in general.", scale: IDX("quiet", "general strike") },
+
+  // --- Soft power ---------------------------------------------------------
+  "stats.softPower.diplomaticReach": { description: "How many rooms this government is already in — embassies, forums, standing channels. It is the infrastructure an ask travels through before anyone decides whether to grant it.", scale: IDX("nobody answers", "everyone answers") },
+  "stats.softPower.culturalReach": { description: "How far this country's ideas and output travel without a diplomat carrying them. It is the part of influence that does not go through a government at all.", scale: IDX("unknown abroad", "everywhere") },
+  "stats.softPower.aidGiven": { description: "Annual development and military aid given, USD millions. Leverage in the power score." },
+  "stats.softPower.aidReceived": { description: "Annual aid received, USD millions. What the assistance ladder can threaten to withdraw." },
+
+  // --- Traits -------------------------------------------------------------
+  "traits.aggression": { description: "How readily the government reaches for force. The authored value is a midpoint; each campaign rolls inside a band around it whose width follows the stability band.", scale: IDX("pacific", "belligerent") },
+  "traits.opportunism": { description: "How readily the government takes an opening it did not plan for.", scale: IDX("principled", "grabs everything") },
+  "traits.legalism": { description: "How much international law and treaty text constrain what the government will do.", scale: IDX("law is optional", "law is binding") },
+  "traits.isolationism": { description: "The government's inward pull — how much it would rather not be involved abroad at all.", scale: IDX("engaged everywhere", "withdrawn") },
+  "traits.riskTolerance": { description: "How much the government will gamble for a payoff.", scale: IDX("cautious", "reckless") },
+  "traits.vengefulness": { description: "How long a grievance is held and how hard it is answered. Sets the decay rate of grudges.", scale: IDX("forgives", "never forgets") },
+  "traits.reliability": { description: "Whether the government keeps its word, and whether it expects others to.", scale: IDX("faithless", "keeps every promise") },
+  "traits.transparency": { description: "How much of what the government does is visible — to its own public and to others. High transparency exposes its own covert acts.", scale: IDX("opaque", "open") },
+  "traits.agendas": { description: "One to three of the nation's candidate agendas, each with a weight, chosen per campaign from the authored pool. What the government is trying to do, as the NPC agent reads it." },
+
+  // --- Doctrine -----------------------------------------------------------
+  "doctrine.posture": { description: "The government's standing military posture: defensive, balanced, assertive or expansionist. Read by the relationship graph and geography." },
+  "doctrine.redLines": { description: "The acts this government has said it will answer with force, each an id and a sentence. Presentation and scenario gating." },
+  "doctrine.alignmentPull": { description: "The great powers this government leans toward. Each pull toward an aligned or opposed pole moves the alignment band half a step." },
+
+  // --- Bands --------------------------------------------------------------
+  "bands.archetype": { description: "The kind of state this is — great power, trading hub, client state — decided from stats at assembly. Content targets an archetype rather than a nation id." },
+  "bands.powerTier": { description: "Overall standing, 1 to 5, from the power score. Sets map marker size and which casts a scenario may draw this nation into.", scale: IDX("tier 1, marginal", "tier 5, a great power") },
+  "bands.wealthTier": { description: "Per-capita wealth, 1 to 5, discounted for rating, debt and reserves. A populous poor country is a large power and a poor one at once.", scale: IDX("tier 1, under $3K a head", "tier 5, over $50K") },
+  "bands.alignmentBand": { description: "Where the nation stands between the aligned and opposed blocs at the dataset snapshot, from memberships and pulls. A relationship to the player is a fact about a pair and lives on the edge, not here." },
+  "bands.stabilityBand": { description: "How close the state is to coming apart: stable, fragile, volatile or collapsing, from the stability score." },
+  "bands.militaryTier": { description: "Usable military weight, 1 to 5, from the military score.", scale: IDX("tier 1, token", "tier 5, peer") },
+  "bands.militaryMetrics.forceIndex": { description: "The military score as a 0..1 figure: what the force is worth in a fight, read by warfighting for tier and posture.", scale: IDX("nothing", "peer") },
+  "bands.militaryMetrics.mobilizationCap": { description: "How much of the nation's mass can be turned into force in a war.", scale: IDX("none", "total") },
+  "bands.militaryMetrics.sustainability.warDuration": { description: "How long the state can keep fighting at its current burden.", scale: IDX("weeks", "years") },
+  "bands.militaryMetrics.sustainability.industrialMobilization": { description: "How far industry can be turned to war production. Owed a reader by the wartime production model.", scale: IDX("none", "total") },
+  "bands.militaryMetrics.downtime": { description: "How long the force needs to recover after a fight.", scale: IDX("none", "years") },
+
+  // --- People (generated per campaign; never on the dataset) --------------
+  "person.id": { description: "The campaign-unique id every seat, effect and dossier keys off." },
+  "person.name": { description: "One roll of a given name and a surname from the nation's name bank, drawn against the same gender roll as the portrait." },
+  "person.nationality": { description: "The nation whose pool this person was drawn from. A cabinet appoints its own nationals only." },
+  "person.portraitRef": { description: "The facet tuple that resolves to a face: heritage, presentation, age band, skin tone, attire, hair, build, variant." },
+  "person.age": { description: "Age in years, rolled inside the role profile's window." },
+  "person.bio": { description: "The one paragraph a player reads about the person, composed from a career line and whichever attribute rolled furthest from the seat's expectation." },
+  "person.education.school": { description: "Where they studied, from the school catalog. The school's tier shifts attributes through the background model." },
+  "person.education.field": { description: "What they studied. Shifts attributes through the background model." },
+  "person.education.postgraduate": { description: "Whether they hold a postgraduate degree." },
+  "person.career": { description: "The posts held before this one, oldest first. Every attribute below is derived from this life and the education above it." },
+  "person.ideology.economicLeftRight": { description: "Economic position, −1 left to +1 right. Decides the ticket a national politician carries.", scale: POLES("economicLeftRight") },
+  "person.ideology.authLibertarian": { description: "Attitude to institutional authority, −1 libertarian to +1 authoritarian.", scale: POLES("authLibertarian") },
+  "person.ideology.nationalistGlobalist": { description: "Attitude to the outside world, −1 globalist to +1 nationalist.", scale: POLES("nationalistGlobalist") },
+  "person.competence": { description: "How well they do the job. Multiplies what runs through their department and the quality of command in a war.", scale: IDX("hopeless", "masterful") },
+  "person.loyalty": { description: "Whether they stay in the tent under pressure. Reads into cabinet risk and command quality.", scale: IDX("faithless", "devoted") },
+  "person.ambition": { description: "How much they want the top chair. High ambition is a challenge waiting to happen.", scale: IDX("content", "wants the chair") },
+  "person.integrity": { description: "Whether they can be bought or shamed. Restrains a disloyal minister from acting on it.", scale: IDX("corruptible", "incorruptible") },
+  "person.charisma": { description: "How much the public and the press like them. Dismissing a charismatic minister costs standing.", scale: IDX("forgettable", "beloved") },
+  "person.traits": { description: "Dispositions from the closed trait list — hawkish, corrupt, principled — read by cabinet risk and counsel." },
+  "person.eligibleRoles": { description: "The seats this person can be appointed to. At least one." },
+  "person.affiliation": { description: "The faction they belong to, where the charter has factions. A rival faction is where a cabinet challenge comes from." },
+  "person.party": { description: "The ticket on their national charter, stamped from their economic position. Absent under a charter that authors no tickets." },
+  "person.birthplace": { description: "The town they are from, drawn from their own country's cities. Absent where the dataset maps too few to tell two people apart." },
+
+  // --- Relationships (built at founding; never on the dataset) ------------
+  "relationship.from": { description: "The nation whose view this edge records. Directed: how A sees B need not match how B sees A." },
+  "relationship.to": { description: "The nation being seen." },
+  "relationship.trust": { description: "Whether the from-nation believes the to-nation will do what it says, −1 to +1.", scale: IDX("assumes betrayal", "takes its word") },
+  "relationship.alignment": { description: "How far the two governments want the same world, −1 to +1.", scale: IDX("opposed", "aligned") },
+  "relationship.tension": { description: "How close the pair is to a confrontation.", scale: IDX("calm", "on the brink") },
+  "relationship.tradeDependence": { description: "How much of the from-nation's trade runs through the to-nation. Leverage in one direction, exposure in the other.", scale: IDX("none", "captive") },
+  "relationship.militaryThreat": { description: "How seriously the from-nation reads the to-nation's forces as a threat to it.", scale: IDX("none", "existential") },
+  "relationship.treaties": { description: "Treaty ids in force between the pair." },
+  "relationship.grudges": { description: "Standing grievances, each with a weight, the turn it started and a decay rate set by vengefulness." },
+  "relationship.history": { description: "Append-only record of what happened between the pair, turn by turn." },
+};

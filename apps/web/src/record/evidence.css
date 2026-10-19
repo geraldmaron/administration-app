@@ -1,0 +1,17 @@
+/* Record connections show only stored causal joins and filed assessments. */
+@layer rooms {
+  .rec-context-actions, .rec-report__identity { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }
+  .rec-context-actions > a { flex: 1 1 10rem; }
+  .rec-chain { display: grid; gap: var(--space-md); padding: var(--space-md); border-radius: var(--radius-card); background: var(--color-ground-raised); border: 1px solid var(--color-border-subtle); }
+  .rec-chain__branch { display: grid; gap: var(--space-sm); min-inline-size: 0; }
+  .rec-chain__branch > h4 { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-xs); }
+  .rec-chain__current { display: grid; gap: var(--space-sm); padding: var(--space-md); border-inline-start: 3px solid var(--color-blue); border-radius: var(--radius-control); background: var(--color-blue-wash); overflow-wrap: anywhere; }
+  .rec-chain .rec-links > li { padding: var(--space-sm); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-ground-base); }
+  .rec-chain .ui-row-link, .rec-orientation .ui-row-link { font-weight: var(--weight-medium); }
+  .rec-subjects { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: var(--space-sm); margin: 0; padding: 0; list-style: none; }
+  .rec-subjects a { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-xs) var(--space-sm); padding: var(--space-md); min-block-size: var(--hit-min); color: var(--color-text-primary); text-decoration: none; background: var(--color-ground-raised); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); }
+  .rec-subjects a > :is(span, small) { grid-column: 2; color: var(--color-text-secondary); overflow-wrap: anywhere; }
+  .rec-subjects a > svg:last-child { grid-column: 3; grid-row: 1; }
+  .rec-subjects a:hover { background: var(--color-ground-raised-hover); }
+  .rec-subjects a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+}

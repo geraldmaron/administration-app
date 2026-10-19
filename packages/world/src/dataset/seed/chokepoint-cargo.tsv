@@ -1,0 +1,16 @@
+# Where a strait's cargo is bound, so a government closing the strait can let some flags through and stop the rest.
+# chokepoint: a ChokepointId. commodity: a CommodityId. destination: the buyer's NationId, or a bucket the source does not split by country
+# (other-asia-oceania, europe, other), which no denier can tell apart and so is stopped with any ship. mbd: million barrels a day, as the source gives it.
+# period: the period the volume covers. source: the page or workbook read. opened: the day it was read.
+# Hormuz crude and condensate by destination, first half of 2025: EIA, World Oil Transit Chokepoints (updated 2026-03-03), Figure 5 data, "ByDestination" sheet.
+# No other strait has a by-destination series in the pages opened: Figure 7 splits the Suez Canal and SUMED pipeline, not the Bab el-Mandeb, and no LNG split was opened.
+chokepoint	commodity	destination	mbd	period	source	opened
+CP-HORMUZ	crude	CHN	5.400	1H25	https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/excel/Chokepoints_FY2026_F5.xlsx	2026-10-13
+CP-HORMUZ	crude	IND	2.049	1H25	https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/excel/Chokepoints_FY2026_F5.xlsx	2026-10-13
+CP-HORMUZ	crude	KOR	1.747	1H25	https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/excel/Chokepoints_FY2026_F5.xlsx	2026-10-13
+CP-HORMUZ	crude	JPN	1.705	1H25	https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/excel/Chokepoints_FY2026_F5.xlsx	2026-10-13
+CP-HORMUZ	crude	other-asia-oceania	2.257	1H25	https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/excel/Chokepoints_FY2026_F5.xlsx	2026-10-13
+CP-HORMUZ	crude	europe	0.586	1H25	https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/excel/Chokepoints_FY2026_F5.xlsx	2026-10-13
+CP-HORMUZ	crude	USA	0.427	1H25	https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/excel/Chokepoints_FY2026_F5.xlsx	2026-10-13
+CP-HORMUZ	crude	SAU	0.018	1H25	https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/excel/Chokepoints_FY2026_F5.xlsx	2026-10-13
+CP-HORMUZ	crude	other	0.557	1H25	https://www.eia.gov/international/content/analysis/special_topics/World_Oil_Transit_Chokepoints/excel/Chokepoints_FY2026_F5.xlsx	2026-10-13

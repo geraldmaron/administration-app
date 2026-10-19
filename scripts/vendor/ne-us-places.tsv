@@ -1,0 +1,771 @@
+# Natural Earth 10m populated places 5.1.2 (public domain), US rows. Regenerate: node scripts/vendor-ne-places.mjs
+name	state	lat	lon	population
+New York	New York	40.7519	-73.9820	19040000
+Los Angeles	California	33.9919	-118.1819	12500000
+Chicago	Illinois	41.8319	-87.7520	8990000
+Miami	Florida	25.7896	-80.2261	5585000
+Philadelphia	Pennsylvania	40.0019	-75.1719	5492000
+Dallas	Texas	32.8220	-96.8420	4798000
+Atlanta	Georgia	33.8320	-84.4019	4506000
+Boston	Massachusetts	42.3319	-71.0720	4467000
+Houston	Texas	29.8219	-95.3419	4459000
+Washington,  D.C.	District of Columbia	38.9015	-77.0114	4338000
+Detroit	Michigan	42.3319	-83.0820	4101000
+Phoenix	Arizona	33.5419	-112.0719	3551000
+San Francisco	California	37.7692	-122.4172	3450000
+Seattle	Washington	47.5719	-122.3419	3074000
+Irvine	California	33.6804	-117.8299	3010232
+San Diego	California	32.8220	-117.1819	2916000
+Minneapolis	Minnesota	44.9819	-93.2537	2616000
+Tampa	Florida	27.9489	-82.4606	2314000
+Denver	Colorado	39.7411	-104.9860	2313000
+Baltimore	Maryland	39.3019	-76.6219	2255000
+St. Louis	Missouri	38.6370	-90.2419	2199000
+Fort Lauderdale	Florida	26.1361	-80.1418	2042042
+Long Beach	California	33.7870	-118.1580	2036134
+Cleveland	Ohio	41.4719	-81.6969	1890000
+Portland	Oregon	45.5220	-122.6819	1875000
+Pittsburgh	Pennsylvania	40.4319	-80.0019	1838000
+Las Vegas	Nevada	36.2119	-115.2220	1823000
+San Bernardino	California	34.1223	-117.3020	1745000
+San Jose	California	37.3019	-121.8519	1668000
+Cincinnati	Ohio	39.1638	-84.4589	1636000
+Sacramento	California	38.5770	-121.4720	1604000
+Oakland	California	37.7689	-122.2211	1510271
+Virginia Beach	Virginia	36.8552	-75.9803	1491000
+San Antonio	Texas	29.4893	-98.5093	1473000
+Kansas City	Missouri	39.1090	-94.6060	1469000
+Ft.  Worth	Texas	32.7400	-97.3400	1440454
+Indianapolis	Indiana	39.7519	-86.1720	1436000
+Milwaukee	Wisconsin	43.0546	-87.9219	1388000
+Orlando	Florida	28.5119	-81.3820	1350000
+Providence	Rhode Island	41.8230	-71.4169	1277000
+Columbus	Ohio	39.9819	-82.9920	1270000
+West Palm Beach	Florida	26.7450	-80.1236	1250000
+Raleigh	North Carolina	35.8188	-78.6447	1163515
+Austin	Texas	30.2689	-97.7447	1161000
+Birmingham	Alabama	33.5300	-86.8250	1128047
+Mesa	Arizona	33.4239	-111.7361	1085394
+Memphis	Tennessee	35.1219	-90.0019	1081000
+Norfolk	Virginia	36.8500	-76.2800	1047869
+Bridgeport	Connecticut	41.1819	-73.2019	1018000
+Buffalo	New York	42.8819	-78.8819	1016000
+Charlotte	North Carolina	35.2069	-80.8320	995000
+Jacksonville	Florida	30.3320	-81.6719	988000
+Salt Lake City	Utah	40.7770	-111.9320	966000
+Louisville	Kentucky	38.2270	-85.7506	948000
+Tulsa	Oklahoma	36.1200	-95.9300	946962
+Hartford	Connecticut	41.7720	-72.6819	913000
+Richmond	Virginia	37.5520	-77.4519	912000
+Albuquerque	New Mexico	35.1050	-106.6413	898642
+Omaha	Nebraska	41.2400	-96.0100	877110
+Nashville	Tennessee	36.1719	-86.7819	877000
+Albany	New York	42.6700	-73.8199	870716
+New Haven	Connecticut	41.3304	-72.9000	846766
+Tucson	Arizona	32.2069	-110.8919	823000
+St. Petersburg	Florida	27.7705	-82.6794	800313
+Oklahoma City	Oklahoma	35.4720	-97.5206	788000
+Honolulu	Hawaii	21.3088	-157.8599	786000
+New Orleans	Louisiana	29.9969	-90.0419	785000
+Dayton	Ohio	39.7523	-84.2019	773000
+Rochester	New York	43.1724	-77.6219	755000
+El Paso	Texas	31.7819	-106.5119	753000
+Stamford	Connecticut	41.0533	-73.5392	746920
+St.  Paul	Minnesota	44.9440	-93.0850	734854
+Arlington	Texas	32.6848	-97.0202	724777
+Lowell	Massachusetts	42.6337	-71.3167	723629
+Tacoma	Washington	47.2113	-122.5150	719868
+Akron	Ohio	41.0704	-81.5200	703200
+Stockton	California	37.9581	-121.2897	685306
+Syracuse	New York	43.0500	-76.1500	662577
+Knoxville	Tennessee	35.9700	-83.9200	655400
+Pasadena	Texas	29.6609	-95.1477	628492
+San Mateo	California	37.5569	-122.3131	626406
+Fresno	California	36.7477	-119.7730	616353
+Oceanside	California	33.2205	-117.3350	609854
+Gary	Indiana	41.5804	-87.3300	591180
+Sarasota	Florida	27.3361	-82.5308	589959
+Aurora	Colorado	39.6959	-104.8085	587540
+Covington	Kentucky	39.0840	-84.5086	585489
+Joliet	Illinois	41.5300	-88.1067	578460
+Grand Rapids	Michigan	42.9637	-85.6699	535829
+Harrisburg	Pennsylvania	40.2736	-76.8847	528892
+Vancouver	Washington	45.6303	-122.6400	525802
+Kansas City	Kansas	39.1136	-94.6301	501577
+Glendale	Arizona	33.5819	-112.1958	500000
+Allentown	Pennsylvania	40.6000	-75.5000	496442
+Berkeley	California	37.8739	-122.2712	496356
+Colorado Springs	Colorado	38.8630	-104.7920	493654
+Everett	Washington	47.9604	-122.2000	486903
+Toledo	Ohio	41.6700	-83.5800	469924
+Bakersfield	California	35.3700	-119.0200	443129
+Laredo	Texas	27.5061	-99.5072	434768
+Baton Rouge	Louisiana	30.4579	-91.1402	422072
+Springfield	Massachusetts	42.1200	-72.5800	421780
+Charleston	South Carolina	32.7924	-79.9921	411940
+Miami Beach	Florida	25.8099	-80.1318	407750
+Wichita	Kansas	37.7200	-97.3300	401843
+Columbia	Missouri	38.9521	-92.3339	398093
+Columbia	South Carolina	34.0400	-80.9000	398093
+Metairie	Louisiana	29.9839	-90.1528	394206
+Palm Springs	California	33.7774	-116.5331	390115
+Elgin	Illinois	42.0395	-88.2899	389514
+Greensboro	North Carolina	36.0700	-79.8000	388887
+Des Moines	Iowa	41.5800	-93.6200	380655
+Ogden	Utah	41.2324	-111.9680	377224
+Hampton	Virginia	37.0300	-76.3500	366766
+Trenton	New Jersey	40.2170	-74.7434	366513
+McAllen	Texas	26.2030	-98.2297	364004
+St. Charles	Missouri	38.7843	-90.5062	360485
+Provo	Utah	40.2489	-111.6378	356712
+Greenville	South Carolina	34.8529	-82.3942	350954
+Aurora	Illinois	41.7654	-88.3000	350000
+Evanston	Illinois	42.0483	-87.7000	350000
+Spokane	Washington	47.6700	-117.4199	347705
+Boise	Idaho	43.6086	-116.2275	338071
+Salem	Massachusetts	42.5225	-70.8831	335509
+Sanford	Florida	28.7900	-81.2800	333460
+Reno	Nevada	39.5300	-119.8200	328585
+Madison	Wisconsin	43.0730	-89.4011	327447
+Modesto	California	37.6554	-120.9900	323386
+Youngstown	Ohio	41.0997	-80.6497	311990
+Durham	North Carolina	36.0000	-78.9200	309495
+Fort Wayne	Indiana	41.0804	-85.1300	299871
+Riverside	California	33.9419	-117.3980	297554
+Flint	Michigan	43.0129	-83.6875	295212
+Worcester	Massachusetts	42.2704	-71.8000	287365
+Barlett	Tennessee	35.2229	-89.8411	286423
+Winston-Salem	North Carolina	36.1054	-80.2600	281683
+Newark	New Jersey	40.7004	-74.1700	280123
+Lansing	Michigan	42.7335	-84.5467	279952
+Corpus Christi	Texas	27.7428	-97.4019	277454
+Little Rock	Arkansas	34.7361	-92.3311	270893
+Ann Arbor	Michigan	42.3004	-83.7200	265976
+Melbourne	Florida	28.0833	-80.6083	265414
+Lexington	Kentucky	38.0500	-84.5000	264578
+Augusta	Georgia	33.4608	-81.9850	262332
+Naples	Florida	26.1421	-81.7950	262306
+Lakeville	Minnesota	44.6501	-93.2425	261308
+Anchorage	Alaska	61.2200	-149.9002	260283
+Canton	Ohio	40.7989	-81.3786	258660
+Chattanooga	Tennessee	35.0700	-85.2500	257589
+Rockford	Illinois	42.2697	-89.0697	255978
+Davenport	Iowa	41.5540	-90.5875	255738
+Mobile	Alabama	30.6800	-88.0500	253466
+Jackson	Mississippi	32.2988	-90.1850	250902
+Coral Springs	Florida	26.2708	-80.2708	250000
+Waukesha	Wisconsin	43.0117	-88.2314	249912
+Shreveport	Louisiana	32.5000	-93.7700	248053
+Lincoln	Nebraska	40.8200	-96.6800	246220
+Eugene	Oregon	44.0500	-123.1000	245158
+Fayetteville	North Carolina	35.0629	-78.8836	243306
+South Bend	Indiana	41.6833	-86.2500	239822
+Pensacola	Florida	30.4211	-87.2169	234384
+Santa Rosa	California	38.4504	-122.7000	231792
+Salem	Oregon	44.9281	-123.0239	229010
+Fort Collins	Colorado	40.5607	-105.0589	228385
+Fort Pierce	Florida	27.4468	-80.3258	228245
+Lancaster	California	34.6980	-118.1358	225799
+Kissimmee	Florida	28.2921	-81.4078	225494
+Tallahassee	Florida	30.4500	-84.2800	221222
+York	Pennsylvania	39.9629	-76.7280	218010
+Columbus	Georgia	32.4704	-84.9800	217980
+Daytona Beach	Florida	29.2106	-81.0231	216890
+Lubbock	Texas	33.5800	-101.8800	213300
+Huntsville	Alabama	34.7200	-86.6100	212733
+Springfield	Missouri	37.1800	-93.3200	210939
+Lancaster	Pennsylvania	40.0378	-76.3058	209489
+Appleton	Wisconsin	44.2687	-88.4005	203665
+Waukegan	Illinois	42.3640	-87.8447	200000
+Green Bay	Wisconsin	44.5300	-88.0000	198611
+Montgomery	Alabama	32.3616	-86.2792	198325
+Roanoke	Virginia	37.2712	-79.9416	198171
+Manchester	New Hampshire	42.9960	-71.4553	196566
+Gainesville	Florida	29.6514	-82.3250	191097
+Ft. Myers	Florida	26.6403	-81.8605	188606
+Kalamazoo	Michigan	42.2922	-85.5872	183381
+Amarillo	Texas	35.2300	-101.8300	181766
+Santa Barbara	California	34.4350	-119.7200	181632
+Brownsville	Texas	25.9200	-97.5000	181399
+Savannah	Georgia	32.0211	-81.1100	180187
+Erie	Pennsylvania	42.1299	-80.0850	178182
+Denton	Texas	33.2158	-97.1288	176930
+Wahiawa	Hawaii	21.5031	-158.0236	174766
+Waterbury	Connecticut	41.5500	-73.0500	174236
+Evansville	Indiana	37.9747	-87.5558	174102
+Peoria	Illinois	40.7000	-89.6700	172308
+Poughkeepsie	New York	41.7002	-73.9214	170996
+Cedar Rapids	Iowa	41.9700	-91.6600	170621
+Waco	Texas	31.5492	-97.1464	167347
+Rock Island	Illinois	41.4934	-90.5346	165728
+Fargo	North Dakota	46.8772	-96.7894	162842
+Wilmington	Delaware	39.7463	-75.5469	161560
+Wilmington	North Carolina	34.2255	-77.9450	161560
+Wilkes-Barre	Pennsylvania	41.2490	-75.8779	158913
+Lafayette	Louisiana	30.2000	-92.0199	158214
+Olympia	Washington	47.0380	-122.8994	156984
+Salinas	California	36.6822	-121.6417	156784
+Scranton	Pennsylvania	41.4093	-75.6627	156196
+Sioux Falls	South Dakota	43.5500	-96.7300	155724
+Niagara Falls	New York	43.0948	-79.0369	153134
+Fayetteville	Arkansas	36.0630	-94.1572	151671
+Paterson	New Jersey	40.9200	-74.1700	151205
+Coral Gables	Florida	25.7154	-80.2911	150000
+Edinburg	Texas	26.3032	-98.1600	150000
+National City	California	32.6719	-117.0980	150000
+Schenectady	New York	42.8146	-73.9400	149255
+Elkhart	Indiana	41.6829	-85.9688	149190
+Santa Cruz	California	36.9719	-122.0264	148444
+Independence	Missouri	39.0911	-94.4153	148102
+Bryan	Texas	30.6742	-96.3697	146692
+Vallejo	California	38.1119	-122.2581	146289
+Pasadena	California	34.1604	-118.1389	144618
+Urbana	Illinois	40.1100	-88.2042	144074
+Belleville	Illinois	38.5252	-90.0002	143900
+Asheville	North Carolina	35.6012	-82.5541	142755
+Ocala	Florida	29.1874	-82.1403	141382
+Binghamton	New York	42.0990	-75.9183	139895
+Killeen	Texas	31.1173	-97.7275	137919
+New Bedford	Massachusetts	41.6561	-70.9447	136082
+Portland	Maine	43.6722	-70.2455	135866
+Springfield	Illinois	39.8200	-89.6500	134715
+Lafayette	Indiana	40.4172	-86.8782	133977
+Fredericksburg	Virginia	38.3035	-77.4608	133134
+Clarksville	Tennessee	36.5301	-87.3594	132536
+Cape Coral	Florida	26.6029	-81.9797	132489
+Caldwell	Idaho	43.6610	-116.6705	132476
+Topeka	Kansas	39.0500	-95.6700	132091
+Racine	Wisconsin	42.7277	-87.8118	131654
+Bloomington	Illinois	40.4846	-88.9936	128979
+Alexandria	Virginia	38.8204	-77.1000	127273
+Bremerton	Washington	47.5736	-122.6420	126820
+Greeley	Colorado	40.4192	-104.7400	125410
+Monterey	California	36.6003	-121.8936	124288
+Spartanburg	South Carolina	34.9494	-81.9323	124126
+Charleston	West Virginia	38.3497	-81.6327	123799
+Boulder	Colorado	40.0384	-105.2461	122274
+Visalia	California	36.3250	-119.3160	121968
+Saginaw	Michigan	43.4195	-83.9508	121379
+Tuscaloosa	Alabama	33.2251	-87.5442	121373
+Southaven	Mississippi	34.9689	-90.0035	121268
+New Albany	Indiana	38.3109	-85.8213	120625
+Beaver Falls	Pennsylvania	40.7519	-80.3194	120125
+Petersburg	Virginia	37.2278	-77.4022	118577
+Yuba City	California	39.1410	-121.6158	116217
+Columbia	Tennessee	35.6150	-87.0353	116091
+Murfreesboro	Tennessee	35.8460	-86.3903	115774
+Macon	Georgia	32.8504	-83.6300	115592
+Las Cruces	New Mexico	32.3126	-106.7778	115167
+Spring Hill	Florida	28.4789	-82.5477	114697
+Abilene	Texas	32.4486	-99.7328	114247
+Norman	Oklahoma	35.2279	-97.3441	113525
+St. Cloud	Minnesota	45.5612	-94.1622	112794
+Tyler	Texas	32.3511	-95.3008	112245
+Pueblo	Colorado	38.2804	-104.6300	112195
+Beaumont	Texas	30.0863	-94.1017	111485
+Santa Maria	California	34.9401	-120.4366	110705
+Harlingen	Texas	26.1976	-97.6902	110339
+Athens	Georgia	33.9613	-83.3780	110301
+Winter Haven	Florida	28.0219	-81.7330	108932
+Medford	Oregon	42.3266	-122.8744	108525
+Rochester	Minnesota	44.0221	-92.4697	108511
+Odessa	Texas	31.8456	-102.3672	106054
+Utica	New York	43.1012	-75.2331	105150
+Billings	Montana	45.7883	-108.5400	104552
+Grand Junction	Colorado	39.0939	-108.5500	104214
+Lynchburg	Virginia	37.4136	-79.1425	103893
+Kennewick	Washington	46.2114	-119.1361	102504
+Council Bluffs	Iowa	41.2623	-95.8608	101805
+Monroe	Louisiana	32.5096	-92.1192	101724
+Wichita Falls	Texas	33.9136	-98.4931	101212
+Muskegon	Michigan	43.2346	-86.2484	101177
+Bloomington	Indiana	39.1657	-86.5264	100310
+Panama City	Florida	30.1586	-85.6553	100072
+Bellingham	Washington	48.7601	-122.4869	99662
+Yakima	Washington	46.6022	-120.5047	99287
+St. George	Utah	37.1042	-113.5833	98638
+Iowa City	Iowa	41.6611	-91.5300	98516
+Midland	Texas	32.0307	-102.0975	98501
+Waterloo	Iowa	42.4932	-92.3428	98347
+New London	Connecticut	41.3555	-72.1000	96178
+Merced	California	37.3026	-120.4819	96091
+Redding	California	40.5870	-122.3906	96058
+Chico	California	39.7286	-121.8364	95888
+Rock Hill	South Carolina	34.9404	-81.0300	94564
+Fort Smith	Arkansas	35.3862	-94.3984	93988
+Burlington	Vermont	44.4758	-73.2125	93807
+Lawrence	Kansas	38.9598	-95.2552	92726
+Santa Fe	New Mexico	35.6869	-105.9372	92681
+Greenville	North Carolina	35.6129	-77.3667	92565
+Yuma	Arizona	32.6853	-114.6236	92489
+Lawton	Oklahoma	34.5990	-98.4100	91752
+Sioux City	Iowa	42.5004	-96.4000	90932
+Hickory	North Carolina	35.7335	-81.3414	89462
+Albany	Georgia	31.5787	-84.1558	88766
+San Angelo	Texas	31.4640	-100.4367	88256
+State College	Pennsylvania	40.7937	-77.8602	87926
+Charlottesville	Virginia	38.0292	-78.4769	87925
+La Crosse	Wisconsin	43.8014	-91.2394	87381
+Vero Beach	Florida	27.6423	-80.3911	86039
+Baytown	Texas	29.7558	-94.9677	86034
+Homestead	Florida	25.4683	-80.4778	85967
+Muncie	Indiana	40.1938	-85.3864	85449
+Huntington	West Virginia	38.4196	-82.4453	85396
+Duluth	Minnesota	46.7833	-92.1064	84800
+Springfield	Ohio	39.9200	-83.8000	84576
+Alton	Illinois	38.8910	-90.1842	84276
+Slidell	Louisiana	30.2750	-89.7811	84239
+Lake Charles	Louisiana	30.2264	-93.2172	83821
+Sault Ste. Marie	Michigan	46.4953	-84.3453	83805
+Victorville	California	34.5365	-117.2903	83496
+Gulfport	Mississippi	30.3676	-89.0928	82165
+Annapolis	Maryland	38.9783	-76.4925	81300
+Eau Claire	Wisconsin	44.8114	-91.4984	79740
+Hagerstown	Maryland	39.6416	-77.7203	79662
+Idaho Falls	Idaho	43.4667	-112.0333	79399
+Altoona	Pennsylvania	40.5186	-78.3950	78607
+St. Joseph	Missouri	39.7690	-94.8464	78012
+Decatur	Illinois	39.8407	-88.9547	77868
+Mansfield	Ohio	40.7583	-82.5155	77768
+Johnson City	Tennessee	36.3133	-82.3536	77538
+Jacksonville	North Carolina	34.7543	-77.4306	77288
+Atlantic City	New Jersey	39.3646	-74.4233	76573
+Alexandria	Louisiana	31.3111	-92.4450	76565
+St. Augustine	Florida	29.8949	-81.3147	76331
+Dover	Delaware	39.1581	-75.5247	76039
+Longview	Texas	32.5005	-94.7403	75920
+Bend	Oregon	44.0719	-121.3100	75441
+Wausau	Wisconsin	44.9592	-89.6300	75422
+Freeport	Texas	28.9595	-95.3569	74892
+Texarkana	Arkansas	33.4421	-94.0375	74414
+Auburn	Alabama	32.6097	-85.4808	73929
+Joplin	Missouri	37.0846	-94.5131	73763
+Rapid City	South Dakota	44.0806	-103.2306	73632
+Terre Haute	Indiana	39.4666	-87.4139	73236
+Cheyenne	Wyoming	41.1400	-104.8197	72927
+Missoula	Montana	46.8722	-113.9931	72856
+Oshkosh	Wisconsin	44.0251	-88.5425	72698
+Logan	Utah	41.7359	-111.8336	72490
+Bowling Green	Kentucky	36.9907	-86.4436	71140
+Battle Creek	Michigan	42.3211	-85.1797	70820
+San Marcos	Texas	29.8831	-97.9411	70371
+Texas City	Texas	29.4109	-94.9628	69914
+Kankakee	Illinois	41.1204	-87.8611	69608
+Johnstown	Pennsylvania	40.3271	-78.9222	69286
+Janesville	Wisconsin	42.6826	-89.0216	69278
+St. Charles	Maryland	38.6031	-76.9389	69208
+Galveston	Texas	29.3011	-94.7975	68612
+Bay City	Michigan	43.5945	-83.8889	68549
+Lima	Ohio	40.7429	-84.1053	68364
+Pontiac	Michigan	42.6519	-83.2902	67994
+Owensboro	Kentucky	37.7746	-87.1133	67825
+Blacksburg	Virginia	37.2294	-80.4142	67508
+Great Falls	Montana	47.5003	-111.3000	66558
+Longview	Washington	46.1387	-122.9370	66231
+San Luis Obispo	California	35.2832	-120.6586	65386
+Houma	Louisiana	29.5959	-90.7195	64592
+Port Charlotte	Florida	27.0000	-82.1057	64279
+Victoria	Texas	28.8050	-97.0033	64209
+Pocatello	Idaho	42.8713	-112.4447	63998
+Flagstaff	Arizona	35.1981	-111.6505	63993
+Bismarck	North Dakota	46.8083	-100.7833	63871
+Jackson	Tennessee	35.6149	-88.8139	63196
+Wenatchee	Washington	47.4236	-120.3090	62625
+Dubuque	Iowa	42.5009	-90.6645	62483
+Elmira	New York	42.0901	-76.8080	62376
+Conway	Arkansas	35.0913	-92.4513	61995
+Parkersburg	West Virginia	39.2667	-81.5616	61935
+Dothan	Alabama	31.2235	-85.3906	61741
+Anderson	South Carolina	34.5037	-82.6503	61558
+Marietta	Georgia	33.9556	-84.5432	61360
+Valdosta	Georgia	30.8329	-83.2786	61179
+Temple	Texas	31.1021	-97.3630	61161
+Kokomo	Indiana	40.4868	-86.1336	61121
+Casper	Wyoming	42.8666	-106.3125	60791
+Ithaca	New York	42.4406	-76.4969	59930
+Corvallis	Oregon	44.5724	-123.2800	59030
+Hattiesburg	Mississippi	31.3273	-89.2902	58874
+Morgantown	West Virginia	39.6298	-79.9561	58808
+Jonesboro	Arkansas	35.8426	-90.7042	58619
+Grand Forks	North Dakota	47.9253	-97.0325	58566
+Dalton	Georgia	34.7697	-84.9703	58557
+Benton Harbor	Michigan	42.1166	-86.4542	58382
+Rocky Mount	North Carolina	35.9380	-77.7908	58361
+Lewiston	Maine	44.1007	-70.2153	57688
+Kingsport	Tennessee	36.5483	-82.5619	57467
+Florence	South Carolina	34.1957	-79.7628	57438
+Carson City	Nevada	39.1638	-119.7664	57341
+Ames	Iowa	42.0539	-93.6197	57104
+Fairbanks	Alaska	64.8370	-147.7107	56993
+Manhattan	Kansas	39.1940	-96.5924	56949
+Port Arthur	Texas	29.8990	-93.9286	56945
+Williamsport	Pennsylvania	41.2411	-77.0014	56877
+Mankato	Minnesota	44.1636	-93.9992	56325
+Lake Havasu City	Arizona	34.4983	-114.3083	56133
+Springfield	Oregon	44.0519	-122.9780	56032
+Tulare	California	36.2070	-119.3441	55908
+Saratoga Springs	New York	43.0830	-73.7850	55793
+Jefferson City	Missouri	38.5766	-92.1733	55139
+Prescott	Arizona	34.5900	-112.4478	55038
+Fond du Lac	Wisconsin	43.7734	-88.4469	54299
+Winchester	Virginia	39.1787	-78.1666	53941
+Sheboygan	Wisconsin	43.7508	-87.7144	53705
+Eagle Pass	Texas	28.7110	-100.4893	53276
+Pine Bluff	Arkansas	34.2287	-92.0031	53217
+Wheeling	West Virginia	40.0643	-80.7211	52492
+Hilo	Hawaii	19.7000	-155.0900	52391
+Titusville	Florida	28.6123	-80.8078	52311
+Wailuku	Hawaii	20.8915	-156.5047	52148
+Albany	Oregon	44.6205	-123.0869	51376
+Sumter	South Carolina	33.9207	-80.3417	50868
+Biloxi	Mississippi	30.3958	-88.8853	50644
+Bangor	Maine	44.8012	-68.7783	50213
+Leesburg	Florida	28.8105	-81.8833	49574
+Myrtle Beach	South Carolina	33.6889	-78.8870	49357
+Lewiston	Idaho	46.4166	-117.0166	49289
+Lancaster	Ohio	39.7192	-82.6053	48829
+Palm Coast	Florida	29.5380	-81.2233	48577
+Salina	Kansas	38.8247	-97.6072	48031
+Stillwater	Oklahoma	36.1354	-97.0683	47667
+Goldsboro	North Carolina	35.3851	-77.9931	47602
+Twin Falls	Idaho	42.5610	-114.4606	47315
+Quincy	Illinois	39.9360	-91.4097	47108
+Brunswick	Georgia	31.1497	-81.4917	47085
+Pittsfield	Massachusetts	42.4482	-73.2598	46230
+Aiken	South Carolina	33.5495	-81.7206	46196
+Grants Pass	Oregon	42.4395	-123.3272	46189
+Enid	Oklahoma	36.3955	-97.8781	46138
+Roswell	New Mexico	33.3945	-104.5225	46096
+Newport	Rhode Island	41.4904	-71.3134	45968
+Danville	Virginia	36.5863	-79.3953	45894
+New Braunfels	Texas	29.6978	-98.1263	45840
+Jamestown	New York	42.0974	-79.2355	45756
+Grand Island	Nebraska	40.9223	-98.3580	45651
+Florence	Alabama	34.7997	-87.6772	45349
+Walla Walla	Washington	46.0652	-118.3419	45150
+El Centro	California	32.7924	-115.5580	45000
+Bozeman	Montana	45.6801	-111.0378	44921
+Richland	Washington	46.2918	-119.2911	44869
+Delano	California	35.7619	-119.2431	44757
+Casa Grande	Arizona	32.8794	-111.7566	44655
+Concord	New Hampshire	43.2081	-71.5380	44606
+Hutchinson	Kansas	38.0655	-97.9235	44477
+Richmond	Indiana	39.8289	-84.8903	44400
+Hot Springs	Arkansas	34.5040	-93.0550	44182
+Farmington	New Mexico	36.7542	-108.1861	43278
+Lufkin	Texas	31.3384	-94.7289	43264
+Traverse City	Michigan	44.7684	-85.6222	43189
+Klamath Falls	Oregon	42.2250	-121.7805	42978
+Harrisonburg	Virginia	38.4494	-78.8692	42538
+Eureka	California	40.8022	-124.1475	42398
+Meridian	Mississippi	32.3642	-88.7036	42290
+Kingman	Arizona	35.1899	-114.0522	42182
+Gadsden	Alabama	34.0145	-86.0066	41709
+Conroe	Texas	30.3121	-95.4559	41643
+Salisbury	North Carolina	35.6708	-80.4745	41352
+Paducah	Kentucky	37.0837	-88.6000	41317
+Cape Girardeau	Illinois	37.3058	-89.5181	40427
+Sherman	Texas	33.6360	-96.6086	40284
+Zanesville	Ohio	39.9403	-82.0133	40052
+Minot	North Dakota	48.2325	-101.2958	39439
+Muskogee	Oklahoma	35.7482	-95.3694	39295
+Helena	Montana	46.5927	-112.0353	38725
+Marion	Indiana	40.5583	-85.6592	38297
+Greenville	Mississippi	33.4104	-91.0617	38107
+Bullhead City	Arizona	35.1482	-114.5675	37989
+Beckley	West Virginia	37.7802	-81.1830	37836
+New Iberia	Louisiana	30.0036	-91.8183	37540
+Bristol	Virginia	36.6115	-82.1760	37443
+Bowling Green	Ohio	41.3747	-83.6514	37080
+Frankfort	Kentucky	38.2008	-84.8734	36688
+Del Rio	Texas	29.3629	-100.8964	36068
+Alamogordo	New Mexico	32.8995	-105.9597	36058
+Tupelo	Mississippi	34.2579	-88.7033	35956
+Hopkinsville	Kentucky	36.8655	-87.4886	35604
+Huntsville	Texas	30.7238	-95.5506	35590
+Cleburne	Texas	32.3515	-97.3925	35545
+Moorhead	Minnesota	46.8743	-96.7422	35528
+Orangeburg	South Carolina	33.4968	-80.8622	35472
+Bartlesville	Oklahoma	36.7472	-95.9806	34610
+West Bend	Wisconsin	43.4257	-88.1833	34530
+Coeur d'Alene	Idaho	47.6781	-116.7794	34514
+Butte	Montana	46.0039	-112.5338	34190
+Watertown	New York	43.9752	-75.9111	33821
+Clovis	New Mexico	34.4051	-103.2048	33792
+Oak Ridge	Tennessee	36.0107	-84.2697	33556
+Winona	Minnesota	44.0504	-91.6392	32897
+Lumberton	North Carolina	34.6272	-79.0119	32785
+Aberdeen	Washington	46.9749	-123.8144	32745
+Carbondale	Illinois	37.7268	-89.2202	32444
+Galesburg	Illinois	40.9478	-90.3711	32094
+Kalispell	Montana	48.1978	-114.3160	32062
+Coos Bay	Oregon	43.3666	-124.2166	31976
+La Grange	Georgia	33.0365	-85.0319	31776
+Beaufort	South Carolina	32.4322	-80.6895	31626
+Kearney	Nebraska	40.7007	-99.0811	31553
+Juneau	Alaska	58.3141	-134.4200	30711
+Nacogdoches	Texas	31.6037	-94.6553	30691
+Roseburg	Oregon	43.2184	-123.3561	30479
+Douglas	Arizona	31.3586	-109.5484	30185
+Burlington	Iowa	40.8079	-91.1128	29773
+Shawnee	Oklahoma	35.3428	-96.9338	29628
+Lake City	Florida	30.1897	-82.6397	29395
+Key West	Florida	24.5552	-81.7827	29377
+Plattsburgh	New York	44.6950	-73.4580	29238
+Gillette	Wyoming	44.2832	-105.5053	29113
+Emporia	Kansas	38.4042	-96.1814	29048
+Laurel	Mississippi	31.6974	-89.1393	28841
+Clarksburg	West Virginia	39.2833	-80.3369	28773
+Hobbs	New Mexico	32.7126	-103.1406	28738
+Garden City	Kansas	37.9752	-100.8641	28564
+Brainerd	Minnesota	46.3580	-94.2009	28187
+Ukiah	California	39.1542	-123.2109	27828
+Mason City	Iowa	43.1540	-93.2008	27802
+Cedar City	Utah	37.6774	-113.0611	27738
+Superior	Wisconsin	46.7212	-92.1039	27580
+Marinette	Wisconsin	45.1004	-87.6305	27169
+Paso Robles	California	35.6266	-120.6900	27157
+Laramie	Wyoming	41.3114	-105.5906	26934
+Ft. Dodge	Iowa	42.5068	-94.1803	26879
+Marquette	Michigan	46.5467	-87.4066	26591
+Aberdeen	South Dakota	45.4651	-98.4864	26041
+Ottumwa	Iowa	41.0129	-92.4148	25982
+Dodge City	Kansas	37.7601	-100.0182	25932
+Vicksburg	Mississippi	32.3525	-90.8777	25701
+Scottsbluff	Nebraska	41.8675	-103.6607	25475
+Faribault	Minnesota	44.2905	-93.2680	25376
+Carlsbad	New Mexico	32.4206	-104.2283	25302
+Ponca City	Oklahoma	36.7074	-97.0853	25273
+Kingsville	Texas	27.5160	-97.8558	25264
+North Platte	Nebraska	41.1363	-100.7705	25247
+Waterville	Maine	44.5519	-69.6458	25152
+Norfolk	Nebraska	42.0287	-97.4336	25030
+Ardmore	Oklahoma	34.1811	-97.1294	24960
+Enterprise	Alabama	31.3278	-85.8440	24205
+Big Spring	Texas	32.2432	-101.4752	24122
+Augusta	Maine	44.3106	-69.7800	24042
+Natchez	Mississippi	31.5548	-91.3875	23863
+Gallup	New Mexico	35.5241	-108.7340	23800
+Paragould	Arkansas	36.0571	-90.5029	23450
+Durango	Colorado	37.2756	-107.8800	23233
+Alice	Texas	27.7505	-98.0705	22655
+Dublin	Georgia	32.5375	-82.9183	22623
+El Dorado	Arkansas	33.2139	-92.6625	22416
+Brookings	South Dakota	44.3068	-96.7880	22411
+Crestview	Florida	30.7542	-86.5726	22403
+Madisonville	Kentucky	37.3327	-87.5022	22294
+Montrose	Colorado	38.4773	-107.8655	21789
+McAlester	Oklahoma	34.9330	-95.7660	21668
+Palatka	Florida	29.6477	-81.6513	21452
+Hays	Kansas	38.8794	-99.3222	21394
+Cumberland	Maryland	39.6532	-78.7628	21316
+Barstow	California	34.8990	-117.0219	21119
+Brownwood	Texas	31.7079	-98.9823	20988
+Arcata	California	40.8852	-124.0882	20905
+Poplar Bluff	Missouri	36.7602	-90.4027	20662
+Albert Lea	Minnesota	43.6478	-93.3687	20522
+Selma	Alabama	32.4076	-87.0212	20126
+Waycross	Georgia	31.2138	-82.3549	19824
+Elko	Nevada	40.8325	-115.7620	19252
+Kirksville	Missouri	40.1937	-92.5828	19193
+Centralia	Washington	46.7164	-122.9530	18880
+Bay City	Texas	28.9811	-95.9644	18663
+Willmar	Minnesota	45.1219	-95.0433	18473
+Alpena	Michigan	45.0616	-83.4327	18330
+Escanaba	Michigan	45.7457	-87.0644	17318
+Las Vegas	New Mexico	35.5970	-105.2225	16998
+Pendleton	Oregon	45.6726	-118.7875	16799
+Dickinson	North Dakota	46.8840	-102.7888	16399
+Hancock	Michigan	47.1273	-88.5808	16355
+Deming	New Mexico	32.2611	-107.7558	16298
+Iron Mountain	Michigan	45.8225	-88.0641	16183
+Hereford	Texas	34.8219	-102.3986	15675
+Yankton	South Dakota	42.8820	-97.3925	15580
+Lihue	Hawaii	21.9815	-159.3710	15536
+Boulder City	Nevada	35.9790	-114.8316	15479
+Scottsdale	Arizona	33.6923	-111.8680	15401
+International Falls	Minnesota	48.6011	-93.4108	15240
+Mitchell	South Dakota	43.7143	-98.0262	15205
+Jamestown	North Dakota	46.9060	-98.7030	15081
+La Grande	Oregon	45.3247	-118.0866	15004
+Bemidji	Minnesota	47.4736	-94.8802	14796
+Vernal	Utah	40.4554	-109.5280	14353
+Cadillac	Michigan	44.2512	-85.4136	14097
+Burley	Idaho	42.5358	-113.7919	14042
+Glenwood Springs	Colorado	39.5466	-107.3247	14004
+Pierre	South Dakota	44.3683	-100.3506	13879
+Dumas	Texas	35.8624	-101.9669	13629
+Williston	North Dakota	48.1568	-103.6280	13564
+Douglas	Georgia	31.5078	-82.8507	13441
+Palmer	Alaska	61.5997	-149.1127	13111
+Beeville	Texas	28.4060	-97.7508	13004
+Tomah	Wisconsin	43.9851	-90.5039	12997
+Woodward	Oklahoma	36.4334	-99.3977	12931
+Petoskey	Michigan	45.3738	-84.9552	12667
+Los Alamos	New Mexico	35.8911	-106.2977	12233
+Ontario	Oregon	44.0266	-116.9619	12187
+Coffeyville	Kansas	37.0381	-95.6263	11760
+Port Lavaca	Texas	28.6160	-96.6297	11743
+Vernon	Texas	34.1511	-99.2904	11660
+Crescent City	California	41.7565	-124.2005	11534
+Riverton	Wyoming	43.0282	-108.3950	11508
+Rhinelander	Wisconsin	45.6399	-89.4121	11483
+Green River	Wyoming	41.5146	-109.4650	11358
+Spencer	Iowa	43.1453	-95.1472	11203
+Guymon	Oklahoma	36.6858	-101.4795	11178
+Havre	Montana	48.5452	-109.6777	11154
+Safford	Arizona	32.8338	-109.7069	10668
+Price	Utah	39.5998	-110.8100	10281
+Astoria	Oregon	46.1884	-123.8300	10011
+Winslow	Arizona	35.0236	-110.6968	9931
+Kailua-Kona	Hawaii	19.6524	-155.9837	9870
+Winnemucca	Nevada	40.9734	-117.7347	9666
+Presque Isle	Maine	46.7934	-68.0022	9466
+Kodiak	Alaska	57.7900	-152.4070	9461
+Craig	Colorado	40.5173	-107.5504	9391
+Cody	Wyoming	44.5232	-109.0571	9161
+Trinidad	Colorado	37.1713	-104.5064	9156
+Ketchikan	Alaska	55.3562	-131.6640	9070
+Sitka	Alaska	57.0604	-135.3275	8931
+Virginia	Minnesota	47.5237	-92.5364	8709
+Socorro	New Mexico	34.0621	-106.8990	8668
+Crookston	Minnesota	47.7738	-96.6077	8653
+Lamar	Colorado	38.0865	-102.6194	8620
+Miles City	Montana	46.4089	-105.8400	8615
+Montpelier	Vermont	44.2600	-72.5758	8538
+Rawlins	Wyoming	41.7907	-107.2343	8533
+Wasilla	Alaska	61.5817	-149.4394	8521
+Pecos	Texas	31.4158	-103.4999	8372
+Alliance	Nebraska	42.1014	-102.8702	8344
+Tillamook	Oregon	45.4552	-123.8425	8145
+McCook	Nebraska	40.2056	-100.6262	8012
+London	Kentucky	37.1289	-84.0834	7844
+Devils Lake	North Dakota	48.1122	-98.8597	7813
+Fort Stockton	Texas	30.8917	-102.8850	7721
+Richfield	Utah	38.7725	-112.0833	7621
+Kenai	Alaska	60.5544	-151.2580	7610
+Gunnison	Colorado	38.5448	-106.9283	7324
+Truth or Consequences	New Mexico	33.1336	-107.2529	7121
+Dalhart	Texas	36.0608	-102.5186	7088
+Raton	New Mexico	36.8974	-104.4399	7073
+Ironwood	Michigan	46.4558	-90.1594	7064
+Needles	California	34.8484	-114.6134	6974
+Powell	Wyoming	44.7587	-108.7584	6895
+Lander	Wyoming	42.8330	-108.7326	6821
+Houlton	Maine	46.1255	-67.8397	6703
+Alpine	Texas	30.3607	-103.6650	6587
+Homer	Alaska	59.6429	-151.5483	6560
+Childress	Texas	34.4249	-100.2139	6557
+Sidney	Nebraska	41.1398	-102.9783	6492
+Douglas	Wyoming	42.7565	-105.3845	6298
+Bethel	Alaska	60.7933	-161.7558	6228
+Bar Harbor	Maine	44.3879	-68.2044	6090
+Glendive	Montana	47.1086	-104.7105	5856
+Chadron	Nebraska	42.8279	-103.0031	5798
+Moab	Utah	38.5737	-109.5492	5730
+Falfurrias	Texas	27.2269	-98.1449	5349
+Polson	Montana	47.6880	-114.1567	5326
+Tucumcari	New Mexico	35.1698	-103.7255	5313
+Willcox	Arizona	32.2532	-109.8314	5146
+Nephi	Utah	39.7103	-111.8355	5117
+Bishop	California	37.3640	-118.3941	4827
+Dillon	Montana	45.2157	-112.6840	4463
+Hardin	Montana	45.7318	-107.6125	4448
+Goodland	Kansas	39.3485	-101.7110	4378
+Utqiaġvik	Alaska	71.2906	-156.7886	4336
+Ely	Nevada	39.2470	-114.8877	4216
+Valdez	Alaska	61.1360	-146.3483	4036
+Mt. Shasta	California	41.3104	-122.3094	3855
+Ely	Minnesota	47.9004	-91.8257	3731
+Salmon	Idaho	45.1757	-113.8950	3601
+Unalaska	Alaska	53.8686	-166.5316	3571
+Nome	Alaska	64.5061	-165.4064	3485
+Thermopolis	Wyoming	43.6460	-108.2147	3445
+Kanab	Utah	37.0474	-112.5255	3442
+Kitty Hawk	North Carolina	36.0773	-75.7047	3413
+Calais	Maine	45.1660	-67.2424	3306
+Tonopah	Nevada	38.0670	-117.2290	3261
+Glasgow	Montana	48.1840	-106.6353	3240
+Kotzebue	Alaska	66.8987	-162.5966	3194
+Mobridge	South Dakota	45.5401	-100.4347	3156
+Montpelier	Idaho	42.3226	-111.2969	2997
+Seward	Alaska	60.1262	-149.4700	2900
+Lead	South Dakota	44.3508	-103.7658	2874
+Parowan	Utah	37.8425	-112.8272	2571
+Prudhoe Bay	Alaska	70.2922	-148.6694	2500
+Dillingham	Alaska	59.0566	-158.4803	2488
+White Sulphur Springs	West Virginia	37.7939	-80.3035	2407
+Apalachicola	Florida	29.7256	-84.9925	2284
+Cordova	Alaska	60.5428	-145.7575	2257
+Van Horn	Texas	31.0425	-104.8322	2175
+Gila Bend	Arizona	32.9504	-112.7247	2088
+Wrangell	Alaska	56.4713	-132.3716	2070
+Monticello	Utah	37.8718	-109.3422	1864
+Denali Park	Alaska	63.7331	-148.9141	1826
+John Day	Oregon	44.4165	-118.9520	1573
+Tombstone	Arizona	31.7131	-110.0669	1570
+Grand Canyon	Arizona	36.0548	-112.1386	1550
+Hooper Bay	Alaska	61.5311	-166.0966	1079
+Talkeetna	Alaska	62.3238	-150.1094	1078
+Wallace	Idaho	47.4742	-115.9269	1028
+Kotlit	Alaska	63.0346	-163.5533	1002
+Skagway	Alaska	59.4583	-135.3139	955
+Fort Yukon	Alaska	66.5647	-145.2738	833
+Selawik	Alaska	66.6039	-160.0094	832
+Mountain Village	Alaska	62.0855	-163.7290	755
+Unalakleet	Alaska	63.8734	-160.7881	741
+Gambell	Alaska	63.7797	-171.7311	681
+Sand Point	Alaska	55.3397	-160.4972	667
+Big Delta	Alaska	64.1525	-145.8422	591
+Mendocino	California	39.3078	-123.7994	548
+Aniak	Alaska	61.5787	-159.5222	501
+Galena	Alaska	64.7333	-156.9270	500
+Point Hope	Alaska	68.3477	-166.8080	461
+Hydaburg	Alaska	55.2140	-132.8006	382
+Kivalina	Alaska	67.7315	-164.4859	374
+Hoonah	Alaska	58.1154	-135.4386	361
+Tununak	Alaska	60.5855	-165.2558	352
+Tanana	Alaska	65.1719	-152.0788	308
+King Salmon	Alaska	58.6887	-156.6614	292
+Ambler	Alaska	67.0865	-157.8514	258
+Koyuk	Alaska	64.9403	-161.1575	254
+Shishmaref	Alaska	66.2570	-166.0719	254
+Quinhagak	Alaska	59.7492	-161.9158	250
+Togiak	Alaska	59.0704	-160.3783	236
+Goodnews Bay	Alaska	59.1210	-161.5871	230
+Cantwell	Alaska	63.3916	-148.9508	222
+Atqasuk	Alaska	70.4694	-157.3958	201
+Cold Bay	Alaska	55.2000	-162.7151	200
+Kaltag	Alaska	64.3272	-158.7219	190
+Whittier	Alaska	60.7842	-148.6777	177
+Wainwright	Alaska	70.6369	-160.0383	174
+Newhalen	Alaska	59.7203	-154.8972	160
+Kobuk	Alaska	66.9072	-156.8810	151
+McGrath	Alaska	62.9568	-155.5958	138
+Tanacross	Alaska	63.3857	-143.3464	136
+Gulkana	Alaska	62.2714	-145.3822	119
+Chignik	Alaska	56.2957	-158.4022	118
+Perryville	Alaska	55.9186	-159.1511	113
+Yakutat	Alaska	59.5473	-139.7272	109
+Eagle	Alaska	64.7880	-141.2000	104
+Port Heiden	Alaska	56.9491	-158.6269	102
+Kaktovik	Alaska	70.0879	-143.6029	101
+Koyukuk	Alaska	64.8803	-157.7009	101
+Circle	Alaska	65.8259	-144.0605	100
+Emmonak	Alaska	62.7770	-164.5230	100
+Nyac	Alaska	61.0041	-159.9405	100
+Mekoryuk	Alaska	60.3886	-166.1899	99
+Wales	Alaska	65.6096	-168.0875	99
+Allakaket	Alaska	66.5655	-152.6455	97
+Karluk	Alaska	57.5723	-154.4550	96
+Teller	Alaska	65.2636	-166.3608	83
+Hughes	Alaska	66.0492	-154.2550	78
+Nenana	Alaska	64.5638	-149.0930	75
+Pilot Point	Alaska	57.5646	-157.5691	68
+Atka	Alaska	52.1965	-174.2005	61
+False Pass	Alaska	54.8512	-163.4150	35
+Lake Minchumina	Alaska	63.8828	-152.3122	32
+Red Devil	Alaska	61.7610	-157.3125	25
+Nikolski	Alaska	52.9384	-168.8677	18
+Wiseman	Alaska	67.4105	-150.1075	14
+Montana	Alaska	62.0797	-150.0728	10

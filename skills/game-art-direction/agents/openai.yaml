@@ -1,0 +1,4 @@
+interface:
+  display_name: "Game Art Direction"
+  short_description: "Consistent generated art for The Administration"
+  default_prompt: "Use $game-art-direction to create a scene or ambient-art generation brief for The Administration."

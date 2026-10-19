@@ -1,0 +1,70 @@
+[
+  {
+    "path": ".",
+    "head_preserved": true,
+    "canonical_integration": true
+  },
+  {
+    "path": "~/.admin-app-wt/casting-pin-pilot",
+    "head_preserved": true,
+    "changed_path_set_preserved": true,
+    "working_blobs_verified": 0,
+    "snapshot": "beb4e4b4dcf562398f511aaff8394de5e380df5d"
+  },
+  {
+    "path": "~/.admin-app-wt/coercion-followups",
+    "head_preserved": true,
+    "changed_path_set_preserved": true,
+    "working_blobs_verified": 0,
+    "snapshot": "0837ea4eae02f3b43722c28c2d745985562e73f9"
+  },
+  {
+    "path": "~/.admin-app-wt/electorate-surfaces",
+    "head_preserved": true,
+    "changed_path_set_preserved": true,
+    "working_blobs_verified": 0,
+    "snapshot": "14ce11a746892904e7a5f48ff2d312a5a147b9e6"
+  },
+  {
+    "path": "~/.admin-app-wt/regime-change",
+    "head_preserved": true,
+    "changed_path_set_preserved": true,
+    "working_blobs_verified": 0,
+    "snapshot": "ccd9707577e7cd34c36ed1fdc0c7dfd347c4865b"
+  },
+  {
+    "path": "~/.admin-app-wt/registry-r2",
+    "head_preserved": true,
+    "changed_path_set_preserved": true,
+    "working_blobs_verified": 0,
+    "snapshot": "09abe6ccaca8aa980afd99b2f45d82b504edb288"
+  },
+  {
+    "path": "~/.admin-app-wt/scenario-cost-model",
+    "head_preserved": true,
+    "changed_path_set_preserved": true,
+    "working_blobs_verified": 92,
+    "snapshot": "f2763efd82fea4ea0257c88d13b1e5ed51911040"
+  },
+  {
+    "path": "~/.codex/worktrees/player-visual-audit/admin-app",
+    "head_preserved": true,
+    "changed_path_set_preserved": true,
+    "working_blobs_verified": 1551,
+    "snapshot": "a68a5216f537a264a895238290e6a224e1c77376"
+  },
+  {
+    "path": "~/.codex/worktrees/player-visual-overhaul/admin-app",
+    "head_preserved": true,
+    "changed_path_set_preserved": true,
+    "working_blobs_verified": 560,
+    "snapshot": "b3b942ebe250eee6ee39f61bd41b5708db6b1b89"
+  },
+  {
+    "path": ".claude/worktrees/agent-acfa663d2ad5b81fa",
+    "head_preserved": true,
+    "changed_path_set_preserved": true,
+    "working_blobs_verified": 0,
+    "snapshot": "48b17f321b96f44cab11f4de27ceb58fd5c40dd4"
+  }
+]

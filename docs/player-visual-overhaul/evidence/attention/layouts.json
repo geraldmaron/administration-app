@@ -1,0 +1,986 @@
+{
+  "records": [
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 320,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 55,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 56,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 77,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 77,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 307.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 320,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 55,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 56,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 77,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 77,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 307.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 390,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 55,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 56,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 56,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 77,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 286.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 390,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 55,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 56,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 56,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 77,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 286.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 768,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 44,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 221.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 768,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 44,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 221.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 845,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 44,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 221.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 845,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 44,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 221.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 1280,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 44,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 221.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 1280,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 44,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 221.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 1440,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 44,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 221.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 1440,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 44,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 221.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 1920,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 44,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 221.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "width": 1920,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [
+          {
+            "height": 44,
+            "text": "Tighten border controlsReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Protect federal sitesReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Plan an offshore lease saleReady for signatureReview →"
+          },
+          {
+            "height": 45,
+            "text": "Turn federal purchasing to clean powerReady for signatureReview →"
+          }
+        ],
+        "priorities": [],
+        "frame": [
+          {
+            "height": 221.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": []
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 320,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 75,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 329.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 117.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 320,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 75,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 329.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 117.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 390,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 75,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 309.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 117.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 390,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 75,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 309.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 117.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 768,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 49,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 215.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 91.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 768,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 49,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 215.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 91.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 845,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 49,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 215.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 91.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 845,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 49,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 215.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 91.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 1280,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 49,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 170.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 91.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 1280,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 49,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 170.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 91.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 1440,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 49,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 170.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 91.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 1440,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 49,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 170.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 91.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 1920,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 49,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 170.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 91.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "width": 1920,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "standing": [],
+        "priorities": [
+          {
+            "height": 49,
+            "text": "5 Vacant seatsNo nominee before the SenateReview appointments →"
+          }
+        ],
+        "frame": [
+          {
+            "height": 170.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          },
+          {
+            "height": 91.796875,
+            "bg": "rgba(0, 0, 0, 0)",
+            "radius": "0px"
+          }
+        ],
+        "queue": [
+          "0px"
+        ]
+      },
+      "axe": []
+    }
+  ],
+  "errors": [],
+  "journeys": [
+    {
+      "fixture": "washington-chairs",
+      "path": "/nation/policy",
+      "href": "/nation/policy?view=orders#order-board",
+      "keyboard": "Enter",
+      "back": true
+    },
+    {
+      "fixture": "washington-chairs",
+      "path": "/washington/oversight",
+      "keyboard": "Enter",
+      "back": true
+    }
+  ]
+}

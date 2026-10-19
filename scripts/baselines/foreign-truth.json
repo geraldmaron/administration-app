@@ -1,0 +1,6 @@
+{
+  "$comment": "\"engine:governments-read-at-founding\" is how many governments outside any standing body with the United States the opening campaign reads at founding (it may fall, not rise); reading a compact partner does not move it. Every other key is a file that prints a foreign scalar outside a fog check, with how many prints it is forgiven. Written by `node scripts/verify-foreign-truth.mjs --update-baseline`; it may only shrink.",
+  "entries": {
+    "engine:governments-read-at-founding": 104
+  }
+}

@@ -1,0 +1,138 @@
+/* Aligned rows and identity lists shared by the Congress and courts workspaces. */
+@layer rooms {
+  .data-table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-ground-base);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: var(--space-sm) var(--space-md);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  .data-table thead th {
+    background: var(--color-ground-raised);
+    color: var(--color-text-secondary);
+    font-weight: var(--weight-strong);
+  }
+
+  .data-table tbody th {
+    font-weight: var(--weight-medium);
+  }
+
+  .data-table :is(th, td).data-table__num {
+    text-align: end;
+  }
+
+  .data-table__sub {
+    display: block;
+    color: var(--color-text-tertiary);
+    font-size: var(--size-caption);
+    font-weight: var(--weight-regular);
+  }
+
+  .data-table__list {
+    margin: var(--space-xs) 0 0;
+    padding-inline-start: var(--space-lg);
+  }
+
+  .data-table tfoot td,
+  .data-table tfoot th {
+    font-weight: var(--weight-strong);
+  }
+
+  @container (max-inline-size: 44rem) {
+    .data-table--stack thead {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+
+    .data-table--stack,
+    .data-table--stack tbody,
+    .data-table--stack tr,
+    .data-table--stack th,
+    .data-table--stack td {
+      display: block;
+    }
+
+    .data-table--stack tr {
+      padding-block: var(--space-sm);
+      border-block-end: 1px solid var(--color-border-strong);
+    }
+
+    .data-table--stack th,
+    .data-table--stack td {
+      border: 0;
+      padding-block: var(--space-2xs);
+    }
+
+    .data-table--stack :is(td, th)[data-label] {
+      display: grid;
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      column-gap: var(--space-sm);
+      align-items: start;
+    }
+
+    .data-table--stack :is(td, th)[data-label] > * {
+      grid-column: 2;
+    }
+
+    .data-table--stack :is(td, th)[data-label]::before {
+      content: attr(data-label);
+      grid-column: 1;
+      color: var(--color-text-tertiary);
+      font-size: var(--size-caption);
+      font-weight: var(--weight-regular);
+    }
+
+  }
+
+  .identity {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-md);
+    margin: 0;
+  }
+
+  .identity dt {
+    color: var(--color-text-tertiary);
+    font-size: var(--size-caption);
+  }
+
+  .identity dd {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: var(--size-small);
+    overflow-wrap: anywhere;
+  }
+
+  .cell-quiet {
+    color: var(--color-text-tertiary);
+  }
+
+  .cell-cost {
+    font-weight: var(--weight-strong);
+  }
+
+  .cell-list {
+    display: grid;
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* A sortable table and the select that stands in for its headers when it stacks. */
+  .hill-sortable { container-type: inline-size; display: grid; gap: var(--space-sm); }
+}

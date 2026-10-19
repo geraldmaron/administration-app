@@ -1,0 +1,75 @@
+/* shadcn/ui manual Vite integration. Source-owned components use the existing
+   semantic palette so contrast/vision preferences remain authoritative. */
+@import "tailwindcss/theme.css" layer(tokens);
+@import "tailwindcss/utilities.css" layer(components);
+@source "./**/*.{ts,tsx}";
+@source "../../../apps/web/src/**/*.{ts,tsx}";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+@layer tokens {
+  :root {
+    --background: var(--color-ground-base);
+    --foreground: var(--color-text-primary);
+    --card: var(--color-ground-overlay);
+    --card-foreground: var(--color-text-primary);
+    --popover: var(--color-ground-overlay);
+    --popover-foreground: var(--color-text-primary);
+    --primary: var(--color-blue-fill);
+    --primary-foreground: var(--color-white);
+    --secondary: var(--color-ground-raised);
+    --secondary-foreground: var(--color-text-primary);
+    --muted: var(--color-ground-sunken);
+    --muted-foreground: var(--color-text-secondary);
+    --accent: var(--color-blue-wash);
+    --accent-foreground: var(--color-text-primary);
+    --destructive: var(--color-red-fill);
+    --destructive-foreground: var(--color-white);
+    --border: var(--color-border-subtle);
+    --input: var(--color-border-strong);
+    --ring: var(--color-focus);
+  }
+}
+@layer components {
+  .ui-evidence-panel { display: grid; gap: var(--space-lg); min-inline-size: 0; }
+  .ui-evidence-table { inline-size: 100%; border-collapse: collapse; font-size: var(--size-label); font-variant-numeric: tabular-nums; }
+  .ui-evidence-table caption { text-align: start; font-weight: var(--weight-strong); padding-block-end: var(--space-md); }
+  .ui-evidence-table th, .ui-evidence-table td { padding: var(--space-sm); border-block-end: 1px solid var(--color-border-subtle); text-align: start; overflow-wrap: anywhere; }
+  .ui-evidence-table td { text-align: end; }
+  .ui-card { min-inline-size: 0; border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--card); color: var(--card-foreground); box-shadow: var(--shadow-rest); }
+  .ui-card__header { display: flex; flex-direction: column; gap: var(--space-sm); padding: var(--space-lg); }
+  .ui-card__title { margin: 0; font-size: var(--size-title); font-weight: var(--weight-strong); line-height: 1.25; }
+  .ui-card__description { margin: 0; color: var(--color-text-secondary); font-size: var(--size-label); }
+  .ui-card__content, .ui-card__footer { padding: 0 var(--space-lg) var(--space-lg); }
+  .ui-card__footer { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-sm); }
+  .ui-tooltip { max-inline-size: min(20rem, calc(100vw - 2rem)); border: 1px solid var(--color-border-subtle); background: var(--popover); color: var(--popover-foreground); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-chip); box-shadow: var(--shadow-float); font-size: var(--size-label); }
+  .ui-toggle { grid-template-columns: auto 1fr; align-items: center; gap: var(--space-sm); }
+  .ui-toggle > .ui-field__hint { grid-column: 2; }
+  .ui-switch { display: inline-flex; align-items: center; flex: none; inline-size: 44px; block-size: 28px; padding: 3px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-pill); background: var(--color-ground-sunken); cursor: pointer; }
+  .ui-switch[data-state="checked"] { background: var(--color-blue-fill); border-color: var(--color-blue-fill); }
+  .ui-switch__thumb { display: block; inline-size: 20px; block-size: 20px; border-radius: var(--radius-pill); background: var(--color-white); box-shadow: var(--shadow-rest-strong); transition: transform var(--duration-fast) var(--ease-standard); }
+  .ui-switch__thumb[data-state="checked"] { transform: translateX(16px); }
+  .ui-tabs__panel[data-state="inactive"] { display: none; }
+}
+@layer states {
+  @media (prefers-reduced-motion: reduce) { .ui-switch__thumb { transition: none; } }
+}

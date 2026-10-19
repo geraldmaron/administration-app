@@ -1,0 +1,396 @@
+/* Flat drawn readings shared by every screen: the bar, a share split, labeled
+   bar rows, a countdown, the steps of a band on a table's columns and the
+   stages of a process. Color means one thing here: good, watch or bad is the
+   President's verdict; reading is plain data; neutral is a quiet gray. */
+@layer components {
+  .ui-bar {
+    --bar-ink: var(--color-blue);
+    position: relative;
+    display: block;
+    inline-size: 100%;
+    min-inline-size: 3rem;
+    block-size: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--color-border-subtle);
+  }
+
+  .ui-bar[data-slim="true"] { block-size: 6px; }
+  .ui-bar[data-tone="neutral"] { --bar-ink: var(--color-text-secondary); }
+  .ui-bar[data-tone="good"] { --bar-ink: var(--status-success-ink); }
+  .ui-bar[data-tone="watch"] { --bar-ink: var(--status-warning-mark); }
+  .ui-bar[data-tone="bad"] { --bar-ink: var(--status-danger-ink); }
+
+  .ui-bar__fill {
+    position: absolute;
+    inset-block: 0;
+    border-radius: var(--radius-pill);
+    background: var(--bar-ink);
+  }
+
+  .ui-bar__fill[data-span="move"] { border-radius: 0; }
+  .ui-bar__fill[data-span="base"] { background: color-mix(in srgb, var(--bar-ink) 38%, var(--color-border-subtle)); }
+  .ui-bar__fill[data-span="faint"] { opacity: 0.35; }
+
+  .ui-bar[data-mode="shift"] .ui-bar__fill { border-radius: 0; }
+
+  /* A level's reading is a tick on a faint run, so the eye lands on where it sits. */
+  .ui-bar__tick {
+    position: absolute;
+    inset-block: -3px;
+    inline-size: 3px;
+    margin-inline-start: -1px;
+    border-radius: 1px;
+    background: var(--bar-ink);
+  }
+
+  .ui-bar__mark {
+    position: absolute;
+    inset-block: -3px;
+    inline-size: 2px;
+    margin-inline-start: -1px;
+    border-radius: 1px;
+    background: var(--color-text-primary);
+  }
+
+  .ui-bar__dot {
+    position: absolute;
+    inset-block-start: 50%;
+    inline-size: 12px;
+    block-size: 12px;
+    margin-inline-start: -6px;
+    margin-block-start: -6px;
+    border: 2px solid var(--bar-ink);
+    border-radius: 50%;
+    background: var(--color-ground-base);
+  }
+
+  .ui-bar__dot[data-end="end"] { background: var(--bar-ink); }
+
+  .ui-share {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+  }
+
+  .ui-share__bar {
+    display: flex;
+    gap: 2px;
+    block-size: 14px;
+    border-radius: var(--radius-control);
+    overflow: hidden;
+  }
+
+  .ui-share__part {
+    min-inline-size: 2px;
+    background: var(--share-ink);
+  }
+
+  .ui-share__part,
+  .ui-share__key {
+    --share-ink: var(--color-blue);
+  }
+
+  .ui-share [data-shade="1"] { --share-ink: color-mix(in srgb, var(--color-blue) 78%, var(--color-ground-base)); }
+  .ui-share [data-shade="2"] { --share-ink: color-mix(in srgb, var(--color-blue) 58%, var(--color-ground-base)); }
+  .ui-share [data-shade="3"] { --share-ink: color-mix(in srgb, var(--color-blue) 40%, var(--color-ground-base)); }
+  .ui-share [data-shade="4"] { --share-ink: color-mix(in srgb, var(--color-blue) 24%, var(--color-ground-base)); }
+
+  .ui-share__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-lg);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-share__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-inline-size: 0;
+  }
+
+  .ui-share__key {
+    flex: none;
+    inline-size: 10px;
+    block-size: 10px;
+    border-radius: 2px;
+    background: var(--share-ink);
+  }
+
+  .ui-share__figure {
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-medium);
+  }
+
+  /* Labeled bars: one grid for the list, each row on its columns, so label, bar and figure line up. */
+  .ui-bar-rows {
+    --bar-label: minmax(7rem, 16rem);
+    display: grid;
+    grid-template-columns: var(--bar-label) minmax(4rem, 1fr) auto;
+    column-gap: var(--space-md);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-bar-rows[data-framed="true"] {
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .ui-bar-row {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    align-items: center;
+    min-block-size: 2.25rem;
+    padding-block: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .ui-bar-rows[data-framed="true"] .ui-bar-row { padding-inline: var(--space-md); padding-block: var(--space-sm); }
+  .ui-bar-rows[data-framed="true"] .ui-bar-row__label { color: var(--color-text-primary); font-weight: var(--weight-medium); }
+  .ui-bar-rows[data-framed="true"] .ui-bar-row__figure { font-size: var(--size-title); }
+  .ui-bar-rows > .ui-bar-row:last-child { border-block-end: 0; }
+
+  .ui-bar-row__label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .ui-bar-row__text { min-inline-size: 0; }
+
+  .ui-bar-row__text > small {
+    display: block;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    font-weight: 400;
+  }
+
+  .ui-bar-row__figure {
+    color: var(--color-text-primary);
+    font-weight: var(--weight-strong);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  /* A narrow list: label and figure share the first line, the bar runs full width under them. */
+  @media (max-width: 36em) {
+    .ui-bar-rows { grid-template-columns: minmax(0, 1fr) auto; }
+
+    .ui-bar-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      row-gap: var(--space-2xs);
+    }
+
+    .ui-bar-row > .ui-bar { grid-column: 1 / -1; grid-row: 2; }
+  }
+
+  /* Countdown: the figure big beside a draining track, the date under it. */
+  .ui-countdown {
+    display: grid;
+    grid-template-columns: auto minmax(3rem, 1fr);
+    gap: var(--space-2xs) var(--space-sm);
+    align-items: center;
+    min-inline-size: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ui-countdown__figure {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: baseline;
+    white-space: nowrap;
+  }
+
+  .ui-countdown[data-open="true"] .ui-countdown__figure {
+    align-items: center;
+    color: var(--color-text-secondary);
+  }
+
+  .ui-countdown__num {
+    color: var(--valence-ink);
+    font-family: var(--font-display);
+    font-size: var(--size-heading);
+    font-weight: var(--weight-strong);
+    line-height: 1;
+  }
+
+  .ui-countdown[data-valence="neutral"] .ui-countdown__num { color: var(--color-text-primary); }
+
+  .ui-countdown__unit {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .ui-countdown__due {
+    display: inline-flex;
+    grid-column: 1 / -1;
+    gap: var(--space-2xs);
+    align-items: center;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    white-space: nowrap;
+  }
+
+  /* Steps as a row: label, track and word on the columns of the group, so a stack of them lines up. */
+  .ui-steps-table {
+    display: grid;
+    grid-template-columns: minmax(7.5rem, 10rem) minmax(5rem, 1fr) auto;
+    column-gap: var(--space-md);
+    min-inline-size: 0;
+  }
+
+  .ui-steps[data-layout="row"] {
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    gap: var(--space-xs) var(--space-md);
+    min-block-size: 2.5rem;
+    padding-block: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .ui-steps-table > .ui-steps[data-layout="row"]:last-child { border-block-end: 0; }
+
+  .ui-steps[data-layout="row"] .ui-steps__label {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+    grid-column: 1;
+    grid-row: 1;
+    min-inline-size: 0;
+  }
+
+  .ui-steps[data-layout="row"] .ui-steps__track {
+    grid-column: 2;
+    grid-row: 1;
+    min-inline-size: 0;
+  }
+
+  .ui-steps[data-layout="row"] .ui-steps__step { block-size: 6px; }
+
+  .ui-steps[data-layout="row"] .ui-steps__word {
+    grid-column: 3;
+    grid-row: 1;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .ui-steps[data-layout="row"] .ui-steps__caption {
+    grid-row: 2;
+    font-size: var(--size-label);
+  }
+
+  .ui-steps[data-tone="neutral"] { --steps-ink: var(--color-text-secondary); }
+
+  /* A 390px phone gives the row about 320px: the track drops under label and word. */
+  @media (max-width: 30em) {
+    .ui-steps-table { grid-template-columns: minmax(0, 1fr) auto; }
+
+    .ui-steps[data-layout="row"] .ui-steps__track {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .ui-steps[data-layout="row"] .ui-steps__caption { grid-row: 3; }
+  }
+
+  /* Stages: marks on one rule, the passed ones joined and filled. */
+  .ui-stages-frame { container-type: inline-size; }
+
+  .ui-stages {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ui-stages__step {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: var(--space-2xs);
+    padding-inline: var(--space-2xs);
+    color: var(--color-text-tertiary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+    text-align: center;
+  }
+
+  /* The rule runs from the middle of the step before to the middle of this one. */
+  .ui-stages__step::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 11px;
+    inset-inline: -50% 50%;
+    block-size: 2px;
+    background: var(--color-border-subtle);
+  }
+
+  .ui-stages__step:first-child::before { display: none; }
+  .ui-stages__step[data-state="done"]::before,
+  .ui-stages__step[data-state="now"]::before { background: var(--status-success-ink); }
+  .ui-stages__step[data-state="ended"]::before { background: var(--status-danger-ink); }
+
+  .ui-stages__mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 24px;
+    block-size: 24px;
+    border: 2px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background: var(--color-ground-base);
+  }
+
+  .ui-stages__word { min-inline-size: 0; overflow-wrap: break-word; }
+
+  .ui-stages__note {
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @container (max-width: 30rem) {
+    .ui-stages { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); gap: var(--space-sm); }
+    .ui-stages__step {
+      grid-template-columns: 24px minmax(0, 1fr);
+      justify-items: start;
+      align-items: center;
+      column-gap: var(--space-sm);
+      padding: 0;
+      text-align: start;
+    }
+    .ui-stages__step::before {
+      inset-inline: 11px auto;
+      inset-block: calc(-1 * var(--space-sm)) auto;
+      inline-size: 2px;
+      block-size: var(--space-sm);
+    }
+    .ui-stages__note { grid-column: 2; }
+  }
+
+  .ui-stages__step[data-state="done"] { color: var(--status-success-ink); }
+  .ui-stages__step[data-state="done"] .ui-stages__mark { border-color: var(--status-success-ink); background: var(--status-success-fill); }
+  .ui-stages__step[data-state="now"] { color: var(--color-text-primary); font-weight: var(--weight-strong); }
+  .ui-stages__step[data-state="now"] .ui-stages__mark { border-color: var(--color-gold-deep); color: var(--color-gold-deep); box-shadow: 0 0 0 3px var(--color-gold-wash); }
+  .ui-stages__step[data-state="ended"] { color: var(--status-danger-ink); }
+  .ui-stages__step[data-state="ended"] .ui-stages__mark { border-color: var(--status-danger-ink); background: var(--status-danger-fill); }
+
+  .ui-stages__step[data-state="done"] .ui-stages__note,
+  .ui-stages__step[data-state="now"] .ui-stages__note { color: var(--color-text-secondary); font-weight: 400; }
+}

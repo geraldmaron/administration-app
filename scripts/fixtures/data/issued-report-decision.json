@@ -1,0 +1,144 @@
+[
+  {
+    "id": "issued-warning-private-demarche",
+    "class": "foreign-crisis",
+    "severity": "serious",
+    "dilemmaShape": "credulity-bet",
+    "subject": "An issued warning puts {{reportTarget}} on the desk",
+    "cast": {
+      "pick": "collectionReport",
+      "bind": "target"
+    },
+    "locus": {
+      "site": "capital",
+      "ground": "home",
+      "descriptor": "the secure briefing room where the issued report is on the desk"
+    },
+    "conditions": [
+      {
+        "kind": "collectionReport",
+        "targetKind": "foreign-nation",
+        "topic": "external-intent",
+        "confidence": "moderate",
+        "shared": false
+      }
+    ],
+    "weight": 1,
+    "particulars": [
+      {
+        "label": "Report age",
+        "value": "{{reportAgeDays}} days"
+      },
+      {
+        "label": "Findings",
+        "value": "{{reportFindingCount}}"
+      },
+      {
+        "label": "Confidence",
+        "value": "{{reportConfidence}}"
+      },
+      {
+        "label": "Source status",
+        "value": "{{reportExposure}}"
+      }
+    ],
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "foreign"
+        },
+        "text": "The Secretary of State has a channel to {{reportTarget}} open tonight. The issued finding says: {{reportFinding}}"
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "intelligence"
+        },
+        "text": "The source is {{reportSource}}. Confidence is {{reportConfidence}}, and the recorded gaps are {{reportGaps}}. I can task another collection effort; I cannot promise its answer in time."
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "foreign"
+        },
+        "text": "A private warning reaches their government now. Recalling the ambassador would make the protest unmistakable and leave us with less room to test their answer."
+      }
+    ],
+    "replies": [
+      {
+        "id": "seek-another-assessment",
+        "tone": "principled",
+        "text": "Task intelligence analysts to seek another assessment of the reported move before an overt response.",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "remembered": "The President tasked another collection effort against the report target before deciding on an overt response.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "intelligence"
+            },
+            "text": "The tasking goes out tonight. The report on the desk remains the only answer we have while another source is sought."
+          },
+          "collection": {
+            "action": "task",
+            "element": "IC-DIA",
+            "discipline": "all-source",
+            "question": "What independent reporting bears on the reported foreign move?"
+          }
+        }
+      },
+      {
+        "id": "make-a-diplomatic-demarche",
+        "tone": "firm",
+        "text": "Deliver a private diplomatic warning to {{reportTarget}} about the reported move.",
+        "commitment": {
+          "kind": "instrument",
+          "instrument": "diplomatic",
+          "rung": 1,
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "foreign"
+            },
+            "text": "The Secretary of State can carry the warning privately. Their answer may come back faster than another assessment, but it will be shaped by knowing we asked."
+          }
+        }
+      },
+      {
+        "id": "recall-ambassador",
+        "tone": "firm",
+        "text": "Recall the ambassador from {{reportTarget}} over the reported move, despite the loss of trust.",
+        "commitment": {
+          "kind": "instrument",
+          "instrument": "diplomatic",
+          "rung": 3
+        }
+      }
+    ],
+    "topics": [
+      "intelligence",
+      "diplomacy"
+    ],
+    "context": {
+      "standing": "An issued intelligence report has reached the President through the regular secure briefing. It records a finding about {{reportTarget}}, with its source and uncertainty attached.",
+      "precedent": "A private warning can make another government pause without making the underlying intelligence public. It can also tell that government what this administration has noticed.",
+      "pressures": [
+        {
+          "source": "cabinet",
+          "want": "The Secretary of State wants a private warning while a diplomatic channel can still carry it."
+        },
+        {
+          "source": "cabinet",
+          "want": "The intelligence community wants the source and the report gaps weighed before an overt claim is made."
+        }
+      ],
+      "inaction": "A warning left unanswered may become harder to use; no new collection is ordered by silence.",
+      "unknown": "The issued report cannot establish whether the reported conduct will become a government decision."
+    },
+    "binding": {
+      "mechanisms": []
+    }
+  }
+]

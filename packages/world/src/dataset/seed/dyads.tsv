@@ -1,0 +1,82 @@
+# The founding relationships the derivation gets wrong, one sourced pair per row.
+# pair: two nation ids, the lower first. kind: close | cool | hostile | dependent | rivalrous. intensity: 0..1.
+# since: the year the relationship took its current shape. source: the page the row was read from. opened: the day it was read.
+# trust_ab, trust_ba (-1..1), tension (0..1), threat_ab, threat_ba (0..1): the levels the row sets, read in pair order
+# ("ab" is the first id's reading of the second). Blank on a row that sets its reading by kind and intensity alone.
+# The levels are coded judgments from the source's qualitative facts on the research table's bands
+# (packages/world/sources/founding-data/dyads-sources.md, section 2), never figures a source printed.
+# The kind is read off the levels: hostile where either side's trust is at or below -0.5 or tension at or above 0.8,
+# rivalrous below -0.1, cool below 0.3, close otherwise; intensity is the mean trust's size.
+# A row moves an edge only toward its reading: an adversarial kind only hardens it, a friendly kind only softens it,
+# so a threat level on a friendly row can lower a reading and never raise one.
+# Trade dependence is not set here; the United States' side comes from us-goods-trade.generated.ts.
+# What each source says, as read on the day it was opened:
+# CHN-USA: the 2026 Annual Threat Assessment lists China among the states whose missiles "can strike the Homeland", while China "is prioritizing a productive, stable economic relationship with the U.S."; competition, not rupture.
+# CUB-USA: Executive Order 14380 (2026-01-29) declares a national emergency over "an unusual and extraordinary threat" from the government of Cuba. Its grounds are alignment and intelligence hosting, not Cuban forces, and the 2026 assessment does not list Cuba among the states that can strike the Homeland.
+# IRN-USA: GlobalSecurity.org's running Iran War 2026 report reads "no active ceasefire" on day 213 (2026-09-28); relations have been severed since 1979.
+# PRK-USA: the 2026 Annual Threat Assessment: North Korea's "WMD, conventional military capabilities, illicit cyber activities" pose "significant threats to the U.S.", with ICBMs "capable of reaching the entire Homeland".
+# RUS-USA: the 2026 Annual Threat Assessment: Russia's "conventional and nuclear forces are an enduring threat to the Homeland"; the relationship took this shape with the 2022 invasion of Ukraine.
+# AFG-PAK: None; Pakistan does not consider the Durand Line settled and Afghanistan's governing authority disputes it. Disputes: Both governments have described an "open war" since early 2026; a ceasefire reached October 19 2025 broke down by February 2026; a further round of strikes hit ten sites on September 24 2026 after one side accused the other of hosting drone launches, with reported civilian deaths; the border has been closed and more than one million Afghans deported since 2025.
+# ARE-USA: Abraham Accords signatory alongside Israel (2020); a close US defense-sales relationship with no mutual-defense treaty. Disputes: The UAE's dispute with Iran over Abu Musa and the Greater and Lesser Tunb islands indirectly raises its threat reading of the Gulf.
+# ARM-AZE: A Joint Declaration and an initialled seventeen-article peace agreement (Washington, August 8 2025); no ratified peace treaty yet. Disputes: Nagorno-Karabakh's status, displaced persons and detainees remain unresolved; the treaty stays initialed, not ratified, conditioned on Armenia amending constitutional language Azerbaijan reads as a territorial claim; a transit corridor through southern Armenia is under construction.
+# AUS-USA: ANZUS Treaty (1951, US-Australia leg active); AUKUS submarine-technology partnership (2021). Disputes: none active.
+# BRA-USA: No bilateral defense treaty; both remain parties to the 1947 Inter-American Treaty of Reciprocal Assistance (Rio Treaty), which neither has denounced (Mexico denounced it in 2002, effective 2004). Disputes: none active.
+# CAN-USA: NATO; NORAD binational aerospace-defense command (1958, renewed in perpetuity 2006); USMCA free-trade agreement (2020). Disputes: Beaufort Sea Arctic maritime boundary unresolved; periodic tariff friction under USMCA's review mechanism.
+# DEU-USA: NATO Article 5; hosts the largest concentration of US forces in Europe. Disputes: none active.
+# DNK-USA: NATO Article 5; a September 2026 Arctic security agreement reaffirming Danish sovereignty over Greenland. Disputes: 2025-2026 friction over US statements about acquiring Greenland, resolved by the September 22 2026 security agreement, which carries no expiration date and bars non-NATO states from military installations in Greenland.
+# FRA-USA: NATO Article 5; the oldest US treaty alliance, dating to 1778. Disputes: none active.
+# GBR-USA: NATO Article 5; a Five Eyes signals-intelligence sharing arrangement since 1946, not a single treaty text. Disputes: none active.
+# GUY-VEN: None. Disputes: The Essequibo territorial dispute at the International Court of Justice; oral hearings concluded May 11 2026 and a judgment is pending (the claimant's counsel has cited an expectation of a ruling by or before January 2027); at the September 2026 UN General Assembly the claimant urged acceptance of the coming ruling while Venezuela called instead for direct negotiation; Venezuela's government has said it will not accept an adverse ruling.
+# IND-PAK: The 1972 Simla Agreement, which Pakistan announced it was suspending after the April 2025 attack in Indian-administered Kashmir. Disputes: Kashmir; strikes on sites in Pakistan and Pakistan-administered Kashmir from May 7 2025 and retaliation, then a ceasefire from May 10 2025 that has held despite reported violations.
+# IRN-ISR: None. Disputes: At war since 2026-02-28 (day 209 as of September 24 2026; no ceasefire in effect). Repeated ceasefire attempts collapsed, most recently by July 8. On September 24 2026 Iran proposed a written sixty-day regionwide ceasefire roadmap, with its security council attaching a four-to-five-day response deadline. The government's claimed 60-70% reopening of the Strait of Hormuz is contradicted by shipping-transit data (one transit recorded September 20 against an approximately 85-a-day pre-war baseline). Crude oil rose to $103.08 on September 23. The June 2025 Twelve-Day War preceded this war.
+# ISR-LBN: None; the two states remain formally at war with no peace treaty. Disputes: A November 2024 ceasefire broke down in March 2026 fighting; a new cessation of hostilities from April 2026 is tied to a contested, still-incomplete disarmament process for non-state armed groups; a further framework announced June 26 2026 was rejected by the armed group it targeted, and Israeli forces remained deployed in the south as of the latest opened update.
+# ITA-USA: NATO Article 5. Disputes: none active.
+# JPN-USA: Treaty of Mutual Cooperation and Security (1960). Disputes: The Senkaku/Diaoyu Islands, administered by Japan and claimed by China, are treated as covered by the treaty's mutual-defense clause.
+# KOR-USA: Mutual Defense Treaty (1953). Disputes: No peace treaty has ever ended the Korean War, only the 1953 armistice; North Korea's missile and nuclear programs.
+# MEX-USA: USMCA free-trade agreement (2020); no defense pact. Disputes: Fentanyl-trafficking and migration-enforcement disputes; periodic US tariff threats tied to border security.
+# NZL-USA: ANZUS Treaty (1951); the US-New Zealand security leg was suspended from 1986 over nuclear-ship access and has been partially restored since. Disputes: none active.
+# PAK-SAU: Strategic Mutual Defence Agreement, signed September 17 2025; treats an attack on either state as an attack on both, but outside analysis reads it as a political signal of solidarity rather than a guarantee of automatic military response, since the operative treaty text has not been published. Disputes: none active; the pact followed Gulf state concern about the durability of US security guarantees.
+# PAN-USA: The 1977 Panama Canal treaties (the Neutrality Treaty) guarantee the canal's neutrality; no mutual-defense treaty. Disputes: Ongoing US demands over canal tolls and a Chinese-linked port operator; Panama's government rejects the sovereignty claim; unresolved as of late 2025.
+# PHL-USA: Mutual Defense Treaty (1951). Disputes: South China Sea: China's claims over Philippine-claimed reefs and shoals repeatedly test the treaty's mutual-defense clause.
+# POL-USA: NATO Article 5. Disputes: none active.
+# RUS-UKR: None; Ukraine is a NATO aspirant, not a member. Disputes: A full-scale invasion under way since February 2022; active front lines across a roughly 750-mile line, described by trackers as a stalemate outside a Ukrainian gain in Zaporizhzhia in February 2026; on September 23 2026 senior officials of the aggressor government effectively rejected a proposed limited "energy" ceasefire and stated operations would not pause during talks; a helicopter incursion into a NATO member's airspace the same week read as a further escalation.
+# SAU-USA: Strategic Defense Agreement, signed November 18 2025 alongside a major non-NATO ally designation, described by its issuing government as historic but reported to stop short of a mutual-defense guarantee. Disputes: Yemen's civil war and Iran-linked regional tension; periodic OPEC+ output disagreements.
+# SRB-XKX: None; Serbia does not recognize the 2008 declaration of independence. Disputes: The EU-facilitated dialogue stalled through 2025 amid a prolonged government-formation impasse; a 2023 normalization agreement remains unsigned; cautious re-engagement under a new EU envoy continued into 2026 with a trilateral missing-persons meeting in January and no leader-level talks resumed.
+# TUR-USA: NATO Article 5. Disputes: Turkey's purchase of the Russian S-400 system and the resulting US sanctions and F-35 exclusion; friction over Syria and Kurdish-led forces.
+# TWN-USA: No treaty; the Taiwan Relations Act (1979) commits the US to arms sales and treats coercive pressure as a matter of grave concern. Disputes: Cross-strait sovereignty status; China's Anti-Secession Law and a large-scale PLA exercise around the island in April 2025.
+# USA-VEN: No treaty; an acting government since January 2026 after a US military operation removed the previous leadership; the United States is engaging it on normalization and debt restructuring. Disputes: Sanctions being unwound through general licenses since January 2026; no date set for elections; the January 2026 operation's casualties; migration.
+pair	kind	intensity	since	source	opened	trust_ab	trust_ba	tension	threat_ab	threat_ba
+CHN-USA	rivalrous	0.5	2018	https://archive.dni.gov/files/ODNI/documents/assessments/ATA-2026-Unclassified-Report.pdf	2026-09-28					
+CUB-USA	hostile	0.7	1961	https://www.presidency.ucsb.edu/documents/executive-order-14380-addressing-threats-the-united-states-the-government-cuba	2026-09-28					
+IRN-USA	hostile	0.9	1979	https://www.globalsecurity.org/military/ops/iran-war-oprep.htm	2026-09-28					
+PRK-USA	hostile	0.7	1950	https://archive.dni.gov/files/ODNI/documents/assessments/ATA-2026-Unclassified-Report.pdf	2026-09-28					
+RUS-USA	hostile	0.7	2022	https://archive.dni.gov/files/ODNI/documents/assessments/ATA-2026-Unclassified-Report.pdf	2026-09-28					
+AFG-PAK	hostile	0.5	2025	https://www.aa.com.tr/en/asia-pacific/timeline-how-pakistan-afghanistan-tensions-reached-a-breaking-point/3842132	2026-09-24	-0.6	-0.4	0.9	0.8	0.6
+ARE-USA	close	0.57	2020	https://www.timesofisrael.com/full-text-of-the-abraham-accords-signed-by-israel-the-uae-and-bahrain/	2026-09-24	0.55	0.6	0.2	0.15	0.05
+ARM-AZE	hostile	0.4	2023	https://www.cfr.org/global-conflict-tracker/conflict/nagorno-karabakh-conflict	2026-09-24	-0.3	-0.5	0.75	0.6	0.5
+AUS-USA	close	0.8	1951	https://avalon.law.yale.edu/20th_century/usmu002.asp	2026-09-24	0.8	0.8	0.1	0.05	0.05
+BRA-USA	close	0.45	1947	https://www.oas.org/juridico/english/sigs/b-29.html	2026-09-24	0.4	0.5	0.15	0.05	0.05
+CAN-USA	close	0.7	1949	https://www.nato.int/cps/en/natolive/official_texts_17120.htm	2026-09-24	0.65	0.75	0.2	0.05	0.05
+DEU-USA	close	0.72	1955	https://www.nato.int/cps/en/natolive/official_texts_17120.htm	2026-09-24	0.7	0.75	0.1	0.05	0.05
+DNK-USA	close	0.68	2026	https://www.whitehouse.gov/briefings-statements/2026/09/agreement-between-the-government-of-the-united-states-of-america-and-the-government-of-the-kingdom-of-denmark-together-with-the-government-of-greenland-to-amend-and-supplement-the-agreement-of-27-apri/	2026-09-24	0.65	0.7	0.25	0.05	0.05
+FRA-USA	close	0.75	1949	https://www.nato.int/cps/en/natolive/official_texts_17120.htm	2026-09-24	0.75	0.75	0.1	0.05	0.05
+GBR-USA	close	0.85	1949	https://www.nato.int/cps/en/natolive/official_texts_17120.htm	2026-09-24	0.85	0.85	0.05	0.05	0.05
+GUY-VEN	hostile	0.55	2018	https://www.icj-cij.org/case/171	2026-09-24	-0.6	-0.5	0.7	0.6	0.1
+IND-PAK	hostile	0.5	2025	https://en.wikipedia.org/wiki/2025_India%E2%80%93Pakistan_conflict	2026-09-29	-0.5	-0.5	0.85	0.7	0.7
+IRN-ISR	hostile	0.93	2026	https://www.globalsecurity.org/military/ops/iran-war-oprep.htm	2026-09-24	-0.95	-0.9	0.95	0.9	0.9
+ISR-LBN	hostile	0.4	2026	https://en.wikipedia.org/wiki/2026_Israel%E2%80%93Lebanon_ceasefire	2026-09-24	-0.3	-0.5	0.8	0.3	0.6
+ITA-USA	close	0.75	1949	https://www.nato.int/cps/en/natolive/official_texts_17120.htm	2026-09-24	0.75	0.75	0.1	0.05	0.05
+JPN-USA	close	0.78	1960	https://treaties.un.org/doc/Publication/UNTS/Volume%20373/volume-373-I-5321-English.pdf	2026-09-24	0.75	0.8	0.2	0.15	0.1
+KOR-USA	close	0.78	1953	https://avalon.law.yale.edu/20th_century/kor001.asp	2026-09-24	0.75	0.8	0.3	0.15	0.15
+MEX-USA	close	0.5	2020	https://ustr.gov/trade-agreements/free-trade-agreements/united-states-mexico-canada-agreement	2026-09-24	0.45	0.55	0.3	0.1	0.05
+NZL-USA	close	0.6	1986	https://avalon.law.yale.edu/20th_century/usmu002.asp	2026-09-24	0.6	0.6	0.1	0.05	0.05
+PAK-SAU	close	0.6	2025	https://en.wikipedia.org/wiki/Strategic_Mutual_Defence_Agreement	2026-09-24	0.6	0.6	0.1	0.05	0.05
+PAN-USA	close	0.38	1977	https://history.state.gov/milestones/1977-1980/panama-canal	2026-09-24	0.35	0.4	0.45	0.35	0.05
+PHL-USA	close	0.68	1951	https://avalon.law.yale.edu/20th_century/phil001.asp	2026-09-24	0.7	0.65	0.35	0.35	0.15
+POL-USA	close	0.78	1999	https://www.nato.int/cps/en/natolive/official_texts_17120.htm	2026-09-24	0.8	0.75	0.15	0.05	0.05
+RUS-UKR	hostile	0.8	2022	https://www.cfr.org/global-conflict-tracker/conflict/conflict-ukraine	2026-09-24	-0.7	-0.9	0.95	0.3	0.95
+SAU-USA	close	0.53	2025	https://www.globalsecurity.org/wmd/library/news/saudi/2025/saudi-251118-whitehouse01.htm	2026-09-24	0.5	0.55	0.35	0.35	0.05
+SRB-XKX	hostile	0.55	2008	https://www.eeas.europa.eu/eeas/belgrade-pristina-dialogue_en	2026-09-24	-0.5	-0.6	0.6	0.3	0.4
+TUR-USA	close	0.38	1952	https://www.nato.int/cps/en/natolive/official_texts_17120.htm	2026-09-24	0.35	0.4	0.35	0.15	0.15
+TWN-USA	close	0.68	1979	https://www.law.cornell.edu/uscode/text/22/3301	2026-09-24	0.7	0.65	0.55	0.75	0.05
+USA-VEN	cool	0.07	2026	https://en.wikipedia.org/wiki/2026_United_States_intervention_in_Venezuela	2026-09-28	0.15	0	0.6	0.05	0.7

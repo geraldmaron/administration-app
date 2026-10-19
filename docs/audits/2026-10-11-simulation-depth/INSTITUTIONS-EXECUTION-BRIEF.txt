@@ -1,0 +1,298 @@
+# The Administration: simulation depth, institutions, people, and consequences
+
+You are working in the existing The Administration repository. Complete a code-grounded audit, update the execution plan and backlog, implement the needed changes, and validate them end to end. Treat this as one connected simulation and player-experience task. Do not stop after writing a proposal, adding types, expanding text, or drawing a relationship graph.
+
+The player is the President of the United States. The goal is an intricate, understandable government simulation in which legal authority, institutional procedure, people, political relationships, resources, public needs, and international commitments meaningfully constrain one another. The player should be able to understand what happened, why it happened, what remains uncertain, and what they can do next.
+
+Use the examples below to identify classes of missing behavior. Investigate adjacent gaps and challenge the assumptions behind existing formulas, classifications, and presentation. Preserve effective mechanisms and replace or extend inadequate ones with evidence. Keep the implementation proportionate to meaningful presidential decisions and the performance budget.
+
+## 1. Establish the actual current baseline
+
+The preparation review examined geraldmaron/administration-app, branch feat/map-first, commit 73ecda316b0bad6a18cc14860962b0bb694b826c, committed October 11, 2026. This is a source-review baseline, not evidence that a newer local checkout or uncommitted work is identical.
+
+Inspect the actual working directory, branch, HEAD, recent commits, uncommitted changes, and relevant instructions before changing anything. Revalidate every finding below against that checkout. Read AGENTS.md, CLAUDE.md, docs/PLAN.md, docs/BACKLOG.md, docs/DECISIONS.md, and the relevant architecture, schema, design, content-doctrine, and writers-room sections. Read current source and callers before accepting a document's claim. Some top-level documents still describe the retired dotted-map shell or call already committed work uncommitted.
+
+Preserve the accepted operations workspace: light analytical surfaces, navy institutional chrome, grouped navigation, scoped tabs, full-data collections, proper documents, semantic icons, shared comparison/authorization, and maps where geography answers a question. Preserve phone/desktop task parity. Do not restore the retired dotted-map shell or replace the application's visual direction during this simulation work.
+
+Preserve real countries and U.S. institutions, fictional people and news outlets, persisted identities, and the established campaign/time model. The simulation runs when the player advances it; absence from the app must not advance the world.
+
+The maintained tracker is docs/PLAN.md plus docs/BACKLOG.md. Reconcile overlapping work, including BL-2/5 for person behavior, BL-86 for court vacancies, BL-102 for foreign trust and intelligence, BL-106 for the legislative agenda, and applicable operations-redesign items. Do not resurrect beads or create a competing tracker.
+
+### Verified starting points to recheck
+
+1. The offline source union intended for the mounted pool contains 339 distinct scenario definitions: 17 CORE_SCENARIOS plus 322 in baked bundle revision 21, with no overlapping IDs in that baseline. Seven pilot definitions sit outside that mounting path. These are source counts; confirm parsing, actual loaded counts, eligibility, and reachability. The baked subset has 977 replies; all 322 scenarios have context, topics, and particulars, and all 977 replies have rejoinders, despite some of those fields being optional in the schema. Do not assume missing context everywhere or equate a large catalog with deep coverage. Sources: packages/content/src/packs/core.ts; packages/player-core/src/content/bundled-corpus.generated.ts; packages/player-core/src/conversation/scripts.ts.
+
+2. The full legislative registry has 36 acts: 11 main entries, 7 fiscal entries, and 18 domestic packages. It already includes eligibility, autonomous introductions, committee-related progression, chamber counts, signing, vetoes, overrides, and annual fiscal offsets. Markup currently changes momentum rather than substantive bill provisions, and the chamber votes are largely aggregate caucus calculations. Sources: legislative-acts.ts, legislative-acts-fiscal.ts, legislative-acts-domestic.ts, legislation.ts, bill-stages.ts, state-legislature.ts, congress-votes.ts, law-offsets.ts in packages/engine/src.
+
+3. There are 12 executive orders: 4 inline plus 8 additional family entries; 7 use rulemaking. They already have authority records, legal restrictions, Attorney General review, responsible officers, implementation, and challenges. Some source-backed restrictions are descriptive rather than executable. For example, a generic emergency check can satisfy authority intended for a specific foreign threat; relief's description names requirements that its empty requires object does not enforce. Sources: orders.ts, order-families.ts, order-review.ts, rulemaking.ts.
+
+4. The playable judicial docket is tied to executive-order challenges. CourtCase requires an order; courtDocket and caseFile traverse order records. There are nine persistent Supreme Court seats and recorded individual votes, but decideCase chooses a holding and vote count from one aggregate draw, then allocates votes by ranked propensities. The opinion is assembled from generic ground/domain/holding paragraphs. Sources: state-judiciary.ts, judicial-review.ts, judiciary.ts, court-votes.ts, court-opinions.ts; packages/player-core/src/judiciary/courts.ts and case-file.ts.
+
+5. Relationship machinery already exists. Nation relationships are directed persistent records. Person-network ties are largely derived from biography, and the person dossier already has a radial TieMap. Cabinet behavioral relationships use another calculation involving ideology, traits, roles, factions, and recorded counsel. Trace how these representations agree, diverge, or remain disconnected. Sources: person-network.ts, person-network-rules.ts, relationships.ts, relationship-graph.ts, cabinet-alignment.ts; apps/web/src/washington/person/PersonVisuals.tsx.
+
+6. A precise betrayal seam exists in the audited first-strike path: victim-to-aggressor trust loss in resolveStrikeHarm scales civilian deaths. A first strike with no civilian deaths can leave that trust unchanged, while another disposition reader applies a deed penalty and third parties react. Treaty willingness reads the trust edge heavily, creating inconsistent interpretations of the same act. Other war-entry and settlement paths do change trust; do not generalize this to all warfare. Also, thirdPartyRelation treats broad shared memberships as compacts and can claim a shared compact even when different memberships connect the three governments. Sources: strike-outcomes.ts, resolution.ts, resolution-ripples.ts, relationships.ts, treaty-counterpart.ts, instrument-records.ts, war-entry.ts, war-outcomes.ts.
+
+7. Fiscal and reversal explanations have concrete inconsistencies. The agenda reads LAW_OFFSETS, while BillScreen.sectionsOf reads actEffects and can describe a bill with annual outlays as having no direct fiscal effect. Judicial reversal negates catalog deltas against current clamped values, creating a boundary/accounting risk; the displayed reversed-effects list can include debt that the resolver deliberately retains. These are source-derived findings, not newly executed test results. Sources: apps/web/src/washington/congress/BillScreen.tsx; packages/player-core/src/congress/congress-acts.ts; packages/player-core/src/legislation/bill-reading.ts; packages/engine/src/orders.ts and policy-program.ts; packages/player-core/src/judiciary/case-effects.ts.
+
+8. The engine already has seeded RNG streams, willingness terms, effect packets, causal records, demographic routing, attention stops, and save normalization. Extend their contracts instead of adding parallel truth. The baked subset has 752 declared impacts, 60 replies naming cohorts, and 17 domestic signatures. These counts describe different channels and do not prove the remaining replies have no consequences. Check overlaps and runtime reachability. Source-written flag counts alone also do not prove orphaned flags: engine readers and other pools must be included.
+
+## 2. Trace the complete model before expanding it
+
+Create a concise, durable audit in the current audit structure. Inventory the full mounted registries, runtime factories, authored templates, occurrences, lifecycle states, selectors, and reachable screens. Distinguish missing data, unused data, disconnected rules, misleading presentation, incomplete content coverage, and intentional simplifications.
+
+For every material field and relationship, trace:
+
+definition and units -> author/generator -> initial value -> availability/casting -> decision calculation -> effect application -> delayed processing -> save/load -> history/intelligence -> selector -> player action or explanation -> validation.
+
+Record the actual producer, consumer, mutation owner, provenance, time semantics, valid range, and unknown/default behavior. A default zero must not silently mean unknown, neutral, nonexistent, and unavailable. Use stable identifiers and typed references. Distinguish an authored template from a particular occurrence, a persistent person from their current office, and a legal instrument from its implementing actions.
+
+Draw compact relationship and lifecycle diagrams showing the actual code paths, including cross-system loops. Include a coverage matrix and a prioritized findings register with source evidence, intended behavior, affected players/screens, remediation, and acceptance proof. Include real data samples that pass current validation. Extend the existing consumer and unit registries when applicable; do not create hundreds of decorative fields.
+
+Before implementation, record a mandatory mechanism/slice matrix covering this prompt's required behavior, source owner, content coverage, and proof. Name the critical coverage cells and the minimum distinct decisions each needs, based on the actual inventory and replay requirements. A retained abstraction needs a reason tied to the presidential experience; it cannot remove a required mechanism by relabeling it optional. An incomplete mandatory cell remains pending. A few demonstration scenarios do not establish completed coverage.
+
+Keep the dependency direction between world data, engine, authored content, player-core, and UI intact. Preserve the pure deterministic engine and its effect-application contract. Account explicitly for existing bookkeeping exceptions rather than introducing a second mutation pipeline.
+
+## 3. Keep legal instruments and institutional powers distinct
+
+Model legislation, enacted law, executive orders, agency rules, court proceedings, judgments, appropriations, and executive implementation as related but distinct objects and lifecycles. Each must identify who may initiate it, who decides it, what authority applies, what resources it can use, when it becomes effective, and what can amend, stop, expire, or replace it.
+
+The same policy goal may have several routes with different scope, durability, timing, political demands, and legal exposure. A regulation is not automatically effective when an executive order directs an agency to develop it. Passing authorization does not manufacture an appropriation. A court ruling can change enforceability without undoing everything that already happened.
+
+Research the legal constraints relevant to each modeled mechanic through primary institutional sources. Record the source, applicable date, and deliberate game abstraction. Distinguish clearly between unavailable authority, genuinely disputed authority, and unlawful defiance the game intentionally permits with institutional consequences. Political capital cannot make a plainly nonexistent power lawful.
+
+Useful starting sources, to recheck when implementing:
+
+- CRS, Executive Orders: An Introduction: https://www.congress.gov/crs_external_products/R/PDF/R46738/R46738.6.pdf
+- U.S. House, The Legislative Process: https://www.house.gov/the-house-explained/the-legislative-process
+- U.S. Senate, Filibusters and Cloture: https://www.senate.gov/about/powers-procedures/filibusters-cloture.htm
+- U.S. Courts, Civil Cases: https://www.uscourts.gov/about-federal-courts/types-cases/civil-cases
+- U.S. Courts, Appeals: https://www.uscourts.gov/about-federal-courts/types-cases/appeals
+
+## 4. Build a broader, credible judicial system
+
+Extend the current order-review path into a general judicial matter model, keeping compatibility with existing records. Cover materially different disputes: statutory authority, agency procedure, federal/state powers, civil rights, immigration, elections, environmental and labor rules, procurement, surveillance, and emergency measures, where they create meaningful presidential consequences. Include matters the President did not initiate.
+
+A case needs appropriate facts and legal structure: parties and their roles; alleged injury; jurisdiction and standing; court and procedural stage; challenged action or law; legal questions; relevant authority and precedent; competing arguments; evidence and disputed facts; relief sought; affected institutions, places, and populations; significance; dates; possible dispositions; and downstream implementation. Make fields required by case type, rather than filling irrelevant fields with invented specifics.
+
+Represent filing, threshold/procedural rulings, interim relief where appropriate, merits decisions, appeals, remand, and implementation. A decision to hear a case is different from a decision on its merits. The Supreme Court does not automatically hear every appeal. Differentiate dismissal, uphold, partial invalidation, limited remedies, and broader invalidation. Decide explicitly how lower courts are represented without simulating every routine lawsuit as presidential business.
+
+Make judges' characteristics affect actual legal reasoning. Consider interpretive philosophy, issue-specific views, treatment of precedent, deference to particular institutions, evidentiary assessment, professional competence, integrity, and institutional concerns. Audit whether existing traits already cover these concepts before adding more. Legal merits and procedure must constrain the result; ideology and friendship must not decide every case.
+
+Replace or justify the current aggregate-outcome-then-vote-allocation model against the intended experience. If votes are presented as individual decisions, their rule inputs and resulting coalition must be causally meaningful. Keep uncertainty coherent across judges; a shared factual development should not become unrelated coin flips. Support case-specific majority/dissent reasoning, recusals, vacancies, and the procedural consequences of an incomplete bench where modeled.
+
+Research and implement participating-judge eligibility, recusal, quorum, and equally divided outcomes for the courts represented. An empty or nonquorate bench must not fabricate an ordinary ruling and label it per curiam. A tie follows the actual procedural posture; it does not universally uphold the President's action.
+
+Preserve judicial independence. Presidential choices may include litigation strategy through counsel, implementing a ruling, revising the challenged action, lawful settlement, seeking legislation, and filling a real vacancy through the proper process. A judicial vote is not a normal lobbying purchase. If misconduct or improper pressure is included, model refusal, evidence, exposure, and institutional consequences.
+
+Demonstrate that court vacancies and appointments are reachable during ordinary seeded play, not only through test fixtures. Do not manufacture frequent vacancies just to populate a screen. Store completed decisions and their bench, factual/legal basis, remedy, and effects so later personnel changes cannot rewrite history.
+
+## 5. Deepen Congress and the law catalog
+
+Preserve current legislative mechanisms while expanding substantive depth. Cover varied issues across fiscal policy, health, housing, education, labor, infrastructure, energy, environment, technology/privacy, civil rights, immigration, public safety, defense, and institutional oversight. Distinguish routine business, crises, recurring fiscal requirements, competing party agendas, and player priorities.
+
+Bills need meaningful provisions, sponsors/cosponsors or their chosen abstraction, committees, beneficiaries and opponents, relevant constituencies, legal authority, fiscal estimates and time horizon, implementation responsibility, eligibility, amendments, sunset/review provisions where relevant, and conflicts with current law. Some should be available proactively; others should arise from conditions, elections, litigation, public pressure, foreign events, or prior decisions. Explain why a known proposal is unavailable without revealing hidden triggers.
+
+Turn amendments into actual changes to provisions, cost, implementation, and support. Reconcile the House and Senate's enacted text. Model the important institutional bottlenecks: committee control, leadership scheduling, procedural barriers, chamber-specific support, negotiations, passage, presidential action, and override. Separate cloture and final passage when they are modeled; identify privileged procedures and reconciliation eligibility honestly. Do not describe a single generic support threshold as the full procedure.
+
+Make individual members and key institutional figures matter through issue-specific convictions, constituent interests, party/caucus commitments, leadership, committee jurisdiction, electoral vulnerability, relationships, promises, and credibility. Leadership or a committee chair can have more reach than a junior member without controlling every follower. Cross-party coalitions must be possible when interests align.
+
+Use party names and institutional roles in the player interface. Show who supports the specific measure, who is uncertain, who opposes it, who can change its calendar or terms, and the observable reasons. A party badge is not a permanent yes/no vote.
+
+Maintain consistency from proposal to enacted law. The comparison, formal document, presidential desk, budget, implementation view, and historical record must read the same fiscal and substantive facts. Separate one-time cost, annual outlays/revenue, transfers, debt, funding source, time to benefit, and distributional effects. Repeal or expiration must affect ongoing provisions without erasing prior consequences.
+
+## 6. Give executive orders their proper scope
+
+Expand the order catalog around distinct lawful powers and meaningful tradeoffs. Include agency management, enforcement priorities within authority, procurement, regulatory direction, foreign-policy/economic authorities, emergency responses, and implementation of enacted laws where supported by the simulation.
+
+Each order needs its actual authority, statutory prerequisites, jurisdiction and target, limits, responsible officials, funding source, implementation method, time to effect, legal review, affected interests, possible challenges, review/sunset conditions, and amendment or rescission behavior. Make every material authority restriction an executable predicate with a negative test. The wrong emergency, wrong target, expired declaration, missing statutory trigger, or unrelated appropriation must not satisfy it.
+
+Preserve the existing distinction between signature, direct implementation, and agency rulemaking. Not every order requires notice-and-comment, and an order directing a rule does not bypass whatever process that agency action requires. Make delays, capacity, dissent within the administration, lawful resistance, judicial relief, and congressional responses affect implementation.
+
+Show a useful presidential comparison: what can change now, what must wait, who carries it out, what it costs, who may challenge it, how durable it is, and what Congress would need to do for a broader change. Orders should feel like executive instruments, with their own documents and actions.
+
+## 7. Expand scenario coverage and preserve meaningful consequences
+
+Audit the mounted corpus and its runtime factories, rather than counting one file. Measure coverage by decision mechanism, issue, geography, actor, severity, institutional stage, game-state condition, demographic exposure, time horizon, and consequence chain. Separate authored definitions, parameter variations, cast bindings, and runtime occurrences in every count.
+
+The existing baked scenarios are substantially populated. Examine whether their data reaches decisions and consequences. Review sparse domestic/cohort channels, independent public problems, law-to-lawsuit chains, oversight, implementation failures, and follow-up branches. Audit all flag/condition producers and consumers across engine, core, baked, and any mounted content before declaring an orphan.
+
+Every scenario should contain appropriate situation facts, stakes, actors, pressures, uncertainty, eligibility, binding rules, meaningful choices, prerequisites, costs, likely benefits, failure branches, inaction/defer/delegate behavior, immediate and delayed effects, affected populations and locations, and a durable explanation. Require qualitative changes between options: who pays, what authority is used, who benefits, how long it takes, and what may go wrong. Avoid nominally different choices with the same effects.
+
+Bind consequences to the actual selected people, nation, place, institution, measure, and occurrence. Do not infer a specific site's identity, particular victims, or a group's beliefs from unrelated national averages. Prevent impossible casts and contradictory combinations of procedurally varied facts.
+
+Make the world generate appropriate business without player initiation: legislative proposals, litigation, implementation disputes, investigations, leadership changes, and foreign actions. These must arise through declared rules and existing simulation phases. Background events may advance without demanding a presidential click, while meaningful matters must remain available until explicitly resolved, declined, deferred, delegated, or legitimately withdrawn under the established attention contract.
+
+Preserve the requirement that fast-forward cannot silently skip decisions the player is owed. Explain deadlines, default consequences, delegated authority, and when an item returns. Resolve incompatible or obsolete cases explicitly. Do not reintroduce a fixed 208-turn game loop.
+
+Check template/occurrence identity. The audited scenario case ID is based on definition ID, and existing case entries can block re-seating a previously used definition. Decide which scenarios are once-per-campaign, recurring, or family-specific; use stable occurrence identities where recurrence is intended. Preserve family/counterpart binding and completed history. Test that repeats neither deadlock the desk nor overwrite earlier events.
+
+Define the expansion target from measured gaps and replay needs. Populate every critical supported mechanism with multiple materially different examples where repetition would otherwise be immediate. State actual coverage and remaining gaps; padded titles or harmless numeric variations do not satisfy missing decision depth.
+
+## 8. Model people, influence, and political capital coherently
+
+Create a shared account of identity, roles, relationships, behavior, and evidence that each institution can use according to its own rules. Reconcile biography-derived ties, cabinet alignment, factions, lobbying, foreign rapport, and persistent nation relationships. Share appropriate concepts without forcing every actor through the same scoring formula.
+
+Separate these meanings:
+
+- Formal authority: what the office can legally decide, block, schedule, fund, or implement.
+- Willingness: whether the person wants to help on this issue in the current situation.
+- Trust and credibility: whose promises they believe, and why.
+- Influence: whose behavior they can actually affect, in which institutions or communities.
+- Political capital: the usable room to secure cooperation, supported by mandate, credibility, attention, promises, and relationships.
+- Resources and capacity: what can actually be executed even when people agree.
+
+Determine what should be stored, derived, or assessed. Avoid counting the same support once as approval, again as standing, and again as newly invented capital. If a spendable capital resource is justified, define its scope, units, earning, spending, recovery, saturation, and consequences; show why it is needed beyond existing rules. Trust, money, votes, and legal authority are not freely interchangeable.
+
+Make influence issue-specific and uneven. An influential committee chair, party leader, respected specialist, regional governor, donor or interest-group figure, cabinet secretary, and charismatic junior legislator have different forms of reach. Support multi-step persuasion where justified, but cap propagation, avoid cycles and duplicate counting, and preserve the other actors' own interests. Losing an office can reduce formal authority while leaving personal credibility and allies intact.
+
+Relationships should support appropriate direction, type, strength, history, context, visibility, and change. Relevant types include professional ties, mentorship, rivalry, loyalty, favors, commitments, institutional dependence, party/caucus ties, and foreign agreements. Only add relationship types with actual behaviors and a player use. Explain a consequential tie through its history rather than generating a label with no cause.
+
+Keep the displayed neighborhood cap separate from actual behavioral reach. The current six-tie person-network limit must not make a broadly connected leader mechanically equivalent to an isolated actor. Death, office loss, replacement, and faction changes must update eligibility and reach without erasing historically valid relationships.
+
+Traits should interact with incentives, opportunity, competence, risk, and institutions. Ambition can produce initiative, succession seeking, coalition building, rivalry, or sabotage depending on circumstances. Loyalty does not imply competence. Integrity may produce principled refusal. Corruption requires an opportunity and interacts with expected benefit, oversight, exposure, and sanctions; it must not make every corrupt person perform the same act on a timer.
+
+An ambitious actor who turns against the administration may withhold cooperation, organize opposition, leak, resign publicly, obstruct implementation, or pursue their own agenda. Their office, access, allies, credibility, and willingness to take risks should constrain what they can do and how far it travels. A generic national penalty proportional only to ambition is insufficient. Model detection, attribution, responses, and recoverability as applicable.
+
+Trace beneficial behavior with equal care: competent implementation, honest advice, credible brokerage, coalition maintenance, and initiative. Show why investing in a well-placed person can be effective, and why that relationship can create dependency or backlash. Compare actual results from working through a key figure versus approaching several less influential actors under equivalent constraints.
+
+## 9. Make trust, betrayal, and reputation persist across systems
+
+Use a confirmed deliberate attack on a previously trusting partner as an integration case. The act's violation of trust must matter independently of civilian deaths. Model the affected direction of trust, perceived hostility/threat, commitments breached, relationship history, and subsequent cooperation. Audit every consumer so diplomacy, treaties, basing, coalition support, intelligence access, trade, and NPC choices do not contradict one another.
+
+The magnitude and response should depend on prior trust, attribution, intent, surprise, damage, agreements, justification, earlier conduct, personalities, domestic politics, dependence, and the target's options. Separate trust from fear and compliance: an intimidated government may comply while trusting less. Peace, compensation, consistent conduct, and leadership changes may affect repair without instantly erasing the record.
+
+Distinguish confirmed attack, failed attempt, accident, disputed attribution, authorized joint action, covert activity, self-defense claims, and action against a shared enemy. These should not all receive the same multiplier. Establish robust directional expectations across seeds while allowing context-dependent severity and response.
+
+Third parties must react through the relevant relationship and actual agreement. Defense treaties, economic unions, political forums, trade dependence, and coincidental membership are different reasons to react. Verify the specific shared compact and its obligations. Bound cascades and repeated penalties. Some governments may condemn, hedge, withdraw cooperation, demand assurances, or exploit the opening; universal identical reactions would lose the strategic differences.
+
+Retain cause and timing in grievances. Audit permanent flags, history-tag classifiers, repeat-action discounts, and trust/disposition combinations so the same act cannot be ignored by one subsystem, counted twice by another, or recover merely because a display changed.
+
+## 10. Use coherent uncertainty and controlled variation
+
+Preserve the seeded RNG architecture. Define variation separately for campaign initialization, stable personal differences, event selection, factual parameters, execution, actor decisions, and observation. Use namespaced streams and stable occurrence/action identifiers. Browsing a dossier, opening a preview, changing layout, sorting a list, or loading a save must not draw a new result or consume gameplay randomness.
+
+Use bounded distributions and coherent correlations. A shared economic shock may affect many actors together; traits and related facts must remain plausible. Introduce residual uncertainty around meaningful causal drivers rather than independent noise on every field. Do not retune merely to hit a band edge or make all outcomes equally likely.
+
+Separate simulation truth, what an actor believes, what the President's administration knows, and what the interface displays. Distinguish outcome probability from confidence in an estimate. Advisors can be mistaken or biased, with errors grounded in information and traits. Store forecasts as they were issued so later results cannot rewrite what the player was told.
+
+Show exact established facts when useful, such as a recorded vote or spent amount. Use likelihood bands, ranges, confidence, dates, and concise drivers for uncertain outcomes. Unknown is not neutral. Do not reveal hidden thresholds, private loyalties, future outcomes, or exact trait scores through ordinary views.
+
+Verify deterministic replay for the same seed, compatible engine/content versions, and actions. Verify meaningful diversity across seeds. Reuse existing content pins/versioning rather than inventing a parallel scheme. Keep old occurrences, identity, histories, commitments, and pending effects stable through supported save migrations.
+
+## 11. Account for real effects and distributional consequences
+
+Trace each intervention from legal approval and funding through implementation capacity, delay, material outcomes, public perception, actor reactions, and later decisions. Separate immediate effects, recurring flows, one-time stocks, delayed effects, contingent effects, and irreversible consequences. Define the authoritative writer and units for each.
+
+Audit the financial-band contract in packages/content/src/impact-model.ts: resolveImpact currently emits choiceBorrowing for a nonzero financial scale. Check the authored meaning against that assumption. Output lost, private property damaged, federal spending authorized, funds actually spent, and debt incurred are different quantities; one must not silently stand in for another. Preserve the documented distinction between presidential budget authority and the national books unless an explicitly justified model change replaces it.
+
+Route material impacts by relevant exposure: region, industry, income, employment, age, household circumstances, public-service dependence, and other supported demographic attributes. Populations are overlapping groups with varied views. Do not equate demographic identity with personality, corruption, or an automatic political preference. Geography and exposure should explain why outcomes differ.
+
+Separate receiving a benefit or harm from noticing it, attributing it to the administration, and changing political support. Good policy need not produce an instant uniform approval gain; a popular promise need not mean implementation succeeded.
+
+Audit overlap among impact events, cohort effects, domestic signatures, gazetteer effects, sector effects, macro changes, and opinion calculations. The same loss or benefit must not be independently charged through several paths. Use source/contribution identity where needed, and preserve aggregate consistency. Explain aggregate changes and distributional differences from the actual applied record.
+
+Correct reversal semantics. Revocation, expiration, judicial relief, and repeal should remove appropriate continuing authority/effects; they cannot automatically restore lives, refund spent money, cancel borrowed debt, or erase unrelated later interventions. Test saturation/clamping, partial implementation, multiple overlapping policies, and repeated cancellation. Descriptions must match what the engine actually retained or reversed.
+
+Represent a remedy's scope in the effect contract: affected provision, application, jurisdiction, party, implementation phase, and effective date as appropriate. Limited relief must target applicable contributions rather than reverse the whole order or statute. Untouched provisions continue. Authorization must also be idempotent: a double click, retried commit, stale preview, or save/reload retry cannot charge or apply an act twice. Distinguish a later intentional reissuance from retrying the same action.
+
+## 12. Build a useful relationship and influence visualization
+
+Extend the existing person graph and relationship readers into a navigable relationship cloud integrated with dossiers, Congress, cabinet, world affairs, and intelligence. Reuse the established design system and interaction patterns.
+
+Support levels appropriate to the task: one person's immediate circle; an issue-specific coalition; a party, committee, or agency; the federal institutional picture; and relevant international relationships. Use search, filters, progressive expansion, and meaningful grouping. A global graph of every entity should not be the default working view.
+
+The graph must answer concrete questions: who can help move this proposal, who controls the next step, who trusts whom, whose opposition may spread, why a person matters here, which relationship changed, and how the assessment is known. Connect the visualization to an actionable dossier or decision without implying every visible actor can be directly controlled.
+
+Use node size for a clearly named influence measure, edge style for relationship type, arrows for direction, and distinct treatments for known versus assessed ties. Include an understandable legend. Keep layout stable; graph-layout randomness must be separate from simulation randomness. Highlight relevant paths and changes without exposing a precise future propagation that the player cannot know.
+
+Each important assessment needs an evidence/source description, observation date, confidence, and history where supported. Distinguish a suspected connection or alleged misconduct from an established fact. Apply intelligence access before computing displayed rankings, clusters, counts, tooltips, search results, and recommendations. Hidden relationships must not leak through graph geometry or a supposedly anonymous top-influencer score.
+
+Audit access rules themselves: shared membership in a broad economic or political organization must not automatically grant private-government intelligence access. Model explicit liaison/access and actual observed information. Biographical or dossier text must not invent an undocumented scandal, favor, or incident merely because a hash selected a sentence.
+
+Provide a keyboard-usable list/table equivalent, readable labels, reduced-motion behavior, adequate contrast, and phone interactions that do not depend on hovering, tiny nodes, or dragging alone. Allow the player to navigate back, change scope, compare relevant actors, and understand empty or unknown states. Measure performance with a full-term world and a dense network.
+
+## 13. Make the system understandable in plain language
+
+Write player-facing prose in direct, natural language. Put the practical meaning first, with technical/legal details available on demand. Use short paragraphs, semantic icons, clear units, visual comparisons, timelines, and expandable explanations.
+
+For a decision, help the player answer: what is happening; why it needs attention; what can be done; who decides or carries it out; what it costs; who may benefit or lose; how long it may take; what could go wrong; how certain the assessment is; and what happens if nothing is done.
+
+Add contextual help and worked examples for political influence, uncertain support, legal authority, judicial procedure, implementation, coalition shifts, and trust repair. Extend the existing glossary/help system. Explain unfamiliar terms at first useful encounter. Keep developer names, raw multipliers, internal IDs, and debug details out of ordinary flows.
+
+Use a committee/proposal example, a court appeal example, and a betrayed-partner example to show how the visuals and prose teach the same rules the engine runs. Test whether a new player can make a sensible decision without reading internal documentation.
+
+## 14. Use cost-effective models and the existing content workflow
+
+Keep gameplay offline with no runtime LLM calls. Use procedural rules, authored content, validators, and deterministic templates for the simulation.
+
+Use available small models for inventories, mechanical migrations, routine drafts, vocabulary cleanup, and coverage tasks once the structure is established. Use capable mid-tier models for bounded implementation and serious content. Reserve stronger reasoning for cross-system architecture, difficult legal/causal judgments, critical content, and independent review. Follow the current writers-room routing: Haiku-class routine/mechanical work, Sonnet-class serious scenarios and consequence cards, Opus-class critical/punctuation/set-piece content and independent content reviews, unless a recorded user instruction changes that requirement. Map those classes to models actually available; never pretend a model switch occurred.
+
+Give delegated tasks narrow ownership, complete briefs, expected outputs, and token/work limits. Share reusable evidence and schemas. Use one independent reviewer for each completed batch, rather than duplicating the entire audit in every context. The reviewer must meet the current tier requirement and must not be the drafting session.
+
+Run a small coverage-targeted authoring pilot before large batches. Track accepted items, rejection reasons, retries, cost or token use, and cost per accepted item where observable. Use session drivers; do not start external paid generation without existing explicit authorization. Preserve the validator and publish controls. Report cost honestly instead of inventing savings.
+
+## 15. Execute in dependency order and carry the work through
+
+First reconcile the baseline and create the findings/coverage records. Then establish shared contracts and select representative integrated slices. Implement and verify those slices through engine, saved state, content, selectors, interface, and explanation before multiplying content. Scale the catalogs against measured gaps, then validate cross-system behavior and full-term diversity.
+
+Include these integrated slices:
+
+1. A substantive bill amendment changes its cost and beneficiaries; a key figure changes coalition support; the measure passes or fails through the appropriate stages; enacted provisions affect implementation and public response; a related challenge can return through the courts.
+2. An order depends on a specific authority and funding, receives legal advice, implements over time, and faces a meaningful legal challenge with a procedurally appropriate remedy and traceable retained effects.
+3. A trusted partner is deliberately attacked; the target, other governments, domestic actors, and subsequent treaty/cooperation decisions respond coherently; intelligence explains what is known and what is disputed.
+4. An ambitious official's loyalty and incentives change; their real access and relationships shape constructive action or opposition; the effects and their evidence become visible in the relevant dossiers, graph, and record.
+
+Keep the current plan and backlog updated with the implementation. Apply the existing doc-sync contract to schema, architecture, content rules, consumer registries, units, saves, capability mappings, and UI documentation. Preserve unrelated work. Use the repository's required merge/build conventions if that stage is authorized; this prompt does not authorize publication, deployment, paid corpus generation, or destructive repository operations.
+
+Do the authorized reversible work without routine confirmation loops. When blocked by access or an actual missing decision, complete the independent work, record the exact blocker and next action, and continue where possible. Do not quietly reduce scope or label a partial implementation complete.
+
+## 16. Acceptance criteria and adversarial proof
+
+Define testable invariants before tuning. Establish the current baseline on the actual complete checkout, separate pre-existing failures, and run the relevant existing tests and required gates. Inspect live user flows as well as source. Add tests for behavior and integration risk, not ones that merely repeat constants or mirror implementation.
+
+The final proof must cover:
+
+1. Every new consequential field has a producer, validated meaning/units, actual consumer, persistence strategy, and reachable player use; there is no schema-only completion.
+2. Multiple substantive judicial families reach ordinary play. Parties, legal questions, procedural state, relevant facts, judges, disposition, remedy, and downstream effects remain connected.
+3. Legal merits and judge characteristics produce explainable differences across matched cases and seeds. Recorded individual votes agree with the holding, eligible participants, recusal, quorum, tie, and procedural rules; no empty-bench fallback invents a judgment.
+4. Threshold dismissal, interim relief, appeal/remand, limited remedies, and final decisions have distinct behavior and reachable proof in the mandatory matrix. Cases without a presidential choice remain visible without becoming pointless interruptions.
+5. A normal seeded vacancy can reach nomination, consideration, confirmation, and seating. Historical opinions and votes remain unchanged afterward.
+6. A proposal grants no enacted benefit at introduction, markup, failed passage, or veto. Substantive amendments change the final provisions and constituency/fiscal consequences.
+7. Required committee, calendar, chamber, cloture/passage, reconciliation, tiebreak, signing-window, and override behaviors pass their mandatory-matrix proofs. Documented retained abstractions cannot substitute for a required unimplemented behavior.
+8. Signed, unsigned, and overridden legislation enters the law/effect system exactly once. Repeal, renewal, sunset, and replacement do not duplicate or erase unrelated effects.
+9. Every material executive-authority restriction has positive and negative fixtures, including wrong/expired emergency, missing trigger, wrong target, and missing funding. UI and direct resolver agree.
+10. Signature, rulemaking, implementation, judicial action, and legislative disapproval cannot prematurely apply, double apply, or double reverse the same effect. Test double authorization, stale previews, retries, and save/reload around commitment, with exactly-once charges and distinct deliberate reissuance.
+11. Proposal, bill document, presidential review, budget, implementation, and record agree on one-time versus annual costs, units, funding, and horizon. Include the current LAW_OFFSETS omission as a regression case.
+12. Reversal works at bounds, after partial implementation, and alongside other interventions. Include limited relief against one provision, a later unrelated intervention, and repeated cancellation. Unaffected provisions, sunk costs, debt, irreversible harm, and unrelated improvements are preserved accurately.
+13. A confirmed deliberate first attack on a trusting partner can damage trust even without civilian casualties. Test subsequent treaty/cooperation decisions as well as the immediate meter.
+14. Accident, uncertain attribution, authorized cooperation, coercion, and treaty violation have distinguishable effects. Fear/compliance does not masquerade as trust.
+15. Third-party reactions use the actual relevant agreement and affected direction; sharing unrelated memberships cannot impersonate a defense compact.
+16. Repeated actions and long-lived grievances have intentional accumulation, saturation, and recovery; no duplicate penalties or forgotten cause.
+17. Matched actors with different offices, reach, relationships, and issue alignment produce meaningfully different coalition or implementation outcomes. Charisma and seniority are not universal control multipliers.
+18. Ambition can produce constructive initiative or opposition; corruption responds to opportunity and oversight. A low-reach actor and a powerful actor cannot create identical fallout solely because a trait value matches.
+19. Influence propagation respects independent preferences, direction, issue scope, bounded cycles, and duplicate-path prevention. Budget/attention constraints make alternative outreach strategies comparable.
+20. Material demographic effects follow exposure and preserve aggregate accounting. Benefits/harms and political attribution are separate. Include a fixture using overlapping impact, cohort, and domestic channels.
+21. Scenario casts are plausible and bound to real runtime entities. Conditions become reachable in intended states; universally eligible content is assessed on purpose, not automatically rejected.
+22. Recurring templates create distinct occurrences when allowed, with no overwritten history or permanent desk blockage. Family follow-ups keep their counterpart and close or lapse explicitly.
+23. Continue/fast-forward preserves unresolved presidential decisions, explicit inaction/defer/delegate choices, and declared defaults. Quiet periods and autonomous world activity work without filler decisions.
+24. Same seed, compatible versions, and actions reproduce results; save/load, previews, dossier browsing, graph interaction, and layout do not reroll them.
+25. Different seeds produce meaningful but plausible diversity in actors, opportunities, reactions, and outcomes. Report distributions, correlations, outliers, and dead content rather than a few favored seeds.
+26. Forecasts are measured against realized outcomes over seed batches, with clear probability/confidence meanings and sensible uncertainty. Do not claim calibration from one playthrough.
+27. Old supported saves preserve identities, known facts, commitments, pending proceedings, occurrences, history, and causal references. Migration does not invent prior knowledge or reset relationships.
+28. Causal trails connect decisions to later outcomes; no orphan references, double-counted effects, or historical recomputation against today's people or laws.
+29. Normal intelligence views reveal only permitted facts and assessments, including rankings, graph shape, counts, search, tooltips, and derived recommendations. An omniscient view remains explicitly separate if supported.
+30. The relationship cloud answers the intended issue/person/institution/world questions, has stable navigation and an accessible equivalent, and performs adequately at full-term scale.
+31. Court, Congress, order, scenario, relationship, and help flows work at the repository's desktop, phone, intermediate, and narrow reflow sizes. Verify keyboard access, focus, labels, contrast, reduced motion, and no clipping/overlap.
+32. A fresh player can explain the next step, costs, uncertainty, affected people, likely opposition, and inaction consequence from the interface. No hidden debug knowledge is required.
+
+Use ablations and matched comparisons where useful: traits held constant while reach changes; reach held constant while loyalty changes; identical case facts before/after a legal change; same crisis with/without an appropriation; same attack with different prior trust/agreements; previewed versus realized results. Test representative actions across ordinary full campaigns, not only hand-constructed perfect states.
+
+Respect the repository's current required gate order, including its build-before-cross-package-check requirement, applicable verify scripts, balance harness, and visual/browser proof. Re-run broader checks when the change or a failed gate creates a concrete risk. Do not weaken validators, invent passing results, count unexecuted tests, or tune a few seeds until the numbers look acceptable.
+
+## 17. Final delivery
+
+Provide the implemented result and a clear report of what changed, why, and how it was verified. Include the updated model/relationship diagrams, content coverage before and after, concrete gameplay examples, acceptance results, balance/diversity measurements, relevant visual proof, save compatibility, model/cost usage, and any remaining limitations with exact backlog ownership.
+
+Distinguish implemented, tested, observed in the running UI, and still pending. If code is presented in chat or a handoff, provide complete files or a complete applied change; do not substitute partial snippets, TODOs, or illustrative pseudo-implementations for finished work.
+
+Keep returning to the central product test: can the President see who and what matters, choose a plausible course, encounter a credible uncertain response, and understand the later consequences across people, institutions, and the country?

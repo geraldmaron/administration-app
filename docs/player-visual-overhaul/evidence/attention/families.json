@@ -1,0 +1,1650 @@
+{
+  "records": [
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 320,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 347,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 293,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 371,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 253,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 333,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 320,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 347,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 293,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 391,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 253,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 333,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 390,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 307,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 273,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 331,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 253,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 313,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 390,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 307,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 273,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 331,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 253,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 313,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 768,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 213,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 257,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 159,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 199,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 768,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 213,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 257,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 159,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 199,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 845,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 193,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 237,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 159,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 199,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 845,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 193,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 237,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 159,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 199,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 1280,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 195,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 161,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 219,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 141,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 181,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 1280,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 195,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 161,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 219,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 141,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 181,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 1440,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 175,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 161,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 219,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 141,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 181,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 1440,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 175,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 161,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 219,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 141,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 181,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 1920,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 175,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 161,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 219,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 141,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 181,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "brief",
+      "path": "/brief",
+      "width": 1920,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 175,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 161,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 219,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 141,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 181,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 320,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 369,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 320,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 369,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 390,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 331,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 390,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 331,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 768,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 269,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 768,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 269,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 845,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 269,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 845,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 269,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 1280,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 209,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 1280,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 209,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 1440,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 209,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 1440,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 209,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 1920,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 209,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "case-families",
+      "name": "bills",
+      "path": "/washington/congress?view=bills",
+      "width": 1920,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 209,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 320,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 199,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 219,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 320,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 199,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 219,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 390,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 159,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 390,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 179,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 159,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 768,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 768,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 845,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 845,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 1280,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 1280,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 1440,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 1440,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 1920,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "appointments-desk",
+      "name": "nominations",
+      "path": "/washington/congress?view=nominations",
+      "width": 1920,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 107,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 87,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 320,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 55,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 75,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 75,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 320,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 55,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 75,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 75,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 390,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 55,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 55,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 55,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 390,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 55,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 55,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 55,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 768,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 768,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 845,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 845,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 1280,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 1280,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 1440,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 1440,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 1920,
+      "theme": "light",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    },
+    {
+      "fixture": "war-joined",
+      "name": "country",
+      "path": "/world/nation/RUS",
+      "width": 1920,
+      "theme": "dark",
+      "metrics": {
+        "overflow": 0,
+        "rows": [
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          },
+          {
+            "height": 45,
+            "radius": "0px",
+            "shadow": "none"
+          }
+        ]
+      },
+      "axe": []
+    }
+  ],
+  "errors": [],
+  "journeys": [
+    {
+      "name": "country",
+      "keyboard": true,
+      "back": true
+    }
+  ]
+}

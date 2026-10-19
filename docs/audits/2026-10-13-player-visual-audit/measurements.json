@@ -1,0 +1,782 @@
+[
+  {
+    "width": 1280,
+    "url": "/brief",
+    "body": [
+      {
+        "width": 1192,
+        "padding": "32px"
+      }
+    ],
+    "kpis": [],
+    "commodity": [],
+    "suppliers": [],
+    "colors": [
+      {
+        "class": "ui-surface__body",
+        "bg": "rgba(0, 0, 0, 0)",
+        "shadow": "none"
+      }
+    ]
+  },
+  {
+    "width": 1280,
+    "url": "/world/security",
+    "body": [
+      {
+        "width": 1192,
+        "padding": "32px"
+      }
+    ],
+    "kpis": [
+      {
+        "text": "Military readiness\n\n72%\n\nMilitary readiness\n72%\n\n▬ No change this week. No posture is charging it.",
+        "width": 179,
+        "height": 156,
+        "x": 32,
+        "y": 143
+      },
+      {
+        "text": "Commands above routine\n\n0\nof 11\n\n0 surge, 0 heightened. None engaged abroad.",
+        "width": 179,
+        "height": 156,
+        "x": 221,
+        "y": 143
+      },
+      {
+        "text": "Forces free to go\n\n100%\n\n0% held abroad, 0% not ready, averaged over 16 assets.",
+        "width": 179,
+        "height": 156,
+        "x": 411,
+        "y": 143
+      },
+      {
+        "text": "Operations open\n\n40\noperations\n\n40 basing. No money paid out weekly.",
+        "width": 179,
+        "height": 156,
+        "x": 600,
+        "y": 143
+      },
+      {
+        "text": "Urgent intelligence\n\n0\nof 1 item\n\n0 reports filed. 0 taskings standing.",
+        "width": 179,
+        "height": 156,
+        "x": 789,
+        "y": 143
+      },
+      {
+        "text": "War Powers\n\n0\npapers open\n\nNo force you introduced is waiting on a report.",
+        "width": 179,
+        "height": 156,
+        "x": 979,
+        "y": 143
+      }
+    ],
+    "commodity": [],
+    "suppliers": [],
+    "colors": [
+      {
+        "class": "ui-surface__body",
+        "bg": "rgba(0, 0, 0, 0)",
+        "shadow": "none"
+      },
+      {
+        "class": "sec-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "sec-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "sec-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      }
+    ]
+  },
+  {
+    "width": 1280,
+    "url": "/nation/economy?view=markets&measure=crude",
+    "body": [
+      {
+        "width": 1192,
+        "padding": "32px"
+      }
+    ],
+    "kpis": [],
+    "commodity": [
+      {
+        "text": "Jobs report",
+        "icons": 0,
+        "width": 427
+      },
+      {
+        "text": "Consumer prices",
+        "icons": 0,
+        "width": 427
+      },
+      {
+        "text": "Output, advance estimate",
+        "icons": 0,
+        "width": 427
+      },
+      {
+        "text": "Federal Reserve decision",
+        "icons": 0,
+        "width": 427
+      },
+      {
+        "text": "Consumer prices",
+        "icons": 0,
+        "width": 427
+      },
+      {
+        "text": "Jobs report",
+        "icons": 0,
+        "width": 427
+      },
+      {
+        "text": "Output, advance estimate",
+        "icons": 0,
+        "width": 427
+      },
+      {
+        "text": "Federal Reserve decision",
+        "icons": 0,
+        "width": 427
+      },
+      {
+        "text": "Consumer prices",
+        "icons": 0,
+        "width": 427
+      },
+      {
+        "text": "Jobs report",
+        "icons": 0,
+        "width": 427
+      },
+      {
+        "text": "Crude oil\nWeekly price line\nCrude oil by week\n\n31 readings, from 1.07 to 1.06; lowest 1.05, highest 1.09.\n\nReaches the pump price. This week: up on measures on Iran.",
+        "icons": 0,
+        "width": 345
+      },
+      {
+        "text": "Natural gas\nWeekly price line",
+        "icons": 0,
+        "width": 345
+      },
+      {
+        "text": "Liquefied natural gas\nWeekly price line",
+        "icons": 0,
+        "width": 345
+      },
+      {
+        "text": "Wheat\nWeekly price line",
+        "icons": 0,
+        "width": 345
+      },
+      {
+        "text": "Corn\nWeekly price line",
+        "icons": 0,
+        "width": 345
+      },
+      {
+        "text": "Soybeans\nWeekly price line",
+        "icons": 0,
+        "width": 345
+      },
+      {
+        "text": "Potash\nWeekly price line",
+        "icons": 0,
+        "width": 345
+      },
+      {
+        "text": "Nitrogen fertilizer\nWeekly price line",
+        "icons": 0,
+        "width": 345
+      },
+      {
+        "text": "Copper\nWeekly price line",
+        "icons": 0,
+        "width": 345
+      },
+      {
+        "text": "Lithium\nWeekly price line",
+        "icons": 0,
+        "width": 345
+      },
+      {
+        "text": "Rare earths\nWeekly price line",
+        "icons": 0,
+        "width": 345
+      }
+    ],
+    "suppliers": [
+      {
+        "text": "United States\n22%",
+        "links": 0
+      },
+      {
+        "text": "Saudi Arabia\n11%",
+        "links": 0
+      },
+      {
+        "text": "Russia\n11%",
+        "links": 0
+      },
+      {
+        "text": "Canada\n6%",
+        "links": 0
+      },
+      {
+        "text": "China\n5%",
+        "links": 0
+      }
+    ],
+    "colors": [
+      {
+        "class": "ui-surface__body",
+        "bg": "rgba(0, 0, 0, 0)",
+        "shadow": "none"
+      },
+      {
+        "class": "eco-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "eco-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "eco-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "url": "/brief",
+    "body": [
+      {
+        "width": 1216,
+        "padding": "32px"
+      }
+    ],
+    "kpis": [],
+    "commodity": [],
+    "suppliers": [],
+    "colors": [
+      {
+        "class": "ui-surface__body",
+        "bg": "rgba(0, 0, 0, 0)",
+        "shadow": "none"
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "url": "/world/security",
+    "body": [
+      {
+        "width": 1216,
+        "padding": "32px"
+      }
+    ],
+    "kpis": [
+      {
+        "text": "Military readiness\n\n72%\n\nMilitary readiness\n72%\n\n▬ No change this week. No posture is charging it.",
+        "width": 183,
+        "height": 156,
+        "x": 32,
+        "y": 143
+      },
+      {
+        "text": "Commands above routine\n\n0\nof 11\n\n0 surge, 0 heightened. None engaged abroad.",
+        "width": 183,
+        "height": 156,
+        "x": 225,
+        "y": 143
+      },
+      {
+        "text": "Forces free to go\n\n100%\n\n0% held abroad, 0% not ready, averaged over 16 assets.",
+        "width": 183,
+        "height": 156,
+        "x": 419,
+        "y": 143
+      },
+      {
+        "text": "Operations open\n\n40\noperations\n\n40 basing. No money paid out weekly.",
+        "width": 183,
+        "height": 156,
+        "x": 612,
+        "y": 143
+      },
+      {
+        "text": "Urgent intelligence\n\n0\nof 1 item\n\n0 reports filed. 0 taskings standing.",
+        "width": 183,
+        "height": 156,
+        "x": 805,
+        "y": 143
+      },
+      {
+        "text": "War Powers\n\n0\npapers open\n\nNo force you introduced is waiting on a report.",
+        "width": 183,
+        "height": 156,
+        "x": 999,
+        "y": 143
+      }
+    ],
+    "commodity": [],
+    "suppliers": [],
+    "colors": [
+      {
+        "class": "ui-surface__body",
+        "bg": "rgba(0, 0, 0, 0)",
+        "shadow": "none"
+      },
+      {
+        "class": "sec-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "sec-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "sec-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "url": "/nation/economy?view=markets&measure=crude",
+    "body": [
+      {
+        "width": 1216,
+        "padding": "32px"
+      }
+    ],
+    "kpis": [],
+    "commodity": [
+      {
+        "text": "Jobs report",
+        "icons": 0,
+        "width": 436
+      },
+      {
+        "text": "Consumer prices",
+        "icons": 0,
+        "width": 436
+      },
+      {
+        "text": "Output, advance estimate",
+        "icons": 0,
+        "width": 436
+      },
+      {
+        "text": "Federal Reserve decision",
+        "icons": 0,
+        "width": 436
+      },
+      {
+        "text": "Consumer prices",
+        "icons": 0,
+        "width": 436
+      },
+      {
+        "text": "Jobs report",
+        "icons": 0,
+        "width": 436
+      },
+      {
+        "text": "Output, advance estimate",
+        "icons": 0,
+        "width": 436
+      },
+      {
+        "text": "Federal Reserve decision",
+        "icons": 0,
+        "width": 436
+      },
+      {
+        "text": "Consumer prices",
+        "icons": 0,
+        "width": 436
+      },
+      {
+        "text": "Jobs report",
+        "icons": 0,
+        "width": 436
+      },
+      {
+        "text": "Crude oil\nWeekly price line\nCrude oil by week\n\n31 readings, from 1.07 to 1.06; lowest 1.05, highest 1.09.\n\nReaches the pump price. This week: up on measures on Iran.",
+        "icons": 0,
+        "width": 353
+      },
+      {
+        "text": "Natural gas\nWeekly price line",
+        "icons": 0,
+        "width": 353
+      },
+      {
+        "text": "Liquefied natural gas\nWeekly price line",
+        "icons": 0,
+        "width": 353
+      },
+      {
+        "text": "Wheat\nWeekly price line",
+        "icons": 0,
+        "width": 353
+      },
+      {
+        "text": "Corn\nWeekly price line",
+        "icons": 0,
+        "width": 353
+      },
+      {
+        "text": "Soybeans\nWeekly price line",
+        "icons": 0,
+        "width": 353
+      },
+      {
+        "text": "Potash\nWeekly price line",
+        "icons": 0,
+        "width": 353
+      },
+      {
+        "text": "Nitrogen fertilizer\nWeekly price line",
+        "icons": 0,
+        "width": 353
+      },
+      {
+        "text": "Copper\nWeekly price line",
+        "icons": 0,
+        "width": 353
+      },
+      {
+        "text": "Lithium\nWeekly price line",
+        "icons": 0,
+        "width": 353
+      },
+      {
+        "text": "Rare earths\nWeekly price line",
+        "icons": 0,
+        "width": 353
+      }
+    ],
+    "suppliers": [
+      {
+        "text": "United States\n22%",
+        "links": 0
+      },
+      {
+        "text": "Saudi Arabia\n11%",
+        "links": 0
+      },
+      {
+        "text": "Russia\n11%",
+        "links": 0
+      },
+      {
+        "text": "Canada\n6%",
+        "links": 0
+      },
+      {
+        "text": "China\n5%",
+        "links": 0
+      }
+    ],
+    "colors": [
+      {
+        "class": "ui-surface__body",
+        "bg": "rgba(0, 0, 0, 0)",
+        "shadow": "none"
+      },
+      {
+        "class": "eco-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "eco-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "eco-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      }
+    ]
+  },
+  {
+    "width": 1920,
+    "url": "/brief",
+    "body": [
+      {
+        "width": 1696,
+        "padding": "248px"
+      }
+    ],
+    "kpis": [],
+    "commodity": [],
+    "suppliers": [],
+    "colors": [
+      {
+        "class": "ui-surface__body",
+        "bg": "rgba(0, 0, 0, 0)",
+        "shadow": "none"
+      }
+    ]
+  },
+  {
+    "width": 1920,
+    "url": "/world/security",
+    "body": [
+      {
+        "width": 1696,
+        "padding": "248px"
+      }
+    ],
+    "kpis": [
+      {
+        "text": "Military readiness\n\n72%\n\nMilitary readiness\n72%\n\n▬ No change this week. No posture is charging it.",
+        "width": 191,
+        "height": 156,
+        "x": 248,
+        "y": 143
+      },
+      {
+        "text": "Commands above routine\n\n0\nof 11\n\n0 surge, 0 heightened. None engaged abroad.",
+        "width": 191,
+        "height": 156,
+        "x": 449,
+        "y": 143
+      },
+      {
+        "text": "Forces free to go\n\n100%\n\n0% held abroad, 0% not ready, averaged over 16 assets.",
+        "width": 191,
+        "height": 156,
+        "x": 651,
+        "y": 143
+      },
+      {
+        "text": "Operations open\n\n40\noperations\n\n40 basing. No money paid out weekly.",
+        "width": 191,
+        "height": 156,
+        "x": 852,
+        "y": 143
+      },
+      {
+        "text": "Urgent intelligence\n\n0\nof 1 item\n\n0 reports filed. 0 taskings standing.",
+        "width": 191,
+        "height": 156,
+        "x": 1053,
+        "y": 143
+      },
+      {
+        "text": "War Powers\n\n0\npapers open\n\nNo force you introduced is waiting on a report.",
+        "width": 191,
+        "height": 156,
+        "x": 1255,
+        "y": 143
+      }
+    ],
+    "commodity": [],
+    "suppliers": [],
+    "colors": [
+      {
+        "class": "ui-surface__body",
+        "bg": "rgba(0, 0, 0, 0)",
+        "shadow": "none"
+      },
+      {
+        "class": "sec-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "sec-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "sec-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      }
+    ]
+  },
+  {
+    "width": 1920,
+    "url": "/nation/economy?view=markets&measure=crude",
+    "body": [
+      {
+        "width": 1696,
+        "padding": "248px"
+      }
+    ],
+    "kpis": [],
+    "commodity": [
+      {
+        "text": "Jobs report",
+        "icons": 0,
+        "width": 455
+      },
+      {
+        "text": "Consumer prices",
+        "icons": 0,
+        "width": 455
+      },
+      {
+        "text": "Output, advance estimate",
+        "icons": 0,
+        "width": 455
+      },
+      {
+        "text": "Federal Reserve decision",
+        "icons": 0,
+        "width": 455
+      },
+      {
+        "text": "Consumer prices",
+        "icons": 0,
+        "width": 455
+      },
+      {
+        "text": "Jobs report",
+        "icons": 0,
+        "width": 455
+      },
+      {
+        "text": "Output, advance estimate",
+        "icons": 0,
+        "width": 455
+      },
+      {
+        "text": "Federal Reserve decision",
+        "icons": 0,
+        "width": 455
+      },
+      {
+        "text": "Consumer prices",
+        "icons": 0,
+        "width": 455
+      },
+      {
+        "text": "Jobs report",
+        "icons": 0,
+        "width": 455
+      },
+      {
+        "text": "Crude oil\nWeekly price line\nCrude oil by week\n\n31 readings, from 1.07 to 1.06; lowest 1.05, highest 1.09.\n\nReaches the pump price. This week: up on measures on Iran.",
+        "icons": 0,
+        "width": 368
+      },
+      {
+        "text": "Natural gas\nWeekly price line",
+        "icons": 0,
+        "width": 368
+      },
+      {
+        "text": "Liquefied natural gas\nWeekly price line",
+        "icons": 0,
+        "width": 368
+      },
+      {
+        "text": "Wheat\nWeekly price line",
+        "icons": 0,
+        "width": 368
+      },
+      {
+        "text": "Corn\nWeekly price line",
+        "icons": 0,
+        "width": 368
+      },
+      {
+        "text": "Soybeans\nWeekly price line",
+        "icons": 0,
+        "width": 368
+      },
+      {
+        "text": "Potash\nWeekly price line",
+        "icons": 0,
+        "width": 368
+      },
+      {
+        "text": "Nitrogen fertilizer\nWeekly price line",
+        "icons": 0,
+        "width": 368
+      },
+      {
+        "text": "Copper\nWeekly price line",
+        "icons": 0,
+        "width": 368
+      },
+      {
+        "text": "Lithium\nWeekly price line",
+        "icons": 0,
+        "width": 368
+      },
+      {
+        "text": "Rare earths\nWeekly price line",
+        "icons": 0,
+        "width": 368
+      }
+    ],
+    "suppliers": [
+      {
+        "text": "United States\n22%",
+        "links": 0
+      },
+      {
+        "text": "Saudi Arabia\n11%",
+        "links": 0
+      },
+      {
+        "text": "Russia\n11%",
+        "links": 0
+      },
+      {
+        "text": "Canada\n6%",
+        "links": 0
+      },
+      {
+        "text": "China\n5%",
+        "links": 0
+      }
+    ],
+    "colors": [
+      {
+        "class": "ui-surface__body",
+        "bg": "rgba(0, 0, 0, 0)",
+        "shadow": "none"
+      },
+      {
+        "class": "eco-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "eco-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      },
+      {
+        "class": "eco-panel",
+        "bg": "rgb(255, 255, 255)",
+        "shadow": "none"
+      }
+    ]
+  }
+]

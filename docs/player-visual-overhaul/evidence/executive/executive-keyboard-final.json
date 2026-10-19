@@ -1,0 +1,26 @@
+[
+  {
+    "width": 320,
+    "theme": "light",
+    "keyboard": "pass",
+    "rosterAxe": 0
+  },
+  {
+    "width": 320,
+    "theme": "dark",
+    "keyboard": "pass",
+    "rosterAxe": 0
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "keyboard": "pass",
+    "rosterAxe": 0
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "keyboard": "pass",
+    "rosterAxe": 0
+  }
+]

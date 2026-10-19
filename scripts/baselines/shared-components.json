@@ -1,0 +1,4 @@
+{
+  "$comment": "Player components shadowing a design-system export, and <Text> style overrides in apps/player and packages/ui, per file. Written by `node scripts/verify-shared-components.mjs --update-baseline`; it may only shrink.",
+  "entries": {}
+}

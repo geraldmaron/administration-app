@@ -1,0 +1,11 @@
+{
+  "id": "content/cover-locks/v1/scan.jpg",
+  "version": 1,
+  "scanFile": "scan.jpg",
+  "medium": "dry felt-tip on cream paper",
+  "hand": "one hand, slightly wobbly, one weight",
+  "ink": "blue-black",
+  "accent": "one burnt-ochre sliver, never more than a sliver of the frame",
+  "fills": "hatch only — no vector smoothness, watercolor, or drop shadows",
+  "recipes": ["object-as-metaphor", "scene", "character", "doodle-diagram"]
+}

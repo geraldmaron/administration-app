@@ -1,0 +1,21 @@
+@layer rooms {
+  .brief-calendar { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(16rem, 1fr); gap: var(--space-lg); }
+  .brief-calendar__month, .brief-calendar__agenda { min-inline-size: 0; padding: var(--space-lg); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-ground-raised); }
+  .brief-calendar__toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); margin-block-end: var(--space-md); }
+  .brief-calendar__toolbar h2 { margin: 0; font-size: var(--size-heading); }
+  .brief-calendar__toolbar > div { display: flex; gap: var(--space-xs); }
+  .brief-calendar__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+  .brief-calendar__weekday { text-align: center; font-size: var(--size-caption); padding-block: var(--space-xs); color: var(--color-text-secondary); }
+  .brief-calendar__grid button { display: flex; flex-direction: column; gap: var(--space-xs); min-inline-size: 0; min-block-size: 4.5rem; padding: var(--space-xs); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-ground-base); color: var(--color-text-primary); font: inherit; cursor: pointer; text-align: start; }
+  .brief-calendar__grid button[data-outside] { color: var(--color-text-tertiary); }
+  .brief-calendar__grid button[aria-current] > span:first-child { font-weight: var(--weight-strong); text-decoration: underline; text-underline-offset: 4px; }
+  .brief-calendar__grid button[aria-pressed="true"] { border-color: var(--color-gold-deep); box-shadow: inset 0 0 0 1px var(--color-gold-deep); }
+  .brief-calendar__grid button:focus-visible { outline: 2px solid var(--color-text-primary); outline-offset: 2px; }
+  .brief-calendar__event { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; font-size: var(--size-caption); }
+  .brief-calendar__agenda h3 { margin-block-start: 0; }
+  .brief-calendar__agenda ul { padding: 0; list-style: none; display: grid; gap: var(--space-sm); }
+  .brief-calendar__appointment { display: grid; gap: var(--space-sm); padding: var(--space-md); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); color: var(--color-text-primary); text-decoration: none; }
+  .brief-calendar__event-note { color: var(--color-text-secondary); font-size: var(--size-label); }
+  @media (max-width: 55em) { .brief-calendar { grid-template-columns: 1fr; } }
+  @media (max-width: 30em) { .brief-calendar__month, .brief-calendar__agenda { padding: var(--space-sm); } .brief-calendar__grid button { min-block-size: 3.5rem; } .brief-calendar__event > span { display: none; } }
+}

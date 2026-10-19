@@ -1,0 +1,287 @@
+/* Tabs (views of one subject) and collections (ranked rows that never hide
+   their tail). Tabs read as an underlined strip, distinct from segmented
+   controls, filter chips and navigation. */
+@layer components {
+  .ui-tabs {
+    min-inline-size: 0;
+  }
+
+  .ui-tabs__list {
+    display: flex;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    gap: var(--space-xs);
+    overflow-x: auto;
+    border-block-end: 1px solid var(--color-border-subtle);
+    scrollbar-width: none;
+  }
+
+  .ui-tabs__list::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* A strip wider than its surface fades at the edge that still has tabs
+     beyond it; each fade is sticky to its end and shown by the scroll
+     position, so it is gone when the end is reached or nothing overflows. */
+  .ui-tabs__list::before,
+  .ui-tabs__list::after {
+    content: "";
+    position: sticky;
+    z-index: 1;
+    flex: none;
+    inline-size: 2rem;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ui-tabs__list::before {
+    inset-inline-start: 0;
+    margin-inline-end: calc(-2rem - var(--space-xs));
+    background: linear-gradient(to right, var(--tabs-ground, var(--color-ground-base)), transparent);
+  }
+
+  .ui-tabs__list::after {
+    inset-inline-end: 0;
+    margin-inline-start: calc(-2rem - var(--space-xs));
+    background: linear-gradient(to left, var(--tabs-ground, var(--color-ground-base)), transparent);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .ui-tabs__list::before {
+      animation: ui-tabs-edge-in linear both;
+      animation-timeline: scroll(nearest inline);
+    }
+
+    .ui-tabs__list::after {
+      animation: ui-tabs-edge-out linear both;
+      animation-timeline: scroll(nearest inline);
+    }
+
+    @keyframes ui-tabs-edge-in {
+      0% { opacity: 0; }
+      12%, 100% { opacity: 1; }
+    }
+
+    @keyframes ui-tabs-edge-out {
+      0%, 88% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+  }
+
+  .ui-tabs[data-density="compact"] .ui-tabs__tab {
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-tabs[data-density="compact"] .ui-tabs__tab[aria-selected="true"]::after {
+    inset-inline: var(--space-xs);
+  }
+
+  .ui-tabs__tab {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-sm);
+    min-block-size: var(--hit-min);
+    padding: var(--space-sm) var(--space-md);
+    border: 0;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: var(--size-body);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-control);
+    cursor: pointer;
+  }
+
+  .ui-tabs__tab:hover {
+    color: var(--color-text-primary);
+  }
+
+  .ui-tabs__tab[aria-selected="true"] {
+    color: var(--color-blue);
+  }
+
+  .ui-tabs__tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--space-sm);
+    inset-block-end: -1px;
+    block-size: 3px;
+    border-radius: 2px 2px 0 0;
+    background: var(--color-blue);
+  }
+
+  .ui-tabs__count {
+    min-inline-size: 22px;
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-pill);
+    background: var(--color-ground-raised-hover);
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+    font-variant-numeric: tabular-nums;
+    line-height: 20px;
+    text-align: center;
+  }
+
+  .ui-tabs__panel {
+    padding-block-start: var(--space-xl);
+  }
+
+  .ui-tabs__panel:focus-visible {
+    outline-offset: 4px;
+  }
+
+  .ui-collection__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding-block: var(--space-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .ui-collection__count {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ui-collection__pages {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ui-collection__page {
+    min-inline-size: 2.25rem;
+    min-block-size: 2.25rem;
+    padding: 0 var(--space-xs);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-base);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-weight: var(--weight-strong);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+
+  .ui-collection__page:hover:not(:disabled) { border-color: var(--color-border-strong); }
+
+  .ui-collection__page[aria-current="page"] {
+    border-color: var(--color-blue);
+    background: var(--color-blue);
+    color: var(--color-ground-base);
+  }
+
+  .ui-collection__page:disabled { color: var(--color-text-disabled); cursor: not-allowed; }
+  .ui-collection__gap { padding-inline: 2px; color: var(--color-text-tertiary); }
+
+  /* Under a table the foot is a row of the table; it lines up with the cells above. */
+  .ui-collection__foot-cell > .ui-collection__foot {
+    padding-inline: var(--space-md);
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  /* A sortable column header: the whole header is the button, the arrow says the order. */
+  .ui-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs, 4px);
+    min-block-size: 2rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: var(--weight-strong);
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .ui-sort[data-align="end"] { flex-direction: row-reverse; text-align: end; }
+  th[data-align="end"] { text-align: end; }
+  .ui-sort__label { display: grid; }
+  .ui-sort__detail { color: var(--color-text-tertiary); font-size: var(--size-caption); font-weight: normal; }
+  .ui-sort__arrow { color: var(--color-text-tertiary); font-size: 0.75em; }
+  .ui-sort[data-active] .ui-sort__arrow { color: var(--color-blue); }
+  .ui-sort:hover .ui-sort__label { text-decoration: underline; }
+
+  /* The select stands in for the headers only where a stacked table hides them; SortPicker measures that itself. */
+  .ui-sort-picker { display: grid; gap: 4px; font-size: var(--size-label); font-weight: var(--weight-strong); }
+  .ui-sort-picker[hidden] { display: none; }
+
+  .ui-collection__empty {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  /* The phone table rule: below 44rem of container width a table with
+     .ui-table--stack reads as one labeled block per row (label left, value
+     right) instead of a squeezed grid. Cells carry data-label; a cell with
+     several children stacks them in the value column. Put the table, or a
+     wrapper around it, in a container (container-type: inline-size). */
+  @container (max-inline-size: 44rem) {
+    .ui-table--stack thead {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+
+    .ui-table--stack,
+    .ui-table--stack tbody,
+    .ui-table--stack tr,
+    .ui-table--stack th,
+    .ui-table--stack td {
+      display: block;
+    }
+
+    .ui-table--stack tr {
+      padding-block: var(--space-sm);
+      border-block-end: 1px solid var(--color-border-strong);
+    }
+
+    .ui-table--stack th,
+    .ui-table--stack td {
+      border: 0;
+      padding-block: var(--space-2xs);
+    }
+
+    .ui-table--stack :is(td, th)[data-label] {
+      display: grid;
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      column-gap: var(--space-sm);
+      align-items: start;
+    }
+
+    .ui-table--stack :is(td, th)[data-label] > * {
+      grid-column: 2;
+    }
+
+    .ui-table--stack :is(td, th)[data-label]::before {
+      content: attr(data-label);
+      grid-column: 1;
+      color: var(--color-text-tertiary);
+      font-size: var(--size-caption);
+      font-weight: var(--weight-regular);
+    }
+
+    .ui-table--stack tr.ui-row-target:hover {
+      background: var(--color-ground-raised-hover);
+    }
+  }
+}
+
+@layer components {
+  .ui-tabs { border-block-end-color: transparent; }
+  .ui-tabs__tab { border-radius: var(--radius-pill); padding-inline: var(--space-lg); }
+  .ui-tabs__tab[aria-selected="true"] { background: var(--status-info-fill); }
+  .ui-tabs__tab[aria-selected="true"]::after { display: none; }
+}

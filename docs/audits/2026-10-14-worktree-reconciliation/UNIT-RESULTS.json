@@ -1,0 +1,87 @@
+{
+  "initial_command": "pnpm run test",
+  "initial_exit_code": 1,
+  "packages": [
+    {
+      "package": "packages/contracts",
+      "initial_failed": 0,
+      "initial_passed": 1
+    },
+    {
+      "package": "packages/design",
+      "initial_failed": 0,
+      "initial_passed": 23
+    },
+    {
+      "package": "packages/world",
+      "initial_failed": 0,
+      "initial_passed": 557
+    },
+    {
+      "package": "services/api",
+      "initial_failed": 0,
+      "initial_passed": 32
+    },
+    {
+      "package": "packages/ui-web",
+      "initial_failed": 0,
+      "initial_passed": 86
+    },
+    {
+      "package": "packages/engine",
+      "initial_failed": 1,
+      "initial_passed": 4600
+    },
+    {
+      "package": "packages/content",
+      "initial_failed": 0,
+      "initial_passed": 1029
+    },
+    {
+      "package": "packages/player-core",
+      "initial_failed": 1,
+      "initial_passed": 1456
+    },
+    {
+      "package": "studio-cli",
+      "initial_failed": 4,
+      "initial_passed": 356
+    },
+    {
+      "package": "apps/desktop",
+      "initial_failed": 0,
+      "initial_passed": 1
+    },
+    {
+      "package": "apps/studio",
+      "initial_failed": 0,
+      "initial_passed": 92
+    },
+    {
+      "package": "apps/web",
+      "initial_failed": 0,
+      "initial_passed": 447
+    }
+  ],
+  "reruns": [
+    {
+      "command": "pnpm --filter @admin/player-core run test src/conversation/lapse-source.test.ts",
+      "passed": 2
+    },
+    {
+      "command": "pnpm --filter @admin/studio-cli run test src/jobs/repair-session-context.test.ts",
+      "passed": 7
+    },
+    {
+      "command": "pnpm --filter @admin/engine run test hill-ledger-golden.test.ts",
+      "passed": 1,
+      "runtime": "Node 22",
+      "after": "runtime reference hash correction"
+    },
+    {
+      "command": "pnpm --filter @admin/web run test",
+      "passed": 447,
+      "after": "shared focus restoration correction"
+    }
+  ]
+}

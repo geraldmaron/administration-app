@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const p=process.env.TOOL_INPUT_FILE_PATH||'';if(p.endsWith('.json')){try{JSON.parse(require('fs').readFileSync(p,'utf8'));process.exit(0)}catch(e){console.error('Invalid JSON in '+p+': '+e.message);process.exit(2)}}\"",
+            "timeout": 5
+          }
+        ],
+        "id": "post:edit:json-validate",
+        "description": "Validate JSON syntax after editing .json files"
+      }
+    ]
+  },
+  "permissions": {
+    "allow": []
+  },
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "memory": {
+      "type": "http",
+      "url": "http://127.0.0.1:8765/"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    }
+  }
+}

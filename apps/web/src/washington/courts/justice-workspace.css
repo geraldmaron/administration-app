@@ -1,0 +1,60 @@
+@layer rooms {
+  .justice-workspace { container-type: inline-size; }
+  .justice-command { display: grid; gap: var(--space-lg); padding: var(--panel-pad); border-block-end: 1px solid var(--color-border-strong); }
+  .justice-command__identity { display: flex; align-items: center; gap: var(--space-md); min-inline-size: 0; }
+  .justice-command__identity > svg { flex: none; color: var(--color-gold-deep); }
+  .justice-command__identity > div { display: grid; gap: var(--space-2xs); flex: 1; min-inline-size: 0; }
+  .justice-kicker { font-size: var(--size-caption); color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .08em; }
+  .justice-readings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); margin: 0; }
+  .justice-readings > div { display: grid; align-content: start; gap: var(--space-xs); min-inline-size: 0; border-inline-start: 3px solid var(--color-border-strong); padding-inline-start: var(--space-sm); }
+  .justice-readings > div[data-attention] { border-color: var(--status-warning-ink); }
+  .justice-readings dt { color: var(--color-text-secondary); font-size: var(--size-caption); }
+  .justice-readings dd { margin: 0; font-size: var(--size-title); font-variant-numeric: tabular-nums; font-weight: var(--weight-strong); overflow-wrap: anywhere; }
+  .justice-readings dd small { font-size: var(--size-body); color: var(--color-text-secondary); }
+  .justice-readings .justice-readings__date { font-size: var(--size-body); }
+  .justice-workspace__body, .justice-workspace__main, .justice-workspace__context { display: grid; gap: var(--space-lg); align-content: start; min-inline-size: 0; }
+  .justice-workspace__context h2 { margin: 0; font-size: var(--size-title); }
+  .justice-workspace__context p { margin: 0; color: var(--color-text-secondary); }
+  .justice-attention-row { display: flex; align-items: center; gap: var(--space-md); min-block-size: 44px; padding: var(--space-sm); color: inherit; text-decoration: none; }
+  .justice-attention-row > span:nth-child(2) { display: grid; gap: var(--space-xs); flex: 1; min-inline-size: 0; }
+  .justice-attention-row > span > span { color: var(--color-text-secondary); font-size: var(--size-small); }
+  .justice-member-link { display: flex; align-items: center; gap: var(--space-sm); inline-size: 100%; min-block-size: 44px; padding: var(--space-sm); color: inherit; text-decoration: none; }
+  .justice-member-link .court-bench__identity { display: grid; gap: var(--space-2xs); flex: 1; min-inline-size: 0; }
+  .justice-member-link .court-bench__identity small { color: var(--color-text-secondary); }
+  .justice-workspace .court-bench__member { display: block; padding: 0; }
+  .justice-workspace .court-bench__composition { grid-template-columns: minmax(0, 1fr); }
+  .justice-workspace .court-bench__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-xs); }
+  .justice-agenda-row { display: grid; grid-template-columns: minmax(5rem, .45fr) minmax(0, 1fr); align-items: start; gap: var(--space-md); inline-size: 100%; min-block-size: 44px; color: inherit; text-decoration: none; padding: var(--space-sm); }
+  .justice-agenda-row .court-calendar__when { display: grid; gap: var(--space-xs); border-inline-start: 3px solid var(--color-gold-deep); padding-inline-start: var(--space-sm); }
+  .justice-agenda-row .court-calendar__what { display: grid; gap: var(--space-xs); }
+  .justice-agenda-row small { color: var(--color-text-secondary); }
+  .justice-workspace .court-calendar__list li { display: block; padding: 0; }
+  .court-system .court-case__body { color: inherit; text-decoration: none; min-block-size: 44px; }
+  .court-system .court-case__body:hover .court-case__title { text-decoration: underline; }
+  .justice-workspace .court-case { align-items: start; }
+  .justice-workspace a:focus-visible, .justice-workspace button:focus-visible { outline: 2px solid var(--color-blue); outline-offset: 3px; }
+  .justice-workspace a:hover { background: var(--color-ground-sunken); }
+  .judicial-ledger { display: grid; gap: var(--space-md); list-style: none; margin: 0; padding: 0; }
+  .judicial-ledger__case { display: grid; gap: var(--space-sm); min-block-size: 44px; padding: var(--space-md); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); color: inherit; text-decoration: none; }
+  .judicial-ledger__heading { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }
+  .judicial-ledger__heading > strong { flex: 1; min-inline-size: min(12rem, 100%); }
+  .judicial-ledger__facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--space-sm); font-size: var(--size-caption); color: var(--color-text-secondary); }
+  .judicial-ledger__question { font-size: var(--size-small); }
+  .judicial-ledger__ground { color: var(--color-text-secondary); font-size: var(--size-caption); }
+  .case-workspace__header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }
+  .case-workspace__evidence { display: grid; gap: var(--space-lg); }
+  .case-workspace__evidence > div, .case-workspace__evidence > aside { display: grid; gap: var(--space-lg); align-content: start; min-inline-size: 0; }
+  .case-workspace .nation-section { padding: var(--panel-pad); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); }
+  .case-workspace .nation-section p { overflow-wrap: anywhere; }
+  .court-forum-evidence { display: grid; gap: var(--space-md); }
+  .court-forum-evidence__composition { display: grid; gap: var(--space-xs); font-size: var(--size-small); }
+  @container (min-width: 52rem) {
+    .case-workspace__evidence { grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr); }
+    .justice-command > .justice-readings { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .justice-workspace__body { grid-template-columns: minmax(0, 1.8fr) minmax(18rem, 1fr); }
+  }
+  @container (max-width: 26rem) {
+    .justice-agenda-row { grid-template-columns: minmax(0, 1fr); }
+    .justice-command { padding-inline: var(--space-sm); }
+  }
+}

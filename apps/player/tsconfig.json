@@ -1,0 +1,20 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "types": [],
+    "paths": {
+      "phosphor-react-native/src/icons/*": [
+        "../../node_modules/phosphor-react-native/lib/typescript/icons/*.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "app",
+    "src",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
+}

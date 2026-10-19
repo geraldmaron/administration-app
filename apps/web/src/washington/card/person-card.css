@@ -1,0 +1,224 @@
+/* A person in a post: face, post over name, one quiet line, the reads as dials. */
+@layer rooms {
+  .person-card {
+    --card-ink: var(--color-gold);
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-2xs) var(--space-sm);
+    align-items: center;
+    padding: var(--space-sm) var(--space-md) var(--space-sm) var(--space-sm);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+    box-shadow: inset 3px 0 0 var(--card-ink);
+  }
+
+  .person-card[data-ink="blue"] { --card-ink: var(--color-blue); }
+  .person-card[data-ink="red"] { --card-ink: var(--color-red); }
+  .person-card[data-ink="democrat"] { --card-ink: var(--color-party-democrat); }
+  .person-card[data-ink="republican"] { --card-ink: var(--color-party-republican); }
+  .person-card[data-ink="independent"] { --card-ink: var(--color-party-independent); }
+  .person-card[data-ink="neutral"] { --card-ink: var(--color-border-strong); }
+
+  .person-card[aria-current="true"] {
+    border-color: var(--color-blue);
+    background: var(--status-info-fill);
+  }
+
+  .person-card--agency {
+    background: var(--color-ground-base);
+  }
+
+  .person-card__seat {
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding: 2px;
+    border-radius: 50%;
+    background: var(--card-ink);
+  }
+
+  .person-card__seat .ui-portrait {
+    outline-offset: 0;
+  }
+
+  .person-card__empty {
+    display: grid;
+    place-items: center;
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+    border-radius: 50%;
+    background: var(--color-ground-abyss);
+    color: var(--card-ink);
+  }
+
+  .person-card__badge {
+    position: absolute;
+    inset-block-end: -2px;
+    inset-inline-end: -2px;
+    display: grid;
+    place-items: center;
+    inline-size: 1.375rem;
+    block-size: 1.375rem;
+    border: 2px solid var(--color-ground-raised);
+    border-radius: 50%;
+    background: var(--color-ground-base);
+    color: var(--card-ink);
+  }
+
+  .person-card__who {
+    display: grid;
+    gap: 2px;
+    min-inline-size: 0;
+  }
+
+  .person-card__eyebrow {
+    margin: 0;
+    color: var(--color-gold);
+    font-size: var(--size-caption);
+    font-weight: var(--weight-strong);
+    letter-spacing: var(--tracking-eyebrow);
+    line-height: var(--leading-compact);
+    text-transform: uppercase;
+  }
+
+  .person-card__eyebrow a,
+  .person-card__name a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .person-card__name a:hover {
+    text-decoration: underline;
+  }
+
+  .person-card__name {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-snug);
+    overflow-wrap: anywhere;
+  }
+
+  .person-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-sm);
+    align-items: center;
+    margin: 2px 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .person-card__meta .ui-tag {
+    min-block-size: 20px;
+    padding: 1px 7px;
+    font-size: var(--size-caption);
+  }
+
+  .person-card__place {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+  }
+
+  .person-card__pending {
+    margin: 0;
+    color: var(--color-gold);
+    font-size: var(--size-small);
+  }
+
+  .person-card__readings {
+    display: flex;
+    gap: var(--space-sm);
+  }
+
+  .person-card__foot {
+    grid-column: 1 / -1;
+  }
+
+  /* Too narrow for the dials beside the name: they drop under it. */
+  @container (max-width: 20rem) {
+    .person-card {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .person-card__readings {
+      grid-column: 2;
+    }
+  }
+
+  /* A reading as a small dial: a half circle, its word under it. */
+  .person-dial {
+    --dial-ink: var(--color-blue);
+    display: grid;
+    justify-items: center;
+    min-inline-size: 4.5rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .person-dial[data-tone="risk"],
+  .person-dial[data-tone="bad"] { --dial-ink: var(--status-danger-ink); }
+  .person-dial[data-tone="good"] { --dial-ink: var(--status-success-ink); }
+  .person-dial[data-tone="watch"] { --dial-ink: var(--status-warning-ink); }
+
+  .person-dial svg {
+    inline-size: 2.75rem;
+    overflow: visible;
+  }
+
+  .person-dial__band {
+    fill: none;
+    stroke: var(--color-ground-abyss);
+    stroke-width: 4;
+  }
+
+  .person-dial__band[data-lit="true"] {
+    stroke: var(--dial-ink);
+  }
+
+  /* A lean runs between two named ends: the track is quiet and the needle says where. */
+  .person-dial__band--ends {
+    stroke: var(--color-border-strong);
+  }
+
+  .person-dial__needle {
+    stroke: var(--color-gold-deep);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .person-dial__hub {
+    fill: var(--color-gold-deep);
+  }
+
+  /* A thin read is drawn faint: the services are guessing. */
+  .person-dial[data-faint="true"] .person-dial__band[data-lit="true"] {
+    stroke-dasharray: 2 1.5;
+    opacity: 0.6;
+  }
+
+  .person-dial__word {
+    margin-block-start: -4px;
+    color: var(--color-text-primary);
+    font-size: var(--size-small);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-compact);
+  }
+
+  .person-dial[data-tone="risk"] .person-dial__word,
+  .person-dial[data-tone="bad"] .person-dial__word { color: var(--status-danger-ink); }
+  .person-dial[data-tone="good"] .person-dial__word { color: var(--status-success-ink); }
+  .person-dial[data-tone="watch"] .person-dial__word { color: var(--status-warning-ink); }
+
+  .person-dial__label {
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+    line-height: var(--leading-compact);
+  }
+}

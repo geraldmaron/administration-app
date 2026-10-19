@@ -1,0 +1,386 @@
+{
+  "wave": "W2",
+  "decisions": [
+    {
+      "id": "the-pier-stands-empty",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The walkout is the incident: the crews put their tools down this morning over an unformulated indexation clause, creating the strike the week describes."
+      },
+      "presumes": "Dockworkers walked out at six this morning over an indexation clause; a strike is under way and ships are due.",
+      "evidence": "Reasoned from prose: the opening reports the stoppage as this morning's event. Frequencies for the class readings (209-week sample): conditionActive unrest 22.6% of weeks (38/48 campaigns; 10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%, >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; cohortStrain at most -0.1 on the cohorts a labor week would read is 0.6-4.0%; crimeTrend rising 2.7%. A strike is narrower than the standing unrest reading, so a gate would deal this week only on a board that already has a street unrest condition and would starve calm boards of a plain labor dispute.",
+      "risk": "A reviewer may prefer an unrest reading, but any gate would both lack fit and change which boards deal the week; introduces is the accurate declaration."
+    },
+    {
+      "id": "the-campus-occupation",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The occupation is the incident: students take and hold the central lawn over three years of cuts, creating the standing protest the week reports."
+      },
+      "presumes": "Three thousand students have held the central lawn for five days over teaching-post cuts.",
+      "evidence": "Reasoned from prose: nothing in the week refers to a prior decision or a prior unrest condition. Frequencies for the class readings (209-week sample): conditionActive unrest 22.6% of weeks (38/48 campaigns; 10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%, >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; cohortStrain at most -0.1 on the cohorts a labor week would read is 0.6-4.0%; crimeTrend rising 2.7%. Not gated because the week is the occupation, not a response to unrest already on the board.",
+      "risk": "The occupation is five days old at the opening, so a reviewer could say the state predates the week; no earlier scenario or flag creates it, so the week is the first the player sees of it."
+    },
+    {
+      "id": "the-factory-shutdown-spreads",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The shutdown is the incident: three plants stop their lines and lay off two thousand workers, creating the sector unrest the week asks the player to contain."
+      },
+      "presumes": "Three plants closed over the tariff schedule and two thousand idle workers stand at the gates.",
+      "evidence": "Reasoned from prose: the plants closing is the first line; the \"unrest in four provinces\" is a risk the cabinet raises, not a state the week asserts. Frequencies for the class readings (209-week sample): conditionActive unrest 22.6% of weeks (38/48 campaigns; 10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%, >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; cohortStrain at most -0.1 on the cohorts a labor week would read is 0.6-4.0%; crimeTrend rising 2.7%. ",
+      "risk": "The tariff named in the prose is the counterpart's, bound by the band cast; no tariff condition is read, so the cause is narrative only."
+    },
+    {
+      "id": "the-harvest-fails",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The failed harvest and the farmers' march are the incident: the northern farms bring in half a crop and put their representatives on the department steps, creating the protest the week reports."
+      },
+      "presumes": "Farm representatives have camped on the Agriculture Department steps since Tuesday after a harvest that came in at half.",
+      "evidence": "Reasoned from prose: the class is unrest, and the unrest is the march. The drought it cites is background of the same incident, not a state the week asks the board to hold (drought is active in 8.1% of weeks, below the floor and not a class reading for unrest anyway). Frequencies for the class readings (209-week sample): conditionActive unrest 22.6% of weeks (38/48 campaigns; 10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%, >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; cohortStrain at most -0.1 on the cohorts a labor week would read is 0.6-4.0%; crimeTrend rising 2.7%. ",
+      "risk": "The prose says \"the drought was real\", which a reviewer could read as presuming a drought; drought is not an accepted unrest reading and clears the floor in neither sample of 209 weeks, so the declaration stays introduces."
+    },
+    {
+      "id": "the-contested-mandate",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The sit-in is the incident: the opposition refuses a twice-certified result and occupies the chamber, creating the constitutional standoff the week reports."
+      },
+      "presumes": "The opposition's forty-three members have held the House chamber since the second certification of a contested count.",
+      "evidence": "Reasoned from prose: the whole fiction is the standoff, which no board condition establishes. Frequencies for the class readings (209-week sample): conditionActive unrest 22.6% of weeks (38/48 campaigns; 10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%, >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; cohortStrain at most -0.1 on the cohorts a labor week would read is 0.6-4.0%; crimeTrend rising 2.7%. ",
+      "risk": "None of the accepted unrest readings captures a legislative boycott, so introduces is accurate."
+    },
+    {
+      "id": "the-transport-stops",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The walkout is the incident: the drivers stop the city at six this morning over a published wage study, creating the strike the week describes."
+      },
+      "presumes": "Every driver in the city walked out this morning demanding the Treasury Secretary resign over a wage study.",
+      "evidence": "Reasoned from prose: the stoppage is this morning's event. This week sets the flags the later labor weeks read (let-the-strike-run, ordered-them-back-to-work, commissioned-wage-study-review). Frequencies for the class readings (209-week sample): conditionActive unrest 22.6% of weeks (38/48 campaigns; 10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%, >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; cohortStrain at most -0.1 on the cohorts a labor week would read is 0.6-4.0%; crimeTrend rising 2.7%. ",
+      "risk": "Same as the other strike weeks: any unrest gate would change which boards deal a plain labor dispute."
+    },
+    {
+      "id": "the-shifts-the-strike-left-uneven",
+      "class": "unrest",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is the aftermath of a strike the player chose to let run: its state is the let-the-strike-run flag already in its conditions, and the shift schedule is a settlement the player's own choice left behind, not a live disturbance on the board."
+      },
+      "presumes": "A temporary shift settlement from a strike the player let run (flag let-the-strike-run, aged 9) still favors the crews who walked out.",
+      "evidence": "Flag-gated follow-up: the flag is set by an earlier decision (see presumes), so the state is the player's own act, not an external event. let-the-strike-run is set by the-strike-that-crossed-three-industries. The prose says outright that the strike ended months ago on its own terms.",
+      "risk": "Low: a reviewer should confirm the prose describes consequences of the player's act only; it does (\"We let the strike run its course\")."
+    },
+    {
+      "id": "the-tram-drivers-who-parked-the-fleet",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The stoppage is the incident: the drivers park the whole fleet over a shift-pay formula frozen for four years, creating the transit strike the week reports."
+      },
+      "presumes": "Every tram in the city sits in the depot yard over a shift-pay dispute, on a third day without transit.",
+      "evidence": "Reasoned from prose. Frequencies for the class readings (209-week sample): conditionActive unrest 22.6% of weeks (38/48 campaigns; 10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%, >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; cohortStrain at most -0.1 on the cohorts a labor week would read is 0.6-4.0%; crimeTrend rising 2.7%. ",
+      "risk": "Strike-week declaration; see the-pier-stands-empty."
+    },
+    {
+      "id": "the-square-that-fills-again-on-fridays",
+      "class": "unrest",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The crowd is the continuing result of the player's own choice to let a strike end rather than break it up: the let-the-strike-run flag supplies the arc, and the permit question turns on that decision, not on a street-pressure reading."
+      },
+      "presumes": "A standing Friday crowd of the same organizers in front of the Capitol steps, nine weeks after the player let the strike end on its own terms (flag let-the-strike-run, aged 6).",
+      "evidence": "Flag-gated follow-up: the flag is set by an earlier decision (see presumes), so the state is the player's own act, not an external event. protest pressure at or above 0.4 holds in 69.4% of weeks and 0.3 in 100%, so a protest gate would not discriminate; stateGrievance and cohortStrain would not map to a peaceful permit crowd.",
+      "risk": "Medium: the prose asserts a present crowd, so a reviewer could call this a dodge. The crowd is described as the outlasting product of the player's own earlier act, and the permit office is asking the player about it."
+    },
+    {
+      "id": "the-dockworkers-who-wont-cross-each-other",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The sympathy line is the incident: the clerks' grievance goes up as a line the operators will not cross that morning, creating the stoppage the week reports."
+      },
+      "presumes": "Six of nine cranes are idle because the crane operators will not cross a sympathy line put up by the warehouse clerks.",
+      "evidence": "Reasoned from prose. Frequencies for the class readings (209-week sample): conditionActive unrest 22.6% of weeks (38/48 campaigns; 10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%, >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; cohortStrain at most -0.1 on the cohorts a labor week would read is 0.6-4.0%; crimeTrend rising 2.7%. The existing coastal geography gate is kept.",
+      "risk": "Strike-week declaration."
+    },
+    {
+      "id": "the-hall-vote-that-shut-the-refinery-gate",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The vote is the incident: the hall votes to walk out and shuts the refinery gate, creating a new stoppage; the earlier back-to-work order only explains why it happens."
+      },
+      "presumes": "Refinery workers voted before the morning shift to walk out, citing that this government ordered them back to work once before (flag ordered-them-back-to-work, aged 6).",
+      "evidence": "Reasoned from prose. The flag is set by the-transport-stops. A new strike vote is an external event, not a consequence the player's act produces directly, so universal would be a dodge. Frequencies for the class readings (209-week sample): conditionActive unrest 22.6% of weeks (38/48 campaigns; 10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%, >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; cohortStrain at most -0.1 on the cohorts a labor week would read is 0.6-4.0%; crimeTrend rising 2.7%. ",
+      "risk": "The week is also an arc follow-up; a reviewer who reads the vote as the player's own consequence could prefer universal. The strike itself is new."
+    },
+    {
+      "id": "the-chair-who-marched-with-them-before-she-worked-here",
+      "class": "unrest",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The student gathering is the incident: students hold the Interior Department gate for five days over a tuition rule signed before the Secretary took office, creating the demonstration the week asks the player to answer."
+      },
+      "presumes": "Students have held the Interior Department gate for five days over a tuition rule.",
+      "evidence": "Reasoned from prose. Frequencies for the class readings (209-week sample): conditionActive unrest 22.6% of weeks (38/48 campaigns; 10.8% at 52 weeks); operatorPressure protest >=0.4 69.4%, >=0.5 30.9%; stateGrievance any <=-0.2 12.5%; cohortStrain at most -0.1 on the cohorts a labor week would read is 0.6-4.0%; crimeTrend rising 2.7%. ",
+      "risk": "Same as the-campus-occupation: the gathering predates the opening by five days but nothing earlier on the board creates it."
+    },
+    {
+      "id": "the-panels-everyone-wants-now",
+      "class": "unrest",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is the precedent the player's own wage-panel decision set: sectors write to ask for the same treatment, and no street state is presumed beyond the letters."
+      },
+      "presumes": "Three sectors want wage panels after the player commissioned one for the drivers (flag commissioned-wage-study-review, aged 5).",
+      "evidence": "Flag-gated follow-up: the flag is set by an earlier decision (see presumes), so the state is the player's own act, not an external event. commissioned-wage-study-review is set by the-transport-stops. The prose has letters, not a stoppage or a crowd.",
+      "risk": "Low: letters and precedent, not an external event."
+    },
+    {
+      "id": "the-hospital-halls-that-kept-the-wards-open",
+      "class": "unrest",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is the follow-up to a wage floor the player negotiated: a letter from the staff left outside it, which turns on that settlement, not on any street state."
+      },
+      "presumes": "Orderlies, cleaners and kitchen staff outside the wage floor the player negotiated (flag negotiated-cross-industry-wage-floor, aged 4) ask to be included.",
+      "evidence": "Flag-gated follow-up: the flag is set by an earlier decision (see presumes), so the state is the player's own act, not an external event. negotiated-cross-industry-wage-floor is set by the-strike-that-crossed-three-industries. The existing cyclePhase expansion/peak gate is kept; cyclePhase is not an unrest reading.",
+      "risk": "Low: the opening is a letter, and the staff kept the wards open rather than striking."
+    },
+    {
+      "id": "four-counties-quoting-the-flood-bridge",
+      "class": "disaster",
+      "decision": "gate",
+      "conditions": [
+        {
+          "kind": "conditionActive",
+          "condition": "flood"
+        }
+      ],
+      "requires": "locus.bind \"condition\" on the scenario (a locus edit outside regate) to avoid the unbound-disaster warning",
+      "presumes": "Two of the four counties lost crossings \"in this flood\", so a flood is running now.",
+      "evidence": "Measured on the balance harness (playCampaign, 8 seeds balance-0..7 x democrat/republican/independent x prudent/reckless = 48 campaigns; 6,920 weeks at a 209-week horizon, reckless runs ending early, and 2,418 weeks at 52 weeks): conditionActive flood holds in 13.7% of weeks (43/48 campaigns; 16.9% at 52 weeks), above the 10% floor. Reachability: auditReachability on the gated def returns zero findings. Binding: the locus rolls its own place (no bind, no state), so auditBindings adds one unbound-disaster warning to the gated def that the original does not have; with locus.bind \"condition\" added it returns none and reachability stays clean. The existing flag (rebuilt-the-flood-bridge, aged 9) and shutdown-false conditions are kept; the flag is set by the-bridge-the-flood-took-with-it.",
+      "risk": "The regate path does not carry locus, so the warning stands unless the integrating session sets locus.bind \"condition\" (a locus edit, not prose). The flag is a long arc, so combined liveness is far below the 13.7%; the gate itself does not make that worse by much because flood onset follows an independent clock."
+    },
+    {
+      "id": "the-generators-that-failed",
+      "class": "disaster",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The failure is the incident: the generators go down mid-surgery at the central hospital, creating the emergency the week describes."
+      },
+      "presumes": "Backup generators failed at the central hospital twenty minutes into the evening surgical list, with four patients on the tables.",
+      "evidence": "Reasoned from prose: this is an infrastructure failure, not a hazard in the named list (earthquake 7.8%, flood 13.7%, drought 8.1%, cyclone 5.1%, wildfire 11.8%, tornado 3.8%, winter-storm 1.6%, heat-wave 0.4%), and the prose names none. Sets made-public-admission, read by the-night-the-exits-were-chained.",
+      "risk": "A hazard gate would be false; introduces is accurate."
+    },
+    {
+      "id": "the-night-the-exits-were-chained",
+      "class": "disaster",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The fire is the incident: a theater fire with the exits chained creates the casualty event the week reports; the flag made-public-admission only arms it."
+      },
+      "presumes": "Forty-three people are unaccounted for in a downtown theater fire with the exits chained shut.",
+      "evidence": "Reasoned from prose: a building fire is not a named hazard (wildfire is a landscape fire, active 11.8% of weeks), and the prose does not claim one. The flag is set by the-generators-that-failed.",
+      "risk": "A reviewer might ask why a flag from an unrelated week arms it; that is a continuity matter, not a premise one."
+    },
+    {
+      "id": "the-bridge-the-flood-took-with-it",
+      "class": "disaster",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is a follow-up to a flood decision the player already made: the flag records the split relief line, and the question of which budget pays for a bridge turns on that decision, not on a flood running this week."
+      },
+      "presumes": "A county bridge a flood took five weeks ago is still in the river; the player earlier split a budget line for flood relief (flag split-the-budget-line, aged 5).",
+      "evidence": "Flag-gated follow-up: the flag is set by an earlier decision (see presumes), so the state is the player's own act, not an external event. The flood has already been dealt with by earlier weeks (water down three weeks, bridge gone five); flood is active in 13.7% of weeks, but a gate on a flood running now would be false five weeks later, so it is not a gate.",
+      "risk": "Medium: the prose presumes a flood in the past, not now; a reviewer could prefer a flag on the flood week itself, but split-the-budget-line is the existing flag."
+    },
+    {
+      "id": "the-frost-that-took-the-belt",
+      "class": "disaster",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The frost is the incident: a frost line runs further south than anyone drew it and takes the belt, creating the loss the week reports."
+      },
+      "presumes": "A frost took most of the fruit belt and the co-ops want a number before the season's paperwork is due.",
+      "evidence": "Reasoned from prose: winter-storm is the nearest named hazard and holds in 1.6% of weeks (12/48 campaigns), far below the 10% floor and a poor fit for a growing-season frost.",
+      "risk": "A reviewer could ask for winter-storm; the floor and the fit both fail, so introduces is the honest declaration."
+    },
+    {
+      "id": "the-span-they-reopened-too-soon",
+      "class": "disaster",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The quake damage is the incident: the week opens the morning after, with a span down on the only north-side crossing, creating the closure decision the week reports."
+      },
+      "presumes": "Last night's quake dropped a span of the elevated line onto the transfer platform and the inspection has not finished.",
+      "evidence": "conditionActive earthquake holds in 7.8% of weeks (33/48 campaigns; 9.8% at 52 weeks), below the 10% floor at the 209-week horizon, so it is not a gate. The quake is last night's event and not a prior board condition.",
+      "risk": "Least certain declaration: the quake is a hazard the engine can run, so a reviewer may say the week presumes one. If the floor were met a gate would be preferred; it is not, and the week reports its own first-morning damage."
+    },
+    {
+      "id": "the-crew-still-on-the-levee",
+      "class": "disaster",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The slide is the incident: the saddle begins to move while the only heavy crew is committed to the levee, creating the second call the week describes; the flag explains why the crew is there."
+      },
+      "presumes": "Ground on the saddle above the valley is moving and the one engineering crew is still posted on the levee from the last flood (flag sent-the-team, aged 6).",
+      "evidence": "Reasoned from prose: a slope slide is not a named hazard. Flag arms it: the flag is set by an earlier decision (see presumes), so the state is the player's own act, not an external event. sent-the-team is set by an earlier disaster week.",
+      "risk": "The levee half is the player's own earlier act; the slide is new, so universal would hide an external event."
+    },
+    {
+      "id": "the-reserve-with-no-rules-written-for-it",
+      "class": "disaster",
+      "decision": "hold",
+      "reason": "The prose asserts a drought: the wells \"came up short a second season\" and both claimants lost grazing or orchard to it. Drought is active in only 8.1% of weeks (6.8% prudent, 11.4% reckless), below the 10% floor, and the week is not the incident that creates it: the drought is two seasons old when the claims arrive. Needs a rewrite so the claims are the incident (for example, a claim filed after an earlier drought week) or a drought flag from an earlier week to read.",
+      "presumes": "Two claims reached the drought reserve after the wells came up short a second season (flag funded-a-standing-drought-reserve, aged 8).",
+      "evidence": "Measured: conditionActive drought 8.1% of weeks (33/48 campaigns) at 209 weeks, 17.2% at 52 weeks (the early-campaign figure), so the floor is missed on the longer, more representative sample. Flag funded-a-standing-drought-reserve is set by the-orchard-belt-that-came-up-dry.",
+      "risk": "Holding costs reach; a reviewer may prefer a gate on drought and accept thin liveness, but the owner's floor forbids it."
+    },
+    {
+      "id": "the-crossing-we-decided-not-to-rebuild",
+      "class": "disaster",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is the long consequence of the player's own deferral: the flag records that the bridge was put off, and two wet seasons later the question is what that decision cost, not whether a flood is running."
+      },
+      "presumes": "A washed-out bridge the player deferred two years ago (flag deferred-the-flood-bridge, aged 6) is now a ford that closes with the water.",
+      "evidence": "Flag-gated follow-up: the flag is set by an earlier decision (see presumes), so the state is the player's own act, not an external event. deferred-the-flood-bridge is set by the-bridge-the-flood-took-with-it. The prose contains no new hazard: the water that closes the ford is the same water.",
+      "risk": "Low: describes consequences of the player's own earlier act only."
+    },
+    {
+      "id": "the-span-that-was-built-for-two-weeks",
+      "class": "disaster",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is the consequence of a temporary span the player ordered: the flag records that the deck was built, and the surveys disagree about its life, with no hazard running."
+      },
+      "presumes": "An emergency deck the player built at the crossing (flag built-a-temporary-span-at-the-crossing, aged 8) has stood since last winter and two surveys disagree about it.",
+      "evidence": "Flag-gated follow-up: the flag is set by an earlier decision (see presumes), so the state is the player's own act, not an external event. built-a-temporary-span-at-the-crossing is set by an earlier flood-crossing week.",
+      "risk": "Low: no external event in the prose."
+    },
+    {
+      "id": "the-bottling-plant-that-failed-its-own-test",
+      "class": "public-health",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The failed sample is the incident: the plant's own test on Friday finds contamination above the school threshold, creating the water-safety question the week reports."
+      },
+      "presumes": "A municipal bottling plant tested its own water and found contamination above the threshold for schools.",
+      "evidence": "Reasoned from prose: this is a contaminated-supply finding, not an outbreak, and the prose names no illness. Pandemic holds in 2.9% of weeks (17/48 campaigns), below the 10% floor and not what the week describes.",
+      "risk": "A water-contamination week sits in the public-health class with no matching reading; introduces is the accurate declaration."
+    },
+    {
+      "id": "the-case-that-came-back-negative-twice",
+      "class": "public-health",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The unconfirmed case is the incident: border testing returns one positive and two negatives on one traveler, creating the containment decision the week reports."
+      },
+      "presumes": "One positive on arrival, two negatives since, from a person who has been in the country four days and sat near 240 others, after the player ordered border testing (flag testing-ordered-at-borders, aged 6).",
+      "evidence": "conditionActive pandemic holds in 2.9% of weeks (17/48 campaigns; 2.1% at 52 weeks), below the floor. The prose says \"something\", not a named pandemic. The flag is set by the-fever-through-the-district.",
+      "risk": "Critical week; a reviewer could say a possible outbreak presumes the pandemic condition. The week is the first possible case, and the pandemic floor is missed by a factor of three."
+    },
+    {
+      "id": "the-clinics-that-stopped-charging",
+      "class": "public-health",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The week is the consequence of the player's own earlier decision to accept displaced people: the flag records it, and the clinics' fee arrangement and who funds it is a budget and authority question, not an outbreak."
+      },
+      "presumes": "Three border districts have treated everybody free since the winter, after the player accepted mass displacement (flag accepted-mass-displacement, aged 5).",
+      "evidence": "Flag-gated follow-up: the flag is set by an earlier decision (see presumes), so the state is the player's own act, not an external event. accepted-mass-displacement is set by an earlier migration week. The prose has no illness, only waiting rooms and fees.",
+      "risk": "Low."
+    },
+    {
+      "id": "the-energy-aid-kept-for-the-cold",
+      "class": "public-health",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The only state the week turns on, a heat wave, is already read by its conditionActive heat-wave gate (with the cast bound to the condition); no pandemic or health-surge state is presumed."
+      },
+      "presumes": "A heat wave is cutting power to households behind on bills and the governor wants to spend the remaining home-energy aid on cooling.",
+      "evidence": "Reasoned from prose and conditions: the week is public-health class but its fiction is a heat wave, which the class reading list does not accept but which the scenario already gates. heat-wave holds in 0.4% of weeks (19/48 campaigns); auditReachability on the original returns zero findings, so it reaches a player through the preview boards despite the low harness rate.",
+      "risk": "Medium: universal is a stretch of the word because a heat wave is presumed; it is declared only because the condition is already there and no accepted public-health reading applies. The week is very rare on real boards (0.4%); that is an existing gate, not new."
+    },
+    {
+      "id": "the-overtime-ward-runs-on",
+      "class": "public-health",
+      "decision": "hold",
+      "reason": "The prose presumes a sustained patient surge: nurses on triple shifts for a month, a six-week surge differential that has run four months. Pandemic is active in only 2.9% of weeks (below the 10% floor) and the week is not the incident that creates the surge. Needs a rewrite that frames the overtime as a budget-control week (a differential that outlived its emergency) without asserting a current surge, or retirement.",
+      "presumes": "A surge pay differential signed by the previous health secretary has run past its six weeks while nurses still cover triple shifts.",
+      "evidence": "Measured: conditionActive pandemic 2.9% of weeks (17/48 campaigns) at 209 weeks, 2.1% at 52 weeks. A universal would assert that the week deals on any board, but the first lines describe a ward under load.",
+      "risk": "A reviewer might accept a universal about the differential alone; the opening also asserts the load, so I do not."
+    },
+    {
+      "id": "the-result-the-lab-will-not-repeat",
+      "class": "public-health",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The unconfirmed result is the incident: a single positive the lab cannot repeat creates the shutdown-or-wait decision the week reports."
+      },
+      "presumes": "One drinking-water sample tested positive once for something undocumented in thirty years, and two reruns came back clean.",
+      "evidence": "Reasoned from prose: a single water test, no illness or outbreak named. conditionActive pandemic is 2.9% of weeks, below the floor and not what the prose describes.",
+      "risk": "Same as the-bottling-plant-that-failed-its-own-test."
+    },
+    {
+      "id": "the-ward-that-ran-out-of-beds",
+      "class": "public-health",
+      "decision": "introduces",
+      "premise": {
+        "kind": "introduces",
+        "what": "The overflow is the incident: the ward goes over capacity in the first week of the fever season, creating the capacity decision the week reports."
+      },
+      "presumes": "The fever ward went over its authorized beds on Tuesday and has not come back under; people wait six hours in the corridor.",
+      "evidence": "Reasoned from prose: the standing paragraph says the ward has run over capacity for three years of fever seasons, so the surge is seasonal, not a pandemic. Pandemic holds in 2.9% of weeks (17/48 campaigns), below the floor.",
+      "risk": "A reviewer might want pandemic; the standing text contradicts it, and the floor fails."
+    },
+    {
+      "id": "the-ward-that-was-patched-and-not-repaired",
+      "class": "public-health",
+      "decision": "universal",
+      "premise": {
+        "kind": "universal",
+        "reason": "The scenario's own collectionReport gate (domestic-state, governor-request, condition pandemic) is what establishes the active pandemic and the request; it deals only when the world's file holds such a report, so it cannot open on a board with no outbreak report."
+      },
+      "presumes": "A governor has requested federal help during an active pandemic, read from an issued domestic-state report.",
+      "evidence": "conditionActive pandemic holds in 2.9% of weeks (17/48 campaigns), below the 10% floor, so it is not added; the report gate already narrows to reports carrying the pandemic condition. auditReachability on the original returns zero findings.",
+      "risk": "Medium: reviewer may say collectionReport is not an accepted public-health reading and the prose asserts a pandemic; it is the one reading that already binds the state to the world's own file, but a stale report could outlive the pandemic."
+    }
+  ]
+}

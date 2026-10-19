@@ -1,0 +1,81 @@
+{
+  "checked": "2026-10-15",
+  "note": "Statutory links resolve to 2024 published edition; verification is against that text, not an assertion of no subsequent amendment.",
+  "sources": [
+    {
+      "key": "war-consultation",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap33-sec1542.htm",
+      "status": 200,
+      "characters": 802,
+      "preview": "U.S.C. Title 50 - WAR AND NATIONAL DEFENSE\n50 U.S.C.\nUnited States Code, 2024 Edition\nTitle 50 - WAR AND NATIONAL DEFENSE\nCHAPTER 33 - WAR POWERS RESOLUTION\nSec. 1542 - Consultation; initial and regular consultations\nFro"
+    },
+    {
+      "key": "war-report",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap33-sec1543.htm",
+      "status": 200,
+      "characters": 2199,
+      "preview": "U.S.C. Title 50 - WAR AND NATIONAL DEFENSE\n50 U.S.C.\nUnited States Code, 2024 Edition\nTitle 50 - WAR AND NATIONAL DEFENSE\nCHAPTER 33 - WAR POWERS RESOLUTION\nSec. 1543 - Reporting requirement\nFrom the U.S. Government Publ"
+    },
+    {
+      "key": "war-termination",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap33-sec1544.htm",
+      "status": 200,
+      "characters": 2746,
+      "preview": "U.S.C. Title 50 - WAR AND NATIONAL DEFENSE\n50 U.S.C.\nUnited States Code, 2024 Edition\nTitle 50 - WAR AND NATIONAL DEFENSE\nCHAPTER 33 - WAR POWERS RESOLUTION\nSec. 1544 - Congressional action\nFrom the U.S. Government Publi"
+    },
+    {
+      "key": "inspectors",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title5/html/USCODE-2024-title5-partI-chap4-sec403.htm",
+      "status": 200,
+      "characters": 21429,
+      "preview": "U.S.C. Title 5 - GOVERNMENT ORGANIZATION AND EMPLOYEES\n5 U.S.C.\nUnited States Code, 2024 Edition\nTitle 5 - GOVERNMENT ORGANIZATION AND EMPLOYEES\nPART I - THE AGENCIES GENERALLY\nCHAPTER 4 - INSPECTORS GENERAL\nSec. 403 - A"
+    },
+    {
+      "key": "findings",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap44-subchapIII-sec3093.htm",
+      "status": 200,
+      "characters": 12958,
+      "preview": "U.S.C. Title 50 - WAR AND NATIONAL DEFENSE\n50 U.S.C.\nUnited States Code, 2024 Edition\nTitle 50 - WAR AND NATIONAL DEFENSE\nCHAPTER 44 - NATIONAL SECURITY\nSUBCHAPTER III - ACCOUNTABILITY FOR INTELLIGENCE ACTIVITIES\nSec. 30"
+    },
+    {
+      "key": "domestic-enforcement",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title18/html/USCODE-2024-title18-partI-chap67-sec1385.htm",
+      "status": 200,
+      "characters": 1938,
+      "preview": "U.S.C. Title 18 - CRIMES AND CRIMINAL PROCEDURE\n18 U.S.C.\nUnited States Code, 2024 Edition\nTitle 18 - CRIMES AND CRIMINAL PROCEDURE\nPART I - CRIMES\nCHAPTER 67 - MILITARY AND NAVY\nSec. 1385 - Use of Army, Navy, Marine Cor"
+    },
+    {
+      "key": "stafford",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title42/html/USCODE-2024-title42-chap68-subchapIV-sec5170.htm",
+      "status": 200,
+      "characters": 12559,
+      "preview": "U.S.C. Title 42 - THE PUBLIC HEALTH AND WELFARE\n42 U.S.C.\nUnited States Code, 2024 Edition\nTitle 42 - THE PUBLIC HEALTH AND WELFARE\nCHAPTER 68 - DISASTER RELIEF\nSUBCHAPTER IV - MAJOR DISASTER ASSISTANCE PROGRAMS\nSec. 517"
+    },
+    {
+      "key": "tariffs",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title19/html/USCODE-2024-title19-chap12-subchapIII-sec2411.htm",
+      "status": 200,
+      "characters": 30715,
+      "preview": "U.S.C. Title 19 - CUSTOMS DUTIES\n19 U.S.C.\nUnited States Code, 2024 Edition\nTitle 19 - CUSTOMS DUTIES\nCHAPTER 12 - TRADE ACT OF 1974\nSUBCHAPTER III - ENFORCEMENT OF UNITED STATES RIGHTS UNDER TRADE AGREEMENTS AND RESPONS"
+    },
+    {
+      "key": "intelligence",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title50/html/USCODE-2024-title50-chap44-subchapI-sec3036.htm",
+      "status": 200,
+      "characters": 11852,
+      "preview": "U.S.C. Title 50 - WAR AND NATIONAL DEFENSE\n50 U.S.C.\nUnited States Code, 2024 Edition\nTitle 50 - WAR AND NATIONAL DEFENSE\nCHAPTER 44 - NATIONAL SECURITY\nSUBCHAPTER I - COORDINATION FOR NATIONAL SECURITY\nSec. 3036 - Direc"
+    },
+    {
+      "key": "constitution",
+      "url": "https://www.archives.gov/founding-docs/constitution-transcript",
+      "status": 200,
+      "characters": 29949
+    },
+    {
+      "key": "insurrection-active",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2024-title10/html/USCODE-2024-title10-subtitleA-partI-chap13-sec251.htm",
+      "status": 200,
+      "note": "Active chapter13 \u00a7251; rejected broad lookup that resolved to a transferred audit range."
+    }
+  ]
+}

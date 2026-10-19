@@ -1,0 +1,255 @@
+{
+  "status": "draft integration acceptance; source inventory is not rendered signoff",
+  "routes": [
+    {
+      "route": "/administrations",
+      "source": "apps/web/src/routes/administrations.tsx",
+      "treatment": "Shared navigation/preferences/save dialogs updated; focused calendar/legal/save journey verified. Recovery/error/preferences variants remain."
+    },
+    {
+      "route": "/brief/clock/$id",
+      "source": "apps/web/src/routes/brief.clock.$id.tsx",
+      "treatment": "Rebuilt statutory clock board, predefined veto and trace to Record;390/1440 stream journeys pass. Other clock types remain unverified."
+    },
+    {
+      "route": "/brief/decision/$id",
+      "source": "apps/web/src/routes/brief.decision.$id.tsx",
+      "treatment": "Rebuilt evidence/choice/authorization board with whole-card choices and scoped inspector;390/1440 focused journeys pass. Remaining scenario variants unverified."
+    },
+    {
+      "route": "/brief/digest",
+      "source": "apps/web/src/routes/brief.digest.tsx",
+      "treatment": "Unified Brief/calendar/history; compatibility redirect. Focused browser journeys verified; remaining sparse/missing history variants open."
+    },
+    {
+      "route": "/brief/",
+      "source": "apps/web/src/routes/brief.index.tsx",
+      "treatment": "Unified Brief/calendar/history; compatibility redirect. Focused browser journeys verified; remaining sparse/missing history variants open."
+    },
+    {
+      "route": "/brief/metric/$id",
+      "source": "apps/web/src/routes/brief.metric.$id.tsx",
+      "treatment": "Retained composition; shared controls migrated. Remaining conditional states require explicit rendered acceptance."
+    },
+    {
+      "route": "/brief/scandal/$id",
+      "source": "apps/web/src/routes/brief.scandal.$id.tsx",
+      "treatment": "Rebuilt accountability case workspace; resolved-scandal conditional state remains unverified."
+    },
+    {
+      "route": "/dev/help",
+      "source": "apps/web/src/routes/dev/help.tsx",
+      "treatment": "Developer-only; excluded from player acceptance."
+    },
+    {
+      "route": "/dev/icons",
+      "source": "apps/web/src/routes/dev/icons.tsx",
+      "treatment": "Developer-only; excluded from player acceptance."
+    },
+    {
+      "route": "/dev/layers",
+      "source": "apps/web/src/routes/dev/layers.tsx",
+      "treatment": "Developer-only; excluded from player acceptance."
+    },
+    {
+      "route": "/dev/map",
+      "source": "apps/web/src/routes/dev/map.tsx",
+      "treatment": "Developer-only; excluded from player acceptance."
+    },
+    {
+      "route": "/ending",
+      "source": "apps/web/src/routes/ending.tsx",
+      "treatment": "Compact ended-campaign header preserves calendar/save/Search at320/390. Defeat-to-Legacy journey exercised390/1440; other ending variants unverified."
+    },
+    {
+      "route": "/founding",
+      "source": "apps/web/src/routes/founding.tsx",
+      "treatment": "Procedural face editor removed; redacted profile identity. Focused two-theme browser proof; remaining full setup/oath variants retained."
+    },
+    {
+      "route": "/handbook/$chapter",
+      "source": "apps/web/src/routes/handbook.$chapter.tsx",
+      "treatment": "Shared navigation/preferences/save dialogs updated; focused calendar/legal/save journey verified. Recovery/error/preferences variants remain."
+    },
+    {
+      "route": "/handbook/",
+      "source": "apps/web/src/routes/handbook.index.tsx",
+      "treatment": "Shared navigation/preferences/save dialogs updated; focused calendar/legal/save journey verified. Recovery/error/preferences variants remain."
+    },
+    {
+      "route": "/handbook/terms",
+      "source": "apps/web/src/routes/handbook.terms.tsx",
+      "treatment": "Shared navigation/preferences/save dialogs updated; focused calendar/legal/save journey verified. Recovery/error/preferences variants remain."
+    },
+    {
+      "route": "/",
+      "source": "apps/web/src/routes/index.tsx",
+      "treatment": "Retained composition; shared controls migrated. Remaining conditional states require explicit rendered acceptance."
+    },
+    {
+      "route": "/legacy",
+      "source": "apps/web/src/routes/legacy.tsx",
+      "treatment": "Record inspectors and signed Legacy rates integrated; stream browser proof recorded; remaining complete-term variants open."
+    },
+    {
+      "route": "/nation/budget",
+      "source": "apps/web/src/routes/nation.budget.tsx",
+      "treatment": "Rebuilt proposal editor/evidence workspace and authorization choices; both themes390/1440 stream journeys pass. Full fiscal-state matrix unverified."
+    },
+    {
+      "route": "/nation/economy",
+      "source": "apps/web/src/routes/nation.economy.tsx",
+      "treatment": "Selected signal controls one inline investigation; published and played performance share chart axes with current/oath/model references. All36 final integrated journeys passed across six widths and both themes, including opening, explicit empty term, completed-quarter Growth, unavailable windows and reload. Peer/year choices retain local state; supplemental population reference not independently accepted."
+    },
+    {
+      "route": "/nation/electorate",
+      "source": "apps/web/src/routes/nation.electorate.tsx",
+      "treatment": "Retained composition; shared controls migrated. Remaining conditional states require explicit rendered acceptance."
+    },
+    {
+      "route": "/nation/emergency",
+      "source": "apps/web/src/routes/nation.emergency.tsx",
+      "treatment": "Contextual declaration and continuation actions; actual declare/end journeys pass390/1440. Stable map-camera visual acceptance remains unverified."
+    },
+    {
+      "route": "/nation/",
+      "source": "apps/web/src/routes/nation.index.tsx",
+      "treatment": "Rebuilt analytical/opinion composition; focused comparison/community journeys verified. Mounted-route reflow sweep passed; complete conditional-state visual acceptance remains open."
+    },
+    {
+      "route": "/nation/policy/",
+      "source": "apps/web/src/routes/nation.policy.index.tsx",
+      "treatment": "Separated issued orders and catalogue, shared compact domain picker and exact order inspector. Enactment journeys pass390/1440."
+    },
+    {
+      "route": "/nation/policy/order/$id",
+      "source": "apps/web/src/routes/nation.policy.order.$id.tsx",
+      "treatment": "Exact signed order inspector integrated; other order variants explicitly unverified."
+    },
+    {
+      "route": "/nation/state/$id",
+      "source": "apps/web/src/routes/nation.state.$id.tsx",
+      "treatment": "Exact cohort and state/filter context integrated. Phone/desktop journeys verified; incident-specific variants remain."
+    },
+    {
+      "route": "/record/event/$id",
+      "source": "apps/web/src/routes/record.event.$id.tsx",
+      "treatment": "Stored causal path, persistent-subject cards and shared filed-report inspector. Final integrated both-theme390/1440 report-to-origin-to-report and focus journeys passed; other event variants remain unverified."
+    },
+    {
+      "route": "/record/",
+      "source": "apps/web/src/routes/record.index.tsx",
+      "treatment": "Record inspectors and signed Legacy rates integrated; stream browser proof recorded; remaining complete-term variants open."
+    },
+    {
+      "route": "/record/press/dispatch/$id",
+      "source": "apps/web/src/routes/record.press.dispatch.$id.tsx",
+      "treatment": "Formal article plus contextual Card, flag-linked nations and shared response control. Press-to-dispatch-to-Back exercised in focused browser journeys."
+    },
+    {
+      "route": "/record/press/",
+      "source": "apps/web/src/routes/record.press.index.tsx",
+      "treatment": "Compatibility destination to Press; filtering/reload/Back covered by focused Press journeys."
+    },
+    {
+      "route": "/recovery",
+      "source": "apps/web/src/routes/recovery.tsx",
+      "treatment": "Unreadable durable vault refuses success and empty-library presentation; retry recovers existing campaign. Actual IndexedDB failure/recovery inspected; all recovery variants unverified."
+    },
+    {
+      "route": "/settings",
+      "source": "apps/web/src/routes/settings.tsx",
+      "treatment": "Shared Card sections and canonical inputs/selectors.320 dark/390 stream interactions inspected; full preferences matrix unverified."
+    },
+    {
+      "route": "/washington/congress/bill/$id",
+      "source": "apps/web/src/routes/washington.congress.bill.$id.tsx",
+      "treatment": "Restructured overview/workload and context; full spectrum selectable. Focused Back/reload journeys verified; bill/post variants remain."
+    },
+    {
+      "route": "/washington/congress/",
+      "source": "apps/web/src/routes/washington.congress.index.tsx",
+      "treatment": "Restructured overview/workload and context; full spectrum selectable. Focused Back/reload journeys verified; bill/post variants remain."
+    },
+    {
+      "route": "/washington/congress/post/$id",
+      "source": "apps/web/src/routes/washington.congress.post.$id.tsx",
+      "treatment": "Restructured overview/workload and context; full spectrum selectable. Focused Back/reload journeys verified; bill/post variants remain."
+    },
+    {
+      "route": "/washington/courts/case/$id",
+      "source": "apps/web/src/routes/washington.courts.case.$id.tsx",
+      "treatment": "Rebuilt judicial/accountability family. Stream browser journeys and inspected captures recorded in SHADCN-JUSTICE.md."
+    },
+    {
+      "route": "/washington/courts/",
+      "source": "apps/web/src/routes/washington.courts.index.tsx",
+      "treatment": "Rebuilt judicial/accountability family. Stream browser journeys and inspected captures recorded in SHADCN-JUSTICE.md."
+    },
+    {
+      "route": "/washington/",
+      "source": "apps/web/src/routes/washington.index.tsx",
+      "treatment": "Retained composition; shared controls migrated. Remaining conditional states require explicit rendered acceptance."
+    },
+    {
+      "route": "/washington/office/$id",
+      "source": "apps/web/src/routes/washington.office.$id.tsx",
+      "treatment": "Rebuilt overview, leadership, organization, actions and Record views with shared seal/evidence components. Legacy fragments mapped to view;390/1440 stream journeys pass."
+    },
+    {
+      "route": "/washington/office/press",
+      "source": "apps/web/src/routes/washington.office.press.tsx",
+      "treatment": "Coverage, Desks and trends, Response and Abroad use URL context and compact Filters Sheet. Both-theme390/1440 integrated journeys passed, including exact-query precedence, desk/story Back, selected filters and focus return."
+    },
+    {
+      "route": "/washington/oversight",
+      "source": "apps/web/src/routes/washington.oversight.tsx",
+      "treatment": "Rebuilt judicial/accountability family. Stream browser journeys and inspected captures recorded in SHADCN-JUSTICE.md."
+    },
+    {
+      "route": "/washington/person/$id",
+      "source": "apps/web/src/routes/washington.person.$id.tsx",
+      "treatment": "Rebuilt assessment, career and relationship workspaces using canonical political identity and redacted portraits. Legacy fragments supported;390/1440 stream journeys pass."
+    },
+    {
+      "route": "/world/",
+      "source": "apps/web/src/routes/world.index.tsx",
+      "treatment": "World/security/action/trade/conflict restructured or polished with canonical inspectors. Scope and remaining states in SHADCN-WORLD.md."
+    },
+    {
+      "route": "/world/nation/$id/act",
+      "source": "apps/web/src/routes/world.nation.$id.act.tsx",
+      "treatment": "Rebuilt configured action/review/receipt; same-country return view/category persists independently of changed tariff goods. All integrated continuous/reloaded tariff-return journeys passed at390/1440 in both themes. Other action variants remain bounded by SHADCN-COMPLETE-WORLD.md."
+    },
+    {
+      "route": "/world/nation/$id/",
+      "source": "apps/web/src/routes/world.nation.$id.index.tsx",
+      "treatment": "World/security/action/trade/conflict restructured or polished with canonical inspectors. Scope and remaining states in SHADCN-WORLD.md."
+    },
+    {
+      "route": "/world/org/$id",
+      "source": "apps/web/src/routes/world.org.$id.tsx",
+      "treatment": "World/security/action/trade/conflict restructured or polished with canonical inspectors. Scope and remaining states in SHADCN-WORLD.md."
+    },
+    {
+      "route": "/world/security/command/$id",
+      "source": "apps/web/src/routes/world.security.command.$id.tsx",
+      "treatment": "World/security/action/trade/conflict restructured or polished with canonical inspectors. Scope and remaining states in SHADCN-WORLD.md."
+    },
+    {
+      "route": "/world/security/",
+      "source": "apps/web/src/routes/world.security.index.tsx",
+      "treatment": "World/security/action/trade/conflict restructured or polished with canonical inspectors. Scope and remaining states in SHADCN-WORLD.md."
+    },
+    {
+      "route": "/world/treaty/$id",
+      "source": "apps/web/src/routes/world.treaty.$id.tsx",
+      "treatment": "World/security/action/trade/conflict restructured or polished with canonical inspectors. Scope and remaining states in SHADCN-WORLD.md."
+    },
+    {
+      "route": "/world/war/$id",
+      "source": "apps/web/src/routes/world.war.$id.tsx",
+      "treatment": "World/security/action/trade/conflict restructured or polished with canonical inspectors. Scope and remaining states in SHADCN-WORLD.md."
+    }
+  ]
+}

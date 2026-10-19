@@ -1,0 +1,149 @@
+[
+  {
+    "id": "wildfire-public-report-federal-offer",
+    "class": "disaster",
+    "severity": "serious",
+    "dilemmaShape": "allocation",
+    "subject": "A wildfire report brings a federal offer to the desk",
+    "cast": {
+      "pick": "collectionReport",
+      "bind": "home"
+    },
+    "locus": {
+      "site": "interior",
+      "ground": "home",
+      "descriptor": "the state operations map marking the active wildfire"
+    },
+    "conditions": [
+      {
+        "kind": "collectionReport",
+        "targetKind": "domestic-state",
+        "topic": "domestic-security",
+        "basis": "governor-request",
+        "condition": "wildfire",
+        "confidence": "low"
+      }
+    ],
+    "weight": 1,
+    "particulars": [
+      {
+        "label": "Findings",
+        "value": "{{reportFindingCount}}"
+      },
+      {
+        "label": "Report age",
+        "value": "{{reportAgeDays}} days"
+      },
+      {
+        "label": "Confidence",
+        "value": "{{reportConfidence}}"
+      },
+      {
+        "label": "Exposure",
+        "value": "{{reportExposure}}"
+      }
+    ],
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "homeland"
+        },
+        "text": "A governor’s wildfire request is on the desk beside the issued report. The finding reads: {{reportFinding}}"
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "homeland"
+        },
+        "text": "The source is {{reportSource}}; confidence is {{reportConfidence}}. The gaps are {{reportGaps}}. The state has asked for a federal answer now."
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "interior"
+        },
+        "text": "Direct relief reaches this state at a smaller cost. The statutory disaster program also reaches this state and spends more. A federal review leaves the request open."
+      }
+    ],
+    "replies": [
+      {
+        "id": "direct-state-relief",
+        "tone": "conciliatory",
+        "text": "Send direct federal relief to the requesting state for the wildfire already recorded in the report.",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "localeAct": "relief",
+          "remembered": "The President sent direct federal relief to the requesting state for the wildfire.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "homeland"
+            },
+            "text": "The state relief order goes out tonight; the governor’s request is answered, and state officials can place the resources."
+          }
+        }
+      },
+      {
+        "id": "order-disaster-program",
+        "tone": "firm",
+        "text": "Sign the statutory disaster relief program for the requesting state, at its larger federal cost.",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "relief": true,
+          "remembered": "The President signed the larger statutory disaster relief program for the requesting state’s wildfire.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "homeland"
+            },
+            "text": "The disaster program is signed for this state. Its larger obligation now sits on the federal books beside the answered request."
+          }
+        }
+      },
+      {
+        "id": "review-state-request",
+        "tone": "principled",
+        "text": "Order a federal review of the wildfire request before sending relief to the state.",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "localeAct": "review",
+          "remembered": "The President ordered a federal review of the governor’s wildfire request, leaving it open.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "interior"
+            },
+            "text": "The review begins tonight. The governor’s request remains open, and its deadline moves while the review runs."
+          }
+        }
+      }
+    ],
+    "topics": [
+      "disaster",
+      "public-safety"
+    ],
+    "context": {
+      "standing": "An issued Homeland Security report records an active wildfire and the governor’s request for federal help.",
+      "precedent": "Direct relief and the statutory disaster program both reach the requesting state. The program spends much more and can steady conditions there; a review buys time while the request remains open.",
+      "pressures": [
+        {
+          "source": "cabinet",
+          "want": "State responders need a clear account of what federal help is actually available before they change their own deployment."
+        },
+        {
+          "source": "cabinet",
+          "want": "The Secretary of Homeland Security wants a bounded federal offer tied to the recorded condition, with room to revise it."
+        }
+      ],
+      "inaction": "The governor’s request remains open as the wildfire continues, and the state has no new federal assistance to place on its operations map.",
+      "unknown": "The issued report cannot say how the fire will move or how much assistance the state will need next."
+    },
+    "binding": {
+      "mechanisms": []
+    }
+  }
+]

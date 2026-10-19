@@ -1,0 +1,19 @@
+{
+  "reason": "Withhold new location-gate failures; no content rewriting or hand editing shards",
+  "restoredIDs": [
+    "four-counties-quoting-the-flood-bridge",
+    "the-bridge-the-flood-took-with-it",
+    "the-crossing-we-decided-not-to-rebuild",
+    "the-night-the-exits-were-chained",
+    "whose-name-goes-on-the-bridge"
+  ],
+  "removedAddition": "wildfire-public-report-federal-offer",
+  "originalCount": 328,
+  "finalCount": 327,
+  "baselineErrors": 86,
+  "finalErrors": 62,
+  "introducedErrors": [],
+  "scratch": "content/reviews/publication-eligibility-2026-10-14/verified-corpus",
+  "backup": "content/reviews/publication-eligibility-2026-10-14/pre-location-rollback-corpus",
+  "installed": "content/corpus"
+}

@@ -1,0 +1,123 @@
+@layer rooms {
+  .frame__work:has(.map-harness) {
+    display: block;
+    padding: 0;
+  }
+
+  .map-harness {
+    position: relative;
+    align-self: stretch;
+    justify-self: stretch;
+    width: 100%;
+    height: calc(100dvh - 3rem);
+    min-height: 20rem;
+    overflow: hidden;
+    background: var(--color-ground-abyss);
+  }
+
+  .map-harness__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  /* Stands in for the shell's chrome so the occluded-area framing can be seen. */
+  .map-harness__chrome {
+    position: absolute;
+    pointer-events: none;
+    border: 1px dashed var(--color-border-strong);
+    background: var(--color-ground-raised);
+  }
+
+  .map-harness__chrome--panel {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(480px, 40%);
+  }
+
+  .map-harness__chrome--sheet {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 418px;
+  }
+
+  .map-harness__panel {
+    position: absolute;
+    right: var(--space-sm);
+    bottom: var(--space-sm);
+    z-index: 3;
+    display: grid;
+    gap: var(--space-sm);
+    max-width: 36rem;
+    max-height: 60%;
+    overflow: auto;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+    font-size: var(--size-caption);
+  }
+
+  .map-harness__panel[data-collapsed="true"] {
+    padding: var(--space-xs);
+  }
+
+  .map-harness__readout {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-2xs) var(--space-sm);
+    margin: 0;
+    font-family: var(--font-mono);
+  }
+
+  .map-harness__readout dt {
+    color: var(--color-text-secondary);
+  }
+
+  .map-harness__readout dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .map-harness__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .map-harness__panel button,
+  .map-harness__row select {
+    min-height: var(--control-compact);
+    padding: 0 var(--space-sm);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-overlay);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .map-harness__row button[aria-pressed="true"] {
+    border-color: var(--color-blue);
+  }
+
+  @media (max-width: 40em) {
+    .map-harness__panel {
+      left: var(--space-xs);
+      right: var(--space-xs);
+      bottom: var(--space-xs);
+      max-width: none;
+      max-height: 45%;
+    }
+  }
+
+  /* The map's own controls take the bottom right, so the harness panel sits left of them. */
+  .map-harness .map-harness__panel {
+    right: auto;
+    left: var(--space-sm);
+  }
+}

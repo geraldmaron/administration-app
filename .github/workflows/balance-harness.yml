@@ -1,0 +1,79 @@
+name: Balance Harness
+
+# The `src/**/*balance*.test.ts` files that packages/engine's vitest.balance.config.ts
+# includes (13 on 2026-10-08) simulate whole campaigns over 4 to 12 seeds. They are a real
+# gate — every assertion in them corresponds to a defect the harness measured on the
+# pre-tuning engine — but they cost about 12 billable minutes (measured 2026-09-10, three
+# files), and carried on every push to main and staging that was ~520 minutes a month
+# against a 2,000-minute ceiling.
+#
+# What they assert is the SHAPE OF A DISTRIBUTION, not the correctness of one commit: removal
+# rates, vote shares, midterm seat swings. That kind of property drifts across many commits
+# rather than breaking on one, which is why a weekly run on main still catches a regression
+# while a per-push run mostly re-measures an unchanged distribution.
+#
+# The cost of the trade, stated plainly: a balance regression can now sit on main for up to
+# seven days instead of failing the merge that introduced it. Run it on demand before anything
+# that depends on the numbers, via the Actions tab or:
+#   gh workflow run balance-harness.yml --ref <branch>
+# Locally it is: pnpm --filter @admin/engine run test:balance
+#
+# The second half of that cost, which the per-push step did not have: a `schedule:` trigger only
+# ever runs on the default branch, so this covers `main` and NOT `staging` — and staging is the
+# branch every working branch merges into, so it is where a balance regression actually lands
+# first. Until this runs there too, the honest habit is `gh workflow run balance-harness.yml
+# --ref staging` before anything is promoted off it.
+on:
+  schedule:
+    # Mondays 04:40 UTC. Off the top of the hour, where GitHub's scheduler queues longest.
+    - cron: '40 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: balance-harness
+  cancel-in-progress: false
+
+jobs:
+  balance:
+    name: Balance Harness (engine, ${{ matrix.party }})
+    runs-on: ubuntu-latest
+    # One job per party the President can run as. Every campaign founds the United States
+    # under its own constitution, and the full gate in balance.test.ts is run for the job's
+    # party (BALANCE_PARTY); that file also measures the other two parties at six seeds each,
+    # so every job reports all three. The term arc, the thirteen-proxy population, the
+    # economy and macro bands and the party-scope check run once, in the Democrat job,
+    # because they are asked of the loop rather than of the party; the borrowing bound
+    # (R1.1) runs there too, as three borrowing-<party>-balance files side by side.
+    strategy:
+      fail-fast: false
+      matrix:
+        party: [democrat, republican, independent]
+    # The harness is synchronous, so vitest's own testTimeout cannot interrupt it; this is
+    # the only thing that bounds a hung run. Measured cost (2026-09-23, four files) is ~19
+    # minutes end to end for the Democrat job and ~7 for each of the other two.
+    timeout-minutes: 60
+    env:
+      BALANCE_PARTY: ${{ matrix.party }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Build first, for the reason rebuild-ci.yml's own comment gives: every package is
+      # composite, and running tsc before a build leaves a .tsbuildinfo that makes the next
+      # build emit incrementally and differ from a cold emit.
+      - run: pnpm run build
+      - if: matrix.party == 'democrat'
+        run: pnpm --filter @admin/engine run test:balance
+      # The exec form, with the src/ prefix and the -t filter: pnpm hands a "--" through to
+      # vitest, whose argument parser then drops the file filter and runs every balance file;
+      # a bare "balance.test.ts" filter matches all of them; and -t alone also matches
+      # pledge-balance's "the balance of a campaign run on a platform".
+      - if: matrix.party != 'democrat'
+        run: pnpm --filter @admin/engine exec vitest run --config vitest.balance.config.ts src/balance.test.ts -t "the balance of a campaign"

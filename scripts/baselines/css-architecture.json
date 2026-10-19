@@ -1,0 +1,4 @@
+{
+  "$comment": "Each key is <sheet>::<kind>: weight (:root:root), important (outside the states layer), unlayered, layer (a name layers.css does not declare), legacy (a rule in rooms.legacy), color (a literal outside the tokens layer) or surface (a rooms rule restyling a .ui-* part). Written by `node scripts/verify-css-architecture.mjs --update-baseline`; it may only shrink.",
+  "entries": {}
+}

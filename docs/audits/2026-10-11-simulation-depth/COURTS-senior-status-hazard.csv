@@ -1,0 +1,25 @@
+slice,court,president_vs_appointing_party,exits,eligible_judge_years,annual_exit_rate
+1985-2025,District Court,same,268,1177,0.228
+1985-2025,District Court,other,191,1247,0.153
+1985-2025,Court of Appeals,same,74,466,0.159
+1985-2025,Court of Appeals,other,24,417,0.058
+1985-2000,District Court,same,71,260,0.273
+1985-2000,District Court,other,66,313,0.211
+1985-2000,Court of Appeals,same,16,78,0.205
+1985-2000,Court of Appeals,other,14,69,0.203
+2001-2025,District Court,same,197,917,0.215
+2001-2025,District Court,other,125,934,0.134
+2001-2025,Court of Appeals,same,58,388,0.149
+2001-2025,Court of Appeals,other,10,348,0.029
+2009-2025,District Court,same,154,711,0.217
+2009-2025,District Court,other,99,799,0.124
+2009-2025,Court of Appeals,same,53,320,0.166
+2009-2025,Court of Appeals,other,8,303,0.026
+2001-2025 term years 1-2,District Court,same,130,493,0.264
+2001-2025 term years 1-2,District Court,other,78,476,0.164
+2001-2025 term years 1-2,Court of Appeals,same,39,208,0.188
+2001-2025 term years 1-2,Court of Appeals,other,8,170,0.047
+2001-2025 term years 3-4,District Court,same,67,424,0.158
+2001-2025 term years 3-4,District Court,other,47,458,0.103
+2001-2025 term years 3-4,Court of Appeals,same,19,180,0.106
+2001-2025 term years 3-4,Court of Appeals,other,2,178,0.011

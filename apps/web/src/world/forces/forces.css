@@ -1,0 +1,129 @@
+/* Force assets: a glyph, a name, a number and the unit the number is counted in. */
+@layer rooms {
+  .asset-name {
+    display: inline-flex;
+    gap: var(--space-sm);
+    align-items: center;
+    min-inline-size: 0;
+  }
+
+  .asset-glyph {
+    flex: none;
+    color: var(--color-text-secondary);
+  }
+
+  .asset-figure {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .asset-figure__n {
+    font-weight: var(--weight-strong);
+  }
+
+  .asset-figure__unit {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .asset-line {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  .holdings {
+    container-type: inline-size;
+    overflow-x: auto;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+  }
+
+  .holdings__table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .holdings__table th,
+  .holdings__table td {
+    padding: var(--space-sm);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: end;
+    vertical-align: top;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .holdings__table .asset-figure__unit {
+    display: none;
+  }
+
+  .holdings__table th:not(:first-child) {
+    white-space: nowrap;
+  }
+
+  .holdings__table th:first-child {
+    text-align: start;
+    font-weight: var(--weight-regular);
+  }
+
+  .holdings__table thead th {
+    background: var(--color-ground-raised);
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-medium);
+  }
+
+  .holdings__table tbody tr:last-child > * {
+    border-block-end: 0;
+  }
+
+  .holdings__unit {
+    display: block;
+    margin-inline-start: calc(24px + var(--space-sm));
+    color: var(--color-text-tertiary);
+    font-size: var(--size-caption);
+  }
+
+  /* Free, abroad and not ready on one bar, in the same inks the desk's service strip uses. */
+  .holdings__table td.holdings__drawn {
+    min-inline-size: 7rem;
+    vertical-align: middle;
+  }
+
+  .holdings__bar {
+    display: flex;
+    gap: 2px;
+    block-size: 0.5rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--color-ground-sunken);
+  }
+
+  .holdings__bar > span {
+    flex-basis: 0;
+    min-inline-size: 3px;
+    background: var(--part-ink);
+  }
+
+  .holdings__bar [data-part="free"] { --part-ink: var(--status-success-ink); }
+  .holdings__bar [data-part="abroad"] { --part-ink: var(--color-blue); }
+  .holdings__bar [data-part="resting"] { --part-ink: var(--status-danger-ink); }
+
+  @media (max-width: 30em) {
+    .holdings__table th,
+    .holdings__table td {
+      padding: var(--space-xs);
+    }
+
+    .holdings__table .asset-glyph {
+      display: none;
+    }
+
+    .holdings__unit {
+      margin-inline-start: 0;
+    }
+  }
+}

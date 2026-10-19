@@ -1,0 +1,25 @@
+import { jsx as _jsx, Fragment as _Fragment, jsxs as _jsxs } from "react/jsx-runtime";
+import { Slot } from "@radix-ui/react-slot";
+import { cva } from "class-variance-authority";
+import { cn } from "./lib/utils";
+/** Source-owned shadcn/ui button pattern; application kinds preserve action semantics. */
+export const buttonVariants = cva("inline-flex items-center justify-center gap-2 whitespace-normal rounded-md text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", {
+    variants: {
+        kind: {
+            primary: "bg-primary text-primary-foreground hover:bg-primary/90",
+            commit: "bg-primary text-primary-foreground hover:bg-primary/90",
+            danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+            secondary: "border bg-background border-input hover:bg-accent hover:text-accent-foreground",
+            ghost: "hover:bg-accent hover:text-accent-foreground",
+        },
+        size: { md: "min-h-11 px-4 py-2", sm: "min-h-11 px-3 py-1.5" },
+    },
+    defaultVariants: { kind: "secondary", size: "md" },
+});
+export function buttonClass(kind = "secondary", size = "md", extra) {
+    return cn(buttonVariants({ kind, size }), "ui-button", `ui-button--${kind}`, size === "sm" && "ui-button--sm", extra);
+}
+export function Button({ kind = "secondary", size = "md", icon, busy = false, className, children, type = "button", disabled, ref, asChild = false, ...rest }) {
+    const Component = asChild ? Slot : "button";
+    return _jsx(Component, { ...rest, ref: ref, type: asChild ? undefined : type, "data-slot": "button", className: buttonClass(kind, size, className), disabled: disabled || busy, "aria-busy": busy || undefined, children: asChild ? children : _jsxs(_Fragment, { children: [busy ? _jsx("span", { className: "ui-button__spinner", "aria-hidden": "true" }) : icon, _jsx("span", { className: "ui-button__label", children: children })] }) });
+}

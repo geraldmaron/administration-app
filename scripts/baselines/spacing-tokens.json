@@ -1,0 +1,7 @@
+{
+  "$comment": "Numeric padding, margin, gap and radius props in apps/player, per file. Written by `node scripts/verify-spacing-tokens.mjs --update-baseline`; it may only shrink.",
+  "entries": {
+    "apps/player/src/decision/projection/ProjectionParts.tsx": 1,
+    "apps/player/src/nation/state/StateViews.tsx": 1
+  }
+}

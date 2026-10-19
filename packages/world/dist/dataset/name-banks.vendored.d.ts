@@ -1,0 +1,4 @@
+import { NameBank } from "../schemas/people-pool.js";
+export declare const VENDORED_NAME_CULTURES: readonly ["albanian", "armenian", "azerbaijani", "bhutanese", "bulgarian", "burkinabe", "cameroonian", "centrafrican", "congolese", "czech-slovak", "equatoguinean", "estonian", "ethiopian", "finnish", "gabonese", "gbe-speaking", "georgian", "ghanaian", "great-lakes", "greek", "ivorian", "kenyan", "khmer", "lao", "latvian", "lithuanian", "macedonian", "malagasy", "maltese", "mande", "melanesian", "micronesian", "mongolian", "namibian", "nepali", "nigerien", "polynesian", "romanian", "senegambian", "serbian", "serbo-croatian", "sinhalese", "slovene", "somali", "sotho-tswana", "south-sudanese", "tanzanian", "ugandan", "upper-guinea-coast", "zambian-malawian", "zimbabwean"];
+export type VendoredNameCulture = (typeof VENDORED_NAME_CULTURES)[number];
+export declare const VENDORED_NAME_BANKS: Record<VendoredNameCulture, NameBank>;

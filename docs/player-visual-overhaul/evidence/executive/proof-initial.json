@@ -1,0 +1,447 @@
+[
+  {
+    "command": "node scripts/verify-adhoc-color-lint.mjs",
+    "exit": 0,
+    "output": "OK: tokens-only-color lint correctly rejected the fixture violation.\n"
+  },
+  {
+    "command": "node scripts/verify-american-spelling-proof.mjs",
+    "exit": 0,
+    "output": "OK: verify-american-spelling refuses the register and the stems, and leaves comments and identifiers alone.\n"
+  },
+  {
+    "command": "node scripts/verify-american-spelling.mjs",
+    "exit": 0,
+    "output": "OK: American spelling across 2890 files.\n"
+  },
+  {
+    "command": "node scripts/verify-attention-anchors-proof.mjs",
+    "exit": 0,
+    "output": "OK: a literal anchor a page draws\nOK: an anchor no page draws\nOK: an id that only a test draws\nOK: a constant anchor, drawn through a constant id\nOK: a raw tail on a path and an object-literal id\nOK: a call whose first argument holds commas and parens\nOK: a template-built anchor is skipped and said so\nOK: a tree that names no anchor\n\nProof complete. Running the gate on the real tree:\n\nskipped (built at run time, not checked): packages/player-core/src/desk/attention-brief.ts: `measure-${RELEASE_MEASURE[kind]}`\nverify-attention-anchors: OK \u2014 30 anchor(s) named by player-core hrefs, each drawn as an id in the web player; 1 skipped.\n"
+  },
+  {
+    "command": "node scripts/verify-attention-anchors.mjs",
+    "exit": 0,
+    "output": "skipped (built at run time, not checked): packages/player-core/src/desk/attention-brief.ts: `measure-${RELEASE_MEASURE[kind]}`\nverify-attention-anchors: OK \u2014 30 anchor(s) named by player-core hrefs, each drawn as an id in the web player; 1 skipped.\n"
+  },
+  {
+    "command": "node scripts/verify-biography-immutability-proof.mjs",
+    "exit": 0,
+    "output": "Proving the biography immutability gate rejects what it says it rejects:\n\n  ok: a file whose past holds and whose standing moves\n  ok: a defining episode the present re-picks\n  ok: origins that change with a loyalty number\n  ok: a temperament that drifts\n  ok: a file frozen so hard the standing line cannot move either\n  ok: a standing line that claims a career\n  ok: a sweep with nothing in it\n  ok: a run that composed one reading and called it a sweep\n\nProof complete. Running the gate on the real founded cast:\n\nOK: 1,080 composition(s) over 120 people at 9 loyalties each \u2014 every past-tense section identical end to end, 120 file(s) moving their Where they stand line, and no standing line claiming a career.\n"
+  },
+  {
+    "command": "node scripts/verify-biography-immutability.mjs",
+    "exit": 0,
+    "output": "OK: 1,080 composition(s) over 120 people at 9 loyalties each \u2014 every past-tense section identical end to end, 120 file(s) moving their Where they stand line, and no standing line claiming a career.\n"
+  },
+  {
+    "command": "node scripts/verify-boundary-lint.mjs",
+    "exit": 0,
+    "output": "OK: dependency-direction lint correctly rejected the fixture violation.\n"
+  },
+  {
+    "command": "node scripts/verify-bundled-corpus-current-proof.mjs",
+    "exit": 0,
+    "output": "verify-bundled-corpus-current-proof: skipped \u2014 content/corpus is absent, so the check cannot run to be proven.\n"
+  },
+  {
+    "command": "node scripts/verify-bundled-corpus-current.mjs",
+    "exit": 0,
+    "output": "verify-bundled-corpus-current: skipped \u2014 content/corpus is not present and not tracked by git, so there is no authored source to compare the bake against. Run it where the writers' room corpus lives.\n"
+  },
+  {
+    "command": "node scripts/verify-case-contract-proof.mjs",
+    "exit": 0,
+    "output": "ok verify-case-contract proof\n"
+  },
+  {
+    "command": "node scripts/verify-case-contract.mjs",
+    "exit": 0,
+    "output": "ok packages/engine/src/effects.ts\n"
+  },
+  {
+    "command": "node scripts/verify-case-source-unification-proof.mjs",
+    "exit": 0,
+    "output": "ok verify-case-source-unification proof\n"
+  },
+  {
+    "command": "node scripts/verify-case-source-unification.mjs",
+    "exit": 0,
+    "output": "ok packages/player-core/src/conversation/scripts.ts\n"
+  },
+  {
+    "command": "node scripts/verify-counsel-plurality-proof.mjs",
+    "exit": 0,
+    "output": "Proving the counsel plurality gate rejects what it says it rejects:\n\n  ok: a cabinet that argues on every register\n  ok: a register nobody ever objects to\n  ok: a register that was never scored at all\n  ok: a cabinet where most chairs cannot object to anything\n  ok: an opinion model blind to which department the decision belongs to\n  ok: a cabinet whose every stance comes from temperament or odds\n  ok: a run that scored no opinion at all\n  ok: a run that founded a campaign but found no seated chair\n\nProof complete. Running the gate on the real founded cabinets:\n\ncounsel plurality: content/corpus is absent (it is gitignored); reading the tracked bake instead\nOK: 390,800 opinion(s) over 25 founded campaign(s) and 977 shipped replies \u2014 every register draws opposition (conciliatory 27% against \u00b7 evasive 17% against \u00b7 principled 6% against \u00b7 firm 9% against \u00b7 coercive 56% against); 16 of 16 seated chairs can reach against; all 3 stakes carried and 2 of 2 departmental reasons reached.\n"
+  },
+  {
+    "command": "node scripts/verify-counsel-plurality.mjs",
+    "exit": 0,
+    "output": "counsel plurality: content/corpus is absent (it is gitignored); reading the tracked bake instead\nOK: 390,800 opinion(s) over 25 founded campaign(s) and 977 shipped replies \u2014 every register draws opposition (conciliatory 27% against \u00b7 evasive 17% against \u00b7 principled 6% against \u00b7 firm 9% against \u00b7 coercive 56% against); 16 of 16 seated chairs can reach against; all 3 stakes carried and 2 of 2 departmental reasons reached.\n"
+  },
+  {
+    "command": "node scripts/verify-css-architecture-proof.mjs",
+    "exit": 0,
+    "output": "OK: a tree that keeps the architecture\nOK: a selector that buys weight with :root:root\nOK: !important outside the states layer\nOK: a rule in no layer\nOK: a layer the order does not declare\nOK: a rule left in rooms.legacy\nOK: a sublayer other than rooms.legacy\nOK: an entry that imports a component before the layer order\nOK: an entry that imports the layer order first\nOK: a hex color in a room\nOK: an rgba() color in a shared part\nOK: a named color inside a mix\nOK: a room restyling a shared part's surface\nOK: a room placing a shared part (layout only)\nOK: a room styling its own child of a part\nOK: findings the baseline forgives\nOK: a forgiven finding that was fixed (stale headroom)\nOK: no layer order to hold\nOK: a sheet that does not parse\nOK: the real tree \u2014 verify-css-architecture: OK \u2014 80 sheet(s), 4698 rule(s) in the order reset, tokens, components, rooms, states; 0 finding(s) forgiven and shrinking.\nverify-css-architecture-proof: OK \u2014 the gate refuses every break in the architecture and forgives only its baseline.\n"
+  },
+  {
+    "command": "node scripts/verify-css-architecture.mjs",
+    "exit": 0,
+    "output": "verify-css-architecture: OK \u2014 80 sheet(s), 4698 rule(s) in the order reset, tokens, components, rooms, states; 0 finding(s) forgiven and shrinking.\n"
+  },
+  {
+    "command": "node scripts/verify-deed-reachability-proof.mjs",
+    "exit": 0,
+    "output": "verify-deed-reachability-proof: 9 of 9 cases behave (8 rejected, the honest case passed).\n"
+  },
+  {
+    "command": "node scripts/verify-deed-reachability.mjs",
+    "exit": 0,
+    "output": "verify-deed-reachability: 72 emittable deed flags over 339 scenarios; 0 read, 72 queued on the allowlist, no dead gate or chain.\n"
+  },
+  {
+    "command": "node scripts/verify-disclosure-proof.mjs",
+    "exit": 0,
+    "output": "OK: a tree that reads loyalty only as a word\nOK: the roster's formatRatio(seat.holder.loyalty), reintroduced\nOK: the same figure through Math.round\nOK: the dossier's person[key] loop, printed through a local\nOK: a toFixed straight off the attribute\nOK: an unrelated formatRatio beside a loyalty word\nOK: a print the baseline forgives\nOK: a baseline that forgives more than the tree still prints\nOK: a baseline raised above the committed one to admit a new print\nOK: a tree with no person attribute in it\n\nProof complete. Running the gate on the real tree:\n\nverify-disclosure: OK \u2014 9 file(s) read a scored person attribute; 0 figure print(s) in 0 file(s), none beyond what the baseline forgives.\n"
+  },
+  {
+    "command": "node scripts/verify-disclosure.mjs",
+    "exit": 0,
+    "output": "verify-disclosure: OK \u2014 9 file(s) read a scored person attribute; 0 figure print(s) in 0 file(s), none beyond what the baseline forgives.\n"
+  },
+  {
+    "command": "node scripts/verify-disposition-readers.mjs",
+    "exit": 0,
+    "output": "verify-disposition-readers: ok (5 axes; readers: deference 3, principle 3, boldness 3, forceAppetite 2, craft 2)\n"
+  },
+  {
+    "command": "node scripts/verify-dist-freshness-proof.mjs",
+    "exit": 0,
+    "output": "OK: verify-dist-freshness correctly rejected a source change whose dist/ was not regenerated.\n"
+  },
+  {
+    "command": "node scripts/verify-dist-freshness.mjs",
+    "exit": 1,
+    "output": "verify-dist-freshness: dist/ has uncommitted changes; commit or stash them first.\n\nM packages/design/dist/tokens/color.d.ts\n M packages/design/dist/tokens/color.js\n M packages/design/dist/tokens/portrait.d.ts\n M packages/design/dist/tokens/spacing.d.ts\n M packages/design/dist/tokens/spacing.js\n M packages/design/dist/tokens/typography.d.ts\n M packages/design/dist/tokens/typography.js\n M packages/player-core/dist/economy/markets.d.ts\n M packages/player-core/dist/economy/markets.js\n M packages/player-core/dist/economy/markets.test.js\n M packages/ui-web/dist/AppFrame.js\n M packages/ui-web/dist/Bar.d.ts\n M packages/ui-web/dist/Bar.js\n M packages/ui-web/dist/Gauge.d.ts\n M packages/ui-web/dist/Gauge.js\n M packages/ui-web/dist/Portrait.d.ts\n M packages/ui-web/dist/Portrait.js\n M packages/ui-web/dist/Series.d.ts\n M packages/ui-web/dist/Series.js\n M packages/ui-web/dist/SideNav.js\n M packages/ui-web/dist/Steps.d.ts\n M packages/ui-web/dist/Steps.js\n M packages/ui-web/dist/WorkSurface.d.ts\n M packages/ui-web/dist/WorkSurface.js\n M packages/ui-web/dist/primitives.test.js\n?? packages/ui-web/dist/Gauge.test.d.ts\n?? packages/ui-web/dist/Gauge.test.js\n?? packages/ui-web/dist/Series.test.d.ts\n?? packages/ui-web/dist/Series.test.js\n"
+  },
+  {
+    "command": "node scripts/verify-doctrine-metric-alignment.mjs",
+    "exit": 0,
+    "output": "verify-doctrine-metric-alignment: doctrine \u00a72 matches the engine's current constants\n"
+  },
+  {
+    "command": "node scripts/verify-engine-reachability-proof.mjs",
+    "exit": 0,
+    "output": "OK: every due row reached, and a row not yet due reported as pending without failing\nOK: the planted break: a due row whose only call site is removed\nOK: an import alone is not a call\nOK: a comment that names the call is not a call\nOK: a call in a web file main.tsx never loads does not count\nOK: a player-core helper that calls the act counts once a screen calls the helper\nOK: the same helper counts for nothing while no screen calls it\nOK: one variant reached by its literal does not carry the others\nOK: a store action called bare, not on the store, is not the store's\nOK: pin-ledger.json governs once its wave list is the program's, and the W3 row is then due\nOK: --as-of previews a later wave\nOK: a dropped row with its reason is accepted at any wave\nOK: a dropped row with no reason is refused\nOK: a row due in a wave the ledger does not declare is refused\nOK: a row listed twice is refused\nOK: an engine act in neither the ledger nor the internal list is refused\nOK: the same act passes once declared internal with its reason, and a stale declaration is refused\nOK: a capability-ledger.md that drifted from the JSON is refused\nOK: a studio module importing a name its package no longer exports is refused\nOK: a ledger with no rows refuses rather than passing on nothing\n\nProof complete. Running the gate on the real tree:\n\nOK: 181 rows over 103 functions at W7 (from scripts/pin-ledger.json); 179 reached, 0 pending, 2 dropped, 0 unreached. 772 player file(s) reached from 1 entry point(s); 114 engine acts checked against the ledger.\n"
+  },
+  {
+    "command": "node scripts/verify-engine-reachability.mjs",
+    "exit": 0,
+    "output": "OK: 181 rows over 103 functions at W7 (from scripts/pin-ledger.json); 179 reached, 0 pending, 2 dropped, 0 unreached. 772 player file(s) reached from 1 entry point(s); 114 engine acts checked against the ledger.\n"
+  },
+  {
+    "command": "node scripts/verify-family-closure-proof.mjs",
+    "exit": 0,
+    "output": "verify-family-closure-proof: 4 of 4 cases behave.\n"
+  },
+  {
+    "command": "node scripts/verify-family-closure.mjs",
+    "exit": 0,
+    "output": "verify-family-closure: 1698 source files, one writer of the arc record.\n"
+  },
+  {
+    "command": "node scripts/verify-file-size-proof.mjs",
+    "exit": 0,
+    "output": "OK: verify-file-size.mjs rejected the oversized fixture and the stale allowlist entry.\n"
+  },
+  {
+    "command": "node scripts/verify-file-size.mjs",
+    "exit": 0,
+    "output": "OK: no file exceeds 800 lines outside the recorded data-table and logic-debt allowlists.\n"
+  },
+  {
+    "command": "node scripts/verify-fiscal-authority-proof.mjs",
+    "exit": 0,
+    "output": "verify-fiscal-authority-proof: the gate rejects all 10 deliberate breaks and accepts a clean tree\n"
+  },
+  {
+    "command": "node scripts/verify-fiscal-authority.mjs",
+    "exit": 0,
+    "output": "verify-fiscal-authority: the founding, the floor, the apportionment and the country's books all hold; 453 engine sources scanned, 0 authored authority credit(s), none outside the three permitted files\n"
+  },
+  {
+    "command": "node scripts/verify-flag-markers-proof.mjs",
+    "exit": 0,
+    "output": "OK: verify-flag-markers.mjs rejected the unmarked flag, the unreadable flag, both stale debt entries, and the empty corpus.\n"
+  },
+  {
+    "command": "node scripts/verify-flag-markers.mjs",
+    "exit": 0,
+    "output": "OK: 38 flag-setting site(s) either stamp their turn, are self-dated, are cleared by their own subsystem, or are recorded debt.\n"
+  },
+  {
+    "command": "node scripts/verify-foreign-truth-proof.mjs",
+    "exit": 0,
+    "output": "OK: a country file that reads tension as a word, over a fog that engages\nOK: military threat printed to the percent for every government\nOK: trust printed through a local, the way the country file does it\nOK: the same figure behind the fog check\nOK: a decision trait printed with toFixed\nOK: a world where every government is read\nOK: more governments outside a standing body read than the baseline allows\nOK: a compact partner read at founding, which the floor must not count\nOK: an adversary read at founding\nOK: a compact partner unread at founding\nOK: membership alone exposes private government deliberations\nOK: a missing membership comparison cannot pass\nOK: an unread share outside a standing body under a third\nOK: a world where every government shares a standing body with the United States\nOK: the covert board printing counter-intelligence\nOK: no third-party tie fogged\nOK: a founding with no foreign government\nOK: a baseline raised above the committed one to admit a print\nOK: a tree that reads no foreign scalar at all\n\nProof complete. Running the gate on the real tree:\n\nverify-foreign-truth: OK \u2014 56 of 160 governments outside a standing body (35.0%) and 508 of 8157 third-party ties are unread at founding; all four adversaries are hidden; membership alone grants no private access; the covert board prints no counter-intelligence; 0 file(s) print foreign scalars, none beyond the baseline.\nverify-foreign-truth: REPORT \u2014 39 unread government(s) trust the United States at 0.2 or more at founding: GBR 0.85, AUS 0.80, POL 0.80, FRA 0.75, ITA 0.75, JPN 0.75, KOR 0.75, DEU 0.70, TWN 0.70, CAN 0.65, DNK 0.65, NZL 0.60, ARE 0.55, SAU 0.50, BEL 0.44, SWE 0.43, NLD 0.43, SVN 0.43, CZE 0.43, ESP 0.43, EST 0.42, LTU 0.42, NOR 0.42, FIN 0.42, HRV 0.41, TUR 0.41, ALB 0.40, LUX 0.34, ISR 0.30, SLV 0.30, UKR 0.29, QAT 0.29, MAR 0.29, BHR 0.28, KWT 0.28, JOR 0.28, AUT 0.20, CYP 0.20, SGP 0.20.\n"
+  },
+  {
+    "command": "node scripts/verify-foreign-truth.mjs",
+    "exit": 0,
+    "output": "verify-foreign-truth: OK \u2014 56 of 160 governments outside a standing body (35.0%) and 508 of 8157 third-party ties are unread at founding; all four adversaries are hidden; membership alone grants no private access; the covert board prints no counter-intelligence; 0 file(s) print foreign scalars, none beyond the baseline.\nverify-foreign-truth: REPORT \u2014 39 unread government(s) trust the United States at 0.2 or more at founding: GBR 0.85, AUS 0.80, POL 0.80, FRA 0.75, ITA 0.75, JPN 0.75, KOR 0.75, DEU 0.70, TWN 0.70, CAN 0.65, DNK 0.65, NZL 0.60, ARE 0.55, SAU 0.50, BEL 0.44, SWE 0.43, NLD 0.43, SVN 0.43, CZE 0.43, ESP 0.43, EST 0.42, LTU 0.42, NOR 0.42, FIN 0.42, HRV 0.41, TUR 0.41, ALB 0.40, LUX 0.34, ISR 0.30, SLV 0.30, UKR 0.29, QAT 0.29, MAR 0.29, BHR 0.28, KWT 0.28, JOR 0.28, AUT 0.20, CYP 0.20, SGP 0.20.\n"
+  },
+  {
+    "command": "node scripts/verify-icon-registry-proof.mjs",
+    "exit": 0,
+    "output": "OK: every glyph bound, through every binder shape\nOK: a glyph added to the set and bound nowhere\nOK: a glyph bound only on a development-only route\nOK: a binding to a glyph the set does not draw\nOK: an unbound glyph and an unknown binding, both forgiven\nOK: a baseline forgiving a glyph that is now bound\nOK: an icon set the gate cannot read\n\nProof complete. Running the gate on the real tree:\n\nverify-icon-registry: OK \u2014 169 glyph(s) in the set, 160 bound across 264 binder file(s); 9 unbound glyph(s) and 0 file(s) binding unknown names, all forgiven and shrinking.\n"
+  },
+  {
+    "command": "node scripts/verify-icon-registry.mjs",
+    "exit": 0,
+    "output": "verify-icon-registry: OK \u2014 169 glyph(s) in the set, 160 bound across 264 binder file(s); 9 unbound glyph(s) and 0 file(s) binding unknown names, all forgiven and shrinking.\n"
+  },
+  {
+    "command": "node scripts/verify-incident-places-proof.mjs",
+    "exit": 0,
+    "output": "OK: an emergency with no place\nOK: a resolver that stopped declaring claims\nOK: a state's mark pinned at the nation although the state has a city\nOK: a state with no dataset city pinned at the national capital instead of its capitol\nOK: a new place-bearing record on the Campaign that nobody classified\n\nProof complete. Running the gate on the real tree:\n\nverify-incident-places: OK \u2014 8 place-bearing engine record(s) classified; 4433 items across 5 kinds all placed. DE, MT, WY have no dataset city, so their items pin at the state capitol.\n"
+  },
+  {
+    "command": "node scripts/verify-incident-places.mjs",
+    "exit": 0,
+    "output": "verify-incident-places: OK \u2014 8 place-bearing engine record(s) classified; 4433 items across 5 kinds all placed. DE, MT, WY have no dataset city, so their items pin at the state capitol.\n"
+  },
+  {
+    "command": "node scripts/verify-kit-current-proof.mjs",
+    "exit": 0,
+    "output": "OK: verify-kit-current refuses a restamped, an incomplete and a padded kit, and passes the committed one.\n"
+  },
+  {
+    "command": "node scripts/verify-kit-current.mjs",
+    "exit": 0,
+    "output": "OK: the authoring kit is current \u2014 kit 818e00aaca30, 11 file(s) in content/kit.\n"
+  },
+  {
+    "command": "node scripts/verify-leader-fidelity-proof.mjs",
+    "exit": 0,
+    "output": "caught: an officeholder no source cites, on the roster, who shares a name the engine generates\ncaught: a roster the committed hashes do not cover\ncaught: a sitting head whose rare family name the engine hands his own government's ministers\ncaught: a nation drawn from a tradition its people do not carry (Ukraine recorded as Russian)\ncaught: a cited officeholder who shares a name the engine generates\ncaught: a source page the committed blocklist does not cover\ncaught: a table row that changed without re-vendoring (Germany's leader recorded as a woman)\ncaught: a table incumbent the generator draws against its row (Germany's leader recorded as a woman)\nverify-leader-fidelity-proof: all 8 planted breaks caught\n"
+  },
+  {
+    "command": "node scripts/verify-leader-fidelity.mjs",
+    "exit": 0,
+    "output": "verify-leader-fidelity: 195 governments held to the table on 5 founded campaigns; 344094 generated names over 50 seeds carry no officeholder's name, cited or on the roster (roster compared by hash; no plaintext roster given)\n"
+  },
+  {
+    "command": "node scripts/verify-locus-ground.mjs",
+    "exit": 0,
+    "output": "verify-locus-ground: 38 authored loci, every one says whose soil it is on.\n"
+  },
+  {
+    "command": "node scripts/verify-map-registration.mjs",
+    "exit": 0,
+    "output": "verify-map-registration: terrain plate is registered to the projection\n"
+  },
+  {
+    "command": "node scripts/verify-metric-registry-proof.mjs",
+    "exit": 1,
+    "output": "OK: a clean tree, with a field read through a helper's own parameter type\nOK: a stored field with no registry entry\nOK: a registered field the walk cannot declare, not named a blind spot\nOK: the same field named as a blind spot\nOK: a field nothing reads\nOK: the same field pinned as owed\nOK: an effect-written field nothing writes\nOK: a patch too loose to say what it writes\nOK: a claimed reader the walk cannot confirm\nOK: the same claim, forgiven by the baseline\nOK: a baseline forgiving a claim the tree no longer makes\nOK: a baseline raised above the committed one\nOK: a report the tree no longer writes\n\nProof complete. Running the gate on the real tree:\n\nverify-metric-registry: blind spots (named, not checked):\n    State:character.cohorts.* \u2014 29 field(s), 87 claim(s) not checked: a state's cohort shares: the schema is built from the cohort axis list, so no access resolves to one share\n    District:cohortSkew.* \u2014 29 field(s), 0 claim(s) not checked: a district's cohort skews: the schema is built from the cohort axis list, so no access resolves to one skew\n    claimed outside the typed packages: Person:bio <- apps/studio/people-view.mjs#personPage\n    claimed outside the typed packages: State:fips <- scripts/vendor-state-demographics.mjs#stateIds\n    scenario gates in the JSON corpus (`content/corpus`) name metrics as strings no TypeScript walk reads\nverify-metric-registry: STALE REPORT  scripts/metric-registry-report.json is not what the tree writes: run node scripts/report-metric-registry.mjs and commit it\n\nverify-metric-registry: FAIL \u2014 1 finding(s) above.\n"
+  },
+  {
+    "command": "node scripts/verify-metric-registry.mjs",
+    "exit": 1,
+    "output": "verify-metric-registry: blind spots (named, not checked):\n    State:character.cohorts.* \u2014 29 field(s), 87 claim(s) not checked: a state's cohort shares: the schema is built from the cohort axis list, so no access resolves to one share\n    District:cohortSkew.* \u2014 29 field(s), 0 claim(s) not checked: a district's cohort skews: the schema is built from the cohort axis list, so no access resolves to one skew\n    claimed outside the typed packages: Person:bio <- apps/studio/people-view.mjs#personPage\n    claimed outside the typed packages: State:fips <- scripts/vendor-state-demographics.mjs#stateIds\n    scenario gates in the JSON corpus (`content/corpus`) name metrics as strings no TypeScript walk reads\nverify-metric-registry: STALE REPORT  scripts/metric-registry-report.json is not what the tree writes: run node scripts/report-metric-registry.mjs and commit it\n\nverify-metric-registry: FAIL \u2014 1 finding(s) above.\n"
+  },
+  {
+    "command": "node scripts/verify-no-history-references-proof.mjs",
+    "exit": 0,
+    "output": "OK: verify-no-history-references refuses each category, and passes lookalikes and exemptions.\n"
+  },
+  {
+    "command": "node scripts/verify-no-history-references.mjs",
+    "exit": 0,
+    "output": "OK: no history references across 3338 files.\n"
+  },
+  {
+    "command": "node scripts/verify-no-silent-skip-proof.mjs",
+    "exit": 0,
+    "output": "ok verify-no-silent-skip proof\n"
+  },
+  {
+    "command": "node scripts/verify-no-silent-skip.mjs",
+    "exit": 0,
+    "output": "ok apps/web/src/shell/ContinueControl.tsx\n"
+  },
+  {
+    "command": "node scripts/verify-one-day-counter-proof.mjs",
+    "exit": 0,
+    "output": "OK: verify-one-day-counter.mjs rejects a second day counter, a second days-to-weeks converter in both its shapes, weeks multiplied back into days and an appropriation run to a year of turns; accepts a per-fiction-day rate, a turn-count multiple, an authored span, a logarithm and the two homes themselves; and refuses an empty corpus.\n"
+  },
+  {
+    "command": "node scripts/verify-one-day-counter.mjs",
+    "exit": 0,
+    "output": "OK: 1670 source files carry one day counter, one days-to-weeks converter and one fiscal calendar.\n"
+  },
+  {
+    "command": "node scripts/verify-opinion-causes-proof.mjs",
+    "exit": 0,
+    "output": "OK: approval and the Desk both drawn with causes\nOK: a cause key with no label\nOK: a label naming no key\nOK: a term reported outside the union\nOK: the approval file drawing the level alone\nOK: a new surface drawing the six judgments without a cause\nOK: a surface that imports the cause reader and never uses it\nOK: the same surface drawing causes through a player-core reading\nOK: a surface drawing causes through a player-core reading built on another\nOK: a player-core reading that names a cause reader only in a comment\nOK: the approval file moved out from under the gate\nOK: a baseline still forgiving a file that now draws its causes\nOK: a decomposition whose union cannot be read\n\nProof complete. Running the gate on the real tree:\n\nverify-opinion-causes: OK \u2014 20 cause keys all named, 20 reported by the model; 10 surface(s) draw a level, 0 still without its causes (forgiven, and shrinking).\n"
+  },
+  {
+    "command": "node scripts/verify-opinion-causes.mjs",
+    "exit": 0,
+    "output": "verify-opinion-causes: OK \u2014 20 cause keys all named, 20 reported by the model; 10 surface(s) draw a level, 0 still without its causes (forgiven, and shrinking).\n"
+  },
+  {
+    "command": "node scripts/verify-person-consequence-alignment-proof.mjs",
+    "exit": 0,
+    "output": "verify-person-consequence-alignment-proof: the gate passes a clean tree and rejects all 16 drift fixtures\n"
+  },
+  {
+    "command": "node scripts/verify-person-consequence-alignment.mjs",
+    "exit": 0,
+    "output": "verify-person-consequence-alignment: 57 constant(s) the dossier prints match the engine's current values\n"
+  },
+  {
+    "command": "node scripts/verify-person-relationship-provenance-proof.mjs",
+    "exit": 0,
+    "output": "verify-person-relationship-provenance proof:\n  ok: a graph whose every tie the two records support passes\n  ok: a mentorship pointing from the junior to the senior\n  ok: a person who is the junior end of two mentorships\n  ok: a tie out of education between two people who name different schools\n  ok: a tie out of a working world whose two careers never overlapped\n  ok: a tie out of a working world one of the two never worked in\n  ok: two prior counterparts who hold the same citizenship\n  ok: a former-colleague tie across a border\n  ok: a seventh tie on one person\n  ok: one shared history sold as two different ties\n  ok: an edge naming somebody who is not in the cast\n  ok: a declared kind that reaches no player\n  ok: a graph where one sentence speaks for every tie\n  ok: a graph with nothing in it at all\n\nProof complete. Running the gate on the real generated cast:\n\nOK: 22,219 ties over 8,051 people from a founded cast on seed \"golden-alpha\" \u2014 former-colleague 16,199 \u00b7 mentor 2,958 \u00b7 peer 1,566 \u00b7 ally 1,265 \u00b7 prior-counterpart 126 \u00b7 rival 105; every kind reached, every mentorship running senior\u2192junior with nobody holding two, every provenance carried by both records that name it, 126 tie(s) crossing a border and every other tie at home, nobody over 6 ties, 19,222 distinct reasons (86.5% of edges, floor 50%). 1 of 14 provenance(s) carry no tie: medicine.\n"
+  },
+  {
+    "command": "node scripts/verify-person-relationship-provenance.mjs",
+    "exit": 0,
+    "output": "OK: 22,219 ties over 8,051 people from a founded cast on seed \"golden-alpha\" \u2014 former-colleague 16,199 \u00b7 mentor 2,958 \u00b7 peer 1,566 \u00b7 ally 1,265 \u00b7 prior-counterpart 126 \u00b7 rival 105; every kind reached, every mentorship running senior\u2192junior with nobody holding two, every provenance carried by both records that name it, 126 tie(s) crossing a border and every other tie at home, nobody over 6 ties, 19,222 distinct reasons (86.5% of edges, floor 50%). 1 of 14 provenance(s) carry no tie: medicine.\n"
+  },
+  {
+    "command": "node scripts/verify-pin-ledger-proof.mjs",
+    "exit": 0,
+    "output": "OK: verify-pin-ledger.mjs passed the agreeing tree and rejected every planted disagreement: unlisted, orphaned, overdue, due at the close, unapproved and undeclared-template pins \u2014 including one planted inside a copy of a real balance test file, not just the hand-written fixture.\n"
+  },
+  {
+    "command": "node scripts/verify-pin-ledger.mjs",
+    "exit": 0,
+    "output": "OK: 10 pin site(s) across 832 test file(s) all sit on the ledger's 12 row(s); none is overdue at W7.\n"
+  },
+  {
+    "command": "node scripts/verify-player-prose-proof.mjs",
+    "exit": 0,
+    "output": "OK: clean copy passes\nOK: insider shorthand\nOK: an em dash in a sentence\nOK: a lone em dash as the empty-value mark\nOK: a colon joining two clauses\nOK: a colon introducing a list\nOK: an ordinary verb that shares letters with a refused word\nOK: a staged contrast\nOK: machinery is not text\nOK: a forgiven finding passes\nOK: a fixed finding leaves the baseline stale\nOK: a tree with no player text\nverify-player-prose-proof: the gate refuses each mark, reads only player text, and holds its baseline.\n"
+  },
+  {
+    "command": "node scripts/verify-player-prose.mjs",
+    "exit": 0,
+    "output": "verify-player-prose: 12076 player string(s) read; 8 finding(s) across 7 file-rule pair(s).\n"
+  },
+  {
+    "command": "node scripts/verify-position-uncertainty-proof.mjs",
+    "exit": 0,
+    "output": "OK: a pool whose replies expose nothing measures 0.0%, below the floor, and would fail the gate.\nOK: the live pool measures 72.7%, so the rule distinguishes a covered pool from a bare one.\nOK: an empty pool measures zero replies and zero coverage, which the gate refuses rather than passes.\nOK: odds alone are not a term: the reading counts what could go wrong, not what the chance of it is.\n"
+  },
+  {
+    "command": "node scripts/verify-position-uncertainty.mjs",
+    "exit": 0,
+    "output": "OK: 72.7% of 908 live-pool replies draw at least one term (300 scenarios cast; {\"instrument\":71,\"position\":834,\"join\":3}).\nOK: no position reply quotes odds \u2014 what a spoken answer exposes is stated, never estimated.\n\nProjected 908 replies across 300 cast scenarios from a 339-scenario pool.\n"
+  },
+  {
+    "command": "node scripts/verify-publish-gate.mjs",
+    "exit": 0,
+    "output": "OK: the CLI refused known-bad content with a non-zero exit.\nOK: band inconsistency was caught by name.\nOK: wrong-charter institution leakage was caught by name.\nOK: unrouted domestic act was caught by name.\nOK: dead grievance gate was caught by name.\nOK: unnamed group toll was caught by name.\nOK: implausible cohort toll was caught by name.\nOK: dead cohort gate was caught by name.\nOK: the bundled core pack still validates clean.\nOK: no published packs yet \u2014 content/packs does not exist.\nOK: a step sequence whose ending contradicts its own valence is refused by name.\nOK: all 3 resolution-sequence reference fixture(s) validate clean.\nOK: the validator path is offline-pure across 281 built file(s).\n"
+  },
+  {
+    "command": "node scripts/verify-resolution-beat-reachability.mjs",
+    "exit": 0,
+    "output": "OK: all 45 shipped resolution sequence(s) are reachable from a real instrument x rung band x risk combination.\nINFO: 38 of 69 situation(s) have no sequence yet \u2014 informational, not a gate failure until the authored bank is meant to cover the full matrix.\nOK: the reachability rule correctly flagged a sequence naming a branch its instrument does not have.\n"
+  },
+  {
+    "command": "node scripts/verify-rule-seams-proof.mjs",
+    "exit": 0,
+    "output": "ams: NOTE \u2014 classified site no longer found: act-price conversations.ts#commitReply \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price npc-turn.ts#runNpcTurn \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: npc-military-path opening-world.ts#openingWorld \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: founding-edge founding.ts#withOpeningWorld \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: founding-edge foreign-politics.ts#interregnum \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price engagement.ts#projectEngagement \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: election-settler opponent.ts#selectOpponent \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: npc-military-path war-join.ts#allyJoinEffects \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: npc-military-path war-join.ts#joinDecisionPackets \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: npc-military-path compacts.ts#callCompact \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: war-outcome-draw war-tick.ts#terminalState \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: war-outcome-draw war-tick.ts#spentEnding \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price war-entry.ts#joinCost \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price war-entry.ts#joinPriceScale \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price engagement.ts#engagementPacket \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price npc-turn.ts#engagementTurn \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price monetary-acts.ts#projectFedLean \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price commodity-levers.ts#projectReserveRelease \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price commodity-levers.ts#projectFuelWaiver \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: projection household-prices.ts#pumpPriceSeries \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: projection monetary.ts#fedDecision \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: election-settler elections.ts#presidentialVerdict \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: election-settler opponent.ts#contingentHouseVote \u2014 remove it once its wave has landed\nverify-rule-seams: OK \u2014 2 rule(s) on 2 seam(s); 82 classified site(s) across 453 module(s) (congressional-decision 12, us-debt-writer 8, election-settler 4, npc-military-path 15, war-outcome-draw 1, cabinet-exit 13, act-price 10, founding-edge 3, npc-actor-slot 2, projection 14); one entitlement key, one storefront.\n"
+  },
+  {
+    "command": "node scripts/verify-rule-seams.mjs",
+    "exit": 0,
+    "output": "ams: NOTE \u2014 classified site no longer found: act-price conversations.ts#commitReply \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price npc-turn.ts#runNpcTurn \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: npc-military-path opening-world.ts#openingWorld \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: founding-edge founding.ts#withOpeningWorld \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: founding-edge foreign-politics.ts#interregnum \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price engagement.ts#projectEngagement \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: election-settler opponent.ts#selectOpponent \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: npc-military-path war-join.ts#allyJoinEffects \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: npc-military-path war-join.ts#joinDecisionPackets \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: npc-military-path compacts.ts#callCompact \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: war-outcome-draw war-tick.ts#terminalState \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: war-outcome-draw war-tick.ts#spentEnding \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price war-entry.ts#joinCost \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price war-entry.ts#joinPriceScale \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price engagement.ts#engagementPacket \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price npc-turn.ts#engagementTurn \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price monetary-acts.ts#projectFedLean \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price commodity-levers.ts#projectReserveRelease \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: act-price commodity-levers.ts#projectFuelWaiver \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: projection household-prices.ts#pumpPriceSeries \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: projection monetary.ts#fedDecision \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: election-settler elections.ts#presidentialVerdict \u2014 remove it once its wave has landed\nverify-rule-seams: NOTE \u2014 classified site no longer found: election-settler opponent.ts#contingentHouseVote \u2014 remove it once its wave has landed\nverify-rule-seams: OK \u2014 2 rule(s) on 2 seam(s); 82 classified site(s) across 453 module(s) (congressional-decision 12, us-debt-writer 8, election-settler 4, npc-military-path 15, war-outcome-draw 1, cabinet-exit 13, act-price 10, founding-edge 3, npc-actor-slot 2, projection 14); one entitlement key, one storefront.\n"
+  },
+  {
+    "command": "node scripts/verify-scenario-arc-families-proof.mjs",
+    "exit": 0,
+    "output": "OK: verify-scenario-arc-families.mjs rejected the unbound pair, the mismatched families, the stale debt entry and the empty corpus, and passed the bound pair and the domestic setter.\n"
+  },
+  {
+    "command": "node scripts/verify-scenario-arc-families.mjs",
+    "exit": 0,
+    "output": "OK: 14 of 17 flag pair(s) between two rule-cast foreign scenarios are bound by a family; 3 are recorded debt.\n"
+  },
+  {
+    "command": "node scripts/verify-scenario-dc-fallback-proof.mjs",
+    "exit": 0,
+    "output": "OK: a capital site is Washington by declaration\nOK: an authored state the dataset has no city in stands at its capitol\nOK: a resolver that drops a city-less state back around the capital\nOK: a home site that names no state is seeded\nOK: a seeded site the baseline forgives\nOK: a baseline still forgiving a scenario that now authors its state\nOK: a corpus with nothing in it\n\nProof complete. Running the gate on the real tree:\n\nverify-scenario-dc-fallback: OK \u2014 346 scenario(s), 314 on home ground, 174 genuinely in Washington; 0 in DC by fallback, 107 in a seeded state.\n"
+  },
+  {
+    "command": "node scripts/verify-scenario-dc-fallback.mjs",
+    "exit": 0,
+    "output": "verify-scenario-dc-fallback: OK \u2014 346 scenario(s), 314 on home ground, 174 genuinely in Washington; 0 in DC by fallback, 107 in a seeded state.\n"
+  },
+  {
+    "command": "node scripts/verify-shipped-content-parses.mjs",
+    "exit": 0,
+    "output": "verify-shipped-content-parses: skipped content/corpus/shards (the authored corpus) \u2014 not present, and not tracked by git\nverify-shipped-content-parses: skipped content/dist (built content sets) \u2014 not present, and not tracked by git\nverify-shipped-content-parses: OK \u2014 the resolution-sequence strict parse correctly rejected its known-bad fixture.\nverify-shipped-content-parses: OK \u2014 381 shipped scenario/resolution-sequence document(s) parse under the current schema.\n"
+  },
+  {
+    "command": "node scripts/verify-trade-measure-kinds.mjs",
+    "exit": 0,
+    "output": "verify-trade-measure-kinds: 5 kinds, every one constructed \u2014 tariff (3), sanctions (5), asset-restriction (3), export-control (4), embargo (6).\n"
+  },
+  {
+    "command": "node scripts/verify-unused-primitives-proof.mjs",
+    "exit": 0,
+    "output": "OK: every part drawn, one of them only inside another drawn part\nOK: a part nobody draws\nOK: a part drawn only on a development-only route\nOK: a part drawn only inside a part nobody draws\nOK: an undrawn part the baseline forgives\nOK: a baseline still forgiving a part that is now drawn\nOK: a barrel with no components in it\n\nProof complete. Running the gate on the real tree:\n\nverify-unused-primitives: OK \u2014 48 exported part(s); 48 drawn where a player can stand, 0 forgiven and shrinking.\n"
+  },
+  {
+    "command": "node scripts/verify-unused-primitives.mjs",
+    "exit": 0,
+    "output": "verify-unused-primitives: OK \u2014 48 exported part(s); 48 drawn where a player can stand, 0 forgiven and shrinking.\n"
+  },
+  {
+    "command": "node scripts/verify-us-units.mjs",
+    "exit": 0,
+    "output": "verify-us-units: clean \u2014 no metric readings in player-facing text (7 rules, 3 proof cases).\n"
+  },
+  {
+    "command": "node scripts/verify-wave-closeout-proof.mjs",
+    "exit": 0,
+    "output": "OK: rejected a landed wave with no gate record.\nOK: rejected a record that still promises a measurement instead of reporting one.\nOK: rejected a record that names no gate step at all.\nOK: rejected the pin ledger left behind a landed wave.\nOK: rejected plan.md claiming a wave the table does not.\nOK: accepted \"partly landed, not closed\" is a real state and must pass.\nOK: accepted a clean tree.\nOK: rejected a tree with no wave table at all.\n\nverify-wave-closeout-proof: the gate answers all 8 cases correctly.\n"
+  },
+  {
+    "command": "node scripts/verify-wave-closeout.mjs",
+    "exit": 0,
+    "output": "OK: 7 landed wave(s) (W0, W1, W2, W3, W4, W5, W6) each carry a gate record that reports what was run; the pin ledger is not behind, and there is no plan.md here to check against it.\n"
+  },
+  {
+    "command": "node scripts/verify-web-boundary.mjs",
+    "exit": 0,
+    "output": "verify-web-boundary: shipping web graph is clean of Expo, RN, Electron and Steamworks.\n"
+  },
+  {
+    "command": "node scripts/verify-willingness-route-proof.mjs",
+    "exit": 0,
+    "output": "verify-willingness-route-proof: ok (clean tree passes, --closing and 7 planted cases fail)\n"
+  },
+  {
+    "command": "node scripts/verify-willingness-route.mjs",
+    "exit": 0,
+    "output": "verify-willingness-route: ok (26 questions, 0 pending; 10 listed draws)\n"
+  },
+  {
+    "command": "node scripts/verify-wire-bank-collapse.mjs",
+    "exit": 0,
+    "output": "OK: the collision detector correctly flagged two step kinds sharing an identical line.\nverify-wire-bank-collapse: OK \u2014 no two FeedItem kinds share a standfirst or body graf, home news reads in its own 3 domestic banks, no line of 29568 composed pieces claims time has passed, and no two resolution-beat step kinds share a line across 45 sequence(s).\n"
+  },
+  {
+    "command": "node scripts/verify-world-coverage-proof.mjs",
+    "exit": 0,
+    "output": "ok   the untouched baseline: gate passed (expected pass)\nok   a government with no shape and no pin: gate refused (expected refusal)\nok   a government drawn only as a pin: gate passed (expected pass)\nok   a government missing from the flag table: gate refused (expected refusal)\nok   a flag code with no artwork: gate refused (expected refusal)\nok   a government with no name culture: gate refused (expected refusal)\nok   a government with no heritage mix: gate refused (expected refusal)\nok   a government with no schools: gate refused (expected refusal)\nok   a government with no party system: gate refused (expected refusal)\nok   a government with no combatant command: gate refused (expected refusal)\nok   a map shape nobody accounts for: gate refused (expected refusal)\nok   a territory whose administrator is off the roster: gate refused (expected refusal)\nok   a census too small to mean anything: gate refused (expected refusal)\n\nEvery break refused, the baseline passed. Running the gate on the real dataset:\nOK: 196 governments covered in every surface (10 drawn as capital pins); 204 map shapes all accounted for.\n"
+  },
+  {
+    "command": "node scripts/verify-world-coverage.mjs",
+    "exit": 0,
+    "output": "OK: 196 governments covered in every surface (10 drawn as capital pins); 204 map shapes all accounted for.\n"
+  }
+]

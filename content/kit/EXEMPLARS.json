@@ -1,0 +1,637 @@
+[
+  {
+    "id": "the-strike-that-hit-the-second-building",
+    "class": "war",
+    "severity": "critical",
+    "dilemmaShape": "disclosure",
+    "motifs": [
+      "broken-chain-of-custody",
+      "agency-non-confirmation"
+    ],
+    "intelConfidence": "disputed",
+    "subject": "The strike that hit the second building",
+    "cast": {
+      "pick": "warCounterpart"
+    },
+    "conditions": [
+      {
+        "kind": "warState",
+        "role": "any"
+      }
+    ],
+    "weight": 0.9,
+    "boosts": [
+      {
+        "source": "warIntensity",
+        "factor": 1.4
+      }
+    ],
+    "once": true,
+    "locus": {
+      "site": "city",
+      "ground": "counterpart",
+      "descriptor": "a block of four-story housing behind the depot, still standing on three sides"
+    },
+    "context": {
+      "standing": "A munitions depot was struck before dawn under a target package approved eleven days ago. The depot is gone. So is most of a residential block that the package listed as cleared.",
+      "precedent": "Every government that has fought this way has faced this morning. The ones that got ahead of it lost a week. The ones that waited for the count lost the argument about whether they had been counting.",
+      "pressures": [
+        {
+          "source": "military",
+          "want": "The services want the package defended, because questioning it stops the campaign this week."
+        },
+        {
+          "source": "ally",
+          "want": "Two partners will be asked about their intelligence contribution by their own legislatures tomorrow morning."
+        },
+        {
+          "source": "press",
+          "want": "The press has the footage already and is running it tonight, with or without a figure from us."
+        },
+        {
+          "source": "street",
+          "want": "The first vigil is tonight, and the organizers have asked for a government representative to stand there."
+        }
+      ],
+      "inaction": "The count arrives from somebody else, in someone else's framing, within about thirty hours. There is no version of this where the number stays unknown.",
+      "unknown": "Whether the block was occupied. The clearance is eleven days old, the imagery behind it has a gap, and the service that flagged the gap did so after the package was approved."
+    },
+    "particulars": [
+      {
+        "label": "Time on target",
+        "value": "04:10"
+      },
+      {
+        "label": "Package approved",
+        "value": "11 days ago"
+      },
+      {
+        "label": "Clearance imagery",
+        "value": "9 days old"
+      },
+      {
+        "label": "Confirmed at first light",
+        "value": "14"
+      }
+    ],
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "defense"
+        },
+        "text": "The depot is gone and the mission is a success by every measure we set for it. Behind it, a residential block that our package listed as cleared is not standing on one side. Fourteen confirmed as of first light. That number is going to move and it is only going to move one direction."
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "foreign"
+        },
+        "text": "Two of our partners contributed to that package. Their legislatures sit tomorrow. Whatever you decide here, you are deciding it for three governments, and the other two will hear it from their own reporters if they do not hear it from us in the next few hours."
+      },
+      {
+        "speaker": {
+          "kind": "narrator"
+        },
+        "text": "The clearance imagery is nine days old, and the second service disputes that the block was ever cleared at all. The analyst who wrote that down did it four days ago, in a document that reached a desk two levels below the approval and stopped there. She is still at that desk, and she has kept a copy."
+      }
+    ],
+    "transmission": {
+      "relay": "intercept",
+      "attribution": "their air defense command, regional sector",
+      "text": "Casualty figures from the housing block are to be collected by district officials and released through the ministry, not by the site commander. Photographic access will be arranged. Confirm receipt."
+    },
+    "replies": [
+      {
+        "id": "announce-before-the-count",
+        "tone": "principled",
+        "text": "We say what we hit, what we believed, and why what we believed was nine days old. We give the number we have and we say it will rise.",
+        "sets": [
+          "owned-the-strike"
+        ],
+        "press": "Government publishes civilian toll before the count is complete.",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "remembered": "The government announced a civilian toll from its own strike before the count was complete, and disclosed that the imagery clearing the block was nine days old.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "defense"
+            },
+            "text": "It went at eleven. By two the count was thirty-one and the correction was the story instead of the strike, which is what you wanted. Both partners followed us inside the hour. The third question at the podium was whether the analyst who flagged the imagery still has her job, and I did not have an answer ready."
+          },
+          "impact": {
+            "human": {
+              "lives": "dozens",
+              "borneBy": "abroad"
+            },
+            "institutional": [
+              "alliance-credit-spent"
+            ],
+            "agency": "our-doing",
+            "divisive": true
+          }
+        }
+      },
+      {
+        "id": "defend-the-package",
+        "tone": "firm",
+        "text": "The package was lawful and the target was military. I am not narrating a figure that changes every hour.",
+        "sets": [
+          "defended-the-package"
+        ],
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "remembered": "The government defended the target package as lawful and withheld any casualty figure until the count was final.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "narrator"
+            },
+            "text": "No figure went out, so theirs did. Their ministry released a count within the hour, and every broadcast ran it over the footage, with your statement read afterward as the response. The question that led the late news was not about any number. It was whether anyone had doubted the imagery before the strike went in, and the analyst who did is still at her desk with her copy."
+          },
+          "impact": {
+            "human": {
+              "lives": "dozens",
+              "borneBy": "abroad"
+            },
+            "institutional": [
+              "alliance-credit-spent",
+              "legal-authority-spent"
+            ],
+            "agency": "our-doing",
+            "divisive": true
+          }
+        }
+      },
+      {
+        "id": "pause-and-reimage",
+        "tone": "conciliatory",
+        "text": "Nothing else flies until every cleared block in every open package is looked at again with today's pictures. The squadrons go back to work-ups.",
+        "sets": [
+          "paused-to-reimage"
+        ],
+        "commitment": {
+          "kind": "instrument",
+          "instrument": "military",
+          "rung": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "the-berth-they-will-not-open",
+    "class": "foreign-crisis",
+    "severity": "serious",
+    "dilemmaShape": "retaliation",
+    "topics": [
+      "trade",
+      "diplomacy"
+    ],
+    "motifs": [
+      "border-crossing"
+    ],
+    "subject": "The berth {{counterpart}} will not open",
+    "cast": {
+      "pick": "tensest"
+    },
+    "conditions": [
+      {
+        "kind": "relationship",
+        "field": "tension",
+        "atLeast": 0.4
+      },
+      {
+        "kind": "relationship",
+        "field": "militaryThreat",
+        "atLeast": 0.2
+      },
+      {
+        "kind": "counterpartTrait",
+        "trait": "opportunism",
+        "atLeast": 0.4
+      },
+      {
+        "kind": "geography",
+        "field": "coastal",
+        "is": true,
+        "of": "counterpart"
+      },
+      {
+        "kind": "geography",
+        "field": "chokepoint",
+        "is": true,
+        "of": "counterpart"
+      }
+    ],
+    "weight": 1.5,
+    "boosts": [
+      {
+        "source": "tension",
+        "factor": 1.4
+      }
+    ],
+    "locus": {
+      "site": "chokepoint",
+      "ground": "counterpart",
+      "descriptor": "a container terminal where four of our hulls have been at anchor for nine days"
+    },
+    "context": {
+      "standing": "Four of the country's hulls have been at anchor off the terminal for nine days without a berth assignment. No embargo has been declared and none will be; the scheduling is being done slowly and lawfully, and the counterpart government has said so in writing.",
+      "precedent": "Every government that has answered a slow-walked berth with a seizure has discovered that the shipping insurers reprice the whole route within the week, and that the repricing outlasts the quarrel by years.",
+      "pressures": [
+        {
+          "source": "business",
+          "want": "The grain shippers want the hulls moving or written off, and they want to know which one this week, because the demurrage is running either way."
+        },
+        {
+          "source": "military",
+          "want": "The naval staff want authority to escort, and want it before they need it rather than after."
+        },
+        {
+          "source": "ally",
+          "want": "Two governments that use the same terminal want no escort anywhere near it, and have said so twice."
+        },
+        {
+          "source": "press",
+          "want": "The word blockade is already in print, which is a word that makes half of the answers below unavailable once the country has accepted it."
+        }
+      ],
+      "inaction": "The hulls sit, the demurrage compounds, the shippers reroute at their own cost and do not come back, and the country loses the route without anything ever having been done to it.",
+      "unknown": "Whether the scheduling is a negotiating position over the inspection regime or the first week of a permanent policy. The counterpart's own port authority may not know either."
+    },
+    "particulars": [
+      {
+        "label": "Hulls at anchor",
+        "value": "4"
+      },
+      {
+        "label": "Days held",
+        "value": "9"
+      },
+      {
+        "label": "Cargo value held",
+        "value": "1.1 billion"
+      },
+      {
+        "label": "Grain contracts affected",
+        "value": "31"
+      }
+    ],
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "foreign"
+        },
+        "text": "Nine days at anchor and no berth. Their note says it is scheduling under their own law, and the maddening part is that it is: nothing has been seized, nothing has been declared, and there is no act here for us to answer. There is only a queue that our hulls never reach the front of."
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "defense"
+        },
+        "text": "I can put an escort on station in four days. I want you to hear what an escort is before you ask for one. It does not open a berth. It makes every hull in that anchorage a place where somebody could make a mistake, and two of our friends use that terminal."
+      },
+      {
+        "speaker": {
+          "kind": "narrator"
+        },
+        "text": "The word blockade ran in three papers this morning. Nobody in the room used it, and everybody in the room understands that they now have less room than they had yesterday, because a country that has read the word expects an answer sized to it."
+      }
+    ],
+    "transmission": {
+      "relay": "communique",
+      "attribution": "the counterpart foreign ministry, to our embassy",
+      "text": "The berths are assigned by our port authority under our law. When your inspection regime stops treating our exporters as suspects, our schedulers will find your hulls a place. Until then they are welcome to wait, and they are welcome to leave."
+    },
+    "replies": [
+      {
+        "id": "trade-the-inspection-regime",
+        "tone": "conciliatory",
+        "text": "Offer them the inspection regime. Suspend the exporter checks for a quarter in exchange for the berths, and say so publicly.",
+        "sets": [
+          "traded-the-inspection-regime-for-berths"
+        ],
+        "press": "Exporter checks suspended for a quarter as the anchored hulls are given berths",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "pull": {
+            "nationalistGlobalist": 0.08
+          },
+          "remembered": "The administration suspended its exporter inspection regime for a quarter in exchange for berthing the anchored hulls, and announced the trade rather than concealing it.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "foreign"
+            },
+            "text": "All four hulls berthed within a day, which tells you the queue was never a queue. Their trade office has already asked what else the checks might be worth, and that question is now a standing feature of every negotiation we have with them."
+          },
+          "impact": {
+            "financial": {
+              "scale": "discretionary",
+              "horizon": "one-off"
+            },
+            "institutional": [
+              "alliance-credit-earned"
+            ],
+            "divisive": true
+          },
+          "relationship": {
+            "trust": 0.06,
+            "tension": -0.1
+          }
+        }
+      },
+      {
+        "id": "escort-the-hulls",
+        "tone": "coercive",
+        "text": "Put an escort on station and take the hulls in. If berthing is discretionary, our presence in that anchorage is discretionary too.",
+        "sets": [
+          "escorted-hulls-into-a-contested-anchorage"
+        ],
+        "press": "Warships ordered to the anchorage as the government moves to berth its held hulls",
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "pull": {
+            "nationalistGlobalist": -0.09
+          },
+          "remembered": "The administration escorted its anchored hulls into a contested anchorage with warships on station, over the objection of two governments that use the same terminal.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "defense"
+            },
+            "text": "The hulls are alongside and nothing was fired. What I did not know when I briefed you: their port authority has moved its own inspection craft into the same water, so we now have two navies and a customs service in one anchorage on standing orders nobody has reconciled."
+          },
+          "impact": {
+            "financial": {
+              "scale": "emergency",
+              "horizon": "one-off"
+            },
+            "institutional": [
+              "forces-committed",
+              "alliance-credit-spent"
+            ],
+            "divisive": true
+          },
+          "relationship": {
+            "tension": 0.12,
+            "militaryThreat": 0.08
+          }
+        }
+      },
+      {
+        "id": "write-off-the-route",
+        "tone": "principled",
+        "text": "Bring the hulls home and reroute the grain. I will not spend a navy on a berth, and I will say why in the same breath.",
+        "sets": [
+          "wrote-off-the-contested-route"
+        ],
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "pull": {
+            "nationalistGlobalist": 0.06
+          },
+          "remembered": "The administration brought the anchored hulls home and rerouted the grain rather than escort them, writing off the route in public.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "narrator"
+            },
+            "text": "The hulls turn for home and the insurers reprice the route the same afternoon, which is the part the shippers had been warning about and the part the country will feel. Two of the thirty-one grain contracts are already being renegotiated at the new rate."
+          },
+          "impact": {
+            "financial": {
+              "scale": "supplemental",
+              "horizon": "multi-year"
+            },
+            "institutional": [
+              "alliance-credit-earned"
+            ],
+            "divisive": true
+          },
+          "relationship": {
+            "trust": -0.07,
+            "tension": 0.05
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "the-yards-and-the-money-that-runs-out",
+    "class": "economy",
+    "severity": "routine",
+    "dilemmaShape": "allocation",
+    "topics": [
+      "labor",
+      "fiscal"
+    ],
+    "subject": "The {{city}} yards and three weeks of money",
+    "cast": {
+      "pick": "none"
+    },
+    "conditions": [
+      {
+        "kind": "appropriation",
+        "weeksLeftAtMost": 4
+      },
+      {
+        "kind": "metric",
+        "metric": "approval",
+        "atMost": 0.6
+      }
+    ],
+    "weight": 1.1,
+    "locus": {
+      "site": "city",
+      "ground": "home",
+      "descriptor": "the barge yards along the river through {{city}}, half of them idle since spring",
+      "city": "CITY-USA-pittsburgh"
+    },
+    "context": {
+      "standing": "The yards through {{city}} live on federal barge and lock orders, the appropriation those orders are written against runs out in three weeks, and nothing has been agreed to replace it. The yards have already stopped ordering steel for anything past the current hulls.",
+      "precedent": "The last time a government let an order book lapse at a river yard, the yard did not reopen when the money came back. The workforce had gone to the pipeline trade and the crane certifications had expired.",
+      "pressures": [
+        {
+          "source": "business",
+          "want": "The yard operators want an order placed this week, not a promise, because the steel has a lead time and the promise does not."
+        },
+        {
+          "source": "legislature",
+          "want": "Members from the river districts want the orders; members who have spent the year on the deficit want to know what is being cut to pay for them."
+        },
+        {
+          "source": "street",
+          "want": "The trades want the certifications kept current more than they want any one hull, because the certifications are what makes the next job possible."
+        },
+        {
+          "source": "cabinet",
+          "want": "The Secretary of Transportation wants the lock work, which is the only part of this the department can defend on its own merits."
+        }
+      ],
+      "inaction": "The appropriation lapses, the yards lay off through the summer, and the crane and welding certifications expire on a schedule nobody can accelerate afterward.",
+      "unknown": "Whether the yards would actually close or simply run thin for a season. The operators say close. The operators have said close before and did not."
+    },
+    "premise": {
+      "kind": "universal",
+      "reason": "The appropriation gate (weeksLeftAtMost 4) establishes the funding clock the week turns on, and a lapsing appropriation is a budget week that deals the same in any phase of the cycle; no cycle reading is presumed."
+    },
+    "particulars": [
+      {
+        "label": "Yard jobs at risk",
+        "value": "2,400"
+      },
+      {
+        "label": "Weeks of funding left",
+        "value": "3"
+      },
+      {
+        "label": "Federal share of orders",
+        "value": "68%"
+      },
+      {
+        "label": "Order book after June",
+        "value": "Empty"
+      }
+    ],
+    "opening": [
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "transportation"
+        },
+        "text": "Three weeks of appropriation left against the barge and lock program, and the yards through {{city}} have already stopped buying steel past the hulls they are on. Two thousand four hundred jobs, and the part that does not come back is the certifications."
+      },
+      {
+        "speaker": {
+          "kind": "cabinet",
+          "roleHint": "finance"
+        },
+        "text": "I would rather you heard the arithmetic than the appeal. There is no unspent money in this program. Anything you place this week is placed against next year, and next year is the year we said we were bringing the deficit down."
+      },
+      {
+        "speaker": {
+          "kind": "narrator"
+        },
+        "text": "The operators have said the yards would close twice before and twice they did not. The trades have never said it. This year the trades are saying it."
+      }
+    ],
+    "replies": [
+      {
+        "id": "place-the-lock-orders",
+        "tone": "firm",
+        "text": "Place the lock orders now against next year's money. The locks are defensible on their own and the steel goes on order this week.",
+        "sets": [
+          "placed-the-lock-orders-early"
+        ],
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "pull": {
+            "economicLeftRight": -0.07
+          },
+          "remembered": "The administration placed the lock orders against next year's appropriation so the river yards could buy steel before the current money ran out.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "finance"
+            },
+            "text": "Steel is on order and the yards are hiring back. The members who spent the year on the deficit have noticed that next year's program is a fifth committed before next year has been argued about, and one of them said so on the record this afternoon."
+          },
+          "impact": {
+            "financial": {
+              "scale": "supplemental",
+              "horizon": "multi-year"
+            },
+            "institutional": [
+              "legislative-capital-spent"
+            ],
+            "divisive": false
+          },
+          "gazetteer": {
+            "cityEmployment": 1600,
+            "adminLean": 0.05
+          }
+        }
+      },
+      {
+        "id": "fund-the-certifications-only",
+        "tone": "conciliatory",
+        "text": "Fund the certifications and the training, not the hulls. Keep the trade alive through the gap and buy the yards back when there is a budget.",
+        "sets": [
+          "funded-the-yard-certifications"
+        ],
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "remembered": "The administration funded the crane and welding certifications through the funding gap rather than the hulls, keeping the trade current without placing an order.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "narrator"
+            },
+            "text": "The certifications hold and about a third of the workforce takes the pipeline work anyway, because a current certification does not pay a mortgage through a summer. The yards will have the papers and not the people."
+          },
+          "impact": {
+            "financial": {
+              "scale": "discretionary",
+              "horizon": "one-off"
+            },
+            "institutional": [
+              "civil-service-strained"
+            ],
+            "divisive": false
+          },
+          "gazetteer": {
+            "cityEmployment": 400
+          }
+        }
+      },
+      {
+        "id": "let-the-program-lapse",
+        "tone": "principled",
+        "text": "Let it lapse. I am not committing next year's money in a week where nobody has agreed what next year is.",
+        "sets": [
+          "let-the-barge-program-lapse"
+        ],
+        "commitment": {
+          "kind": "position",
+          "cost": {},
+          "pull": {
+            "economicLeftRight": 0.07
+          },
+          "remembered": "The administration let the barge and lock appropriation lapse rather than commit next year's money before next year had been agreed.",
+          "rejoinder": {
+            "speaker": {
+              "kind": "cabinet",
+              "roleHint": "transportation"
+            },
+            "text": "The layoffs went out on the Friday. The thing I did not put in the briefing, because I did not know it: two of the three yards have already sold crane time to the pipeline contractors through the fall, which means they are not idle waiting for us. They are gone."
+          },
+          "impact": {
+            "human": {
+              "displaced": "local",
+              "borneBy": "one-region"
+            },
+            "financial": {
+              "scale": "none",
+              "horizon": "one-off"
+            },
+            "institutional": [
+              "legislative-capital-spent"
+            ],
+            "divisive": true
+          },
+          "gazetteer": {
+            "cityEmployment": -900,
+            "adminLean": -0.08
+          }
+        }
+      }
+    ]
+  }
+]

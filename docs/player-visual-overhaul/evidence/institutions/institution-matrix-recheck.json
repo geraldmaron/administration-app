@@ -1,0 +1,59 @@
+{
+  "records": [
+    {
+      "width": 768,
+      "theme": "light",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    },
+    {
+      "width": 845,
+      "theme": "light",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    },
+    {
+      "width": 845,
+      "theme": "dark",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "view": "office",
+      "overflow": false,
+      "hiddenConsequences": 0,
+      "padding": "16px",
+      "axe": []
+    }
+  ],
+  "errors": []
+}

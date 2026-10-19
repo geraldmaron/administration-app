@@ -1,0 +1,54 @@
+import { expect, test } from "@playwright/test";
+import { expectNoHorizontalOverflow, importFixture } from "./helpers";
+
+for (const theme of ["light", "dark"] as const) {
+  test(`press investigations preserve desk, story and response context · ${theme}`, async ({ page }, info) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+    await importFixture(page, "loses-reelection");
+    await page.goto("/washington/office/press");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+    await expect(page.getByRole("tab", { name: /^Coverage/ })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tab", { name: /^Coverage/ })).toBeInViewport();
+    await expect(page.getByRole("heading", { name: "Every story filed", exact: true })).toBeVisible();
+    await expect(page.locator("#press-desks")).toHaveCount(0);
+    const filters = page.getByRole("button", { name: "Filters", exact: true });
+    await filters.click();
+    await page.getByRole("dialog", { name: "Filter coverage" }).getByLabel("Lean", { exact: true }).selectOption("critical");
+    await page.getByRole("button", { name: /^Show [\d,]+ stories$/ }).click();
+    await expect(page).toHaveURL(/tone=critical/);
+    await expect(page.getByRole("button", { name: "Filters · 1", exact: true })).toBeFocused();
+    await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+    await expect(page).not.toHaveURL(/tone=/);
+    await page.screenshot({ path: info.outputPath(`press-coverage-${theme}.png`), animations: "disabled" });
+    await page.getByRole("tab", { name: "Desks and trends", exact: true }).click();
+    await expect(page).toHaveURL(/view=analysis/);
+    await page.reload();
+    await expect(page.getByRole("tab", { name: "Desks and trends", exact: true })).toHaveAttribute("aria-selected", "true");
+    await expectNoHorizontalOverflow(page, "press analysis");
+    await page.screenshot({ path: info.outputPath(`press-analysis-${theme}.png`), animations: "disabled" });
+    await page.locator(".pr-desk a.pr-desk__name").first().click();
+    await expect(page).toHaveURL(/outlet=/);
+    await expect(page.getByRole("tab", { name: /^Coverage/ })).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#press-feed [role=status]")).toHaveText(/ of [\d,]+ stories/);
+    await page.locator(".pr-story a.ui-row-link").first().click();
+    await expect(page.locator(".dispatch-page")).toBeVisible();
+    await expectNoHorizontalOverflow(page, "opened dispatch");
+    await page.screenshot({ path: info.outputPath(`press-dispatch-${theme}.png`), animations: "disabled" });
+    await page.goBack();
+    await expect(page).toHaveURL(/outlet=/);
+    await page.goto("/washington/office/press?view=coverage#press-respond");
+    await expect(page.getByRole("tab", { name: /^Coverage/ })).toHaveAttribute("aria-selected", "true");
+    await page.goto("/washington/office/press#press-respond");
+    await expect(page.getByRole("tab", { name: /^Response/ })).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#press-respond")).toBeVisible();
+    await page.getByRole("tab", { name: /^Abroad/ }).click();
+    await expect(page.getByRole("heading", { name: "The press abroad", exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page, "foreign press");
+    await page.goto("/ending");
+    await expect(page.getByRole("heading", { level: 1, name: "Defeated at the polls" })).toBeVisible();
+    await expectNoHorizontalOverflow(page, "ending");
+    await page.getByRole("link", { name: "Read the legacy", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Inherited baseline and end state", exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page, "legacy comparison");
+  });
+}

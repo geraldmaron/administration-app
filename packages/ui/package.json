@@ -1,0 +1,53 @@
+{
+  "name": "@admin/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "react-native": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/theme/tamagui.config.ts",
+    "./forms": "./src/forms/index.ts",
+    "./seals": "./src/seals/index.ts",
+    "./review": "./src/review/index.ts",
+    "./dossier": "./src/dossier/index.ts",
+    "./legislature": "./src/legislature/index.ts",
+    "./nation": "./src/nation/index.ts",
+    "./world": "./src/world/index.ts",
+    "./news": "./src/news/index.ts",
+    "./record": "./src/record/index.ts",
+    "./map": "./src/map/index.ts",
+    "./handbook": "./src/handbook/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@admin/design": "workspace:*",
+    "@tamagui/core": "3.0.17",
+    "phosphor-react-native": "3.0.6",
+    "tamagui": "3.0.17",
+    "@tamagui/animations-react-native": "3.0.17",
+    "@tamagui/animations-css": "3.0.17"
+  },
+  "devDependencies": {
+    "@types/react": "~19.3.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "react-native": "0.88.0",
+    "react-native-svg": "15.16.0",
+    "react-native-safe-area-context": "~5.10.1",
+    "react": "19.3.0"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-svg": "*"
+  }
+}

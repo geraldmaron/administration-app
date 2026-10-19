@@ -1,0 +1,380 @@
+/* The leadership questions: twenty marks of progress, the question, one of four ways to answer it, and what the answers add up to. */
+@layer rooms {
+  .questionnaire {
+    gap: var(--space-lg);
+  }
+
+  .question-progress ol {
+    display: grid;
+    grid-template-columns: repeat(20, minmax(0, 1fr));
+    gap: 3px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .question-progress__mark {
+    display: block;
+    inline-size: 100%;
+    block-size: var(--hit-min);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  /* The visible mark is a short bar in the middle of a full-height target. */
+  .question-progress__mark::before {
+    content: "";
+    display: block;
+    block-size: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--color-border-strong);
+  }
+
+  .question-progress__mark[data-answered="true"]::before {
+    background: var(--color-blue-fill);
+  }
+
+  .question-progress__mark[aria-current="step"]::before {
+    block-size: 10px;
+    background: var(--color-gold);
+  }
+
+  .question-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .question-head__area {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .question-head__prompt {
+    margin: 0;
+    font-size: var(--size-title);
+    line-height: var(--leading-compact);
+  }
+
+  /* A scale: three anchors over seven stops, the middle stop marked as the middle course. */
+  .answer-scale {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .answer-scale__anchors {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md);
+  }
+
+  .answer-scale__anchors p {
+    margin: 0;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .answer-scale__anchors [data-end="middle"] {
+    color: var(--color-text-secondary);
+    text-align: center;
+  }
+
+  .answer-scale__anchors [data-end="last"] {
+    text-align: end;
+  }
+
+  .answer-scale__track {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    justify-items: center;
+  }
+
+  .answer-scale__track::before {
+    content: "";
+    position: absolute;
+    inset-inline: calc(100% / 14);
+    inset-block-start: 50%;
+    block-size: 2px;
+    background: var(--color-border-strong);
+  }
+
+  .answer-scale__stop {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: var(--hit-min);
+    block-size: var(--hit-min);
+    cursor: pointer;
+  }
+
+  .answer-scale__stop::after {
+    content: "";
+    inline-size: 20px;
+    block-size: 20px;
+    border: 2px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background: var(--color-ground-base);
+  }
+
+  .answer-scale__stop[data-middle="true"]::after {
+    border-style: dashed;
+  }
+
+  .answer-scale__stop[data-checked="true"]::after {
+    inline-size: 28px;
+    block-size: 28px;
+    border-color: var(--color-blue);
+    background: var(--color-blue-fill);
+  }
+
+  .answer-scale__stop:has(input:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-pill);
+  }
+
+  .answer-scale__stop input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  /* A split: the two sides with their shares, and the ten shares as blocks. */
+  .answer-split {
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .answer-split__sides {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md);
+  }
+
+  .answer-split__side {
+    display: grid;
+    gap: var(--space-2xs);
+    margin: 0;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .answer-split__side strong {
+    font-size: 1.75rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .answer-split__side[data-side="first"] strong {
+    color: var(--color-blue);
+  }
+
+  .answer-split__side[data-side="last"] {
+    text-align: end;
+  }
+
+  .answer-split__side[data-side="last"] strong {
+    color: var(--color-gold);
+  }
+
+  .answer-split__bar {
+    display: grid;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  .answer-split__bar span {
+    block-size: 18px;
+    border-radius: 3px;
+  }
+
+  .answer-split__bar [data-side="first"] {
+    background: var(--color-blue-fill);
+  }
+
+  .answer-split__bar [data-side="last"] {
+    background: var(--color-gold-deep);
+  }
+
+  .answer-split[data-unanswered="true"] .answer-split__bar span {
+    opacity: 0.4;
+  }
+
+  /* A ranking: three wide buttons, each wearing its place once pressed. */
+  .answer-rank {
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .answer-rank__list {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .answer-rank__option {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-md);
+    inline-size: 100%;
+    min-block-size: var(--hit-min);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-base);
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .answer-rank__option[aria-pressed="true"] {
+    border-color: var(--color-blue);
+    background: var(--status-info-fill);
+  }
+
+  .answer-rank__badge {
+    display: grid;
+    place-items: center;
+    inline-size: 32px;
+    block-size: 32px;
+    border: 2px dashed var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    font-weight: var(--weight-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .answer-rank__option[aria-pressed="true"] .answer-rank__badge {
+    border: 0;
+    background: var(--color-blue-fill);
+    color: var(--color-white);
+  }
+
+  .answer-rank__option[data-place="0"] .answer-rank__badge {
+    background: var(--color-gold);
+  }
+
+  /* What the answers add up to: three beliefs drawn from the center, the style, and the party. */
+  .derived-profile {
+    gap: var(--space-lg);
+  }
+
+  .derived-profile__beliefs {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .axis-reading {
+    display: grid;
+    grid-template-columns: minmax(5rem, auto) minmax(0, 1fr) minmax(5rem, auto);
+    grid-template-areas: "caption caption caption" "neg track pos";
+    align-items: center;
+    gap: var(--space-2xs) var(--space-sm);
+  }
+
+  .axis-reading__caption {
+    grid-area: caption;
+    font-weight: var(--weight-medium);
+  }
+
+  .axis-reading__pole {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .axis-reading__pole:last-child {
+    text-align: end;
+  }
+
+  .axis-reading__track {
+    position: relative;
+    grid-area: track;
+    block-size: 12px;
+    border-radius: 2px;
+    background: var(--color-ground-sunken);
+    box-shadow: inset 0 0 0 1px var(--color-border-subtle);
+  }
+
+  /* The center line, so a reading at the middle still shows where the middle is. */
+  .axis-reading__track::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 50%;
+    inset-block: -4px;
+    inline-size: 2px;
+    background: var(--color-border-strong);
+  }
+
+  .axis-reading__fill {
+    position: absolute;
+    inset-block: 0;
+    background: var(--color-blue-fill);
+  }
+
+  /* A tick, not a handle: nothing here is dragged. */
+  .axis-reading__mark {
+    position: absolute;
+    inset-block: -5px;
+    inline-size: 3px;
+    background: var(--color-text-primary);
+    transform: translateX(-50%);
+  }
+
+  .derived-profile__style {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-gold-wash);
+  }
+
+  .derived-profile__style p {
+    margin: 0;
+  }
+
+  .derived-profile__kicker {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .derived-profile__style-name {
+    font-size: 1.25rem;
+    font-weight: var(--weight-medium);
+  }
+
+  .derived-profile__locked {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  @media (max-width: 40em) {
+    .answer-scale__anchors [data-end="middle"] {
+      display: none;
+    }
+
+    .answer-scale__anchors {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}

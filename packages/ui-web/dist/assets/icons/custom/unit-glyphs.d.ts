@@ -1,0 +1,11 @@
+export declare const FighterJetIcon: import("@phosphor-icons/react").Icon;
+export declare const BomberIcon: import("@phosphor-icons/react").Icon;
+export declare const TransportAircraftIcon: import("@phosphor-icons/react").Icon;
+export declare const HelicopterIcon: import("@phosphor-icons/react").Icon;
+export declare const AircraftCarrierIcon: import("@phosphor-icons/react").Icon;
+export declare const SurfaceCombatantIcon: import("@phosphor-icons/react").Icon;
+export declare const SubmarineIcon: import("@phosphor-icons/react").Icon;
+export declare const ArmoredVehicleIcon: import("@phosphor-icons/react").Icon;
+export declare const GroundFormationIcon: import("@phosphor-icons/react").Icon;
+export declare const MissileIcon: import("@phosphor-icons/react").Icon;
+export declare const SatelliteIcon: import("@phosphor-icons/react").Icon;

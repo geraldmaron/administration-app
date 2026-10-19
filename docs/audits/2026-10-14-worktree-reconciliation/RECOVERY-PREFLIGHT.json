@@ -1,0 +1,37 @@
+{
+  "mode": "Independent read-only recovery preflight",
+  "beforeCount": 328,
+  "afterCount": 327,
+  "uniqueIds": 327,
+  "restoredIds": [
+    "four-counties-quoting-the-flood-bridge",
+    "the-bridge-the-flood-took-with-it",
+    "the-crossing-we-decided-not-to-rebuild",
+    "the-night-the-exits-were-chained",
+    "whose-name-goes-on-the-bridge"
+  ],
+  "removedIds": [
+    "wildfire-public-report-federal-offer"
+  ],
+  "unchangedOtherBodies": 322,
+  "expectedUnchanged": 322,
+  "chronologyRetained": true,
+  "beforeErrors": 60,
+  "afterErrors": 62,
+  "novelErrorsAgainstPrepublicationBaseline": [],
+  "errorsRestoredFromKnownBaseline": [
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "whose-name-goes-on-the-bridge",
+      "message": "the context.inaction is shown the moment the decision is made, and \"by spring\" narrates a season or more as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    },
+    {
+      "kind": "commit-time-flash-forward",
+      "severity": "error",
+      "scenario": "the-bridge-the-flood-took-with-it",
+      "message": "the rejoinder for \"share-the-cost-with-the-county\" is shown the moment the decision is made, and \"raised its half in seven months\" narrates about 210 days as already gone by. Say what is true tonight, give it to a speaker as a forecast (\"it could take months\"), or move it into a later scenario gated on agedAtLeast"
+    }
+  ],
+  "headCommit": "f49f99197180296c404186520813e85b3d17c79e"
+}

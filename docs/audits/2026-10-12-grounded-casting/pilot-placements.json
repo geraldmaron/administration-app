@@ -1,0 +1,42 @@
+{
+  "the-yard-that-builds-the-boats": {
+    "locus": {
+      "sector": "defense-industrial"
+    }
+  },
+  "the-fleet-that-limped-on-half": {
+    "locus": {
+      "sector": "defense-industrial"
+    }
+  },
+  "the-return-on-the-yard-we-stood-behind": {
+    "locus": {
+      "sector": "defense-industrial"
+    }
+  },
+  "the-reserve-with-no-rules-written-for-it": {
+    "locus": {
+      "sector": "agriculture"
+    }
+  },
+  "the-frost-that-took-the-belt": {
+    "locus": {
+      "sector": "agriculture"
+    }
+  },
+  "the-span-that-was-built-for-two-weeks": {
+    "locus": {
+      "site": "interior"
+    }
+  },
+  "the-rearmament-line-draws-on-the-clinics-again": {
+    "locus": {
+      "site": "capital"
+    }
+  },
+  "the-clinics-that-never-got-the-difference-back": {
+    "locus": {
+      "site": "interior"
+    }
+  }
+}

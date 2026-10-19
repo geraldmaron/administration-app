@@ -1,0 +1,122 @@
+[
+  {
+    "institution": "INST-USDA",
+    "file": "usda.jpg",
+    "description": "Screenshot of USDA logo",
+    "source": "https://libapps.s3.amazonaws.com/customers/5162/images/USDA_012.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-COMMERCE",
+    "file": "commerce.jpg",
+    "description": "Seal of the U.S. Department of Commerce",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/DOC_002.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-DOD",
+    "file": "dod.jpg",
+    "description": "Seal of the U.S. Department of Defense",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/DoD_003.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-ED",
+    "file": "ed.jpg",
+    "description": "Seal of the U.S. Department of Education",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/ED_002.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-DOE",
+    "file": "doe.jpg",
+    "description": "Seal of the U.S. Department of Energy",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/DOE_002.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-HHS",
+    "file": "hhs.jpg",
+    "description": "Seal of the U.S. Department of Health and Human Services",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/HHS_001.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-DHS",
+    "file": "dhs.jpg",
+    "description": "Seal of the DHS",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/DHS_012.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-HUD",
+    "file": "hud.jpg",
+    "description": "Seal of the U.S. Department of Housing and Urban Development",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/HUD_001.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-DOJ",
+    "file": "doj.jpg",
+    "description": "Seal of the DOJ",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/DOJ_008a.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-LABOR",
+    "file": "labor.jpg",
+    "description": "Seal of the U.S. Department of Labor",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/DOL_001.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-STATE",
+    "file": "state.jpg",
+    "description": "Seal of the U.S. Department of State",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/State_001.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-INTERIOR",
+    "file": "interior.jpg",
+    "description": "Seal of the U.S. Department of the Interior",
+    "source": "https://libapps.s3.amazonaws.com/accounts/321115/images/001_DOI.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-TREASURY",
+    "file": "treasury.jpg",
+    "description": "Seal of the U.S. Department of the Treasury",
+    "source": "https://libapps.s3.amazonaws.com/accounts/321115/images/USDT_001.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-DOT",
+    "file": "dot.jpg",
+    "description": "Seal of DOT",
+    "source": "https://d2jv02qf7xgjwx.cloudfront.net/customers/5162/images/DOT_003.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  },
+  {
+    "institution": "INST-VA",
+    "file": "va.jpg",
+    "description": "Department of Veterans Affairs seal",
+    "source": "https://libapps.s3.amazonaws.com/accounts/321115/images/VA_002a.jpg",
+    "catalogue": "https://libguides.fdlp.gov/c.php?g=1506135",
+    "retrieved": "2026-10-14"
+  }
+]

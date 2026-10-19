@@ -1,0 +1,206 @@
+[
+  {
+    "route": "/administrations",
+    "file": "apps/web/src/routes/administrations.tsx"
+  },
+  {
+    "route": "/brief/clock/$id",
+    "file": "apps/web/src/routes/brief.clock.$id.tsx",
+    "sample": "/brief/clock/acting-authority"
+  },
+  {
+    "route": "/brief/decision/$id",
+    "file": "apps/web/src/routes/brief.decision.$id.tsx",
+    "sample": "/brief/decision/the-boats-somebody-says-are-being-loaded"
+  },
+  {
+    "route": "/brief/digest",
+    "file": "apps/web/src/routes/brief.digest.tsx"
+  },
+  {
+    "route": "/brief",
+    "file": "apps/web/src/routes/brief.index.tsx"
+  },
+  {
+    "route": "/brief/metric/$id",
+    "file": "apps/web/src/routes/brief.metric.$id.tsx",
+    "sample": null
+  },
+  {
+    "route": "/brief/scandal/$id",
+    "file": "apps/web/src/routes/brief.scandal.$id.tsx",
+    "sample": null
+  },
+  {
+    "route": "/ending",
+    "file": "apps/web/src/routes/ending.tsx"
+  },
+  {
+    "route": "/founding",
+    "file": "apps/web/src/routes/founding.tsx"
+  },
+  {
+    "route": "/handbook/$chapter",
+    "file": "apps/web/src/routes/handbook.$chapter.tsx",
+    "sample": "/handbook/first-week"
+  },
+  {
+    "route": "/handbook",
+    "file": "apps/web/src/routes/handbook.index.tsx"
+  },
+  {
+    "route": "/handbook/terms",
+    "file": "apps/web/src/routes/handbook.terms.tsx"
+  },
+  {
+    "route": "/",
+    "file": "apps/web/src/routes/index.tsx"
+  },
+  {
+    "route": "/legacy",
+    "file": "apps/web/src/routes/legacy.tsx"
+  },
+  {
+    "route": "/nation/budget",
+    "file": "apps/web/src/routes/nation.budget.tsx"
+  },
+  {
+    "route": "/nation/economy",
+    "file": "apps/web/src/routes/nation.economy.tsx"
+  },
+  {
+    "route": "/nation/electorate",
+    "file": "apps/web/src/routes/nation.electorate.tsx"
+  },
+  {
+    "route": "/nation/emergency",
+    "file": "apps/web/src/routes/nation.emergency.tsx"
+  },
+  {
+    "route": "/nation",
+    "file": "apps/web/src/routes/nation.index.tsx"
+  },
+  {
+    "route": "/nation/policy",
+    "file": "apps/web/src/routes/nation.policy.index.tsx"
+  },
+  {
+    "route": "/nation/policy/order/$id",
+    "file": "apps/web/src/routes/nation.policy.order.$id.tsx",
+    "sample": null
+  },
+  {
+    "route": "/nation/state/$id",
+    "file": "apps/web/src/routes/nation.state.$id.tsx",
+    "sample": "/nation/state/MO"
+  },
+  {
+    "route": "/record/event/$id",
+    "file": "apps/web/src/routes/record.event.$id.tsx",
+    "sample": "/record/event/ev-31-1740"
+  },
+  {
+    "route": "/record",
+    "file": "apps/web/src/routes/record.index.tsx"
+  },
+  {
+    "route": "/record/press/dispatch/$id",
+    "file": "apps/web/src/routes/record.press.dispatch.$id.tsx",
+    "sample": "/record/press/dispatch/360"
+  },
+  {
+    "route": "/record/press",
+    "file": "apps/web/src/routes/record.press.index.tsx"
+  },
+  {
+    "route": "/recovery",
+    "file": "apps/web/src/routes/recovery.tsx"
+  },
+  {
+    "route": "/settings",
+    "file": "apps/web/src/routes/settings.tsx"
+  },
+  {
+    "route": "/washington/congress/bill/$id",
+    "file": "apps/web/src/routes/washington.congress.bill.$id.tsx",
+    "sample": "/washington/congress/bill/bill%3Aact-fiscal-responsibility%3A29"
+  },
+  {
+    "route": "/washington/congress",
+    "file": "apps/web/src/routes/washington.congress.index.tsx"
+  },
+  {
+    "route": "/washington/congress/post/$id",
+    "file": "apps/web/src/routes/washington.congress.post.$id.tsx",
+    "sample": "/washington/congress/post/post-house-speaker"
+  },
+  {
+    "route": "/washington/courts/case/$id",
+    "file": "apps/web/src/routes/washington.courts.case.$id.tsx",
+    "sample": null
+  },
+  {
+    "route": "/washington/courts",
+    "file": "apps/web/src/routes/washington.courts.index.tsx"
+  },
+  {
+    "route": "/washington",
+    "file": "apps/web/src/routes/washington.index.tsx"
+  },
+  {
+    "route": "/washington/office/$id",
+    "file": "apps/web/src/routes/washington.office.$id.tsx",
+    "sample": "/washington/office/OFF-ENERGY-SEC#office-actions"
+  },
+  {
+    "route": "/washington/office/press",
+    "file": "apps/web/src/routes/washington.office.press.tsx"
+  },
+  {
+    "route": "/washington/oversight",
+    "file": "apps/web/src/routes/washington.oversight.tsx"
+  },
+  {
+    "route": "/washington/person/$id",
+    "file": "apps/web/src/routes/washington.person.$id.tsx",
+    "sample": "/washington/person/PER-USA-committee-chair-13"
+  },
+  {
+    "route": "/world",
+    "file": "apps/web/src/routes/world.index.tsx"
+  },
+  {
+    "route": "/world/nation/$id/act",
+    "file": "apps/web/src/routes/world.nation.$id.act.tsx",
+    "sample": null
+  },
+  {
+    "route": "/world/nation/$id",
+    "file": "apps/web/src/routes/world.nation.$id.index.tsx",
+    "sample": "/world/nation/CYP"
+  },
+  {
+    "route": "/world/org/$id",
+    "file": "apps/web/src/routes/world.org.$id.tsx",
+    "sample": null
+  },
+  {
+    "route": "/world/security/command/$id",
+    "file": "apps/web/src/routes/world.security.command.$id.tsx",
+    "sample": "/world/security/command/CCMD-NORTHCOM"
+  },
+  {
+    "route": "/world/security",
+    "file": "apps/web/src/routes/world.security.index.tsx"
+  },
+  {
+    "route": "/world/treaty/$id",
+    "file": "apps/web/src/routes/world.treaty.$id.tsx",
+    "sample": null
+  },
+  {
+    "route": "/world/war/$id",
+    "file": "apps/web/src/routes/world.war.$id.tsx",
+    "sample": "/world/war/war%3AIND%3APAK%3A0"
+  }
+]

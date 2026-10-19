@@ -1,0 +1,18 @@
+@import "./shadcn.css";
+/* Every part's stylesheet, in one import for the app. Each sheet wraps its
+   own rules in the components layer. */
+@import "./styles/controls.css";
+@import "./styles/readings.css";
+@import "./styles/drawn.css";
+@import "./styles/acts.css";
+@import "./styles/choice.css";
+@import "./styles/frame.css";
+@import "./styles/surface.css";
+@import "./styles/palette.css";
+@import "./styles/doors.css";
+@import "./styles/tags.css";
+@import "./styles/helptip.css";
+@import "./styles/sheets.css";
+@import "./styles/views.css";
+@import "./styles/document.css";
+@import "./styles/cues.css";

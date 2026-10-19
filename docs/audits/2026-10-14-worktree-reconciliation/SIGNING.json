@@ -1,0 +1,46 @@
+{
+  "scope": "repository local, shared by linked worktrees",
+  "global_changed": false,
+  "verified": [
+    {
+      "path": ".",
+      "commit.gpgsign": "false"
+    },
+    {
+      "path": "~/.admin-app-wt/casting-pin-pilot",
+      "commit.gpgsign": "false"
+    },
+    {
+      "path": "~/.admin-app-wt/coercion-followups",
+      "commit.gpgsign": "false"
+    },
+    {
+      "path": "~/.admin-app-wt/electorate-surfaces",
+      "commit.gpgsign": "false"
+    },
+    {
+      "path": "~/.admin-app-wt/regime-change",
+      "commit.gpgsign": "false"
+    },
+    {
+      "path": "~/.admin-app-wt/registry-r2",
+      "commit.gpgsign": "false"
+    },
+    {
+      "path": "~/.admin-app-wt/scenario-cost-model",
+      "commit.gpgsign": "false"
+    },
+    {
+      "path": "~/.codex/worktrees/player-visual-audit/admin-app",
+      "commit.gpgsign": "false"
+    },
+    {
+      "path": "~/.codex/worktrees/player-visual-overhaul/admin-app",
+      "commit.gpgsign": "false"
+    },
+    {
+      "path": ".claude/worktrees/agent-acfa663d2ad5b81fa",
+      "commit.gpgsign": "false"
+    }
+  ]
+}

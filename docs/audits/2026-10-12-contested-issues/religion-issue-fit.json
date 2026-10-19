@@ -1,0 +1,8130 @@
+{
+ "source": "CES Common Content 2020 (doi:10.7910/DVN/E9N6PH) and 2024 (doi:10.7910/DVN/X11EP6), CC0, retrieved 2026-10-12",
+ "shrink_k": 150.0,
+ "national_share": {
+  "evangelical-protestant": 0.1758,
+  "mainline-protestant": 0.0926,
+  "black-protestant": 0.0625,
+  "catholic": 0.1801,
+  "other-christian": 0.072,
+  "other-faith": 0.0529,
+  "unaffiliated": 0.3642
+ },
+ "raked_national_share": {
+  "evangelical-protestant": 0.1813,
+  "mainline-protestant": 0.0976,
+  "black-protestant": 0.0797,
+  "catholic": 0.1891,
+  "other-christian": 0.0904,
+  "other-faith": 0.0585,
+  "unaffiliated": 0.3035
+ },
+ "rake_targets": {
+  "race-white": {
+   "evangelical-protestant": 26,
+   "mainline-protestant": 14,
+   "black-protestant": 0,
+   "catholic": 17,
+   "other-christian": 4,
+   "other-faith": 4,
+   "unaffiliated": 30
+  },
+  "race-black": {
+   "evangelical-protestant": 0,
+   "mainline-protestant": 0,
+   "black-protestant": 65,
+   "catholic": 4,
+   "other-christian": 4,
+   "other-faith": 4,
+   "unaffiliated": 22
+  },
+  "race-hispanic": {
+   "evangelical-protestant": 0,
+   "mainline-protestant": 0,
+   "black-protestant": 0,
+   "catholic": 42,
+   "other-christian": 25,
+   "other-faith": 5,
+   "unaffiliated": 28
+  },
+  "race-asian": {
+   "evangelical-protestant": 0,
+   "mainline-protestant": 0,
+   "black-protestant": 0,
+   "catholic": 12,
+   "other-christian": 22,
+   "other-faith": 34,
+   "unaffiliated": 32
+  }
+ },
+ "something_else": {
+  "2020:black-protestant": 430,
+  "2020:catholic": 43,
+  "2020:evangelical-protestant": 830,
+  "2020:mainline-protestant": 404,
+  "2020:other-christian": 420,
+  "2020:other-faith": 536,
+  "2020:unaffiliated": 1487,
+  "2024:black-protestant": 577,
+  "2024:catholic": 42,
+  "2024:evangelical-protestant": 948,
+  "2024:mainline-protestant": 376,
+  "2024:other-christian": 563,
+  "2024:other-faith": 445,
+  "2024:unaffiliated": 1886
+ },
+ "states": {
+  "AK": {
+   "n": 243,
+   "neff": 93,
+   "shrink_weight": 0.383,
+   "share": {
+    "evangelical-protestant": 0.1573,
+    "mainline-protestant": 0.074,
+    "black-protestant": 0.018,
+    "catholic": 0.1688,
+    "other-christian": 0.1088,
+    "other-faith": 0.0477,
+    "unaffiliated": 0.4253
+   },
+   "raw": {
+    "evangelical-protestant": 0.2314,
+    "mainline-protestant": 0.0882,
+    "black-protestant": 0.0046,
+    "catholic": 0.146,
+    "other-christian": 0.1072,
+    "other-faith": 0.0261,
+    "unaffiliated": 0.3964
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0437,
+    "mainline-protestant": 0.0294,
+    "black-protestant": 0.007,
+    "catholic": 0.0366,
+    "other-christian": 0.032,
+    "other-faith": 0.0165,
+    "unaffiliated": 0.0507
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1638,
+    "mainline-protestant": 0.0789,
+    "black-protestant": 0.0234,
+    "catholic": 0.1698,
+    "other-christian": 0.1386,
+    "other-faith": 0.0562,
+    "unaffiliated": 0.3692
+   }
+  },
+  "AL": {
+   "n": 1848,
+   "neff": 676,
+   "shrink_weight": 0.818,
+   "share": {
+    "evangelical-protestant": 0.3352,
+    "mainline-protestant": 0.0959,
+    "black-protestant": 0.1464,
+    "catholic": 0.0749,
+    "other-christian": 0.0297,
+    "other-faith": 0.0222,
+    "unaffiliated": 0.2956
+   },
+   "raw": {
+    "evangelical-protestant": 0.3292,
+    "mainline-protestant": 0.095,
+    "black-protestant": 0.155,
+    "catholic": 0.0735,
+    "other-christian": 0.0283,
+    "other-faith": 0.0214,
+    "unaffiliated": 0.2976
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0181,
+    "mainline-protestant": 0.0113,
+    "black-protestant": 0.0139,
+    "catholic": 0.01,
+    "other-christian": 0.0064,
+    "other-faith": 0.0056,
+    "unaffiliated": 0.0176
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.3442,
+    "mainline-protestant": 0.1007,
+    "black-protestant": 0.1859,
+    "catholic": 0.0768,
+    "other-christian": 0.0378,
+    "other-faith": 0.0226,
+    "unaffiliated": 0.2321
+   }
+  },
+  "AR": {
+   "n": 1068,
+   "neff": 420,
+   "shrink_weight": 0.737,
+   "share": {
+    "evangelical-protestant": 0.3292,
+    "mainline-protestant": 0.0887,
+    "black-protestant": 0.087,
+    "catholic": 0.1014,
+    "other-christian": 0.0669,
+    "other-faith": 0.0305,
+    "unaffiliated": 0.2962
+   },
+   "raw": {
+    "evangelical-protestant": 0.3714,
+    "mainline-protestant": 0.0928,
+    "black-protestant": 0.0885,
+    "catholic": 0.0736,
+    "other-christian": 0.056,
+    "other-faith": 0.0277,
+    "unaffiliated": 0.29
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0236,
+    "mainline-protestant": 0.0142,
+    "black-protestant": 0.0139,
+    "catholic": 0.0127,
+    "other-christian": 0.0112,
+    "other-faith": 0.008,
+    "unaffiliated": 0.0222
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.3357,
+    "mainline-protestant": 0.0925,
+    "black-protestant": 0.1097,
+    "catholic": 0.1063,
+    "other-christian": 0.0795,
+    "other-faith": 0.0319,
+    "unaffiliated": 0.2445
+   }
+  },
+  "AZ": {
+   "n": 2955,
+   "neff": 991,
+   "shrink_weight": 0.869,
+   "share": {
+    "evangelical-protestant": 0.1401,
+    "mainline-protestant": 0.0868,
+    "black-protestant": 0.0224,
+    "catholic": 0.1787,
+    "other-christian": 0.1256,
+    "other-faith": 0.0451,
+    "unaffiliated": 0.4013
+   },
+   "raw": {
+    "evangelical-protestant": 0.1404,
+    "mainline-protestant": 0.0877,
+    "black-protestant": 0.0229,
+    "catholic": 0.181,
+    "other-christian": 0.1228,
+    "other-faith": 0.045,
+    "unaffiliated": 0.4003
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.011,
+    "mainline-protestant": 0.009,
+    "black-protestant": 0.0048,
+    "catholic": 0.0122,
+    "other-christian": 0.0104,
+    "other-faith": 0.0066,
+    "unaffiliated": 0.0156
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.143,
+    "mainline-protestant": 0.0907,
+    "black-protestant": 0.0283,
+    "catholic": 0.1888,
+    "other-christian": 0.1602,
+    "other-faith": 0.052,
+    "unaffiliated": 0.337
+   }
+  },
+  "CA": {
+   "n": 9928,
+   "neff": 3716,
+   "shrink_weight": 0.961,
+   "share": {
+    "evangelical-protestant": 0.0808,
+    "mainline-protestant": 0.0558,
+    "black-protestant": 0.0336,
+    "catholic": 0.2208,
+    "other-christian": 0.1199,
+    "other-faith": 0.0641,
+    "unaffiliated": 0.4251
+   },
+   "raw": {
+    "evangelical-protestant": 0.0796,
+    "mainline-protestant": 0.0554,
+    "black-protestant": 0.0338,
+    "catholic": 0.2223,
+    "other-christian": 0.1203,
+    "other-faith": 0.0642,
+    "unaffiliated": 0.4243
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0044,
+    "mainline-protestant": 0.0038,
+    "black-protestant": 0.003,
+    "catholic": 0.0068,
+    "other-christian": 0.0053,
+    "other-faith": 0.004,
+    "unaffiliated": 0.0081
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0846,
+    "mainline-protestant": 0.0597,
+    "black-protestant": 0.0434,
+    "catholic": 0.2352,
+    "other-christian": 0.1398,
+    "other-faith": 0.0783,
+    "unaffiliated": 0.3591
+   }
+  },
+  "CO": {
+   "n": 2114,
+   "neff": 792,
+   "shrink_weight": 0.841,
+   "share": {
+    "evangelical-protestant": 0.1658,
+    "mainline-protestant": 0.0949,
+    "black-protestant": 0.0204,
+    "catholic": 0.1531,
+    "other-christian": 0.0947,
+    "other-faith": 0.0411,
+    "unaffiliated": 0.4299
+   },
+   "raw": {
+    "evangelical-protestant": 0.1711,
+    "mainline-protestant": 0.0975,
+    "black-protestant": 0.0206,
+    "catholic": 0.1512,
+    "other-christian": 0.0854,
+    "other-faith": 0.0401,
+    "unaffiliated": 0.434
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0134,
+    "mainline-protestant": 0.0105,
+    "black-protestant": 0.0051,
+    "catholic": 0.0127,
+    "other-christian": 0.0099,
+    "other-faith": 0.007,
+    "unaffiliated": 0.0176
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1739,
+    "mainline-protestant": 0.1018,
+    "black-protestant": 0.0264,
+    "catholic": 0.1645,
+    "other-christian": 0.119,
+    "other-faith": 0.0442,
+    "unaffiliated": 0.3701
+   }
+  },
+  "CT": {
+   "n": 1235,
+   "neff": 569,
+   "shrink_weight": 0.791,
+   "share": {
+    "evangelical-protestant": 0.0433,
+    "mainline-protestant": 0.084,
+    "black-protestant": 0.0336,
+    "catholic": 0.3372,
+    "other-christian": 0.0583,
+    "other-faith": 0.0557,
+    "unaffiliated": 0.3879
+   },
+   "raw": {
+    "evangelical-protestant": 0.0384,
+    "mainline-protestant": 0.081,
+    "black-protestant": 0.0363,
+    "catholic": 0.3524,
+    "other-christian": 0.0618,
+    "other-faith": 0.0535,
+    "unaffiliated": 0.3767
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0081,
+    "mainline-protestant": 0.0114,
+    "black-protestant": 0.0078,
+    "catholic": 0.02,
+    "other-christian": 0.0101,
+    "other-faith": 0.0094,
+    "unaffiliated": 0.0203
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0451,
+    "mainline-protestant": 0.0894,
+    "black-protestant": 0.0432,
+    "catholic": 0.3593,
+    "other-christian": 0.0709,
+    "other-faith": 0.0616,
+    "unaffiliated": 0.3305
+   }
+  },
+  "DC": {
+   "n": 367,
+   "neff": 186,
+   "shrink_weight": 0.554,
+   "share": {
+    "evangelical-protestant": 0.0987,
+    "mainline-protestant": 0.0637,
+    "black-protestant": 0.1593,
+    "catholic": 0.1474,
+    "other-christian": 0.0581,
+    "other-faith": 0.0833,
+    "unaffiliated": 0.3894
+   },
+   "raw": {
+    "evangelical-protestant": 0.0268,
+    "mainline-protestant": 0.0445,
+    "black-protestant": 0.1975,
+    "catholic": 0.1477,
+    "other-christian": 0.0526,
+    "other-faith": 0.1055,
+    "unaffiliated": 0.4253
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0118,
+    "mainline-protestant": 0.0151,
+    "black-protestant": 0.0292,
+    "catholic": 0.026,
+    "other-christian": 0.0164,
+    "other-faith": 0.0225,
+    "unaffiliated": 0.0362
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1017,
+    "mainline-protestant": 0.0669,
+    "black-protestant": 0.2016,
+    "catholic": 0.1435,
+    "other-christian": 0.0916,
+    "other-faith": 0.0841,
+    "unaffiliated": 0.3107
+   }
+  },
+  "DE": {
+   "n": 459,
+   "neff": 223,
+   "shrink_weight": 0.598,
+   "share": {
+    "evangelical-protestant": 0.1487,
+    "mainline-protestant": 0.1,
+    "black-protestant": 0.0988,
+    "catholic": 0.1814,
+    "other-christian": 0.0507,
+    "other-faith": 0.0501,
+    "unaffiliated": 0.3704
+   },
+   "raw": {
+    "evangelical-protestant": 0.1223,
+    "mainline-protestant": 0.1083,
+    "black-protestant": 0.09,
+    "catholic": 0.2045,
+    "other-christian": 0.041,
+    "other-faith": 0.0463,
+    "unaffiliated": 0.3876
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.022,
+    "mainline-protestant": 0.0208,
+    "black-protestant": 0.0192,
+    "catholic": 0.027,
+    "other-christian": 0.0133,
+    "other-faith": 0.0141,
+    "unaffiliated": 0.0326
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1546,
+    "mainline-protestant": 0.1065,
+    "black-protestant": 0.127,
+    "catholic": 0.1836,
+    "other-christian": 0.0614,
+    "other-faith": 0.0622,
+    "unaffiliated": 0.3047
+   }
+  },
+  "FL": {
+   "n": 9009,
+   "neff": 2929,
+   "shrink_weight": 0.951,
+   "share": {
+    "evangelical-protestant": 0.1318,
+    "mainline-protestant": 0.0785,
+    "black-protestant": 0.0702,
+    "catholic": 0.2148,
+    "other-christian": 0.0914,
+    "other-faith": 0.06,
+    "unaffiliated": 0.3533
+   },
+   "raw": {
+    "evangelical-protestant": 0.129,
+    "mainline-protestant": 0.078,
+    "black-protestant": 0.068,
+    "catholic": 0.2183,
+    "other-christian": 0.0927,
+    "other-faith": 0.0603,
+    "unaffiliated": 0.3537
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0062,
+    "mainline-protestant": 0.005,
+    "black-protestant": 0.0047,
+    "catholic": 0.0076,
+    "other-christian": 0.0054,
+    "other-faith": 0.0044,
+    "unaffiliated": 0.0088
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1358,
+    "mainline-protestant": 0.0826,
+    "black-protestant": 0.0893,
+    "catholic": 0.2299,
+    "other-christian": 0.1084,
+    "other-faith": 0.0663,
+    "unaffiliated": 0.2876
+   }
+  },
+  "GA": {
+   "n": 4052,
+   "neff": 1475,
+   "shrink_weight": 0.908,
+   "share": {
+    "evangelical-protestant": 0.2276,
+    "mainline-protestant": 0.0734,
+    "black-protestant": 0.1696,
+    "catholic": 0.1045,
+    "other-christian": 0.0463,
+    "other-faith": 0.0497,
+    "unaffiliated": 0.3289
+   },
+   "raw": {
+    "evangelical-protestant": 0.2317,
+    "mainline-protestant": 0.0719,
+    "black-protestant": 0.1755,
+    "catholic": 0.1002,
+    "other-christian": 0.0443,
+    "other-faith": 0.0491,
+    "unaffiliated": 0.3273
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.011,
+    "mainline-protestant": 0.0067,
+    "black-protestant": 0.0099,
+    "catholic": 0.0078,
+    "other-christian": 0.0054,
+    "other-faith": 0.0056,
+    "unaffiliated": 0.0122
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2369,
+    "mainline-protestant": 0.078,
+    "black-protestant": 0.2182,
+    "catholic": 0.1024,
+    "other-christian": 0.0543,
+    "other-faith": 0.0513,
+    "unaffiliated": 0.2588
+   }
+  },
+  "HI": {
+   "n": 379,
+   "neff": 178,
+   "shrink_weight": 0.543,
+   "share": {
+    "evangelical-protestant": 0.0734,
+    "mainline-protestant": 0.0474,
+    "black-protestant": 0.0143,
+    "catholic": 0.1589,
+    "other-christian": 0.1722,
+    "other-faith": 0.0987,
+    "unaffiliated": 0.4352
+   },
+   "raw": {
+    "evangelical-protestant": 0.0415,
+    "mainline-protestant": 0.0324,
+    "black-protestant": 0.0041,
+    "catholic": 0.1386,
+    "other-christian": 0.2247,
+    "other-faith": 0.1302,
+    "unaffiliated": 0.4285
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0149,
+    "mainline-protestant": 0.0133,
+    "black-protestant": 0.0048,
+    "catholic": 0.0259,
+    "other-christian": 0.0313,
+    "other-faith": 0.0252,
+    "unaffiliated": 0.0371
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0765,
+    "mainline-protestant": 0.0504,
+    "black-protestant": 0.0185,
+    "catholic": 0.1591,
+    "other-christian": 0.193,
+    "other-faith": 0.1303,
+    "unaffiliated": 0.3722
+   }
+  },
+  "IA": {
+   "n": 1247,
+   "neff": 443,
+   "shrink_weight": 0.747,
+   "share": {
+    "evangelical-protestant": 0.2529,
+    "mainline-protestant": 0.1857,
+    "black-protestant": 0.0211,
+    "catholic": 0.154,
+    "other-christian": 0.0306,
+    "other-faith": 0.0199,
+    "unaffiliated": 0.3356
+   },
+   "raw": {
+    "evangelical-protestant": 0.2548,
+    "mainline-protestant": 0.1947,
+    "black-protestant": 0.0184,
+    "catholic": 0.1595,
+    "other-christian": 0.0268,
+    "other-faith": 0.0148,
+    "unaffiliated": 0.3311
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0207,
+    "mainline-protestant": 0.0188,
+    "black-protestant": 0.0064,
+    "catholic": 0.0174,
+    "other-christian": 0.0077,
+    "other-faith": 0.0057,
+    "unaffiliated": 0.0224
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2617,
+    "mainline-protestant": 0.1965,
+    "black-protestant": 0.027,
+    "catholic": 0.1637,
+    "other-christian": 0.0407,
+    "other-faith": 0.02,
+    "unaffiliated": 0.2905
+   }
+  },
+  "ID": {
+   "n": 639,
+   "neff": 208,
+   "shrink_weight": 0.581,
+   "share": {
+    "evangelical-protestant": 0.1804,
+    "mainline-protestant": 0.0866,
+    "black-protestant": 0.0102,
+    "catholic": 0.1251,
+    "other-christian": 0.1481,
+    "other-faith": 0.0426,
+    "unaffiliated": 0.407
+   },
+   "raw": {
+    "evangelical-protestant": 0.2111,
+    "mainline-protestant": 0.0904,
+    "black-protestant": 0.0038,
+    "catholic": 0.0974,
+    "other-christian": 0.1511,
+    "other-faith": 0.0401,
+    "unaffiliated": 0.4061
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0283,
+    "mainline-protestant": 0.0199,
+    "black-protestant": 0.0043,
+    "catholic": 0.0206,
+    "other-christian": 0.0248,
+    "other-faith": 0.0136,
+    "unaffiliated": 0.0341
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1766,
+    "mainline-protestant": 0.0868,
+    "black-protestant": 0.0125,
+    "catholic": 0.1269,
+    "other-christian": 0.2215,
+    "other-faith": 0.0419,
+    "unaffiliated": 0.3338
+   }
+  },
+  "IL": {
+   "n": 4607,
+   "neff": 1779,
+   "shrink_weight": 0.922,
+   "share": {
+    "evangelical-protestant": 0.1405,
+    "mainline-protestant": 0.0913,
+    "black-protestant": 0.0636,
+    "catholic": 0.2214,
+    "other-christian": 0.0479,
+    "other-faith": 0.0563,
+    "unaffiliated": 0.3789
+   },
+   "raw": {
+    "evangelical-protestant": 0.1357,
+    "mainline-protestant": 0.0895,
+    "black-protestant": 0.0652,
+    "catholic": 0.2248,
+    "other-christian": 0.0486,
+    "other-faith": 0.0573,
+    "unaffiliated": 0.3791
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0081,
+    "mainline-protestant": 0.0068,
+    "black-protestant": 0.0059,
+    "catholic": 0.0099,
+    "other-christian": 0.0051,
+    "other-faith": 0.0055,
+    "unaffiliated": 0.0115
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.145,
+    "mainline-protestant": 0.0963,
+    "black-protestant": 0.0811,
+    "catholic": 0.234,
+    "other-christian": 0.0656,
+    "other-faith": 0.0632,
+    "unaffiliated": 0.3149
+   }
+  },
+  "IN": {
+   "n": 2698,
+   "neff": 1031,
+   "shrink_weight": 0.873,
+   "share": {
+    "evangelical-protestant": 0.2878,
+    "mainline-protestant": 0.1099,
+    "black-protestant": 0.0317,
+    "catholic": 0.1383,
+    "other-christian": 0.0399,
+    "other-faith": 0.0387,
+    "unaffiliated": 0.3537
+   },
+   "raw": {
+    "evangelical-protestant": 0.3008,
+    "mainline-protestant": 0.1096,
+    "black-protestant": 0.0297,
+    "catholic": 0.1319,
+    "other-christian": 0.0399,
+    "other-faith": 0.0379,
+    "unaffiliated": 0.3503
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0143,
+    "mainline-protestant": 0.0097,
+    "black-protestant": 0.0053,
+    "catholic": 0.0105,
+    "other-christian": 0.0061,
+    "other-faith": 0.0059,
+    "unaffiliated": 0.0149
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.3008,
+    "mainline-protestant": 0.1174,
+    "black-protestant": 0.0409,
+    "catholic": 0.1478,
+    "other-christian": 0.0491,
+    "other-faith": 0.0395,
+    "unaffiliated": 0.3045
+   }
+  },
+  "KS": {
+   "n": 972,
+   "neff": 408,
+   "shrink_weight": 0.731,
+   "share": {
+    "evangelical-protestant": 0.2485,
+    "mainline-protestant": 0.1367,
+    "black-protestant": 0.0255,
+    "catholic": 0.1245,
+    "other-christian": 0.0515,
+    "other-faith": 0.0399,
+    "unaffiliated": 0.3734
+   },
+   "raw": {
+    "evangelical-protestant": 0.2488,
+    "mainline-protestant": 0.1284,
+    "black-protestant": 0.0241,
+    "catholic": 0.1197,
+    "other-christian": 0.0549,
+    "other-faith": 0.0418,
+    "unaffiliated": 0.3823
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0214,
+    "mainline-protestant": 0.0166,
+    "black-protestant": 0.0076,
+    "catholic": 0.0161,
+    "other-christian": 0.0113,
+    "other-faith": 0.0099,
+    "unaffiliated": 0.0241
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2583,
+    "mainline-protestant": 0.1453,
+    "black-protestant": 0.0328,
+    "catholic": 0.1336,
+    "other-christian": 0.0667,
+    "other-faith": 0.0427,
+    "unaffiliated": 0.3208
+   }
+  },
+  "KY": {
+   "n": 1888,
+   "neff": 805,
+   "shrink_weight": 0.843,
+   "share": {
+    "evangelical-protestant": 0.3835,
+    "mainline-protestant": 0.1078,
+    "black-protestant": 0.0537,
+    "catholic": 0.0994,
+    "other-christian": 0.0358,
+    "other-faith": 0.0253,
+    "unaffiliated": 0.2945
+   },
+   "raw": {
+    "evangelical-protestant": 0.3874,
+    "mainline-protestant": 0.1093,
+    "black-protestant": 0.0436,
+    "catholic": 0.1028,
+    "other-christian": 0.0358,
+    "other-faith": 0.0252,
+    "unaffiliated": 0.296
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0172,
+    "mainline-protestant": 0.011,
+    "black-protestant": 0.0072,
+    "catholic": 0.0107,
+    "other-christian": 0.0065,
+    "other-faith": 0.0055,
+    "unaffiliated": 0.0161
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.3957,
+    "mainline-protestant": 0.1137,
+    "black-protestant": 0.0685,
+    "catholic": 0.1047,
+    "other-christian": 0.0421,
+    "other-faith": 0.0245,
+    "unaffiliated": 0.2509
+   }
+  },
+  "LA": {
+   "n": 1354,
+   "neff": 567,
+   "shrink_weight": 0.791,
+   "share": {
+    "evangelical-protestant": 0.2009,
+    "mainline-protestant": 0.0603,
+    "black-protestant": 0.1522,
+    "catholic": 0.2058,
+    "other-christian": 0.0518,
+    "other-faith": 0.0331,
+    "unaffiliated": 0.296
+   },
+   "raw": {
+    "evangelical-protestant": 0.1981,
+    "mainline-protestant": 0.0558,
+    "black-protestant": 0.1705,
+    "catholic": 0.2128,
+    "other-christian": 0.0397,
+    "other-faith": 0.0318,
+    "unaffiliated": 0.2913
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0167,
+    "mainline-protestant": 0.0096,
+    "black-protestant": 0.0158,
+    "catholic": 0.0172,
+    "other-christian": 0.0082,
+    "other-faith": 0.0074,
+    "unaffiliated": 0.0191
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2045,
+    "mainline-protestant": 0.0628,
+    "black-protestant": 0.1914,
+    "catholic": 0.2028,
+    "other-christian": 0.0706,
+    "other-faith": 0.036,
+    "unaffiliated": 0.232
+   }
+  },
+  "MA": {
+   "n": 2337,
+   "neff": 1000,
+   "shrink_weight": 0.87,
+   "share": {
+    "evangelical-protestant": 0.0406,
+    "mainline-protestant": 0.0917,
+    "black-protestant": 0.0282,
+    "catholic": 0.2824,
+    "other-christian": 0.0419,
+    "other-faith": 0.0932,
+    "unaffiliated": 0.4221
+   },
+   "raw": {
+    "evangelical-protestant": 0.0374,
+    "mainline-protestant": 0.0911,
+    "black-protestant": 0.029,
+    "catholic": 0.2828,
+    "other-christian": 0.0415,
+    "other-faith": 0.0975,
+    "unaffiliated": 0.4208
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.006,
+    "mainline-protestant": 0.0091,
+    "black-protestant": 0.0053,
+    "catholic": 0.0142,
+    "other-christian": 0.0063,
+    "other-faith": 0.0094,
+    "unaffiliated": 0.0156
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0424,
+    "mainline-protestant": 0.0981,
+    "black-protestant": 0.0365,
+    "catholic": 0.3001,
+    "other-christian": 0.054,
+    "other-faith": 0.1055,
+    "unaffiliated": 0.3633
+   }
+  },
+  "MD": {
+   "n": 2203,
+   "neff": 956,
+   "shrink_weight": 0.864,
+   "share": {
+    "evangelical-protestant": 0.0934,
+    "mainline-protestant": 0.0924,
+    "black-protestant": 0.1449,
+    "catholic": 0.1633,
+    "other-christian": 0.0419,
+    "other-faith": 0.0846,
+    "unaffiliated": 0.3794
+   },
+   "raw": {
+    "evangelical-protestant": 0.0786,
+    "mainline-protestant": 0.0931,
+    "black-protestant": 0.1501,
+    "catholic": 0.1659,
+    "other-christian": 0.0383,
+    "other-faith": 0.0891,
+    "unaffiliated": 0.3849
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0087,
+    "mainline-protestant": 0.0094,
+    "black-protestant": 0.0116,
+    "catholic": 0.012,
+    "other-christian": 0.0062,
+    "other-faith": 0.0092,
+    "unaffiliated": 0.0157
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0974,
+    "mainline-protestant": 0.0986,
+    "black-protestant": 0.1871,
+    "catholic": 0.1652,
+    "other-christian": 0.0557,
+    "other-faith": 0.0911,
+    "unaffiliated": 0.305
+   }
+  },
+  "ME": {
+   "n": 638,
+   "neff": 330,
+   "shrink_weight": 0.688,
+   "share": {
+    "evangelical-protestant": 0.126,
+    "mainline-protestant": 0.1226,
+    "black-protestant": 0.012,
+    "catholic": 0.1966,
+    "other-christian": 0.0314,
+    "other-faith": 0.0357,
+    "unaffiliated": 0.4758
+   },
+   "raw": {
+    "evangelical-protestant": 0.1552,
+    "mainline-protestant": 0.135,
+    "black-protestant": 0.0068,
+    "catholic": 0.1589,
+    "other-christian": 0.0253,
+    "other-faith": 0.0227,
+    "unaffiliated": 0.4962
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0199,
+    "mainline-protestant": 0.0188,
+    "black-protestant": 0.0045,
+    "catholic": 0.0201,
+    "other-christian": 0.0086,
+    "other-faith": 0.0082,
+    "unaffiliated": 0.0275
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1347,
+    "mainline-protestant": 0.1337,
+    "black-protestant": 0.0156,
+    "catholic": 0.2091,
+    "other-christian": 0.0427,
+    "other-faith": 0.0382,
+    "unaffiliated": 0.426
+   }
+  },
+  "MI": {
+   "n": 3896,
+   "neff": 1485,
+   "shrink_weight": 0.908,
+   "share": {
+    "evangelical-protestant": 0.1975,
+    "mainline-protestant": 0.1049,
+    "black-protestant": 0.052,
+    "catholic": 0.1674,
+    "other-christian": 0.0428,
+    "other-faith": 0.0549,
+    "unaffiliated": 0.3806
+   },
+   "raw": {
+    "evangelical-protestant": 0.1974,
+    "mainline-protestant": 0.1042,
+    "black-protestant": 0.0526,
+    "catholic": 0.1659,
+    "other-christian": 0.043,
+    "other-faith": 0.0559,
+    "unaffiliated": 0.3809
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0103,
+    "mainline-protestant": 0.0079,
+    "black-protestant": 0.0058,
+    "catholic": 0.0097,
+    "other-christian": 0.0053,
+    "other-faith": 0.006,
+    "unaffiliated": 0.0126
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2034,
+    "mainline-protestant": 0.1105,
+    "black-protestant": 0.0662,
+    "catholic": 0.1772,
+    "other-christian": 0.0607,
+    "other-faith": 0.0602,
+    "unaffiliated": 0.3218
+   }
+  },
+  "MN": {
+   "n": 2020,
+   "neff": 774,
+   "shrink_weight": 0.838,
+   "share": {
+    "evangelical-protestant": 0.1888,
+    "mainline-protestant": 0.1769,
+    "black-protestant": 0.0151,
+    "catholic": 0.1494,
+    "other-christian": 0.0409,
+    "other-faith": 0.048,
+    "unaffiliated": 0.3808
+   },
+   "raw": {
+    "evangelical-protestant": 0.1774,
+    "mainline-protestant": 0.1803,
+    "black-protestant": 0.0124,
+    "catholic": 0.1516,
+    "other-christian": 0.0407,
+    "other-faith": 0.0506,
+    "unaffiliated": 0.3869
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0137,
+    "mainline-protestant": 0.0138,
+    "black-protestant": 0.004,
+    "catholic": 0.0129,
+    "other-christian": 0.0071,
+    "other-faith": 0.0079,
+    "unaffiliated": 0.0175
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1968,
+    "mainline-protestant": 0.1886,
+    "black-protestant": 0.0195,
+    "catholic": 0.1596,
+    "other-christian": 0.0511,
+    "other-faith": 0.0525,
+    "unaffiliated": 0.332
+   }
+  },
+  "MO": {
+   "n": 2701,
+   "neff": 1015,
+   "shrink_weight": 0.871,
+   "share": {
+    "evangelical-protestant": 0.2986,
+    "mainline-protestant": 0.1234,
+    "black-protestant": 0.0551,
+    "catholic": 0.1118,
+    "other-christian": 0.0458,
+    "other-faith": 0.0305,
+    "unaffiliated": 0.3348
+   },
+   "raw": {
+    "evangelical-protestant": 0.3062,
+    "mainline-protestant": 0.118,
+    "black-protestant": 0.059,
+    "catholic": 0.108,
+    "other-christian": 0.0463,
+    "other-faith": 0.0299,
+    "unaffiliated": 0.3326
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0145,
+    "mainline-protestant": 0.0101,
+    "black-protestant": 0.0074,
+    "catholic": 0.0097,
+    "other-christian": 0.0066,
+    "other-faith": 0.0053,
+    "unaffiliated": 0.0148
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.3093,
+    "mainline-protestant": 0.1307,
+    "black-protestant": 0.0706,
+    "catholic": 0.1177,
+    "other-christian": 0.0566,
+    "other-faith": 0.03,
+    "unaffiliated": 0.2851
+   }
+  },
+  "MS": {
+   "n": 964,
+   "neff": 410,
+   "shrink_weight": 0.732,
+   "share": {
+    "evangelical-protestant": 0.3185,
+    "mainline-protestant": 0.0717,
+    "black-protestant": 0.2145,
+    "catholic": 0.0714,
+    "other-christian": 0.0199,
+    "other-faith": 0.0269,
+    "unaffiliated": 0.2772
+   },
+   "raw": {
+    "evangelical-protestant": 0.3025,
+    "mainline-protestant": 0.0614,
+    "black-protestant": 0.2534,
+    "catholic": 0.0677,
+    "other-christian": 0.014,
+    "other-faith": 0.0273,
+    "unaffiliated": 0.2737
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0227,
+    "mainline-protestant": 0.0119,
+    "black-protestant": 0.0215,
+    "catholic": 0.0124,
+    "other-christian": 0.0058,
+    "other-faith": 0.008,
+    "unaffiliated": 0.022
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.3254,
+    "mainline-protestant": 0.0749,
+    "black-protestant": 0.2705,
+    "catholic": 0.07,
+    "other-christian": 0.0226,
+    "other-faith": 0.0257,
+    "unaffiliated": 0.2109
+   }
+  },
+  "MT": {
+   "n": 461,
+   "neff": 230,
+   "shrink_weight": 0.605,
+   "share": {
+    "evangelical-protestant": 0.1895,
+    "mainline-protestant": 0.115,
+    "black-protestant": 0.0122,
+    "catholic": 0.1478,
+    "other-christian": 0.0843,
+    "other-faith": 0.0322,
+    "unaffiliated": 0.419
+   },
+   "raw": {
+    "evangelical-protestant": 0.2232,
+    "mainline-protestant": 0.137,
+    "black-protestant": 0.0076,
+    "catholic": 0.1377,
+    "other-christian": 0.0453,
+    "other-faith": 0.0232,
+    "unaffiliated": 0.426
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0275,
+    "mainline-protestant": 0.0227,
+    "black-protestant": 0.0057,
+    "catholic": 0.0227,
+    "other-christian": 0.0137,
+    "other-faith": 0.0099,
+    "unaffiliated": 0.0326
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1952,
+    "mainline-protestant": 0.1212,
+    "black-protestant": 0.0152,
+    "catholic": 0.1563,
+    "other-christian": 0.1194,
+    "other-faith": 0.0333,
+    "unaffiliated": 0.3593
+   }
+  },
+  "NC": {
+   "n": 3876,
+   "neff": 1316,
+   "shrink_weight": 0.898,
+   "share": {
+    "evangelical-protestant": 0.2669,
+    "mainline-protestant": 0.0972,
+    "black-protestant": 0.114,
+    "catholic": 0.0926,
+    "other-christian": 0.0683,
+    "other-faith": 0.0434,
+    "unaffiliated": 0.3175
+   },
+   "raw": {
+    "evangelical-protestant": 0.2759,
+    "mainline-protestant": 0.0983,
+    "black-protestant": 0.1143,
+    "catholic": 0.0864,
+    "other-christian": 0.0687,
+    "other-faith": 0.042,
+    "unaffiliated": 0.3143
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0123,
+    "mainline-protestant": 0.0082,
+    "black-protestant": 0.0088,
+    "catholic": 0.0077,
+    "other-christian": 0.007,
+    "other-faith": 0.0055,
+    "unaffiliated": 0.0128
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2737,
+    "mainline-protestant": 0.1019,
+    "black-protestant": 0.1445,
+    "catholic": 0.094,
+    "other-christian": 0.0811,
+    "other-faith": 0.0475,
+    "unaffiliated": 0.2573
+   }
+  },
+  "ND": {
+   "n": 271,
+   "neff": 122,
+   "shrink_weight": 0.449,
+   "share": {
+    "evangelical-protestant": 0.2333,
+    "mainline-protestant": 0.1871,
+    "black-protestant": 0.0197,
+    "catholic": 0.1611,
+    "other-christian": 0.0351,
+    "other-faith": 0.0224,
+    "unaffiliated": 0.3413
+   },
+   "raw": {
+    "evangelical-protestant": 0.2159,
+    "mainline-protestant": 0.2212,
+    "black-protestant": 0.0081,
+    "catholic": 0.1897,
+    "other-christian": 0.0265,
+    "other-faith": 0.0069,
+    "unaffiliated": 0.3317
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0372,
+    "mainline-protestant": 0.0376,
+    "black-protestant": 0.0081,
+    "catholic": 0.0355,
+    "other-christian": 0.0145,
+    "other-faith": 0.0075,
+    "unaffiliated": 0.0426
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2414,
+    "mainline-protestant": 0.1978,
+    "black-protestant": 0.0252,
+    "catholic": 0.1698,
+    "other-christian": 0.0465,
+    "other-faith": 0.023,
+    "unaffiliated": 0.2963
+   }
+  },
+  "NE": {
+   "n": 704,
+   "neff": 291,
+   "shrink_weight": 0.66,
+   "share": {
+    "evangelical-protestant": 0.2272,
+    "mainline-protestant": 0.1824,
+    "black-protestant": 0.0179,
+    "catholic": 0.1725,
+    "other-christian": 0.0358,
+    "other-faith": 0.0435,
+    "unaffiliated": 0.3208
+   },
+   "raw": {
+    "evangelical-protestant": 0.2167,
+    "mainline-protestant": 0.1943,
+    "black-protestant": 0.012,
+    "catholic": 0.1904,
+    "other-christian": 0.0326,
+    "other-faith": 0.0479,
+    "unaffiliated": 0.3061
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0242,
+    "mainline-protestant": 0.0232,
+    "black-protestant": 0.0064,
+    "catholic": 0.023,
+    "other-christian": 0.0104,
+    "other-faith": 0.0125,
+    "unaffiliated": 0.027
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2344,
+    "mainline-protestant": 0.1923,
+    "black-protestant": 0.0228,
+    "catholic": 0.1823,
+    "other-christian": 0.0469,
+    "other-faith": 0.0452,
+    "unaffiliated": 0.276
+   }
+  },
+  "NH": {
+   "n": 662,
+   "neff": 324,
+   "shrink_weight": 0.684,
+   "share": {
+    "evangelical-protestant": 0.0757,
+    "mainline-protestant": 0.0953,
+    "black-protestant": 0.0136,
+    "catholic": 0.2485,
+    "other-christian": 0.0409,
+    "other-faith": 0.052,
+    "unaffiliated": 0.474
+   },
+   "raw": {
+    "evangelical-protestant": 0.0821,
+    "mainline-protestant": 0.0953,
+    "black-protestant": 0.0091,
+    "catholic": 0.2341,
+    "other-christian": 0.0391,
+    "other-faith": 0.0462,
+    "unaffiliated": 0.4941
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0152,
+    "mainline-protestant": 0.0163,
+    "black-protestant": 0.0053,
+    "catholic": 0.0235,
+    "other-christian": 0.0108,
+    "other-faith": 0.0117,
+    "unaffiliated": 0.0278
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0802,
+    "mainline-protestant": 0.1031,
+    "black-protestant": 0.0177,
+    "catholic": 0.2672,
+    "other-christian": 0.0551,
+    "other-faith": 0.0559,
+    "unaffiliated": 0.4207
+   }
+  },
+  "NJ": {
+   "n": 3287,
+   "neff": 1169,
+   "shrink_weight": 0.886,
+   "share": {
+    "evangelical-protestant": 0.0614,
+    "mainline-protestant": 0.0672,
+    "black-protestant": 0.0674,
+    "catholic": 0.3119,
+    "other-christian": 0.0798,
+    "other-faith": 0.1122,
+    "unaffiliated": 0.3
+   },
+   "raw": {
+    "evangelical-protestant": 0.0568,
+    "mainline-protestant": 0.0644,
+    "black-protestant": 0.0692,
+    "catholic": 0.3163,
+    "other-christian": 0.083,
+    "other-faith": 0.1158,
+    "unaffiliated": 0.2945
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0068,
+    "mainline-protestant": 0.0072,
+    "black-protestant": 0.0074,
+    "catholic": 0.0136,
+    "other-christian": 0.0081,
+    "other-faith": 0.0094,
+    "unaffiliated": 0.0133
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0622,
+    "mainline-protestant": 0.0695,
+    "black-protestant": 0.084,
+    "catholic": 0.3227,
+    "other-christian": 0.0987,
+    "other-faith": 0.1224,
+    "unaffiliated": 0.2404
+   }
+  },
+  "NM": {
+   "n": 785,
+   "neff": 272,
+   "shrink_weight": 0.645,
+   "share": {
+    "evangelical-protestant": 0.1127,
+    "mainline-protestant": 0.0545,
+    "black-protestant": 0.0144,
+    "catholic": 0.2035,
+    "other-christian": 0.1277,
+    "other-faith": 0.0467,
+    "unaffiliated": 0.4404
+   },
+   "raw": {
+    "evangelical-protestant": 0.0988,
+    "mainline-protestant": 0.0398,
+    "black-protestant": 0.0117,
+    "catholic": 0.2257,
+    "other-christian": 0.1188,
+    "other-faith": 0.0471,
+    "unaffiliated": 0.4582
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0181,
+    "mainline-protestant": 0.0118,
+    "black-protestant": 0.0065,
+    "catholic": 0.0253,
+    "other-christian": 0.0196,
+    "other-faith": 0.0128,
+    "unaffiliated": 0.0302
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1153,
+    "mainline-protestant": 0.0567,
+    "black-protestant": 0.0181,
+    "catholic": 0.2215,
+    "other-christian": 0.1594,
+    "other-faith": 0.0554,
+    "unaffiliated": 0.3736
+   }
+  },
+  "NV": {
+   "n": 1450,
+   "neff": 471,
+   "shrink_weight": 0.759,
+   "share": {
+    "evangelical-protestant": 0.1024,
+    "mainline-protestant": 0.0596,
+    "black-protestant": 0.0344,
+    "catholic": 0.2146,
+    "other-christian": 0.1085,
+    "other-faith": 0.0665,
+    "unaffiliated": 0.414
+   },
+   "raw": {
+    "evangelical-protestant": 0.0911,
+    "mainline-protestant": 0.0526,
+    "black-protestant": 0.0393,
+    "catholic": 0.2309,
+    "other-christian": 0.0972,
+    "other-faith": 0.073,
+    "unaffiliated": 0.4158
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0133,
+    "mainline-protestant": 0.0103,
+    "black-protestant": 0.0089,
+    "catholic": 0.0194,
+    "other-christian": 0.0136,
+    "other-faith": 0.012,
+    "unaffiliated": 0.0227
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1038,
+    "mainline-protestant": 0.0617,
+    "black-protestant": 0.0434,
+    "catholic": 0.2228,
+    "other-christian": 0.1499,
+    "other-faith": 0.0736,
+    "unaffiliated": 0.3449
+   }
+  },
+  "NY": {
+   "n": 7151,
+   "neff": 2611,
+   "shrink_weight": 0.946,
+   "share": {
+    "evangelical-protestant": 0.0621,
+    "mainline-protestant": 0.0682,
+    "black-protestant": 0.0635,
+    "catholic": 0.3111,
+    "other-christian": 0.053,
+    "other-faith": 0.1004,
+    "unaffiliated": 0.3417
+   },
+   "raw": {
+    "evangelical-protestant": 0.0601,
+    "mainline-protestant": 0.0669,
+    "black-protestant": 0.0641,
+    "catholic": 0.3131,
+    "other-christian": 0.0529,
+    "other-faith": 0.1013,
+    "unaffiliated": 0.3417
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0047,
+    "mainline-protestant": 0.0049,
+    "black-protestant": 0.0048,
+    "catholic": 0.0091,
+    "other-christian": 0.0044,
+    "other-faith": 0.0059,
+    "unaffiliated": 0.0093
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0643,
+    "mainline-protestant": 0.0721,
+    "black-protestant": 0.0813,
+    "catholic": 0.3267,
+    "other-christian": 0.0646,
+    "other-faith": 0.1088,
+    "unaffiliated": 0.2823
+   }
+  },
+  "OH": {
+   "n": 5158,
+   "neff": 1986,
+   "shrink_weight": 0.93,
+   "share": {
+    "evangelical-protestant": 0.2086,
+    "mainline-protestant": 0.1169,
+    "black-protestant": 0.0477,
+    "catholic": 0.1636,
+    "other-christian": 0.0354,
+    "other-faith": 0.0418,
+    "unaffiliated": 0.386
+   },
+   "raw": {
+    "evangelical-protestant": 0.2093,
+    "mainline-protestant": 0.1173,
+    "black-protestant": 0.0479,
+    "catholic": 0.1622,
+    "other-christian": 0.035,
+    "other-faith": 0.0416,
+    "unaffiliated": 0.3867
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0091,
+    "mainline-protestant": 0.0072,
+    "black-protestant": 0.0048,
+    "catholic": 0.0083,
+    "other-christian": 0.0041,
+    "other-faith": 0.0045,
+    "unaffiliated": 0.0109
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2173,
+    "mainline-protestant": 0.1246,
+    "black-protestant": 0.0615,
+    "catholic": 0.1732,
+    "other-christian": 0.0495,
+    "other-faith": 0.0468,
+    "unaffiliated": 0.3271
+   }
+  },
+  "OK": {
+   "n": 1268,
+   "neff": 527,
+   "shrink_weight": 0.778,
+   "share": {
+    "evangelical-protestant": 0.3104,
+    "mainline-protestant": 0.0856,
+    "black-protestant": 0.0455,
+    "catholic": 0.0916,
+    "other-christian": 0.1148,
+    "other-faith": 0.0306,
+    "unaffiliated": 0.3215
+   },
+   "raw": {
+    "evangelical-protestant": 0.3386,
+    "mainline-protestant": 0.088,
+    "black-protestant": 0.0348,
+    "catholic": 0.0665,
+    "other-christian": 0.1197,
+    "other-faith": 0.0285,
+    "unaffiliated": 0.3238
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0206,
+    "mainline-protestant": 0.0123,
+    "black-protestant": 0.008,
+    "catholic": 0.0109,
+    "other-christian": 0.0141,
+    "other-faith": 0.0072,
+    "unaffiliated": 0.0204
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.3199,
+    "mainline-protestant": 0.0902,
+    "black-protestant": 0.0578,
+    "catholic": 0.0963,
+    "other-christian": 0.1294,
+    "other-faith": 0.0319,
+    "unaffiliated": 0.2744
+   }
+  },
+  "OR": {
+   "n": 1911,
+   "neff": 879,
+   "shrink_weight": 0.854,
+   "share": {
+    "evangelical-protestant": 0.1723,
+    "mainline-protestant": 0.0871,
+    "black-protestant": 0.0078,
+    "catholic": 0.1062,
+    "other-christian": 0.0724,
+    "other-faith": 0.0475,
+    "unaffiliated": 0.5068
+   },
+   "raw": {
+    "evangelical-protestant": 0.1827,
+    "mainline-protestant": 0.0908,
+    "black-protestant": 0.0046,
+    "catholic": 0.0931,
+    "other-christian": 0.066,
+    "other-faith": 0.0451,
+    "unaffiliated": 0.5177
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.013,
+    "mainline-protestant": 0.0097,
+    "black-protestant": 0.0023,
+    "catholic": 0.0098,
+    "other-christian": 0.0084,
+    "other-faith": 0.007,
+    "unaffiliated": 0.0169
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1834,
+    "mainline-protestant": 0.0948,
+    "black-protestant": 0.0102,
+    "catholic": 0.1152,
+    "other-christian": 0.0913,
+    "other-faith": 0.0541,
+    "unaffiliated": 0.4511
+   }
+  },
+  "PA": {
+   "n": 6180,
+   "neff": 2438,
+   "shrink_weight": 0.942,
+   "share": {
+    "evangelical-protestant": 0.162,
+    "mainline-protestant": 0.1281,
+    "black-protestant": 0.0324,
+    "catholic": 0.2166,
+    "other-christian": 0.0429,
+    "other-faith": 0.0496,
+    "unaffiliated": 0.3685
+   },
+   "raw": {
+    "evangelical-protestant": 0.1659,
+    "mainline-protestant": 0.1305,
+    "black-protestant": 0.0311,
+    "catholic": 0.2128,
+    "other-christian": 0.0421,
+    "other-faith": 0.0474,
+    "unaffiliated": 0.3701
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0075,
+    "mainline-protestant": 0.0068,
+    "black-protestant": 0.0035,
+    "catholic": 0.0083,
+    "other-christian": 0.0041,
+    "other-faith": 0.0043,
+    "unaffiliated": 0.0098
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1685,
+    "mainline-protestant": 0.1362,
+    "black-protestant": 0.0416,
+    "catholic": 0.2295,
+    "other-christian": 0.0567,
+    "other-faith": 0.0535,
+    "unaffiliated": 0.314
+   }
+  },
+  "RI": {
+   "n": 408,
+   "neff": 211,
+   "shrink_weight": 0.584,
+   "share": {
+    "evangelical-protestant": 0.0686,
+    "mainline-protestant": 0.088,
+    "black-protestant": 0.0193,
+    "catholic": 0.3058,
+    "other-christian": 0.0603,
+    "other-faith": 0.044,
+    "unaffiliated": 0.4141
+   },
+   "raw": {
+    "evangelical-protestant": 0.0733,
+    "mainline-protestant": 0.0828,
+    "black-protestant": 0.0163,
+    "catholic": 0.3245,
+    "other-christian": 0.0713,
+    "other-faith": 0.0296,
+    "unaffiliated": 0.4022
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.018,
+    "mainline-protestant": 0.019,
+    "black-protestant": 0.0087,
+    "catholic": 0.0323,
+    "other-christian": 0.0177,
+    "other-faith": 0.0117,
+    "unaffiliated": 0.0338
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0713,
+    "mainline-protestant": 0.0937,
+    "black-protestant": 0.0248,
+    "catholic": 0.3273,
+    "other-christian": 0.0809,
+    "other-faith": 0.0471,
+    "unaffiliated": 0.3548
+   }
+  },
+  "SC": {
+   "n": 2065,
+   "neff": 742,
+   "shrink_weight": 0.832,
+   "share": {
+    "evangelical-protestant": 0.2395,
+    "mainline-protestant": 0.0927,
+    "black-protestant": 0.1515,
+    "catholic": 0.1051,
+    "other-christian": 0.0408,
+    "other-faith": 0.0398,
+    "unaffiliated": 0.3307
+   },
+   "raw": {
+    "evangelical-protestant": 0.2499,
+    "mainline-protestant": 0.0937,
+    "black-protestant": 0.1595,
+    "catholic": 0.0966,
+    "other-christian": 0.036,
+    "other-faith": 0.0366,
+    "unaffiliated": 0.3278
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0159,
+    "mainline-protestant": 0.0107,
+    "black-protestant": 0.0134,
+    "catholic": 0.0108,
+    "other-christian": 0.0068,
+    "other-faith": 0.0069,
+    "unaffiliated": 0.0172
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2439,
+    "mainline-protestant": 0.0965,
+    "black-protestant": 0.1907,
+    "catholic": 0.1095,
+    "other-christian": 0.053,
+    "other-faith": 0.0427,
+    "unaffiliated": 0.2638
+   }
+  },
+  "SD": {
+   "n": 335,
+   "neff": 180,
+   "shrink_weight": 0.546,
+   "share": {
+    "evangelical-protestant": 0.2494,
+    "mainline-protestant": 0.1827,
+    "black-protestant": 0.0132,
+    "catholic": 0.124,
+    "other-christian": 0.0542,
+    "other-faith": 0.035,
+    "unaffiliated": 0.3415
+   },
+   "raw": {
+    "evangelical-protestant": 0.2509,
+    "mainline-protestant": 0.2021,
+    "black-protestant": 0.0,
+    "catholic": 0.1125,
+    "other-christian": 0.0643,
+    "other-faith": 0.035,
+    "unaffiliated": 0.3351
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0323,
+    "mainline-protestant": 0.0299,
+    "black-protestant": 0.0,
+    "catholic": 0.0235,
+    "other-christian": 0.0183,
+    "other-faith": 0.0137,
+    "unaffiliated": 0.0351
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.2584,
+    "mainline-protestant": 0.1935,
+    "black-protestant": 0.017,
+    "catholic": 0.1325,
+    "other-christian": 0.0671,
+    "other-faith": 0.035,
+    "unaffiliated": 0.2964
+   }
+  },
+  "TN": {
+   "n": 2784,
+   "neff": 1007,
+   "shrink_weight": 0.87,
+   "share": {
+    "evangelical-protestant": 0.3869,
+    "mainline-protestant": 0.1092,
+    "black-protestant": 0.0701,
+    "catholic": 0.0777,
+    "other-christian": 0.0478,
+    "other-faith": 0.029,
+    "unaffiliated": 0.2792
+   },
+   "raw": {
+    "evangelical-protestant": 0.3906,
+    "mainline-protestant": 0.1106,
+    "black-protestant": 0.0645,
+    "catholic": 0.0772,
+    "other-christian": 0.0496,
+    "other-faith": 0.0294,
+    "unaffiliated": 0.2781
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0154,
+    "mainline-protestant": 0.0099,
+    "black-protestant": 0.0077,
+    "catholic": 0.0084,
+    "other-christian": 0.0068,
+    "other-faith": 0.0053,
+    "unaffiliated": 0.0141
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.3965,
+    "mainline-protestant": 0.1144,
+    "black-protestant": 0.0889,
+    "catholic": 0.0799,
+    "other-christian": 0.0632,
+    "other-faith": 0.0291,
+    "unaffiliated": 0.2279
+   }
+  },
+  "TX": {
+   "n": 9222,
+   "neff": 3549,
+   "shrink_weight": 0.959,
+   "share": {
+    "evangelical-protestant": 0.1765,
+    "mainline-protestant": 0.0769,
+    "black-protestant": 0.0768,
+    "catholic": 0.2029,
+    "other-christian": 0.1073,
+    "other-faith": 0.0418,
+    "unaffiliated": 0.3178
+   },
+   "raw": {
+    "evangelical-protestant": 0.1751,
+    "mainline-protestant": 0.0769,
+    "black-protestant": 0.0765,
+    "catholic": 0.2039,
+    "other-christian": 0.1077,
+    "other-faith": 0.042,
+    "unaffiliated": 0.318
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0064,
+    "mainline-protestant": 0.0045,
+    "black-protestant": 0.0045,
+    "catholic": 0.0068,
+    "other-christian": 0.0052,
+    "other-faith": 0.0034,
+    "unaffiliated": 0.0078
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1809,
+    "mainline-protestant": 0.0806,
+    "black-protestant": 0.0973,
+    "catholic": 0.2147,
+    "other-christian": 0.1165,
+    "other-faith": 0.0511,
+    "unaffiliated": 0.259
+   }
+  },
+  "UT": {
+   "n": 1015,
+   "neff": 438,
+   "shrink_weight": 0.745,
+   "share": {
+    "evangelical-protestant": 0.0694,
+    "mainline-protestant": 0.074,
+    "black-protestant": 0.0058,
+    "catholic": 0.0835,
+    "other-christian": 0.3826,
+    "other-faith": 0.041,
+    "unaffiliated": 0.3437
+   },
+   "raw": {
+    "evangelical-protestant": 0.046,
+    "mainline-protestant": 0.0715,
+    "black-protestant": 0.0013,
+    "catholic": 0.0562,
+    "other-christian": 0.4643,
+    "other-faith": 0.0393,
+    "unaffiliated": 0.3216
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.01,
+    "mainline-protestant": 0.0123,
+    "black-protestant": 0.0017,
+    "catholic": 0.011,
+    "other-christian": 0.0238,
+    "other-faith": 0.0093,
+    "unaffiliated": 0.0223
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0608,
+    "mainline-protestant": 0.0623,
+    "black-protestant": 0.0069,
+    "catholic": 0.0754,
+    "other-christian": 0.5244,
+    "other-faith": 0.034,
+    "unaffiliated": 0.2363
+   }
+  },
+  "VA": {
+   "n": 3434,
+   "neff": 1396,
+   "shrink_weight": 0.903,
+   "share": {
+    "evangelical-protestant": 0.1933,
+    "mainline-protestant": 0.1076,
+    "black-protestant": 0.1052,
+    "catholic": 0.128,
+    "other-christian": 0.0651,
+    "other-faith": 0.0528,
+    "unaffiliated": 0.348
+   },
+   "raw": {
+    "evangelical-protestant": 0.1938,
+    "mainline-protestant": 0.1098,
+    "black-protestant": 0.1045,
+    "catholic": 0.1259,
+    "other-christian": 0.0651,
+    "other-faith": 0.0525,
+    "unaffiliated": 0.3483
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0106,
+    "mainline-protestant": 0.0084,
+    "black-protestant": 0.0082,
+    "catholic": 0.0089,
+    "other-christian": 0.0066,
+    "other-faith": 0.006,
+    "unaffiliated": 0.0128
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1994,
+    "mainline-protestant": 0.1135,
+    "black-protestant": 0.1342,
+    "catholic": 0.1293,
+    "other-christian": 0.0821,
+    "other-faith": 0.0577,
+    "unaffiliated": 0.2837
+   }
+  },
+  "VT": {
+   "n": 274,
+   "neff": 142,
+   "shrink_weight": 0.486,
+   "share": {
+    "evangelical-protestant": 0.0763,
+    "mainline-protestant": 0.1078,
+    "black-protestant": 0.012,
+    "catholic": 0.2635,
+    "other-christian": 0.0309,
+    "other-faith": 0.0452,
+    "unaffiliated": 0.4643
+   },
+   "raw": {
+    "evangelical-protestant": 0.0916,
+    "mainline-protestant": 0.121,
+    "black-protestant": 0.0,
+    "catholic": 0.2463,
+    "other-christian": 0.0161,
+    "other-faith": 0.025,
+    "unaffiliated": 0.4999
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0242,
+    "mainline-protestant": 0.0274,
+    "black-protestant": 0.0,
+    "catholic": 0.0362,
+    "other-christian": 0.0106,
+    "other-faith": 0.0131,
+    "unaffiliated": 0.042
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.0811,
+    "mainline-protestant": 0.117,
+    "black-protestant": 0.0156,
+    "catholic": 0.2868,
+    "other-christian": 0.0406,
+    "other-faith": 0.049,
+    "unaffiliated": 0.41
+   }
+  },
+  "WA": {
+   "n": 2756,
+   "neff": 1154,
+   "shrink_weight": 0.885,
+   "share": {
+    "evangelical-protestant": 0.1705,
+    "mainline-protestant": 0.084,
+    "black-protestant": 0.0197,
+    "catholic": 0.117,
+    "other-christian": 0.0875,
+    "other-faith": 0.0553,
+    "unaffiliated": 0.4661
+   },
+   "raw": {
+    "evangelical-protestant": 0.1781,
+    "mainline-protestant": 0.0864,
+    "black-protestant": 0.0188,
+    "catholic": 0.1085,
+    "other-christian": 0.0846,
+    "other-faith": 0.0545,
+    "unaffiliated": 0.4691
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0113,
+    "mainline-protestant": 0.0083,
+    "black-protestant": 0.004,
+    "catholic": 0.0092,
+    "other-christian": 0.0082,
+    "other-faith": 0.0067,
+    "unaffiliated": 0.0147
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1801,
+    "mainline-protestant": 0.0907,
+    "black-protestant": 0.0257,
+    "catholic": 0.1256,
+    "other-christian": 0.1062,
+    "other-faith": 0.0616,
+    "unaffiliated": 0.4101
+   }
+  },
+  "WI": {
+   "n": 2566,
+   "neff": 1031,
+   "shrink_weight": 0.873,
+   "share": {
+    "evangelical-protestant": 0.1806,
+    "mainline-protestant": 0.1499,
+    "black-protestant": 0.0185,
+    "catholic": 0.2173,
+    "other-christian": 0.0339,
+    "other-faith": 0.021,
+    "unaffiliated": 0.3789
+   },
+   "raw": {
+    "evangelical-protestant": 0.178,
+    "mainline-protestant": 0.1554,
+    "black-protestant": 0.0145,
+    "catholic": 0.2224,
+    "other-christian": 0.033,
+    "other-faith": 0.0175,
+    "unaffiliated": 0.3791
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0119,
+    "mainline-protestant": 0.0113,
+    "black-protestant": 0.0037,
+    "catholic": 0.013,
+    "other-christian": 0.0056,
+    "other-faith": 0.0041,
+    "unaffiliated": 0.0151
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1889,
+    "mainline-protestant": 0.1604,
+    "black-protestant": 0.0238,
+    "catholic": 0.2338,
+    "other-christian": 0.0413,
+    "other-faith": 0.0225,
+    "unaffiliated": 0.3293
+   }
+  },
+  "WV": {
+   "n": 872,
+   "neff": 286,
+   "shrink_weight": 0.656,
+   "share": {
+    "evangelical-protestant": 0.3108,
+    "mainline-protestant": 0.1004,
+    "black-protestant": 0.0497,
+    "catholic": 0.0918,
+    "other-christian": 0.0416,
+    "other-faith": 0.0588,
+    "unaffiliated": 0.3468
+   },
+   "raw": {
+    "evangelical-protestant": 0.3753,
+    "mainline-protestant": 0.1071,
+    "black-protestant": 0.0172,
+    "catholic": 0.0628,
+    "other-christian": 0.0293,
+    "other-faith": 0.0604,
+    "unaffiliated": 0.3479
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0287,
+    "mainline-protestant": 0.0183,
+    "black-protestant": 0.0077,
+    "catholic": 0.0144,
+    "other-christian": 0.01,
+    "other-faith": 0.0141,
+    "unaffiliated": 0.0282
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.3204,
+    "mainline-protestant": 0.1058,
+    "black-protestant": 0.0634,
+    "catholic": 0.0959,
+    "other-christian": 0.0565,
+    "other-faith": 0.0647,
+    "unaffiliated": 0.2933
+   }
+  },
+  "WY": {
+   "n": 190,
+   "neff": 98,
+   "shrink_weight": 0.394,
+   "share": {
+    "evangelical-protestant": 0.1909,
+    "mainline-protestant": 0.0818,
+    "black-protestant": 0.0125,
+    "catholic": 0.1447,
+    "other-christian": 0.1228,
+    "other-faith": 0.04,
+    "unaffiliated": 0.4073
+   },
+   "raw": {
+    "evangelical-protestant": 0.2724,
+    "mainline-protestant": 0.0827,
+    "black-protestant": 0.0022,
+    "catholic": 0.1159,
+    "other-christian": 0.0902,
+    "other-faith": 0.0307,
+    "unaffiliated": 0.4058
+   },
+   "raw_se": {
+    "evangelical-protestant": 0.0451,
+    "mainline-protestant": 0.0279,
+    "black-protestant": 0.0048,
+    "catholic": 0.0324,
+    "other-christian": 0.029,
+    "other-faith": 0.0175,
+    "unaffiliated": 0.0497
+   },
+   "raked_share": {
+    "evangelical-protestant": 0.1941,
+    "mainline-protestant": 0.0845,
+    "black-protestant": 0.0154,
+    "catholic": 0.1499,
+    "other-christian": 0.1706,
+    "other-faith": 0.0423,
+    "unaffiliated": 0.3431
+   }
+  }
+ },
+ "baseline": {
+  "evangelical-protestant": {
+   "rep2p": 0.866,
+   "se": 0.007,
+   "voters": 14031
+  },
+  "mainline-protestant": {
+   "rep2p": 0.558,
+   "se": 0.016,
+   "voters": 6961
+  },
+  "black-protestant": {
+   "rep2p": 0.149,
+   "se": 0.014,
+   "voters": 4046
+  },
+  "catholic": {
+   "rep2p": 0.561,
+   "se": 0.019,
+   "voters": 11287
+  },
+  "other-christian": {
+   "rep2p": 0.632,
+   "se": 0.017,
+   "voters": 3900
+  },
+  "other-faith": {
+   "rep2p": 0.296,
+   "se": 0.023,
+   "voters": 2820
+  },
+  "unaffiliated": {
+   "rep2p": 0.274,
+   "se": 0.011,
+   "voters": 22987
+  }
+ },
+ "positions": {
+  "age-35-64": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.552,
+     "se": 0.004,
+     "n": 31241
+    },
+    "2024": {
+     "support": 0.59,
+     "se": 0.005,
+     "n": 30684
+    },
+    "pooled": {
+     "support": 0.571,
+     "se": 0.003,
+     "n": 61925
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.468,
+     "se": 0.004,
+     "n": 31239
+    },
+    "2024": {
+     "support": 0.529,
+     "se": 0.005,
+     "n": 30684
+    },
+    "pooled": {
+     "support": 0.498,
+     "se": 0.003,
+     "n": 61923
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.195,
+     "se": 0.003,
+     "n": 31234
+    },
+    "2024": {
+     "support": 0.13,
+     "se": 0.003,
+     "n": 30685
+    },
+    "pooled": {
+     "support": 0.162,
+     "se": 0.002,
+     "n": 61919
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.6,
+     "se": 0.004,
+     "n": 31246
+    },
+    "2024": {
+     "support": 0.563,
+     "se": 0.005,
+     "n": 30694
+    },
+    "pooled": {
+     "support": 0.582,
+     "se": 0.003,
+     "n": 61940
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.408,
+     "se": 0.004,
+     "n": 31241
+    },
+    "2024": {
+     "support": 0.416,
+     "se": 0.005,
+     "n": 30694
+    },
+    "pooled": {
+     "support": 0.412,
+     "se": 0.003,
+     "n": 61935
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.65,
+     "se": 0.004,
+     "n": 31218
+    },
+    "2024": {
+     "support": 0.563,
+     "se": 0.005,
+     "n": 30692
+    },
+    "pooled": {
+     "support": 0.606,
+     "se": 0.003,
+     "n": 61910
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.662,
+     "se": 0.004,
+     "n": 31218
+    },
+    "2024": {
+     "support": 0.817,
+     "se": 0.004,
+     "n": 30694
+    },
+    "pooled": {
+     "support": 0.74,
+     "se": 0.003,
+     "n": 61912
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.508,
+     "se": 0.004,
+     "n": 31241
+    },
+    "2024": {
+     "support": 0.582,
+     "se": 0.005,
+     "n": 30694
+    },
+    "pooled": {
+     "support": 0.545,
+     "se": 0.003,
+     "n": 61935
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.734,
+     "se": 0.004,
+     "n": 31220
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.369,
+     "se": 0.004,
+     "n": 31073
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.628,
+     "se": 0.005,
+     "n": 30543
+    }
+   }
+  },
+  "age-65-plus": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.478,
+     "se": 0.006,
+     "n": 12902
+    },
+    "2024": {
+     "support": 0.551,
+     "se": 0.006,
+     "n": 17367
+    },
+    "pooled": {
+     "support": 0.516,
+     "se": 0.004,
+     "n": 30269
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.521,
+     "se": 0.006,
+     "n": 12900
+    },
+    "2024": {
+     "support": 0.548,
+     "se": 0.006,
+     "n": 17365
+    },
+    "pooled": {
+     "support": 0.535,
+     "se": 0.004,
+     "n": 30265
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.185,
+     "se": 0.005,
+     "n": 12898
+    },
+    "2024": {
+     "support": 0.105,
+     "se": 0.004,
+     "n": 17360
+    },
+    "pooled": {
+     "support": 0.144,
+     "se": 0.003,
+     "n": 30258
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.653,
+     "se": 0.006,
+     "n": 12901
+    },
+    "2024": {
+     "support": 0.625,
+     "se": 0.006,
+     "n": 17382
+    },
+    "pooled": {
+     "support": 0.639,
+     "se": 0.004,
+     "n": 30283
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.408,
+     "se": 0.006,
+     "n": 12902
+    },
+    "2024": {
+     "support": 0.403,
+     "se": 0.006,
+     "n": 17384
+    },
+    "pooled": {
+     "support": 0.406,
+     "se": 0.004,
+     "n": 30286
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.635,
+     "se": 0.006,
+     "n": 12886
+    },
+    "2024": {
+     "support": 0.548,
+     "se": 0.006,
+     "n": 17385
+    },
+    "pooled": {
+     "support": 0.59,
+     "se": 0.004,
+     "n": 30271
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.73,
+     "se": 0.006,
+     "n": 12895
+    },
+    "2024": {
+     "support": 0.927,
+     "se": 0.003,
+     "n": 17384
+    },
+    "pooled": {
+     "support": 0.832,
+     "se": 0.003,
+     "n": 30279
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.664,
+     "se": 0.006,
+     "n": 12898
+    },
+    "2024": {
+     "support": 0.763,
+     "se": 0.005,
+     "n": 17385
+    },
+    "pooled": {
+     "support": 0.716,
+     "se": 0.004,
+     "n": 30283
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.722,
+     "se": 0.006,
+     "n": 12894
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.437,
+     "se": 0.006,
+     "n": 12805
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.584,
+     "se": 0.006,
+     "n": 17273
+    }
+   }
+  },
+  "age-under-35": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.638,
+     "se": 0.006,
+     "n": 16805
+    },
+    "2024": {
+     "support": 0.665,
+     "se": 0.008,
+     "n": 11860
+    },
+    "pooled": {
+     "support": 0.651,
+     "se": 0.005,
+     "n": 28665
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.44,
+     "se": 0.006,
+     "n": 16806
+    },
+    "2024": {
+     "support": 0.475,
+     "se": 0.009,
+     "n": 11860
+    },
+    "pooled": {
+     "support": 0.456,
+     "se": 0.005,
+     "n": 28666
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.215,
+     "se": 0.005,
+     "n": 16806
+    },
+    "2024": {
+     "support": 0.14,
+     "se": 0.006,
+     "n": 11859
+    },
+    "pooled": {
+     "support": 0.18,
+     "se": 0.004,
+     "n": 28665
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.53,
+     "se": 0.006,
+     "n": 16805
+    },
+    "2024": {
+     "support": 0.578,
+     "se": 0.009,
+     "n": 11861
+    },
+    "pooled": {
+     "support": 0.552,
+     "se": 0.005,
+     "n": 28666
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.391,
+     "se": 0.006,
+     "n": 16807
+    },
+    "2024": {
+     "support": 0.345,
+     "se": 0.009,
+     "n": 11860
+    },
+    "pooled": {
+     "support": 0.369,
+     "se": 0.005,
+     "n": 28667
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.772,
+     "se": 0.005,
+     "n": 16806
+    },
+    "2024": {
+     "support": 0.681,
+     "se": 0.008,
+     "n": 11861
+    },
+    "pooled": {
+     "support": 0.73,
+     "se": 0.005,
+     "n": 28667
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.464,
+     "se": 0.006,
+     "n": 16805
+    },
+    "2024": {
+     "support": 0.616,
+     "se": 0.009,
+     "n": 11861
+    },
+    "pooled": {
+     "support": 0.535,
+     "se": 0.005,
+     "n": 28666
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.322,
+     "se": 0.006,
+     "n": 16808
+    },
+    "2024": {
+     "support": 0.364,
+     "se": 0.009,
+     "n": 11859
+    },
+    "pooled": {
+     "support": 0.341,
+     "se": 0.005,
+     "n": 28667
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.773,
+     "se": 0.005,
+     "n": 16796
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.244,
+     "se": 0.005,
+     "n": 16709
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.717,
+     "se": 0.008,
+     "n": 11813
+    }
+   }
+  },
+  "all-adults": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.56,
+     "se": 0.003,
+     "n": 60948
+    },
+    "2024": {
+     "support": 0.599,
+     "se": 0.004,
+     "n": 59911
+    },
+    "pooled": {
+     "support": 0.58,
+     "se": 0.002,
+     "n": 120859
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.471,
+     "se": 0.003,
+     "n": 60945
+    },
+    "2024": {
+     "support": 0.52,
+     "se": 0.004,
+     "n": 59909
+    },
+    "pooled": {
+     "support": 0.495,
+     "se": 0.002,
+     "n": 120854
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.198,
+     "se": 0.002,
+     "n": 60938
+    },
+    "2024": {
+     "support": 0.127,
+     "se": 0.002,
+     "n": 59904
+    },
+    "pooled": {
+     "support": 0.163,
+     "se": 0.002,
+     "n": 120842
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.592,
+     "se": 0.003,
+     "n": 60952
+    },
+    "2024": {
+     "support": 0.582,
+     "se": 0.004,
+     "n": 59937
+    },
+    "pooled": {
+     "support": 0.587,
+     "se": 0.002,
+     "n": 120889
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.403,
+     "se": 0.003,
+     "n": 60950
+    },
+    "2024": {
+     "support": 0.395,
+     "se": 0.004,
+     "n": 59938
+    },
+    "pooled": {
+     "support": 0.399,
+     "se": 0.002,
+     "n": 120888
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.682,
+     "se": 0.003,
+     "n": 60910
+    },
+    "2024": {
+     "support": 0.59,
+     "se": 0.004,
+     "n": 59938
+    },
+    "pooled": {
+     "support": 0.636,
+     "se": 0.002,
+     "n": 120848
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.62,
+     "se": 0.003,
+     "n": 60918
+    },
+    "2024": {
+     "support": 0.793,
+     "se": 0.003,
+     "n": 59939
+    },
+    "pooled": {
+     "support": 0.706,
+     "se": 0.002,
+     "n": 120857
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.489,
+     "se": 0.003,
+     "n": 60947
+    },
+    "2024": {
+     "support": 0.571,
+     "se": 0.004,
+     "n": 59938
+    },
+    "pooled": {
+     "support": 0.53,
+     "se": 0.002,
+     "n": 120885
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.742,
+     "se": 0.003,
+     "n": 60910
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.348,
+     "se": 0.003,
+     "n": 60587
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.64,
+     "se": 0.003,
+     "n": 59629
+    }
+   }
+  },
+  "black-protestant": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.683,
+     "se": 0.012,
+     "n": 3518
+    },
+    "2024": {
+     "support": 0.708,
+     "se": 0.014,
+     "n": 4045
+    },
+    "pooled": {
+     "support": 0.695,
+     "se": 0.009,
+     "n": 7563
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.519,
+     "se": 0.013,
+     "n": 3518
+    },
+    "2024": {
+     "support": 0.606,
+     "se": 0.015,
+     "n": 4045
+    },
+    "pooled": {
+     "support": 0.562,
+     "se": 0.01,
+     "n": 7563
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.202,
+     "se": 0.01,
+     "n": 3518
+    },
+    "2024": {
+     "support": 0.164,
+     "se": 0.011,
+     "n": 4044
+    },
+    "pooled": {
+     "support": 0.184,
+     "se": 0.008,
+     "n": 7562
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.787,
+     "se": 0.011,
+     "n": 3516
+    },
+    "2024": {
+     "support": 0.745,
+     "se": 0.013,
+     "n": 4048
+    },
+    "pooled": {
+     "support": 0.767,
+     "se": 0.008,
+     "n": 7564
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.301,
+     "se": 0.012,
+     "n": 3514
+    },
+    "2024": {
+     "support": 0.283,
+     "se": 0.014,
+     "n": 4048
+    },
+    "pooled": {
+     "support": 0.292,
+     "se": 0.009,
+     "n": 7562
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.814,
+     "se": 0.01,
+     "n": 3513
+    },
+    "2024": {
+     "support": 0.734,
+     "se": 0.014,
+     "n": 4048
+    },
+    "pooled": {
+     "support": 0.775,
+     "se": 0.008,
+     "n": 7561
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.522,
+     "se": 0.013,
+     "n": 3516
+    },
+    "2024": {
+     "support": 0.796,
+     "se": 0.012,
+     "n": 4048
+    },
+    "pooled": {
+     "support": 0.657,
+     "se": 0.009,
+     "n": 7564
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.426,
+     "se": 0.013,
+     "n": 3517
+    },
+    "2024": {
+     "support": 0.53,
+     "se": 0.015,
+     "n": 4048
+    },
+    "pooled": {
+     "support": 0.477,
+     "se": 0.01,
+     "n": 7565
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.823,
+     "se": 0.01,
+     "n": 3513
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.296,
+     "se": 0.012,
+     "n": 3476
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.557,
+     "se": 0.015,
+     "n": 4011
+    }
+   }
+  },
+  "catholic": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.541,
+     "se": 0.007,
+     "n": 11271
+    },
+    "2024": {
+     "support": 0.569,
+     "se": 0.008,
+     "n": 10896
+    },
+    "pooled": {
+     "support": 0.555,
+     "se": 0.005,
+     "n": 22167
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.541,
+     "se": 0.007,
+     "n": 11271
+    },
+    "2024": {
+     "support": 0.593,
+     "se": 0.008,
+     "n": 10895
+    },
+    "pooled": {
+     "support": 0.566,
+     "se": 0.005,
+     "n": 22166
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.213,
+     "se": 0.006,
+     "n": 11268
+    },
+    "2024": {
+     "support": 0.145,
+     "se": 0.006,
+     "n": 10897
+    },
+    "pooled": {
+     "support": 0.18,
+     "se": 0.004,
+     "n": 22165
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.611,
+     "se": 0.007,
+     "n": 11272
+    },
+    "2024": {
+     "support": 0.582,
+     "se": 0.008,
+     "n": 10903
+    },
+    "pooled": {
+     "support": 0.596,
+     "se": 0.005,
+     "n": 22175
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.398,
+     "se": 0.007,
+     "n": 11275
+    },
+    "2024": {
+     "support": 0.405,
+     "se": 0.008,
+     "n": 10903
+    },
+    "pooled": {
+     "support": 0.402,
+     "se": 0.005,
+     "n": 22178
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.678,
+     "se": 0.007,
+     "n": 11262
+    },
+    "2024": {
+     "support": 0.577,
+     "se": 0.008,
+     "n": 10903
+    },
+    "pooled": {
+     "support": 0.628,
+     "se": 0.005,
+     "n": 22165
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.673,
+     "se": 0.007,
+     "n": 11270
+    },
+    "2024": {
+     "support": 0.836,
+     "se": 0.006,
+     "n": 10903
+    },
+    "pooled": {
+     "support": 0.753,
+     "se": 0.005,
+     "n": 22173
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.595,
+     "se": 0.007,
+     "n": 11271
+    },
+    "2024": {
+     "support": 0.702,
+     "se": 0.008,
+     "n": 10903
+    },
+    "pooled": {
+     "support": 0.647,
+     "se": 0.005,
+     "n": 22174
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.77,
+     "se": 0.006,
+     "n": 11266
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.359,
+     "se": 0.007,
+     "n": 11221
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.644,
+     "se": 0.008,
+     "n": 10841
+    }
+   }
+  },
+  "degree": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.623,
+     "se": 0.004,
+     "n": 22518
+    },
+    "2024": {
+     "support": 0.614,
+     "se": 0.005,
+     "n": 21243
+    },
+    "pooled": {
+     "support": 0.618,
+     "se": 0.003,
+     "n": 43761
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.366,
+     "se": 0.004,
+     "n": 22519
+    },
+    "2024": {
+     "support": 0.429,
+     "se": 0.005,
+     "n": 21238
+    },
+    "pooled": {
+     "support": 0.399,
+     "se": 0.003,
+     "n": 43757
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.142,
+     "se": 0.003,
+     "n": 22519
+    },
+    "2024": {
+     "support": 0.107,
+     "se": 0.003,
+     "n": 21236
+    },
+    "pooled": {
+     "support": 0.124,
+     "se": 0.002,
+     "n": 43755
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.675,
+     "se": 0.004,
+     "n": 22527
+    },
+    "2024": {
+     "support": 0.647,
+     "se": 0.005,
+     "n": 21252
+    },
+    "pooled": {
+     "support": 0.66,
+     "se": 0.003,
+     "n": 43779
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.321,
+     "se": 0.004,
+     "n": 22524
+    },
+    "2024": {
+     "support": 0.329,
+     "se": 0.005,
+     "n": 21252
+    },
+    "pooled": {
+     "support": 0.326,
+     "se": 0.003,
+     "n": 43776
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.703,
+     "se": 0.004,
+     "n": 22507
+    },
+    "2024": {
+     "support": 0.598,
+     "se": 0.005,
+     "n": 21253
+    },
+    "pooled": {
+     "support": 0.648,
+     "se": 0.003,
+     "n": 43760
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.542,
+     "se": 0.004,
+     "n": 22508
+    },
+    "2024": {
+     "support": 0.763,
+     "se": 0.004,
+     "n": 21253
+    },
+    "pooled": {
+     "support": 0.658,
+     "se": 0.003,
+     "n": 43761
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.402,
+     "se": 0.004,
+     "n": 22517
+    },
+    "2024": {
+     "support": 0.524,
+     "se": 0.005,
+     "n": 21251
+    },
+    "pooled": {
+     "support": 0.466,
+     "se": 0.003,
+     "n": 43768
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.775,
+     "se": 0.003,
+     "n": 22516
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.296,
+     "se": 0.004,
+     "n": 22425
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.706,
+     "se": 0.005,
+     "n": 21153
+    }
+   }
+  },
+  "evangelical-protestant": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.191,
+     "se": 0.005,
+     "n": 8661
+    },
+    "2024": {
+     "support": 0.228,
+     "se": 0.007,
+     "n": 8160
+    },
+    "pooled": {
+     "support": 0.209,
+     "se": 0.004,
+     "n": 16821
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.598,
+     "se": 0.007,
+     "n": 8658
+    },
+    "2024": {
+     "support": 0.663,
+     "se": 0.008,
+     "n": 8156
+    },
+    "pooled": {
+     "support": 0.63,
+     "se": 0.005,
+     "n": 16814
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.372,
+     "se": 0.007,
+     "n": 8656
+    },
+    "2024": {
+     "support": 0.242,
+     "se": 0.007,
+     "n": 8157
+    },
+    "pooled": {
+     "support": 0.308,
+     "se": 0.005,
+     "n": 16813
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.392,
+     "se": 0.007,
+     "n": 8660
+    },
+    "2024": {
+     "support": 0.364,
+     "se": 0.008,
+     "n": 8163
+    },
+    "pooled": {
+     "support": 0.378,
+     "se": 0.005,
+     "n": 16823
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.584,
+     "se": 0.007,
+     "n": 8659
+    },
+    "2024": {
+     "support": 0.587,
+     "se": 0.008,
+     "n": 8163
+    },
+    "pooled": {
+     "support": 0.585,
+     "se": 0.005,
+     "n": 16822
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.488,
+     "se": 0.007,
+     "n": 8650
+    },
+    "2024": {
+     "support": 0.364,
+     "se": 0.008,
+     "n": 8164
+    },
+    "pooled": {
+     "support": 0.427,
+     "se": 0.005,
+     "n": 16814
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.87,
+     "se": 0.005,
+     "n": 8653
+    },
+    "2024": {
+     "support": 0.925,
+     "se": 0.004,
+     "n": 8163
+    },
+    "pooled": {
+     "support": 0.897,
+     "se": 0.003,
+     "n": 16816
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.709,
+     "se": 0.006,
+     "n": 8659
+    },
+    "2024": {
+     "support": 0.776,
+     "se": 0.007,
+     "n": 8163
+    },
+    "pooled": {
+     "support": 0.742,
+     "se": 0.005,
+     "n": 16822
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.53,
+     "se": 0.007,
+     "n": 8653
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.622,
+     "se": 0.007,
+     "n": 8597
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.338,
+     "se": 0.008,
+     "n": 8095
+    }
+   }
+  },
+  "foreign-born": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.602,
+     "se": 0.012,
+     "n": 4408
+    },
+    "2024": {
+     "support": 0.641,
+     "se": 0.013,
+     "n": 3867
+    },
+    "pooled": {
+     "support": 0.621,
+     "se": 0.009,
+     "n": 8275
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.506,
+     "se": 0.012,
+     "n": 4407
+    },
+    "2024": {
+     "support": 0.566,
+     "se": 0.014,
+     "n": 3867
+    },
+    "pooled": {
+     "support": 0.536,
+     "se": 0.009,
+     "n": 8274
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.258,
+     "se": 0.011,
+     "n": 4407
+    },
+    "2024": {
+     "support": 0.152,
+     "se": 0.01,
+     "n": 3867
+    },
+    "pooled": {
+     "support": 0.205,
+     "se": 0.007,
+     "n": 8274
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.64,
+     "se": 0.012,
+     "n": 4406
+    },
+    "2024": {
+     "support": 0.675,
+     "se": 0.013,
+     "n": 3867
+    },
+    "pooled": {
+     "support": 0.658,
+     "se": 0.009,
+     "n": 8273
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.362,
+     "se": 0.012,
+     "n": 4408
+    },
+    "2024": {
+     "support": 0.296,
+     "se": 0.013,
+     "n": 3867
+    },
+    "pooled": {
+     "support": 0.328,
+     "se": 0.009,
+     "n": 8275
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.742,
+     "se": 0.011,
+     "n": 4406
+    },
+    "2024": {
+     "support": 0.695,
+     "se": 0.013,
+     "n": 3867
+    },
+    "pooled": {
+     "support": 0.718,
+     "se": 0.008,
+     "n": 8273
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.58,
+     "se": 0.012,
+     "n": 4407
+    },
+    "2024": {
+     "support": 0.75,
+     "se": 0.012,
+     "n": 3867
+    },
+    "pooled": {
+     "support": 0.665,
+     "se": 0.009,
+     "n": 8274
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.513,
+     "se": 0.012,
+     "n": 4408
+    },
+    "2024": {
+     "support": 0.581,
+     "se": 0.014,
+     "n": 3866
+    },
+    "pooled": {
+     "support": 0.547,
+     "se": 0.009,
+     "n": 8274
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.773,
+     "se": 0.01,
+     "n": 4403
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.353,
+     "se": 0.012,
+     "n": 4369
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.617,
+     "se": 0.014,
+     "n": 3843
+    }
+   }
+  },
+  "frontline-services": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.604,
+     "se": 0.005,
+     "n": 17787
+    },
+    "2024": {
+     "support": 0.649,
+     "se": 0.007,
+     "n": 15494
+    },
+    "pooled": {
+     "support": 0.626,
+     "se": 0.004,
+     "n": 33281
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.446,
+     "se": 0.005,
+     "n": 17789
+    },
+    "2024": {
+     "support": 0.511,
+     "se": 0.007,
+     "n": 15496
+    },
+    "pooled": {
+     "support": 0.477,
+     "se": 0.005,
+     "n": 33285
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.185,
+     "se": 0.004,
+     "n": 17789
+    },
+    "2024": {
+     "support": 0.119,
+     "se": 0.005,
+     "n": 15495
+    },
+    "pooled": {
+     "support": 0.153,
+     "se": 0.003,
+     "n": 33284
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.59,
+     "se": 0.005,
+     "n": 17787
+    },
+    "2024": {
+     "support": 0.58,
+     "se": 0.007,
+     "n": 15500
+    },
+    "pooled": {
+     "support": 0.585,
+     "se": 0.004,
+     "n": 33287
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.387,
+     "se": 0.005,
+     "n": 17787
+    },
+    "2024": {
+     "support": 0.392,
+     "se": 0.007,
+     "n": 15500
+    },
+    "pooled": {
+     "support": 0.389,
+     "se": 0.004,
+     "n": 33287
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.712,
+     "se": 0.005,
+     "n": 17783
+    },
+    "2024": {
+     "support": 0.622,
+     "se": 0.007,
+     "n": 15500
+    },
+    "pooled": {
+     "support": 0.669,
+     "se": 0.004,
+     "n": 33283
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.586,
+     "se": 0.005,
+     "n": 17784
+    },
+    "2024": {
+     "support": 0.755,
+     "se": 0.006,
+     "n": 15500
+    },
+    "pooled": {
+     "support": 0.668,
+     "se": 0.004,
+     "n": 33284
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.436,
+     "se": 0.005,
+     "n": 17788
+    },
+    "2024": {
+     "support": 0.519,
+     "se": 0.007,
+     "n": 15500
+    },
+    "pooled": {
+     "support": 0.476,
+     "se": 0.005,
+     "n": 33288
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.772,
+     "se": 0.005,
+     "n": 17779
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.31,
+     "se": 0.005,
+     "n": 17678
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.673,
+     "se": 0.007,
+     "n": 15429
+    }
+   }
+  },
+  "goods-producing": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.538,
+     "se": 0.011,
+     "n": 4573
+    },
+    "2024": {
+     "support": 0.522,
+     "se": 0.014,
+     "n": 4111
+    },
+    "pooled": {
+     "support": 0.53,
+     "se": 0.009,
+     "n": 8684
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.527,
+     "se": 0.011,
+     "n": 4575
+    },
+    "2024": {
+     "support": 0.595,
+     "se": 0.014,
+     "n": 4110
+    },
+    "pooled": {
+     "support": 0.561,
+     "se": 0.009,
+     "n": 8685
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.224,
+     "se": 0.009,
+     "n": 4572
+    },
+    "2024": {
+     "support": 0.156,
+     "se": 0.01,
+     "n": 4112
+    },
+    "pooled": {
+     "support": 0.191,
+     "se": 0.007,
+     "n": 8684
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.433,
+     "se": 0.011,
+     "n": 4575
+    },
+    "2024": {
+     "support": 0.4,
+     "se": 0.014,
+     "n": 4113
+    },
+    "pooled": {
+     "support": 0.416,
+     "se": 0.009,
+     "n": 8688
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.54,
+     "se": 0.011,
+     "n": 4576
+    },
+    "2024": {
+     "support": 0.563,
+     "se": 0.014,
+     "n": 4113
+    },
+    "pooled": {
+     "support": 0.551,
+     "se": 0.009,
+     "n": 8689
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.621,
+     "se": 0.01,
+     "n": 4574
+    },
+    "2024": {
+     "support": 0.513,
+     "se": 0.014,
+     "n": 4112
+    },
+    "pooled": {
+     "support": 0.568,
+     "se": 0.009,
+     "n": 8686
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.681,
+     "se": 0.01,
+     "n": 4573
+    },
+    "2024": {
+     "support": 0.809,
+     "se": 0.011,
+     "n": 4113
+    },
+    "pooled": {
+     "support": 0.744,
+     "se": 0.008,
+     "n": 8686
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.509,
+     "se": 0.011,
+     "n": 4576
+    },
+    "2024": {
+     "support": 0.559,
+     "se": 0.014,
+     "n": 4113
+    },
+    "pooled": {
+     "support": 0.534,
+     "se": 0.009,
+     "n": 8689
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.682,
+     "se": 0.01,
+     "n": 4568
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.414,
+     "se": 0.011,
+     "n": 4545
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.535,
+     "se": 0.014,
+     "n": 4096
+    }
+   }
+  },
+  "income-affluent": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.637,
+     "se": 0.009,
+     "n": 4667
+    },
+    "2024": {
+     "support": 0.641,
+     "se": 0.009,
+     "n": 5958
+    },
+    "pooled": {
+     "support": 0.64,
+     "se": 0.007,
+     "n": 10625
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.364,
+     "se": 0.009,
+     "n": 4664
+    },
+    "2024": {
+     "support": 0.426,
+     "se": 0.01,
+     "n": 5958
+    },
+    "pooled": {
+     "support": 0.401,
+     "se": 0.007,
+     "n": 10622
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.118,
+     "se": 0.006,
+     "n": 4667
+    },
+    "2024": {
+     "support": 0.07,
+     "se": 0.005,
+     "n": 5958
+    },
+    "pooled": {
+     "support": 0.09,
+     "se": 0.004,
+     "n": 10625
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.645,
+     "se": 0.009,
+     "n": 4668
+    },
+    "2024": {
+     "support": 0.637,
+     "se": 0.01,
+     "n": 5958
+    },
+    "pooled": {
+     "support": 0.64,
+     "se": 0.007,
+     "n": 10626
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.349,
+     "se": 0.009,
+     "n": 4667
+    },
+    "2024": {
+     "support": 0.33,
+     "se": 0.009,
+     "n": 5958
+    },
+    "pooled": {
+     "support": 0.338,
+     "se": 0.007,
+     "n": 10625
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.682,
+     "se": 0.009,
+     "n": 4661
+    },
+    "2024": {
+     "support": 0.592,
+     "se": 0.01,
+     "n": 5958
+    },
+    "pooled": {
+     "support": 0.628,
+     "se": 0.007,
+     "n": 10619
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.578,
+     "se": 0.009,
+     "n": 4665
+    },
+    "2024": {
+     "support": 0.776,
+     "se": 0.008,
+     "n": 5958
+    },
+    "pooled": {
+     "support": 0.697,
+     "se": 0.006,
+     "n": 10623
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.423,
+     "se": 0.009,
+     "n": 4668
+    },
+    "2024": {
+     "support": 0.524,
+     "se": 0.01,
+     "n": 5957
+    },
+    "pooled": {
+     "support": 0.484,
+     "se": 0.007,
+     "n": 10625
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.766,
+     "se": 0.008,
+     "n": 4664
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.302,
+     "se": 0.008,
+     "n": 4650
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.741,
+     "se": 0.009,
+     "n": 5939
+    }
+   }
+  },
+  "income-comfortable": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.556,
+     "se": 0.004,
+     "n": 30319
+    },
+    "2024": {
+     "support": 0.585,
+     "se": 0.005,
+     "n": 30154
+    },
+    "pooled": {
+     "support": 0.571,
+     "se": 0.003,
+     "n": 60473
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.451,
+     "se": 0.004,
+     "n": 30317
+    },
+    "2024": {
+     "support": 0.507,
+     "se": 0.005,
+     "n": 30149
+    },
+    "pooled": {
+     "support": 0.48,
+     "se": 0.003,
+     "n": 60466
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.178,
+     "se": 0.003,
+     "n": 30314
+    },
+    "2024": {
+     "support": 0.123,
+     "se": 0.003,
+     "n": 30149
+    },
+    "pooled": {
+     "support": 0.15,
+     "se": 0.002,
+     "n": 60463
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.593,
+     "se": 0.004,
+     "n": 30324
+    },
+    "2024": {
+     "support": 0.577,
+     "se": 0.005,
+     "n": 30163
+    },
+    "pooled": {
+     "support": 0.585,
+     "se": 0.003,
+     "n": 60487
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.397,
+     "se": 0.004,
+     "n": 30320
+    },
+    "2024": {
+     "support": 0.395,
+     "se": 0.005,
+     "n": 30165
+    },
+    "pooled": {
+     "support": 0.396,
+     "se": 0.003,
+     "n": 60485
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.678,
+     "se": 0.004,
+     "n": 30298
+    },
+    "2024": {
+     "support": 0.586,
+     "se": 0.005,
+     "n": 30165
+    },
+    "pooled": {
+     "support": 0.631,
+     "se": 0.003,
+     "n": 60463
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.632,
+     "se": 0.004,
+     "n": 30307
+    },
+    "2024": {
+     "support": 0.812,
+     "se": 0.004,
+     "n": 30166
+    },
+    "pooled": {
+     "support": 0.724,
+     "se": 0.003,
+     "n": 60473
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.5,
+     "se": 0.004,
+     "n": 30316
+    },
+    "2024": {
+     "support": 0.59,
+     "se": 0.005,
+     "n": 30166
+    },
+    "pooled": {
+     "support": 0.546,
+     "se": 0.003,
+     "n": 60482
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.744,
+     "se": 0.003,
+     "n": 30304
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.359,
+     "se": 0.004,
+     "n": 30166
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.65,
+     "se": 0.005,
+     "n": 30011
+    }
+   }
+  },
+  "income-struggling": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.561,
+     "se": 0.006,
+     "n": 19877
+    },
+    "2024": {
+     "support": 0.623,
+     "se": 0.007,
+     "n": 18670
+    },
+    "pooled": {
+     "support": 0.589,
+     "se": 0.004,
+     "n": 38547
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.514,
+     "se": 0.006,
+     "n": 19880
+    },
+    "2024": {
+     "support": 0.574,
+     "se": 0.007,
+     "n": 18673
+    },
+    "pooled": {
+     "support": 0.541,
+     "se": 0.004,
+     "n": 38553
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.238,
+     "se": 0.005,
+     "n": 19877
+    },
+    "2024": {
+     "support": 0.148,
+     "se": 0.005,
+     "n": 18670
+    },
+    "pooled": {
+     "support": 0.197,
+     "se": 0.004,
+     "n": 38547
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.6,
+     "se": 0.005,
+     "n": 19873
+    },
+    "2024": {
+     "support": 0.587,
+     "se": 0.007,
+     "n": 18679
+    },
+    "pooled": {
+     "support": 0.594,
+     "se": 0.004,
+     "n": 38552
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.414,
+     "se": 0.005,
+     "n": 19877
+    },
+    "2024": {
+     "support": 0.414,
+     "se": 0.007,
+     "n": 18679
+    },
+    "pooled": {
+     "support": 0.414,
+     "se": 0.004,
+     "n": 38556
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.704,
+     "se": 0.005,
+     "n": 19874
+    },
+    "2024": {
+     "support": 0.61,
+     "se": 0.007,
+     "n": 18678
+    },
+    "pooled": {
+     "support": 0.661,
+     "se": 0.004,
+     "n": 38552
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.611,
+     "se": 0.005,
+     "n": 19863
+    },
+    "2024": {
+     "support": 0.778,
+     "se": 0.006,
+     "n": 18678
+    },
+    "pooled": {
+     "support": 0.688,
+     "se": 0.004,
+     "n": 38541
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.485,
+     "se": 0.006,
+     "n": 19877
+    },
+    "2024": {
+     "support": 0.561,
+     "se": 0.007,
+     "n": 18678
+    },
+    "pooled": {
+     "support": 0.52,
+     "se": 0.004,
+     "n": 38555
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.752,
+     "se": 0.005,
+     "n": 19858
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.34,
+     "se": 0.005,
+     "n": 19759
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.601,
+     "se": 0.007,
+     "n": 18590
+    }
+   }
+  },
+  "mainline-protestant": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.567,
+     "se": 0.008,
+     "n": 6645
+    },
+    "2024": {
+     "support": 0.578,
+     "se": 0.01,
+     "n": 6344
+    },
+    "pooled": {
+     "support": 0.573,
+     "se": 0.006,
+     "n": 12989
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.48,
+     "se": 0.008,
+     "n": 6644
+    },
+    "2024": {
+     "support": 0.53,
+     "se": 0.01,
+     "n": 6345
+    },
+    "pooled": {
+     "support": 0.505,
+     "se": 0.006,
+     "n": 12989
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.106,
+     "se": 0.005,
+     "n": 6643
+    },
+    "2024": {
+     "support": 0.06,
+     "se": 0.005,
+     "n": 6344
+    },
+    "pooled": {
+     "support": 0.083,
+     "se": 0.004,
+     "n": 12987
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.601,
+     "se": 0.008,
+     "n": 6646
+    },
+    "2024": {
+     "support": 0.563,
+     "se": 0.01,
+     "n": 6346
+    },
+    "pooled": {
+     "support": 0.582,
+     "se": 0.006,
+     "n": 12992
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.406,
+     "se": 0.008,
+     "n": 6647
+    },
+    "2024": {
+     "support": 0.4,
+     "se": 0.01,
+     "n": 6346
+    },
+    "pooled": {
+     "support": 0.403,
+     "se": 0.006,
+     "n": 12993
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.646,
+     "se": 0.007,
+     "n": 6643
+    },
+    "2024": {
+     "support": 0.536,
+     "se": 0.01,
+     "n": 6347
+    },
+    "pooled": {
+     "support": 0.593,
+     "se": 0.006,
+     "n": 12990
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.69,
+     "se": 0.007,
+     "n": 6644
+    },
+    "2024": {
+     "support": 0.861,
+     "se": 0.007,
+     "n": 6347
+    },
+    "pooled": {
+     "support": 0.773,
+     "se": 0.005,
+     "n": 12991
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.535,
+     "se": 0.008,
+     "n": 6646
+    },
+    "2024": {
+     "support": 0.641,
+     "se": 0.01,
+     "n": 6347
+    },
+    "pooled": {
+     "support": 0.587,
+     "se": 0.006,
+     "n": 12993
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.754,
+     "se": 0.007,
+     "n": 6644
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.366,
+     "se": 0.008,
+     "n": 6619
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.697,
+     "se": 0.009,
+     "n": 6322
+    }
+   }
+  },
+  "no-degree": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.532,
+     "se": 0.004,
+     "n": 38430
+    },
+    "2024": {
+     "support": 0.592,
+     "se": 0.005,
+     "n": 38668
+    },
+    "pooled": {
+     "support": 0.561,
+     "se": 0.003,
+     "n": 77098
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.519,
+     "se": 0.004,
+     "n": 38426
+    },
+    "2024": {
+     "support": 0.568,
+     "se": 0.005,
+     "n": 38671
+    },
+    "pooled": {
+     "support": 0.543,
+     "se": 0.003,
+     "n": 77097
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.223,
+     "se": 0.003,
+     "n": 38419
+    },
+    "2024": {
+     "support": 0.137,
+     "se": 0.003,
+     "n": 38668
+    },
+    "pooled": {
+     "support": 0.182,
+     "se": 0.002,
+     "n": 77087
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.555,
+     "se": 0.004,
+     "n": 38425
+    },
+    "2024": {
+     "support": 0.547,
+     "se": 0.005,
+     "n": 38685
+    },
+    "pooled": {
+     "support": 0.551,
+     "se": 0.003,
+     "n": 77110
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.44,
+     "se": 0.004,
+     "n": 38426
+    },
+    "2024": {
+     "support": 0.43,
+     "se": 0.005,
+     "n": 38686
+    },
+    "pooled": {
+     "support": 0.435,
+     "se": 0.003,
+     "n": 77112
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.672,
+     "se": 0.004,
+     "n": 38403
+    },
+    "2024": {
+     "support": 0.585,
+     "se": 0.005,
+     "n": 38685
+    },
+    "pooled": {
+     "support": 0.63,
+     "se": 0.003,
+     "n": 77088
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.656,
+     "se": 0.004,
+     "n": 38410
+    },
+    "2024": {
+     "support": 0.808,
+     "se": 0.004,
+     "n": 38686
+    },
+    "pooled": {
+     "support": 0.729,
+     "se": 0.003,
+     "n": 77096
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.528,
+     "se": 0.004,
+     "n": 38430
+    },
+    "2024": {
+     "support": 0.596,
+     "se": 0.005,
+     "n": 38687
+    },
+    "pooled": {
+     "support": 0.561,
+     "se": 0.003,
+     "n": 77117
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.728,
+     "se": 0.003,
+     "n": 38394
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.372,
+     "se": 0.004,
+     "n": 38162
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.605,
+     "se": 0.005,
+     "n": 38476
+    }
+   }
+  },
+  "no-disability": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.564,
+     "se": 0.003,
+     "n": 56850
+    },
+    "2024": {
+     "support": 0.601,
+     "se": 0.004,
+     "n": 55642
+    },
+    "pooled": {
+     "support": 0.582,
+     "se": 0.002,
+     "n": 112492
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.467,
+     "se": 0.003,
+     "n": 56846
+    },
+    "2024": {
+     "support": 0.514,
+     "se": 0.004,
+     "n": 55639
+    },
+    "pooled": {
+     "support": 0.491,
+     "se": 0.002,
+     "n": 112485
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.196,
+     "se": 0.002,
+     "n": 56841
+    },
+    "2024": {
+     "support": 0.125,
+     "se": 0.002,
+     "n": 55635
+    },
+    "pooled": {
+     "support": 0.161,
+     "se": 0.002,
+     "n": 112476
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.591,
+     "se": 0.003,
+     "n": 56855
+    },
+    "2024": {
+     "support": 0.583,
+     "se": 0.004,
+     "n": 55667
+    },
+    "pooled": {
+     "support": 0.587,
+     "se": 0.002,
+     "n": 112522
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.4,
+     "se": 0.003,
+     "n": 56852
+    },
+    "2024": {
+     "support": 0.392,
+     "se": 0.004,
+     "n": 55668
+    },
+    "pooled": {
+     "support": 0.396,
+     "se": 0.002,
+     "n": 112520
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.685,
+     "se": 0.003,
+     "n": 56815
+    },
+    "2024": {
+     "support": 0.592,
+     "se": 0.004,
+     "n": 55669
+    },
+    "pooled": {
+     "support": 0.639,
+     "se": 0.002,
+     "n": 112484
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.615,
+     "se": 0.003,
+     "n": 56824
+    },
+    "2024": {
+     "support": 0.79,
+     "se": 0.003,
+     "n": 55669
+    },
+    "pooled": {
+     "support": 0.702,
+     "se": 0.002,
+     "n": 112493
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.485,
+     "se": 0.003,
+     "n": 56849
+    },
+    "2024": {
+     "support": 0.569,
+     "se": 0.004,
+     "n": 55668
+    },
+    "pooled": {
+     "support": 0.527,
+     "se": 0.002,
+     "n": 112517
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.744,
+     "se": 0.003,
+     "n": 56815
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.347,
+     "se": 0.003,
+     "n": 56513
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.643,
+     "se": 0.004,
+     "n": 55378
+    }
+   }
+  },
+  "non-veteran": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.573,
+     "se": 0.003,
+     "n": 54700
+    },
+    "2024": {
+     "support": 0.613,
+     "se": 0.004,
+     "n": 53652
+    },
+    "pooled": {
+     "support": 0.593,
+     "se": 0.002,
+     "n": 108352
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.459,
+     "se": 0.003,
+     "n": 54696
+    },
+    "2024": {
+     "support": 0.51,
+     "se": 0.004,
+     "n": 53652
+    },
+    "pooled": {
+     "support": 0.484,
+     "se": 0.002,
+     "n": 108348
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.2,
+     "se": 0.003,
+     "n": 54689
+    },
+    "2024": {
+     "support": 0.127,
+     "se": 0.003,
+     "n": 53647
+    },
+    "pooled": {
+     "support": 0.163,
+     "se": 0.002,
+     "n": 108336
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.609,
+     "se": 0.003,
+     "n": 54701
+    },
+    "2024": {
+     "support": 0.6,
+     "se": 0.004,
+     "n": 53675
+    },
+    "pooled": {
+     "support": 0.604,
+     "se": 0.002,
+     "n": 108376
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.384,
+     "se": 0.003,
+     "n": 54702
+    },
+    "2024": {
+     "support": 0.376,
+     "se": 0.004,
+     "n": 53675
+    },
+    "pooled": {
+     "support": 0.38,
+     "se": 0.002,
+     "n": 108377
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.696,
+     "se": 0.003,
+     "n": 54663
+    },
+    "2024": {
+     "support": 0.602,
+     "se": 0.004,
+     "n": 53675
+    },
+    "pooled": {
+     "support": 0.649,
+     "se": 0.002,
+     "n": 108338
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.604,
+     "se": 0.003,
+     "n": 54670
+    },
+    "2024": {
+     "support": 0.781,
+     "se": 0.003,
+     "n": 53676
+    },
+    "pooled": {
+     "support": 0.692,
+     "se": 0.002,
+     "n": 108346
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.472,
+     "se": 0.003,
+     "n": 54696
+    },
+    "2024": {
+     "support": 0.556,
+     "se": 0.004,
+     "n": 53675
+    },
+    "pooled": {
+     "support": 0.514,
+     "se": 0.002,
+     "n": 108371
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.758,
+     "se": 0.003,
+     "n": 54663
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.323,
+     "se": 0.003,
+     "n": 54370
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.651,
+     "se": 0.004,
+     "n": 53393
+    }
+   }
+  },
+  "not-in-the-workforce": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.516,
+     "se": 0.005,
+     "n": 26822
+    },
+    "2024": {
+     "support": 0.572,
+     "se": 0.005,
+     "n": 28744
+    },
+    "pooled": {
+     "support": 0.543,
+     "se": 0.003,
+     "n": 55566
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.502,
+     "se": 0.005,
+     "n": 26816
+    },
+    "2024": {
+     "support": 0.544,
+     "se": 0.005,
+     "n": 28741
+    },
+    "pooled": {
+     "support": 0.523,
+     "se": 0.003,
+     "n": 55557
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.209,
+     "se": 0.004,
+     "n": 26812
+    },
+    "2024": {
+     "support": 0.126,
+     "se": 0.003,
+     "n": 28735
+    },
+    "pooled": {
+     "support": 0.168,
+     "se": 0.003,
+     "n": 55547
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.611,
+     "se": 0.004,
+     "n": 26820
+    },
+    "2024": {
+     "support": 0.598,
+     "se": 0.005,
+     "n": 28759
+    },
+    "pooled": {
+     "support": 0.605,
+     "se": 0.003,
+     "n": 55579
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.4,
+     "se": 0.005,
+     "n": 26817
+    },
+    "2024": {
+     "support": 0.387,
+     "se": 0.005,
+     "n": 28760
+    },
+    "pooled": {
+     "support": 0.394,
+     "se": 0.003,
+     "n": 55577
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.663,
+     "se": 0.004,
+     "n": 26794
+    },
+    "2024": {
+     "support": 0.574,
+     "se": 0.005,
+     "n": 28761
+    },
+    "pooled": {
+     "support": 0.619,
+     "se": 0.003,
+     "n": 55555
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.658,
+     "se": 0.004,
+     "n": 26799
+    },
+    "2024": {
+     "support": 0.835,
+     "se": 0.004,
+     "n": 28761
+    },
+    "pooled": {
+     "support": 0.745,
+     "se": 0.003,
+     "n": 55560
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.546,
+     "se": 0.005,
+     "n": 26817
+    },
+    "2024": {
+     "support": 0.638,
+     "se": 0.005,
+     "n": 28760
+    },
+    "pooled": {
+     "support": 0.591,
+     "se": 0.003,
+     "n": 55577
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.727,
+     "se": 0.004,
+     "n": 26801
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.377,
+     "se": 0.004,
+     "n": 26653
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.615,
+     "se": 0.005,
+     "n": 28594
+    }
+   }
+  },
+  "other-christian": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.412,
+     "se": 0.013,
+     "n": 3665
+    },
+    "2024": {
+     "support": 0.403,
+     "se": 0.015,
+     "n": 3880
+    },
+    "pooled": {
+     "support": 0.407,
+     "se": 0.01,
+     "n": 7545
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.578,
+     "se": 0.013,
+     "n": 3664
+    },
+    "2024": {
+     "support": 0.633,
+     "se": 0.015,
+     "n": 3881
+    },
+    "pooled": {
+     "support": 0.607,
+     "se": 0.01,
+     "n": 7545
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.281,
+     "se": 0.012,
+     "n": 3664
+    },
+    "2024": {
+     "support": 0.202,
+     "se": 0.012,
+     "n": 3879
+    },
+    "pooled": {
+     "support": 0.239,
+     "se": 0.009,
+     "n": 7543
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.527,
+     "se": 0.013,
+     "n": 3666
+    },
+    "2024": {
+     "support": 0.478,
+     "se": 0.015,
+     "n": 3881
+    },
+    "pooled": {
+     "support": 0.501,
+     "se": 0.01,
+     "n": 7547
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.45,
+     "se": 0.013,
+     "n": 3665
+    },
+    "2024": {
+     "support": 0.484,
+     "se": 0.015,
+     "n": 3881
+    },
+    "pooled": {
+     "support": 0.468,
+     "se": 0.01,
+     "n": 7546
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.674,
+     "se": 0.012,
+     "n": 3664
+    },
+    "2024": {
+     "support": 0.533,
+     "se": 0.015,
+     "n": 3880
+    },
+    "pooled": {
+     "support": 0.6,
+     "se": 0.01,
+     "n": 7544
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.681,
+     "se": 0.012,
+     "n": 3664
+    },
+    "2024": {
+     "support": 0.83,
+     "se": 0.011,
+     "n": 3881
+    },
+    "pooled": {
+     "support": 0.759,
+     "se": 0.009,
+     "n": 7545
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.543,
+     "se": 0.013,
+     "n": 3667
+    },
+    "2024": {
+     "support": 0.648,
+     "se": 0.014,
+     "n": 3881
+    },
+    "pooled": {
+     "support": 0.599,
+     "se": 0.01,
+     "n": 7548
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.664,
+     "se": 0.012,
+     "n": 3660
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.44,
+     "se": 0.013,
+     "n": 3643
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.435,
+     "se": 0.015,
+     "n": 3845
+    }
+   }
+  },
+  "other-faith": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.721,
+     "se": 0.012,
+     "n": 3337
+    },
+    "2024": {
+     "support": 0.769,
+     "se": 0.014,
+     "n": 3065
+    },
+    "pooled": {
+     "support": 0.744,
+     "se": 0.009,
+     "n": 6402
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.4,
+     "se": 0.013,
+     "n": 3338
+    },
+    "2024": {
+     "support": 0.425,
+     "se": 0.016,
+     "n": 3065
+    },
+    "pooled": {
+     "support": 0.412,
+     "se": 0.01,
+     "n": 6403
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.167,
+     "se": 0.01,
+     "n": 3338
+    },
+    "2024": {
+     "support": 0.086,
+     "se": 0.009,
+     "n": 3064
+    },
+    "pooled": {
+     "support": 0.128,
+     "se": 0.007,
+     "n": 6402
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.67,
+     "se": 0.013,
+     "n": 3336
+    },
+    "2024": {
+     "support": 0.699,
+     "se": 0.015,
+     "n": 3066
+    },
+    "pooled": {
+     "support": 0.684,
+     "se": 0.01,
+     "n": 6402
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.333,
+     "se": 0.013,
+     "n": 3337
+    },
+    "2024": {
+     "support": 0.274,
+     "se": 0.014,
+     "n": 3066
+    },
+    "pooled": {
+     "support": 0.305,
+     "se": 0.01,
+     "n": 6403
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.749,
+     "se": 0.012,
+     "n": 3334
+    },
+    "2024": {
+     "support": 0.678,
+     "se": 0.015,
+     "n": 3065
+    },
+    "pooled": {
+     "support": 0.714,
+     "se": 0.009,
+     "n": 6399
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.502,
+     "se": 0.013,
+     "n": 3331
+    },
+    "2024": {
+     "support": 0.724,
+     "se": 0.014,
+     "n": 3066
+    },
+    "pooled": {
+     "support": 0.609,
+     "se": 0.01,
+     "n": 6397
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.406,
+     "se": 0.013,
+     "n": 3338
+    },
+    "2024": {
+     "support": 0.486,
+     "se": 0.016,
+     "n": 3065
+    },
+    "pooled": {
+     "support": 0.445,
+     "se": 0.01,
+     "n": 6403
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.796,
+     "se": 0.011,
+     "n": 3335
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.261,
+     "se": 0.012,
+     "n": 3317
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.756,
+     "se": 0.014,
+     "n": 3052
+    }
+   }
+  },
+  "professional-technical": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.619,
+     "se": 0.007,
+     "n": 9616
+    },
+    "2024": {
+     "support": 0.622,
+     "se": 0.008,
+     "n": 8882
+    },
+    "pooled": {
+     "support": 0.621,
+     "se": 0.005,
+     "n": 18498
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.382,
+     "se": 0.007,
+     "n": 9616
+    },
+    "2024": {
+     "support": 0.434,
+     "se": 0.008,
+     "n": 8882
+    },
+    "pooled": {
+     "support": 0.409,
+     "se": 0.005,
+     "n": 18498
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.155,
+     "se": 0.005,
+     "n": 9616
+    },
+    "2024": {
+     "support": 0.119,
+     "se": 0.005,
+     "n": 8882
+    },
+    "pooled": {
+     "support": 0.136,
+     "se": 0.004,
+     "n": 18498
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.645,
+     "se": 0.006,
+     "n": 9620
+    },
+    "2024": {
+     "support": 0.646,
+     "se": 0.008,
+     "n": 8885
+    },
+    "pooled": {
+     "support": 0.645,
+     "se": 0.005,
+     "n": 18505
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.346,
+     "se": 0.006,
+     "n": 9621
+    },
+    "2024": {
+     "support": 0.323,
+     "se": 0.008,
+     "n": 8885
+    },
+    "pooled": {
+     "support": 0.334,
+     "se": 0.005,
+     "n": 18506
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.714,
+     "se": 0.006,
+     "n": 9615
+    },
+    "2024": {
+     "support": 0.621,
+     "se": 0.008,
+     "n": 8885
+    },
+    "pooled": {
+     "support": 0.666,
+     "se": 0.005,
+     "n": 18500
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.536,
+     "se": 0.007,
+     "n": 9613
+    },
+    "2024": {
+     "support": 0.733,
+     "se": 0.007,
+     "n": 8885
+    },
+    "pooled": {
+     "support": 0.638,
+     "se": 0.005,
+     "n": 18498
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.394,
+     "se": 0.007,
+     "n": 9616
+    },
+    "2024": {
+     "support": 0.484,
+     "se": 0.008,
+     "n": 8885
+    },
+    "pooled": {
+     "support": 0.441,
+     "se": 0.005,
+     "n": 18501
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.774,
+     "se": 0.006,
+     "n": 9614
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.282,
+     "se": 0.006,
+     "n": 9577
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.7,
+     "se": 0.008,
+     "n": 8841
+    }
+   }
+  },
+  "public-and-uniformed": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.621,
+     "se": 0.016,
+     "n": 1744
+    },
+    "2024": {
+     "support": 0.65,
+     "se": 0.016,
+     "n": 2375
+    },
+    "pooled": {
+     "support": 0.638,
+     "se": 0.012,
+     "n": 4119
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.48,
+     "se": 0.017,
+     "n": 1744
+    },
+    "2024": {
+     "support": 0.465,
+     "se": 0.017,
+     "n": 2375
+    },
+    "pooled": {
+     "support": 0.471,
+     "se": 0.012,
+     "n": 4119
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.267,
+     "se": 0.015,
+     "n": 1744
+    },
+    "2024": {
+     "support": 0.134,
+     "se": 0.011,
+     "n": 2375
+    },
+    "pooled": {
+     "support": 0.19,
+     "se": 0.009,
+     "n": 4119
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.526,
+     "se": 0.017,
+     "n": 1744
+    },
+    "2024": {
+     "support": 0.565,
+     "se": 0.017,
+     "n": 2375
+    },
+    "pooled": {
+     "support": 0.549,
+     "se": 0.012,
+     "n": 4119
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.485,
+     "se": 0.017,
+     "n": 1743
+    },
+    "2024": {
+     "support": 0.401,
+     "se": 0.016,
+     "n": 2375
+    },
+    "pooled": {
+     "support": 0.437,
+     "se": 0.012,
+     "n": 4118
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.7,
+     "se": 0.015,
+     "n": 1740
+    },
+    "2024": {
+     "support": 0.589,
+     "se": 0.016,
+     "n": 2375
+    },
+    "pooled": {
+     "support": 0.636,
+     "se": 0.012,
+     "n": 4115
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.574,
+     "se": 0.017,
+     "n": 1743
+    },
+    "2024": {
+     "support": 0.777,
+     "se": 0.014,
+     "n": 2375
+    },
+    "pooled": {
+     "support": 0.692,
+     "se": 0.011,
+     "n": 4118
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.47,
+     "se": 0.017,
+     "n": 1744
+    },
+    "2024": {
+     "support": 0.518,
+     "se": 0.017,
+     "n": 2375
+    },
+    "pooled": {
+     "support": 0.498,
+     "se": 0.012,
+     "n": 4119
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.72,
+     "se": 0.015,
+     "n": 1743
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.378,
+     "se": 0.016,
+     "n": 1734
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.701,
+     "se": 0.015,
+     "n": 2367
+    }
+   }
+  },
+  "race-asian": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.648,
+     "se": 0.016,
+     "n": 1782
+    },
+    "2024": {
+     "support": 0.719,
+     "se": 0.017,
+     "n": 1899
+    },
+    "pooled": {
+     "support": 0.684,
+     "se": 0.012,
+     "n": 3681
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.488,
+     "se": 0.017,
+     "n": 1782
+    },
+    "2024": {
+     "support": 0.522,
+     "se": 0.019,
+     "n": 1899
+    },
+    "pooled": {
+     "support": 0.505,
+     "se": 0.013,
+     "n": 3681
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.188,
+     "se": 0.013,
+     "n": 1782
+    },
+    "2024": {
+     "support": 0.105,
+     "se": 0.012,
+     "n": 1898
+    },
+    "pooled": {
+     "support": 0.146,
+     "se": 0.009,
+     "n": 3680
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.734,
+     "se": 0.015,
+     "n": 1781
+    },
+    "2024": {
+     "support": 0.742,
+     "se": 0.017,
+     "n": 1899
+    },
+    "pooled": {
+     "support": 0.738,
+     "se": 0.011,
+     "n": 3680
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.304,
+     "se": 0.016,
+     "n": 1781
+    },
+    "2024": {
+     "support": 0.271,
+     "se": 0.017,
+     "n": 1899
+    },
+    "pooled": {
+     "support": 0.288,
+     "se": 0.012,
+     "n": 3680
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.735,
+     "se": 0.015,
+     "n": 1781
+    },
+    "2024": {
+     "support": 0.659,
+     "se": 0.018,
+     "n": 1899
+    },
+    "pooled": {
+     "support": 0.697,
+     "se": 0.012,
+     "n": 3680
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.593,
+     "se": 0.017,
+     "n": 1780
+    },
+    "2024": {
+     "support": 0.776,
+     "se": 0.016,
+     "n": 1899
+    },
+    "pooled": {
+     "support": 0.686,
+     "se": 0.012,
+     "n": 3679
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.452,
+     "se": 0.017,
+     "n": 1782
+    },
+    "2024": {
+     "support": 0.564,
+     "se": 0.019,
+     "n": 1898
+    },
+    "pooled": {
+     "support": 0.508,
+     "se": 0.013,
+     "n": 3680
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.827,
+     "se": 0.013,
+     "n": 1782
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.282,
+     "se": 0.015,
+     "n": 1771
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.729,
+     "se": 0.017,
+     "n": 1889
+    }
+   }
+  },
+  "race-black": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.699,
+     "se": 0.009,
+     "n": 6735
+    },
+    "2024": {
+     "support": 0.75,
+     "se": 0.01,
+     "n": 7570
+    },
+    "pooled": {
+     "support": 0.724,
+     "se": 0.007,
+     "n": 14305
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.487,
+     "se": 0.01,
+     "n": 6734
+    },
+    "2024": {
+     "support": 0.574,
+     "se": 0.011,
+     "n": 7571
+    },
+    "pooled": {
+     "support": 0.529,
+     "se": 0.007,
+     "n": 14305
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.21,
+     "se": 0.008,
+     "n": 6734
+    },
+    "2024": {
+     "support": 0.15,
+     "se": 0.008,
+     "n": 7570
+    },
+    "pooled": {
+     "support": 0.181,
+     "se": 0.006,
+     "n": 14304
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.738,
+     "se": 0.009,
+     "n": 6732
+    },
+    "2024": {
+     "support": 0.709,
+     "se": 0.01,
+     "n": 7577
+    },
+    "pooled": {
+     "support": 0.724,
+     "se": 0.007,
+     "n": 14309
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.334,
+     "se": 0.009,
+     "n": 6731
+    },
+    "2024": {
+     "support": 0.318,
+     "se": 0.011,
+     "n": 7577
+    },
+    "pooled": {
+     "support": 0.327,
+     "se": 0.007,
+     "n": 14308
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.783,
+     "se": 0.008,
+     "n": 6729
+    },
+    "2024": {
+     "support": 0.721,
+     "se": 0.01,
+     "n": 7577
+    },
+    "pooled": {
+     "support": 0.753,
+     "se": 0.006,
+     "n": 14306
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.496,
+     "se": 0.01,
+     "n": 6730
+    },
+    "2024": {
+     "support": 0.748,
+     "se": 0.01,
+     "n": 7577
+    },
+    "pooled": {
+     "support": 0.617,
+     "se": 0.007,
+     "n": 14307
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.392,
+     "se": 0.01,
+     "n": 6735
+    },
+    "2024": {
+     "support": 0.465,
+     "se": 0.011,
+     "n": 7577
+    },
+    "pooled": {
+     "support": 0.427,
+     "se": 0.007,
+     "n": 14312
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.806,
+     "se": 0.008,
+     "n": 6724
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.269,
+     "se": 0.009,
+     "n": 6666
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.623,
+     "se": 0.011,
+     "n": 7519
+    }
+   }
+  },
+  "race-hispanic": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.609,
+     "se": 0.01,
+     "n": 6970
+    },
+    "2024": {
+     "support": 0.65,
+     "se": 0.011,
+     "n": 7633
+    },
+    "pooled": {
+     "support": 0.63,
+     "se": 0.008,
+     "n": 14603
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.505,
+     "se": 0.01,
+     "n": 6970
+    },
+    "2024": {
+     "support": 0.58,
+     "se": 0.011,
+     "n": 7633
+    },
+    "pooled": {
+     "support": 0.543,
+     "se": 0.008,
+     "n": 14603
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.236,
+     "se": 0.009,
+     "n": 6968
+    },
+    "2024": {
+     "support": 0.152,
+     "se": 0.008,
+     "n": 7633
+    },
+    "pooled": {
+     "support": 0.193,
+     "se": 0.006,
+     "n": 14601
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.613,
+     "se": 0.01,
+     "n": 6971
+    },
+    "2024": {
+     "support": 0.598,
+     "se": 0.011,
+     "n": 7635
+    },
+    "pooled": {
+     "support": 0.606,
+     "se": 0.008,
+     "n": 14606
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.356,
+     "se": 0.01,
+     "n": 6970
+    },
+    "2024": {
+     "support": 0.375,
+     "se": 0.011,
+     "n": 7635
+    },
+    "pooled": {
+     "support": 0.366,
+     "se": 0.007,
+     "n": 14605
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.805,
+     "se": 0.008,
+     "n": 6968
+    },
+    "2024": {
+     "support": 0.712,
+     "se": 0.01,
+     "n": 7634
+    },
+    "pooled": {
+     "support": 0.758,
+     "se": 0.007,
+     "n": 14602
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.512,
+     "se": 0.01,
+     "n": 6969
+    },
+    "2024": {
+     "support": 0.717,
+     "se": 0.01,
+     "n": 7635
+    },
+    "pooled": {
+     "support": 0.616,
+     "se": 0.008,
+     "n": 14604
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.47,
+     "se": 0.01,
+     "n": 6969
+    },
+    "2024": {
+     "support": 0.565,
+     "se": 0.011,
+     "n": 7635
+    },
+    "pooled": {
+     "support": 0.518,
+     "se": 0.008,
+     "n": 14604
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.781,
+     "se": 0.009,
+     "n": 6962
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.309,
+     "se": 0.01,
+     "n": 6917
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.634,
+     "se": 0.011,
+     "n": 7592
+    }
+   }
+  },
+  "race-other": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.556,
+     "se": 0.018,
+     "n": 2333
+    },
+    "2024": {
+     "support": 0.538,
+     "se": 0.017,
+     "n": 2853
+    },
+    "pooled": {
+     "support": 0.545,
+     "se": 0.012,
+     "n": 5186
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.466,
+     "se": 0.018,
+     "n": 2334
+    },
+    "2024": {
+     "support": 0.528,
+     "se": 0.017,
+     "n": 2853
+    },
+    "pooled": {
+     "support": 0.503,
+     "se": 0.012,
+     "n": 5187
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.189,
+     "se": 0.014,
+     "n": 2335
+    },
+    "2024": {
+     "support": 0.157,
+     "se": 0.012,
+     "n": 2852
+    },
+    "pooled": {
+     "support": 0.17,
+     "se": 0.009,
+     "n": 5187
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.464,
+     "se": 0.018,
+     "n": 2335
+    },
+    "2024": {
+     "support": 0.482,
+     "se": 0.017,
+     "n": 2854
+    },
+    "pooled": {
+     "support": 0.475,
+     "se": 0.012,
+     "n": 5189
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.499,
+     "se": 0.018,
+     "n": 2336
+    },
+    "2024": {
+     "support": 0.478,
+     "se": 0.017,
+     "n": 2854
+    },
+    "pooled": {
+     "support": 0.486,
+     "se": 0.012,
+     "n": 5190
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.631,
+     "se": 0.017,
+     "n": 2332
+    },
+    "2024": {
+     "support": 0.534,
+     "se": 0.017,
+     "n": 2853
+    },
+    "pooled": {
+     "support": 0.572,
+     "se": 0.012,
+     "n": 5185
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.62,
+     "se": 0.017,
+     "n": 2332
+    },
+    "2024": {
+     "support": 0.779,
+     "se": 0.014,
+     "n": 2854
+    },
+    "pooled": {
+     "support": 0.717,
+     "se": 0.011,
+     "n": 5186
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.416,
+     "se": 0.017,
+     "n": 2336
+    },
+    "2024": {
+     "support": 0.509,
+     "se": 0.017,
+     "n": 2854
+    },
+    "pooled": {
+     "support": 0.472,
+     "se": 0.012,
+     "n": 5190
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.679,
+     "se": 0.016,
+     "n": 2333
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.343,
+     "se": 0.017,
+     "n": 2319
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.598,
+     "se": 0.017,
+     "n": 2836
+    }
+   }
+  },
+  "race-white": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.519,
+     "se": 0.003,
+     "n": 43128
+    },
+    "2024": {
+     "support": 0.558,
+     "se": 0.004,
+     "n": 39956
+    },
+    "pooled": {
+     "support": 0.538,
+     "se": 0.003,
+     "n": 83084
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.461,
+     "se": 0.003,
+     "n": 43125
+    },
+    "2024": {
+     "support": 0.497,
+     "se": 0.004,
+     "n": 39953
+    },
+    "pooled": {
+     "support": 0.479,
+     "se": 0.003,
+     "n": 83078
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.19,
+     "se": 0.003,
+     "n": 43119
+    },
+    "2024": {
+     "support": 0.116,
+     "se": 0.003,
+     "n": 39951
+    },
+    "pooled": {
+     "support": 0.154,
+     "se": 0.002,
+     "n": 83070
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.557,
+     "se": 0.003,
+     "n": 43133
+    },
+    "2024": {
+     "support": 0.552,
+     "se": 0.004,
+     "n": 39972
+    },
+    "pooled": {
+     "support": 0.555,
+     "se": 0.003,
+     "n": 83105
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.427,
+     "se": 0.003,
+     "n": 43132
+    },
+    "2024": {
+     "support": 0.415,
+     "se": 0.004,
+     "n": 39973
+    },
+    "pooled": {
+     "support": 0.421,
+     "se": 0.003,
+     "n": 83105
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.638,
+     "se": 0.003,
+     "n": 43100
+    },
+    "2024": {
+     "support": 0.54,
+     "se": 0.004,
+     "n": 39975
+    },
+    "pooled": {
+     "support": 0.59,
+     "se": 0.003,
+     "n": 83075
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.666,
+     "se": 0.003,
+     "n": 43107
+    },
+    "2024": {
+     "support": 0.819,
+     "se": 0.003,
+     "n": 39974
+    },
+    "pooled": {
+     "support": 0.741,
+     "se": 0.002,
+     "n": 83081
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.517,
+     "se": 0.003,
+     "n": 43125
+    },
+    "2024": {
+     "support": 0.596,
+     "se": 0.004,
+     "n": 39974
+    },
+    "pooled": {
+     "support": 0.555,
+     "se": 0.003,
+     "n": 83099
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.721,
+     "se": 0.003,
+     "n": 43109
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.375,
+     "se": 0.003,
+     "n": 42914
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.641,
+     "se": 0.004,
+     "n": 39793
+    }
+   }
+  },
+  "rural": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.469,
+     "se": 0.005,
+     "n": 20482
+    },
+    "2024": {
+     "support": 0.521,
+     "se": 0.006,
+     "n": 19456
+    },
+    "pooled": {
+     "support": 0.495,
+     "se": 0.004,
+     "n": 39938
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.514,
+     "se": 0.005,
+     "n": 20480
+    },
+    "2024": {
+     "support": 0.558,
+     "se": 0.006,
+     "n": 19453
+    },
+    "pooled": {
+     "support": 0.536,
+     "se": 0.004,
+     "n": 39933
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.225,
+     "se": 0.004,
+     "n": 20477
+    },
+    "2024": {
+     "support": 0.141,
+     "se": 0.004,
+     "n": 19450
+    },
+    "pooled": {
+     "support": 0.183,
+     "se": 0.003,
+     "n": 39927
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.506,
+     "se": 0.005,
+     "n": 20487
+    },
+    "2024": {
+     "support": 0.492,
+     "se": 0.006,
+     "n": 19464
+    },
+    "pooled": {
+     "support": 0.499,
+     "se": 0.004,
+     "n": 39951
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.476,
+     "se": 0.005,
+     "n": 20487
+    },
+    "2024": {
+     "support": 0.47,
+     "se": 0.006,
+     "n": 19463
+    },
+    "pooled": {
+     "support": 0.473,
+     "se": 0.004,
+     "n": 39950
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.627,
+     "se": 0.005,
+     "n": 20466
+    },
+    "2024": {
+     "support": 0.53,
+     "se": 0.006,
+     "n": 19464
+    },
+    "pooled": {
+     "support": 0.58,
+     "se": 0.004,
+     "n": 39930
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.689,
+     "se": 0.005,
+     "n": 20477
+    },
+    "2024": {
+     "support": 0.836,
+     "se": 0.005,
+     "n": 19464
+    },
+    "pooled": {
+     "support": 0.761,
+     "se": 0.003,
+     "n": 39941
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.535,
+     "se": 0.005,
+     "n": 20487
+    },
+    "2024": {
+     "support": 0.602,
+     "se": 0.006,
+     "n": 19465
+    },
+    "pooled": {
+     "support": 0.568,
+     "se": 0.004,
+     "n": 39952
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.685,
+     "se": 0.005,
+     "n": 20474
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.412,
+     "se": 0.005,
+     "n": 20362
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.575,
+     "se": 0.006,
+     "n": 19356
+    }
+   }
+  },
+  "sex-female": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.585,
+     "se": 0.004,
+     "n": 35182
+    },
+    "2024": {
+     "support": 0.621,
+     "se": 0.005,
+     "n": 31939
+    },
+    "pooled": {
+     "support": 0.603,
+     "se": 0.003,
+     "n": 67121
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.427,
+     "se": 0.004,
+     "n": 35177
+    },
+    "2024": {
+     "support": 0.492,
+     "se": 0.005,
+     "n": 31941
+    },
+    "pooled": {
+     "support": 0.459,
+     "se": 0.003,
+     "n": 67118
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.191,
+     "se": 0.003,
+     "n": 35176
+    },
+    "2024": {
+     "support": 0.132,
+     "se": 0.003,
+     "n": 31936
+    },
+    "pooled": {
+     "support": 0.162,
+     "se": 0.002,
+     "n": 67112
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.682,
+     "se": 0.004,
+     "n": 35184
+    },
+    "2024": {
+     "support": 0.653,
+     "se": 0.005,
+     "n": 31954
+    },
+    "pooled": {
+     "support": 0.668,
+     "se": 0.003,
+     "n": 67138
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.33,
+     "se": 0.004,
+     "n": 35179
+    },
+    "2024": {
+     "support": 0.319,
+     "se": 0.004,
+     "n": 31954
+    },
+    "pooled": {
+     "support": 0.325,
+     "se": 0.003,
+     "n": 67133
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.725,
+     "se": 0.003,
+     "n": 35159
+    },
+    "2024": {
+     "support": 0.62,
+     "se": 0.005,
+     "n": 31954
+    },
+    "pooled": {
+     "support": 0.673,
+     "se": 0.003,
+     "n": 67113
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.584,
+     "se": 0.004,
+     "n": 35162
+    },
+    "2024": {
+     "support": 0.777,
+     "se": 0.004,
+     "n": 31955
+    },
+    "pooled": {
+     "support": 0.679,
+     "se": 0.003,
+     "n": 67117
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.475,
+     "se": 0.004,
+     "n": 35176
+    },
+    "2024": {
+     "support": 0.582,
+     "se": 0.005,
+     "n": 31954
+    },
+    "pooled": {
+     "support": 0.528,
+     "se": 0.003,
+     "n": 67130
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.791,
+     "se": 0.003,
+     "n": 35157
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.288,
+     "se": 0.003,
+     "n": 34946
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.668,
+     "se": 0.005,
+     "n": 31786
+    }
+   }
+  },
+  "sex-male": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.534,
+     "se": 0.005,
+     "n": 25766
+    },
+    "2024": {
+     "support": 0.573,
+     "se": 0.005,
+     "n": 27418
+    },
+    "pooled": {
+     "support": 0.553,
+     "se": 0.004,
+     "n": 53184
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.519,
+     "se": 0.005,
+     "n": 25768
+    },
+    "2024": {
+     "support": 0.552,
+     "se": 0.005,
+     "n": 27414
+    },
+    "pooled": {
+     "support": 0.535,
+     "se": 0.004,
+     "n": 53182
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.206,
+     "se": 0.004,
+     "n": 25762
+    },
+    "2024": {
+     "support": 0.122,
+     "se": 0.004,
+     "n": 27414
+    },
+    "pooled": {
+     "support": 0.165,
+     "se": 0.003,
+     "n": 53176
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.496,
+     "se": 0.005,
+     "n": 25768
+    },
+    "2024": {
+     "support": 0.505,
+     "se": 0.005,
+     "n": 27429
+    },
+    "pooled": {
+     "support": 0.501,
+     "se": 0.004,
+     "n": 53197
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.48,
+     "se": 0.005,
+     "n": 25771
+    },
+    "2024": {
+     "support": 0.477,
+     "se": 0.005,
+     "n": 27430
+    },
+    "pooled": {
+     "support": 0.479,
+     "se": 0.004,
+     "n": 53201
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.636,
+     "se": 0.004,
+     "n": 25751
+    },
+    "2024": {
+     "support": 0.553,
+     "se": 0.005,
+     "n": 27430
+    },
+    "pooled": {
+     "support": 0.595,
+     "se": 0.004,
+     "n": 53181
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.658,
+     "se": 0.004,
+     "n": 25756
+    },
+    "2024": {
+     "support": 0.816,
+     "se": 0.004,
+     "n": 27430
+    },
+    "pooled": {
+     "support": 0.736,
+     "se": 0.003,
+     "n": 53186
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.504,
+     "se": 0.005,
+     "n": 25771
+    },
+    "2024": {
+     "support": 0.565,
+     "se": 0.005,
+     "n": 27430
+    },
+    "pooled": {
+     "support": 0.534,
+     "se": 0.004,
+     "n": 53201
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.691,
+     "se": 0.004,
+     "n": 25753
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.413,
+     "se": 0.005,
+     "n": 25641
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.607,
+     "se": 0.005,
+     "n": 27291
+    }
+   }
+  },
+  "suburban": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.582,
+     "se": 0.005,
+     "n": 23469
+    },
+    "2024": {
+     "support": 0.615,
+     "se": 0.005,
+     "n": 23574
+    },
+    "pooled": {
+     "support": 0.599,
+     "se": 0.004,
+     "n": 47043
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.448,
+     "se": 0.005,
+     "n": 23471
+    },
+    "2024": {
+     "support": 0.501,
+     "se": 0.006,
+     "n": 23574
+    },
+    "pooled": {
+     "support": 0.475,
+     "se": 0.004,
+     "n": 47045
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.174,
+     "se": 0.003,
+     "n": 23469
+    },
+    "2024": {
+     "support": 0.114,
+     "se": 0.004,
+     "n": 23574
+    },
+    "pooled": {
+     "support": 0.143,
+     "se": 0.003,
+     "n": 47043
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.627,
+     "se": 0.004,
+     "n": 23470
+    },
+    "2024": {
+     "support": 0.608,
+     "se": 0.006,
+     "n": 23586
+    },
+    "pooled": {
+     "support": 0.617,
+     "se": 0.004,
+     "n": 47056
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.371,
+     "se": 0.004,
+     "n": 23465
+    },
+    "2024": {
+     "support": 0.366,
+     "se": 0.005,
+     "n": 23587
+    },
+    "pooled": {
+     "support": 0.368,
+     "se": 0.004,
+     "n": 47052
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.687,
+     "se": 0.004,
+     "n": 23453
+    },
+    "2024": {
+     "support": 0.592,
+     "se": 0.006,
+     "n": 23587
+    },
+    "pooled": {
+     "support": 0.639,
+     "se": 0.004,
+     "n": 47040
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.619,
+     "se": 0.004,
+     "n": 23461
+    },
+    "2024": {
+     "support": 0.799,
+     "se": 0.005,
+     "n": 23587
+    },
+    "pooled": {
+     "support": 0.711,
+     "se": 0.003,
+     "n": 47048
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.484,
+     "se": 0.005,
+     "n": 23463
+    },
+    "2024": {
+     "support": 0.574,
+     "se": 0.006,
+     "n": 23587
+    },
+    "pooled": {
+     "support": 0.53,
+     "se": 0.004,
+     "n": 47050
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.758,
+     "se": 0.004,
+     "n": 23456
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.335,
+     "se": 0.004,
+     "n": 23333
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.673,
+     "se": 0.005,
+     "n": 23462
+    }
+   }
+  },
+  "unaffiliated": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.731,
+     "se": 0.004,
+     "n": 23851
+    },
+    "2024": {
+     "support": 0.794,
+     "se": 0.005,
+     "n": 23521
+    },
+    "pooled": {
+     "support": 0.762,
+     "se": 0.003,
+     "n": 47372
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.355,
+     "se": 0.005,
+     "n": 23852
+    },
+    "2024": {
+     "support": 0.389,
+     "se": 0.006,
+     "n": 23522
+    },
+    "pooled": {
+     "support": 0.372,
+     "se": 0.004,
+     "n": 47374
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.118,
+     "se": 0.003,
+     "n": 23851
+    },
+    "2024": {
+     "support": 0.063,
+     "se": 0.003,
+     "n": 23519
+    },
+    "pooled": {
+     "support": 0.091,
+     "se": 0.002,
+     "n": 47370
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.645,
+     "se": 0.005,
+     "n": 23856
+    },
+    "2024": {
+     "support": 0.667,
+     "se": 0.006,
+     "n": 23530
+    },
+    "pooled": {
+     "support": 0.656,
+     "se": 0.004,
+     "n": 47386
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.335,
+     "se": 0.005,
+     "n": 23853
+    },
+    "2024": {
+     "support": 0.314,
+     "se": 0.006,
+     "n": 23531
+    },
+    "pooled": {
+     "support": 0.325,
+     "se": 0.004,
+     "n": 47384
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.757,
+     "se": 0.004,
+     "n": 23844
+    },
+    "2024": {
+     "support": 0.691,
+     "se": 0.006,
+     "n": 23531
+    },
+    "pooled": {
+     "support": 0.724,
+     "se": 0.003,
+     "n": 47375
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.476,
+     "se": 0.005,
+     "n": 23840
+    },
+    "2024": {
+     "support": 0.694,
+     "se": 0.006,
+     "n": 23531
+    },
+    "pooled": {
+     "support": 0.585,
+     "se": 0.004,
+     "n": 47371
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.329,
+     "se": 0.005,
+     "n": 23849
+    },
+    "2024": {
+     "support": 0.395,
+     "se": 0.006,
+     "n": 23531
+    },
+    "pooled": {
+     "support": 0.362,
+     "se": 0.004,
+     "n": 47380
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.823,
+     "se": 0.004,
+     "n": 23839
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.209,
+     "se": 0.004,
+     "n": 23714
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.806,
+     "se": 0.005,
+     "n": 23463
+    }
+   }
+  },
+  "urban": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.643,
+     "se": 0.006,
+     "n": 16651
+    },
+    "2024": {
+     "support": 0.674,
+     "se": 0.007,
+     "n": 16509
+    },
+    "pooled": {
+     "support": 0.658,
+     "se": 0.004,
+     "n": 33160
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.448,
+     "se": 0.006,
+     "n": 16648
+    },
+    "2024": {
+     "support": 0.498,
+     "se": 0.007,
+     "n": 16510
+    },
+    "pooled": {
+     "support": 0.472,
+     "se": 0.005,
+     "n": 33158
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.197,
+     "se": 0.005,
+     "n": 16646
+    },
+    "2024": {
+     "support": 0.127,
+     "se": 0.005,
+     "n": 16509
+    },
+    "pooled": {
+     "support": 0.163,
+     "se": 0.003,
+     "n": 33155
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.656,
+     "se": 0.006,
+     "n": 16648
+    },
+    "2024": {
+     "support": 0.66,
+     "se": 0.007,
+     "n": 16516
+    },
+    "pooled": {
+     "support": 0.658,
+     "se": 0.004,
+     "n": 33164
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.354,
+     "se": 0.006,
+     "n": 16651
+    },
+    "2024": {
+     "support": 0.34,
+     "se": 0.007,
+     "n": 16516
+    },
+    "pooled": {
+     "support": 0.347,
+     "se": 0.004,
+     "n": 33167
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.743,
+     "se": 0.005,
+     "n": 16644
+    },
+    "2024": {
+     "support": 0.662,
+     "se": 0.007,
+     "n": 16515
+    },
+    "pooled": {
+     "support": 0.704,
+     "se": 0.004,
+     "n": 33159
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.539,
+     "se": 0.006,
+     "n": 16634
+    },
+    "2024": {
+     "support": 0.729,
+     "se": 0.007,
+     "n": 16516
+    },
+    "pooled": {
+     "support": 0.631,
+     "se": 0.005,
+     "n": 33150
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.441,
+     "se": 0.006,
+     "n": 16651
+    },
+    "2024": {
+     "support": 0.528,
+     "se": 0.007,
+     "n": 16514
+    },
+    "pooled": {
+     "support": 0.483,
+     "se": 0.005,
+     "n": 33165
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.794,
+     "se": 0.005,
+     "n": 16634
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.287,
+     "se": 0.005,
+     "n": 16549
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.673,
+     "se": 0.007,
+     "n": 16441
+    }
+   }
+  },
+  "us-born": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.556,
+     "se": 0.003,
+     "n": 56397
+    },
+    "2024": {
+     "support": 0.595,
+     "se": 0.004,
+     "n": 56005
+    },
+    "pooled": {
+     "support": 0.576,
+     "se": 0.002,
+     "n": 112402
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.468,
+     "se": 0.003,
+     "n": 56395
+    },
+    "2024": {
+     "support": 0.515,
+     "se": 0.004,
+     "n": 56003
+    },
+    "pooled": {
+     "support": 0.491,
+     "se": 0.002,
+     "n": 112398
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.192,
+     "se": 0.002,
+     "n": 56389
+    },
+    "2024": {
+     "support": 0.124,
+     "se": 0.002,
+     "n": 55998
+    },
+    "pooled": {
+     "support": 0.158,
+     "se": 0.002,
+     "n": 112387
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.587,
+     "se": 0.003,
+     "n": 56403
+    },
+    "2024": {
+     "support": 0.572,
+     "se": 0.004,
+     "n": 56031
+    },
+    "pooled": {
+     "support": 0.58,
+     "se": 0.002,
+     "n": 112434
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.407,
+     "se": 0.003,
+     "n": 56399
+    },
+    "2024": {
+     "support": 0.405,
+     "se": 0.004,
+     "n": 56032
+    },
+    "pooled": {
+     "support": 0.406,
+     "se": 0.002,
+     "n": 112431
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.676,
+     "se": 0.003,
+     "n": 56361
+    },
+    "2024": {
+     "support": 0.579,
+     "se": 0.004,
+     "n": 56032
+    },
+    "pooled": {
+     "support": 0.628,
+     "se": 0.002,
+     "n": 112393
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.624,
+     "se": 0.003,
+     "n": 56368
+    },
+    "2024": {
+     "support": 0.797,
+     "se": 0.003,
+     "n": 56033
+    },
+    "pooled": {
+     "support": 0.71,
+     "se": 0.002,
+     "n": 112401
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.486,
+     "se": 0.003,
+     "n": 56396
+    },
+    "2024": {
+     "support": 0.57,
+     "se": 0.004,
+     "n": 56033
+    },
+    "pooled": {
+     "support": 0.528,
+     "se": 0.002,
+     "n": 112429
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.739,
+     "se": 0.003,
+     "n": 56366
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.348,
+     "se": 0.003,
+     "n": 56077
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.642,
+     "se": 0.004,
+     "n": 55747
+    }
+   }
+  },
+  "veteran": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.444,
+     "se": 0.009,
+     "n": 6248
+    },
+    "2024": {
+     "support": 0.469,
+     "se": 0.01,
+     "n": 6259
+    },
+    "pooled": {
+     "support": 0.456,
+     "se": 0.007,
+     "n": 12507
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.581,
+     "se": 0.009,
+     "n": 6249
+    },
+    "2024": {
+     "support": 0.617,
+     "se": 0.01,
+     "n": 6257
+    },
+    "pooled": {
+     "support": 0.598,
+     "se": 0.007,
+     "n": 12506
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.184,
+     "se": 0.007,
+     "n": 6249
+    },
+    "2024": {
+     "support": 0.127,
+     "se": 0.007,
+     "n": 6257
+    },
+    "pooled": {
+     "support": 0.157,
+     "se": 0.005,
+     "n": 12506
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.445,
+     "se": 0.009,
+     "n": 6251
+    },
+    "2024": {
+     "support": 0.408,
+     "se": 0.01,
+     "n": 6262
+    },
+    "pooled": {
+     "support": 0.428,
+     "se": 0.007,
+     "n": 12513
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.573,
+     "se": 0.009,
+     "n": 6248
+    },
+    "2024": {
+     "support": 0.58,
+     "se": 0.01,
+     "n": 6263
+    },
+    "pooled": {
+     "support": 0.577,
+     "se": 0.007,
+     "n": 12511
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.558,
+     "se": 0.009,
+     "n": 6247
+    },
+    "2024": {
+     "support": 0.464,
+     "se": 0.01,
+     "n": 6263
+    },
+    "pooled": {
+     "support": 0.514,
+     "se": 0.007,
+     "n": 12510
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.759,
+     "se": 0.008,
+     "n": 6248
+    },
+    "2024": {
+     "support": 0.91,
+     "se": 0.006,
+     "n": 6263
+    },
+    "pooled": {
+     "support": 0.83,
+     "se": 0.005,
+     "n": 12511
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.641,
+     "se": 0.008,
+     "n": 6251
+    },
+    "2024": {
+     "support": 0.714,
+     "se": 0.009,
+     "n": 6263
+    },
+    "pooled": {
+     "support": 0.675,
+     "se": 0.006,
+     "n": 12514
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.61,
+     "se": 0.009,
+     "n": 6247
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.568,
+     "se": 0.009,
+     "n": 6217
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.53,
+     "se": 0.01,
+     "n": 6236
+    }
+   }
+  },
+  "with-disability": {
+   "abortion-always-allow": {
+    "2020": {
+     "support": 0.507,
+     "se": 0.012,
+     "n": 4064
+    },
+    "2024": {
+     "support": 0.578,
+     "se": 0.015,
+     "n": 4094
+    },
+    "pooled": {
+     "support": 0.539,
+     "se": 0.009,
+     "n": 8158
+    }
+   },
+   "abortion-rape-incest-only": {
+    "2020": {
+     "support": 0.525,
+     "se": 0.012,
+     "n": 4065
+    },
+    "2024": {
+     "support": 0.602,
+     "se": 0.015,
+     "n": 4095
+    },
+    "pooled": {
+     "support": 0.56,
+     "se": 0.009,
+     "n": 8160
+    }
+   },
+   "abortion-illegal-always": {
+    "2020": {
+     "support": 0.226,
+     "se": 0.01,
+     "n": 4063
+    },
+    "2024": {
+     "support": 0.135,
+     "se": 0.01,
+     "n": 4094
+    },
+    "pooled": {
+     "support": 0.185,
+     "se": 0.007,
+     "n": 8157
+    }
+   },
+   "guns-assault-ban": {
+    "2020": {
+     "support": 0.609,
+     "se": 0.012,
+     "n": 4063
+    },
+    "2024": {
+     "support": 0.566,
+     "se": 0.015,
+     "n": 4095
+    },
+    "pooled": {
+     "support": 0.59,
+     "se": 0.009,
+     "n": 8158
+    }
+   },
+   "guns-easier-carry": {
+    "2020": {
+     "support": 0.438,
+     "se": 0.012,
+     "n": 4064
+    },
+    "2024": {
+     "support": 0.433,
+     "se": 0.015,
+     "n": 4095
+    },
+    "pooled": {
+     "support": 0.436,
+     "se": 0.009,
+     "n": 8159
+    }
+   },
+   "imm-legal-status": {
+    "2020": {
+     "support": 0.641,
+     "se": 0.011,
+     "n": 4061
+    },
+    "2024": {
+     "support": 0.551,
+     "se": 0.015,
+     "n": 4094
+    },
+    "pooled": {
+     "support": 0.601,
+     "se": 0.009,
+     "n": 8155
+    }
+   },
+   "imm-border-patrols": {
+    "2020": {
+     "support": 0.689,
+     "se": 0.011,
+     "n": 4060
+    },
+    "2024": {
+     "support": 0.838,
+     "se": 0.011,
+     "n": 4095
+    },
+    "pooled": {
+     "support": 0.756,
+     "se": 0.008,
+     "n": 8155
+    }
+   },
+   "police-plus-ten": {
+    "2020": {
+     "support": 0.543,
+     "se": 0.012,
+     "n": 4064
+    },
+    "2024": {
+     "support": 0.601,
+     "se": 0.015,
+     "n": 4095
+    },
+    "pooled": {
+     "support": 0.569,
+     "se": 0.009,
+     "n": 8159
+    }
+   },
+   "lgbt-nondiscrimination-2020": {
+    "2020": {
+     "support": 0.726,
+     "se": 0.011,
+     "n": 4061
+    }
+   },
+   "trans-military-ban-2020": {
+    "2020": {
+     "support": 0.37,
+     "se": 0.012,
+     "n": 4040
+    }
+   },
+   "marriage-recognition-2024": {
+    "2024": {
+     "support": 0.599,
+     "se": 0.015,
+     "n": 4078
+    }
+   }
+  }
+ },
+ "cultural": {
+  "age-35-64": 0.268,
+  "age-65-plus": 0.235,
+  "age-under-35": 0.361,
+  "all-adults": 0.286,
+  "black-protestant": 0.377,
+  "catholic": 0.264,
+  "degree": 0.403,
+  "evangelical-protestant": -0.172,
+  "foreign-born": 0.312,
+  "frontline-services": 0.332,
+  "goods-producing": 0.111,
+  "income-affluent": 0.414,
+  "income-comfortable": 0.291,
+  "income-struggling": 0.261,
+  "mainline-protestant": 0.312,
+  "no-degree": 0.228,
+  "no-disability": 0.29,
+  "non-veteran": 0.314,
+  "not-in-the-workforce": 0.257,
+  "other-christian": 0.063,
+  "other-faith": 0.469,
+  "professional-technical": 0.395,
+  "public-and-uniformed": 0.283,
+  "race-asian": 0.439,
+  "race-black": 0.393,
+  "race-hispanic": 0.31,
+  "race-other": 0.199,
+  "race-white": 0.256,
+  "rural": 0.163,
+  "sex-female": 0.374,
+  "sex-male": 0.19,
+  "suburban": 0.332,
+  "unaffiliated": 0.512,
+  "urban": 0.379,
+  "us-born": 0.284,
+  "veteran": 0.031,
+  "with-disability": 0.226
+ }
+}

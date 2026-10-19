@@ -1,0 +1,72 @@
+/* Quick-read cues shared by every screen.
+
+   Valence: whether what the player is looking at is in their favor. One
+   scale, four steps, the status inks: good (green), watch (amber), bad (red),
+   neutral (no color). It always rides with a word or a sign, never color
+   alone. Readings take it through data-tone; any row, cell or figure can take
+   it through data-valence.
+
+   Whole-row targets are the existing card-door pattern in doors.css
+   (.ui-card-door / .ui-card-door__link); .ui-row-target / .ui-row-link are
+   accepted there as the same rule for table rows and list rows. */
+@layer components {
+  .ui-gauge[data-tone="good"],
+  .ui-trend[data-tone="good"],
+  .ui-steps[data-tone="good"] {
+    --gauge-ink: var(--status-success-ink);
+    --trend-ink: var(--status-success-ink);
+    --steps-ink: var(--status-success-ink);
+  }
+
+  .ui-gauge[data-tone="watch"],
+  .ui-trend[data-tone="watch"],
+  .ui-steps[data-tone="watch"] {
+    --gauge-ink: var(--status-warning-ink);
+    --trend-ink: var(--status-warning-ink);
+    --steps-ink: var(--status-warning-mark);
+  }
+
+  .ui-gauge[data-tone="bad"],
+  .ui-trend[data-tone="bad"],
+  .ui-steps[data-tone="bad"] {
+    --gauge-ink: var(--status-danger-ink);
+    --trend-ink: var(--status-danger-ink);
+    --steps-ink: var(--status-danger-ink);
+  }
+
+  .ui-steps[data-tone="good"] .ui-steps__word { color: var(--status-success-ink); }
+  .ui-steps[data-tone="watch"] .ui-steps__word { color: var(--status-warning-ink); }
+  .ui-steps[data-tone="bad"] .ui-steps__word { color: var(--status-danger-ink); }
+
+  [data-valence="good"] { --valence-ink: var(--status-success-ink); --valence-fill: var(--status-success-fill); }
+  [data-valence="watch"] { --valence-ink: var(--status-warning-ink); --valence-fill: var(--status-warning-fill); }
+  [data-valence="bad"] { --valence-ink: var(--status-danger-ink); --valence-fill: var(--status-danger-fill); }
+  [data-valence="neutral"] { --valence-ink: var(--color-text-secondary); --valence-fill: var(--color-ground-raised); }
+
+  /* A figure or word that carries the valence in its ink. */
+  .ui-valence-ink[data-valence] {
+    color: var(--valence-ink);
+    font-weight: var(--weight-medium);
+  }
+
+  /* A row or card that carries it as a leading bar. */
+  .ui-valence-bar[data-valence] {
+    box-shadow: inset 4px 0 0 var(--valence-ink);
+  }
+
+  /* A compact chip: sign + word on its tint. */
+  .ui-valence-chip[data-valence] {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-chip);
+    background: var(--valence-fill);
+    color: var(--valence-ink);
+    font-size: var(--size-small);
+    font-weight: var(--weight-medium);
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+}

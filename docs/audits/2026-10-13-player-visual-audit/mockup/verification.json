@@ -1,0 +1,83 @@
+{
+  "records": [
+    {
+      "width": 1408,
+      "theme": "light",
+      "scroll": 1408,
+      "value": "$102.65",
+      "icons": 21
+    },
+    {
+      "width": 1408,
+      "theme": "dark",
+      "scroll": 1408,
+      "value": "$102.65",
+      "icons": 21
+    },
+    {
+      "width": 992,
+      "theme": "light",
+      "scroll": 992,
+      "value": "$102.65",
+      "icons": 21
+    },
+    {
+      "width": 992,
+      "theme": "dark",
+      "scroll": 992,
+      "value": "$102.65",
+      "icons": 21
+    },
+    {
+      "width": 358,
+      "theme": "light",
+      "scroll": 358,
+      "value": "$102.65",
+      "icons": 21
+    },
+    {
+      "width": 358,
+      "theme": "dark",
+      "scroll": 358,
+      "value": "$102.65",
+      "icons": 21
+    },
+    {
+      "width": 288,
+      "theme": "light",
+      "scroll": 288,
+      "value": "$102.65",
+      "icons": 21
+    },
+    {
+      "width": 288,
+      "theme": "dark",
+      "scroll": 288,
+      "value": "$102.65",
+      "icons": 21
+    },
+    {
+      "test": "select LNG",
+      "value": "Index 1.32"
+    },
+    {
+      "test": "scrub week",
+      "week": "Week 4"
+    },
+    {
+      "test": "replay stops",
+      "week": "Week 10",
+      "button": "Replay history"
+    },
+    {
+      "test": "focus restoration",
+      "focused": "USA"
+    },
+    {
+      "test": "reduced motion",
+      "preference": true,
+      "week": "Week 1"
+    }
+  ],
+  "errors": []
+}

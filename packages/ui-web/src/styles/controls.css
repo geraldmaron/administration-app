@@ -1,0 +1,484 @@
+/* Buttons, fields, choices and switches. */
+@layer components {
+  /* The one focus ring; parts that cannot take it themselves name their stand-in below. */
+  :focus-visible,
+  .ui-choice__option:has(input:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  .ui-choice[data-appearance="outline"] .ui-choice__option { border: 1px solid var(--color-border-subtle); padding: var(--space-md); border-radius: var(--radius-control); }
+  .ui-choice[data-appearance="outline"] .ui-choice__option[data-checked="true"] { border-color: var(--color-blue); background: var(--color-blue-wash); }
+
+  .ui-choice__option input:focus-visible {
+    outline: none;
+  }
+
+  .ui-visually-hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* A room tints its glyphs by setting --icon-ink on itself, never by restyling the part. */
+  .ui-icon {
+    flex: none;
+    color: var(--icon-ink, currentColor);
+  }
+
+  .ui-icon-label { display: inline-flex; align-items: center; gap: var(--space-sm); min-inline-size: 0; }
+  .ui-icon-label > span { min-inline-size: 0; overflow-wrap: anywhere; }
+
+  .ui-icon-badge {
+    --badge-ink: var(--color-blue);
+    --badge-wash: var(--color-blue-wash);
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    inline-size: 36px;
+    block-size: 36px;
+    border-radius: var(--radius-control);
+    background: var(--badge-wash);
+    box-shadow: inset 0 0 0 1px var(--badge-ink);
+    color: var(--badge-ink);
+  }
+
+  .ui-icon-badge[data-size="28"] {
+    inline-size: 28px;
+    block-size: 28px;
+    border-radius: var(--radius-chip);
+  }
+
+  .ui-icon-badge[data-size="48"] {
+    inline-size: 48px;
+    block-size: 48px;
+    border-radius: var(--radius-card);
+  }
+
+  .ui-icon-badge[data-tone="gold"] {
+    --badge-ink: var(--color-gold);
+    --badge-wash: var(--color-gold-wash);
+  }
+
+  .ui-icon-badge[data-tone="red"] {
+    --badge-ink: var(--color-red);
+    --badge-wash: var(--color-red-wash);
+  }
+
+  .ui-icon-badge[data-tone="neutral"] {
+    --badge-ink: var(--color-text-secondary);
+    --badge-wash: var(--status-pending-fill);
+  }
+
+  .ui-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    min-block-size: var(--control-height);
+    padding: 0 var(--space-lg);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-base);
+    color: var(--color-blue);
+    font: inherit;
+    font-size: var(--size-body);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-control);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+  }
+
+  .ui-button:hover:not(:disabled) {
+    background: var(--status-info-fill);
+  }
+
+  .ui-button:disabled {
+    cursor: not-allowed;
+    border-color: var(--color-border-subtle);
+    color: var(--color-text-disabled);
+  }
+
+  .ui-button--sm {
+    min-block-size: var(--control-compact);
+    padding: 0 var(--space-md);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  /* commit is the same role as primary: one per decision region. */
+  .ui-button--primary,
+  .ui-button--commit {
+    border-color: var(--color-blue-fill);
+    background: var(--color-blue-fill);
+    color: var(--color-white);
+  }
+
+  /* Filled verbs change text and fill together when they become available.
+     Animating only the fill flashes white text on the disabled pale ground. */
+  .ui-button--primary,
+  .ui-button--commit,
+  .ui-button--danger {
+    transition: none;
+  }
+
+  .ui-button--primary:hover:not(:disabled),
+  .ui-button--commit:hover:not(:disabled) {
+    border-color: var(--color-blue-fill-hover);
+    background: var(--color-blue-fill-hover);
+  }
+
+  .ui-button--danger {
+    border-color: var(--color-red-fill);
+    background: var(--color-red-fill);
+    color: var(--color-white);
+  }
+
+  .ui-button--danger:hover:not(:disabled) {
+    border-color: var(--color-red-fill-hover);
+    background: var(--color-red-fill-hover);
+  }
+
+  .ui-button--ghost {
+    border-color: transparent;
+    background: transparent;
+    color: var(--color-blue);
+  }
+
+  .ui-button--ghost:hover:not(:disabled) {
+    background: var(--status-info-fill);
+    text-decoration: underline;
+  }
+
+  .ui-button--primary:disabled,
+  .ui-button--commit:disabled,
+  .ui-button--danger:disabled {
+    background: var(--color-ground-sunken);
+  }
+
+  .ui-button--ghost:disabled {
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .ui-button__spinner {
+    inline-size: 14px;
+    block-size: 14px;
+    border: 2px solid currentColor;
+    border-inline-end-color: transparent;
+    border-radius: var(--radius-pill);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ui-button__spinner { animation: ui-spin 800ms linear infinite; }
+  }
+
+  @keyframes ui-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .ui-field,
+  .ui-choice {
+    position: relative;
+    display: grid;
+    gap: var(--space-xs);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .ui-field__label {
+    padding: 0;
+    color: var(--color-text-primary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-field__hint {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-field__error {
+    margin: 0;
+    color: var(--status-danger-ink);
+    font-size: var(--size-label);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-input {
+    inline-size: 100%;
+    min-block-size: var(--control-height);
+    padding: 0 var(--space-md);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-base);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--size-body);
+    line-height: var(--leading-control);
+  }
+
+  .ui-input[aria-invalid="true"] {
+    border-color: var(--status-danger-ink);
+    box-shadow: inset 0 0 0 1px var(--status-danger-ink);
+  }
+
+  .ui-input--range {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .ui-input--range::-webkit-slider-runnable-track {
+    block-size: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--color-border-subtle);
+  }
+
+  .ui-input--range::-moz-range-track {
+    block-size: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--color-border-subtle);
+  }
+
+  .ui-input--range::-webkit-slider-thumb {
+    appearance: none;
+    inline-size: 22px;
+    block-size: 22px;
+    margin-block-start: -8px;
+    border: 2px solid var(--color-white);
+    border-radius: var(--radius-pill);
+    background: var(--color-blue-fill);
+  }
+
+  .ui-input--range::-moz-range-thumb {
+    inline-size: 18px;
+    block-size: 18px;
+    border: 2px solid var(--color-white);
+    border-radius: var(--radius-pill);
+    background: var(--color-blue-fill);
+  }
+
+  .ui-choice__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .ui-choice__option {
+    position: relative;
+    display: grid;
+    align-content: center;
+    gap: var(--choice-option-gap, var(--space-2xs));
+    min-block-size: var(--control-height);
+    padding: var(--choice-option-padding, var(--space-sm) var(--space-md));
+    border: 1px solid var(--choice-option-border, var(--color-border-strong));
+    border-radius: var(--choice-option-radius, var(--radius-control));
+    background: var(--choice-option-bg, var(--color-ground-base));
+    cursor: pointer;
+  }
+
+  .ui-choice__option input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    z-index: 1;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .ui-choice__option[data-checked="true"] {
+    border-color: var(--choice-checked-border, var(--color-blue));
+    background: var(--choice-checked-bg, var(--status-info-fill));
+    box-shadow: var(--choice-checked-shadow, inset 0 0 0 1px var(--color-blue));
+  }
+
+  .ui-choice__label {
+    font-size: var(--size-body);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-control);
+  }
+
+  .ui-choice__detail {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  /* A segmented control is one row. Field measures this row and substitutes
+     a labeled select when the actual labels cannot fit. */
+  .ui-choice--segments .ui-choice__options {
+    display: flex;
+    flex-wrap: nowrap;
+    max-inline-size: 100%;
+    gap: 2px;
+    padding: 3px;
+    border-radius: var(--radius-control);
+    background: var(--color-ground-sunken);
+    border: 1px solid var(--color-border-subtle);
+    overflow: hidden;
+  }
+
+  .ui-choice[data-compact] .ui-choice__options {
+    position: absolute;
+    inset-inline: 0;
+    visibility: hidden;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .ui-choice--segments .ui-choice__option {
+    flex: 1 0 auto;
+    min-inline-size: max-content;
+    white-space: nowrap;
+    text-align: center;
+    min-block-size: var(--hit-min);
+    padding: var(--space-xs) var(--space-md);
+    border: 0;
+    border-radius: var(--radius-control);
+    background: transparent;
+    color: var(--color-text-secondary);
+    transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+  }
+
+  .ui-choice--segments .ui-choice__option:hover {
+    color: var(--color-text-primary);
+  }
+
+  .ui-choice--segments .ui-choice__option[data-checked="true"] {
+    background: var(--color-blue-fill);
+    color: var(--color-white);
+    box-shadow: inset 0 0 0 1px var(--color-blue);
+  }
+
+  .ui-choice--cards .ui-choice__options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  }
+
+  .ui-choice--cards .ui-choice__option {
+    align-content: start;
+    padding: var(--choice-card-padding, var(--space-lg));
+  }
+
+  .ui-choice--cards.ui-choice--raised .ui-choice__option:hover:not([data-checked="true"]) {
+    border-color: var(--choice-hover-border, var(--choice-option-border, var(--color-border-strong)));
+    background: var(--choice-hover-bg, var(--choice-option-bg, var(--color-ground-base)));
+  }
+
+  /* Tiles: each option is a picture of itself with a short name under it. */
+  .ui-choice--tiles .ui-choice__options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  }
+
+  .ui-choice--tiles .ui-choice__option {
+    align-content: start;
+    justify-items: center;
+    padding: var(--space-xs);
+    text-align: center;
+  }
+
+  .ui-choice__visual {
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: calc(var(--radius-control) - 2px);
+    background: var(--color-ground-sunken);
+  }
+
+  .ui-choice__visual > img,
+  .ui-choice__visual > svg {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  /* On a card, the picture is a mark beside the words, not a tile above them. */
+  .ui-choice--cards .ui-choice__option:has(.ui-choice__visual) {
+    grid-template-columns: 2rem minmax(0, 1fr);
+    column-gap: var(--space-sm);
+  }
+
+  .ui-choice--cards .ui-choice__visual {
+    grid-row: span 2;
+    inline-size: 2rem;
+    background: transparent;
+  }
+
+  .ui-choice--tiles .ui-choice__label {
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  /* Swatches: a row of colors, each one named to a screen reader and on hover. */
+  .ui-choice--swatches .ui-choice__options {
+    gap: var(--space-xs);
+  }
+
+  .ui-choice--swatches .ui-choice__option {
+    min-block-size: var(--hit-min);
+    min-inline-size: var(--hit-min);
+    justify-items: center;
+    padding: 3px;
+    border-radius: var(--radius-pill);
+  }
+
+  .ui-choice__swatch {
+    display: block;
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: var(--radius-pill);
+    box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  }
+
+  .ui-choice--swatches .ui-choice__option[data-checked="true"] {
+    box-shadow: 0 0 0 2px var(--color-blue);
+  }
+
+  .ui-toggle {
+    position: relative;
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .ui-toggle__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-block-size: var(--hit-min);
+    font-size: var(--size-body);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-control);
+    cursor: pointer;
+  }
+
+
+}
+
+@layer components {
+  .ui-native-select { position: relative; min-inline-size: 0; }
+  .ui-native-select > select { appearance: none; inline-size: 100%; min-block-size: var(--hit-min); padding-inline-end: var(--space-2xl); }
+  .ui-native-select__chevron { position: absolute; inset-inline-end: var(--space-sm); inset-block-start: 50%; transform: translateY(-50%) rotate(90deg); pointer-events: none; color: var(--color-text-secondary); }
+  .ui-native-select:has(select:disabled) { opacity: .6; }
+  @media (forced-colors: active) { .ui-native-select > select { appearance: auto; } .ui-native-select__chevron { display: none; } }
+}

@@ -1,0 +1,32 @@
+@layer rooms {
+  .setup-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: var(--space-lg);
+    padding-block: var(--space-md);
+  }
+  .setup-option {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: var(--space-sm);
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+    background: var(--color-ground-raised);
+  }
+  .setup-option h2, .setup-option p, .setup-profile h3 { margin: 0; }
+  .setup-option .ui-button { margin-block-start: auto; }
+  .setup-profile { display: grid; gap: var(--space-md); min-inline-size: 0; }
+  .setup-profile h3 { display: flex; align-items: center; gap: var(--space-xs); }
+  .setup-profile progress { inline-size: 100%; block-size: 0.5rem; accent-color: var(--color-blue-fill); }
+  .setup-progress { margin: 0; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+  .setup-tools, .setup-question-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-sm); }
+  .profile-answers .ui-choice__options { grid-template-columns: 1fr; }
+  .profile-answer-list { padding-inline-start: 1.5rem; }
+  .profile-answer-list li { padding-block: var(--space-sm); }
+  .profile-answer-list p { color: var(--color-text-secondary); }
+  .profile-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: var(--space-md); margin: 0; }
+  .profile-summary dt { color: var(--color-text-secondary); font-size: var(--size-small); }
+  .profile-summary dd { margin: 0; }
+}

@@ -1,0 +1,11 @@
+/* Executive shared table frame and view controls. */
+@layer rooms {
+  .exec-panel__lede { margin: 0; color: var(--color-text-primary); font-size: var(--size-body); font-weight: var(--weight-medium); }
+  .exec .exec-panel { padding: var(--space-lg); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-ground-base); }
+  .exec-panel:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+  .exec-table { container-type: inline-size; display: grid; gap: var(--space-sm); min-inline-size: 0; }
+  .cabinet-tools { display: grid; grid-template-columns: minmax(12rem, 1.5fr) repeat(3, minmax(8rem, 1fr)); gap: var(--space-md); padding-block: var(--space-md); }
+  .cabinet-tools .ui-field { min-inline-size: 0; }
+  @container (max-width: 48rem) { .cabinet-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @container (max-width: 24rem) { .cabinet-tools { grid-template-columns: minmax(0, 1fr); } }
+}

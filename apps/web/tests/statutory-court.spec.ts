@@ -1,0 +1,30 @@
+import { expect, test } from "@playwright/test";
+import { expectNoHorizontalOverflow, importFixture } from "./helpers";
+
+test("a Congress-originated statutory challenge reaches the docket and a readable case", async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await importFixture(page, "statutory-court");
+  await page.goto("/washington/courts?view=docket");
+  const help = page.getByRole("button", { name: "How a challenge moves through the courts", exact: true });
+  await help.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "An appeal does not start the case over" })).toBeVisible();
+  await expectNoHorizontalOverflow(page, "court procedure help");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "How a challenge moves through the courts" })).toBeHidden();
+  const pending = page.getByRole("table", { name: "Pending cases" });
+  await expect(pending.getByRole("link", { name: "Potomac Precision Works v. Department of Defense" })).toBeVisible();
+  await expect(pending.getByText(/Scope of Congress's industrial-base authorization/)).toBeVisible();
+  await pending.getByRole("link", { name: "Potomac Precision Works v. Department of Defense" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Potomac Precision Works v. Department of Defense" })).toBeVisible();
+  await expect(page.getByText(/concrete contractual injury/)).toBeVisible();
+  await expect(page.getByText(/Does the industrial-base authorization permit/).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Read the Act" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Read the priority order" })).toBeVisible();
+  await expect(page.getByText(/The lower court .* priority/).first()).toBeVisible();
+  await expectNoHorizontalOverflow(page, "statutory court case");
+  await page.screenshot({ path: `/private/tmp/admin-statutory-court-${info.project.name}.png`, fullPage: true, animations: "disabled" });
+  expect(errors).toEqual([]);
+});

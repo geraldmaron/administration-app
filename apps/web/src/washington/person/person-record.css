@@ -1,0 +1,52 @@
+/* A person's record in office: the decisions they cast as a table that stacks on a phone, and the plain facts for a governor or foreign leader. */
+@layer rooms {
+  .person-record {
+    inline-size: 100%;
+    border: 1px solid var(--color-border-strong);
+    border-collapse: collapse;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .person-record th,
+  .person-record td {
+    padding: var(--space-sm) var(--space-md);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  .person-record thead th {
+    background: var(--color-ground-raised);
+    color: var(--color-text-secondary);
+    font-weight: var(--weight-medium);
+  }
+
+  .person-record__date {
+    display: block;
+    color: var(--color-text-tertiary);
+    font-size: var(--size-caption);
+    font-weight: var(--weight-regular);
+  }
+
+  .person-record__cast {
+    font-weight: var(--weight-strong);
+  }
+
+  .person-record__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--space-sm) var(--space-lg);
+    margin: 0 0 var(--space-md);
+  }
+
+  .person-record__facts dt {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .person-record__facts dd {
+    margin: 0;
+    font-weight: var(--weight-strong);
+  }
+}

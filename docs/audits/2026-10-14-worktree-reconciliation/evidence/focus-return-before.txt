@@ -1,0 +1,1 @@
+<h1 class="screen-head__title" tabindex="-1">Economy</h1>

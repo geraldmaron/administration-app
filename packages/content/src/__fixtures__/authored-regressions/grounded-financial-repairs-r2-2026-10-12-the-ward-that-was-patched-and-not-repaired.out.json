@@ -1,0 +1,149 @@
+{
+  "id": "the-ward-that-was-patched-and-not-repaired",
+  "class": "public-health",
+  "severity": "serious",
+  "dilemmaShape": "containment",
+  "subject": "A state needs federal help during a health surge",
+  "cast": {
+    "pick": "collectionReport",
+    "bind": "home"
+  },
+  "conditions": [
+    {
+      "kind": "collectionReport",
+      "targetKind": "domestic-state",
+      "status": "findings",
+      "topic": "domestic-security",
+      "basis": "governor-request",
+      "condition": "pandemic",
+      "confidence": "low"
+    }
+  ],
+  "weight": 1,
+  "once": true,
+  "locus": {
+    "site": "capital",
+    "ground": "home",
+    "descriptor": "the federal public-health desk reading the governor\u2019s issued request"
+  },
+  "context": {
+    "standing": "A governor has requested federal help for {{reportTarget}} during an active pandemic. The issued report describes the condition and the request. State health officials still decide where patients and staff go.",
+    "precedent": "Direct relief to one state sends money and materiel ahead of ordinary funding. A review pays for a closer federal assessment and gives the state more time. The standing relief order commits a larger disaster supplemental to the same requesting state.",
+    "pressures": [
+      {
+        "source": "cabinet",
+        "want": "Health officials want the state supplied now, but warn that federal money cannot assign beds or staff from the White House."
+      },
+      {
+        "source": "street",
+        "want": "Families want supplies and treatment close to home while the state\u2019s health system is under pressure."
+      },
+      {
+        "source": "legislature",
+        "want": "Members want to know whether a smaller state act answers the request or the larger appropriated order is necessary."
+      },
+      {
+        "source": "cabinet",
+        "want": "The budget office warns that the relief order borrows more and obligates more than direct state relief."
+      }
+    ],
+    "inaction": "The governor\u2019s request remains open and the pandemic condition continues. This decision sends no new federal resources unless the President acts.",
+    "unknown": "The report does not say how long the surge will last or which hospitals the state will ask to support first."
+  },
+  "particulars": [
+    {
+      "label": "Requesting state",
+      "value": "{{reportTarget}}"
+    },
+    {
+      "label": "Federal report",
+      "value": "1 issued finding"
+    },
+    {
+      "label": "Current condition",
+      "value": "Active pandemic"
+    },
+    {
+      "label": "Relief scope",
+      "value": "1 state"
+    }
+  ],
+  "opening": [
+    {
+      "speaker": {
+        "kind": "cabinet",
+        "roleHint": "health"
+      },
+      "text": "The governor of {{reportTarget}} is asking for help during the active pandemic. We can direct relief to the state now. The question is how much federal authority and money to commit."
+    },
+    {
+      "speaker": {
+        "kind": "narrator"
+      },
+      "text": "The smaller state act sends aid now; a review buys a short interval but sends no relief; the standing relief order puts a larger appropriated supplemental behind this same state."
+    }
+  ],
+  "replies": [
+    {
+      "id": "close-the-wing",
+      "tone": "firm",
+      "text": "Send direct federal relief to {{reportTarget}} now. Leave clinical placement to the state.",
+      "commitment": {
+        "kind": "position",
+        "cost": {},
+        "remembered": "The President directed federal relief to {{reportTarget}} against the governor\u2019s recorded request.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "cabinet",
+            "roleHint": "health"
+          },
+          "text": "The state relief act is signed. Money and materiel are committed to {{reportTarget}}; its health officials decide where those resources go."
+        },
+        "localeAct": "relief"
+      }
+    },
+    {
+      "id": "repair-around-the-patients",
+      "tone": "conciliatory",
+      "text": "Order a federal review before sending relief. Ask for a closer account of what the state can use.",
+      "commitment": {
+        "kind": "position",
+        "cost": {},
+        "remembered": "The President ordered a federal review of {{reportTarget}}\u2019s request while the condition remained active.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "cabinet",
+            "roleHint": "health"
+          },
+          "text": "The federal review is ordered. It costs staff time and moves the state\u2019s answer window back, but sends no relief today."
+        },
+        "localeAct": "review"
+      }
+    },
+    {
+      "id": "shut-the-two-bays",
+      "tone": "coercive",
+      "text": "Sign the larger appropriated relief order for {{reportTarget}}. Put the full state request behind it.",
+      "commitment": {
+        "kind": "position",
+        "cost": {},
+        "remembered": "The President signed the standing disaster relief order for {{reportTarget}}, committing a larger supplemental to the requesting state.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "cabinet",
+            "roleHint": "health"
+          },
+          "text": "The order is signed for {{reportTarget}}. A larger federal obligation now backs the state response; state officials still determine clinical use."
+        },
+        "relief": true
+      }
+    }
+  ],
+  "topics": [
+    "health",
+    "scandal"
+  ],
+  "binding": {
+    "mechanisms": []
+  }
+}

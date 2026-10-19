@@ -1,0 +1,153 @@
+{
+  "id": "the-file-the-defense-has-now-asked-for",
+  "class": "justice",
+  "severity": "serious",
+  "dilemmaShape": "disclosure",
+  "topics": [
+    "judiciary",
+    "intelligence"
+  ],
+  "subject": "The inspector general\u2019s file at Justice",
+  "cast": {
+    "pick": "none"
+  },
+  "conditions": [
+    {
+      "kind": "oversightMatter",
+      "origin": "inspector-general",
+      "institution": "INST-DOJ",
+      "stage": "opened",
+      "public": false
+    }
+  ],
+  "weight": 1,
+  "once": true,
+  "locus": {
+    "site": "capital",
+    "ground": "home",
+    "descriptor": "the White House counsel\u2019s room with the inspector general\u2019s open notice on the table"
+  },
+  "context": {
+    "standing": "The Justice Department inspector general has opened a private audit into {{matterSubject}}. The office is still gathering its first record. The President can act on Justice, but cannot decide what the inspector general finds.",
+    "precedent": "A case-specific presidential instruction to Justice can be refused under the department\u2019s communication rules. A broader enforcement posture can be carried without directing this audit. Written notice to remove an inspector general takes thirty days, leaves the audit running, and makes the obstruction public.",
+    "pressures": [
+      {
+        "source": "cabinet",
+        "want": "The Attorney General warns that an order to investigate this audit\u2019s subject can be refused as case direction from the White House."
+      },
+      {
+        "source": "legislature",
+        "want": "Congress has not yet heard of the audit. A removal notice would put both the inquiry and the President\u2019s move against it before members."
+      },
+      {
+        "source": "cabinet",
+        "want": "White House counsel says a department-wide enforcement instruction must not be sold as an answer to the inspector general\u2019s own file."
+      },
+      {
+        "source": "press",
+        "want": "The audit is still private. The President\u2019s written removal notice would make the struggle over it a public matter."
+      }
+    ],
+    "inaction": "The inspector general continues the private audit. Justice receives no new presidential directive, and the inspector general stays in office.",
+    "unknown": "The audit has not reported a finding. Justice may refuse a case-specific instruction, and no one can say yet what the inspector general will conclude."
+  },
+  "particulars": [
+    {
+      "label": "Office",
+      "value": "Justice inspector general"
+    },
+    {
+      "label": "Audit stage",
+      "value": "1 of 3"
+    },
+    {
+      "label": "Public status",
+      "value": "Private"
+    },
+    {
+      "label": "Removal notice",
+      "value": "30 days"
+    }
+  ],
+  "opening": [
+    {
+      "speaker": {
+        "kind": "cabinet",
+        "roleHint": "justice"
+      },
+      "text": "Justice\u2019s inspector general has opened an audit into {{matterSubject}}. It is still private. You can instruct the department, but you cannot instruct the inspector general to reach a finding."
+    },
+    {
+      "speaker": {
+        "kind": "narrator"
+      },
+      "text": "A case-specific investigation order may be refused. A broader enforcement instruction changes the department\u2019s posture, not the audit. A written removal notice starts a thirty-day clock and exposes the fight to Congress."
+    }
+  ],
+  "replies": [
+    {
+      "id": "hand-the-file-over",
+      "tone": "firm",
+      "text": "Direct Justice to investigate the subject named in the inspector general\u2019s open audit. Put the instruction in writing even if the department refuses it.",
+      "commitment": {
+        "kind": "position",
+        "cost": {},
+        "directive": {
+          "kind": "investigation"
+        },
+        "remembered": "The President instructed Justice to investigate the inspector general matter\u2019s subject, and Justice refused the case-specific direction under its standing communications rule.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "cabinet",
+            "roleHint": "justice"
+          },
+          "text": "Justice\u2019s counsel has declined the case-specific instruction. The refusal is filed, the department bears the pressure of having had to answer, and the inspector general\u2019s audit continues."
+        }
+      }
+    },
+    {
+      "id": "fight-the-request",
+      "tone": "principled",
+      "text": "Set a department-wide enforcement posture on case intake and charging standards. Leave the inspector general\u2019s audit to run on its own.",
+      "commitment": {
+        "kind": "position",
+        "cost": {},
+        "directive": {
+          "kind": "enforcement-posture",
+          "subject": "department-wide case intake and charging standards"
+        },
+        "remembered": "The President issued a department-wide enforcement-posture directive to Justice without directing the inspector general\u2019s audit.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "cabinet",
+            "roleHint": "justice"
+          },
+          "text": "The posture order has gone to Justice. It addresses the department\u2019s general work; the inspector general still owns this file and its finding."
+        }
+      }
+    },
+    {
+      "id": "drop-the-two-cases",
+      "tone": "coercive",
+      "text": "File written notice to remove Justice\u2019s inspector general, citing loss of confidence in how this audit is being handled.",
+      "commitment": {
+        "kind": "position",
+        "cost": {},
+        "remembered": "The President filed written notice of intent to remove Justice\u2019s inspector general while the audit was open.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "narrator"
+          },
+          "text": "The notice is filed. The inspector general remains in office through the thirty-day period, the audit continues, and Congress can now see the move against it."
+        },
+        "directive": {
+          "kind": "inspector-removal-notice",
+          "reason": "loss of confidence in the handling of the open departmental audit"
+        }
+      }
+    }
+  ],
+  "binding": {
+    "mechanisms": []
+  }
+}

@@ -1,0 +1,9 @@
+// Deliberate boundary violation, used only by scripts/verify-boundary-lint.mjs.
+// Not a .ts file (so it never lints as part of the normal package build) — the
+// verify script copies it into packages/engine/src as a temp .ts file, lints it,
+// and asserts ESLint reports the no-restricted-imports violation below.
+import { useState } from "react";
+
+export function brokenOnPurpose() {
+  return useState(0);
+}

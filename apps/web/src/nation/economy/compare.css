@@ -1,0 +1,103 @@
+/* The economy's comparison panel: its controls, country chips and source line. */
+@layer rooms {
+  .economic-comparison .compare__peers {
+    display: grid;
+    gap: var(--space-xs);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .economic-comparison .compare__peers legend {
+    margin: 0 0 var(--space-xs);
+    padding: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-compact);
+  }
+
+  .compare__count {
+    margin-inline-start: var(--space-sm);
+    font-weight: var(--weight-regular);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .compare__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .compare__chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-block-size: var(--hit-min);
+    padding-inline: var(--space-md);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background: var(--color-ground-base);
+    font-size: var(--size-label);
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-control);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .compare__chip:hover { background: var(--color-ground-raised-hover); }
+
+  .compare__chip[data-on="true"] {
+    border-color: var(--color-blue);
+    background: color-mix(in srgb, var(--color-blue) 6%, var(--color-ground-base));
+  }
+
+  .compare__chip[data-disabled="true"] {
+    border-color: var(--color-border-subtle);
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+  }
+
+  .compare__chip[data-disabled="true"]:hover { background: var(--color-ground-base); }
+
+  .compare__chip input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: inherit;
+  }
+
+  .compare__chip:has(input:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  /* The swatch is the line itself: the same color and dash the chart draws it in. */
+  .compare__swatch {
+    inline-size: 1.25rem;
+    block-size: 0;
+    border-block-start: 3px solid var(--color-border-strong);
+  }
+
+  .compare__chip[data-variant="0"] .compare__swatch { border-block-start: 3px solid var(--color-blue); }
+  .compare__chip[data-variant="1"] .compare__swatch { border-block-start: 3px dashed var(--color-red); }
+  .compare__chip[data-variant="2"] .compare__swatch { border-block-start: 3px dotted var(--color-gold); }
+  .compare__chip[data-variant="3"] .compare__swatch { border-block-start: 3px dashed var(--color-text-secondary); }
+
+  .cmp-era {
+    margin: calc(-1 * var(--space-xs)) 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  .cmp-source {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+}

@@ -1,0 +1,503 @@
+/* The World overview: six readings, the map and its key, the wars and pending matters, the full governments table and the standing the administration holds. Marks use the solid map inks; every printed word carries the exact reading. */
+@layer rooms {
+  .wd {
+    display: grid;
+    gap: var(--space-lg);
+    min-inline-size: 0;
+    max-inline-size: 90rem;
+    padding-block-end: var(--space-xl);
+  }
+
+  .wd-band,
+  .wd-cols,
+  .wd-stack {
+    display: grid;
+    gap: var(--space-lg);
+    min-inline-size: 0;
+  }
+
+  @media (min-width: 64em) {
+    .wd-band { grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); align-items: start; }
+    .wd-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  }
+
+  .wd-panel {
+    display: grid;
+    align-content: start;
+    gap: var(--space-md);
+    min-inline-size: 0;
+    padding: var(--panel-pad);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .wd-panel:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  .wd-panel__bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .wd-panel__title {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-snug);
+  }
+
+  .wd-count {
+    color: var(--color-text-secondary);
+    font-family: var(--font-body);
+    font-size: var(--size-small);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-regular);
+  }
+
+  .wd-subtitle {
+    margin: 0;
+    font-size: var(--size-body);
+    font-weight: var(--weight-strong);
+  }
+
+  .wd-lede {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-weight: var(--weight-medium);
+  }
+
+  .wd-muted,
+  .wd-note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  /* The headline readings. */
+
+  .wd-segments {
+    display: flex;
+    gap: 2px;
+    block-size: 0.5rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--color-ground-sunken);
+  }
+
+  .wd-segments > span {
+    flex-basis: 0;
+    min-inline-size: 4px;
+    background: var(--segment-ink);
+  }
+
+  .wd-segments [data-segment="favorable"],
+  .wd-segments [data-segment="assessed"] { --segment-ink: var(--map-div-n3); }
+  .wd-segments [data-segment="neutral"] { --segment-ink: var(--map-div-0); }
+  .wd-segments [data-segment="caution"] { --segment-ink: var(--map-div-p1); }
+  .wd-segments [data-segment="adverse"] { --segment-ink: var(--map-div-p3); }
+  .wd-segments [data-segment="unread"] { --segment-ink: var(--color-text-disabled); }
+
+  /* The map: one tone per government, from the same tokens the globe's legend uses. */
+  [data-tone="favorable"] { --tone-ink: var(--map-div-n3); }
+  [data-tone="lean-favorable"] { --tone-ink: var(--map-div-n1); }
+  [data-tone="neutral"] { --tone-ink: var(--map-div-0); }
+  [data-tone="caution"] { --tone-ink: var(--map-div-p1); }
+  [data-tone="adverse"] { --tone-ink: var(--map-div-p3); }
+  [data-tone="unread"] { --tone-ink: var(--color-text-disabled); }
+  [data-tone="none"] { --tone-ink: var(--color-border-strong); }
+  [data-tone="land"] { --tone-ink: var(--color-border-subtle); }
+  [data-tone="own"] { --tone-ink: var(--color-gold); }
+  [data-tone="seq-1"] { --tone-ink: var(--map-seq-1); }
+  [data-tone="seq-2"] { --tone-ink: var(--map-seq-3); }
+  [data-tone="seq-3"] { --tone-ink: var(--map-seq-5); }
+  [data-tone="seq-4"] { --tone-ink: var(--map-seq-7); }
+
+  .wd-switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .wd-chip {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+    min-block-size: 2.5rem;
+    padding: var(--space-2xs) var(--space-md);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 999px;
+    background: var(--color-ground-base);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--size-small);
+    cursor: pointer;
+  }
+
+  .wd-chip[aria-pressed="true"] {
+    border-color: var(--color-blue);
+    background: var(--color-blue);
+    color: var(--color-white);
+    font-weight: var(--weight-strong);
+  }
+
+  .wd-readout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+    min-block-size: 2rem;
+    margin: 0;
+    font-size: var(--size-small);
+  }
+
+  .wd-readout__name { font-weight: var(--weight-strong); }
+
+  .wd-readout__tone,
+  .wd-key__swatch {
+    flex: none;
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+    border-radius: 3px;
+    background: var(--tone-ink);
+  }
+
+  .wd-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-md);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--size-small);
+  }
+
+  .wd-key__step {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  .wd-key__step strong { font-variant-numeric: tabular-nums; }
+
+  /* Parts of the world. */
+  .wd-regions {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wd-region {
+    display: grid;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+  }
+
+  .wd-region[data-current="true"] {
+    border-color: var(--color-blue);
+    box-shadow: inset 3px 0 0 var(--color-blue);
+  }
+
+  .wd-region__head {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: baseline;
+    justify-content: space-between;
+    min-block-size: 2.5rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-text-primary);
+    font: inherit;
+    font-weight: var(--weight-strong);
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .wd-region__head:hover .wd-region__name { text-decoration: underline; }
+
+  .wd-region__count {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--weight-regular);
+  }
+
+  .wd-region__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .wd-region__flags { display: inline-flex; gap: var(--space-2xs); }
+
+  .wd-region__flag {
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: 1.75rem;
+    min-block-size: 1.75rem;
+  }
+
+  /* Rows: wars, pending matters, developments. */
+  .wd-rows {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wd-rows > li {
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .wd-rows > li:last-child { border-block-end: 0; }
+
+  .wd-war,
+  .wd-line {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: flex-start;
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  .wd-war[data-party="true"] { box-shadow: inset 3px 0 0 var(--status-danger-ink); }
+
+  .wd-war__flags {
+    display: grid;
+    gap: var(--space-2xs);
+    flex: none;
+  }
+
+  .wd-war__body,
+  .wd-line__body {
+    display: grid;
+    flex: 1 1 auto;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+  }
+
+  .wd-war__top,
+  .wd-line__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-sm);
+    align-items: center;
+  }
+
+  .wd-war__title,
+  .wd-line__title { font-weight: var(--weight-strong); }
+
+  .wd-line__mark { flex: none; margin-block-start: 2px; color: var(--color-text-secondary); }
+
+  .wd-line__kind {
+    flex: none;
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+    text-align: end;
+  }
+
+  .wd-line__stance { font-size: var(--size-small); font-weight: var(--weight-strong); }
+
+  /* The governments table. */
+  .wd-tools {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  @media (min-width: 40em) {
+    .wd-tools { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  }
+
+  .wd-count-line { margin: 0; color: var(--color-text-secondary); font-size: var(--size-small); }
+
+  .wd-tablebox {
+    container-type: inline-size;
+    display: grid;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  .wd-table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .wd-table th,
+  .wd-table td {
+    padding: var(--space-sm);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: middle;
+  }
+
+  .wd-table thead th {
+    border-block-end: 1px solid var(--color-border-strong);
+    color: var(--color-text-secondary);
+    font-weight: var(--weight-strong);
+    white-space: nowrap;
+  }
+
+  .wd-table [data-align="end"] { text-align: end; font-variant-numeric: tabular-nums; }
+
+  .wd-table__name {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+    min-inline-size: 13rem;
+    font-weight: var(--weight-medium);
+  }
+
+  .wd-table__name > span { display: grid; min-inline-size: 0; }
+
+  .wd-table td[data-label="Standing"] { min-inline-size: 9rem; }
+
+  .wd-table td[data-label="Alignment"] { display: table-cell; }
+
+  .wd-direction {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+    font-weight: var(--weight-medium);
+  }
+
+  @container (max-width: 62rem) {
+    .wd-table thead {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+
+    .wd-table,
+    .wd-table tbody,
+    .wd-table tr,
+    .wd-table th,
+    .wd-table td { display: block; }
+
+    .wd-table__row {
+      margin-block-end: var(--space-sm);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-card);
+    }
+
+    .wd-table__name { min-inline-size: 0; }
+
+    .wd-table td {
+      display: grid;
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      gap: var(--space-sm);
+      align-items: center;
+      text-align: start;
+    }
+
+    .wd-table td::before {
+      content: attr(data-label);
+      color: var(--color-text-secondary);
+      font-weight: var(--weight-strong);
+    }
+  }
+
+  /* International Standing. */
+  .wd-standing__grid {
+    display: grid;
+    gap: var(--space-lg);
+    min-inline-size: 0;
+  }
+
+  @media (min-width: 56em) {
+    .wd-standing__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); align-items: start; }
+  }
+
+  .wd-standing__now,
+  .wd-standing__charts {
+    display: grid;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  .wd-standing__figure {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: baseline;
+    margin: 0;
+  }
+
+  .wd-standing__figure strong {
+    font-size: var(--size-figure, 1.75rem);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .wd-standing__figure span { color: var(--color-text-secondary); font-size: var(--size-small); }
+
+  .wd-standing__tally {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+  }
+
+  .wd-standing__tally > div {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: baseline;
+    justify-content: space-between;
+    padding-block: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .wd-standing__tally dt { color: var(--color-text-secondary); font-size: var(--size-small); }
+  .wd-standing__tally dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: var(--weight-strong); }
+  .wd-standing__tally dd span { color: var(--color-text-secondary); font-weight: var(--weight-regular); }
+
+  .wd-standing__figure-chart {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+  }
+
+  .wd-standing__figure-chart figcaption { color: var(--color-text-secondary); font-size: var(--size-small); }
+}
+
+@layer rooms {
+  .wd-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--space-sm); margin: 0; padding: 0; list-style: none; }
+  .wd-kpi { display: grid; align-content: start; gap: var(--space-sm); padding: var(--panel-pad); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-ground-raised); min-inline-size: 0; }
+  .wd-kpi__heading { display: grid; gap: var(--space-sm); }
+  .wd-kpi__heading a { display: flex; gap: var(--space-xs); align-items: center; color: var(--color-text-primary); font-size: var(--size-small); font-weight: var(--weight-medium); }
+  .wd-kpi__heading svg { flex-shrink: 0; color: var(--color-blue); }
+  .wd-kpi__figure { display: flex; flex-wrap: wrap; gap: var(--space-xs); align-items: baseline; font-size: var(--size-title); font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+  .wd-kpi__figure small { color: var(--color-text-secondary); font-size: var(--size-caption); font-weight: var(--weight-regular); }
+  .wd-kpi[data-tone="bad"] .wd-kpi__figure { color: var(--status-danger-ink); }
+  .wd-kpi[data-tone="watch"] .wd-kpi__figure { color: var(--status-warning-ink); }
+}
+
+@layer rooms {
+  .wd-kpi { position: relative; }
+  .wd-kpi > .ui-helptip { position: absolute; inset-block-end: var(--space-xs); inset-inline-end: var(--space-xs); z-index: 2; }
+  .wd-kpi__reading { padding-inline-end: var(--space-xl); }
+  @media (max-width: 44em) {
+    .wd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .wd-kpi { padding: var(--space-sm); padding-block-end: var(--space-xl); }
+    .wd-kpi__heading a { align-items: start; }
+    .wd-kpi__figure { font-size: var(--size-title); }
+  }
+}

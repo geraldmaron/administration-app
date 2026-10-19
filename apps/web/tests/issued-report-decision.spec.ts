@@ -1,0 +1,41 @@
+import { readFileSync } from "node:fs";
+import { expect, test } from "@playwright/test";
+import { confirmReview, expectNoHorizontalOverflow, importFixture } from "./helpers";
+
+test("an authored issued report survives reload and tasks collection from the decision", async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.stack ?? error.message));
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  const fixture = JSON.parse(readFileSync(new URL("./.fixtures/issued-report-decision.json", import.meta.url), "utf8"));
+  const [caseId, item] = Object.entries(fixture.campaign.cases).find(([id]) => id.startsWith("scenario:issued-warning-private-demarche@report:"))!;
+  const report = JSON.parse((item as { authoredSnapshot: string }).authoredSnapshot).report;
+  await importFixture(page, "issued-report-decision");
+  await page.goto(`/brief/decision/${encodeURIComponent(caseId.slice("scenario:".length))}`);
+  await page.getByRole("heading", { level: 1 }).first().waitFor();
+  const opened = await page.getByRole("heading", { level: 1 }).first().textContent();
+  if (opened === "The screen could not open") throw new Error(`Decision recovery: ${errors.join("\n")}`);
+  expect(errors).toEqual([]);
+  await expect(page.getByRole("heading", { level: 1, name: /An issued warning puts/ })).toBeVisible();
+  await page.getByRole("tab", { name: "Background and history" }).click();
+  const finding = page.getByText(report.findings[0].observation, { exact: false });
+  await expect(finding).toBeVisible();
+  await expect(page.getByText(report.findings[0].source, { exact: false })).toBeVisible();
+  await expectNoHorizontalOverflow(page, "issued report decision");
+  await finding.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `tests/.results/issued-report-decision-${info.project.name}.png`, fullPage: true });
+  await page.reload();
+  await page.getByRole("tab", { name: "Background and history" }).click();
+  await expect(page.getByText(report.findings[0].observation, { exact: false })).toBeVisible();
+
+  const compare = page.getByRole("region", { name: "Compare the answers" });
+  await compare.getByRole("radio", { name: "Principled" }).check();
+  await page.getByRole("button", { name: "Give this answer" }).click();
+  await confirmReview(page);
+  await expect(page.getByRole("article", { name: /^Answered:/ })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("The tasking goes out tonight", { exact: false })).toBeVisible();
+  await page.reload();
+  await page.goto("/world/security?view=intelligence");
+  const reports = page.getByRole("region", { name: "Intelligence reports", exact: true });
+  await expect(reports).toContainText(report.summary);
+  await expectNoHorizontalOverflow(page, "retained intelligence report");
+});

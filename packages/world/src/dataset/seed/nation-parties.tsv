@@ -1,0 +1,603 @@
+# Nation parties, vendored by scripts/vendor-nation-stats.mjs — do not edit by hand.
+# fetched: 2026-09-22
+# source: CIA World Factbook archive (github.com/factbook/factbook.json), public domain — Legislative branch, parties elected and seats per party (the lower chamber where there are two), from the most recent election the Factbook records
+iso3	rank	name	short	seats
+AGO	1	Popular Movement for the Liberation of Angola	MPLA	124
+AGO	2	National Union for the Total Independence of Angola	UNITA	90
+ALB	1	Socialist Party of Albania	PS	83
+ALB	2	Democratic Party - Alliance for a Greater Albania	PD-ASHM	50
+AND	1	Democrats for Andorra (DA) and its allies		17
+AND	2	Concordia (Concòrdia) and its allies		5
+AND	3	Andorra Forward	Andorra Endavant	3
+AND	4	Social Democrat Party (PS) - Social Democracy and Progress	SDP	3
+ARG	1	Union for the Homeland	UP	48
+ARG	2	Freedom Advances	LLA	28
+ARG	3	Together for Change	JxC/Juntos	27
+ARM	1	Civil Contract Party		71
+ARM	2	Armenia Alliance		29
+ARM	3	I Have the Honour Alliance		7
+ATG	1	Antigua and Barbuda Labour Party	ABLP	9
+ATG	2	United Progressive Party	UPP	6
+ATG	3	Barbuda People's Movement	BPM	1
+ATG	4			1
+ATG	5	Republican Force		1
+AUS	1	Australian Labor Party	ALP	94
+AUS	2	Liberal National coalition		43
+AUT	1	Freedom Party	FPÖ	57
+AUT	2	People's Party	ÖVP	51
+AUT	3	Social Democratic Party	SPÖ	41
+AUT	4	NEOS	“New Austria”	18
+AUT	5	Greens		16
+AZE	1	New Azerbaidjan Party	YAP	68
+BDI	1	National Council for the Defense of Democracy - Front for the Defense of Democracy	CNDD-FDD	108
+BEL	1	New Flemish Alliance	N-VA	24
+BEL	2	Vlaams Belang	Flemish Interest	20
+BEL	3	Movement for Reform	MR	20
+BEL	4	Socialist Party in Wallonia	PS	16
+BEL	5	Workers' Party of Belgium	PTB*PVDA	15
+BEL	6	LES ENGAGÉS		14
+BEL	7	Vooruit		13
+BEL	8	Christian Democratic and Flemish	CD&V	11
+BEN	1	Progressive Union for Renewal		53
+BEN	2	Republican Block	BR	28
+BEN	3	Democrats		28
+BGR	1	Citizens for European Development of Bulgaria Party (GERB) - Union of Democratic Forces	UDF	66
+BGR	2	We Continue the Change - Democratic Bulgaria		36
+BGR	3	Revival	Vuzrazhdane	33
+BGR	4	Movement for Rights and Freedoms (DPS) - New Beginning		29
+BGR	5	Bulgarian Socialist Party (BSP) - United Left		19
+BGR	6	Alliance for Rights and Freedoms	APS	19
+BGR	7	There is Such a People	PP-ITN	17
+BHS	1	Progressive Liberal Party	PLP	32
+BHS	2	Free National Movement	FNM	7
+BIH	1	Party of Democratic Action	SDA	9
+BIH	2	Alliance of Independent Social Democrats	SNSD	6
+BIH	3	Social Democratic Party of Bosnia and Herzegovina	SDP	5
+BIH	4	HDZ BiH, HSS, HSP BiH, HKDU, HSPAS, HDU, HSPHB, HRAST		4
+BIH	5	Democratic Front (DF) - Civic Alliance	GS	3
+BIH	6	People and Justice	NAROD I PRAVDA	3
+BIH	7			3
+BIH	8	Republican Party of the Social Order	PROS	3
+BLR	1	Belaya Rus party		51
+BLR	2	Republican Party of Labour and Justice		8
+BLR	3	Communist Party of Belarus		7
+BLZ	1	People's United Party	PUP	26
+BLZ	2	United Democratic Party	UDP	5
+BOL	1	Christian Democratic Party	PDC	49
+BOL	2	LIBRE		39
+BOL	3	Unity		26
+BOL	4	Popular Alliance		8
+BRA	1	Liberal Party	PL	99
+BRA	2	Workers' Party	PT	69
+BRA	3	Brazil Union	União	59
+BRA	4	Progressive Party	PP	47
+BRA	5	Brazilian Democratic Movement	MDB	42
+BRA	6	Social Democratic Party	PSD	42
+BRA	7	Republicans	Republicanos	40
+BRB	1	Barbados Labour Party	BLP	30
+BTN	1	People's Democratic Party	PDP	30
+BTN	2	Bhutan Tendrel Party	BTP	17
+BWA	1	Umbrella for Democratic Change	UDC	36
+BWA	2	Botswana Congress Party	BCP	15
+BWA	3	Botswana Patriotic Front	BPF	5
+BWA	4	Botswana Democratic Party	BDP	4
+CAF	1	United Hearts Movement	MCU	63
+CAF	2	National Movement of Independents	MOUNI	9
+CAF	3	Union for Central African Renewal	URCA	7
+CAF	4	Movement for the Liberation of the Central African People	MLPC	7
+CAN	1	Liberal Party		169
+CAN	2	Conservative Party		144
+CAN	3	Bloc Québécois	BQ	22
+CHE	1	Swiss People's Party	SVP/UDC	62
+CHE	2	Socialist Party	SP/PS	41
+CHE	3	Centre Party		29
+CHE	4	FDP/The Liberals	FDP/PLR	28
+CHE	5	Green Party	GPS/PES	23
+CHE	6	Liberal Green Party	GLP/PVL	10
+CHL	1	Chile Podemos	Empowering Chile", CP +	53
+CHL	2	New Social Pact	NPS	37
+CHL	3	Approving Dignity	AD	37
+CHL	4	Christian Social Front	FSC	15
+CIV	1	Rally of Houphouetists for Democracy and Peace	RHDP	139
+CIV	2	te d'Ivoire-African Democratic Rally (PDCI-RDA)-Together for Democracy and Sovereignty	EDS	49
+CIV	3	te d'Ivoire-African Democratic Rally	PDCI-RDA	23
+CMR	1	Cameroon People's Democratic Movement	RDPC/CPDM	152
+COD	1	Union for Democracy and Social Progress/TSHISEKEDI	UDPS/TSHISEKEDI	69
+COD	2	Action of Allies and Union for the Congolese Nation	A/A-UNC	35
+COD	3	Alliance of Democratic Forces of Congo and Allies	AFDC-A	35
+COD	4	Act and Build	AB	26
+COD	5	Action of Allies/All for the Development of the Congo	2A/TDC	21
+COD	6	Alliance of Stakeholders for the People	AAAP	21
+COD	7	Alliance Bloc 50	A/B50	20
+COD	8	Congo Liberation Movement	MLC	19
+COG	1	Congolese Workers Party	PCT	112
+COL	1	Liberal Party	PL	32
+COL	2	Historic Pact		27
+COL	3	Conservative Party	CP	25
+COL	4	Democratic Centre	CD	16
+COL	5	Radical Change	CR	16
+COL	6	Union Party for the People “Partido de la U”		15
+COL	7	Green Alliance - Hope Centre coalition		11
+COM	1	Convention for the Renewal of the Comoros	CRC	31
+CPV	1	Movement for Democracy	MpD	38
+CPV	2	African Party for the Independence of Cabo Verde	PAICV	30
+CPV	3	Union for an Independent Democratic Cape Verde	UCID	4
+CRI	1	National Liberation Party	PLN	19
+CRI	2	Democratic Social Progress Party	PPSD	10
+CRI	3	Christian Social Unity Party	USC	9
+CRI	4	New Republic Party	NR	7
+CRI	5	Broad Front	FA	6
+CRI	6	Progressive Liberal Party	LP	6
+CYP	1	Democratic Rally	DISY	17
+CYP	2	Progressive Party of the Working People	AKEL	15
+CYP	3	Democratic Party	DIKO	9
+CYP	4	National Popular Front	ELAM	4
+CYP	5	Movement of Social Democrats	EDEK	4
+CYP	6	Democratic Alignment	DIPA	4
+CYP	7	Cyprus Green Party	KOP	3
+CZE	1	ANO		80
+CZE	2	SPOLU		52
+CZE	3	Mayors and independents	STAN	22
+CZE	4	Czech Pirate Party		18
+CZE	5	Freedom and Direct Democracy	SPD	15
+CZE	6	Motoristé sobě	AUTO	13
+DEU	1	Christian Democratic Union	CDU	164
+DEU	2	Alternative for Germany	AfD	152
+DEU	3	Social Democratic Party	SPD	120
+DEU	4	Green Party		85
+DEU	5	Left Party	Die Linke	64
+DEU	6	Christian Social Union of Bavaria	CSU	44
+DJI	1	Union for the Presidential Majority	UMP	58
+DJI	2	Union for Democracy and Justice	UDJ	7
+DMA	1	Dominica Labor Party	DLP	19
+DNK	1	Social Democratic Party		50
+DNK	2	Liberal Party	Venstre	23
+DNK	3	Moderates	M	16
+DNK	4	Socialist People's Party	SF	15
+DNK	5	Danish Democrats	Æ	14
+DNK	6	Liberal Alliance		14
+DNK	7	Conservative People's Party		10
+DNK	8	Unity List-Red-Green Alliance		9
+DOM	1	Modern Revolutionary Party (PRM) and its allies		146
+DOM	2	People’s Force (FP) and its allies		28
+DZA	1	National Liberation Front	FLN	98
+DZA	2	Movement of Society for Peace	MSP	65
+DZA	3	National Democratic Rally	RND	58
+DZA	4	El-Moustakbel Front	Future", FM	48
+DZA	5	El Binaa Movement		39
+ECU	1	Citizen Revolution Movement (RC) - Renewal Movement	RETO	67
+ECU	2	National Democratic Action	ADN	66
+ECU	3	Pachakutik		9
+EGY	1	Future of the Nation	Mostakbal Watan	317
+EGY	2	Republican People's party	El Shaab el Gomhory	49
+ESP	1	People's Party	PP	136
+ESP	2	Spanish Socialist Workers' Party	PSOE	122
+ESP	3	Vox		33
+ESP	4	SUMAR		31
+EST	1	Reform Party		37
+EST	2	Conservative People's Party	EKRE	17
+EST	3	Centre Party		16
+EST	4	Estonia 200	Eesti 200	14
+EST	5	Social Democratic Party		9
+EST	6	Pro Patria	Isamaa	8
+ETH	1	Prosperity Party		448
+FIN	1	National Coalition Party	KOK	48
+FIN	2	The Finns Party	PS	46
+FIN	3	Social Democratic Party	SDP	43
+FIN	4	Center Party	KESK	23
+FIN	5	The Greens		13
+FIN	6	Left Alliance	Vas	11
+FJI	1	FijiFirst		26
+FJI	2	People's Alliance		21
+FJI	3	National Federation Party	NFP	5
+FJI	4	Social Democratic Liberal Party	Soldelpa	3
+FRA	1	New Popular Front (NFP)/UG		178
+FRA	2	Ensemble	presidential majority	150
+FRA	3	National Rally	RN	125
+FRA	4	The Republicans	LR	39
+GBR	1	Labour Party		411
+GBR	2	Conservative Party		121
+GBR	3	Liberal Democrats		72
+GEO	1	Georgian Dream		89
+GEO	2	Coalition for Changes		19
+GEO	3	Unity - National Movement		16
+GEO	4	Strong Georgia – Lelo, For people, For Liberty!		14
+GEO	5	For Georgia		12
+GHA	1	National Democratic Congress	NDC	183
+GHA	2	New Patriotic Party	NPP	88
+GMB	1	National People's Party	NPP	18
+GMB	2	United Democratic Party	UDP	15
+GMB	3	National Reconciliation Party	NRP	4
+GNB	1	Inclusive Alliance Platform/Terra Coalition		54
+GNB	2	Movement for Democratic Alternation	MADEM G.15	29
+GNB	3	Party for Social Renewal	PRS	12
+GNB	4	Bissau-Guinean Workers’ Party		6
+GNQ	1	Democratic Party of Equatorial Guinea (PDGE) and its allies		100
+GRC	1	New Democracy	ND	158
+GRC	2	Coalition of the Radical Left	SYRIZA	47
+GRC	3	Panhellenic Socialist Movement - Movement for Change	PASOK-KINAL	32
+GRC	4	Communist Party	KKE	21
+GRD	1	National Democratic Congress	NDC	9
+GRD	2	New National Party	NNP	6
+GTM	1	Let’s Go for a Different Guatemala	Vamos	39
+GTM	2	National Unity of Hope Party	UNE	28
+GTM	3	Seed Movement	Semilla	23
+GTM	4	Cabal		18
+GTM	5	Vision with Values	VIVA	11
+GUY	1	People's Progressive Party/Civic	PPP/C	36
+GUY	2	We Invest in Nationhood	W.I.N.	16
+GUY	3	A Partnership for National Unity	APNU	12
+HND	1	Liberty and Refoundation Party	LIBRE	50
+HND	2	National Party	PN	44
+HND	3	Liberal Party	PL	22
+HND	4	Salvador de Honduras Party	PSH	10
+HRV	1	Croatian Democratic Union	HDZ	55
+HRV	2	Social Democratic Party of Croatia	SDP	37
+HRV	3	Homeland Movement	DP	11
+HRV	4	We Can! – Political Platform	Možemo!	10
+HRV	5	Bridge	Most	7
+HTI	1	Haitian Tet Kale Party	PHTK	9
+HTI	2	Konvansyon Inite Demokratik	KID	7
+HTI	3	People's Struggle Party	OPL	7
+HTI	4	Ayiti an aksyon	AAA	6
+HTI	5	Fanmi Lavalas		6
+HTI	6	Patriotic Unity Party	Inite Patriyotik	4
+HUN	1	Hungarian Civic Union-Christian Democratic People's Party	FIDESZ-KDNP	135
+HUN	2	Democratic Coalition	DK	15
+HUN	3	Movement for a Better Hungary	Jobbik	10
+HUN	4	Hungarian Socialist Party	MSZP	10
+HUN	5	Momentum		10
+IDN	1	Indonesian Democratic Party - Struggle	PDI-P	110
+IDN	2	Party of Functional Groups	Golkar	102
+IDN	3	Great Indonesia Movement	Gerindra	86
+IDN	4	National Democratic Party	NasDem	69
+IDN	5	National Awakening Party	PKB	68
+IDN	6	Prosperous Justice Party	PKS	53
+IDN	7	National Mandate Party	PAN	48
+IDN	8	Democratic Party	PD	44
+IND	1	Bharatiya Janata Party	BJP	240
+IND	2	Indian National Congress	INC	99
+IND	3	Samajwadi Party	SP	37
+IND	4	All India Trinamool Congress	AITC	29
+IRL	1	Fianna Fáil		48
+IRL	2	Sinn Féin		39
+IRL	3	Fine Gael		38
+IRL	4	Social Democratic Party		11
+IRL	5	Labour Party		11
+ISL	1	Social Democratic Alliance	SDA	15
+ISL	2	Independence Party	IP	14
+ISL	3	Liberal Reform Party		11
+ISL	4	People’s Party		10
+ISL	5	Center Party		8
+ISL	6	Progressive Party	PP	5
+ISR	1	Likud		32
+ISR	2	Yesh Atid		24
+ISR	3	Religious Zionism		14
+ISR	4	National Unity		12
+ISR	5	Shas		11
+ISR	6	United Torah Judaism	Yahadut Hatorah	7
+ISR	7	Yisrael Beiteinu		6
+ITA	1	Coalition Brothers of Italy (FdI) - Lega - Forza Italia - Us Moderates	Noi moderati, NM	237
+ITA	2	Democratic Party - Democratic and Progressive Italy (PD-IDP) - Greens and Left Alliance (AVS) - +EUROPA" - Civic Commitment	IC	84
+ITA	3	Five Star Movement	M5s	52
+ITA	4	Action - Italia Viva		21
+JAM	1	Jamaica Labour Party	JLP	35
+JAM	2	People's National Party	PNP	28
+JPN	1	Liberal Democratic Party	LDP	191
+JPN	2	Constitutional Democratic Party of Japan		148
+JPN	3	Nippon Ishin	Japan Innovation Party	38
+JPN	4	Democratic Party for the People		28
+JPN	5	Komeito		24
+KAZ	1	Amanat party		62
+KAZ	2	Auyl party		8
+KAZ	3	Ak Zhol Democratic Party of Kazakhstan		6
+KAZ	4	Respublica		6
+KAZ	5	People's Party of Kazakhstan		5
+KEN	1	United Democratic Alliance	UDA	145
+KEN	2	Orange Democratic Movement	ODM	86
+KEN	3	Jubilee Party	JP	28
+KEN	4	Wiper Democratic Movement-Kenya	WDM-K	26
+KGZ	1	Ata-Jurt Kyrgyzstan	Fatherland	15
+KGZ	2	Ishenim	Trust	12
+KGZ	3	Yntymak	Harmony	9
+KGZ	4	Alyans	Alliance	7
+KGZ	5	Butun Kyrgyzstan	United	6
+KGZ	6	Yiman Nuru	Ray of Faith	5
+KHM	1	Cambodian People's Party	CPP	120
+KHM	2	United National Front for an Independent, Neutral, Peaceful and Co-operative Cambodia	FUNCINPEC	5
+KNA	1	St. Kitts-Nevis Labour Party	SKNLP	6
+KNA	2	Concerned Citizens' Movement	CCM	3
+KNA	3	Peoples Labour Party	PLP	1
+KNA	4	People's Action Movement	PAM	1
+KOR	1	Democratic Party of Korea		161
+KOR	2	People Power Party		90
+KOR	3	People Future Party		18
+LAO	1	Lao People's Revolutionary Party	LPRP	158
+LBN	1	Strong Republic		19
+LBN	2	Strong Lebanon		18
+LBN	3	Development and Liberation		15
+LBN	4	Loyalty to the Resistance		15
+LBN	5	Democratic Gathering		8
+LBR	1	Congress for Democratic Change	CDC	25
+LBR	2	Unity Party	UP	11
+LBR	3	Collaborating Political Parties	CPP	6
+LBR	4	Movement for Democracy and Reconstruction	MDR	4
+LCA	1	Saint Lucia Labour Party	SLP	13
+LCA	2	United Workers Party	UWP	2
+LIE	1	Patriotic Union	VU	10
+LIE	2	Progressive Citizens' Party	FBP	7
+LIE	3	Democrats for Liechtenstein	DpL	6
+LIE	4	Free List	FL	2
+LKA	1	National People's Power	Jathika Jana Balawegaya, NPP	159
+LKA	2	Samagi Jana Balawegaya	SJB	40
+LSO	1	Revolution for Prosperity	RFP	56
+LSO	2	Democratic Congress	DC	29
+LSO	3	All Basotho Convention	ABC	8
+LSO	4	Basotho Action Party	BAP	6
+LTU	1	Lithuanian Social Democratic Party	LSDP	52
+LTU	2	Homeland Union - Lithuanian Christian Democrats	TS-LKD	28
+LTU	3	Political Party "The Dawn of Nemunas"	PPNA	20
+LTU	4	Union of Democrats “For Lithuania”	DSVL	14
+LTU	5	Liberals Movement of the Republic of Lithuania	LS	12
+LTU	6	Lithuanian Farmers and Greens Union	LVŽS	8
+LUX	1	Christian Social People's Party	CSV	21
+LUX	2	Democratic Party	PD/DP	14
+LUX	3	Socialist Workers' Party	POSL/LSAP	11
+LUX	4	Alternative Democratic Reform Party	ADR	5
+LUX	5	Greens	DEI GRÉNG	4
+LUX	6	Pirate Party	PIRATEN	3
+LVA	1	New Unity	VIENOTIBA	26
+LVA	2	Union of Farmers and Greens	ZZS	16
+LVA	3	United List - Latvian Green Party, Latvian Regional Alliance, Liepāja Party		15
+LVA	4	National Alliance of All for Latvia!" - "For Fatherland and Freedom / LNNK"	NA	13
+LVA	5	For Stability!		11
+LVA	6	Progressives		10
+LVA	7	Latvia First		9
+MAR	1	National Rally of Independents	RNI	102
+MAR	2	Authenticity and Modernity Party	PAM	87
+MAR	3	Istiqlal Party	PI	81
+MAR	4	Socialist Union of Popular Forces	USFP	34
+MAR	5	Popular Movement	MP	28
+MAR	6	Progress and Socialism Party	PPS	22
+MCO	1	Monegasque National Union - l’Union		24
+MDA	1	Action and Solidarity Party	PAS	55
+MDA	2	Electoral Bloc “Patriotic of Socialists, Communists, Heart and Future of Moldova”		26
+MDA	3	Alternative Bloc		8
+MDA	4	Our Party		6
+MDA	5	Democracy at Home Party		6
+MDG	1	Isika Rehetra Miaraka Amin’i Andry Rajoelina	IRMAR	84
+MDG	2	Firaisankina		22
+MDV	1	People's National Congress	PNC	66
+MDV	2	Maldivian Democratic Party	MDP	12
+MEX	1	National Regeneration Movement	MORENA	236
+MEX	2	Ecologist Green Party of Mexico	PVEM	77
+MEX	3	National Action Party	PAN	72
+MEX	4	Labour Party	PT	51
+MEX	5	Institutional Revolutionary Party	PRI	35
+MEX	6	Citizens' Movement	MC	27
+MKD	1	Coalition "Your Macedonia"	led by VMRO-DPMNE	58
+MKD	2	Coalition "European Front"	led by the Democratic Union for Integration – DUI	18
+MKD	3	Coalition "For a European Future"	led by the Social Democratic Union of Macedonia – SDSM	18
+MKD	4	Coalition VLEN		14
+MKD	5	ZNAM	Movement "I know": For our Macedonia	6
+MKD	6	The Left	Levica	6
+MLT	1	Labour Party	LP	44
+MLT	2	Nationalist Party	PN	35
+MNE	1	Europe now!	Evropa sad	24
+MNE	2	Together! For the future that belongs to you	DPS – SD – DUA – LP - UDSh	21
+MNE	3	Democratic People’s Party of Montenegro, Labour Party)		13
+MNE	4	Bravery counts!	HRABRO se broji!	11
+MNE	5	It’s clear! (Jasno je!) – Bosniak Party		6
+MNG	1	Mongolian People's Party	MPP	68
+MNG	2	Democratic Party	DP	42
+MNG	3	HUN Party		8
+MOZ	1	Mozambique Liberation Front	FRELIMO	171
+MOZ	2	Optimist Party for the Development of Mozambique	PODEMOS	43
+MOZ	3	Mozambican National Resistance	RENAMO	28
+MRT	1	El Insaf		107
+MRT	2	Tawassoul		11
+MUS	1	Alliance Du Changement	Alliance for Change, AdC	60
+MWI	1	Democratic Progressive Party	DPP	78
+MWI	2	Malawi Congress Party	MCP	52
+MYS	1	Pakatan Harapan	PH	76
+MYS	2	National Alliance	PN	52
+MYS	3	National Front	BN	30
+MYS	4	Sarawak Parties Alliance	GPS	23
+MYS	5	Pan-Malaysian Islamic Party	PAS	22
+NAM	1	SWAPO Party		51
+NAM	2	Affirmative Repositioning	AR	6
+NAM	3	Landless People's Movement	LPM	5
+NAM	4	Popular Democratic Movement	PDM	5
+NGA	1	All Progressives Congress	APC	180
+NGA	2	People's Democratic Party	PDP	116
+NGA	3	Labour Party	LP	35
+NGA	4	New Nigeria Peoples Party	NNPP	19
+NIC	1	Sandinista National Liberation Front	FSLN	75
+NIC	2	Liberal and Constitutionalist Party	PLC	9
+NLD	1	Democrats 66	D66	26
+NLD	2	Party for Freedom	PVV	26
+NLD	3	People's Party for Freedom and Democracy	VVD	22
+NLD	4	Green Left - Labour Party	PvdA	20
+NLD	5	Christian Democratic Appeal	CDA	18
+NLD	6	JA21		9
+NOR	1	Labour Party		53
+NOR	2	Progress Party		47
+NOR	3	Conservative Party		24
+NOR	4	Socialist Left Party		9
+NOR	5	Center Party		9
+NOR	6	Red Party		9
+NPL	1	Nepali Congress	NC	89
+NPL	2	Communist Party of Nepal	Unified Marxist-Leninist, UML	78
+NPL	3	Communist Party of Nepal-Maoist Centre	CPN-MC	32
+NPL	4	Rastriya Swatantra Party		20
+NPL	5	Rastriya Prajatantra Party Nepal	RPP	14
+NPL	6	People's Socialist Party, Nepal		12
+NPL	7	Communist Party of Nepal	Unified Socialist	10
+NPL	8	Janamat Party		6
+NPL	9	Democratic Socialist Party, Nepal		4
+NPL	10	People's Freedom Party		3
+NPL	11	Nepal Workers Peasants Party		1
+NPL	12	Rastriya Janamorcha		1
+NZL	1	National Party		49
+NZL	2	Labour Party		34
+NZL	3	Green Party		14
+NZL	4	ACT New Zealand		11
+NZL	5	New Zealand First		8
+NZL	6	Te Pāti Māori		4
+PAK	1	Pakistan Muslim League-Nawaz	PML-N	75
+PAK	2	Pakistan People's Party Parliamentarians	PPPP	54
+PAK	3	Muttahida Quami Movement Pakistan	MQMP	17
+PAN	1	Realizing Goals	RM	14
+PAN	2	Democratic Revolutionary Party	PRD	13
+PAN	3	Democratic Change	CD	8
+PAN	4	Panamenista Party		8
+PER	1	Free Peru	PL	37
+PER	2	Popular Force	FP	24
+PER	3	Popular Action	AP	16
+PER	4	Alliance for Progress	APP	15
+PER	5	Go on Country - Social Integration Party	AvP	10
+PER	6	Popular Renewal	RP	9
+PER	7	We Are Peru" (SP) - Purple Party	PM	9
+PNG	1	Niugini Union Pati	PANGU	39
+PNG	2	People's National Congress Party	PNC	15
+PNG	3	United Resource Party	URP	11
+POL	1	Law and Justice	PiS	194
+POL	2	Civic Coalition	KO	157
+POL	3	The Third Way		65
+POL	4	The New Left	Nowa Lewica	26
+PRT	1	Social Democratic Party (PPD/PSD) - Democratic and Social Centre - People's Party	CDS-PP	88
+PRT	2	Chega	CH	60
+PRT	3	Socialist Party	PS	58
+PRY	1	National Republican Association/Colorado Party	ANR	48
+PRY	2	Authentic Radical Liberal Party (PLRA) - Alliances		23
+PRY	3	National Crusade Party	CN	4
+ROU	1	Social Democratic Party	PSD	86
+ROU	2	Alliance for the Union of Romanians	AUR	63
+ROU	3	National Liberal Party	PNL	49
+ROU	4	Save Romania Union	USR	40
+ROU	5	S.O.S. Romania		28
+ROU	6	Party of Young People	POT	24
+ROU	7	Democratic Union of Hungarians in Romania	UDMR	22
+RUS	1	United Russia		326
+RUS	2	Communist Party	KPRF	57
+RUS	3	A Just Russia		28
+RUS	4	Liberal Democratic Party of Russia	LDPR	23
+RWA	1	Rwandan Patriotic Front (FPR) and its allies		37
+RWA	2	Liberal Party	PL	5
+RWA	3	Social Democratic Party	PSD	5
+SEN	1	Pastef Party		130
+SEN	2	Coalition Takku Wallu Sénégal		16
+SGP	1	People's Action Party	PAP	87
+SGP	2	Workers' Party	WPS	12
+SLB	1	Ownership Unity and Responsibility	OUR Party	15
+SLB	2	Solomon Islands Democratic Party	SIDP	11
+SLB	3	Solomon Islands United Party	UP	6
+SLB	4	Solomon Islands People First Party	SIPFP	3
+SLE	1	Sierra Leone People's Party	SLPP	81
+SLE	2	All People's Congress	APC	54
+SLV	1	New Ideas	N	54
+SMR	1	Christian Democratic Party of San Marino	PDCS	22
+SMR	2	Free (Libera) – Socialist Party	PS	10
+SMR	3	Future Republic	RF	8
+SMR	4	Party of Socialists and Democrats	PSD	8
+SMR	5	Tomorrow - Motus Liberi		5
+SMR	6	Reformist Alliance	AR	4
+SMR	7	R.E.T.E. Citizens' Movement		3
+SRB	1	Aleksandar Vucic – Serbia Must Not Stop		129
+SRB	2	Serbia Against Violence		65
+SRB	3	Ivica Dacic - Prime Minister of Serbia		18
+SRB	4	Dr Miloš Jovanović - Hope for Serbia		13
+SRB	5	We – Voice of the People, Prof. Dr. Branimir Nestorovic		13
+STP	1	Sao Tome and Principe Liberation Movement/Social Democratic Party	MLSTP - PSD	18
+STP	2	Movement of Independent Citizens - Socialist Party (MCI - PS) - National Unity Party	PUN	5
+SUR	1	National Democratic Party	NDP	18
+SUR	2	Progressive Reform Party	VHP	17
+SUR	3	National Party of Suriname	NPS	6
+SUR	4	General Liberation and Development Party	ABOP	6
+SVK	1	Smer - Social Democracy	Smer-SD	42
+SVK	2	Progressive Slovakia	PS	32
+SVK	3	Hlas (“Voice”) - SD		27
+SVK	4	Coalition OĽaNO and Friends, 'For the People' and 'Christian Union'		16
+SVK	5	Christian Democratic Movement	KDH	12
+SVK	6	Freedom and Solidarity	SaS	11
+SVK	7	Slovak National Party	SNS	10
+SVN	1	Freedom Movement	SVOBODA	41
+SVN	2	Slovenian Democratic Party	SDS	27
+SVN	3	New Slovenia - Christian Democrats	NSi	8
+SVN	4	Social Democrats	SD	7
+SVN	5	Left	LEVICA	5
+SWE	1	Social Democratic Party	SAP	107
+SWE	2	Sweden Democrats	SD	73
+SWE	3	Moderate Party	M	68
+SWE	4	Left Party	VP	24
+SWE	5	Centre Party	CP	24
+SWE	6	Christian Democrats	KD	19
+SWE	7	Green Party	Mpg	18
+SYC	1	United Seychelles	US	19
+SYC	2	Seychelles Democratic Alliance	Linyon Demokratik Seselwa, LDS	15
+TCD	1	Patriotic Salvation Movement	MPS	124
+TCD	2	veil)		12
+TGO	1	Union for the Republic	UNIR	108
+THA	1	Move Forward		151
+THA	2	Pheu Thai		141
+THA	3	Bhumjaithai		71
+THA	4	Palang Pracharath		40
+THA	5	United Thai Nation		36
+THA	6	Democrat Party		25
+TJK	1	People's Democratic Party of Tajikistan	PDPT	49
+TJK	2	Agrarian Party of Tajikistan	APT	7
+TJK	3	Party of Economic Reforms of Tajikistan	PERT	5
+TKM	1	Democratic Party of Turkmenistan	DPT	65
+TKM	2	Groups of citizens of Turkmenistan		28
+TKM	3	Agrarian Party		24
+TKM	4	Party of Industrialists and Entrepreneurs		8
+TLS	1	National Congress for the Reconstruction of Timor-Leste	CNRT	31
+TLS	2	Revolutionary Front for an independent East Timor	FRETILIN	19
+TLS	3	Democratic Party	PD	6
+TLS	4	Kmanek Haburas Unidade Nasional Timor Oan	KHUNTO	5
+TLS	5	People's Liberation Party	PLP	4
+TTO	1	United National Congress	UNC	26
+TTO	2	People's National Movement	PNM	13
+TUR	1	Justice and Development Party	Ak Party	267
+TUR	2	Republican People's Party	CHP	130
+TUR	3	Green and the Left Party of the Future	YSGP	57
+TUR	4	Nationalist Action Party	MHP	50
+TUR	5	Good Party	İyi Party	44
+TZA	1	Revolutionary Party of Tanzania	CCM	383
+TZA	2	ACT-Wazalendo		2
+UGA	1	National Resistance Movement	NRM	336
+UGA	2	National Unity Platform	NUP	57
+UGA	3	Forum for Democratic Change	FDC	32
+UKR	1	Servant of the People		254
+UKR	2	Opposition Platform - For Life		43
+UKR	3	Fatherland		26
+UKR	4	European Solidarity		25
+URY	1	Broad Front	FA	48
+URY	2	National Party	PN	29
+URY	3	Colorado Party	PC	17
+USA	1	Republican Party		220
+USA	2	Democratic Party		215
+UZB	1	Movement of Entrepreneurs and Businesspeople - Liberal Democratic Party	UzLiDeP	64
+UZB	2	Milliy Tiklanish Democratic Party	O'zMTDP	29
+UZB	3	Social Democratic Party	"Adolat" SDP	21
+UZB	4	People's Democratic Party	XDP	20
+UZB	5	Ecological Party	O'EP	16
+VCT	1	United Labour Party	ULP	9
+VCT	2	New Democratic Party	NDP	6
+VNM	1	Communist Party		485
+VUT	1	Leaders Party of Vanuatu	LPV	9
+VUT	2	Vanua'aku Pati	VP	7
+VUT	3	Iauko Group	IG	6
+VUT	4	Union of Moderate Parties	UMP	6
+VUT	5	Rural Development Party	RDP	6
+VUT	6	Graon mo Jastis Pati	Land and Justice Party, GJP	5
+VUT	7	Reunification Movement for Change	RMC	5
+WSM	1	Faatuatua ile Atua Samoa ua Tasi	FAST	32
+WSM	2	Human Rights Protection Party (HRPP) (22), Sāmoa Uniting Party (SUP) (3), Independents		4
+XKX	1	Self-Determination Movement (LVV) (58), Democratic Party of Kosovo (PDK) (19), Democratic League of Kosovo (LDK) (15), Serb List (10), Alliance for the Future of Kosovo (AAK) (8), other		10
+YEM	1	General People's Congress	GPC	238
+YEM	2	Yemeni Congregation for Reform	Islah	46
+ZMB	1	United Party for National Development	UPND	82
+ZMB	2	Patriotic Front	PF	60
+ZWE	1	ZANU-PF		175
+ZWE	2	Citizens Coalition for Change	CCC	104

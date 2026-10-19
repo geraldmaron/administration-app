@@ -1,0 +1,281 @@
+import { agendaTheme } from "@admin/world";
+import { selectNation, selectRelationship, selectRelationshipsFrom } from "./state.js";
+import { grudgeWeight } from "./relationships.js";
+import { liveTemperament, TEMPERAMENT_CENTER } from "./temperament.js";
+import { nationName } from "./naming.js";
+import { engagementLine } from "./wire.js";
+import { envoyBenchLean, envoyLean, presidentRapport } from "./treaty-counterpart.js";
+import { sharedPressureWarning } from "./intelligence.js";
+import { noiseFrom, projectWillingness, stampOf, weigh, willDraw, } from "./willingness.js";
+export const ENGAGEMENT_KINDS = ["call", "envoy", "visit", "summit", "declaration"];
+/**
+ * The most any one engagement moves any one reading. A single call is not a
+ * reconciliation; a relationship is changed by a run of them, which is why the
+ * cooldown and this bound are set together.
+ */
+export const ENGAGEMENT_BOUND = 0.06;
+// Planning values, set so a call is almost always taken and a joint declaration
+// only between governments that already trust each other. A summit is how two
+// tense governments meet, so it is the one that works mostly on tension. A
+// joint declaration records trust already built and sets the pair's direction,
+// so it moves common aims at the family's bound and trust no more than a visit.
+export const ENGAGEMENT_TERMS = {
+    call: { warmth: { trust: 0.02, tension: -0.01, alignment: 0 }, cooldownWeeks: 4, threshold: -0.4 },
+    envoy: { warmth: { trust: 0.02, tension: -0.02, alignment: 0 }, cooldownWeeks: 6, threshold: -0.2 },
+    visit: { warmth: { trust: 0.05, tension: -0.02, alignment: 0.02 }, cooldownWeeks: 26, threshold: 0.15 },
+    summit: { warmth: { trust: 0.03, tension: -0.06, alignment: 0 }, cooldownWeeks: 26, threshold: 0 },
+    declaration: { warmth: { trust: 0.04, tension: -0.02, alignment: 0.06 }, cooldownWeeks: 52, threshold: 0.35 },
+};
+/** The noise on a government's decision to receive; inside this margin the draw decides. */
+const RECEIVE_NOISE = 0.1;
+/** The trust each side must hold before a joint declaration is on the table at all. */
+export const DECLARATION_TRUST = 0.3;
+/** The tension below which two governments have no need of a summit. */
+export const SUMMIT_TENSION = 0.3;
+/** The host's trust in the visitor below which it will not stage a state visit. */
+export const VISIT_HOST_TRUST = 0;
+// How much engagement serves each kind of aim. Standing is built at summits and
+// on state visits; a government after its own autonomy engages widely so no one
+// patron owns it; an inward agenda finds little in it.
+const ENGAGEMENT_AFFINITY = {
+    security: 0.45,
+    economic: 0.7,
+    prestige: 0.95,
+    autonomy: 0.6,
+    internal: 0.3,
+};
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const round4 = (v) => Math.round(v * 10000) / 10000 || 0;
+export const engagementHistoryKind = (kind) => `engagement-${kind}`;
+/** How much a government's own aims are served by engaging at all, 0..1. */
+export function engagementAffinity(traits) {
+    const total = traits.agendas.reduce((sum, agenda) => sum + agenda.weight, 0);
+    if (total === 0)
+        return 0.5;
+    const weighted = traits.agendas.reduce((sum, agenda) => {
+        const theme = agendaTheme(agenda.id);
+        return sum + (theme ? ENGAGEMENT_AFFINITY[theme] : 0.5) * agenda.weight;
+    }, 0);
+    return weighted / total;
+}
+/** The week this kind was last made or refused on this edge, if it was. */
+function lastMade(edge, kind) {
+    const tag = engagementHistoryKind(kind);
+    const made = edge.history.filter((event) => event.kind === tag || event.kind === `${tag}-declined`);
+    return made.length > 0 ? Math.max(...made.map((event) => event.turn)) : undefined;
+}
+// --- The people at the table ---------------------------------------------
+/**
+ * How much the Secretary of State's own hand counts in a government's decision
+ * to receive each kind. A call is the President on the line and nobody else; an
+ * envoy is the Secretary's own work, and a visit, a summit or a declaration is
+ * prepared by the department before the President arrives.
+ */
+export const ENVOY_WEIGHT = {
+    call: 0,
+    envoy: 0.3,
+    visit: 0.15,
+    summit: 0.2,
+    declaration: 0.15,
+};
+/**
+ * How much warmer a received meeting is with a Secretary at the strong end of
+ * the bench, and how much cooler at the weak end. A product choice for how much
+ * the Secretary of State's leadership is worth, not a tuned figure; an empty
+ * chair reads below the bench and lands 15% cooler.
+ */
+const WARMTH_PER_BENCH_LEAN = 0.12;
+/** How much rapport between the two leaders counts in a decision to receive. */
+const RECEIVE_RAPPORT_WEIGHT = 0.15;
+const byPresidentOf = (campaign, request) => request.actor === campaign.founding.nation;
+/**
+ * How far the Secretary of State's craft sizes what a received meeting does
+ * for the relationship. Only the President's own meetings, and never a call,
+ * which the Secretary does not prepare; 1 everywhere else.
+ */
+export function warmthScale(campaign, request) {
+    if (!byPresidentOf(campaign, request) || ENVOY_WEIGHT[request.kind] === 0)
+        return 1;
+    return round4(1 + WARMTH_PER_BENCH_LEAN * envoyBenchLean(campaign));
+}
+/**
+ * The President's side of the table, as the receiving government weighs it:
+ * who the department sent, and how the two leaders get on. Nothing for another
+ * government's request, whose own people are not modeled at the table.
+ */
+function presidentTerms(campaign, request) {
+    if (!byPresidentOf(campaign, request))
+        return [];
+    const weight = ENVOY_WEIGHT[request.kind];
+    const rapport = presidentRapport(campaign, request.target);
+    return [
+        ...(weight > 0 ? [{ key: "envoy", source: "situation", value: round4(weight * envoyLean(campaign)) }] : []),
+        ...(rapport === undefined ? [] : [{ key: "rapport", source: "trait", value: round4(RECEIVE_RAPPORT_WEIGHT * rapport) }]),
+    ];
+}
+/** What keeps this kind off the table between the two this week, or undefined when it is on it. */
+export function engagementHold(campaign, request) {
+    const out = selectRelationship(campaign, request.actor, request.target);
+    const back = selectRelationship(campaign, request.target, request.actor);
+    if (!out || !back || request.actor === request.target)
+        return { kind: "no-relationship" };
+    const last = lastMade(out, request.kind);
+    const cooldown = ENGAGEMENT_TERMS[request.kind].cooldownWeeks;
+    if (last !== undefined && campaign.turn - last < cooldown)
+        return { kind: "cooldown", weeksLeft: cooldown - (campaign.turn - last) };
+    if (request.kind === "visit" && back.trust < VISIT_HOST_TRUST)
+        return { kind: "host-distrusts", theirs: back.trust, need: VISIT_HOST_TRUST };
+    const tension = Math.max(out.tension, back.tension);
+    if (request.kind === "summit" && tension < SUMMIT_TENSION)
+        return { kind: "too-calm", tension, need: SUMMIT_TENSION };
+    if (request.kind === "declaration" && (out.trust < DECLARATION_TRUST || back.trust < DECLARATION_TRUST))
+        return { kind: "too-little-trust", ours: out.trust, theirs: back.trust, need: DECLARATION_TRUST };
+    return undefined;
+}
+/** Whether this kind is on the table between the two this week. */
+export function engagementAvailable(campaign, request) {
+    return engagementHold(campaign, request) === undefined;
+}
+/** The engagements a government could make this week, to the governments it has a working relationship with. */
+export function engagementCandidates(campaign, actor, targets) {
+    const allowed = targets ? new Set(targets) : undefined;
+    return selectRelationshipsFrom(campaign, actor)
+        .filter((edge) => !allowed || allowed.has(edge.to))
+        .flatMap((edge) => ENGAGEMENT_KINDS.map((kind) => ({ actor, target: edge.to, kind })))
+        .filter((request) => engagementAvailable(campaign, request));
+}
+/**
+ * What the receiving government weighs: its own trust in the one asking, what
+ * stands between them, what the one asking is worth to it, whether its own aims
+ * are served by the meeting, and whether it is a government that keeps to
+ * itself. Read from the edge the receiver holds and its live temperament; for
+ * the President's own request, also who the State Department sent and how the
+ * two leaders get on.
+ */
+function receiveTerms(campaign, request) {
+    const back = selectRelationship(campaign, request.target, request.actor);
+    const temper = liveTemperament(campaign, request.target);
+    const asker = selectNation(campaign, request.actor);
+    const weight = (asker.base.bands.powerTier - 1) / 4;
+    return [
+        { key: "bond", source: "interest", value: round4(0.8 * back.trust) },
+        { key: "enmity", source: "situation", value: round4(-(0.6 * back.tension + 0.4 * clamp01(grudgeWeight(back)))) },
+        { key: "stakes", source: "interest", value: round4(0.4 * clamp01(back.tradeDependence + 0.5 * weight)) },
+        { key: "agenda-fit", source: "interest", value: round4(0.3 * (engagementAffinity(temper) - 0.5)) },
+        { key: "isolationism", source: "trait", value: round4(-0.3 * (temper.isolationism - TEMPERAMENT_CENTER.isolationism)) },
+        ...(request.actor === campaign.founding.nation && (request.kind === "envoy" || request.kind === "summit") &&
+            sharedPressureWarning(campaign, request.target)
+            ? [{ key: "shared-warning", source: "situation", value: 0.05 }] : []),
+        ...presidentTerms(campaign, request),
+    ];
+}
+/** One reading's step, sized by the Secretary's craft and never past the family's bound. */
+const sized = (value, scale) => scale === 1 ? value : round4(Math.max(-ENGAGEMENT_BOUND, Math.min(ENGAGEMENT_BOUND, value * scale)));
+function warmthEffects(campaign, request, line) {
+    const { warmth } = ENGAGEMENT_TERMS[request.kind];
+    const scale = warmthScale(campaign, request);
+    const deltas = { trust: sized(warmth.trust, scale), tension: sized(warmth.tension, scale), alignment: sized(warmth.alignment, scale) };
+    return [
+        {
+            kind: "relationship",
+            from: request.actor,
+            to: request.target,
+            deltas,
+            addHistory: { turn: campaign.turn, kind: engagementHistoryKind(request.kind), description: line },
+        },
+        { kind: "relationship", from: request.target, to: request.actor, deltas },
+    ];
+}
+function namesOf(campaign, request) {
+    const name = (id) => {
+        const identity = selectNation(campaign, id)?.base.identity;
+        return identity ? nationName(identity) : id;
+    };
+    return { actor: name(request.actor), target: name(request.target) };
+}
+function readout(campaign, request, received) {
+    const byPresident = byPresidentOf(campaign, request);
+    return engagementLine({ kind: request.kind, ...namesOf(campaign, request), byPresident, received, turn: campaign.turn });
+}
+/** Whether the other side would take it, without the draw. The agent reads this and not the whole projection, which composes prose. */
+export function projectReceive(campaign, request) {
+    return projectWillingness("receive-engagement", receiveTerms(campaign, request), {
+        threshold: ENGAGEMENT_TERMS[request.kind].threshold,
+        noiseBound: RECEIVE_NOISE,
+    });
+}
+/** What an engagement would do before it is made. Undefined where the kind is not on the table this week. */
+export function projectEngagement(campaign, request) {
+    if (!engagementAvailable(campaign, request))
+        return undefined;
+    const willingness = projectReceive(campaign, request);
+    return { request, willingness, effects: warmthEffects(campaign, request, readout(campaign, request, true)) };
+}
+/**
+ * The receiving government's reasoning as it stands this week, with no draw
+ * in it: what a reading of the offer is allowed to name. Never applied.
+ */
+export function receivePreview(campaign, request) {
+    const preview = weigh("receive-engagement", receiveTerms(campaign, request), {
+        threshold: ENGAGEMENT_TERMS[request.kind].threshold,
+        noiseBound: RECEIVE_NOISE,
+        noise: 0,
+    });
+    return stampOf(preview, request.target, request.actor, "intelligence");
+}
+/** The receiving government's decision, with its one draw. Keyed without the week, so the answer moves only with the terms. */
+export function receiveDecision(campaign, request, streams) {
+    const draw = willDraw(streams, "receive-engagement", request.target, request.actor, request.kind);
+    return weigh("receive-engagement", receiveTerms(campaign, request), {
+        threshold: ENGAGEMENT_TERMS[request.kind].threshold,
+        noiseBound: RECEIVE_NOISE,
+        noise: noiseFrom(draw, RECEIVE_NOISE),
+    });
+}
+function feedItem(campaign, request, headline) {
+    const byPresident = request.actor === campaign.founding.nation;
+    return {
+        turn: campaign.turn + 1,
+        kind: byPresident ? "player-action" : "npc-action",
+        visibility: "public",
+        headline,
+        actor: request.actor,
+        target: request.target,
+        facts: { instrument: `engagement:${request.kind}`, topicTags: ["diplomacy"] },
+    };
+}
+/**
+ * Make the engagement: the receiving government decides, and the packet writes
+ * what the projection promised if it said yes, or only the record of the
+ * refusal if it said no. The one path for the President and every other
+ * government; the President's commit and the agent's chosen move both land here.
+ */
+export function engagementPacket(campaign, request, streams) {
+    const projection = projectEngagement(campaign, request);
+    if (!projection) {
+        return { ok: false, reason: `A ${request.kind} with ${namesOf(campaign, request).target} is not on the table this week.` };
+    }
+    const decision = receiveDecision(campaign, request, streams);
+    const stamp = stampOf(decision, request.target, request.actor, "intelligence");
+    const byPresident = request.actor === campaign.founding.nation;
+    const headline = readout(campaign, request, decision.acts);
+    const declined = {
+        kind: "relationship",
+        from: request.actor,
+        to: request.target,
+        addHistory: { turn: campaign.turn, kind: `${engagementHistoryKind(request.kind)}-declined`, description: headline },
+    };
+    return {
+        ok: true,
+        received: decision.acts,
+        decision: stamp,
+        packet: {
+            source: byPresident ? "action" : "simulate",
+            actor: byPresident ? "player" : "world",
+            turn: campaign.turn,
+            narration: { summary: headline },
+            effects: [...(decision.acts ? projection.effects : [declined]), { kind: "feed", items: [feedItem(campaign, request, headline)] }],
+            provenance: { origin: "decision", entities: [request.actor, request.target], systems: ["engagement"], decision: stamp },
+        },
+    };
+}

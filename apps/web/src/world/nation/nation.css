@@ -1,0 +1,373 @@
+/* The World's home, a government's file, and the act workspace. Section titles, notes and the problem line are the Brief's (brief/brief.css); the section nav, ident and stat rows are the state dossier's (nation/state/state.css). */
+@layer rooms {
+  .world,
+  .country,
+  .act-desk {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xl);
+    padding-block-end: var(--space-xl);
+  }
+
+  .act-desk {
+    max-inline-size: 90rem;
+    inline-size: 100%;
+    margin-inline: auto;
+  }
+
+  .world section,
+  .country section,
+  .act-desk section {
+    display: grid;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  .country-section {
+    scroll-margin-block-start: var(--space-3xl);
+  }
+
+  /* The watchlist: three short groups, each with its own heading. */
+  .world-watch__group {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .world-watch__heading,
+  .country-group__heading {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-strong);
+  }
+
+  .world-list__rows,
+  .measure-list,
+  .commitment-list,
+  .partner-list,
+  .presence-list,
+  .program-list,
+  .move-list,
+  .org-list,
+  .tie-list,
+  .country-bullets,
+  .act-underway__rows,
+  .assess__detail {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .world-line__door,
+  .partner__door {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    min-block-size: var(--hit-min);
+    color: var(--color-text-primary);
+    text-decoration: none;
+  }
+
+  .world-line__door:hover .world-line__name {
+    text-decoration: underline;
+  }
+
+  /* Every government ranked: a door with its flag, and the reading on its meter. */
+  .world-line {
+    display: grid;
+    grid-template-columns: minmax(8rem, 1fr) minmax(8rem, 1.4fr);
+    gap: var(--space-md);
+    align-items: center;
+    min-block-size: var(--hit-min);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .world-line__stance {
+    color: var(--color-text-tertiary);
+  }
+
+  .world-line__war {
+    color: var(--color-red);
+  }
+
+  /* A government's file. */
+  .leader {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+  }
+
+  .leader__body {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .leader__role,
+  .leader__since {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .leader__name {
+    margin: 0;
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+  }
+
+  .country-war {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: center;
+    margin: 0;
+    color: var(--color-red);
+  }
+
+  .country-act-link {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+    min-block-size: var(--hit-min);
+    color: var(--color-blue);
+  }
+
+  .country-bands {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-md);
+  }
+
+  .country-group {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .country-line {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  /* Sits in the steps table where a drawn reading would; it spans the row rather than squeezing into the label column. */
+  .country-unread {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    margin: 0;
+    color: var(--color-text-tertiary);
+    font-size: var(--size-small);
+  }
+
+  .country-table {
+    inline-size: 100%;
+    border: 1px solid var(--color-border-strong);
+    border-collapse: collapse;
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .country-table th,
+  .country-table td {
+    padding: var(--space-xs) var(--space-sm);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .country-table th:first-child {
+    text-align: start;
+    font-weight: var(--weight-regular);
+  }
+
+  .country-table thead th {
+    border-block-end: 1px solid var(--color-border-strong);
+    background: var(--color-ground-raised);
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    font-weight: var(--weight-medium);
+  }
+
+  .measure,
+  .commitment,
+  .presence {
+    display: grid;
+    gap: var(--space-2xs);
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .measure__what,
+  .commitment__kind,
+  .presence__label {
+    font-weight: var(--weight-strong);
+  }
+
+  .measure__since,
+  .commitment__why,
+  .commitment__status,
+  .presence__where,
+  .presence__band {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .measure__lift,
+  .act-underway__end {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--hit-min);
+    color: var(--color-blue);
+  }
+
+  .commitment[data-status="wound-down"],
+  .commitment[data-status="suspended"] {
+    border-style: dashed;
+    color: var(--color-text-secondary);
+  }
+
+  .partner {
+    display: grid;
+    grid-template-columns: minmax(8rem, 1fr) minmax(8rem, 1.4fr);
+    gap: var(--space-md);
+    align-items: center;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .country-bullets {
+    padding-inline-start: var(--space-md);
+    list-style: disc;
+  }
+
+  .program-list li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    font-size: var(--size-small);
+  }
+
+  .tie-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-xs);
+    padding-block: var(--space-2xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-size: var(--size-small);
+  }
+
+  .program__domain,
+  .tie__word {
+    color: var(--color-text-tertiary);
+  }
+
+  .program__stance {
+    font-weight: var(--weight-strong);
+  }
+
+  .tie-list li[data-kind="rival"] .tie__word {
+    color: var(--color-red);
+  }
+
+  .move-list li {
+    display: grid;
+    gap: var(--space-2xs);
+    padding-block-end: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .move-list__headline,
+  .move-list__when,
+  .move-list__why {
+    margin: 0;
+    font-size: var(--size-small);
+  }
+
+  .move-list__when {
+    color: var(--color-text-tertiary);
+    font-size: var(--size-caption);
+  }
+
+  .move-list__why {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  /* The act workspace. */
+
+
+  .act-underway__rows li {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .act-underway__body {
+    display: grid;
+    flex: 1 1 auto;
+    gap: var(--space-2xs);
+    font-size: var(--size-small);
+  }
+
+  .act-terms {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .act-terms__partners {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .act-terms__closed {
+    margin: 0;
+    color: var(--color-red);
+  }
+
+  /* One cell of the comparison: the words, colored by whether the news is good, and the reasons under them. */
+  .assess {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .assess[data-stance="favorable"] .assess__text {
+    color: var(--color-blue);
+  }
+
+  .assess[data-stance="caution"] .assess__text {
+    color: var(--status-warning-ink);
+  }
+
+  .assess[data-stance="adverse"] .assess__text {
+    color: var(--color-red);
+  }
+
+  .assess__detail {
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  .receipt-standing {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  @media (max-width: 30em) {
+    .world-line,
+    .partner {
+      grid-template-columns: 1fr;
+      gap: 0;
+      padding-block-end: var(--space-xs);
+    }
+  }
+}

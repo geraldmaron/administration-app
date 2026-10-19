@@ -1,0 +1,35 @@
+# What share of a household price each component carries.
+# reading: the household price the share belongs to. series: the published series the share is read from, kept apart
+# because the marketing bill and the industry groups are different series. source: the page. opened: the day it was read.
+reading	component	share	series	period	source	opened
+gasoline_price	crude_oil	0.514	EIA retail breakdown	2025_annual_avg	EIA-GASEXPLAINED	2026-09-24
+gasoline_price	refining_costs_and_profit	0.143	EIA retail breakdown	2025_annual_avg	EIA-GASEXPLAINED	2026-09-24
+gasoline_price	distribution_and_marketing	0.178	EIA retail breakdown	2025_annual_avg	EIA-GASEXPLAINED	2026-09-24
+gasoline_price	taxes	0.166	EIA retail breakdown	2025_annual_avg	EIA-GASEXPLAINED	2026-09-24
+gasoline_price	crude_oil	0.517	EIA retail breakdown	2016-2025_10yr_avg	EIA-GASEXPLAINED	2026-09-24
+gasoline_price	refining_costs_and_profit	0.15	EIA retail breakdown	2016-2025_10yr_avg	EIA-GASEXPLAINED	2026-09-24
+gasoline_price	distribution_and_marketing	0.159	EIA retail breakdown	2016-2025_10yr_avg	EIA-GASEXPLAINED	2026-09-24
+gasoline_price	taxes	0.174	EIA retail breakdown	2016-2025_10yr_avg	EIA-GASEXPLAINED	2026-09-24
+gasoline_price	crude_oil	0.52	EIA retail breakdown	2026-05	EIA-GASDIESEL	2026-09-24
+gasoline_price	refining_costs_and_profit	0.22	EIA retail breakdown	2026-05	EIA-GASDIESEL	2026-09-24
+gasoline_price	distribution_and_marketing	0.15	EIA retail breakdown	2026-05	EIA-GASDIESEL	2026-09-24
+gasoline_price	taxes	0.12	EIA retail breakdown	2026-05	EIA-GASDIESEL	2026-09-24
+food_dollar	farm_share	0.118	marketing bill	2024	USDA-ERS-FOODDOLLAR	2026-09-24
+food_dollar	marketing_share	0.882	marketing bill	2024	USDA-ERS-FOODDOLLAR	2026-09-24
+food_dollar	farm_share_food_at_home	0.185	marketing bill	2024	USDA-ERS-FOODDOLLAR	2026-09-24
+food_dollar	farm_share_food_away_from_home	0.071	marketing bill	2024	USDA-ERS-FOODDOLLAR	2026-09-24
+food_dollar	food_services_industry_group	0.386	industry group	2024	USDA-ERS-FOODDOLLAR	2026-09-24
+food_dollar	farm_production_industry_group	0.067	industry group	2024	USDA-ERS-FOODDOLLAR	2026-09-24
+food_dollar	farm_production_crops	0.025	industry group	2024	USDA-ERS-FOODDOLLAR	2026-09-24
+food_dollar	farm_production_livestock	0.033	industry group	2024	USDA-ERS-FOODDOLLAR	2026-09-24
+food_dollar	farm_production_forestry_fishing_ag_services	0.009	industry group	2024	USDA-ERS-FOODDOLLAR	2026-09-24
+food_dollar	agribusiness	0.03	industry group	2024	USDA-ERS-FOODDOLLAR	2026-09-24
+cpi_relative_importance	food	0.13698	CPI-U relative importance	2025-12	BLS-CPI-RI-2025	2026-09-24
+cpi_relative_importance	food_at_home	0.08325	CPI-U relative importance	2025-12	BLS-CPI-RI-2025	2026-09-24
+cpi_relative_importance	food_away_from_home	0.05373	CPI-U relative importance	2025-12	BLS-CPI-RI-2025	2026-09-24
+cpi_relative_importance	energy	0.06383	CPI-U relative importance	2025-12	BLS-CPI-RI-2025	2026-09-24
+cpi_relative_importance	energy_commodities	0.0312	CPI-U relative importance	2025-12	BLS-CPI-RI-2025	2026-09-24
+cpi_relative_importance	gasoline_all_types	0.02895	CPI-U relative importance	2025-12	BLS-CPI-RI-2025	2026-09-24
+cpi_relative_importance	energy_services	0.03262	CPI-U relative importance	2025-12	BLS-CPI-RI-2025	2026-09-24
+cpi_relative_importance	electricity	0.02489	CPI-U relative importance	2025-12	BLS-CPI-RI-2025	2026-09-24
+cpi_relative_importance	utility_piped_gas_service	0.00773	CPI-U relative importance	2025-12	BLS-CPI-RI-2025	2026-09-24

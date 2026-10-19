@@ -1,0 +1,10 @@
+import type { ConsequenceDef, ConsequencePack } from "../consequence.js";
+import { ASSISTANCE_CONSEQUENCES } from "./consequences/assistance.js";
+import { BRIEFING_CONSEQUENCES } from "./consequences/briefing.js";
+import { COVERT_CONSEQUENCES } from "./consequences/covert.js";
+import { DIPLOMATIC_CONSEQUENCES } from "./consequences/diplomatic.js";
+import { ECONOMIC_CONSEQUENCES } from "./consequences/economic.js";
+import { MILITARY_CONSEQUENCES } from "./consequences/military.js";
+export declare const CORE_CONSEQUENCES: readonly ConsequenceDef[];
+export declare const coreConsequencePack: ConsequencePack;
+export { ASSISTANCE_CONSEQUENCES, BRIEFING_CONSEQUENCES, COVERT_CONSEQUENCES, DIPLOMATIC_CONSEQUENCES, ECONOMIC_CONSEQUENCES, MILITARY_CONSEQUENCES, };

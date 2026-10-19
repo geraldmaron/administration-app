@@ -1,0 +1,38 @@
+// What US military operations have cost: `seed/force-cost-anchors.tsv`, cell
+// for cell. A force act's price is read off these rows (engine `force-costs.ts`),
+// each in its own dollar year and carried to the world's by the CPI rows. A
+// row the game chose rather than read says "planning value" in its provenance.
+
+export type ForceCostProvenance = "sourced" | "planning value";
+
+export type ForceCostAnchorRow = {
+  readonly anchor: string;
+  readonly value: number;
+  readonly unit: string;
+  /** The dollars a money row is stated in; absent on a count or an index. */
+  readonly dollarYear?: number;
+  readonly provenance: ForceCostProvenance;
+  readonly covers: string;
+  readonly source: string;
+  readonly opened: string;
+};
+
+// prettier-ignore
+export const FORCE_COST_ANCHORS: readonly ForceCostAnchorRow[] = [
+  { anchor: "cpi-2008", value: 215.303, unit: "index", provenance: "sourced", covers: "CPI-U, US city average, all items: the 2008 annual average", source: "BLS, Historical Consumer Price Index for All Urban Consumers (CPI-U), December 2023, https://www.bls.gov/cpi/tables/supplemental-files/historical-cpi-u-202312.pdf", opened: "2026-10-10" },
+  { anchor: "cpi-2011", value: 224.939, unit: "index", provenance: "sourced", covers: "CPI-U, US city average, all items: the 2011 annual average", source: "BLS public data API, timeseries CUUR0000SA0, https://api.bls.gov/publicAPI/", opened: "2026-10-10" },
+  { anchor: "cpi-2017", value: 245.120, unit: "index", provenance: "sourced", covers: "CPI-U, US city average, all items: the 2017 annual average", source: "BLS public data API, timeseries CUUR0000SA0, https://api.bls.gov/publicAPI/", opened: "2026-10-10" },
+  { anchor: "cpi-2018", value: 251.107, unit: "index", provenance: "sourced", covers: "CPI-U, US city average, all items: the 2018 annual average", source: "BLS public data API, timeseries CUUR0000SA0, https://api.bls.gov/publicAPI/", opened: "2026-10-10" },
+  { anchor: "cpi-2026", value: 331.655, unit: "index", provenance: "sourced", covers: "CPI-U, US city average, all items: the January to August 2026 average, since the year's own is not yet published", source: "BLS public data API, timeseries CUUR0000SA0, https://api.bls.gov/publicAPI/", opened: "2026-10-10" },
+  { anchor: "exercise-cost", value: 14, unit: "usd_millions", dollarYear: 2018, provenance: "sourced", covers: "The Pentagon's estimate of what the canceled 2018 Ulchi Freedom Guardian exercise in Korea would have cost: about ten days, with 17,500 US troops taking part the year before. A defense spokesman's figure, reported without a breakdown", source: "Stars and Stripes, Pentagon estimates canceled war games with South Korea would have cost $14 million (2018-07-11), https://www.stripes.com/news/2018-07-11/pentagon-estimates-canceled-war-games-with-south-korea-would-have-cost-14-million-1499498.html", opened: "2026-10-10" },
+  { anchor: "carrier-year-direct", value: 470, unit: "usd_millions", dollarYear: 2017, provenance: "sourced", covers: "One aircraft carrier's direct operating and support cost a year, in FY2017 dollars. A peacetime figure that carries the crew's pay", source: "CBO, The U.S. Military's Force Structure: A Primer (July 2016), Summary Table 1, read from a copy at https://www.defensedaily.com/wp-content/uploads/post_attachment/139103.pdf because cbo.gov refused the request", opened: "2026-10-10" },
+  { anchor: "air-wing-year-direct", value: 330, unit: "usd_millions", dollarYear: 2017, provenance: "sourced", covers: "One carrier air wing's direct operating and support cost a year, in FY2017 dollars", source: "CBO, The U.S. Military's Force Structure: A Primer (July 2016), Summary Table 1, read from a copy at https://www.defensedaily.com/wp-content/uploads/post_attachment/139103.pdf because cbo.gov refused the request", opened: "2026-10-10" },
+  { anchor: "destroyer-year-direct", value: 60, unit: "usd_millions", dollarYear: 2017, provenance: "sourced", covers: "One Arleigh Burke (DDG-51) destroyer's direct operating and support cost a year, in FY2017 dollars", source: "CBO, The U.S. Military's Force Structure: A Primer (July 2016), Summary Table 1, read from a copy at https://www.defensedaily.com/wp-content/uploads/post_attachment/139103.pdf because cbo.gov refused the request", opened: "2026-10-10" },
+  { anchor: "strike-group-escorts", value: 5, unit: "ships", provenance: "sourced", covers: "The surface combatants a carrier strike group sails with, besides its carrier, air wing and one submarine", source: "Hendrix, At What Cost a Carrier? (CNAS, March 2013), p. 5, https://s3.us-east-1.amazonaws.com/files.cnas.org/documents/CNAS-Carrier_Hendrix_FINAL.pdf", opened: "2026-10-10" },
+  { anchor: "odyssey-dawn-cost", value: 550, unit: "usd_millions", dollarYear: 2011, provenance: "sourced", covers: "The Defense Department's incremental cost of Operation Odyssey Dawn over Libya through 2011-03-28, the first ten days: about 340 of it munitions, and not counting the F-15E that was lost", source: "CRS R41725, Operation Odyssey Dawn (Libya): Background and Issues for Congress (2011-03-30), https://www.everycrsreport.com/files/20110330_R41725_bb82159244743cdcd092ea840833f4ac98a4d92d.html", opened: "2026-10-10" },
+  { anchor: "odyssey-dawn-strike-sorties", value: 370, unit: "sorties", provenance: "sourced", covers: "US strike sorties flown in Odyssey Dawn to 11:00 EDT on 2011-03-28, of 983 US sorties of every kind; 192 Tomahawks were launched besides", source: "Defense Department briefing slides, 28 March 2011, slide 2, https://web.archive.org/web/2012id_/http://www.defense.gov/news/d20110328slides1.pdf", opened: "2026-10-10" },
+  { anchor: "strike-sorties-per-aircraft", value: 2, unit: "sorties", provenance: "planning value", covers: "A limited strike as one wave and one re-strike for each aircraft sent", source: "planning value, packages/world/sources/force-costs-sources.md", opened: "2026-10-10" },
+  { anchor: "transit-days", value: 7, unit: "days", provenance: "planning value", covers: "A week's passage to station for a forward carrier group or a blockading ship, at its daily cost, before its weekly bill begins", source: "planning value, packages/world/sources/force-costs-sources.md", opened: "2026-10-10" },
+  { anchor: "brigade-shipping", value: 32, unit: "usd_millions", dollarYear: 2026, provenance: "sourced", covers: "What US Transportation Command paid to ship one armored brigade's equipment from Texas to Poland, chartering, loading and unloading included: one way, the troops' own travel not included", source: "AP via PBS NewsHour, Trump's troop reversals in Europe could cost taxpayers millions, officials say (2026-06-05), https://www.pbs.org/newshour/politics/trumps-troop-reversals-in-europe-could-cost-taxpayers-millions-officials-say", opened: "2026-10-10" },
+  { anchor: "brigade-year-in-theater", value: 7200, unit: "usd_millions", dollarYear: 2008, provenance: "sourced", covers: "The average cost of one brigade-combat-team equivalent in Iraq in FY2008: military personnel, operations and investment, where CRS counts 9,000 troops to a brigade with its support", source: "CRS R40682, Troop Levels in the Afghan and Iraq Wars, FY2001-FY2012 (2009-07-02), Table B-1, https://www.everycrsreport.com/reports/R40682.html", opened: "2026-10-10" },
+];

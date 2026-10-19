@@ -1,0 +1,203 @@
+/* Compare and authorize: the title, a reason every locked option shares, the results list (choice.css), the review and the verb; and the receipt an act leaves. */
+@layer components {
+  .ui-compare {
+    container: compare / inline-size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-md);
+    min-inline-size: 0;
+  }
+
+  .ui-compare__title {
+    margin: 0;
+    font-size: var(--size-body);
+    line-height: var(--leading-body);
+  }
+
+  .ui-compare__locked {
+    display: flex;
+    gap: var(--space-xs);
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-compare__locked strong { color: var(--color-text-primary); }
+  .ui-compare__locked .ui-icon { flex: none; margin-block-start: 2px; }
+
+  .ui-compare__locked--shared {
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-card);
+    background: var(--status-warning-fill);
+    color: var(--status-warning-ink);
+  }
+
+  .ui-compare__locked--shared strong { color: inherit; }
+
+  .ui-compare__none { color: var(--color-text-tertiary); }
+
+  .ui-compare__footnote { min-inline-size: 0; }
+
+  .ui-compare__act {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-block: var(--space-md);
+    border-block: 1px solid var(--color-border-subtle);
+  }
+
+  .ui-compare__review {
+    flex: 1 1 16rem;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-compare__choice {
+    display: inline-block;
+    margin-inline-end: var(--space-sm);
+    padding: 0 var(--space-sm);
+    border-radius: var(--radius-chip);
+    background: var(--status-info-fill);
+    color: var(--status-info-ink);
+    font-weight: var(--weight-strong);
+    white-space: nowrap;
+  }
+
+  .ui-compare[data-docked="true"] .ui-compare__act {
+    position: sticky;
+    z-index: 2;
+    inset-block-end: 0;
+    padding: var(--space-md) 0;
+    border-block-start: 1px solid var(--color-border-subtle);
+    background: var(--color-ground-base);
+  }
+
+  @container compare (max-width: 30rem) {
+    .ui-compare__act { flex-direction: column; align-items: stretch; }
+    .ui-compare__review { flex-basis: auto; }
+  }
+
+  /* A docked verb lives in the surface's foot, outside the scrolling body, so
+     it holds the bottom of the sheet without covering a row or a column. */
+  .ui-surface__foot .ui-compare__act {
+    gap: var(--space-sm) var(--space-md);
+  }
+
+  .ui-surface__foot .ui-compare__review {
+    flex-basis: 12rem;
+    font-size: var(--size-label);
+  }
+
+  /* On a phone the review would take a quarter of the screen beside the verb;
+     it sits over the verb instead, at most three lines. Every word of it is
+     already on the cards above. */
+  @media (max-width: 30em) {
+    .ui-surface__foot .ui-compare__act {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-xs);
+    }
+
+    .ui-surface__foot .ui-compare__review {
+      flex-basis: auto;
+      display: -webkit-box;
+      overflow: hidden;
+      font-size: var(--size-label);
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+    }
+  }
+
+  .ui-receipt {
+    display: grid;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    border: 1px solid var(--color-gold-deep);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+    box-shadow: var(--edge-gold);
+  }
+
+  .ui-receipt__head {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+  }
+
+  .ui-receipt__mark {
+    color: var(--status-success-ink);
+  }
+
+  /* A refused act keeps its receipt, but not the gold of a sealed one: the
+     edge goes plain and the mark is the refusal. */
+  .ui-receipt[data-outcome="refused"] {
+    border-color: var(--color-border-strong);
+    box-shadow: none;
+  }
+
+  .ui-receipt[data-outcome="refused"] .ui-receipt__mark,
+  .ui-receipt__outcome {
+    color: var(--status-danger-ink);
+  }
+
+  .ui-receipt__outcome {
+    margin: 0;
+    font-size: var(--size-label);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-receipt__title {
+    margin: 0;
+    font-size: var(--size-title);
+    line-height: var(--leading-body);
+  }
+
+  .ui-receipt__date {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-receipt__lines {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+  }
+
+  .ui-receipt__line {
+    display: grid;
+    grid-template-columns: minmax(7rem, 1fr) 2fr;
+    gap: var(--space-md);
+    font-size: var(--size-body);
+    line-height: var(--leading-body);
+  }
+
+  .ui-receipt__line dt {
+    color: var(--color-text-secondary);
+  }
+
+  .ui-receipt__line dd {
+    margin: 0;
+  }
+
+  .ui-receipt__record {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    line-height: var(--leading-compact);
+  }
+
+  .ui-receipt__doors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+}

@@ -1,0 +1,10 @@
+import type { StatConsumer } from "./stat-consumers.js";
+export declare const GEO_CONSUMERS: readonly StatConsumer[];
+export declare const CITY_CONSUMERS: readonly StatConsumer[];
+export declare const STATE_CONSUMERS: readonly StatConsumer[];
+export declare const DISTRICT_CONSUMERS: readonly StatConsumer[];
+export declare const SECTOR_CONSUMERS: readonly StatConsumer[];
+export declare const MARITIME_ZONE_CONSUMERS: readonly StatConsumer[];
+export declare const INSTALLATION_ANCHOR_CONSUMERS: readonly StatConsumer[];
+export declare const FEDERAL_SITE_CONSUMERS: readonly StatConsumer[];
+export declare const STATE_CAPITOL_CONSUMERS: readonly StatConsumer[];

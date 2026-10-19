@@ -1,0 +1,381 @@
+// Written by scripts/vendor-state-demographics.mjs from seed/state-demographics.tsv; do not edit by hand.
+//
+// The opening composition of each state on the race, sex, nativity, disability
+// and veteran axes, as shares of residents. Race, ethnicity and sex are Census
+// Bureau counts; the other three are approximate. Every campaign samples around
+// these values when it opens, so no two games start from exactly the same
+// country.
+// source race, ethnicity, sex: US Census Bureau, Vintage 2023 population estimates by characteristics, July 1 2023 (https://www2.census.gov/programs-surveys/popest/datasets/2020-2023/state/asrh/sc-est2023-alldata6.csv); public domain. Race is non-Hispanic single race; other is American Indian and Alaska Native, Native Hawaiian and Pacific Islander, and two or more races, non-Hispanic.
+// source nativity, disability, veteran: approximate, hand-rounded shares (seed/state-demographics-approx.tsv) from public Census Bureau ACS 2023 summaries, rescaled so the population-weighted mean matches the national figure (foreign-born 14.3, disability 13.6, veterans 6.1 percent of civilian adults). Veteran share is converted to a share of all residents using the state's 18-and-over share. Not exact.
+// opened 2026-10-11
+
+import type { StateId } from "../schemas/state.js";
+
+export type StateDemographics = {
+  readonly race: Readonly<Record<"race-hispanic" | "race-black" | "race-asian" | "race-white" | "race-other", number>>;
+  readonly sex: Readonly<Record<"sex-female" | "sex-male", number>>;
+  readonly nativity: Readonly<Record<"foreign-born" | "us-born", number>>;
+  readonly disability: Readonly<Record<"with-disability" | "no-disability", number>>;
+  readonly veteran: Readonly<Record<"veteran" | "non-veteran", number>>;
+};
+
+// prettier-ignore
+export const STATE_DEMOGRAPHICS: Readonly<Record<StateId, StateDemographics>> = {
+  AK: {
+    race: { "race-hispanic": 0.0746, "race-black": 0.0325, "race-asian": 0.0657, "race-white": 0.5902, "race-other": 0.237 },
+    sex: { "sex-female": 0.4746, "sex-male": 0.5254 },
+    nativity: { "foreign-born": 0.0827, "us-born": 0.9173 },
+    disability: { "with-disability": 0.1365, "no-disability": 0.8635 },
+    veteran: { veteran: 0.0812, "non-veteran": 0.9188 },
+  },
+  AL: {
+    race: { "race-hispanic": 0.0569, "race-black": 0.2623, "race-asian": 0.0155, "race-white": 0.6411, "race-other": 0.0242 },
+    sex: { "sex-female": 0.5147, "sex-male": 0.4853 },
+    nativity: { "foreign-born": 0.0413, "us-born": 0.9587 },
+    disability: { "with-disability": 0.1679, "no-disability": 0.8321 },
+    veteran: { veteran: 0.0602, "non-veteran": 0.9398 },
+  },
+  AR: {
+    race: { "race-hispanic": 0.0925, "race-black": 0.1526, "race-asian": 0.0181, "race-white": 0.7024, "race-other": 0.0344 },
+    sex: { "sex-female": 0.5065, "sex-male": 0.4935 },
+    nativity: { "foreign-born": 0.0537, "us-born": 0.9463 },
+    disability: { "with-disability": 0.1837, "no-disability": 0.8163 },
+    veteran: { veteran: 0.0564, "non-veteran": 0.9436 },
+  },
+  AZ: {
+    race: { "race-hispanic": 0.3158, "race-black": 0.0492, "race-asian": 0.0379, "race-white": 0.5337, "race-other": 0.0634 },
+    sex: { "sex-female": 0.5011, "sex-male": 0.4989 },
+    nativity: { "foreign-born": 0.1364, "us-born": 0.8636 },
+    disability: { "with-disability": 0.1417, "no-disability": 0.8583 },
+    veteran: { veteran: 0.0608, "non-veteran": 0.9392 },
+  },
+  CA: {
+    race: { "race-hispanic": 0.4045, "race-black": 0.0558, "race-asian": 0.1583, "race-white": 0.343, "race-other": 0.0384 },
+    sex: { "sex-female": 0.5009, "sex-male": 0.4991 },
+    nativity: { "foreign-born": 0.277, "us-born": 0.723 },
+    disability: { "with-disability": 0.1218, "no-disability": 0.8782 },
+    veteran: { veteran: 0.0358, "non-veteran": 0.9642 },
+  },
+  CO: {
+    race: { "race-hispanic": 0.2274, "race-black": 0.0419, "race-asian": 0.0363, "race-white": 0.6605, "race-other": 0.0339 },
+    sex: { "sex-female": 0.4936, "sex-male": 0.5064 },
+    nativity: { "foreign-born": 0.1075, "us-born": 0.8925 },
+    disability: { "with-disability": 0.1207, "no-disability": 0.8793 },
+    veteran: { veteran: 0.0565, "non-veteran": 0.9435 },
+  },
+  CT: {
+    race: { "race-hispanic": 0.1861, "race-black": 0.1085, "race-asian": 0.0505, "race-white": 0.6326, "race-other": 0.0223 },
+    sex: { "sex-female": 0.5096, "sex-male": 0.4904 },
+    nativity: { "foreign-born": 0.1633, "us-born": 0.8367 },
+    disability: { "with-disability": 0.1239, "no-disability": 0.8761 },
+    veteran: { veteran: 0.0391, "non-veteran": 0.9609 },
+  },
+  DC: {
+    race: { "race-hispanic": 0.12, "race-black": 0.4268, "race-asian": 0.0474, "race-white": 0.3765, "race-other": 0.0293 },
+    sex: { "sex-female": 0.5262, "sex-male": 0.4738 },
+    nativity: { "foreign-born": 0.1499, "us-born": 0.8501 },
+    disability: { "with-disability": 0.1207, "no-disability": 0.8793 },
+    veteran: { veteran: 0.0265, "non-veteran": 0.9735 },
+  },
+  DE: {
+    race: { "race-hispanic": 0.1111, "race-black": 0.2267, "race-asian": 0.0433, "race-white": 0.5893, "race-other": 0.0296 },
+    sex: { "sex-female": 0.5163, "sex-male": 0.4837 },
+    nativity: { "foreign-born": 0.1158, "us-born": 0.8842 },
+    disability: { "with-disability": 0.149, "no-disability": 0.851 },
+    veteran: { veteran: 0.0598, "non-veteran": 0.9402 },
+  },
+  FL: {
+    race: { "race-hispanic": 0.2741, "race-black": 0.1538, "race-asian": 0.0308, "race-white": 0.5193, "race-other": 0.022 },
+    sex: { "sex-female": 0.5087, "sex-male": 0.4913 },
+    nativity: { "foreign-born": 0.2191, "us-born": 0.7809 },
+    disability: { "with-disability": 0.1448, "no-disability": 0.8552 },
+    veteran: { veteran: 0.0656, "non-veteran": 0.9344 },
+  },
+  GA: {
+    race: { "race-hispanic": 0.1114, "race-black": 0.3212, "race-asian": 0.0477, "race-white": 0.4955, "race-other": 0.0242 },
+    sex: { "sex-female": 0.5127, "sex-male": 0.4873 },
+    nativity: { "foreign-born": 0.1199, "us-born": 0.8801 },
+    disability: { "with-disability": 0.1312, "no-disability": 0.8688 },
+    veteran: { veteran: 0.0564, "non-veteran": 0.9436 },
+  },
+  HI: {
+    race: { "race-hispanic": 0.1011, "race-black": 0.0196, "race-asian": 0.3623, "race-white": 0.2152, "race-other": 0.3018 },
+    sex: { "sex-female": 0.4984, "sex-male": 0.5016 },
+    nativity: { "foreign-born": 0.186, "us-born": 0.814 },
+    disability: { "with-disability": 0.1155, "no-disability": 0.8845 },
+    veteran: { veteran: 0.0566, "non-veteran": 0.9434 },
+  },
+  IA: {
+    race: { "race-hispanic": 0.0744, "race-black": 0.0428, "race-asian": 0.0267, "race-white": 0.831, "race-other": 0.0251 },
+    sex: { "sex-female": 0.4986, "sex-male": 0.5014 },
+    nativity: { "foreign-born": 0.0568, "us-born": 0.9432 },
+    disability: { "with-disability": 0.1312, "no-disability": 0.8688 },
+    veteran: { veteran: 0.0471, "non-veteran": 0.9529 },
+  },
+  ID: {
+    race: { "race-hispanic": 0.1383, "race-black": 0.0082, "race-asian": 0.0161, "race-white": 0.8026, "race-other": 0.0348 },
+    sex: { "sex-female": 0.4969, "sex-male": 0.5031 },
+    nativity: { "foreign-born": 0.062, "us-born": 0.938 },
+    disability: { "with-disability": 0.1417, "no-disability": 0.8583 },
+    veteran: { veteran: 0.0581, "non-veteran": 0.9419 },
+  },
+  IL: {
+    race: { "race-hispanic": 0.1899, "race-black": 0.14, "race-asian": 0.0618, "race-white": 0.5879, "race-other": 0.0204 },
+    sex: { "sex-female": 0.5059, "sex-male": 0.4941 },
+    nativity: { "foreign-born": 0.1447, "us-born": 0.8553 },
+    disability: { "with-disability": 0.1207, "no-disability": 0.8793 },
+    veteran: { veteran: 0.0359, "non-veteran": 0.9641 },
+  },
+  IN: {
+    race: { "race-hispanic": 0.0877, "race-black": 0.0996, "race-asian": 0.0281, "race-white": 0.7603, "race-other": 0.0243 },
+    sex: { "sex-female": 0.5039, "sex-male": 0.4961 },
+    nativity: { "foreign-born": 0.0599, "us-born": 0.9401 },
+    disability: { "with-disability": 0.1469, "no-disability": 0.8531 },
+    veteran: { veteran: 0.0453, "non-veteran": 0.9547 },
+  },
+  KS: {
+    race: { "race-hispanic": 0.1372, "race-black": 0.0574, "race-asian": 0.0309, "race-white": 0.7372, "race-other": 0.0373 },
+    sex: { "sex-female": 0.4985, "sex-male": 0.5015 },
+    nativity: { "foreign-born": 0.0723, "us-born": 0.9277 },
+    disability: { "with-disability": 0.1365, "no-disability": 0.8635 },
+    veteran: { veteran: 0.0528, "non-veteran": 0.9472 },
+  },
+  KY: {
+    race: { "race-hispanic": 0.0504, "race-black": 0.0843, "race-asian": 0.0175, "race-white": 0.8235, "race-other": 0.0243 },
+    sex: { "sex-female": 0.5044, "sex-male": 0.4956 },
+    nativity: { "foreign-born": 0.0413, "us-born": 0.9587 },
+    disability: { "with-disability": 0.1837, "no-disability": 0.8163 },
+    veteran: { veteran: 0.0489, "non-veteran": 0.9511 },
+  },
+  LA: {
+    race: { "race-hispanic": 0.0725, "race-black": 0.3188, "race-asian": 0.0186, "race-white": 0.5664, "race-other": 0.0237 },
+    sex: { "sex-female": 0.5114, "sex-male": 0.4886 },
+    nativity: { "foreign-born": 0.0444, "us-born": 0.9556 },
+    disability: { "with-disability": 0.1627, "no-disability": 0.8373 },
+    veteran: { veteran: 0.0429, "non-veteran": 0.9571 },
+  },
+  MA: {
+    race: { "race-hispanic": 0.1349, "race-black": 0.0766, "race-asian": 0.0774, "race-white": 0.6883, "race-other": 0.0228 },
+    sex: { "sex-female": 0.5115, "sex-male": 0.4885 },
+    nativity: { "foreign-born": 0.1809, "us-born": 0.8191 },
+    disability: { "with-disability": 0.126, "no-disability": 0.874 },
+    veteran: { veteran: 0.0312, "non-veteran": 0.9688 },
+  },
+  MD: {
+    race: { "race-hispanic": 0.1264, "race-black": 0.3018, "race-asian": 0.0691, "race-white": 0.4728, "race-other": 0.0299 },
+    sex: { "sex-female": 0.5139, "sex-male": 0.4861 },
+    nativity: { "foreign-born": 0.1654, "us-born": 0.8346 },
+    disability: { "with-disability": 0.1155, "no-disability": 0.8845 },
+    veteran: { veteran: 0.0515, "non-veteran": 0.9485 },
+  },
+  ME: {
+    race: { "race-hispanic": 0.0228, "race-black": 0.0202, "race-asian": 0.0136, "race-white": 0.9182, "race-other": 0.0252 },
+    sex: { "sex-female": 0.5074, "sex-male": 0.4926 },
+    nativity: { "foreign-born": 0.0393, "us-born": 0.9607 },
+    disability: { "with-disability": 0.1732, "no-disability": 0.8268 },
+    veteran: { veteran: 0.071, "non-veteran": 0.929 },
+  },
+  MI: {
+    race: { "race-hispanic": 0.0598, "race-black": 0.1373, "race-asian": 0.0352, "race-white": 0.7366, "race-other": 0.0311 },
+    sex: { "sex-female": 0.5045, "sex-male": 0.4955 },
+    nativity: { "foreign-born": 0.0723, "us-born": 0.9277 },
+    disability: { "with-disability": 0.1522, "no-disability": 0.8478 },
+    veteran: { veteran: 0.0426, "non-veteran": 0.9574 },
+  },
+  MN: {
+    race: { "race-hispanic": 0.0646, "race-black": 0.0758, "race-asian": 0.0543, "race-white": 0.7689, "race-other": 0.0364 },
+    sex: { "sex-female": 0.4989, "sex-male": 0.5011 },
+    nativity: { "foreign-born": 0.0878, "us-born": 0.9122 },
+    disability: { "with-disability": 0.1176, "no-disability": 0.8824 },
+    veteran: { veteran: 0.0393, "non-veteran": 0.9607 },
+  },
+  MO: {
+    race: { "race-hispanic": 0.0534, "race-black": 0.1142, "race-asian": 0.0227, "race-white": 0.779, "race-other": 0.0307 },
+    sex: { "sex-female": 0.5065, "sex-male": 0.4935 },
+    nativity: { "foreign-born": 0.0444, "us-born": 0.9556 },
+    disability: { "with-disability": 0.1522, "no-disability": 0.8478 },
+    veteran: { veteran: 0.0514, "non-veteran": 0.9486 },
+  },
+  MS: {
+    race: { "race-hispanic": 0.0388, "race-black": 0.3738, "race-asian": 0.0116, "race-white": 0.5565, "race-other": 0.0193 },
+    sex: { "sex-female": 0.515, "sex-male": 0.485 },
+    nativity: { "foreign-born": 0.0258, "us-born": 0.9742 },
+    disability: { "with-disability": 0.1732, "no-disability": 0.8268 },
+    veteran: { veteran: 0.0438, "non-veteran": 0.9562 },
+  },
+  MT: {
+    race: { "race-hispanic": 0.0474, "race-black": 0.0056, "race-asian": 0.0101, "race-white": 0.8511, "race-other": 0.0858 },
+    sex: { "sex-female": 0.4933, "sex-male": 0.5067 },
+    nativity: { "foreign-born": 0.0227, "us-born": 0.9773 },
+    disability: { "with-disability": 0.1469, "no-disability": 0.8531 },
+    veteran: { veteran: 0.0709, "non-veteran": 0.9291 },
+  },
+  NC: {
+    race: { "race-hispanic": 0.1143, "race-black": 0.2099, "race-asian": 0.0356, "race-white": 0.6067, "race-other": 0.0335 },
+    sex: { "sex-female": 0.5112, "sex-male": 0.4888 },
+    nativity: { "foreign-born": 0.0889, "us-born": 0.9111 },
+    disability: { "with-disability": 0.1417, "no-disability": 0.8583 },
+    veteran: { veteran: 0.0574, "non-veteran": 0.9426 },
+  },
+  ND: {
+    race: { "race-hispanic": 0.0487, "race-black": 0.0357, "race-asian": 0.0169, "race-white": 0.8262, "race-other": 0.0725 },
+    sex: { "sex-female": 0.4871, "sex-male": 0.5129 },
+    nativity: { "foreign-born": 0.0413, "us-born": 0.9587 },
+    disability: { "with-disability": 0.1207, "no-disability": 0.8793 },
+    veteran: { veteran: 0.0505, "non-veteran": 0.9495 },
+  },
+  NE: {
+    race: { "race-hispanic": 0.1294, "race-black": 0.0505, "race-asian": 0.0275, "race-white": 0.7619, "race-other": 0.0307 },
+    sex: { "sex-female": 0.4972, "sex-male": 0.5028 },
+    nativity: { "foreign-born": 0.0806, "us-born": 0.9194 },
+    disability: { "with-disability": 0.1239, "no-disability": 0.8761 },
+    veteran: { veteran: 0.0516, "non-veteran": 0.9484 },
+  },
+  NH: {
+    race: { "race-hispanic": 0.0484, "race-black": 0.0163, "race-asian": 0.0308, "race-white": 0.8853, "race-other": 0.0192 },
+    sex: { "sex-female": 0.501, "sex-male": 0.499 },
+    nativity: { "foreign-born": 0.0672, "us-born": 0.9328 },
+    disability: { "with-disability": 0.1312, "no-disability": 0.8688 },
+    veteran: { veteran: 0.0617, "non-veteran": 0.9383 },
+  },
+  NJ: {
+    race: { "race-hispanic": 0.2266, "race-black": 0.13, "race-asian": 0.1043, "race-white": 0.5202, "race-other": 0.0189 },
+    sex: { "sex-female": 0.5079, "sex-male": 0.4921 },
+    nativity: { "foreign-born": 0.246, "us-born": 0.754 },
+    disability: { "with-disability": 0.1144, "no-disability": 0.8856 },
+    veteran: { veteran: 0.0287, "non-veteran": 0.9713 },
+  },
+  NM: {
+    race: { "race-hispanic": 0.4859, "race-black": 0.0208, "race-asian": 0.0177, "race-white": 0.3677, "race-other": 0.1079 },
+    sex: { "sex-female": 0.5029, "sex-male": 0.4971 },
+    nativity: { "foreign-born": 0.1054, "us-born": 0.8946 },
+    disability: { "with-disability": 0.1574, "no-disability": 0.8426 },
+    veteran: { veteran: 0.056, "non-veteran": 0.944 },
+  },
+  NV: {
+    race: { "race-hispanic": 0.2994, "race-black": 0.099, "race-asian": 0.0921, "race-white": 0.4544, "race-other": 0.0551 },
+    sex: { "sex-female": 0.4966, "sex-male": 0.5034 },
+    nativity: { "foreign-born": 0.186, "us-born": 0.814 },
+    disability: { "with-disability": 0.1312, "no-disability": 0.8688 },
+    veteran: { veteran: 0.0559, "non-veteran": 0.9441 },
+  },
+  NY: {
+    race: { "race-hispanic": 0.1979, "race-black": 0.1431, "race-asian": 0.0951, "race-white": 0.5405, "race-other": 0.0234 },
+    sex: { "sex-female": 0.5118, "sex-male": 0.4882 },
+    nativity: { "foreign-born": 0.2356, "us-born": 0.7644 },
+    disability: { "with-disability": 0.1239, "no-disability": 0.8761 },
+    veteran: { veteran: 0.03, "non-veteran": 0.97 },
+  },
+  OH: {
+    race: { "race-hispanic": 0.0485, "race-black": 0.1295, "race-asian": 0.0276, "race-white": 0.7673, "race-other": 0.0271 },
+    sex: { "sex-female": 0.5068, "sex-male": 0.4932 },
+    nativity: { "foreign-born": 0.0537, "us-born": 0.9463 },
+    disability: { "with-disability": 0.149, "no-disability": 0.851 },
+    veteran: { veteran: 0.0453, "non-veteran": 0.9547 },
+  },
+  OK: {
+    race: { "race-hispanic": 0.1291, "race-black": 0.0747, "race-asian": 0.0254, "race-white": 0.6263, "race-other": 0.1445 },
+    sex: { "sex-female": 0.5025, "sex-male": 0.4975 },
+    nativity: { "foreign-born": 0.062, "us-born": 0.938 },
+    disability: { "with-disability": 0.1732, "no-disability": 0.8268 },
+    veteran: { veteran: 0.0542, "non-veteran": 0.9458 },
+  },
+  OR: {
+    race: { "race-hispanic": 0.1492, "race-black": 0.0209, "race-asian": 0.0501, "race-white": 0.7284, "race-other": 0.0514 },
+    sex: { "sex-female": 0.502, "sex-male": 0.498 },
+    nativity: { "foreign-born": 0.1033, "us-born": 0.8967 },
+    disability: { "with-disability": 0.1469, "no-disability": 0.8531 },
+    veteran: { veteran: 0.0531, "non-veteran": 0.9469 },
+  },
+  PA: {
+    race: { "race-hispanic": 0.089, "race-black": 0.1082, "race-asian": 0.0408, "race-white": 0.7407, "race-other": 0.0213 },
+    sex: { "sex-female": 0.507, "sex-male": 0.493 },
+    nativity: { "foreign-born": 0.0744, "us-born": 0.9256 },
+    disability: { "with-disability": 0.1417, "no-disability": 0.8583 },
+    veteran: { veteran: 0.0446, "non-veteran": 0.9554 },
+  },
+  RI: {
+    race: { "race-hispanic": 0.1801, "race-black": 0.0641, "race-asian": 0.0356, "race-white": 0.6925, "race-other": 0.0277 },
+    sex: { "sex-female": 0.5096, "sex-male": 0.4904 },
+    nativity: { "foreign-born": 0.1447, "us-born": 0.8553 },
+    disability: { "with-disability": 0.1365, "no-disability": 0.8635 },
+    veteran: { veteran: 0.0414, "non-veteran": 0.9586 },
+  },
+  SC: {
+    race: { "race-hispanic": 0.0745, "race-black": 0.2527, "race-asian": 0.0197, "race-white": 0.6288, "race-other": 0.0243 },
+    sex: { "sex-female": 0.5141, "sex-male": 0.4859 },
+    nativity: { "foreign-born": 0.0568, "us-born": 0.9432 },
+    disability: { "with-disability": 0.1522, "no-disability": 0.8478 },
+    veteran: { veteran: 0.06, "non-veteran": 0.94 },
+  },
+  SD: {
+    race: { "race-hispanic": 0.0509, "race-black": 0.0248, "race-asian": 0.0174, "race-white": 0.8048, "race-other": 0.1021 },
+    sex: { "sex-female": 0.4916, "sex-male": 0.5084 },
+    nativity: { "foreign-born": 0.0393, "us-born": 0.9607 },
+    disability: { "with-disability": 0.1312, "no-disability": 0.8688 },
+    veteran: { veteran: 0.054, "non-veteran": 0.946 },
+  },
+  TN: {
+    race: { "race-hispanic": 0.0752, "race-black": 0.1608, "race-asian": 0.0204, "race-white": 0.7198, "race-other": 0.0238 },
+    sex: { "sex-female": 0.5096, "sex-male": 0.4904 },
+    nativity: { "foreign-born": 0.0548, "us-born": 0.9452 },
+    disability: { "with-disability": 0.1627, "no-disability": 0.8373 },
+    veteran: { veteran: 0.0499, "non-veteran": 0.9501 },
+  },
+  TX: {
+    race: { "race-hispanic": 0.3978, "race-black": 0.1269, "race-asian": 0.0575, "race-white": 0.3964, "race-other": 0.0214 },
+    sex: { "sex-female": 0.5012, "sex-male": 0.4988 },
+    nativity: { "foreign-born": 0.1757, "us-born": 0.8243 },
+    disability: { "with-disability": 0.1239, "no-disability": 0.8761 },
+    veteran: { veteran: 0.0466, "non-veteran": 0.9534 },
+  },
+  UT: {
+    race: { "race-hispanic": 0.16, "race-black": 0.0125, "race-asian": 0.0268, "race-white": 0.7571, "race-other": 0.0436 },
+    sex: { "sex-female": 0.4934, "sex-male": 0.5066 },
+    nativity: { "foreign-born": 0.0878, "us-born": 0.9122 },
+    disability: { "with-disability": 0.1144, "no-disability": 0.8856 },
+    veteran: { veteran: 0.037, "non-veteran": 0.963 },
+  },
+  VA: {
+    race: { "race-hispanic": 0.1118, "race-black": 0.191, "race-asian": 0.0724, "race-white": 0.5911, "race-other": 0.0337 },
+    sex: { "sex-female": 0.5059, "sex-male": 0.4941 },
+    nativity: { "foreign-born": 0.1292, "us-born": 0.8708 },
+    disability: { "with-disability": 0.126, "no-disability": 0.874 },
+    veteran: { veteran: 0.0757, "non-veteran": 0.9243 },
+  },
+  VT: {
+    race: { "race-hispanic": 0.0262, "race-black": 0.0147, "race-asian": 0.0206, "race-white": 0.9147, "race-other": 0.0238 },
+    sex: { "sex-female": 0.5035, "sex-male": 0.4965 },
+    nativity: { "foreign-born": 0.0496, "us-born": 0.9504 },
+    disability: { "with-disability": 0.1417, "no-disability": 0.8583 },
+    veteran: { veteran: 0.0544, "non-veteran": 0.9456 },
+  },
+  WA: {
+    race: { "race-hispanic": 0.1462, "race-black": 0.0422, "race-asian": 0.1048, "race-white": 0.6418, "race-other": 0.065 },
+    sex: { "sex-female": 0.4965, "sex-male": 0.5035 },
+    nativity: { "foreign-born": 0.1602, "us-born": 0.8398 },
+    disability: { "with-disability": 0.1344, "no-disability": 0.8656 },
+    veteran: { veteran: 0.0602, "non-veteran": 0.9398 },
+  },
+  WI: {
+    race: { "race-hispanic": 0.0809, "race-black": 0.0627, "race-asian": 0.0325, "race-white": 0.7951, "race-other": 0.0288 },
+    sex: { "sex-female": 0.4993, "sex-male": 0.5007 },
+    nativity: { "foreign-born": 0.0537, "us-born": 0.9463 },
+    disability: { "with-disability": 0.1312, "no-disability": 0.8688 },
+    veteran: { veteran: 0.0433, "non-veteran": 0.9567 },
+  },
+  WV: {
+    race: { "race-hispanic": 0.0224, "race-black": 0.0367, "race-asian": 0.0091, "race-white": 0.9093, "race-other": 0.0225 },
+    sex: { "sex-female": 0.5008, "sex-male": 0.4992 },
+    nativity: { "foreign-born": 0.0186, "us-born": 0.9814 },
+    disability: { "with-disability": 0.2047, "no-disability": 0.7953 },
+    veteran: { veteran: 0.057, "non-veteran": 0.943 },
+  },
+  WY: {
+    race: { "race-hispanic": 0.1075, "race-black": 0.0101, "race-asian": 0.0106, "race-white": 0.8307, "race-other": 0.0411 },
+    sex: { "sex-female": 0.488, "sex-male": 0.512 },
+    nativity: { "foreign-born": 0.031, "us-born": 0.969 },
+    disability: { "with-disability": 0.1417, "no-disability": 0.8583 },
+    veteran: { veteran: 0.0696, "non-veteran": 0.9304 },
+  },
+} as Readonly<Record<StateId, StateDemographics>>;

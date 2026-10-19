@@ -1,0 +1,3 @@
+{"id":"baked-one","class":"culture","severity":"routine","cast":{"pick":"none"},"conditions":[],"weight":1,"shard":"culture-000.jsonl"}
+{"id":"baked-three","class":"economy","severity":"routine","cast":{"pick":"none"},"conditions":[],"weight":1,"shard":"economy-000.jsonl"}
+{"id":"published-not-baked","class":"culture","severity":"routine","cast":{"pick":"none"},"conditions":[],"weight":1,"shard":"culture-001.jsonl"}

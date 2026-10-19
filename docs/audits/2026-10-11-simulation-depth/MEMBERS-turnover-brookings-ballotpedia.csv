@@ -1,0 +1,11 @@
+chamber,election_year,not_seeking_reelection,seeking_reelection,lost_primary,lost_general,reelected,reelected_pct_of_seeking,source
+House,2016,41,392,5,8,380,96.9,"Brookings Vital Statistics on Congress Table 2-7 (House) / 2-8 (Senate), edition posted 2024-11"
+House,2018,52,376,4,30,342,91.0,"Brookings Vital Statistics on Congress Table 2-7 (House) / 2-8 (Senate), edition posted 2024-11"
+House,2020,36,394,8,13,373,94.7,"Brookings Vital Statistics on Congress Table 2-7 (House) / 2-8 (Senate), edition posted 2024-11"
+House,2022,49,383,14,9,360,94.0,"Brookings Vital Statistics on Congress Table 2-7 (House) / 2-8 (Senate), edition posted 2024-11"
+Senate,2016,5,29,0,2,27,93.1,"Brookings Vital Statistics on Congress Table 2-7 (House) / 2-8 (Senate), edition posted 2024-11"
+Senate,2018,3,32,0,5,27,84.4,"Brookings Vital Statistics on Congress Table 2-7 (House) / 2-8 (Senate), edition posted 2024-11"
+Senate,2020,4,31,0,5,26,83.9,"Brookings Vital Statistics on Congress Table 2-7 (House) / 2-8 (Senate), edition posted 2024-11"
+Senate,2022,7,28,0,0,28,100.0,"Brookings Vital Statistics on Congress Table 2-7 (House) / 2-8 (Senate), edition posted 2024-11"
+House,2024,45,,4 (derived),11,,,"Ballotpedia news 2024-09-18 (retirements as of that date; secondary) and 2024-12-12 (15 lost: 11 general, 4 primary derived by subtraction)"
+Senate,2024,8,,,3,,,"Ballotpedia news 2024-09-18 (8 retirements as of that date); 3 lost general per Bloomberg Government via search result, not opened"

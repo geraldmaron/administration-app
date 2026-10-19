@@ -1,0 +1,32 @@
+import { expect, test } from "@playwright/test";
+import { importFixture, expectNoHorizontalOverflow } from "./helpers";
+
+test("court files distinguish a pending procedural step from a recorded final disposition", async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await importFixture(page, "court-procedure");
+  await page.goto("/washington/courts?view=docket");
+  const pending = page.getByRole("table", { name: "Pending cases", exact: true });
+  await expect(pending).toContainText("Threshold review");
+  await expect(pending).toContainText("No Supreme Court merits forecast yet");
+  await pending.getByRole("link").first().click();
+  await expect(page.getByRole("heading", { name: "The pending question", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Procedural history", exact: true })).toBeAttached();
+  await expect(page.getByText("Federal district court", { exact: true }).first()).toBeVisible();
+  await expectNoHorizontalOverflow(page, "pending court procedure");
+  await page.screenshot({ path: `tests/.results/court-pending-${info.project.name}.png`, fullPage: true, animations: "disabled" });
+  const pendingUrl = page.url();
+  await page.reload();
+  await expect(page).toHaveURL(pendingUrl);
+  await expect(page.getByRole("heading", { name: "The pending question", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Back to the docket", exact: true }).click();
+  const rulings = page.getByRole("table", { name: "Rulings", exact: true });
+  await rulings.getByRole("link").first().click();
+  await expect(page.getByRole("heading", { name: /^Sec\. 1\. Holding$/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Procedural history", exact: true })).toBeAttached();
+  await expect(page.getByRole("heading", { name: "The pending question", exact: true })).toHaveCount(0);
+  await expectNoHorizontalOverflow(page, "final court procedure");
+  await page.screenshot({ path: `tests/.results/court-final-${info.project.name}.png`, fullPage: true, animations: "disabled" });
+  expect(errors).toEqual([]);
+});

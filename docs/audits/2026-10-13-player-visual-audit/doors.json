@@ -1,0 +1,876 @@
+{
+  "failures": [],
+  "disabled": [
+    {
+      "fixture": "week-30",
+      "from": "/brief",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/brief",
+      "text": "Advance one day",
+      "reason": "Time is held until you answer or put off what is waiting on the Desk: one decisi"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/brief",
+      "text": "Hand the rest to the Chief of Staff and continue",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/brief/digest",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/brief/digest",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/brief/digest",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/congress",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/congress",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/congress",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/congress",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/courts",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/oversight",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/office/press",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/office/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/office/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/office/press",
+      "text": "Book the interview",
+      "reason": "30 weeks since anyone at the White House took a question."
+    },
+    {
+      "fixture": "week-30",
+      "from": "/washington/office/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/economy",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/economy",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/budget",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/budget",
+      "text": "Reset to the book in force",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/budget",
+      "text": "In force 0.76%",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/budget",
+      "text": "In force 0.03%",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/budget",
+      "text": "In force 0.53%",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/budget",
+      "text": "In force 1.54%",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/budget",
+      "text": "In force 2.40%",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/budget",
+      "text": "Submit budget proposal",
+      "reason": "Keeping the book needs no signature. Its money runs through September 30, 2029."
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/policy",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/policy",
+      "text": "Enact this stance",
+      "reason": "Keeping the program in force needs no signature. It goes on costing what the fir"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/emergency",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/emergency",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/electorate",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/nation/electorate",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/world",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/world",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/world/security",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/record",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/record/press",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Acting authority at O"
+    },
+    {
+      "fixture": "week-30",
+      "from": "/record/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/record/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "week-30",
+      "from": "/record/press",
+      "text": "Book the interview",
+      "reason": "30 weeks since anyone at the White House took a question."
+    },
+    {
+      "fixture": "week-30",
+      "from": "/record/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/brief",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/brief",
+      "text": "Advance one day",
+      "reason": "Time is held until you answer or put off what is waiting on the Desk: one decisi"
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/brief",
+      "text": "Hand the rest to the Chief of Staff and continue",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/brief/digest",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/brief/digest",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/brief/digest",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/congress",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/congress",
+      "text": "Last recorded vote",
+      "reason": "Neither chamber has recorded a roll call yet"
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/congress",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/congress",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/congress",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/courts",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/oversight",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/office/press",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/office/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/office/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/office/press",
+      "text": "Book the interview",
+      "reason": "2 weeks since anyone at the White House took a question."
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/washington/office/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/economy",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/economy",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/budget",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/budget",
+      "text": "Reset to the book in force",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/budget",
+      "text": "In force 0.76%",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/budget",
+      "text": "In force 0.03%",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/budget",
+      "text": "In force 0.53%",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/budget",
+      "text": "In force 1.54%",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/budget",
+      "text": "In force 2.40%",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/budget",
+      "text": "Submit budget proposal",
+      "reason": "Keeping the book needs no signature. Its money runs through September 30, 2029."
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/policy",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/policy",
+      "text": "Enact this stance",
+      "reason": "Keeping the program in force needs no signature. It goes on costing what the fir"
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/emergency",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/electorate",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/nation/electorate",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/world",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/world",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/world/security",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/record",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/record/press",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Secretary of Defense "
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/record/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/record/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/record/press",
+      "text": "Book the interview",
+      "reason": "2 weeks since anyone at the White House took a question."
+    },
+    {
+      "fixture": "decision-critical",
+      "from": "/record/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/brief",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/brief",
+      "text": "Advance one day",
+      "reason": "Time is held until you answer or put off what is waiting on the Desk: one decisi"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/brief/digest",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/brief/digest",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/brief/digest",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/congress",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/congress",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/congress",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/congress",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/congress",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/courts",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/oversight",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/office/press",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/office/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/office/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/office/press",
+      "text": "Book the interview",
+      "reason": "52 weeks since anyone at the White House took a question."
+    },
+    {
+      "fixture": "long-war",
+      "from": "/washington/office/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/economy",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/economy",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/budget",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/budget",
+      "text": "Reset to the book in force",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/budget",
+      "text": "In force 0.76%",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/budget",
+      "text": "In force 0.03%",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/budget",
+      "text": "In force 0.53%",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/budget",
+      "text": "In force 1.54%",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/budget",
+      "text": "In force 2.40%",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/budget",
+      "text": "Submit budget proposal",
+      "reason": "Keeping the book needs no signature. Its money runs through February 2, 2030."
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/policy",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/policy",
+      "text": "Enact this stance",
+      "reason": "Keeping the program in force needs no signature. It goes on costing what the fir"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/emergency",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/emergency",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/electorate",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/nation/electorate",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/world",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/world",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/world",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/world/security",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/record",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/record/press",
+      "text": "Continue",
+      "reason": "A decision is waiting for your answer. Time is paused for: Flooding. Continue re"
+    },
+    {
+      "fixture": "long-war",
+      "from": "/record/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/record/press",
+      "text": "‹",
+      "reason": ""
+    },
+    {
+      "fixture": "long-war",
+      "from": "/record/press",
+      "text": "Book the interview",
+      "reason": "52 weeks since anyone at the White House took a question."
+    },
+    {
+      "fixture": "long-war",
+      "from": "/record/press",
+      "text": "‹",
+      "reason": ""
+    }
+  ],
+  "followed": 139
+}

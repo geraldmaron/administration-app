@@ -1,0 +1,262 @@
+@layer rooms {
+  .act-plate {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-sm) var(--space-md);
+    align-items: center;
+    padding-block-end: var(--space-md);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .act-plate__seat img {
+    display: block;
+    border-radius: var(--radius-chip);
+    box-shadow: 0 0 0 1px var(--color-border-subtle);
+  }
+
+  .act-plate__readings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-xs) var(--space-lg);
+    align-items: end;
+  }
+
+  .act-step {
+    scroll-margin-block-start: 5rem;
+  }
+
+  .act-waiting {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    margin: 0;
+    color: var(--color-text-tertiary);
+    font-size: var(--size-small);
+  }
+
+  /* Act cards: the name, then the odds as pips and the money and wait each with a mark. */
+  .act-family {
+    --choice-card-padding: var(--space-sm) var(--space-md);
+    --choice-option-gap: var(--space-xs);
+    --choice-option-border: var(--color-border-subtle);
+    --choice-option-radius: var(--radius-card);
+    --choice-option-bg: var(--color-ground-raised);
+    --choice-hover-border: var(--color-border-strong);
+    --choice-hover-bg: var(--color-ground-raised-hover);
+  }
+
+  .act-family .ui-field__label {
+    margin-block-end: var(--space-xs);
+  }
+
+  .act-family__legend {
+    --icon-ink: var(--color-text-tertiary);
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+    color: var(--color-text-secondary);
+  }
+
+  .act-family .ui-choice__options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  }
+
+  .act-family .ui-choice__option {
+    align-content: start;
+  }
+
+  .act-readings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-sm);
+    align-items: center;
+  }
+
+  .act-reading {
+    --icon-ink: var(--color-text-tertiary);
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+    white-space: nowrap;
+  }
+
+  .act-odds {
+    flex-basis: 100%;
+    --odds-ink: var(--color-blue);
+  }
+
+  .act-odds[data-stance="favorable"] { --odds-ink: var(--status-success-ink); }
+  .act-odds[data-stance="caution"] { --odds-ink: var(--status-warning-ink); }
+  .act-odds[data-stance="adverse"] { --odds-ink: var(--color-red); }
+
+  .act-odds strong {
+    color: var(--odds-ink);
+  }
+
+  .act-odds__pips {
+    display: inline-flex;
+    gap: 2px;
+    margin-inline-end: 2px;
+  }
+
+  .act-odds__pips span {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 2px;
+    background: var(--color-ground-base);
+    box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  }
+
+  .act-odds__pips span[data-lit="true"] {
+    background: var(--odds-ink);
+    box-shadow: none;
+  }
+
+  .act-reading--held {
+    color: var(--status-warning-ink);
+    --icon-ink: var(--status-warning-ink);
+  }
+
+  .act-reading--warning {
+    color: var(--color-red);
+    --icon-ink: var(--color-red);
+    white-space: normal;
+  }
+
+  .act-reading__why {
+    flex-basis: 100%;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .act-family .ui-choice__option:has(.act-reading--held) {
+    --choice-option-bg: var(--status-warning-fill);
+    --choice-checked-bg: var(--status-warning-fill);
+    --choice-hover-bg: var(--status-warning-fill);
+  }
+
+  /* Terms: one framed panel, with each control's figure read large beside its label. */
+  .act-terms {
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .act-terms .ui-field__label {
+    font-weight: var(--weight-strong);
+  }
+
+  .act-terms__who .ui-choice__options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+  }
+
+  /* The comparison's cells: a reading drawn where the answer has one, the answer, then its reasons. */
+  .assess__lead {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  .assess:not([data-baseline]) > .assess__lead .assess__text {
+    font-size: var(--size-body);
+    font-weight: var(--weight-strong);
+  }
+
+  .assess[data-baseline] {
+    color: var(--color-text-tertiary);
+  }
+
+  .assess-pips {
+    --pip-ink: var(--color-blue);
+    display: inline-flex;
+    flex: none;
+    gap: 2px;
+  }
+
+  .assess-pips[data-stance="caution"] { --pip-ink: var(--status-warning-ink); }
+  .assess-pips[data-stance="adverse"] { --pip-ink: var(--color-red); }
+
+  .assess-pips span {
+    inline-size: 9px;
+    block-size: 9px;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  }
+
+  .assess-pips span[data-lit="true"] {
+    background: var(--pip-ink);
+    box-shadow: none;
+  }
+
+  .assess-items {
+    display: grid;
+    gap: var(--space-2xs);
+    margin: var(--space-2xs) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--size-label);
+  }
+
+  .assess-items--chips {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .assess-item {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    color: var(--color-text-secondary);
+  }
+
+  .assess-items--chips .assess-item {
+    --icon-ink: var(--color-text-tertiary);
+    padding: 2px var(--space-xs);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-control);
+  }
+
+  .assess-item--delta[data-direction="down"] {
+    color: var(--color-red);
+    --icon-ink: var(--color-red);
+  }
+
+  .assess-item--delta[data-direction="up"] {
+    color: var(--color-blue);
+    --icon-ink: var(--color-blue);
+  }
+
+  .assess-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-sm);
+    margin-block-start: var(--space-2xs);
+  }
+
+  .assess-flag {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    color: var(--color-text-secondary);
+    font-size: var(--size-label);
+  }
+
+  .assess-flag img {
+    inline-size: 18px;
+    block-size: 12px;
+    border-radius: 1px;
+    object-fit: cover;
+    box-shadow: 0 0 0 1px var(--color-border-subtle);
+  }
+
+  .assess-flag[data-stance="favorable"] .assess-flag__name { color: var(--color-blue); }
+  .assess-flag[data-stance="adverse"] .assess-flag__name { color: var(--color-red); }
+
+
+}

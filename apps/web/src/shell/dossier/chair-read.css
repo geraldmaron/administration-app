@@ -1,0 +1,99 @@
+/* A person's read: a pip per reading the simulation uses and the deciding word; the disclosure form opens why. */
+@layer rooms {
+  /* A holder's read: a pip per reading and the deciding word; pressing it opens why. */
+  .chair-read {
+    position: relative;
+  }
+
+  .chair-read__pips {
+    display: inline-flex;
+    gap: 3px;
+  }
+
+  .chair-read__pip {
+    display: inline-block;
+    inline-size: 0.5rem;
+    block-size: 0.875rem;
+    border-radius: 2px;
+    background: var(--color-border-subtle);
+  }
+
+  .chair-read__pip[data-tone="good"] { background: var(--status-success-ink); }
+  .chair-read__pip[data-tone="fair"] { background: color-mix(in srgb, var(--status-success-ink) 45%, var(--color-border-subtle)); }
+  .chair-read__pip[data-tone="watch"] { background: var(--status-warning-mark); }
+  .chair-read__pip[data-tone="bad"] { background: var(--status-danger-ink); }
+  /* Ambition is a pressure, not a grade: drawn hollow, filling as it nears the mark. */
+  .chair-read__pip[data-tone^="pressure"] { background: transparent; box-shadow: inset 0 0 0 1.5px var(--color-text-secondary); }
+  .chair-read__pip[data-tone="pressure-near"] { background: linear-gradient(to top, var(--color-text-secondary) 50%, transparent 50%); }
+  .chair-read__pip[data-tone="pressure-past"] { background: var(--status-warning-mark); box-shadow: none; }
+
+  .chair-read__word {
+    font-weight: var(--weight-strong);
+  }
+
+  .chair-read[data-tone="good"] .chair-read__word { color: var(--color-text-primary); font-weight: var(--weight-medium); }
+  .chair-read[data-tone="watch"] .chair-read__word { color: var(--status-warning-ink); }
+  .chair-read[data-tone="bad"] .chair-read__word { color: var(--status-danger-ink); }
+
+  .chair-read__reason {
+    margin: 0;
+  }
+
+  .chair-read__list {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+  }
+
+  .chair-read__list > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  .chair-read__list dt {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+    color: var(--color-text-secondary);
+  }
+
+  .chair-read__list dd {
+    margin: 0;
+    font-weight: var(--weight-strong);
+  }
+
+  .chair-read__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--size-caption);
+  }
+
+  .chair-read__more {
+    justify-self: start;
+    font-size: var(--size-small);
+  }
+
+  /* The static form, for a card that is itself a control: no button, the same pips and word. */
+  .read-badge {
+    display: inline-flex;
+    gap: var(--space-sm);
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .read-badge[data-tone="watch"] .chair-read__word { color: var(--status-warning-ink); }
+  .read-badge[data-tone="bad"] .chair-read__word { color: var(--status-danger-ink); }
+  .read-badge[data-tone="good"] .chair-read__word { font-weight: var(--weight-medium); }
+}
+
+@layer rooms {
+  .read-profile { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm) var(--space-lg); margin: 0; padding-block: var(--space-md); border-block: 1px solid var(--color-border-subtle); }
+  .read-profile > div { min-inline-size: 0; }
+  .read-profile dt { color: var(--color-text-secondary); font-size: var(--size-caption); }
+  .read-profile dd { margin: 0; font-size: var(--size-small); font-weight: var(--weight-medium); }
+  .read-profile [data-tone="watch"] dd, .read-profile [data-tone="pressure-near"] dd, .read-profile [data-tone="pressure-past"] dd { color: var(--status-warning-ink); }
+  .read-profile [data-tone="bad"] dd { color: var(--status-danger-ink); }
+}
+
+@layer rooms { .chair-read__evidence { display: grid; gap: var(--space-md); } }

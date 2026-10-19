@@ -1,0 +1,156 @@
+{
+  "id": "the-tariff-in-response",
+  "class": "foreign-crisis",
+  "severity": "serious",
+  "dilemmaShape": "retaliation",
+  "topics": [
+    "trade"
+  ],
+  "subject": "A foreign tariff has reached the trade ledger",
+  "cast": {
+    "pick": "tradeMeasure"
+  },
+  "conditions": [
+    {
+      "kind": "tradeMeasure",
+      "origin": "retaliation",
+      "responseSector": "energy-refined",
+      "responseRate": 0.15
+    }
+  ],
+  "weight": 1,
+  "locus": {
+    "site": "capital",
+    "ground": "home",
+    "descriptor": "the U.S. Trade Representative’s office as the customs notice reaches the desk"
+  },
+  "context": {
+    "standing": "A foreign government has put a {{tradeRate}} tariff on U.S. {{tradeSector}} exports. Its importers pay the duty at their border. U.S. exporters face lost orders and pressure to cut their prices.",
+    "precedent": "When one government answers a tariff with another, importers at home pay the new duty before diplomats settle the dispute. A reciprocal charge may strengthen a bargaining position, but it can also keep both charges in place.",
+    "pressures": [
+      {
+        "source": "business",
+        "want": "Exporters want a credible answer before they quote their next shipments. Their customers can switch suppliers while the duty remains."
+      },
+      {
+        "source": "cabinet",
+        "want": "The U.S. Trade Representative can impose a narrow tariff, but says domestic buyers will pay the duty on goods they bring in."
+      },
+      {
+        "source": "legislature",
+        "want": "Members want the President to answer the landed measure without promising relief that Congress has not voted."
+      },
+      {
+        "source": "press",
+        "want": "The trade desks want to know whether the administration has objected privately, escalated, or left the measure unanswered."
+      }
+    ],
+    "inaction": "Foreign buyers keep paying the duty on qualifying imports and can turn to other suppliers. U.S. exporters face the resulting lost sales while the administration leaves its own tariff schedule unchanged.",
+    "unknown": "The ledger records the duty and its target; it does not say how long the foreign government will hold it or whether talks would change that decision."
+  },
+  "particulars": [
+    {
+      "label": "Foreign action",
+      "value": "Active retaliation tariff"
+    },
+    {
+      "label": "Rate on U.S. exports",
+      "value": "{{tradeRate}}"
+    },
+    {
+      "label": "Export sector",
+      "value": "{{tradeSector}}"
+    },
+    {
+      "label": "U.S. reply available",
+      "value": "15% on refined energy"
+    }
+  ],
+  "opening": [
+    {
+      "speaker": {
+        "kind": "cabinet",
+        "roleHint": "foreign"
+      },
+      "text": "The foreign tariff is in force. Their importers pay {{tradeRate}} on U.S. {{tradeSector}} shipments. Our exporters are losing orders and need a decision before they quote new business."
+    },
+    {
+      "speaker": {
+        "kind": "narrator"
+      },
+      "text": "The President can deliver a private objection through the diplomatic channel, impose a narrow duty on refined products bought here, or wait for firmer export figures. None of those choices lifts the foreign charge today."
+    }
+  ],
+  "replies": [
+    {
+      "id": "negotiate-pharmaceutical-relief",
+      "tone": "conciliatory",
+      "text": "Deliver a private warning to that government: we object to the tariff and will judge any next step against the losses it causes.",
+      "commitment": {
+        "kind": "instrument",
+        "instrument": "diplomatic",
+        "rung": 1,
+        "rejoinder": {
+          "speaker": {
+            "kind": "cabinet",
+            "roleHint": "foreign"
+          },
+          "text": "The private objection is on its way through the diplomatic channel. The foreign duty still stands, and exporters still have to price the risk of lost orders."
+        }
+      }
+    },
+    {
+      "id": "escalate-tariffs-across-fuel",
+      "tone": "coercive",
+      "text": "Impose a fifteen-percent U.S. tariff on refined energy from that government as an answer to its active measure.",
+      "sets": [
+        "mirrored-their-tariff"
+      ],
+      "commitment": {
+        "kind": "position",
+        "cost": {},
+        "remembered": "The President imposed a fifteen-percent refined-energy tariff against the government whose retaliation was already active.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "cabinet",
+            "roleHint": "foreign"
+          },
+          "text": "The refined-products duty is signed. Domestic importers will pay it on qualifying shipments; the other government has made no new move yet."
+        },
+        "tariff": {
+          "sector": "energy-refined",
+          "rate": 0.15
+        }
+      },
+      "press": "The President imposes a refined-energy tariff after a foreign retaliation measure"
+    },
+    {
+      "id": "absorb-and-watch",
+      "tone": "firm",
+      "text": "Make no new tariff today. Ask the trade staff to measure the export loss before proposing another duty.",
+      "commitment": {
+        "kind": "position",
+        "cost": {
+          "standing": -0.02
+        },
+        "remembered": "The President left the U.S. tariff schedule unchanged while the foreign retaliation remained in force.",
+        "rejoinder": {
+          "speaker": {
+            "kind": "cabinet",
+            "roleHint": "foreign"
+          },
+          "text": "No new duty is posted today. Exporters must keep pricing the foreign tariff into their orders while the trade staff works through the losses."
+        }
+      }
+    }
+  ],
+  "binding": {
+    "mechanisms": [
+      {
+        "reply": "absorb-and-watch",
+        "metric": "standing",
+        "because": "Leaving an active foreign tariff unanswered weakens the administration’s word with exporters and other governments watching the dispute."
+      }
+    ]
+  }
+}

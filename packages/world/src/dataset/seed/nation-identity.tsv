@@ -1,0 +1,202 @@
+# Nation identity, vendored by scripts/vendor-nation-stats.mjs — do not edit by hand.
+# fetched: 2026-09-22
+# source: GeoNames countryInfo.txt (https://download.geonames.org/export/dump/countryInfo.txt), CC BY 4.0 — codes, capital, continent, currency, languages, neighbors, area
+# source: CIA World Factbook archive (github.com/factbook/factbook.json), public domain — UN membership, short name, adjective, government type, capital coordinates, median age, coastline, standing forces
+# roster: every Factbook entry listing UN membership, plus TWN, XKX, PSE
+iso3	iso2	un_member	name	short_name	adjective	capital	capital_fb	capital_lat	capital_lon	continent	currency	languages	languages_fb	government_type	median_age	area_km2	coastline_km	standing_forces	party_system	neighbors	factbook
+AFG	AF	yes	Afghanistan	Afghanistan	Afghan	Kabul	Kabul	34.52	69.18	AS	AFN	fa-AF,ps,uz-AF,tk		theocratic	18.4	647500	0	yes		TKM,CHN,IRN,TJK,PAK,UZB	south-asia/af.json
+AGO	AO	yes	Angola	Angola	Angolan	Luanda	Luanda	-8.83	13.22	AF	AOA	pt-AO	Portuguese 71.2%	presidential republic	16.6	1246700	1600	yes		COD,NAM,ZMB,COG	africa/ao.json
+ALB	AL	yes	Albania	Albania	Albanian	Tirana	Tirana	41.32	19.82	EU	ALL	sq,el		parliamentary republic	37.9	28748	362	yes		MKD,GRC,MNE,SRB,XKX	europe/al.json
+AND	AD	yes	Andorra	Andorra	Andorran	Andorra la Vella	Andorra la Vella	42.50	1.52	EU	EUR	ca	Catalan	parliamentary democracy	49.4	468	0	no		ESP,FRA	europe/an.json
+ARE	AE	yes	United Arab Emirates	none	Emirati	Abu Dhabi	Abu Dhabi	24.47	54.37	AS	AED	ar-AE,fa,en,hi,ur		federation of monarchies	35.8	82880	1318	yes		SAU,OMN	middle-east/ae.json
+ARG	AR	yes	Argentina	Argentina	Argentine	Buenos Aires	Buenos Aires	-34.60	-58.37	SA	ARS	es-AR,en,it,de,fr,gn		presidential republic	34.6	2766890	4989	yes		CHL,BOL,URY,PRY,BRA	south-america/ar.json
+ARM	AM	yes	Armenia	Armenia	Armenian	Yerevan	Yerevan	40.17	44.50	AS	AMD	hy		parliamentary democracy	39.5	29800	0	yes		GEO,IRN,AZE,TUR	central-asia/am.json
+ATG	AG	yes	Antigua and Barbuda	Antigua and Barbuda	Antiguan, Barbudan	St. John's	Saint John's	17.12	-61.85	NA	XCD	en-AG	English	parliamentary democracy under a constitutional monarchy	34.1	443	153	yes			central-america-n-caribbean/ac.json
+AUS	AU	yes	Australia	Australia	Australian	Canberra	Canberra	-35.27	149.13	OC	AUD	en-AU	English 72%, Mandarin 2.7%, Arabic 1.4%, Vietnamese 1.3%, Cantonese 1.2%, other 15.7%, unspecified 5.7%	federal parliamentary democracy&nbsp	38.5	7686850	25760	yes			australia-oceania/as.json
+AUT	AT	yes	Austria	Austria	Austrian	Vienna	Vienna	48.20	16.37	EU	EUR	de-AT,hr,hu,sl		federal parliamentary republic	44.5	83858	0	yes		CHE,DEU,HUN,SVK,CZE,ITA,SVN,LIE	europe/au.json
+AZE	AZ	yes	Azerbaijan	Azerbaijan	Azerbaijani	Baku	Baku	40.38	49.87	AS	AZN	az,ru,hy		presidential republic	34.8	86600	0	yes		GEO,IRN,ARM,TUR,RUS	central-asia/aj.json
+BDI	BI	yes	Burundi	Burundi	Burundian	Gitega	Gitega	-3.42	29.92	AF	BIF	fr-BI,rn		presidential republic	17.6	27830	0	yes		TZA,COD,RWA	africa/by.json
+BEL	BE	yes	Belgium	Belgium	Belgian	Brussels	Brussels	51.40	4.58	EU	EUR	nl-BE,fr-BE,de-BE		federal parliamentary democracy under a constitutional monarchy	42.4	30510	66.5	yes		DEU,NLD,LUX,FRA	europe/be.json
+BEN	BJ	yes	Benin	Benin	Beninese	Porto-Novo	Porto-Novo	6.48	2.62	AF	XOF	fr-BJ	55 languages	presidential republic	17.2	112620	121	yes		NER,TGO,BFA,NGA	africa/bn.json
+BFA	BF	yes	Burkina Faso	Burkina Faso	Burkinabe	Ouagadougou	Ouagadougou	12.37	-1.52	AF	XOF	fr-BF,mos	Mossi 52.9%, Fula 7.8%, Gourmantche 6.8%, Dyula 5.7%, Bissa 3.3%, Gurunsi 3.2%, French	presidential republic	19	274200	0	yes		NER,BEN,GHA,CIV,TGO,MLI	africa/uv.json
+BGD	BD	yes	Bangladesh	Bangladesh	Bangladeshi	Dhaka	Dhaka	23.72	90.40	AS	BDT	bn-BD,en		parliamentary republic	27.8	144000	580	yes		MMR,IND	south-asia/bg.json
+BGR	BG	yes	Bulgaria	Bulgaria	Bulgarian	Sofia	Sofia	42.68	23.32	EU	BGN	bg,tr-BG,rom		parliamentary republic	45.5	110910	354	yes		MKD,GRC,ROU,TUR,SRB	europe/bu.json
+BHR	BH	yes	Bahrain	Bahrain	Bahraini	Manama	Manama	26.23	50.57	AS	BHD	ar-BH,en,fa,ur		constitutional monarchy	33.5	665	161	yes			middle-east/ba.json
+BHS	BS	yes	Bahamas	The Bahamas	Bahamian	Nassau	Nassau	25.08	-77.35	NA	BSD	en-BS	English	parliamentary democracy&nbsp	31.1	13940	3542	yes			central-america-n-caribbean/bf.json
+BIH	BA	yes	Bosnia and Herzegovina	Bosnia and Herzegovina	Bosnian, Herzegovinian	Sarajevo	Sarajevo	43.87	18.42	EU	BAM	bs,hr-BA,sr-BA		parliamentary republic	45.7	51129	20	yes		HRV,MNE,SRB	europe/bk.json
+BLR	BY	yes	Belarus	Belarus	Belarusian	Minsk	Minsk	53.90	27.57	EU	BYN	be,ru		presidential republic in name, although in fact a dictatorship	42.5	207600	0	yes		POL,LTU,UKR,RUS,LVA	europe/bo.json
+BLZ	BZ	yes	Belize	Belize	Belizean	Belmopan	Belmopan	17.25	-88.77	NA	BZD	en-BZ,es		parliamentary democracy	27.2	22966	386	yes		GTM,MEX	central-america-n-caribbean/bh.json
+BOL	BO	yes	Bolivia	Bolivia	Bolivian	Sucre	La Paz	-16.50	-68.15	SA	BOB	es-BO,qu,ay		presidential republic	27	1098580	0	yes		PER,CHL,PRY,BRA,ARG	south-america/bl.json
+BRA	BR	yes	Brazil	Brazil	Brazilian	Brasilia	Bras&iacute	-15.78	-47.92	SA	BRL	pt-BR,es,en,fr		federal presidential republic	35.4	8511965	7491	yes		SUR,PER,BOL,URY,GUY,PRY,GUF,VEN,COL,ARG	south-america/br.json
+BRB	BB	yes	Barbados	Barbados	Barbadian or Bajan	Bridgetown	Bridgetown	13.10	-59.62	NA	BBD	en-BB	English	parliamentary republic	42.2	431	97	yes			central-america-n-caribbean/bb.json
+BRN	BN	yes	Brunei	Brunei	Bruneian	Bandar Seri Begawan	Bandar Seri Begawan	4.88	114.93	AS	BND	ms-BN,en-BN		absolute monarchy or sultanate	32.6	5770	161	yes		MYS	east-n-southeast-asia/bx.json
+BTN	BT	yes	Bhutan	Bhutan	Bhutanese	Thimphu	Thimphu	27.47	89.63	AS	BTN	dz	Sharchopkha 28%, Dzongkha	constitutional monarchy	31.2	47000	0	yes		CHN,IND	south-asia/bt.json
+BWA	BW	yes	Botswana	Botswana	Motswana	Gaborone	Gaborone	-24.63	25.90	AF	BWP	en-BW,tn-BW	Setswana 77.3%, Sekalanga 7.4%, Shekgalagadi 3.4%, English	parliamentary republic	25.8	600370	0	yes		ZWE,ZAF,NAM	africa/bc.json
+CAF	CF	yes	Central African Republic	none	Central African	Bangui	Bangui	4.37	18.58	AF	XAF	fr-CF,sg,ln,kg	French	presidential republic	20.6	622984	0	yes		TCD,SDN,COD,SSD,CMR,COG	africa/ct.json
+CAN	CA	yes	Canada	Canada	Canadian	Ottawa	Ottawa	45.42	-75.70	NA	CAD	en-CA,fr-CA,iu		federal parliamentary democracy	42.8	9984670	202080	yes		USA	north-america/ca.json
+CHE	CH	yes	Switzerland	Switzerland	Swiss	Bern	Bern	46.92	7.47	EU	CHF	de-CH,fr-CH,it-CH,rm		federal republic	44.4	41290	0	yes		DEU,ITA,LIE,FRA,AUT	europe/sz.json
+CHL	CL	yes	Chile	Chile	Chilean	Santiago	Santiago	-33.45	-70.67	SA	CLP	es-CL		presidential republic	38.9	756950	6435	yes		PER,BOL,ARG	south-america/ci.json
+CHN	CN	yes	China	China	Chinese	Beijing	Beijing	39.92	116.38	AS	CNY	zh-CN,yue,wuu,dta,ug,za		communist party-led state	40.8	9596960	14500	yes		LAO,BTN,TJK,KAZ,MNG,AFG,NPL,MMR,KGZ,PAK,PRK,RUS,VNM,IND	east-n-southeast-asia/ch.json
+CIV	CI	yes	Ivory Coast	C&ocirc;te d'Ivoire	Ivoirian	Yamoussoukro	Yamoussoukro	6.82	-5.27	AF	XOF	fr-CI		presidential republic	20	322460	515	yes		LBR,GHA,GIN,BFA,MLI	africa/iv.json
+CMR	CM	yes	Cameroon	Cameroon	Cameroonian	Yaounde	Yaounde	3.87	11.52	AF	XAF	en-CM,fr-CM		presidential republic	19.4	475440	402	yes		TCD,CAF,GAB,GNQ,COG,NGA	africa/cm.json
+COD	CD	yes	Democratic Republic of the Congo	DRC	Congolese or Congo	Kinshasa	Kinshasa	-4.32	15.30	AF	CDF	fr-CD,ln,ktu,kg,sw,lua		semi-presidential republic	16.9	2345410	37	yes		TZA,CAF,SSD,RWA,ZMB,BDI,UGA,COG,AGO	africa/cg.json
+COG	CG	yes	Republic of the Congo	Congo (Brazzaville)	Congolese or Congo	Brazzaville	Brazzaville	-4.25	15.28	AF	XAF	fr-CG,kg,ln-CG		presidential republic	20.9	342000	169	yes		CAF,GAB,COD,CMR,AGO	africa/cf.json
+COL	CO	yes	Colombia	Colombia	Colombian	Bogota	Bogot&aacute	4.60	-74.08	SA	COP	es-CO		presidential republic	33.1	1138910	3208	yes		ECU,PER,PAN,BRA,VEN	south-america/co.json
+COM	KM	yes	Comoros	Comoros	Comoran	Moroni	Moroni	-11.70	43.23	AF	KMF	ar,fr-KM	Arabic	federal presidential republic	23.1	2170	340	yes			africa/cn.json
+CPV	CV	yes	Cabo Verde	Cabo Verde	Cabo Verdean	Praia	Praia	14.92	-23.52	AF	CVE	pt-CV	Portuguese	parliamentary republic	29.3	4033	965	yes			africa/cv.json
+CRI	CR	yes	Costa Rica	Costa Rica	Costa Rican	San Jose	San Jos&eacute	9.93	-84.08	NA	CRC	es-CR,en		presidential republic	36	51100	1290	yes		PAN,NIC	central-america-n-caribbean/cs.json
+CUB	CU	yes	Cuba	Cuba	Cuban	Havana	Havana	23.12	-82.35	NA	CUP	es-CU,pap		communist state	46.2	110860	3735	yes		USA	central-america-n-caribbean/cu.json
+CYP	CY	yes	Cyprus	Cyprus	Cypriot	Nicosia	Nicosia	35.17	33.37	EU	EUR	el-CY,tr-CY,en		Republic of Cyprus - presidential republic	39.9	9250	648	yes			europe/cy.json
+CZE	CZ	yes	Czechia	Czechia	Czech	Prague	Prague	50.08	14.47	EU	CZK	cs,sk		parliamentary republic	44.4	78866	0	yes		POL,DEU,SVK,AUT	europe/ez.json
+DEU	DE	yes	Germany	Germany	German	Berlin	Berlin	52.52	13.40	EU	EUR	de		federal parliamentary republic	46.9	357021	2389	yes		CHE,POL,NLD,DNK,BEL,CZE,LUX,FRA,AUT	europe/gm.json
+DJI	DJ	yes	Djibouti	Djibouti	Djiboutian	Djibouti	Djibouti	11.58	43.15	AF	DJF	fr-DJ,ar,so-DJ,aa	French	presidential republic	26.7	23000	314	yes		ERI,ETH,SOM	africa/dj.json
+DMA	DM	yes	Dominica	Dominica	Dominican	Roseau	Roseau	15.30	-61.40	NA	XCD	en-DM	English	parliamentary republic	37.5	754	148	no			central-america-n-caribbean/do.json
+DNK	DK	yes	Denmark	Denmark	Danish	Copenhagen	Copenhagen	55.67	12.58	EU	DKK	da-DK,en,fo,de-DK		parliamentary constitutional monarchy	42.2	43094	7314	yes		DEU	europe/da.json
+DOM	DO	yes	Dominican Republic	The Dominican	Dominican	Santo Domingo	Santo Domingo	18.47	-69.90	NA	DOP	es-DO		presidential republic	29.6	48730	1288	yes		HTI	central-america-n-caribbean/dr.json
+DZA	DZ	yes	Algeria	Algeria	Algerian	Algiers	Algiers	36.75	3.05	AF	DZD	ar-DZ		presidential republic	29.3	2381740	998	yes		NER,ESH,LBY,MRT,TUN,MAR,MLI	africa/ag.json
+ECU	EC	yes	Ecuador	Ecuador	Ecuadorian	Quito	Quito	-0.22	-78.50	SA	USD	es-EC		presidential republic	28.2	283560	2237	yes		PER,COL	south-america/ec.json
+EGY	EG	yes	Egypt	Egypt	Egyptian	Cairo	Cairo	30.05	31.25	AF	EGP	ar-EG,en,fr		presidential republic	24.6	1001450	2450	yes		LBY,SDN,ISR,PSE	africa/eg.json
+ERI	ER	yes	Eritrea	Eritrea	Eritrean	Asmara	Asmara	15.33	38.93	AF	ERN	aa-ER,ar,tig,kun,ti-ER	Tigrinya	authoritarian	21.7	121320	2234	yes		ETH,SDN,DJI	africa/er.json
+ESP	ES	yes	Spain	Spain	Spanish	Madrid	Madrid	40.40	-3.68	EU	EUR	es-ES,ca,gl,eu,oc		parliamentary constitutional monarchy	47.2	504782	4964	yes		AND,PRT,GIB,FRA,MAR	europe/sp.json
+EST	EE	yes	Estonia	Estonia	Estonian	Tallinn	Tallinn	59.43	24.72	EU	EUR	et,ru	Estonian	parliamentary republic	42.9	45226	3794	yes		RUS,LVA	europe/en.json
+ETH	ET	yes	Ethiopia	Ethiopia	Ethiopian	Addis Ababa	Addis Ababa	9.03	38.70	AF	ETB	am,en-ET,om-ET,ti-ET,so-ET,sid		federal parliamentary republic	20.6	1127127	0	yes		ERI,KEN,SDN,SSD,SOM,DJI	africa/et.json
+FIN	FI	yes	Finland	Finland	Finnish	Helsinki	Helsinki	60.17	24.93	EU	EUR	fi-FI,sv-FI,smn		parliamentary republic	44	337030	1250	yes		NOR,RUS,SWE	europe/fi.json
+FJI	FJ	yes	Fiji	Fiji	Fijian	Suva	Suva	-18.13	178.42	OC	FJD	en-FJ,fj	English	parliamentary republic	32	18270	1129	yes			australia-oceania/fj.json
+FRA	FR	yes	France	France	French	Paris	Paris	48.87	2.33	EU	EUR	fr-FR,frp,br,co,ca,eu,oc		semi-presidential republic	42.7	547030	4853	yes		CHE,DEU,BEL,LUX,ITA,AND,MCO,ESP	europe/fr.json
+FSM	FM	yes	Micronesia	none	Micronesian	Palikir	Palikir	6.92	158.15	OC	USD	en-FM,chk,pon,yap,kos,uli,woe,nkr,kpg	English	federal republic in free association with the US	28.7	702	6112	yes			australia-oceania/fm.json
+GAB	GA	yes	Gabon	Gabon	Gabonese	Libreville	Libreville	0.38	9.45	AF	XAF	fr-GA	French	presidential republic	22.3	267667	885	yes		CMR,GNQ,COG	africa/gb.json
+GBR	GB	yes	United Kingdom	United Kingdom	British	London	London	51.50	-0.08	EU	GBP	en-GB,cy-GB,gd	English	parliamentary constitutional monarchy	40.9	244820	12429	yes		IRL	europe/uk.json
+GEO	GE	yes	Georgia	Georgia	Georgian	Tbilisi	Tbilisi	41.68	44.83	AS	GEL	ka,ru,hy,az		semi-presidential republic	38.6	69700	310	yes		ARM,AZE,TUR,RUS	central-asia/gg.json
+GHA	GH	yes	Ghana	Ghana	Ghanaian	Accra	Accra	5.55	-0.22	AF	GHS	en-GH,ak,ee,tw	Asante 16%, Ewe 14%, Fante 11.6%, Boron	presidential republic	21.6	239460	539	yes		CIV,TGO,BFA	africa/gh.json
+GIN	GN	yes	Guinea	Guinea	Guinean	Conakry	Conakry	9.50	-13.70	AF	GNF	fr-GN	French	presidential republic	19.5	245857	320	yes		LBR,SEN,SLE,CIV,GNB,MLI	africa/gv.json
+GMB	GM	yes	Gambia	The Gambia	Gambian	Banjul	Banjul	13.45	-16.57	AF	GMD	en-GM,mnk,wof,wo,ff	English	presidential republic	20.5	11300	80	yes		SEN	africa/ga.json
+GNB	GW	yes	Guinea-Bissau	Guinea-Bissau	Bissau-Guinean	Bissau	Bissau	11.85	-15.58	AF	XOF	pt-GW,pov	Portuguese-based Creole, Portuguese	semi-presidential republic	18.5	36120	350	yes		SEN,GIN	africa/pu.json
+GNQ	GQ	yes	Equatorial Guinea	Equatorial Guinea	Equatorial Guinean or Equatoguinean	Ciudad de la Paz	Malabo	3.75	8.78	AF	XAF	es-GQ,fr,pt		presidential republic	22.3	28051	296	yes		GAB,CMR	africa/ek.json
+GRC	GR	yes	Greece	Greece	Greek	Athens	Athens	37.98	23.73	EU	EUR	el-GR,en,fr		parliamentary republic	46.8	131940	13676	yes		ALB,MKD,TUR,BGR	europe/gr.json
+GRD	GD	yes	Grenada	Grenada	Grenadian	St. George's	Saint George's	12.05	-61.75	NA	XCD	en-GD	English	parliamentary democracy under a constitutional monarchy	35.9	344	121	no			central-america-n-caribbean/gj.json
+GTM	GT	yes	Guatemala	Guatemala	Guatemalan	Guatemala City	Guatemala City	14.62	-90.52	NA	GTQ	es-GT		presidential republic	26.7	108890	400	yes		MEX,HND,BLZ,SLV	central-america-n-caribbean/gt.json
+GUY	GY	yes	Guyana	Guyana	Guyanese	Georgetown	Georgetown	6.80	-58.15	SA	GYD	en-GY	English	parliamentary republic	28.7	214970	459	yes		SUR,BRA,VEN	south-america/gy.json
+HND	HN	yes	Honduras	Honduras	Honduran	Tegucigalpa	Tegucigalpa	14.10	-87.22	NA	HNL	es-HN,cab,miq		presidential republic	26.1	112090	823	yes		GTM,NIC,SLV	central-america-n-caribbean/ho.json
+HRV	HR	yes	Croatia	Croatia	Croatian	Zagreb	Zagreb	45.80	16.00	EU	EUR	hr-HR,sr		parliamentary republic	44.9	56542	5835	yes		HUN,SVN,BIH,MNE,SRB	europe/hr.json
+HTI	HT	yes	Haiti	Haiti	Haitian	Port-au-Prince	Port-au-Prince	18.53	-72.33	NA	HTG	ht,fr-HT		semi-presidential republic	25.3	27750	1771	yes		DOM	central-america-n-caribbean/ha.json
+HUN	HU	yes	Hungary	Hungary	Hungarian	Budapest	Budapest	47.50	19.08	EU	HUF	hu-HU		parliamentary republic	45.1	93030	0	yes		SVK,SVN,ROU,UKR,HRV,AUT,SRB	europe/hu.json
+IDN	ID	yes	Indonesia	Indonesia	Indonesian	Jakarta	Jakarta	-6.17	106.82	AS	IDR	id,en,nl,jv		presidential republic	31.8	1919440	54716	yes		PNG,TLS,MYS	east-n-southeast-asia/id.json
+IND	IN	yes	India	India	Indian	New Delhi	New Delhi	28.60	77.20	AS	INR	en-IN,hi,bn,te,mr,ta,ur,gu,kn,ml,or,pa,as,bh,sat,ks,ne,sd,kok,doi,mni,sit,sa,fr,lus,inc		federal parliamentary republic	30.1	3287590	7000	yes		CHN,NPL,MMR,BTN,PAK,BGD	south-asia/in.json
+IRL	IE	yes	Ireland	Ireland	Irish	Dublin	Dublin	53.32	-6.23	EU	EUR	en-IE,ga-IE	English	parliamentary republic	40.5	70280	1448	yes		GBR	europe/ei.json
+IRN	IR	yes	Iran	Iran	Iranian	Tehran	Tehran	35.70	51.42	AS	IRR	fa-IR,ku		theocratic republic	35.2	1648000	2440	yes		TKM,AFG,IRQ,ARM,PAK,AZE,TUR	middle-east/ir.json
+IRQ	IQ	yes	Iraq	Iraq	Iraqi	Baghdad	Baghdad	33.33	44.40	AS	IQD	ar-IQ,ku,hy		federal parliamentary republic	22.7	437072	58	yes		SYR,SAU,IRN,JOR,TUR,KWT	middle-east/iz.json
+ISL	IS	yes	Iceland	Iceland	Icelandic	Reykjavik	Reykjavik	64.15	-21.95	EU	ISK	is,en,de,da,sv,no	Icelandic, English, Polish, Nordic languages, German	unitary parliamentary republic	38.2	103000	4970	no			europe/ic.json
+ISR	IL	yes	Israel	Israel	Israeli	Jerusalem	Jerusalem	31.77	35.23	AS	ILS	he,ar-IL,en-IL,		parliamentary democracy	30.2	20770	273	yes		SYR,JOR,LBN,EGY,PSE	middle-east/is.json
+ITA	IT	yes	Italy	Italy	Italian	Rome	Rome	41.90	12.48	EU	EUR	it-IT,de-IT,fr-IT,sc,ca,co,sl		parliamentary republic	48.8	301230	7600	yes		CHE,VAT,SVN,SMR,FRA,AUT	europe/it.json
+JAM	JM	yes	Jamaica	Jamaica	Jamaican	Kingston	Kingston	18.00	-76.80	NA	JMD	en-JM	English, Jamaican patois	parliamentary democracy	28.8	10991	1022	yes			central-america-n-caribbean/jm.json
+JOR	JO	yes	Jordan	Jordan	Jordanian	Amman	Amman	31.95	35.93	AS	JOD	ar-JO,en		parliamentary constitutional monarchy	25.4	92300	26	yes		SYR,SAU,IRQ,ISR,PSE	middle-east/jo.json
+JPN	JP	yes	Japan	Japan	Japanese	Tokyo	Tokyo	35.68	139.75	AS	JPY	ja		parliamentary constitutional monarchy	50.2	377835	29751	yes			east-n-southeast-asia/ja.json
+KAZ	KZ	yes	Kazakhstan	Kazakhstan	Kazakhstani	Nur-Sultan	Astana	51.17	71.42	AS	KZT	kk,ru		presidential republic	32.1	2717300	0	yes		TKM,CHN,KGZ,UZB,RUS	central-asia/kz.json
+KEN	KE	yes	Kenya	Kenya	Kenyan	Nairobi	Nairobi	-1.28	36.82	AF	KES	en-KE,sw-KE		presidential republic	21.5	582650	536	yes		ETH,TZA,SSD,SOM,UGA	africa/ke.json
+KGZ	KG	yes	Kyrgyzstan	Kyrgyzstan	Kyrgyzstani	Bishkek	Bishkek	42.87	74.60	AS	KGS	ky,uz,ru		parliamentary republic	28.6	198500	0	yes		CHN,TJK,UZB,KAZ	central-asia/kg.json
+KHM	KH	yes	Cambodia	Cambodia	Cambodian	Phnom Penh	Phnom Penh	11.55	104.92	AS	KHR	km,fr,en		parliamentary constitutional monarchy	28.3	181040	443	yes		LAO,THA,VNM	east-n-southeast-asia/cb.json
+KIR	KI	yes	Kiribati	Kiribati	Kiribati	Tarawa	Tarawa	1.35	173.03	OC	AUD	en-KI,gil	Gilbertese, English	presidential republic	27.7	811	1143	yes			australia-oceania/kr.json
+KNA	KN	yes	Saint Kitts and Nevis	Saint Kitts and Nevis	Kittitian, Nevisian	Basseterre	Basseterre	17.30	-62.72	NA	XCD	en-KN	English	federal parliamentary democracy under a constitutional monarchy	39.1	261	135	yes			central-america-n-caribbean/sc.json
+KOR	KR	yes	South Korea	South Korea	Korean	Seoul	Seoul	37.55	126.98	AS	KRW	ko-KR,en		presidential republic	47	98480	2413	yes		PRK	east-n-southeast-asia/ks.json
+KWT	KW	yes	Kuwait	Kuwait	Kuwaiti	Kuwait City	Kuwait City	29.37	47.97	AS	KWD	ar-KW,en		constitutional monarchy	30.4	17820	499	yes		SAU,IRQ	middle-east/ku.json
+LAO	LA	yes	Laos	Laos	Lao or Laotian	Vientiane	Vientiane	17.97	102.60	AS	LAK	lo,fr,en		communist party-led state	25.8	236800	0	yes		CHN,MMR,KHM,THA,VNM	east-n-southeast-asia/la.json
+LBN	LB	yes	Lebanon	Lebanon	Lebanese	Beirut	Beirut	33.87	35.50	AS	LBP	ar-LB,fr-LB,en,hy		parliamentary democratic republic	29.4	10400	225	yes		SYR,ISR	middle-east/le.json
+LBR	LR	yes	Liberia	Liberia	Liberian	Monrovia	Monrovia	6.30	-10.80	AF	LRD	en-LR	English 20%	presidential republic	20.1	111370	579	yes		SLE,CIV,GIN	africa/li.json
+LBY	LY	yes	Libya	Libya	Libyan	Tripoli	Tripoli	32.88	13.17	AF	LYD	ar-LY,it,en		in transition	26.4	1759540	1770	yes		TCD,NER,DZA,SDN,TUN,EGY	africa/ly.json
+LCA	LC	yes	Saint Lucia	Saint Lucia	Saint Lucian	Castries	Castries	14.00	-61.00	NA	XCD	en-LC	English	parliamentary democracy under a constitutional monarchy	40.4	616	158	no			central-america-n-caribbean/st.json
+LIE	LI	yes	Liechtenstein	Liechtenstein	Liechtenstein	Vaduz	Vaduz	47.13	9.52	EU	CHF	de-LI		constitutional monarchy	44.4	160	0	no		CHE,AUT	europe/ls.json
+LKA	LK	yes	Sri Lanka	Sri Lanka	Sri Lankan	Colombo	Colombo	6.92	79.83	AS	LKR	si,ta,en	Sinhala	presidential republic	34.2	65610	1340	yes			south-asia/ce.json
+LSO	LS	yes	Lesotho	Lesotho	Basotho	Maseru	Maseru	-29.32	27.48	AF	LSL	en-LS,st,zu,xh	Sesotho	parliamentary constitutional monarchy	24	30355	0	yes		ZAF	africa/lt.json
+LTU	LT	yes	Lithuania	Lithuania	Lithuanian	Vilnius	Vilnius	54.68	25.32	EU	EUR	lt,ru,pl		semi-presidential republic	44	65200	90	yes		POL,BLR,RUS,LVA	europe/lh.json
+LUX	LU	yes	Luxembourg	Luxembourg	Luxembourg	Luxembourg	Luxembourg	49.60	6.12	EU	EUR	lb,de-LU,fr-LU	Luxembourgish	constitutional monarchy	40.1	2586	0	yes		DEU,BEL,FRA	europe/lu.json
+LVA	LV	yes	Latvia	Latvia	Latvian	Riga	Riga	56.95	24.10	EU	EUR	lv,ru,lt		parliamentary republic	43.8	64589	498	yes		LTU,EST,BLR,RUS	europe/lg.json
+MAR	MA	yes	Morocco	Morocco	Moroccan	Rabat	Rabat	34.02	-6.82	AF	MAD	ar-MA,ber,fr		parliamentary constitutional monarchy	30.9	446550	2945	yes		DZA,ESH,ESP	africa/mo.json
+MCO	MC	yes	Monaco	Monaco	Monegasque or Monacan	Monaco	Monaco	43.73	7.42	EU	EUR	fr-MC,en,it		constitutional monarchy	57.5	1.95	4.1	no		FRA	europe/mn.json
+MDA	MD	yes	Moldova	Moldova	Moldovan	Chisinau	Chisinau in Romanian	47.00	28.85	EU	MDL	ro,ru,gag,tr		parliamentary republic	40.4	33843	0	yes		ROU,UKR	europe/md.json
+MDG	MG	yes	Madagascar	Madagascar	Malagasy	Antananarivo	Antananarivo	-18.92	47.52	AF	MGA	fr-MG,mg	Malagasy	semi-presidential republic	20.5	587040	4828	yes			africa/ma.json
+MDV	MV	yes	Maldives	Maldives	Maldivian	Male	Mal&eacute	4.17	73.50	AS	MVR	dv,en	Dhivehi	presidential republic	32.4	300	644	yes			south-asia/mv.json
+MEX	MX	yes	Mexico	Mexico	Mexican	Mexico City	Mexico City	19.43	-99.13	NA	MXN	es-MX		federal presidential republic	31	1972550	9330	yes		GTM,USA,BLZ	north-america/mx.json
+MHL	MH	yes	Marshall Islands	Marshall Islands	Marshallese	Majuro	Majuro	7.10	171.38	OC	USD	mh,en-MH		mixed presidential-parliamentary system in free association with the US	25.9	181.3	370.4	yes			australia-oceania/rm.json
+MKD	MK	yes	North Macedonia	North Macedonia	Macedonian	Skopje	Skopje	42.00	21.43	EU	MKD	mk,sq,tr,rmm,sr		parliamentary republic	40.9	25333	0	yes		ALB,GRC,BGR,SRB,XKX	europe/mk.json
+MLI	ML	yes	Mali	Mali	Malian	Bamako	Bamako	12.65	-8.00	AF	XOF	fr-ML,bm	Bambara	semi-presidential republic	16.5	1240000	0	yes		SEN,NER,DZA,CIV,GIN,MRT,BFA	africa/ml.json
+MLT	MT	yes	Malta	Malta	Maltese	Valletta	Valletta	35.88	14.50	EU	EUR	mt,en-MT	Maltese	parliamentary republic	42.1	316	196.8	yes			europe/mt.json
+MMR	MM	yes	Myanmar	Burma	Burmese	Nay Pyi Taw	Rangoon	16.80	96.17	AS	MMK	my		military regime	31.1	678500	1930	yes		CHN,LAO,THA,BGD,IND	east-n-southeast-asia/bm.json
+MNE	ME	yes	Montenegro	Montenegro	Montenegrin	Podgorica	Podgorica	42.43	19.27	EU	EUR	sr,hu,bs,sq,hr,rom		parliamentary republic	41.5	14026	293.5	yes		ALB,HRV,BIH,SRB,XKX	europe/mj.json
+MNG	MN	yes	Mongolia	Mongolia	Mongolian	Ulaanbaatar	Ulaanbaatar	47.92	106.92	AS	MNT	mn,ru		semi-presidential republic	28.8	1565000	0	yes		CHN,RUS	east-n-southeast-asia/mg.json
+MOZ	MZ	yes	Mozambique	Mozambique	Mozambican	Maputo	Maputo	-25.95	32.58	AF	MZN	pt-MZ,vmw	Makhuwa 26.1%, Portuguese	presidential republic	17.4	801590	2470	yes		ZWE,TZA,SWZ,ZAF,ZMB,MWI	africa/mz.json
+MRT	MR	yes	Mauritania	Mauritania	Mauritanian	Nouakchott	Nouakchott	18.07	-15.97	AF	MRU	ar-MR,fuc,snk,fr,mey,wo		presidential republic	18.6	1030700	754	yes		SEN,DZA,ESH,MLI	africa/mr.json
+MUS	MU	yes	Mauritius	Mauritius	Mauritian	Port Louis	Port Louis	-20.15	57.48	AF	MUR	en-MU,bho,fr	Creole 86.5%, Bhojpuri 5.3%, French 4.1%, two languages 1.4%, other 2.6%	parliamentary republic	40	2040	177	no			africa/mp.json
+MWI	MW	yes	Malawi	Malawi	Malawian	Lilongwe	Lilongwe	-13.97	33.78	AF	MWK	ny,yao,tum,swk	English	presidential republic	19.4	118480	0	yes		TZA,MOZ,ZMB	africa/mi.json
+MYS	MY	yes	Malaysia	Malaysia	Malaysian	Kuala Lumpur	Kuala Lumpur	3.17	101.70	AS	MYR	ms-MY,en,zh,ta,te,ml,pa,th		federal parliamentary constitutional monarchy	32.2	329750	4675	yes		BRN,THA,IDN	east-n-southeast-asia/my.json
+NAM	NA	yes	Namibia	Namibia	Namibian	Windhoek	Windhoek	-22.57	17.08	AF	NAD	en-NA,af,de,hz,naq	Oshiwambo languages 49.7%, Nama/Damara 11%, Kavango languages 10.4%, Afrikaans 9.4%, Herero languages 9.2%, Zambezi languages 4.9%, English	presidential republic	23.1	825418	1572	yes		ZAF,BWA,ZMB,AGO	africa/wa.json
+NER	NE	yes	Niger	Niger	Nigerien	Niamey	Niamey	13.52	2.12	AF	XOF	fr-NE,ha,kr,dje	Hausa, Zarma, French	formerly, semi-presidential republic	15.3	1267000	0	yes		TCD,BEN,DZA,LBY,BFA,NGA,MLI	africa/ng.json
+NGA	NG	yes	Nigeria	Nigeria	Nigerian	Abuja	Abuja	9.08	7.53	AF	NGN	en-NG,ha,yo,ig,ff	English	federal presidential republic	19.4	923768	853	yes		TCD,NER,BEN,CMR	africa/ni.json
+NIC	NI	yes	Nicaragua	Nicaragua	Nicaraguan	Managua	Managua	12.13	-86.25	NA	NIO	es-NI,en		presidential republic	29.5	129494	910	yes		CRI,HND	central-america-n-caribbean/nu.json
+NLD	NL	yes	The Netherlands	Netherlands	Dutch	Amsterdam	Amsterdam	52.35	4.92	EU	EUR	nl-NL,fy-NL		parliamentary constitutional monarchy	42.2	41526	451	yes		DEU,BEL	europe/nl.json
+NOR	NO	yes	Norway	Norway	Norwegian	Oslo	Oslo	59.92	10.75	EU	NOK	no,nb,nn,se,fi		parliamentary constitutional monarchy	41	324220	25148	yes		FIN,RUS,SWE	europe/no.json
+NPL	NP	yes	Nepal	Nepal	Nepali	Kathmandu	Kathmandu	27.72	85.32	AS	NPR	ne,en		federal parliamentary republic	28.1	140800	0	yes		CHN,IND	south-asia/np.json
+NRU	NR	yes	Nauru	Nauru	Nauruan	Yaren	no official capital			OC	AUD	na,en-NR	Nauruan 93%	parliamentary republic	28.2	21	30	no			australia-oceania/nr.json
+NZL	NZ	yes	New Zealand	New Zealand	New Zealand	Wellington	Wellington	-41.30	174.78	OC	NZD	en-NZ,mi	English	parliamentary democracy&nbsp	38.1	268680	15134	yes			australia-oceania/nz.json
+OMN	OM	yes	Oman	Oman	Omani	Muscat	Muscat	23.62	58.58	AS	OMR	ar-OM,en,bal,ur		absolute monarchy	27.5	212460	2092	yes		SAU,YEM,ARE	middle-east/mu.json
+PAK	PK	yes	Pakistan	Pakistan	Pakistani	Islamabad	Islamabad	33.68	73.05	AS	PKR	ur-PK,en-PK,pa,sd,ps,brh		federal parliamentary republic	23.2	803940	1046	yes		CHN,AFG,IRN,IND	south-asia/pk.json
+PAN	PA	yes	Panama	Panama	Panamanian	Panama City	Panama City	8.97	-79.53	NA	PAB	es-PA,en		presidential republic	31.7	78200	2490	no		CRI,COL	central-america-n-caribbean/pm.json
+PER	PE	yes	Peru	Peru	Peruvian	Lima	Lima	-12.05	-77.05	SA	PEN	es-PE,qu,ay		presidential republic	30.4	1285220	2414	yes		ECU,CHL,BOL,BRA,COL	south-america/pe.json
+PHL	PH	yes	Philippines	Philippines	Philippine	Manila	Manila	14.60	120.97	AS	PHP	tl,en-PH,fil,ceb,ilo,hil,war,pam,bik,bcl,pag,mrw,tsg,mdh,cbk,krj,sgd,msb,akl,ibg,yka,mta,abx		presidential republic	27.1	300000	36289	yes			east-n-southeast-asia/rp.json
+PLW	PW	yes	Palau	Palau	Palauan	Melekeok	Ngerulmud	7.50	134.62	OC	USD	pau,sov,en-PW,tox,ja,fil,zh	Palauan	presidential republic in free association with the US	35.5	458	1519	no			australia-oceania/ps.json
+PNG	PG	yes	Papua New Guinea	Papua New Guinea	Papua New Guinean	Port Moresby	Port Moresby	-9.45	147.18	OC	PGK	en-PG,ho,meu,tpi	Tok Pisin	parliamentary democracy under a constitutional monarchy	21.9	462840	5152	yes		IDN	east-n-southeast-asia/pp.json
+POL	PL	yes	Poland	Poland	Polish	Warsaw	Warsaw	52.25	21.00	EU	PLN	pl		parliamentary republic	43.4	312685	440	yes		DEU,LTU,SVK,CZE,BLR,UKR,RUS	europe/pl.json
+PRK	KP	yes	North Korea	North Korea	Korean	Pyongyang	Pyongyang	39.02	125.75	AS	KPW	ko-KP		dictatorship, single-party communist state	36.2	120540	2495	yes		CHN,KOR,RUS	east-n-southeast-asia/kn.json
+PRT	PT	yes	Portugal	Portugal	Portuguese	Lisbon	Lisbon	38.72	-9.13	EU	EUR	pt-PT,mwl	Portuguese	semi-presidential republic	46.8	92391	1793	yes		ESP	europe/po.json
+PRY	PY	yes	Paraguay	Paraguay	Paraguayan	Asuncion	Asunci&oacute	-25.27	-57.67	SA	PYG	es-PY,gn		presidential republic	32.3	406750	0	yes		BOL,BRA,ARG	south-america/pa.json
+PSE	PS	no	Palestinian Territory	West Bank		East Jerusalem				AS	ILS	ar-PS			22	5970	0	yes		JOR,ISR,EGY	middle-east/we.json
+QAT	QA	yes	Qatar	Qatar	Qatari	Doha	Doha	25.28	51.53	AS	QAR	ar-QA,es		absolute monarchy	34.4	11437	563	yes		SAU	middle-east/qa.json
+ROU	RO	yes	Romania	Romania	Romanian	Bucharest	Bucharest	44.43	26.10	EU	RON	ro,hu,rom		semi-presidential republic	45.8	237500	225	yes		MDA,HUN,UKR,BGR,SRB	europe/ro.json
+RUS	RU	yes	Russia	Russia	Russian	Moscow	Moscow	55.75	37.60	EU	RUB	ru,tt,xal,cau,ady,kv,ce,tyv,cv,udm,tut,mns,bua,myv,mdf,chm,ba,inh,kbd,krc,av,sah,nog		semi-presidential federation	42.3	17100000	37653	yes		GEO,CHN,BLR,UKR,KAZ,LVA,POL,EST,LTU,FIN,MNG,NOR,AZE,PRK	central-asia/rs.json
+RWA	RW	yes	Rwanda	Rwanda	Rwandan	Kigali	Kigali	-1.95	30.05	AF	RWF	rw,en-RW,fr-RW,sw		presidential republic	21.3	26338	0	yes		TZA,COD,BDI,UGA	africa/rw.json
+SAU	SA	yes	Saudi Arabia	Saudi Arabia	Saudi or Saudi Arabian	Riyadh	Riyadh	24.65	46.70	AS	SAR	ar-SA		absolute monarchy	32.8	1960582	2640	yes		QAT,OMN,IRQ,YEM,JOR,ARE,KWT	middle-east/sa.json
+SDN	SD	yes	Sudan	Sudan	Sudanese	Khartoum	Khartoum	15.60	32.53	AF	SDG	ar-SD,en,fia		presidential republic	19.5	1861484	853	yes		SSD,TCD,EGY,ETH,ERI,LBY,CAF	africa/su.json
+SEN	SN	yes	Senegal	Senegal	Senegalese	Dakar	Dakar	14.73	-17.63	AF	XOF	fr-SN,wo,fuc,mnk	French	presidential republic	19.4	196190	531	yes		GIN,MRT,GNB,GMB,MLI	africa/sg.json
+SGP	SG	yes	Singapore	Singapore	Singapore	Singapore	Singapore	1.28	103.85	AS	SGD	cmn,en-SG,ms-SG,ta-SG,zh-SG		parliamentary republic	39.8	692.7	193	yes			east-n-southeast-asia/sn.json
+SLB	SB	yes	Solomon Islands	Solomon Islands	Solomon Islander	Honiara	Honiara	-9.43	159.95	OC	SBD	en-SB,tpi	Melanesian pidgin	parliamentary democracy under a constitutional monarchy	25.5	28450	5313	yes			australia-oceania/bp.json
+SLE	SL	yes	Sierra Leone	Sierra Leone	Sierra Leonean	Freetown	Freetown	8.48	-13.23	AF	SLE	en-SL,men,tem	English	presidential republic	19.7	71740	402	yes		LBR,GIN	africa/sl.json
+SLV	SV	yes	El Salvador	El Salvador	Salvadoran	San Salvador	San Salvador	13.70	-89.20	NA	USD	es-SV		presidential republic	31.2	21040	307	yes		GTM,HND	central-america-n-caribbean/es.json
+SMR	SM	yes	San Marino	San Marino	Sammarinese	San Marino	San Marino	43.93	12.42	EU	EUR	it-SM		parliamentary republic	46.3	61.2	0	yes		ITA	europe/sm.json
+SOM	SO	yes	Somalia	Somalia	Somali	Mogadishu	Mogadishu	2.07	45.33	AF	SOS	so-SO,ar-SO,it,en-SO		federal parliamentary republic	15.7	637657	3025	yes		ETH,KEN,DJI	africa/so.json
+SRB	RS	yes	Serbia	Serbia	Serbian	Belgrade	Belgrade	44.83	20.50	EU	RSD	sr,hu,bs,rom		parliamentary republic	44.1	88361	0	yes		ALB,HUN,MKD,ROU,HRV,BIH,BGR,MNE,XKX	europe/ri.json
+SSD	SS	yes	South Sudan	South Sudan	South Sudanese	Juba	Juba	4.85	31.62	AF	SSP	en		presidential republic	18.7	644329	0	yes		COD,CAF,ETH,KEN,SDN,UGA	africa/od.json
+STP	ST	yes	Sao Tome and Principe	Sao Tome and Principe	Sao Tomean	Sao Tome	Sao Tome	0.33	6.73	AF	STN	pt-ST	Portuguese 98.4%	semi-presidential republic	21.2	1001	209	yes			africa/tp.json
+SUR	SR	yes	Suriname	Suriname	Surinamese	Paramaribo	Paramaribo	5.83	-55.17	SA	SRD	nl-SR,en,srn,hns,jv		presidential republic	32.3	163270	386	yes		GUY,BRA,GUF	south-america/ns.json
+SVK	SK	yes	Slovakia	Slovakia	Slovak	Bratislava	Bratislava	48.15	17.12	EU	EUR	sk,hu		parliamentary republic	43.1	48845	0	yes		POL,HUN,CZE,UKR,AUT	europe/lo.json
+SVN	SI	yes	Slovenia	Slovenia	Slovenian	Ljubljana	Ljubljana	46.05	14.52	EU	EUR	sl,sh		parliamentary republic	46	20273	46.6	yes		HUN,ITA,HRV,AUT	europe/si.json
+SWE	SE	yes	Sweden	Sweden	Swedish	Stockholm	Stockholm	59.33	18.05	EU	SEK	sv-SE,se,sma,fi-SE		parliamentary constitutional monarchy	41.2	449964	3218	yes		NOR,FIN	europe/sw.json
+SWZ	SZ	yes	Eswatini	Eswatini	Swati	Mbabane	Mbabane	-26.32	31.13	AF	SZL	en-SZ,ss-SZ	English	absolute monarchy	24.8	17363	0	yes		ZAF,MOZ	africa/wz.json
+SYC	SC	yes	Seychelles	Seychelles	Seychellois	Victoria	Victoria	-4.62	55.45	AF	SCR	en-SC,fr-SC	Seychellois Creole	presidential republic	39.2	455	491	yes			africa/se.json
+SYR	SY	yes	Syria	Syria	Syrian	Damascus	Damascus	33.50	36.30	AS	SYP	ar-SY,ku,hy,arc,fr,en		transitional presidential republic	24.5	185180	193	yes		IRQ,JOR,ISR,TUR,LBN	middle-east/sy.json
+TCD	TD	yes	Chad	Chad	Chadian	N'Djamena	N'Djamena	12.10	15.03	AF	XAF	fr-TD,ar-TD,sre		presidential republic	16.9	1284000	0	yes		NER,LBY,CAF,SDN,CMR,NGA	africa/cd.json
+TGO	TG	yes	Togo	Togo	Togolese	Lome	Lome	6.12	1.22	AF	XOF	fr-TG,ee,hna,kbp,dag,ha	French	presidential republic	20.9	56785	56	yes		BEN,GHA,BFA	africa/to.json
+THA	TH	yes	Thailand	Thailand	Thai	Bangkok	Bangkok	13.75	100.52	AS	THB	th,en		constitutional monarchy	41.9	514000	3219	yes		LAO,MMR,KHM,MYS	east-n-southeast-asia/th.json
+TJK	TJ	yes	Tajikistan	Tajikistan	Tajikistani	Dushanbe	Dushanbe	38.55	68.77	AS	TJS	tg,ru		presidential republic	22.8	143100	0	yes		CHN,AFG,KGZ,UZB	central-asia/ti.json
+TKM	TM	yes	Turkmenistan	Turkmenistan	Turkmenistani	Ashgabat	Ashgabat	37.95	58.38	AS	TMT	tk,ru,uz		presidential republic	31.6	488100	0	yes		AFG,IRN,UZB,KAZ	central-asia/tx.json
+TLS	TL	yes	Timor Leste	Timor-Leste	Timorese	Dili	Dili	-8.58	125.60	OC	USD	tet,pt-TL,id,en	Tetun Prasa 30.6%, Mambai 16.6%, Makasai 10.5%, Tetun Terik 6.1%, Baikenu 5.9%, Kemak 5.8%, Bunak 5.5%, Tokodede 4%, Fataluku 3.5%, Waima'a 1.8%, Galoli 1.4%, Naueti 1.4%, Idate 1.2%, Midiki 1.2%, other 4.5%	semi-presidential republic	23	15007	706	yes		IDN	east-n-southeast-asia/tt.json
+TON	TO	yes	Tonga	Tonga	Tongan	Nuku'alofa	Nuku'alofa	-21.13	-175.20	OC	TOP	to,en-TO	Tongan only 85%, Tongan and other language 13.9%, Tongan not used at home 1.1%	constitutional monarchy	26.4	748	419	yes			australia-oceania/tn.json
+TTO	TT	yes	Trinidad and Tobago	Trinidad and Tobago	Trinidadian, Tobagonian	Port of Spain	Port of Spain	10.65	-61.52	NA	TTD	en-TT,hns,fr,es,zh	English	parliamentary republic	39.1	5128	362	yes			central-america-n-caribbean/td.json
+TUN	TN	yes	Tunisia	Tunisia	Tunisian	Tunis	Tunis	36.80	10.18	AF	TND	ar-TN,fr		parliamentary republic	34.1	163610	1148	yes		DZA,LBY	africa/ts.json
+TUR	TR	yes	Turkey	Turkey	Turkish	Ankara	Ankara	39.93	32.87	AS	TRY	tr-TR,ku,diq,az,av		presidential republic	34.4	780580	7200	yes		SYR,GEO,IRQ,IRN,GRC,ARM,AZE,BGR	middle-east/tu.json
+TUV	TV	yes	Tuvalu	Tuvalu	Tuvaluan	Funafuti	Funafuti	-8.52	179.22	OC	AUD	tvl,en,sm,gil	Tuvaluan	parliamentary democracy under a constitutional monarchy	28.1	26	24	no	none		australia-oceania/tv.json
+TWN	TW	no	Taiwan	Taiwan	Taiwan	Taipei	Taipei	25.03	121.52	AS	TWD	zh-TW,zh,nan,hak		semi-presidential republic	45.1	35980	1566.3	yes			east-n-southeast-asia/tw.json
+TZA	TZ	yes	Tanzania	Tanzania	Tanzanian	Dodoma	Dodoma	-6.80	39.28	AF	TZS	sw-TZ,en,ar		presidential republic	18.8	945087	1424	yes		MOZ,KEN,COD,RWA,ZMB,BDI,UGA,MWI	africa/tz.json
+UGA	UG	yes	Uganda	Uganda	Ugandan	Kampala	Kampala	0.32	32.55	AF	UGX	en-UG,lg,sw,ar	English	presidential republic	16.4	236040	0	yes		TZA,KEN,SSD,COD,RWA	africa/ug.json
+UKR	UA	yes	Ukraine	Ukraine	Ukrainian	Kyiv	Kyiv	50.43	30.52	EU	UAH	uk,ru-UA,rom,pl,hu		semi-presidential republic	44.6	603700	2782	yes		POL,MDA,HUN,SVK,BLR,ROU,RUS	europe/up.json
+URY	UY	yes	Uruguay	Uruguay	Uruguayan	Montevideo	Montevideo	-34.85	-56.17	SA	UYU	es-UY		presidential republic	37.4	176220	660	yes		BRA,ARG	south-america/uy.json
+USA	US	yes	United States	United States	American	Washington	Washington, D.C.	38.88	-77.03	NA	USD	en-US,es-US,haw,fr	English only	constitutional federal republic	39.5	9629091	19924	yes		CAN,MEX,CUB	north-america/us.json
+UZB	UZ	yes	Uzbekistan	Uzbekistan	Uzbekistani	Tashkent	Tashkent	41.32	69.25	AS	UZS	uz,ru,tg		presidential republic	29.2	447400	0	yes		TKM,AFG,KGZ,TJK,KAZ	central-asia/uz.json
+VCT	VC	yes	Saint Vincent and the Grenadines	Saint Vincent and the Grenadines	Saint Vincentian or Vincentian	Kingstown	Kingstown	13.13	-61.22	NA	XCD	en-VC,fr	English, Vincentian Creole English, French patois	parliamentary democracy under a constitutional monarchy	38.1	389	84	no			central-america-n-caribbean/vc.json
+VEN	VE	yes	Venezuela	Venezuela	Venezuelan	Caracas	Caracas	10.48	-66.87	SA	VES	es-VE		federal presidential republic	31.3	912050	2800	yes		GUY,BRA,COL	south-america/ve.json
+VNM	VN	yes	Vietnam	Vietnam	Vietnamese	Hanoi	Hanoi	21.03	105.85	AS	VND	vi,en,fr,zh,km		communist party-led state	33.5	329560	3444	yes		CHN,LAO,KHM	east-n-southeast-asia/vm.json
+VUT	VU	yes	Vanuatu	Vanuatu	Ni-Vanuatu	Port Vila	Port-Vila	-17.73	168.32	OC	VUV	bi,en-VU,fr-VU	indigenous languages	parliamentary republic	24.9	12200	2528	no			australia-oceania/nh.json
+WSM	WS	yes	Samoa	Samoa	Samoan	Apia	Apia	-13.82	-171.77	OC	WST	sm,en-WS	Samoan	parliamentary republic	27.8	2944	403	no			australia-oceania/ws.json
+XKX	XK	no	Kosovo	Kosovo	Kosovan	Pristina	Pristina	42.67	21.17	EU	EUR	sq,sr		parliamentary republic	32.3	10908	0	yes		SRB,ALB,MKD,MNE	europe/kv.json
+YEM	YE	yes	Yemen	Yemen	Yemeni	Sanaa	Sanaa	15.35	44.20	AS	YER	ar-YE		in transition	20.5	527970	1906	yes		SAU,OMN	middle-east/ym.json
+ZAF	ZA	yes	South Africa	South Africa	South African	Pretoria	Pretoria	-25.70	28.22	AF	ZAR	zu,xh,af,nso,en-ZA,tn,st,ts,ss,ve,nr		parliamentary republic	30.7	1219912	2798	yes		ZWE,SWZ,MOZ,BWA,NAM,LSO	africa/sf.json
+ZMB	ZM	yes	Zambia	Zambia	Zambian	Lusaka	Lusaka	-15.42	28.28	AF	ZMW	en-ZM,bem,loz,lun,lue,ny,toi	Bemba 33.4%, Nyanja 14.7%, Tonga 11.4%, Lozi 5.5%, Chewa 4.5%, Nsenga 2.9%, Tumbuka 2.5%, Lunda	presidential republic	19	752614	0	yes		ZWE,TZA,MOZ,COD,NAM,MWI,AGO	africa/za.json
+ZWE	ZW	yes	Zimbabwe	Zimbabwe	Zimbabwean	Harare	Harare	-17.82	31.03	AF	ZWG	en-ZW,sn,nr,nd	Shona	presidential republic	21.3	390580	0	yes		ZAF,MOZ,BWA,ZMB	africa/zi.json

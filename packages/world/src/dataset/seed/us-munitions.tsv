@@ -1,0 +1,14 @@
+# US munitions by class, as indexes on a notional full stock.
+# systems: the systems in the class, space-separated. opening_index: 0..1, or empty where no stock is sourced.
+# production_rate and lead_time: where a source gives them. provenance: "sourced" or "planning value".
+# source: the page the row was read from. opened: the day it was read.
+# Every opening is a planning value: no stock count for these systems is in the pages opened (the CSIS page says inventories are classified).
+# The direction is sourced (more than 150 THAAD fired, more than 1,000 Tomahawks and about 1,100 JASSMs expended, about 80 SM-3s fired,
+# the PrSM inventory possibly spent, 155mm output of 36,000 a month against a missed 100,000 goal); the level is the game's:
+# a depletion at the 2026 ceasefire, then 143 weeks of the class's steady line to the oath, since no post-war order clears a 36-month lead by then.
+class	systems	opening_index	production_rate	lead_time	provenance	source	opened
+air-defense	thaad patriot	0.55	THAAD 96 a year; PAC-3 about 600 a year	about 24 months historically, 36 or more now (general, every class)	planning value	CSIS, Last Rounds? Status of Key Munitions at the Iran War Ceasefire, https://www.csis.org/analysis/last-rounds-status-key-munitions-iran-war-ceasefire	2026-09-24
+naval-interceptors	sm-3 sm-6	0.8	not given	about 24 months historically, 36 or more now (general, every class)	planning value	CSIS, Last Rounds? Status of Key Munitions at the Iran War Ceasefire, https://www.csis.org/analysis/last-rounds-status-key-munitions-iran-war-ceasefire	2026-09-24
+cruise-standoff	tomahawk jassm	0.55	not given	about 24 months historically, 36 or more now (general, every class)	planning value	CSIS, Last Rounds? Status of Key Munitions at the Iran War Ceasefire, https://www.csis.org/analysis/last-rounds-status-key-munitions-iran-war-ceasefire	2026-09-24
+precision-fires	prsm atacms	0.45	PrSM about 400 a year	about 24 months historically, 36 or more now (general, every class)	planning value	CSIS, Last Rounds? Status of Key Munitions at the Iran War Ceasefire, https://www.csis.org/analysis/last-rounds-status-key-munitions-iran-war-ceasefire	2026-09-24
+artillery-155	155mm	0.85	about 36,000 rounds a month	about 24 months historically, 36 or more now (general, every class)	planning value	Military Times, Manufacturing woes hamper US 155-mm ammo production, https://www.militarytimes.com/news/your-military/2026/07/14/manufacturing-woes-hamper-us-155-mm-ammo-production/; CSIS, Last Rounds? Status of Key Munitions at the Iran War Ceasefire, https://www.csis.org/analysis/last-rounds-status-key-munitions-iran-war-ceasefire	2026-09-24

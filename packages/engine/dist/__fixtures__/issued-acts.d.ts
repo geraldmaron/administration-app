@@ -1,0 +1,12 @@
+import type { Charter } from "@admin/world";
+import type { NationId } from "@admin/world";
+import type { Campaign, HillPostId, PressAction } from "../state.js";
+import type { RngStreams } from "../rng.js";
+import { type PressResult } from "../press-issued.js";
+import { issueLobbying } from "../lobbying.js";
+import { type TreatyResult } from "../treaties.js";
+import { resolveIssuedAuthorization } from "../force-authorization.js";
+export declare function takePressAction(campaign: Campaign, charter: Charter, kind: PressAction, _streams: RngStreams, outletId?: string): PressResult;
+export declare function lobbyFigure(campaign: Campaign, target: HillPostId, approach: Parameters<typeof issueLobbying>[2]): ReturnType<typeof issueLobbying>;
+export declare function submitForRatification(campaign: Campaign, charter: Charter, id: string): TreatyResult;
+export declare function requestForceAuthorization(campaign: Campaign, target: NationId): ReturnType<typeof resolveIssuedAuthorization>;

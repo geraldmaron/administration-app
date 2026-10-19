@@ -1,0 +1,262 @@
+/* The emergency board: declarations with their windows, conditions, incidents and the Guard. */
+@layer rooms {
+  .emergency__list {
+    display: grid;
+    gap: var(--space-md);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .declaration,
+  .condition,
+  .guard-row {
+    display: grid;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .emergency__list {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  }
+
+  .declaration {
+    border-inline-start: 3px solid var(--color-gold);
+  }
+
+  .declaration[data-closing="true"] {
+    border-inline-start-color: var(--status-danger-ink);
+  }
+
+  .declaration[data-selected="true"] {
+    border-color: var(--color-blue);
+    background: var(--color-blue-wash);
+  }
+
+  .condition[data-covered="true"] {
+    border-inline-start: 3px solid var(--color-gold);
+  }
+
+  .declaration__head,
+  .condition__head,
+  .guard-row p,
+  .declaration__cost,
+  .condition__covered {
+    margin: 0;
+    font-size: var(--size-small);
+  }
+
+  .condition__where,
+  .declaration__cost {
+    color: var(--color-text-secondary);
+  }
+
+  .condition__covered {
+    color: var(--color-gold);
+  }
+
+  .declaration__acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .emergency-act__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-snug);
+  }
+
+  .emergency-act > button {
+    justify-self: start;
+  }
+
+  .emergency {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .emergency-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-sm) var(--space-lg);
+    margin: 0;
+    padding: var(--space-sm) 0;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .emergency-summary__item {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .emergency-summary dt {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .emergency-summary dd {
+    margin: 0;
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .incident {
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 4px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .incident[data-stance="adverse"] {
+    border-inline-start-color: var(--status-danger-ink);
+  }
+
+  .incident[data-stance="caution"] {
+    border-inline-start-color: var(--status-warning-ink);
+  }
+
+  .incident[data-selected="true"] {
+    border-color: var(--color-blue);
+    background: var(--color-blue-wash);
+  }
+
+  .incident__button {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-md);
+    inline-size: 100%;
+    min-block-size: var(--hit-min);
+    padding: var(--space-md);
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .incident__glyph {
+    color: var(--color-text-secondary);
+  }
+
+  .incident__body {
+    display: grid;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+  }
+
+  .incident__headline {
+    font-weight: var(--weight-strong);
+  }
+
+  .incident__where {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .incident__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-block-start: var(--space-2xs);
+  }
+
+  .emergency-response {
+    display: grid;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    border: 1px solid var(--color-blue);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+}
+@layer rooms {
+  .incident__button:hover {
+    background: var(--color-ground-raised-hover);
+  }
+
+  .emergency-summary dd {
+    white-space: nowrap;
+  }
+}
+
+@layer rooms {
+  /* Tiles share hairlines through the grid gap, so any column count keeps even dividers. */
+  .emergency-summary {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: var(--space-md) var(--space-lg);
+    padding-block: var(--space-md);
+  }
+
+  .emergency-summary__item {
+    align-content: start;
+    padding: 0;
+  }
+
+  .emergency-summary dt {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  .emergency-summary dt .ui-icon {
+    flex: none;
+    margin-block-start: 1px;
+  }
+
+  .emergency-summary dd {
+    font-size: var(--size-heading);
+    line-height: var(--leading-tight);
+  }
+
+  .emergency-summary__note {
+    display: block;
+    margin-block-start: var(--space-xs);
+    white-space: normal;
+    font-weight: var(--weight-regular);
+    color: var(--color-text-tertiary);
+    font-size: var(--size-caption);
+  }
+
+  .incident__severity {
+    display: grid;
+    grid-template-columns: auto minmax(4rem, 14rem) auto;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-block: var(--space-2xs);
+  }
+
+  .incident__severity-label {
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+  }
+
+  .incident__severity-figure {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer rooms {
+  /* Four tiles sit two by two, then four across, never three and one. */
+  .emergency-summary:has(> :nth-child(4):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 64em) { .emergency-summary:has(> :nth-child(4):last-child) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+}
+
+
+@layer rooms {
+  .emergency { container-type: inline-size; }
+  .emergency-workspace, .emergency-workspace__context, .emergency-evidence { display: grid; gap: var(--space-lg); min-inline-size: 0; align-items: start; }
+  .emergency-workspace .emergency__list { grid-template-columns: minmax(0, 1fr); }
+  .emergency-workspace__context .emergency-response { padding: var(--space-lg); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-card); background: var(--color-ground-base); }
+  @container (min-width: 62rem) {
+    .emergency-workspace { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); }
+    .emergency-evidence { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+}

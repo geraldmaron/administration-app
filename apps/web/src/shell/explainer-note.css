@@ -1,0 +1,8 @@
+@layer rooms {
+  .explainer-note { border-block: 1px solid var(--color-border-subtle); }
+  .explainer-note__open { display: flex; align-items: center; gap: var(--space-sm); inline-size: 100%; min-block-size: var(--hit-min); padding-block: var(--space-sm); border: 0; background: transparent; color: var(--color-text-primary); font: inherit; font-weight: var(--weight-medium); text-align: start; cursor: pointer; }
+  .explainer-note__open:hover { color: var(--color-blue); }
+  .explainer-note__open:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+  .explainer-note__chapter { display: inline-flex; align-items: center; min-block-size: var(--hit-min); color: var(--color-blue); font-weight: var(--weight-medium); }
+  .explainer-note__chapter:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+}

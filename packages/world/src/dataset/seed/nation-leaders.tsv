@@ -1,0 +1,201 @@
+# Nation leader constraints, vendored by scripts/vendor-nation-leaders.mjs — do not edit by hand.
+# source: packages/world/sources/leader-table/nation-leaders.tsv (as of 2026-09-23); never rendered to a player
+# governing_party_ids: the table's party names mapped to this nation's slate ids, largest first; empty for a partyless government
+# name_form: how the table's surname rule writes a name, read off the rule by scripts/vendor-nation-leaders.mjs
+# women_cabinet_share: the table's percent as a fraction; share_flagged marks a share that predates the sitting cabinet
+nation_id	as_of	leader_seat	leader_title	leader_sex	leader_age_band	second_seat_title	regime_type	name_culture	name_form	governing_party_ids	women_cabinet_share	share_flagged
+AFG	2026-09-23	head_of_state	Supreme Leader	M	50-59	Prime Minister	theocracy	afghan	given-family		0	no
+AGO	2026-09-23	head_of_state	President	M	70-79	same	authoritarian	lusophone	given-family	party-ago-mpla	0.292	no
+ALB	2026-09-23	head_of_government	Prime Minister	M	60-69	President	flawed_democracy	albanian	given-family	party-alb-ps	0.462	no
+AND	2026-09-23	head_of_government	Head of Government	M	40-49	Co-Princes (French President and Bishop of Urgell)	full_democracy	hispanic	given-family	party-and-democrats-for-andorra-da-and-its	0.462	no
+ARE	2026-09-23	head_of_state	President	M	60-69	Vice President and Prime Minister	absolute_monarchy	gulf-arabic	given-family		0.19	no
+ARG	2026-09-23	head_of_state	President	M	50-59	same	flawed_democracy	hispanic	given-family	party-arg-lla;party-arg-pro	0.222	no
+ARM	2026-09-23	head_of_government	Prime Minister	M	50-59	President	hybrid_regime	armenian	given-family	party-arm-civil-contract-party	0.333	no
+ATG	2026-09-23	head_of_government	Prime Minister	M	50-59	King	flawed_democracy	anglo	given-family	party-atg-ablp	0.125	no
+AUS	2026-09-23	head_of_government	Prime Minister	M	60-69	Governor-General (representing the King)	full_democracy	anglo	given-family	party-aus-labor	0.545	no
+AUT	2026-09-23	head_of_government	Federal Chancellor	M	60-69	Federal President	full_democracy	germanic	given-family	party-aut-ovp;party-aut-spo	0.385	no
+AZE	2026-09-23	head_of_state	President	M	60-69	Prime Minister	authoritarian	azerbaijani	given-family	party-aze-yap	0	no
+BDI	2026-09-23	head_of_state	President	M	50-59	Prime Minister	authoritarian	great-lakes	given-family	party-bdi-cndd-fdd	0.308	no
+BEL	2026-09-23	head_of_government	Prime Minister	M	50-59	King	flawed_democracy	dutch	given-family	party-bel-nva;party-bel-mr	0.286	no
+BEN	2026-09-23	head_of_state	President of the Republic	M	50-59	same	hybrid_regime	gbe-speaking	given-family	party-ben-progressive-union-for-renewal;party-ben-br	0.263	yes
+BFA	2026-09-23	head_of_state	President of the Transition	M	30-39	Prime Minister	military_junta	burkinabe	given-family		0.095	no
+BGD	2026-09-23	head_of_government	Prime Minister	M	50-59	President	hybrid_regime	south-asian	given-family	party-bgd-bnp	0.19	no
+BGR	2026-09-23	head_of_government	Prime Minister	M	60-69	President	flawed_democracy	bulgarian	given-family	party-bgr-progressive-bulgaria	0.053	yes
+BHR	2026-09-23	head_of_state	King	M	70-79	Crown Prince and Prime Minister	constitutional_monarchy_executive	gulf-arabic	given-family		0.227	no
+BHS	2026-09-23	head_of_government	Prime Minister	M	70-79	King	flawed_democracy	anglo	given-family	party-bhs-plp	0.222	no
+BIH	2026-09-23	head_of_state	Chairman of the Presidency	M	50-59	Chair of the Council of Ministers	hybrid_regime	serbo-croatian	given-family	party-bih-hdz-bih;party-bih-snsd;party-bih-sdp	0.125	no
+BLR	2026-09-23	head_of_state	President	M	70-79	Prime Minister	authoritarian	russian	given-family		0.042	no
+BLZ	2026-09-23	head_of_government	Prime Minister	M	60-69	King	flawed_democracy	anglo	given-family	party-blz-pup	0.056	no
+BOL	2026-09-23	head_of_state	President	M	50-59	same	hybrid_regime	hispanic	given-family	party-bol-pdc	0.214	no
+BRA	2026-09-23	head_of_state	President	M	80+	same	flawed_democracy	lusophone	given-family	party-bra-pt;party-bra-mdb	0.29	no
+BRB	2026-09-23	head_of_government	Prime Minister	F	60-69	President	flawed_democracy	anglo	given-family	party-brb-blp	0.278	no
+BRN	2026-09-23	head_of_state	Sultan	M	80+	same	absolute_monarchy	malay	malay-patronymic		0.1	no
+BTN	2026-09-23	head_of_government	Prime Minister	M	60-69	Druk Gyalpo (King)	hybrid_regime	bhutanese	given-family	party-btn-pdp	0.111	no
+BWA	2026-09-23	head_of_state	President	M	50-59	same	flawed_democracy	sotho-tswana	given-family	party-bwa-udc	0.167	no
+CAF	2026-09-23	head_of_state	President of the Republic	M	60-69	Prime Minister	authoritarian	centrafrican	given-family	party-caf-mcu	0.194	no
+CAN	2026-09-23	head_of_government	Prime Minister	M	60-69	King	full_democracy	anglo	given-family	party-can-liberal	0.5	no
+CHE	2026-09-23	head_of_state	President of the Swiss Confederation	M	60-69	same	full_democracy	germanic	given-family	party-che-svp;party-che-fdp;party-che-sp	0.286	no
+CHL	2026-09-23	head_of_state	President	M	60-69	same	flawed_democracy	hispanic	given-family	party-chl-republicano;party-chl-udi	0.458	no
+CHN	2026-09-23	head_of_state	General Secretary and President	M	70-79	Premier	one_party_state	han	family-given	party-chn-cpc	0.083	no
+CIV	2026-09-23	head_of_state	President of the Republic	M	80+	Prime Minister	hybrid_regime	ivorian	given-family	party-civ-rhdp	0.2	no
+CMR	2026-09-23	head_of_state	President of the Republic	M	80+	Prime Minister	authoritarian	cameroonian	given-family	party-cmr-rdpc-cpdm	0.188	no
+COD	2026-09-23	head_of_state	President of the Republic	M	60-69	Prime Minister	authoritarian	central-african	given-family	party-cod-udps	0.25	no
+COG	2026-09-23	head_of_state	President of the Republic	M	80+	Prime Minister	authoritarian	congolese	given-family	party-cog-pct	0.216	no
+COL	2026-09-23	head_of_state	President	M	40-49	same	flawed_democracy	hispanic	given-family	party-col-defensores;party-col-cd;party-col-liberal	0.556	no
+COM	2026-09-23	head_of_state	President of the Union	M	60-69	same	authoritarian	comorian	patronymic	party-com-crc	0.133	no
+CPV	2026-09-23	head_of_government	Prime Minister	M	50-59	President of the Republic	flawed_democracy	lusophone	given-family	party-cpv-paicv	0.125	yes
+CRI	2026-09-23	head_of_state	President	F	40-49	same	full_democracy	hispanic	given-family	party-cri-ppso	0.286	no
+CUB	2026-09-23	head_of_state	President and First Secretary of the Communist Party	M	60-69	Prime Minister	one_party_state	hispanic	given-family	party-cub-pcc	0.182	no
+CYP	2026-09-23	head_of_state	President	M	50-59	same	flawed_democracy	greek	given-family	party-cyp-diko	0.333	no
+CZE	2026-09-23	head_of_government	Prime Minister	M	70-79	President	full_democracy	czech-slovak	given-family	party-cze-ano	0.143	no
+DEU	2026-09-23	head_of_government	Federal Chancellor	M	70-79	Federal President	full_democracy	germanic	given-family	party-deu-union;party-deu-spd	0.5	no
+DJI	2026-09-23	head_of_state	President	M	70-79	same	authoritarian	somali	patronymic	party-dji-ump	0.217	no
+DMA	2026-09-23	head_of_government	Prime Minister	M	50-59	President	flawed_democracy	anglo	given-family	party-dma-dlp	0.385	no
+DNK	2026-09-23	head_of_government	Prime Minister	F	40-49	King	full_democracy	nordic	given-family	party-dnk-social	0.333	yes
+DOM	2026-09-23	head_of_state	President	M	50-59	same	flawed_democracy	hispanic	given-family	party-dom-modern-revolutionary-party-prm-a	0.095	no
+DZA	2026-09-23	head_of_state	President	M	80+	Prime Minister	authoritarian	maghrebi	given-family	party-dza-fln;party-dza-rnd	0.219	no
+ECU	2026-09-23	head_of_state	President	M	30-39	same	hybrid_regime	hispanic	given-family	party-ecu-adn	0.5	no
+EGY	2026-09-23	head_of_state	President	M	70-79	Prime Minister	authoritarian	arabic	given-family	party-egy-mostaqbal	0.103	no
+ERI	2026-09-23	head_of_state	President	M	80+	same	one_party_state	tigrinya	patronymic	party-eri-pfdj	0.267	no
+ESP	2026-09-23	head_of_government	President of the Government	M	50-59	King	full_democracy	hispanic	given-family	party-esp-psoe	0.5	no
+EST	2026-09-23	head_of_government	Prime Minister	M	50-59	President	full_democracy	estonian	given-family	party-est-reform-party	0.364	no
+ETH	2026-09-23	head_of_government	Prime Minister	M	50-59	President	authoritarian	ethiopian	patronymic	party-eth-prosperity	0.455	no
+FIN	2026-09-23	head_of_government	Prime Minister	M	50-59	President of the Republic	full_democracy	finnish	given-family	party-fin-kok;party-fin-ps	0.611	no
+FJI	2026-09-23	head_of_government	Prime Minister	M	70-79	President	hybrid_regime	melanesian	given-family	party-fji-people-s-alliance;party-fji-nfp	0.136	no
+FRA	2026-09-23	head_of_state	President of the Republic	M	40-49	Prime Minister	full_democracy	french	given-family	party-fra-ens	0.45	no
+FSM	2026-09-23	head_of_state	President	M	60-69	same	full_democracy	micronesian	given-family		0.375	no
+GAB	2026-09-23	head_of_state	President of the Republic	M	50-59	same	authoritarian	gabonese	given-family	party-gab-udb	0.357	no
+GBR	2026-09-23	head_of_government	Prime Minister	M	50-59	King	full_democracy	anglo	given-family	party-gbr-labour	0.5	yes
+GEO	2026-09-23	head_of_government	Prime Minister	M	40-49	President	hybrid_regime	georgian	given-family	party-geo-georgian-dream	0.286	no
+GHA	2026-09-23	head_of_state	President	M	60-69	same	flawed_democracy	ghanaian	given-family	party-gha-ndc	0.211	no
+GIN	2026-09-23	head_of_state	President of the Republic	M	40-49	Prime Minister	authoritarian	mande	given-family	party-gin-gmd	0.219	no
+GMB	2026-09-23	head_of_state	President	M	60-69	same	hybrid_regime	senegambian	given-family	party-gmb-npp	0.143	no
+GNB	2026-09-23	head_of_state	Transitional President	M	60-69	Prime Minister	military_junta	lusophone	given-family		0.217	no
+GNQ	2026-09-23	head_of_state	President of the Republic	M	80+	Prime Minister	authoritarian	equatoguinean	given-family	party-gnq-democratic-party-of-equatorial-g	0.05	no
+GRC	2026-09-23	head_of_government	Prime Minister	M	50-59	President	full_democracy	greek	given-family	party-grc-nd	0.25	no
+GRD	2026-09-23	head_of_government	Prime Minister	M	40-49	King	flawed_democracy	anglo	given-family	party-grd-ndc	0.308	no
+GTM	2026-09-23	head_of_state	President	M	60-69	same	hybrid_regime	hispanic	given-family		0.5	no
+GUY	2026-09-23	head_of_state	President	M	40-49	same	flawed_democracy	anglo	given-family	party-guy-ppp-c	0.368	no
+HND	2026-09-23	head_of_state	President	M	60-69	same	hybrid_regime	hispanic	given-family	party-hnd-pn	0.333	no
+HRV	2026-09-23	head_of_government	Prime Minister	M	50-59	President	flawed_democracy	serbo-croatian	given-family	party-hrv-hdz;party-hrv-dp	0.222	no
+HTI	2026-09-23	head_of_government	Prime Minister	M	50-59	none	authoritarian	french	given-family		0.222	no
+HUN	2026-09-23	head_of_government	Prime Minister	M	40-49	President of the Republic	flawed_democracy	hungarian	given-family	party-hun-tisza	0	yes
+IDN	2026-09-23	head_of_state	President	M	70-79	same	flawed_democracy	indonesian	given-family	party-idn-gerindra;party-idn-golkar	0.098	no
+IND	2026-09-23	head_of_government	Prime Minister	M	70-79	President	flawed_democracy	south-asian	given-family	party-ind-bjp	0.056	no
+IRL	2026-09-23	head_of_government	Taoiseach	M	60-69	President	full_democracy	anglo	given-family	party-irl-ff;party-irl-fg	0.286	no
+IRN	2026-09-23	head_of_state	Supreme Leader	M	50-59	President	theocracy	persian	given-family		0.107	no
+IRQ	2026-09-23	head_of_government	Prime Minister	M	40-49	President	authoritarian	arabic	given-family	party-irq-cf;party-irq-kdp;party-irq-taqaddum	0.13	yes
+ISL	2026-09-23	head_of_government	Prime Minister	F	30-39	President	full_democracy	nordic	patronymic	party-isl-sf	0.5	no
+ISR	2026-09-23	head_of_government	Prime Minister	M	70-79	President	flawed_democracy	hebrew	given-family	party-isr-likud;party-isr-shas	0.217	no
+ITA	2026-09-23	head_of_government	President of the Council of Ministers (Prime Minister)	F	40-49	President of the Republic	flawed_democracy	italian	given-family	party-ita-fdi	0.25	no
+JAM	2026-09-23	head_of_government	Prime Minister	M	50-59	King	flawed_democracy	anglo	given-family	party-jam-jlp	0.267	no
+JOR	2026-09-23	head_of_state	King	M	60-69	Prime Minister	constitutional_monarchy_executive	arabic	given-family		0.077	no
+JPN	2026-09-23	head_of_government	Prime Minister	F	60-69	Emperor	full_democracy	japanese	given-family	party-jpn-ldp;party-jpn-ishin	0.158	no
+KAZ	2026-09-23	head_of_state	President	M	70-79	Prime Minister	authoritarian	kazakh	given-family	party-kaz-adilet	0.19	no
+KEN	2026-09-23	head_of_state	President	M	50-59	same	hybrid_regime	kenyan	given-family	party-ken-uda;party-ken-odm	0.304	no
+KGZ	2026-09-23	head_of_state	President	M	50-59	Chairman of the Cabinet of Ministers	authoritarian	kyrgyz	given-family		0.111	no
+KHM	2026-09-23	head_of_government	Prime Minister	M	40-49	King	authoritarian	khmer	family-given	party-khm-cpp	0.111	no
+KIR	2026-09-23	head_of_state	President (Te Beretitenti)	M	60-69	same	flawed_democracy	micronesian	given-family	party-kir-tkp	0.143	no
+KNA	2026-09-23	head_of_government	Prime Minister	M	40-49	King	flawed_democracy	anglo	given-family	party-kna-sknlp	0.25	no
+KOR	2026-09-23	head_of_state	President	M	60-69	Prime Minister	flawed_democracy	korean	family-given	party-kor-dp	0.222	no
+KWT	2026-09-23	head_of_state	Emir	M	80+	Prime Minister	absolute_monarchy	gulf-arabic	given-family		0.118	no
+LAO	2026-09-23	head_of_state	General Secretary and President	M	80+	Prime Minister	one_party_state	lao	given-family	party-lao-lprp	0.154	no
+LBN	2026-09-23	head_of_government	Prime Minister	M	70-79	President	authoritarian	arabic	given-family	party-lbn-strong-republic;party-lbn-development-and-liberation	0.227	no
+LBR	2026-09-23	head_of_state	President	M	80+	same	hybrid_regime	upper-guinea-coast	given-family	party-lbr-up	0.353	no
+LBY	2026-09-23	head_of_government	Prime Minister of the Government of National Unity	M	60-69	Chairman of the Presidential Council	authoritarian	maghrebi	given-family		0.13	no
+LCA	2026-09-23	head_of_government	Prime Minister	M	70-79	King	flawed_democracy	anglo	given-family	party-lca-slp	0.154	no
+LIE	2026-09-23	head_of_state	Hereditary Prince (Regent for the Reigning Prince)	M	50-59	Prime Minister	constitutional_monarchy_executive	germanic	given-family	party-lie-vu;party-lie-fbp	0.4	no
+LKA	2026-09-23	head_of_state	President	M	50-59	Prime Minister	flawed_democracy	sinhalese	given-family	party-lka-jathika-jana-balawegaya-npp	0.087	no
+LSO	2026-09-23	head_of_government	Prime Minister	M	60-69	King	flawed_democracy	sotho-tswana	given-family	party-lso-rfp	0.118	no
+LTU	2026-09-23	head_of_government	Prime Minister	M	40-49	President	flawed_democracy	lithuanian	given-family	party-ltu-lsdp	0.357	no
+LUX	2026-09-23	head_of_government	Prime Minister	M	60-69	Grand Duke	full_democracy	germanic	given-family	party-lux-csv;party-lux-pd-dp	0.333	no
+LVA	2026-09-23	head_of_government	Prime Minister	M	40-49	President	flawed_democracy	latvian	given-family	party-lva-united-list-latvian-green-party-;party-lva-vienotiba;party-lva-zzs	0.286	yes
+MAR	2026-09-23	head_of_state	King	M	60-69	Head of Government	constitutional_monarchy_executive	maghrebi	given-family	party-mar-rni;party-mar-pam;party-mar-istiqlal	0.263	no
+MCO	2026-09-23	head_of_state	Sovereign Prince	M	60-69	Minister of State	constitutional_monarchy_executive	french	given-family		0.4	no
+MDA	2026-09-23	head_of_state	President	F	50-59	Prime Minister	hybrid_regime	romanian	given-family	party-mda-pas	0.214	no
+MDG	2026-09-23	head_of_state	President of the Refoundation of the Republic of Madagascar	M	50-59	Prime Minister	military_junta	malagasy	given-family		0.333	no
+MDV	2026-09-23	head_of_state	President	M	40-49	same	hybrid_regime	maldivian	patronymic	party-mdv-pnc	0.1	no
+MEX	2026-09-23	head_of_state	President	F	60-69	same	hybrid_regime	hispanic	given-family	party-mex-morena	0.476	no
+MHL	2026-09-23	head_of_state	President	F	70-79	same	full_democracy	micronesian	given-family		0	no
+MKD	2026-09-23	head_of_government	Prime Minister	M	40-49	President	flawed_democracy	macedonian	given-family	party-mkd-led-by-vmro-dpmne	0.158	no
+MLI	2026-09-23	head_of_state	President of the Transition	M	40-49	Prime Minister	military_junta	mande	given-family		0.185	no
+MLT	2026-09-23	head_of_government	Prime Minister	M	40-49	President	flawed_democracy	maltese	given-family	party-mlt-lp	0.125	yes
+MMR	2026-09-23	head_of_state	President	M	70-79	same	authoritarian	burmese	given-family	party-mmr-usdp	0.1	no
+MNE	2026-09-23	head_of_government	Prime Minister	M	30-39	President	flawed_democracy	serbo-croatian	given-family	party-mne-evropa-sad	0.28	no
+MNG	2026-09-23	head_of_government	Prime Minister	M	30-39	President	flawed_democracy	mongolian	patronymic	party-mng-mpp;party-mng-hun-party	0.125	no
+MOZ	2026-09-23	head_of_state	President	M	40-49	same	authoritarian	lusophone	given-family	party-moz-frelimo	0.278	no
+MRT	2026-09-23	head_of_state	President	M	60-69	Prime Minister	authoritarian	mauritanian	mauritanian-patronymic	party-mrt-el-insaf	0.259	no
+MUS	2026-09-23	head_of_government	Prime Minister	M	70-79	President	full_democracy	south-asian	given-family	party-mus-alliance-for-change-adc	0.083	no
+MWI	2026-09-23	head_of_state	President	M	80+	same	flawed_democracy	zambian-malawian	given-family	party-mwi-dpp	0.278	no
+MYS	2026-09-23	head_of_government	Prime Minister	M	70-79	Yang di-Pertuan Agong	flawed_democracy	malaysian	malay-patronymic	party-mys-ph;party-mys-bn	0.111	no
+NAM	2026-09-23	head_of_state	President	F	70-79	same	flawed_democracy	namibian	given-family	party-nam-swapo-party	0.643	no
+NER	2026-09-23	head_of_state	President of the Republic	M	60-69	Prime Minister	military_junta	nigerien	patronymic		0.208	no
+NGA	2026-09-23	head_of_state	President	M	70-79	same	hybrid_regime	nigerian	given-family	party-nga-apc	0.086	no
+NIC	2026-09-23	head_of_state	Co-President	M	80+	Co-President	authoritarian	hispanic	given-family	party-nic-fsln	0.6	no
+NLD	2026-09-23	head_of_government	Prime Minister	M	30-39	King	full_democracy	dutch	given-family	party-nld-d66;party-nld-vvd	0.286	yes
+NOR	2026-09-23	head_of_government	Prime Minister	M	60-69	King	full_democracy	nordic	given-family	party-nor-ap	0.474	no
+NPL	2026-09-23	head_of_government	Prime Minister	M	30-39	President	hybrid_regime	nepali	given-family	party-npl-rsp	0.214	no
+NRU	2026-09-23	head_of_state	President	M	50-59	same	flawed_democracy	micronesian	given-family		0.125	no
+NZL	2026-09-23	head_of_government	Prime Minister	M	50-59	Governor-General (representing the King)	full_democracy	anglo	given-family	party-nzl-national-party	0.35	no
+OMN	2026-09-23	head_of_state	Sultan	M	70-79	same	absolute_monarchy	gulf-arabic	given-family		0.13	no
+PAK	2026-09-23	head_of_government	Prime Minister	M	70-79	President	authoritarian	south-asian	given-family	party-pak-pmln;party-pak-ppp	0.034	no
+PAN	2026-09-23	head_of_state	President	M	60-69	same	flawed_democracy	hispanic	given-family	party-pan-rm	0.353	no
+PER	2026-09-23	head_of_state	President	F	50-59	same	hybrid_regime	hispanic	given-family	party-per-fp	0.211	no
+PHL	2026-09-23	head_of_state	President	M	60-69	same	flawed_democracy	hispanic	given-family	party-phl-pfp;party-phl-lakas	0.174	no
+PLW	2026-09-23	head_of_state	President	M	50-59	same	full_democracy	micronesian	given-family		0.143	no
+PNG	2026-09-23	head_of_government	Prime Minister	M	50-59	Governor-General (representing the King)	hybrid_regime	melanesian	given-family	party-png-pangu;party-png-urp	0.027	no
+POL	2026-09-23	head_of_government	Prime Minister	M	60-69	President	flawed_democracy	polish	given-family	party-pol-ko	0.316	no
+PRK	2026-09-23	head_of_state	General Secretary and President of the State Affairs	M	40-49	Premier	one_party_state	korean	family-given	party-prk-wpk	0.029	no
+PRT	2026-09-23	head_of_government	Prime Minister	M	50-59	President of the Republic	full_democracy	lusophone	given-family	party-prt-cds-pp	0.375	no
+PRY	2026-09-23	head_of_state	President	M	40-49	same	flawed_democracy	hispanic	given-family	party-pry-anr	0.235	no
+PSE	2026-09-23	head_of_state	President	M	80+	Prime Minister	authoritarian	arabic	given-family	party-pse-fatah	0.2	no
+QAT	2026-09-23	head_of_state	Emir	M	40-49	Prime Minister	absolute_monarchy	gulf-arabic	given-family		0.111	no
+ROU	2026-09-23	head_of_state	President	M	50-59	Prime Minister	flawed_democracy	romanian	given-family	party-rou-pnl	0.133	no
+RUS	2026-09-23	head_of_state	President	M	70-79	Prime Minister	authoritarian	russian	given-family	party-rus-er	0.095	no
+RWA	2026-09-23	head_of_state	President	M	60-69	Prime Minister	authoritarian	great-lakes	given-family	party-rwa-rpf	0.263	no
+SAU	2026-09-23	head_of_government	Crown Prince and Prime Minister	M	40-49	King	absolute_monarchy	gulf-arabic	given-family		0	no
+SDN	2026-09-23	head_of_state	Chairman of the Transitional Sovereignty Council	M	60-69	Prime Minister	military_junta	arabic	given-family		0.095	no
+SEN	2026-09-23	head_of_state	President of the Republic	M	40-49	Prime Minister	flawed_democracy	senegambian	given-family		0.16	no
+SGP	2026-09-23	head_of_government	Prime Minister	M	50-59	President	flawed_democracy	han	family-given	party-sgp-pap	0.133	no
+SLB	2026-09-23	head_of_government	Prime Minister	M	50-59	Governor-General (representing the King)	flawed_democracy	melanesian	given-family	party-slb-sidp	0.095	no
+SLE	2026-09-23	head_of_state	President	M	60-69	same	hybrid_regime	upper-guinea-coast	given-family	party-sle-slpp	0.333	no
+SLV	2026-09-23	head_of_state	President	M	40-49	same	hybrid_regime	hispanic	given-family	party-slv-n	0.375	no
+SMR	2026-09-23	head_of_government	Secretary of State for Foreign and Political Affairs	M	50-59	Captains Regent (two, six-month terms)	full_democracy	italian	given-family	party-smr-pdcs;party-smr-ps	0.1	no
+SOM	2026-09-23	head_of_state	President	M	70-79	Prime Minister	authoritarian	somali	patronymic	party-som-jsp	0.04	no
+SRB	2026-09-23	head_of_state	President	M	50-59	Prime Minister	flawed_democracy	serbian	given-family	party-srb-sns;party-srb-sps	0.32	no
+SSD	2026-09-23	head_of_state	President	M	70-79	same	authoritarian	south-sudanese	patronymic	party-ssd-splm	0.176	no
+STP	2026-09-23	head_of_government	Prime Minister	M	60-69	President of the Republic	flawed_democracy	lusophone	given-family	party-stp-adi	0.4	no
+SUR	2026-09-23	head_of_state	President	F	70-79	same	flawed_democracy	dutch	given-family	party-sur-ndp;party-sur-nps	0.235	no
+SVK	2026-09-23	head_of_government	Prime Minister	M	60-69	President	flawed_democracy	czech-slovak	given-family	party-svk-smer-sd;party-svk-hlas-voice-sd	0.133	no
+SVN	2026-09-23	head_of_government	Prime Minister	M	60-69	President	flawed_democracy	slovene	given-family	party-svn-sds;party-svn-nsi	0.368	yes
+SWE	2026-09-23	head_of_government	Prime Minister (caretaker)	M	60-69	King	full_democracy	nordic	given-family	party-swe-mod	0.522	no
+SWZ	2026-09-23	head_of_state	King	M	50-59	Prime Minister	absolute_monarchy	southern-african	given-family		0.25	no
+SYC	2026-09-23	head_of_state	President	M	60-69	same	flawed_democracy	french	given-family	party-syc-us	0.5	no
+SYR	2026-09-23	head_of_state	President	M	40-49	none	authoritarian	arabic	given-family		0.043	no
+TCD	2026-09-23	head_of_state	President of the Republic	M	40-49	Prime Minister	authoritarian	chadian	patronymic	party-tcd-mps	0.16	no
+TGO	2026-09-23	head_of_government	President of the Council of Ministers	M	60-69	President of the Republic	authoritarian	gbe-speaking	given-family	party-tgo-unir	0.222	no
+THA	2026-09-23	head_of_government	Prime Minister	M	60-69	King	flawed_democracy	thai	given-family	party-tha-bhumjaithai;party-tha-pheu	0.211	no
+TJK	2026-09-23	head_of_state	President	M	70-79	Prime Minister	authoritarian	tajik	given-family	party-tjk-pdpt	0.143	no
+TKM	2026-09-23	head_of_state	President	M	40-49	same	authoritarian	turkmen	given-family	party-tkm-dpt	0	no
+TLS	2026-09-23	head_of_government	Prime Minister	M	80+	President	flawed_democracy	lusophone	given-family	party-tls-cnrt;party-tls-pd	0.2	no
+TON	2026-09-23	head_of_government	Prime Minister	M	40-49	King	constitutional_monarchy_executive	polynesian	given-family		0.091	no
+TTO	2026-09-23	head_of_government	Prime Minister	F	70-79	President	flawed_democracy	anglo	given-family	party-tto-unc	0.174	no
+TUN	2026-09-23	head_of_state	President	M	60-69	Head of Government	hybrid_regime	maghrebi	given-family		0.208	no
+TUR	2026-09-23	head_of_state	President	M	70-79	same	hybrid_regime	turkish	given-family	party-tur-akp;party-tur-mhp	0.059	no
+TUV	2026-09-23	head_of_government	Prime Minister	M	60-69	Governor-General (representing the King)	full_democracy	polynesian	given-family		0	no
+TWN	2026-09-23	head_of_state	President	M	60-69	Premier	full_democracy	han	family-given	party-twn-dpp	0.133	no
+TZA	2026-09-23	head_of_state	President	F	60-69	same	hybrid_regime	tanzanian	given-family	party-tza-ccm	0.217	no
+UGA	2026-09-23	head_of_state	President	M	80+	same	hybrid_regime	ugandan	given-family	party-uga-nrm	0.333	no
+UKR	2026-09-23	head_of_state	President	M	40-49	Prime Minister	hybrid_regime	ukrainian	given-family	party-ukr-sluha	0.2	yes
+URY	2026-09-23	head_of_state	President	M	50-59	same	full_democracy	hispanic	given-family	party-ury-fa	0.357	no
+UZB	2026-09-23	head_of_state	President	M	60-69	Prime Minister	authoritarian	uzbek	given-family	party-uzb-uzlidep	0.05	no
+VCT	2026-09-23	head_of_government	Prime Minister	M	60-69	King	flawed_democracy	anglo	given-family	party-vct-ndp	0.143	no
+VEN	2026-09-23	head_of_state	Acting President	F	50-59	same	authoritarian	hispanic	given-family	party-ven-psuv	0.257	no
+VNM	2026-09-23	head_of_state	General Secretary and State President	M	60-69	Prime Minister	one_party_state	vietnamese	family-given	party-vnm-cpv	0.071	no
+VUT	2026-09-23	head_of_government	Prime Minister	M	50-59	President	flawed_democracy	melanesian	given-family	party-vut-lpv;party-vut-vp;party-vut-ig	0	no
+WSM	2026-09-23	head_of_government	Prime Minister	M	60-69	O le Ao o le Malo (Head of State)	flawed_democracy	polynesian	given-family	party-wsm-fast	0.067	no
+XKX	2026-09-23	head_of_government	Prime Minister	M	50-59	President (acting)	hybrid_regime	albanian	given-family	party-xkx-self-determination-movement-lvv-	0.25	no
+YEM	2026-09-23	head_of_state	Chairman of the Presidential Leadership Council	M	70-79	Prime Minister	authoritarian	gulf-arabic	given-family	party-yem-islah	0	no
+ZAF	2026-09-23	head_of_state	President	M	70-79	same	flawed_democracy	south-african	given-family	party-zaf-anc;party-zaf-da	0.406	no
+ZMB	2026-09-23	head_of_state	President	M	60-69	same	hybrid_regime	zambian-malawian	given-family	party-zmb-upnd	0.154	no
+ZWE	2026-09-23	head_of_state	President	M	80+	same	authoritarian	zimbabwean	given-family	party-zwe-zanu-pf	0.24	no

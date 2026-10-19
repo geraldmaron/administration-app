@@ -1,0 +1,4 @@
+{
+  "$comment": "Files that print a person's scored attribute (loyalty, integrity, ambition, charisma, competence) as a figure, with how many prints each is forgiven. Written by `node scripts/verify-disclosure.mjs --update-baseline`; it may only shrink.",
+  "entries": {}
+}

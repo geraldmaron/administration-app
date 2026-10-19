@@ -1,0 +1,290 @@
+{
+  "deed-received:assistance:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance sent to this government at high weight that failed yet."
+  },
+  "deed-received:assistance:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance sent to this government at high weight that landed yet."
+  },
+  "deed-received:assistance:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance sent to this government at low weight that failed yet."
+  },
+  "deed-received:assistance:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance sent to this government at low weight that landed yet."
+  },
+  "deed-received:assistance:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance sent to this government at mid weight that failed yet."
+  },
+  "deed-received:assistance:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance sent to this government at mid weight that landed yet."
+  },
+  "deed-received:covert:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation run against this government at high weight that failed yet."
+  },
+  "deed-received:covert:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation run against this government at high weight that landed yet."
+  },
+  "deed-received:covert:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation run against this government at low weight that failed yet."
+  },
+  "deed-received:covert:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation run against this government at low weight that landed yet."
+  },
+  "deed-received:covert:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation run against this government at mid weight that failed yet."
+  },
+  "deed-received:covert:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation run against this government at mid weight that landed yet."
+  },
+  "deed-received:diplomatic:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act taken against this government at high weight that failed yet."
+  },
+  "deed-received:diplomatic:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act taken against this government at high weight that landed yet."
+  },
+  "deed-received:diplomatic:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act taken against this government at low weight that failed yet."
+  },
+  "deed-received:diplomatic:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act taken against this government at low weight that landed yet."
+  },
+  "deed-received:diplomatic:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act taken against this government at mid weight that failed yet."
+  },
+  "deed-received:diplomatic:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act taken against this government at mid weight that landed yet."
+  },
+  "deed-received:economic:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure imposed on this government at high weight that failed yet."
+  },
+  "deed-received:economic:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure imposed on this government at high weight that landed yet."
+  },
+  "deed-received:economic:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure imposed on this government at low weight that failed yet."
+  },
+  "deed-received:economic:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure imposed on this government at low weight that landed yet."
+  },
+  "deed-received:economic:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure imposed on this government at mid weight that failed yet."
+  },
+  "deed-received:economic:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure imposed on this government at mid weight that landed yet."
+  },
+  "deed-received:military:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act taken against this government at high weight that failed yet."
+  },
+  "deed-received:military:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act taken against this government at high weight that landed yet."
+  },
+  "deed-received:military:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act taken against this government at low weight that failed yet."
+  },
+  "deed-received:military:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act taken against this government at low weight that landed yet."
+  },
+  "deed-received:military:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act taken against this government at mid weight that failed yet."
+  },
+  "deed-received:military:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act taken against this government at mid weight that landed yet."
+  },
+  "deed:assistance:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance this government sent at high weight that failed yet."
+  },
+  "deed:assistance:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance this government sent at high weight that landed yet."
+  },
+  "deed:assistance:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance this government sent at low weight that failed yet."
+  },
+  "deed:assistance:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance this government sent at low weight that landed yet."
+  },
+  "deed:assistance:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance this government sent at mid weight that failed yet."
+  },
+  "deed:assistance:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers assistance this government sent at mid weight that landed yet."
+  },
+  "deed:covert:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation this government ran at high weight that failed yet."
+  },
+  "deed:covert:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation this government ran at high weight that landed yet."
+  },
+  "deed:covert:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation this government ran at low weight that failed yet."
+  },
+  "deed:covert:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation this government ran at low weight that landed yet."
+  },
+  "deed:covert:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation this government ran at mid weight that failed yet."
+  },
+  "deed:covert:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a covert operation this government ran at mid weight that landed yet."
+  },
+  "deed:diplomatic:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act this government took at high weight that failed yet."
+  },
+  "deed:diplomatic:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act this government took at high weight that landed yet."
+  },
+  "deed:diplomatic:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act this government took at low weight that failed yet."
+  },
+  "deed:diplomatic:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act this government took at low weight that landed yet."
+  },
+  "deed:diplomatic:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act this government took at mid weight that failed yet."
+  },
+  "deed:diplomatic:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a diplomatic act this government took at mid weight that landed yet."
+  },
+  "deed:economic:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure this government imposed at high weight that failed yet."
+  },
+  "deed:economic:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure this government imposed at high weight that landed yet."
+  },
+  "deed:economic:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure this government imposed at low weight that failed yet."
+  },
+  "deed:economic:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure this government imposed at low weight that landed yet."
+  },
+  "deed:economic:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure this government imposed at mid weight that failed yet."
+  },
+  "deed:economic:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an economic measure this government imposed at mid weight that landed yet."
+  },
+  "deed:military:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act this government ordered at high weight that failed yet."
+  },
+  "deed:military:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act this government ordered at high weight that landed yet."
+  },
+  "deed:military:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act this government ordered at low weight that failed yet."
+  },
+  "deed:military:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act this government ordered at low weight that landed yet."
+  },
+  "deed:military:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act this government ordered at mid weight that failed yet."
+  },
+  "deed:military:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a military act this government ordered at mid weight that landed yet."
+  },
+  "deed:order:high:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an executive order at high weight that a court struck down yet."
+  },
+  "deed:order:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an executive order at high weight that took effect yet."
+  },
+  "deed:order:low:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an executive order at low weight that a court struck down yet."
+  },
+  "deed:order:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an executive order at low weight that took effect yet."
+  },
+  "deed:order:mid:failed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an executive order at mid weight that a court struck down yet."
+  },
+  "deed:order:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers an executive order at mid weight that took effect yet."
+  },
+  "deed:pledge:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a commitment this government opened at high weight yet."
+  },
+  "deed:pledge:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a commitment this government opened at low weight yet."
+  },
+  "deed:pledge:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a commitment this government opened at mid weight yet."
+  },
+  "deed:withdrawal:high:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a commitment this government wound down early at high weight yet."
+  },
+  "deed:withdrawal:low:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a commitment this government wound down early at low weight yet."
+  },
+  "deed:withdrawal:mid:landed": {
+    "owner": "content track",
+    "reason": "No shipped scenario answers a commitment this government wound down early at mid weight yet."
+  }
+}

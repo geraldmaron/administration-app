@@ -1,0 +1,17 @@
+/* The cascade's one order, declared before any rule exists.
+
+   Precedence between stylesheets comes from this list and from nothing else:
+   a rule in a later layer wins over a rule in an earlier one whatever their
+   selectors weigh and whichever sheet the browser happened to load last. That
+   is why a route's lazily loaded sheet needs no extra weight to land.
+
+   - reset: element defaults.
+   - tokens: custom properties; no selectors on parts.
+   - components: the shared parts in @admin/ui-web, one sheet per part.
+   - rooms: the shell's and each screen's own layout.
+   - states: reduced motion, increased contrast, forced colors and reduced
+     transparency, the preferences that must win over every look.
+
+   Every sheet wraps its rules in one of these; scripts/verify-css-architecture.mjs
+   refuses a rule outside them. */
+@layer reset, tokens, components, rooms, states;

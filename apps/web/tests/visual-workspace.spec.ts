@@ -1,0 +1,50 @@
+import { fileURLToPath } from "node:url";
+import { expect, test } from "@playwright/test";
+import { expectNoHorizontalOverflow, selectChoice } from "./helpers";
+
+for (const theme of ["light", "dark"] as const) {
+  test(`connected market history and supplier return in ${theme}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme });
+    await page.goto("/administrations");
+    await page.getByLabel("Import a save exported from this game").setInputFiles(fileURLToPath(new URL("./.fixtures/gulf-oil-shock.json", import.meta.url)));
+    await page.waitForURL("**/brief");
+    await page.goto("/nation/economy?view=markets&measure=crude");
+    await expect(page.getByRole("heading", { level: 2, name: "Crude oil", exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page, "coordinated market workspace");
+    await selectChoice(page, "Commodity", "Liquefied natural gas");
+    await expect(page).toHaveURL(/measure=lng/);
+    const lngRow = page.getByRole("row").filter({ has: page.getByRole("button", { name: "Liquefied natural gas", exact: true }) });
+    await expect(lngRow).toContainText("↑");
+    await expect(lngRow).toContainText("+31.9%");
+    await selectChoice(page, "Commodity", "Crude oil");
+    await page.getByRole("button", { name: "Replay history", exact: true }).click();
+    await expect(page.locator(".ui-series__selected")).toContainText("Oath", { timeout: 1500 });
+    await page.getByRole("button", { name: "Pause replay", exact: true }).click();
+    const cursor = page.getByRole("slider", { name: "Crude oil by week: recorded observation" });
+    await cursor.focus();
+    await cursor.press("Home");
+    for (let i = 0; i < 4; i += 1) await cursor.press("ArrowRight");
+    await expect(page).toHaveURL(/observation=4/);
+    await expect(page.locator(".ui-series__selected")).toContainText("Week 4");
+    await page.getByRole("button", { name: "Replay history", exact: true }).click();
+    await expect(page.locator(".ui-series__selected")).toContainText("Week 5", { timeout: 3000 });
+    await page.getByRole("button", { name: "Pause replay", exact: true }).click();
+    const selection = new URL(page.url()).searchParams.get("observation");
+    const supplier = page.locator(".market-supplier").getByRole("link", { name: "Saudi Arabia", exact: true });
+    await supplier.click();
+    await expect(page.getByRole("heading", { level: 1, name: "Saudi Arabia", exact: true })).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`observation=${selection}`));
+    await expect(page.locator(".market-supplier").getByRole("link", { name: "Saudi Arabia", exact: true })).toBeFocused();
+    const flowSupplier = page.locator(".market-flow").getByRole("link", { name: "Saudi Arabia", exact: true });
+    await flowSupplier.click();
+    await expect(page.getByRole("heading", { level: 1, name: "Saudi Arabia", exact: true })).toBeVisible();
+    await page.goBack();
+    await expect(flowSupplier).toBeFocused();
+    await expect(page).toHaveURL(new RegExp(`observation=${selection}`));
+    await expectNoHorizontalOverflow(page, "supplier return");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const transition = await page.locator(".market-pulse .ui-series__now").evaluate((element) => getComputedStyle(element).transitionDuration);
+    expect(transition).toBe("0s");
+  });
+}

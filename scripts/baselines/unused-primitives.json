@@ -1,0 +1,4 @@
+{
+  "$comment": "Design-system parts the barrel exports and no player-reachable surface draws. Written by `node scripts/verify-unused-primitives.mjs --update-baseline`; it may only shrink. Draw a part or delete it.",
+  "entries": {}
+}

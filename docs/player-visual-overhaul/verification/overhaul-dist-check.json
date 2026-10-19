@@ -1,0 +1,6 @@
+{
+  "command": "pnpm exec tsc -b --force packages/contracts packages/world packages/design packages/player-core packages/ui-web packages/engine packages/content services/api studio-cli",
+  "exit": 0,
+  "files": 3724,
+  "changed": []
+}

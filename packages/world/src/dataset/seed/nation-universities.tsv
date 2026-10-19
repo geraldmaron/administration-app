@@ -1,0 +1,892 @@
+# Universities by country, most-documented first (Wikipedia sitelinks), vendored by scripts/vendor-nation-wikidata.mjs — do not edit by hand.
+# fetched: 2026-09-22
+# source: Wikidata (query.wikidata.org), CC0
+iso3	rank	name	sitelinks	qid
+AFG	1	Kabul University	40	Q1354097
+AFG	2	Balkh University	16	Q1070930
+AFG	3	American University of Afghanistan	14	Q3918332
+AFG	4	Herat University	13	Q2620139
+AFG	5	Kandahar University	12	Q3752161
+AGO	1	Agostinho Neto University	17	Q1325937
+AGO	2	Catholic University of Angola	9	Q1707542
+AGO	3	Jean Piaget University of Angola	6	Q10387844
+AGO	4	Universidade José Eduardo dos Santos	6	Q18467828
+AGO	5	Mandume ya Ndemufayo University	5	Q18467847
+ALB	1	University of Tirana	49	Q428520
+ALB	2	University of Arts (Albania)	20	Q1148613
+ALB	3	Agricultural University of Tirana	17	Q1738772
+ALB	4	Polytechnic University of Tirana	17	Q821042
+ALB	5	Aleksandër Moisiu University of Durrës	16	Q3302123
+AND	1	Universitat d'Andorra	32	Q648838
+ARE	1	United Arab Emirates University	18	Q1544739
+ARE	2	Khalifa University	14	Q6399651
+ARE	3	American University in Dubai	11	Q467144
+ARE	4	Zayed University	11	Q8067559
+ARE	5	American University of Sharjah	10	Q4115992
+ARG	1	University of Buenos Aires	62	Q194223
+ARG	2	National University of Córdoba	25	Q1570489
+ARG	3	National University of La Plata	25	Q784171
+ARG	4	Pontifical Catholic University of Argentina	21	Q973767
+ARG	5	University of Belgrano	17	Q1789101
+ARM	1	Yerevan State University	46	Q1474624
+ARM	2	American University of Armenia	20	Q467164
+ARM	3	National Polytechnic University of Armenia	20	Q952960
+ARM	4	Yerevan State Medical University	18	Q2082826
+ARM	5	Armenian State Pedagogical University	15	Q1977379
+ATG	1	American University of Antigua	8	Q3291620
+ATG	2	Antigua State College	4	Q4774792
+ATG	3	University of Health Sciences Antigua	2	Q7895486
+AUS	1	University of Melbourne	58	Q319078
+AUS	2	Australian National University	57	Q127990
+AUS	3	University of Queensland	46	Q866012
+AUS	4	Monash University	44	Q598841
+AUS	5	University of Western Australia	41	Q1517021
+AUT	1	University of Vienna	88	Q165980
+AUT	2	Central European University	67	Q757391
+AUT	3	University of Graz	53	Q622683
+AUT	4	University of Innsbruck	43	Q875788
+AUT	5	TU Wien	40	Q689400
+AZE	1	Baku State University	70	Q1633799
+AZE	2	Azerbaijan Technical University	31	Q724222
+AZE	3	French-Azerbaijani University	28	Q20572404
+AZE	4	Azerbaijan State University of Economics	25	Q2072655
+AZE	5	Khazar University	22	Q1064573
+BDI	1	Université du Burundi	23	Q719925
+BDI	2	Université Espoir d'Afrique	7	Q2687972
+BDI	3	Université de Ngozi	5	Q3551654
+BDI	4	Hills University	3	Q19462316
+BDI	5	Université de Mwaro	2	Q3551641
+BEL	1	Ghent University	46	Q1137665
+BEL	2	Université libre de Bruxelles	42	Q574606
+BEL	3	Vrije Universiteit Brussel	39	Q612665
+BEL	4	University of Liège	38	Q1334582
+BEL	5	University of Antwerp	32	Q175241
+BEN	1	University of Abomey-Calavi	16	Q6979225
+BEN	2	University of Science and Technology of Benin	9	Q3011789
+BEN	3	University of Parakou	5	Q3551659
+BEN	4	National University of Agriculture	3	Q108108624
+BEN	5	National University of Sciences, Technologies, Engineering and Mathematics	3	Q83870793
+BFA	1	University Joseph Ki-Zerbo	20	Q1076606
+BFA	2	Université Nazi Boni	5	Q3551817
+BFA	3	Université Norbert Zongo	4	Q3551610
+BFA	4	Burkina Institute of Technology	3	Q121072791
+BFA	5	Université Saint Thomas d'Aquin	2	Q3551484
+BGD	1	University of Dhaka	46	Q1480421
+BGD	2	University of Rajshahi	18	Q3350920
+BGD	3	University of Chittagong	12	Q7895267
+BGD	4	Islamic University, Bangladesh	11	Q3347861
+BGD	5	Bangladesh University of Engineering and Technology	9	Q506330
+BGR	1	Sofia University	42	Q841581
+BGR	2	Veliko Tarnovo University	20	Q1629255
+BGR	3	American University in Bulgaria	16	Q469484
+BGR	4	Plovdiv University	14	Q7205171
+BGR	5	Technical University of Sofia	14	Q2303775
+BHR	1	University of Bahrain	14	Q1707779
+BHR	2	Arab Open University	9	Q3679860
+BHR	3	Arabian Gulf University	9	Q4118306
+BHR	4	Applied Science University	5	Q4781578
+BHR	5	College of Health Sciences, Bahrain	5	Q5146725
+BHS	1	University of The Bahamas	6	Q5146860
+BIH	1	University of Sarajevo	40	Q572286
+BIH	2	University of Banja Luka	31	Q1587312
+BIH	3	University of Mostar	26	Q2303102
+BIH	4	University of Zenica	19	Q2496184
+BIH	5	University of Tuzla	16	Q1578569
+BLR	1	Belarusian State University	36	Q2418908
+BLR	2	Belarusian State University of Informatics and Radioelectronics	23	Q816145
+BLR	3	European Humanities University	16	Q1377393
+BLR	4	Belarusian National Technical University	15	Q815268
+BLR	5	Academy of Public Administration	12	Q2005698
+BLZ	1	University of Belize	9	Q7895116
+BLZ	2	Centro Escolar Mexico Junior College	2	Q5062823
+BLZ	3	Galen University	2	Q1707030
+BLZ	4	St. John's College, Belize	2	Q7588645
+BLZ	5	Corozal Junior College	1	Q5172347
+BOL	1	Higher University of San Andrés	14	Q3290454
+BOL	2	Royal and Pontifical Higher University of San Francisco Xavier of Chuquisaca	11	Q930279
+BOL	3	Public University of El Alto	7	Q10968607
+BOL	4	Universidad Católica Boliviana San Pablo	7	Q2495675
+BOL	5	University of San Simón	7	Q1767912
+BRA	1	Federal University of Minas Gerais	105	Q132140
+BRA	2	State University of Minas Gerais	102	Q2495760
+BRA	3	Pontifícia Universidade Católica de Minas Gerais	96	Q923610
+BRA	4	Universidade Federal de Goiás	82	Q7894375
+BRA	5	Museu Nacional	45	Q1850416
+BRB	1	University of the West Indies	32	Q746153
+BRB	2	American University of Barbados School of Medicine	2	Q105446875
+BRB	3	Washington University of Barbados	2	Q29467820
+BRB	4	Bridgetown International University	0	Q55075099
+BRN	1	Universiti Brunei Darussalam	20	Q569243
+BRN	2	Seri Begawan Religious Teachers University College	6	Q24915008
+BRN	3	Brunei Polytechnic	5	Q18205340
+BRN	4	IBTE Agro-Technology Campus	2	Q38250826
+BRN	5	KEMUDA Institute	2	Q19646171
+BTN	1	Royal University of Bhutan	16	Q2640138
+BTN	2	Sherubtse College	9	Q2017028
+BTN	3	College of Language and Culture Studies	5	Q4100163
+BTN	4	Gaeddu College of Business Studies	4	Q5516504
+BTN	5	Royal Institute of Health Sciences	3	Q4233753
+BWA	1	University of Botswana	27	Q493141
+BWA	2	Botswana International University of Science and Technology	9	Q2856101
+BWA	3	Botho College	4	Q4948645
+BWA	4	Botswana Institute of Administration and Commerce	2	Q3151905
+BWA	5	BA ISAGO University	0	Q99678207
+CAF	1	University of Bangui	12	Q1638914
+CAF	2	EUCLID	5	Q3046238
+CAF	3	ATAFOM University International	1	Q130377117
+CAF	4	ATAFOM University	0	Q140949396
+CAF	5	Centre Afrique Management School	0	Q140949397
+CAN	1	University of York	45	Q967165
+CAN	2	University of Ottawa	33	Q627969
+CAN	3	Carleton University	31	Q1041737
+CAN	4	Brock University	20	Q923624
+CAN	5	Acadia University	16	Q337382
+CHE	1	ETH Zurich	73	Q11942
+CHE	2	University of Zurich	65	Q206702
+CHE	3	University of Lausanne	49	Q658975
+CHE	4	Geneva Graduate Institute	47	Q691686
+CHE	5	University of Bern	44	Q659080
+CHL	1	University of the Bío-Bío	79	Q38779
+CHL	2	University of Chile	57	Q232141
+CHL	3	University of Concepción	53	Q199948
+CHL	4	Pontifical Catholic University of Chile	36	Q1129925
+CHL	5	Catholic University of the Most Holy Conception	26	Q1251039
+CHN	1	Peking University	80	Q16952
+CHN	2	Tsinghua University	69	Q16955
+CHN	3	Nanjing University	57	Q683580
+CHN	4	Fudan University	55	Q495015
+CHN	5	Zhejiang University	47	Q197543
+CIV	1	Félix Houphouët Boigny University	17	Q1583390
+CIV	2	University of Abobo-Adjamé	5	Q3551460
+CIV	3	Jean Lorougnon Guédé University	4	Q18413711
+CIV	4	Université Alassane Ouattara	4	Q3551369
+CIV	5	CIFAD	3	Q2945818
+CMR	1	Université de Yaoundé I	12	Q3551692
+CMR	2	University of Bamenda	11	Q17028026
+CMR	3	Université de Buea	10	Q652308
+CMR	4	Université de Douala	10	Q916350
+CMR	5	Université de Yaoundé II	10	Q3551693
+COD	1	University of Kinshasa	26	Q774520
+COD	2	Université de Lubumbashi	20	Q1588869
+COD	3	University of Kisangani	14	Q780301
+COD	4	Université catholique de Bukavu	7	Q1667045
+COD	5	University of Goma	6	Q3551591
+COG	1	Marien Ngouabi University	18	Q3551438
+COG	2	Université Denis Sassou Nguesso	4	Q98959826
+COG	3	Free University of Congo	1	Q3551798
+COG	4	CFI-CIRAS	0	Q131388868
+COL	1	National University of Colombia	25	Q1150419
+COL	2	University of the Andes	20	Q1569421
+COL	3	Tecnológico de Antioquia	18	Q648599
+COL	4	University of Antioquia	16	Q1258413
+COL	5	University of Valle	15	Q3117949
+COM	1	University of the Comoros	10	Q3551727
+COM	2	Centre Universitaire de Mohéli	0	Q140959337
+COM	3	Centre Universitaire de Patsy	0	Q140959338
+COM	4	Faculty Imam Chafiou	0	Q140959339
+COM	5	Higher Institute for Continuous Training and Professional Rehabilitation	0	Q140959340
+CPV	1	University of Cape Verde	12	Q1707609
+CPV	2	Universidade Jean Piaget de Cabo Verde	11	Q1707547
+CPV	3	Universidade de Santiago	5	Q47254981
+CPV	4	University of Mindelo	5	Q6041675
+CPV	5	Atlantic Technical University	1	Q137384705
+CRI	1	University for Peace	34	Q392774
+CRI	2	University of Costa Rica	25	Q1305486
+CRI	3	Universidad Nacional (Costa Rica)	7	Q31867
+CRI	4	Distance State University	5	Q6156446
+CRI	5	EARTH University	5	Q5322516
+CUB	1	University of Havana	41	Q837320
+CUB	2	University of Santiago de Cuba	9	Q839919
+CUB	3	University "Marta Abreu" of Las Villas	8	Q6156410
+CUB	4	National Art Schools (Cuba)	7	Q6970485
+CUB	5	University of Information Science	7	Q1535007
+CYP	1	University of Cyprus	35	Q1520608
+CYP	2	University of Nicosia	23	Q338645
+CYP	3	Near East University	16	Q890755
+CYP	4	Cyprus University of Technology	13	Q1518320
+CYP	5	Open University of Cyprus	13	Q1473115
+CZE	1	Charles University	83	Q31519
+CZE	2	Masaryk University	46	Q763586
+CZE	3	Czech Technical University in Prague	32	Q1329478
+CZE	4	Palacký University Olomouc	32	Q1637611
+CZE	5	Academy of Performing Arts	27	Q414221
+DEU	1	University of Tübingen	86	Q153978
+DEU	2	University of Göttingen	82	Q152838
+DEU	3	Ludwig-Maximilians-Universität München	76	Q55044
+DEU	4	Leipzig University	67	Q154804
+DEU	5	Goethe University Frankfurt	62	Q50662
+DJI	1	University of Djibouti	13	Q3551582
+DJI	2	Académie Arabe de Formation Bancaire et d'Assurance	0	Q140962969
+DJI	3	Big Ben School of English	0	Q140962970
+DJI	4	Centre d’Etudes de Géophysique de Djibouti	0	Q140962973
+DJI	5	Centre de Formation Continue	0	Q140962971
+DMA	1	New World University	1	Q24913734
+DNK	1	Aarhus University	43	Q924265
+DNK	2	Technical University of Denmark	32	Q1269766
+DNK	3	Aalborg University	28	Q601956
+DNK	4	University of Southern Denmark	28	Q2166335
+DNK	5	Roskilde University	22	Q1542386
+DOM	1	Autonomous University of Santo Domingo	12	Q748358
+DOM	2	Technological University of Santiago	9	Q2629906
+DOM	3	Pontificia Universidad Católica Madre y Maestra	7	Q1548573
+DOM	4	Pedro Henriquez Urena National University	5	Q7894297
+DOM	5	Universidad Católica Santo Domingo	5	Q2120374
+DZA	1	University of Algiers 1	24	Q1190852
+DZA	2	University of Laghouat	12	Q7895618
+DZA	3	University of Science and Technology, Houari Boumediene	12	Q3181219
+DZA	4	University of Abou Bekr Belkaïd	11	Q3551363
+DZA	5	Mohamed Khider Biskra University	10	Q12204532
+ECU	1	Central University of Ecuador	18	Q1643758
+ECU	2	Pontificia Universidad Católica del Ecuador	12	Q1537436
+ECU	3	Universidad San Francisco de Quito	8	Q2495713
+ECU	4	Universidad Técnica Particular de Loja	8	Q7894321
+ECU	5	University of Cuenca	6	Q7895315
+EGY	1	Al-Azhar University	88	Q173959
+EGY	2	Cairo University	63	Q194445
+EGY	3	Alexandria University	34	Q1424632
+EGY	4	Ain Shams University	32	Q2723670
+EGY	5	The American University in Cairo	27	Q469476
+ERI	1	Eritrea Institute of Technology	12	Q5389588
+ERI	2	Asmara College of Health Sciences	1	Q30674326
+ERI	3	Orota Hospital	1	Q23948496
+ERI	4	Asmara College of Education	0	Q140963450
+ERI	5	College of Agriculture, Hamelmalo	0	Q140963451
+ESP	1	University of Salamanca	66	Q308963
+ESP	2	University of Barcelona	58	Q219615
+ESP	3	ESCP Business School	57	Q29293
+ESP	4	Complutense University of Madrid	56	Q219694
+ESP	5	University of Granada	38	Q1232180
+EST	1	University of Tartu	71	Q204181
+EST	2	Tallinn University	44	Q1257946
+EST	3	Tallinn University of Technology	37	Q604487
+EST	4	Estonian Academy of Arts	32	Q1370318
+EST	5	Estonian Academy of Music and Theatre	24	Q1370342
+ETH	1	Addis Ababa University	33	Q1238770
+ETH	2	Jimma University	11	Q6199299
+ETH	3	Mekelle University	11	Q6810561
+ETH	4	Hawassa University	9	Q5684692
+ETH	5	Bahir Dar University	8	Q4842597
+FIN	1	University of Helsinki	67	Q28695
+FIN	2	University of Turku	41	Q501841
+FIN	3	University of Oulu	39	Q1357517
+FIN	4	Aalto University	34	Q300980
+FIN	5	Tampere University	34	Q56403399
+FJI	1	University of the South Pacific	30	Q1062121
+FJI	2	Fiji National University	8	Q1707084
+FJI	3	university of Fiji	8	Q1707347
+FJI	4	Pacific Regional Seminary	1	Q64689342
+FRA	1	Université de Versailles Saint-Quentin-en-Yvelines	80	Q186638
+FRA	2	Paris-Saclay University	77	Q109409389
+FRA	3	Paris Institute of Political Studies	68	Q859363
+FRA	4	ESCP Business School	57	Q29293
+FRA	5	University of Paris 1 Pantheon-Sorbonne	54	Q999763
+GAB	1	Université Omar Bongo	18	Q3551470
+GAB	2	Université des Sciences et Techniques de Masuku	2	Q3551737
+GAB	3	École Normale Supérieure de Libreville	1	Q50361417
+GAB	4	Université Franco-Gabonaise Saint-Exupéry	1	Q55280985
+GAB	5	African University of Management and Technologies	0	Q140956516
+GBR	1	University of Oxford	148	Q34433
+GBR	2	University of Edinburgh	90	Q160302
+GBR	3	University of London	87	Q170027
+GBR	4	University of Manchester	66	Q230899
+GBR	5	Imperial College London	65	Q189022
+GEO	1	Tbilisi State University	47	Q37008
+GEO	2	Abkhazian State University	20	Q307065
+GEO	3	Shota Rustaveli State University	18	Q773986
+GEO	4	Georgian Technical University	17	Q1425119
+GEO	5	Akaki Tsereteli State University	15	Q4700199
+GHA	1	University of Ghana	36	Q2303765
+GHA	2	Kwame Nkrumah University of Science and Technology	18	Q1654025
+GHA	3	University of Cape Coast	18	Q746079
+GHA	4	University of Education, Winneba	12	Q1557172
+GHA	5	Ghana Communication Technology University	10	Q1521371
+GIN	1	University of Conakry	15	Q2496012
+GIN	2	Kofi Annan University of Guinea	4	Q3551423
+GIN	3	University Julius Nyerere of Kankan	4	Q6309990
+GIN	4	ISIC of Kountia	3	Q97126390
+GIN	5	Nongo Conakry University	3	Q60038331
+GMB	1	University of the Gambia	8	Q597030
+GMB	2	International Open University	7	Q16850113
+GMB	3	EUCLID	5	Q3046238
+GMB	4	American International University West Africa	4	Q16251004
+GMB	5	Al Hikma University	0	Q140943293
+GNB	1	Universidade Amílcar Cabral	10	Q1654110
+GNB	2	Universidade Colinas de Boé	8	Q1654102
+GNB	3	Universidade Lusófona da Guiné	1	Q30294233
+GNB	4	Bimantecs	0	Q140900916
+GNB	5	Centro de Formação Domingos Ramos	0	Q140900917
+GNQ	1	National University of Equatorial Guinea	13	Q3291919
+GNQ	2	Colegio Nacional Enrique Nvó Okenve	5	Q5142860
+GNQ	3	Campus UNED Guinea Ecuatorial	3	Q107350957
+GNQ	4	Afro-American University of Central Africa	2	Q122142167
+GNQ	5	Centro de Enseñanza Superior Rey Malabo	0	Q140949626
+GRC	1	National and Kapodistrian University of Athens	51	Q547867
+GRC	2	Aristotle University of Thessaloniki	37	Q667568
+GRC	3	National Technical University of Athens	27	Q1640726
+GRC	4	Panteion University	22	Q953421
+GRC	5	University of Piraeus	21	Q550263
+GRD	1	St. George's University	9	Q7588178
+GRD	2	Balthazar University	0	Q102228284
+GTM	1	Universidad de San Carlos de Guatemala	18	Q607331
+GTM	2	Rafael Landívar University	9	Q2496136
+GTM	3	Francisco Marroquín University	7	Q747786
+GTM	4	Universidad del Valle de Guatemala	6	Q7894349
+GTM	5	Galileo University	5	Q1275933
+GUY	1	University of Guyana	18	Q1502975
+GUY	2	Ebini Experimental Station	1	Q31878131
+GUY	3	Georgetown American University	1	Q23807974
+GUY	4	Lincoln American University	1	Q48816231
+GUY	5	Texila American University	1	Q17111408
+HND	1	National Autonomous University of Honduras	16	Q3616162
+HND	2	University of San Pedro Sula	7	Q7896241
+HND	3	Universidad Católica de Honduras	4	Q7894251
+HND	4	Francisco Morazán National Pedagogical University	3	Q6156613
+HND	5	Universidad José Cecilio del Valle	3	Q6156499
+HRV	1	University of Pula	69	Q633782
+HRV	2	University of Zagreb	50	Q675848
+HRV	3	University of Zadar	26	Q2496233
+HRV	4	University of Osijek	23	Q1708709
+HRV	5	University of Split	23	Q609301
+HTI	1	Quisqueya University	7	Q16682060
+HTI	2	American University of the Caribbean, Haiti	5	Q4745323
+HTI	3	Université Caraïbe	5	Q3434858
+HTI	4	University Notre Dame of Haiti	5	Q1654386
+HTI	5	Université Roi Henri Christophe	3	Q15616499
+HUN	1	University of Debrecen	33	Q903092
+HUN	2	Franz Liszt Academy of Music	32	Q847099
+HUN	3	Budapest University of Technology and Economics	30	Q1186843
+HUN	4	University of Szeged	30	Q369839
+HUN	5	University of Pécs	26	Q1187444
+IDN	1	University of Indonesia	43	Q534515
+IDN	2	Airlangga University	40	Q1494353
+IDN	3	Gadjah Mada University	33	Q1145992
+IDN	4	Bandung Institute of Technology	29	Q1579397
+IDN	5	Brawijaya University	18	Q1336952
+IND	1	Nalanda Mahavihara	72	Q216243
+IND	2	University of Calcutta	66	Q1145306
+IND	3	University of Delhi	55	Q665105
+IND	4	University of Mumbai	48	Q406402
+IND	5	Visva-Bharati University	30	Q1575044
+IRL	1	University College Dublin	41	Q1068258
+IRL	2	University of Galway	29	Q644478
+IRL	3	University of Limerick	26	Q573954
+IRL	4	University College Cork	25	Q1574185
+IRL	5	Dublin City University	24	Q1202897
+IRN	1	University of Tehran	54	Q737835
+IRN	2	Sharif University of Technology	32	Q2096604
+IRN	3	Islamic Azad University	29	Q2661844
+IRN	4	Imam Hossein University	23	Q1165865
+IRN	5	K. N. Toosi University of Technology	22	Q1333607
+IRQ	1	University of Baghdad	43	Q550376
+IRQ	2	Al-Mustansiriya University	23	Q310842
+IRQ	3	University of Basrah	20	Q1477607
+IRQ	4	University of Mosul	18	Q2743336
+IRQ	5	Salahaddin University-Erbil	13	Q369629
+ISL	1	University of Iceland	52	Q196559
+ISL	2	Reykjavík University	28	Q1542418
+ISL	3	University of Akureyri	25	Q1463356
+ISL	4	Bifröst University	24	Q3107095
+ISL	5	Iceland University of the Arts	20	Q1134292
+ISR	1	Hebrew University of Jerusalem	86	Q174158
+ISR	2	Tel Aviv University	52	Q319239
+ISR	3	Technion – Israel Institute of Technology	39	Q333705
+ISR	4	Open University of Israel	26	Q1423960
+ISR	5	Ariel University	25	Q201325
+ITA	1	University of Bologna	91	Q131262
+ITA	2	Sapienza University of Rome	70	Q209344
+ITA	3	University of Padua	61	Q193510
+ITA	4	ESCP Business School	57	Q29293
+ITA	5	University of Turin	50	Q499911
+JAM	1	University of the West Indies	32	Q746153
+JAM	2	University of Technology	8	Q1584459
+JAM	3	Mico University College	3	Q6838941
+JAM	4	Northern Caribbean University	3	Q3551705
+JAM	5	University of the Commonwealth Caribbean	3	Q7894663
+JOR	1	University of Jordan	31	Q610253
+JOR	2	Hashemite University	21	Q2281564
+JOR	3	Al-Quds Open University	16	Q1853678
+JOR	4	Jordan University of Science and Technology	13	Q2919325
+JOR	5	Yarmouk University	12	Q240784
+JPN	1	Kyoto University	84	Q336264
+JPN	2	Waseda University	55	Q274486
+JPN	3	University of Osaka	52	Q651233
+JPN	4	Keio University	46	Q815432
+JPN	5	United Nations University	38	Q492442
+KAZ	1	Al-Farabi Kazakh National University	27	Q427677
+KAZ	2	L. N. Gumilyov Eurasian National University	20	Q127745
+KAZ	3	Nazarbayev University	17	Q2783344
+KAZ	4	Satbayev University	17	Q1513804
+KAZ	5	Karaganda State University	14	Q920456
+KEN	1	University of Nairobi	31	Q649998
+KEN	2	Garissa University	16	Q19749298
+KEN	3	Kenyatta University	15	Q46756
+KEN	4	Moi University	14	Q13122809
+KEN	5	Egerton University	13	Q3915401
+KGZ	1	Kyrgyz National University	20	Q1964642
+KGZ	2	American University of Central Asia	14	Q1141697
+KGZ	3	University of Central Asia	14	Q687110
+KGZ	4	Osh State University	12	Q4810736
+KGZ	5	Bishkek Humanities University	11	Q2496197
+KHM	1	Royal University of Phnom Penh	20	Q1709572
+KHM	2	University of Cambodia	11	Q1707654
+KHM	3	Institute of Technology of Cambodia	8	Q11812055
+KHM	4	International University	7	Q3545832
+KHM	5	Angkor University	5	Q4763326
+KIR	1	University of the South Pacific	30	Q1062121
+KIR	2	Marine Training Centre	1	Q97933072
+KIR	3	University of the South Pacific Center	1	Q27222388
+KNA	1	Medical University of the Americas – Nevis	3	Q796632
+KNA	2	Ross University School of Veterinary Medicine	2	Q25040058
+KNA	3	University of Medicine and Health Sciences	2	Q890460
+KOR	1	Seoul National University	55	Q39913
+KOR	2	Korea University	42	Q39997
+KOR	3	Yonsei University	39	Q39988
+KOR	4	Sungkyunkwan University	31	Q41085
+KOR	5	Ewha Womans University	28	Q41114
+KWT	1	Kuwait University	16	Q3273657
+KWT	2	Arab Open University	9	Q3679860
+KWT	3	American University of Kuwait	5	Q4116094
+KWT	4	Gulf University for Science and Technology	5	Q1024668
+KWT	5	Kuwait College of Science and Technology	4	Q39060049
+LAO	1	National University of Laos	25	Q536280
+LAO	2	Souphanouvong University	6	Q1584919
+LAO	3	Sisavangvong University	3	Q1289092
+LAO	4	Champasak University	1	Q122909985
+LAO	5	Lao University of Health Sciences	0	Q103018894
+LBN	1	American University of Beirut	47	Q469482
+LBN	2	Lebanese University	21	Q975461
+LBN	3	University of Balamand	14	Q1324082
+LBN	4	Beirut Arab University	12	Q2778441
+LBN	5	Haigazian University	10	Q465523
+LBR	1	University of Liberia	21	Q3044628
+LBR	2	Tubman University	5	Q1528161
+LBR	3	Cuttington University	4	Q5197010
+LBR	4	African Methodist Episcopal University	2	Q4689862
+LBR	5	United Methodist University	1	Q16902330
+LBY	1	University of Tripoli	21	Q2529518
+LBY	2	University of Benghazi	15	Q3134657
+LBY	3	Omar Al-Mukhtar University	13	Q328423
+LBY	4	University of Libya	12	Q3646851
+LBY	5	Misrata University	8	Q45819
+LCA	1	Spartan Health Sciences University	6	Q7573904
+LCA	2	International American University College of Medicine	2	Q6048175
+LCA	3	American International Medical University	1	Q4744172
+LIE	1	University of Liechtenstein	22	Q974328
+LIE	2	International Academy of Philosophy	6	Q1572147
+LIE	3	Private University in the Principality of Liechtenstein	4	Q2111101
+LKA	1	University of Peradeniya	12	Q3083280
+LKA	2	University of Jaffna	9	Q3399947
+LKA	3	University of Kelaniya	7	Q3534731
+LKA	4	Uva Wellassa University	7	Q7903611
+LKA	5	Open University of Sri Lanka	5	Q3537680
+LSO	1	National University of Lesotho	23	Q1410332
+LTU	1	Vilnius University	54	Q658192
+LTU	2	Vytautas Magnus University	33	Q1756541
+LTU	3	Kaunas University of Technology	29	Q625158
+LTU	4	Klaipėda University	29	Q178200
+LTU	5	Mykolas Romeris University	25	Q1247342
+LUX	1	University of Luxembourg	33	Q59668
+LUX	2	Miami University Dolibois European Center	4	Q3247727
+LUX	3	Sacred Heart University Luxembourg	4	Q1528530
+LUX	4	Institute of Technology	1	Q16366441
+LUX	5	Institut universitaire international Luxembourg	0	Q27961796
+LVA	1	University of Latvia	50	Q498407
+LVA	2	Riga Technical University	37	Q411895
+LVA	3	Daugavpils University	19	Q1854796
+LVA	4	Latvia University of Life Sciences and Technologies	19	Q1342858
+LVA	5	Riga Stradiņš University	19	Q2007643
+MAR	1	University of al-Qarawiyyin	67	Q378014
+MAR	2	Cadi Ayyad University	16	Q737095
+MAR	3	Mohammed V University	16	Q1360237
+MAR	4	Al Akhawayn University	13	Q2829294
+MAR	5	Ibn Zohr University	12	Q3551418
+MDA	1	Moldova State University	32	Q1097810
+MDA	2	Technical University of Moldova	19	Q1098106
+MDA	3	Comrat State University	16	Q2496010
+MDA	4	Shevchenko Transnistria State University	15	Q1282309
+MDA	5	Taraclia State University	12	Q2650619
+MDG	1	University of Antananarivo	19	Q1443595
+MDG	2	University of Toamasina	8	Q1443900
+MDG	3	University of Toliara	6	Q18380163
+MDG	4	University of Mahajanga	4	Q3551622
+MDG	5	University of Fianarantsoa	3	Q20669871
+MDV	1	Maldives National University	7	Q4120538
+MDV	2	Maldives Polytechnic	1	Q6742807
+MDV	3	Villa College	1	Q25110403
+MDV	4	Islamic University of Maldives	0	Q135190778
+MEX	1	National Autonomous University of Mexico	58	Q222738
+MEX	2	University of Guadalajara	44	Q164028
+MEX	3	Monterrey Institute of Technology and Higher Education	23	Q1343885
+MEX	4	Tu putamadre	17	Q1539696
+MEX	5	El Colegio de México	16	Q1324001
+MHL	1	University of the South Pacific	30	Q1062121
+MHL	2	College of the Marshall Islands	4	Q5146888
+MHL	3	University of the Southpacific - RMI Campus	1	Q35327140
+MKD	1	Ss. Cyril and Methodius University of Skopje	29	Q589636
+MKD	2	State University of Tetova	18	Q1529083
+MKD	3	University for Information Science and Technology "St. Paul The Apostle"	18	Q7894999
+MKD	4	St. Clement of Ohrid University of Bitola	15	Q2094960
+MKD	5	South East European University	13	Q2304477
+MLI	1	Sankore Madrasah	28	Q1265294
+MLI	2	University of Timbuktu	9	Q7896465
+MLI	3	University of Legal and Political Sciences of Bamako	4	Q3551742
+MLI	4	Ségou University	3	Q3551674
+MLI	5	Université des lettres et des sciences humaines de Bamako	3	Q3551732
+MLT	1	University of Malta	41	Q426045
+MLT	2	London School of Commerce, Valletta	0	Q125957217
+MLT	3	Pegaso International	0	Q130387177
+MLT	4	St. Martin's Institute of Higher Education	0	Q125960086
+MMR	1	Mandalay University	13	Q6747773
+MMR	2	Yangon Technological University	7	Q8048626
+MMR	3	Dagon University	4	Q5208638
+MMR	4	East Yangon University	4	Q7895354
+MMR	5	International Theravāda Buddhist Missionary University	4	Q6053947
+MNE	1	University of Montenegro	30	Q1786067
+MNE	2	Mediterranean University	10	Q282645
+MNE	3	University of Donja Gorica	8	Q103021183
+MNE	4	Faculty for Information technology, Podgorica	1	Q5428882
+MNG	1	National University of Mongolia	29	Q1349150
+MNG	2	Mongolian University of Science and Technology	10	Q2370318
+MNG	3	Mongolia International University	8	Q1046619
+MNG	4	Mongolian University of Life Sciences	7	Q2514534
+MNG	5	University of the Humanities	7	Q1097182
+MOZ	1	Eduardo Mondlane University	20	Q890884
+MOZ	2	Catholic University of Mozambique	10	Q650358
+MOZ	3	Maputo University	10	Q290662
+MOZ	4	Lúrio University	6	Q10387849
+MOZ	5	Save University	3	Q20060561
+MRT	1	University of Nouakchott Al Aasriya	17	Q3119358
+MRT	2	Université Libanaise Internationale en Mauritanie	6	Q1443352
+MRT	3	Faculté des Sciences Juridiques et Economiques	1	Q35326205
+MRT	4	Modern University of Chinguitt	1	Q1074359
+MRT	5	Al Aasriya University of Nouakchott	0	Q55402201
+MUS	1	University of Mauritius	15	Q1097479
+MUS	2	African Leadership University	7	Q25104613
+MUS	3	University of Technology, Mauritius	6	Q1097363
+MUS	4	Open University of Mauritius	3	Q7096263
+MUS	5	Curtin Mauritius	2	Q108893081
+MWI	1	University of Malawi	24	Q671642
+MWI	2	Mzuzu University	13	Q477625
+MWI	3	Catholic University of Malawi	4	Q1029596
+MWI	4	Malawi University of Science and Technology	3	Q25104234
+MWI	5	Malawi Adventist University	2	Q6741451
+MYS	1	Universiti Malaya	42	Q1142924
+MYS	2	International Islamic University Malaysia	26	Q1524992
+MYS	3	Universiti Sains Malaysia	16	Q1973130
+MYS	4	Universiti Tunku Abdul Rahman	16	Q7894438
+MYS	5	Universiti Teknologi Petronas	15	Q2096395
+NAM	1	University of Namibia	20	Q220226
+NAM	2	International University of Management	5	Q1667019
+NAM	3	College of the Arts, Windhoek	3	Q5146879
+NER	1	Islamic University of Niger	11	Q890735
+NER	2	Université Abdou Moumouni	9	Q308329
+NER	3	Aboubacar Ibrahim International University	5	Q109255074
+NER	4	Maryam Abacha America University of Niger	5	Q97041896
+NER	5	Université Dan Dicko Dankoulodo de Maradi	5	Q3551623
+NGA	1	University of Ibadan	28	Q1169487
+NGA	2	University of Lagos	24	Q1782980
+NGA	3	Ahmadu Bello University	23	Q401034
+NGA	4	University of Nigeria	18	Q927304
+NGA	5	Lagos State University	16	Q849611
+NIC	1	National Autonomous University of Nicaragua	8	Q495504
+NIC	2	National Autonomous University of Nicaragua at León	4	Q6155017
+NIC	3	Catholic University of Dry Tropic Farming and Livestock	3	Q6156405
+NIC	4	UNAN	3	Q7894291
+NIC	5	Universidad Central de Nicaragua	3	Q7894255
+NLD	1	Dutch Defense Academy	2	Q1826903
+NOR	1	University of Oslo	67	Q486156
+NOR	2	Norwegian University of Science and Technology	41	Q314536
+NOR	3	University of Bergen	39	Q204457
+NOR	4	University of Tromsø – The Arctic University of Norway	32	Q279724
+NOR	5	University of Stavanger	28	Q498401
+NPL	1	Tribhuvan University	26	Q588239
+NPL	2	Kathmandu University	15	Q6376965
+NPL	3	Pokhara University	8	Q3630498
+NPL	4	Lumbini Buddha University	7	Q6703130
+NPL	5	Nepal Sanskrit University	7	Q10957095
+NRU	1	University of the South Pacific	30	Q1062121
+NZL	1	University of Auckland	49	Q492467
+NZL	2	University of Canterbury	36	Q432475
+NZL	3	University of Otago	32	Q1201513
+NZL	4	Victoria University of Wellington	30	Q1150437
+NZL	5	Massey University	25	Q1134606
+OMN	1	Sultan Qaboos University	23	Q1808326
+OMN	2	Arab Open University	9	Q3679860
+OMN	3	Sohar University	7	Q2496166
+OMN	4	University Of Nizwa	6	Q2496107
+OMN	5	German University of Technology in Oman	5	Q1514056
+PAK	1	University of the Punjab	28	Q1549932
+PAK	2	University of Karachi	27	Q1661751
+PAK	3	Quaid-i-Azam University	21	Q2047109
+PAK	4	University of Engineering and Technology	20	Q1961570
+PAK	5	Aga Khan University	18	Q4690953
+PAN	1	University of Panama	16	Q7896059
+PAN	2	Technological University of Panama	5	Q3034637
+PAN	3	Catholic University Santa María La Antigua of Panama	4	Q7894249
+PAN	4	Florida State University-Panama	3	Q5461630
+PAN	5	Universidad Autónoma de Chiriquí	3	Q7894238
+PER	1	Pontifical Catholic University of Peru	16	Q200601
+PER	2	University of Lima	16	Q29675
+PER	3	National University of Engineering	11	Q5202403
+PER	4	University of Piura	11	Q5202348
+PER	5	National University of San Antonio Abad in Cusco	10	Q916367
+PHL	1	University of the Philippines	35	Q746592
+PHL	2	Ateneo de Manila University	24	Q533235
+PHL	3	University of Santo Tomas	21	Q1401524
+PHL	4	University of San Carlos	17	Q887649
+PHL	5	Central Philippine University	15	Q1053944
+PNG	1	University of Papua New Guinea	19	Q780975
+PNG	2	Papua New Guinea University of Technology	7	Q890684
+PNG	3	University of Goroka	5	Q890541
+PNG	4	Divine Word University	2	Q5284156
+PNG	5	Papua New Guinea University of Natural Resources and Environment	2	Q7133170
+POL	1	Jagiellonian University	73	Q189441
+POL	2	University of Warsaw	63	Q144488
+POL	3	ESCP Business School	57	Q29293
+POL	4	University of Wrocław	44	Q315658
+POL	5	Adam Mickiewicz University in Poznań	36	Q348402
+PRK	1	Kim Il-sung University	49	Q39920
+PRK	2	Kim Chaek University of Technology	19	Q40000
+PRK	3	Pyongyang University of Science and Technology	15	Q710126
+PRK	4	Pyongyang University of Foreign Studies	11	Q39944
+PRK	5	Huichon University of Telecommunications	10	Q197525
+PRT	1	University of Coimbra	57	Q368643
+PRT	2	NOVA University Lisbon	23	Q1979891
+PRT	3	University of Évora	19	Q1557861
+PRT	4	University of Aveiro	18	Q29671
+PRT	5	University of Minho	18	Q29673
+PRY	1	Universidad Nacional de Asunción	18	Q2039033
+PRY	2	Universidad Americana	10	Q1750155
+PRY	3	Universidad Autónoma de Asunción	7	Q549311
+PRY	4	Universidad Católica "Nuestra Señora de la Asunción"	7	Q662015
+PRY	5	Universidad Nacional de Itapúa	4	Q7894300
+PSE	1	Birzeit University	23	Q510029
+PSE	2	al-Aqsa University	22	Q131623074
+PSE	3	Al-Azhar University – Gaza	20	Q292489
+PSE	4	Al-Quds University	17	Q310564
+PSE	5	An-Najah National University	17	Q2096138
+QAT	1	Qatar University	26	Q1574578
+QAT	2	Texas A&M University at Qatar	8	Q1144951
+QAT	3	Carnegie Mellon University, Qatar	7	Q890704
+QAT	4	Hamad Bin Khalifa University	7	Q24911975
+QAT	5	Northwestern University in Qatar	7	Q890759
+ROU	1	University of Bucharest	49	Q608338
+ROU	2	Babeș-Bolyai University	36	Q538452
+ROU	3	Alexandru Ioan Cuza University	33	Q1523902
+ROU	4	Politehnica University of Bucharest	20	Q1465448
+ROU	5	University of Craiova	17	Q494096
+RUS	1	Lomonosov Moscow State University	108	Q13164
+RUS	2	Saint Petersburg State University	73	Q27621
+RUS	3	Moscow State Institute of International Relations	50	Q322964
+RUS	4	Peoples' Friendship University of Russia	43	Q839669
+RUS	5	Kuban State University	37	Q4243514
+RWA	1	University of Rwanda	15	Q19888178
+RWA	2	African Leadership University	7	Q25104613
+RWA	3	Kigali Independent University ULK	4	Q3551790
+RWA	4	Adventist University of Central Africa	3	Q24937816
+RWA	5	Institute of Applied Sciences Ruhengeri	2	Q105095653
+SAU	1	King Saud University	36	Q1752043
+SAU	2	King Abdulaziz University	31	Q1795928
+SAU	3	King Abdullah University of Science and Technology	28	Q1463036
+SAU	4	Umm al-Qura University	22	Q3133606
+SAU	5	Princess Nora bint Abdul Rahman University	15	Q4118886
+SDN	1	University of Khartoum	28	Q656871
+SDN	2	Sudan University of Science and Technology	12	Q458467
+SDN	3	Neelain University	10	Q4121165
+SDN	4	Ahfad University for Women	9	Q400222
+SDN	5	Arab Open University	9	Q3679860
+SEN	1	Université Cheikh Anta Diop	24	Q671363
+SEN	2	Université Gaston Berger	6	Q3551411
+SEN	3	Assane Seck University	4	Q3551694
+SEN	4	Brighton International University	3	Q767720
+SEN	5	Université de Thiès	3	Q3551680
+SGP	1	Nanyang Technological University	60	Q721064
+SGP	2	National University of Singapore	60	Q738236
+SGP	3	Singapore Management University	20	Q950609
+SGP	4	Singapore University of Social Sciences	15	Q494179
+SGP	5	Singapore University of Technology and Design	12	Q11081251
+SLB	1	University of the South Pacific	30	Q1062121
+SLB	2	Honiara Solomon Islands College of Higher Education	2	Q5896110
+SLB	3	Solomon Islands National University	2	Q110442979
+SLB	4	Woodford International School	2	Q8032659
+SLB	5	University of the South Pacific Solomon Islands	1	Q7896771
+SLE	1	Fourah Bay College	11	Q1506926
+SLE	2	Njala University	8	Q7042386
+SLE	3	University of Sierra Leone	8	Q15045868
+SLE	4	University of Makeni	4	Q7895660
+SLE	5	Eastern Technical University of Sierra Leone	3	Q1278215
+SLV	1	University of El Salvador	18	Q3179505
+SLV	2	Catholic University of El Salvador	6	Q6156399
+SLV	3	Francisco Gavidia University	4	Q9091552
+SLV	4	José Matías Delgado University	3	Q4475794
+SLV	5	Escuela Superior de Economia y Negocios	2	Q5397486
+SMR	1	University of the Republic of San Marino	21	Q796723
+SMR	2	Scuola superiore di studi storici di San Marino	4	Q2653978
+SOM	1	Mogadishu University	15	Q721115
+SOM	2	Somali National University	13	Q278455
+SOM	3	Benadir University	10	Q721109
+SOM	4	East Africa University	9	Q5327643
+SOM	5	Amoud University	6	Q3493066
+SRB	1	University of Belgrade	52	Q240631
+SRB	2	University of Novi Sad	31	Q1263535
+SRB	3	University of Niš	18	Q1388776
+SRB	4	University of Arts in Belgrade	17	Q1479582
+SRB	5	University of Kragujevac	17	Q2303907
+SSD	1	University of Juba	31	Q1231063
+SSD	2	Upper Nile University	10	Q2915589
+SSD	3	Rumbek University	7	Q2892503
+SSD	4	John Garang Memorial University	5	Q6234826
+SSD	5	St. Mary's University in Juba	5	Q7590451
+STP	1	University of São Tomé and Príncipe	7	Q6041504
+SUR	1	Anton de Kom University of Suriname	14	Q1975617
+SUR	2	International Business School Americas Europe	1	Q64871009
+SUR	3	South American International University	0	Q139997295
+SVK	1	Comenius University	43	Q31392
+SVK	2	Trnava University in Trnava	22	Q2585282
+SVK	3	Pavol Jozef Šafárik University in Košice	20	Q178333
+SVK	4	Matej Bel University	17	Q1908174
+SVK	5	University of Prešov	17	Q963904
+SVN	1	University of Ljubljana	51	Q1377
+SVN	2	University of Maribor	28	Q1378
+SVN	3	University of Primorska	18	Q1378123
+SVN	4	University of Nova Gorica	13	Q656086
+SVN	5	Alma Mater Europaea	10	Q14594755
+SWE	1	Uppsala University	74	Q185246
+SWE	2	Lund University	66	Q218506
+SWE	3	Karolinska Institutet	58	Q219564
+SWE	4	Stockholm University	58	Q221645
+SWE	5	University of Gothenburg	43	Q371522
+SWZ	1	University of Eswatini	20	Q1570483
+SWZ	2	Ludlambedlu	1	Q134311417
+SWZ	3	AMADI University	0	Q100942496
+SWZ	4	Limkokwing University of Creative Technology Swaziland	0	Q102107091
+SWZ	5	Southern Africa Nazarene University	0	Q61931923
+SYC	1	University of Seychelles	10	Q7896291
+SYR	1	Damascus University	43	Q1351317
+SYR	2	University of Aleppo	26	Q2302663
+SYR	3	University of Latakia	19	Q7809596
+SYR	4	Homs University	18	Q797514
+SYR	5	Arab International University	7	Q4783194
+TCD	1	University of N'Djaména	20	Q1678185
+TCD	2	Université Emi Koussi	4	Q56326652
+TCD	3	University of Moundou	3	Q3551638
+TCD	4	HEC-Chad University	2	Q122270858
+TCD	5	National Higher School of Information and Communication Technologies	2	Q121745579
+TGO	1	University of Lomé	14	Q3551618
+TGO	2	University of Kara	5	Q3551604
+TGO	3	American Institute of Africa	0	Q140948769
+TGO	4	American Institute of Commonwealth	0	Q140948770
+TGO	5	Catholic University of West Africa - University Unit of Togo	0	Q140949025
+THA	1	Chiang Mai University	23	Q1071609
+THA	2	Mahidol University	18	Q626804
+THA	3	Khon Kaen University	16	Q368329
+THA	4	Naresuan University	15	Q1311551
+THA	5	Silpakorn University	15	Q1209824
+TJK	1	Tajik National University	18	Q1528756
+TJK	2	Russian-Tajik Slavonic University	10	Q2669434
+TJK	3	Khujand State University	9	Q2083886
+TJK	4	Agricultural University of Tajikistan	8	Q650473
+TJK	5	Tajik State Medical University	7	Q4449705
+TKM	1	Magtymguly Turkmen State University	14	Q1351705
+TKM	2	Myrat Garryyev State Medical University of Turkmenistan	10	Q4146865
+TKM	3	Turkmen Agricultural University Named After S.A. Nyýazow	9	Q4466158
+TKM	4	International Oil and Gas University	8	Q4466149
+TKM	5	Turkmen Institute of National Economy	7	Q651139
+TLS	1	National University of East Timor	16	Q75639
+TLS	2	Universidade Da Paz	8	Q7894358
+TLS	3	Universidade Dili	6	Q16912035
+TLS	4	Catholic University of Timor Saint John Paul II	5	Q110016021
+TLS	5	Universidade Oriental Timor Lorosa’e	3	Q60847633
+TON	1	University of the South Pacific	30	Q1062121
+TON	2	King's International University, Tonga	1	Q38251221
+TON	3	Lo'au University	0	Q117520715
+TTO	1	University of the West Indies	32	Q746153
+TTO	2	University of the Southern Caribbean	6	Q367398
+TTO	3	University of Trinidad and Tobago	4	Q648244
+TTO	4	College of Science, Technology and Applied Arts of Trinidad and Tobago	2	Q648688
+TUN	1	Ez-Zitouna University	21	Q428136
+TUN	2	Tunis University	15	Q3551686
+TUN	3	Carthage University	12	Q852223
+TUN	4	Tunis El Manar University	12	Q3551684
+TUN	5	University of Monastir	11	Q3551637
+TUR	1	Istanbul University	61	Q192964
+TUR	2	Ankara University	40	Q1060621
+TUR	3	Istanbul Technical University	40	Q344334
+TUR	4	Boğaziçi University	39	Q896267
+TUR	5	Marmara University	36	Q1424081
+TUV	1	University of the South Pacific	30	Q1062121
+TUV	2	Tuvalu Atoll Science Technology Training Institute	1	Q105063705
+TWN	1	National Taiwan University	47	Q32746
+TWN	2	Fu Jen Catholic University	42	Q685664
+TWN	3	National Sun Yat-sen University	28	Q32751
+TWN	4	National Central University	27	Q714891
+TWN	5	National Chengchi University	22	Q712849
+TZA	1	University of Dar es Salaam	31	Q557597
+TZA	2	Sokoine University of Agriculture	12	Q4005900
+TZA	3	The Open University of Tanzania	12	Q7755195
+TZA	4	University of Dodoma	12	Q693769
+TZA	5	Mzumbe University	11	Q1240270
+UGA	1	Makerere University	35	Q261506
+UGA	2	Mbarara University of Science and Technology	13	Q514030
+UGA	3	Kyambogo University	12	Q2753927
+UGA	4	Gulu University	10	Q5617918
+UGA	5	Uganda Christian University	10	Q2473859
+UKR	1	Taras Shevchenko National University of Kyiv	61	Q84151
+UKR	2	Lviv University	50	Q80207
+UKR	3	National University of Kharkiv	39	Q1458695
+UKR	4	National University of Kyiv-Mohyla Academy	36	Q1133013
+UKR	5	Odesa University	36	Q85300
+URY	1	University of the Republic	30	Q1856423
+URY	2	Universidad de Montevideo	17	Q961612
+URY	3	Catholic University of Uruguay	10	Q3291440
+URY	4	Universidad ORT Uruguay	8	Q3772943
+URY	5	Learning Assessment System	5	Q17630306
+USA	1	Harvard University	151	Q13371
+USA	2	Massachusetts Institute of Technology	112	Q49108
+USA	3	Stanford University	111	Q41506
+USA	4	Yale University	106	Q49112
+USA	5	Princeton University	99	Q21578
+UZB	1	National University of Uzbekistan named after Mirzo Ulugbek	28	Q651133
+UZB	2	Samarkand State Medical University	13	Q18399739
+UZB	3	Tashkent State University of Economics	13	Q2428356
+UZB	4	Samarkand State University	11	Q4406337
+UZB	5	Namangan State University	10	Q32393
+VCT	1	Richmond Gabriel University	2	Q63102005
+VCT	2	Trinity School of Medicine	1	Q16901997
+VEN	1	Central University of Venezuela	29	Q936476
+VEN	2	University of the Andes	25	Q760690
+VEN	3	Simón Bolívar University	12	Q2093477
+VEN	4	Andrés Bello Catholic University	10	Q4760155
+VEN	5	University of Carabobo	7	Q367429
+VNM	1	Vietnam National University	33	Q1076729
+VNM	2	Vietnam National University	23	Q943759
+VNM	3	Can Tho University	11	Q5029090
+VNM	4	Hanoi University of Science and Technology	10	Q3075696
+VNM	5	University of Da Nang	10	Q945839
+WSM	1	National University of Samoa	11	Q2666843
+WSM	2	South Pacific Nazarene Theological College	1	Q7568114
+XKX	1	University of Pristina	36	Q29659
+XKX	2	University of Prizren	21	Q1582460
+XKX	3	University of Pristina (1969–1999)	11	Q1630703
+XKX	4	University of Gjakova	7	Q31666747
+XKX	5	University “Haxhi Zeka”	6	Q27888404
+YEM	1	Sanaa University	21	Q4115304
+YEM	2	University of Aden	9	Q634796
+YEM	3	Dar al-Mustafa	8	Q5221945
+YEM	4	Iman University	7	Q12204401
+YEM	5	Hodeidah University	6	Q4118505
+ZAF	1	University of Cape Town	58	Q951305
+ZAF	2	University of the Witwatersrand	44	Q534643
+ZAF	3	Stellenbosch University	38	Q1066492
+ZAF	4	University of Pretoria	36	Q604444
+ZAF	5	University of Fort Hare	32	Q2005511
+ZMB	1	University of Zambia	29	Q2096836
+ZMB	2	Copperbelt University	10	Q339314
+ZMB	3	Mulungushi University	8	Q3643633
+ZMB	4	Nkrumah University	7	Q7042646
+ZMB	5	University of Lusaka	7	Q7895649
+ZWE	1	University of Zimbabwe	27	Q581954
+ZWE	2	Africa University	9	Q383939
+ZWE	3	Solusi University	9	Q5308248
+ZWE	4	Great Zimbabwe University	4	Q5600321
+ZWE	5	Gwanda State University	4	Q5623285

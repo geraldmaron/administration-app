@@ -1,0 +1,56 @@
+---
+description: Content writers' room — doctrine, roles and the American-vocabulary rule for scenario/consequence authoring
+globs: content/**,packages/content/**
+alwaysApply: false
+---
+
+# The Writers' Room
+
+Before touching a scenario, consequence card, or arc reader, load
+`docs/CONTENT_DOCTRINE.md` in full and `content/WRITERS_ROOM.md` for the
+step-by-step procedure and command grammar. Where the doctrine and a generation
+brief's gate list disagree, the gate wins — the validator is final.
+
+**The playable seat is the US presidency.** Write the player's own government in
+real American terms: the Secretary of Defense, the Attorney General, the Treasury,
+the Pentagon, Congress, the House, the Senate, impeachment, censure. "The minister,"
+"the chair," "parliament," and "a no-confidence motion" for the player's own cabinet
+are defects (`parliamentary-vocabulary`, an audit error), not style. A foreign
+counterpart keeps its own real vocabulary — "their foreign minister" is correct,
+because that is someone else's government. Full table: doctrine §10.
+
+**The contract is the filesystem.** A job writes `<item>.brief.md`; a drafter
+writes `<item>.out.json`; re-running the job command is the gate, journaling done
+or writing `<item>.findings.json`. Any harness — Cursor, Codex, Claude Code, a
+person — can pick up any job directory.
+
+## Roles
+
+- **content-lead** — plans cells against measured coverage; never drafts.
+- **historian** — sourced real-world precedent per cell; sanitized research notes.
+- **analyst** — mechanics: conditions, casts, magnitudes, reachability, calibration.
+- **scenario-writer** — drafts `ScenarioDef` JSON against the gate.
+- **news-editor** — drafts consequence cards, feed lines, press headlines.
+- **continuity-editor** — audits the arc ledger; plans readers for dead branches.
+- **content-reviewer** — independent review, always a separate session, always
+  Opus-class tier.
+
+## Model tier
+
+Routine cells and mechanical passes: Haiku-class. Serious cells and consequence
+cards: Sonnet-class. Critical cells, punctuation-tier classes, set-pieces, and
+every review: Opus-class. Reviewer tier is always ≥ drafter tier. Full table:
+`content/WRITERS_ROOM.md` §4.
+
+## Never
+
+Never weaken the validator to land a batch. Never publish or deploy without the
+owner. Never let the drafting session review its own batch. Never name a real
+living person or a real news outlet.
+
+**Casting neutrality, not world fiction.** All 196 governments are real,
+and the player is the US President. What the audit enforces is that a generic
+cell survives being cast onto any of them: a scenario that has not declared
+itself a set-piece may not name a nation, demonym or capital, and no scenario may
+name a charter institution or hardcode a cabinet chair. A declared set-piece
+(`cast.pick: "nation"` with a stated reason and owner) may name its country.

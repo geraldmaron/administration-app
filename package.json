@@ -1,0 +1,54 @@
+{
+  "name": "the-administration",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Administration — political simulation game (monorepo coordinator)",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r --workspace-concurrency=1 --no-bail run test --maxWorkers=2 --minWorkers=1",
+    "play": "pnpm --filter @admin/web dev",
+    "desktop": "pnpm --filter @admin/desktop start",
+    "studio": "node apps/studio/launch.mjs",
+    "bake:map": "node scripts/bake-map-geometry.mjs",
+    "bake:cities": "node scripts/bake-cities.mjs",
+    "vendor:nation-stats": "node scripts/vendor-nation-stats.mjs",
+    "bake:nations": "node scripts/bake-nations.mjs",
+    "vendor:nation-flags": "node scripts/vendor-nation-flags.mjs",
+    "bake:nation-flags": "node scripts/bake-nation-flags.mjs",
+    "vendor:state-flags": "node scripts/vendor-state-flags.mjs",
+    "bake:state-flags": "node scripts/bake-state-flags.mjs",
+    "bake:terrain": "node scripts/bake-map-terrain.mjs",
+    "bake:district-map": "node scripts/bake-district-map.mjs",
+    "bake:map-lod": "node scripts/bake-map-lod.mjs",
+    "vendor:district-map": "node scripts/vendor-district-map-source.mjs"
+  },
+  "devDependencies": {
+    "@types/pngjs": "^6.0.5",
+    "@types/topojson-client": "^3.1.5",
+    "d3-geo": "^3.1.1",
+    "eslint": "^10.8.0",
+    "i18n-iso-countries": "^7.14.0",
+    "pngjs": "^7.0.0",
+    "shapefile": "^0.6.6",
+    "topojson-client": "^3.1.0",
+    "topojson-server": "^3.0.1",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^2.1.0",
+    "world-atlas": "^2.0.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "@electron/node-gyp": "10.2.0-electron.2",
+      "react": "19.3.0",
+      "react-dom": "19.3.0",
+      "@types/react": "~19.3.0"
+    }
+  }
+}

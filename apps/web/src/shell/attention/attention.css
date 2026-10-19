@@ -1,0 +1,86 @@
+@layer rooms {
+  /* A section that shows something a badge counts and the player has not seen yet. */
+  [data-attention="new"] {
+    position: relative;
+    box-shadow: inset 3px 0 0 var(--color-red-fill);
+  }
+
+  [data-attention="new"]::before {
+    content: "New";
+    position: absolute;
+    inset-block-start: var(--space-xs);
+    inset-inline-end: var(--space-xs);
+    z-index: 1;
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-pill);
+    background: var(--color-red-fill);
+    color: var(--color-white);
+    font-size: var(--size-caption);
+    font-weight: var(--weight-strong);
+    line-height: 1.5;
+    pointer-events: none;
+  }
+
+  /* The section a badge or a "waiting" row just led to. */
+  [data-attention-arrived="true"] {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 4px;
+    animation: attention-arrive 2.4s ease-out;
+  }
+
+  @keyframes attention-arrive {
+    0% { outline-color: var(--color-focus); }
+    70% { outline-color: var(--color-focus); }
+    100% { outline-color: transparent; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-attention-arrived="true"] {
+      animation: none;
+    }
+  }
+}
+
+@layer rooms {
+  /* Destination attention is a working list, not a panel containing more panels. */
+  .attention-worklist { container-type: inline-size; display: grid; gap: var(--space-xs); padding-block: var(--space-sm); border-block: 1px solid var(--color-border-subtle); }
+  .attention-worklist > h2 { display: flex; align-items: center; gap: var(--space-xs); margin: 0; font-size: var(--size-body); }
+  .attention-action { display: grid; align-items: center; gap: var(--space-sm); min-block-size: 44px; padding: var(--space-xs); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--color-text-primary); font: inherit; font-size: var(--size-label); text-align: start; text-decoration: none; cursor: pointer; }
+  .attention-action:hover { background: var(--color-ground-raised); }
+  .waiting-here { margin-block-end: var(--space-md); }
+  .brief .queue, .desk__main .queue, .desk__side .queue { padding: var(--space-sm) 0; border-inline: 0; border-radius: 0; background: transparent; }
+  .queue > h2 { font-size: var(--size-body); }
+  .waiting-here__title { display: flex; align-items: center; gap: var(--space-xs); margin: 0; font-size: var(--size-body); }
+  .waiting-here__list { display: grid; margin: 0; padding: 0; list-style: none; }
+  .waiting-here__standing + .waiting-here__standing { border-block-start: 1px solid var(--color-border-subtle); }
+  .waiting-here__link { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+  .waiting-here__link > svg { color: var(--color-gold-deep); }
+  .waiting-here__subject { min-inline-size: 0; font-weight: var(--weight-medium); }
+  .waiting-here__status { color: var(--color-text-secondary); font-size: var(--size-caption); }
+  .waiting-here__go { color: var(--color-blue); white-space: nowrap; }
+  :is(.queue, .waiting-here) .queue__list { gap: 0; }
+  :is(.queue, .waiting-here) .queue__row { padding: var(--space-sm) 0; border: 0; border-block-start: 1px solid var(--color-border-subtle); border-radius: 0; background: transparent; box-shadow: none; }
+  :is(.queue, .waiting-here) .queue__title { font-size: var(--size-label); }
+  :is(.queue, .waiting-here) .queue__glyph { inline-size: 24px; block-size: 24px; }
+  :is(.queue, .waiting-here) .queue__glyph svg { inline-size: 16px; block-size: 16px; }
+  :is(.queue, .waiting-here) .queue__reason, :is(.queue, .waiting-here) .queue__clamp { display: block; overflow: visible; }
+  :is(.queue, .waiting-here) .queue__row[data-attention="new"] { box-shadow: none; }
+  :is(.queue, .waiting-here) .queue__row[data-attention="new"]::before { display: none; }
+  :is(.queue, .waiting-here) .queue__row[data-attention="new"] .queue__title::after { content: "New"; display: inline-block; margin-inline-start: var(--space-xs); padding-inline: var(--space-xs); border-radius: var(--radius-pill); background: var(--color-red-fill); color: var(--color-white); font-size: var(--size-caption); line-height: 1.5; }
+  /* Freshness remains visible without laying an absolute badge over the action. */
+  .waiting-here__standing[data-attention="new"] { box-shadow: none; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .waiting-here__standing[data-attention="new"]::before { position: static; grid-column: 2; grid-row: 1; margin-inline-start: var(--space-xs); }
+  .waiting-here__standing[data-attention="new"] > a { grid-column: 1; grid-row: 1; }
+  @container (min-width: 34rem) and (max-width: 56rem) {
+    :is(.queue, .waiting-here) .queue__row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    :is(.queue, .waiting-here) .queue__subject { grid-column: 1; grid-row: 1; }
+    :is(.queue, .waiting-here) .queue__acts { grid-column: 2; grid-row: 1; justify-content: end; }
+    :is(.queue, .waiting-here) .queue__deadline { grid-column: 1; grid-row: 2; }
+    :is(.queue, .waiting-here) .queue__wait { grid-column: 2; grid-row: 2; }
+  }
+  @media (max-width: 40em) {
+    .waiting-here__link { grid-template-columns: auto minmax(0, 1fr) auto; }
+    .waiting-here__status { grid-column: 2; grid-row: 2; }
+    .waiting-here__go { grid-column: 3; grid-row: 1 / 3; }
+  }
+}

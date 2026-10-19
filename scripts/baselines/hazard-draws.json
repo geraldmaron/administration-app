@@ -1,0 +1,89 @@
+{
+  "comment": [
+    "Every draw in an actor decision module that can decide whether an actor acts, by file and stream key, with its kind and the terms that set its rate.",
+    "Read by scripts/verify-willingness-route.mjs. The list may only shrink. `live` is a draw on the tree; `pending` is a site a W5 owner plans, listed before its first export so the owner's first iteration passes; `retiring` is a draw its owner removes this wave. `--closing` fails on any entry that is not `live`, so an unused pending entry is removed at the final gate.",
+    "A weighed decision's noise is not listed here: it is drawn through willingness.ts's willDraw, the one home of the \"will\" stream."
+  ],
+  "draws": [
+    {
+      "file": "npc-turn.ts",
+      "key": "npc-initiative",
+      "kind": "initiative: whether a government acts this week",
+      "terms": ["opportunism", "aggression", "isolationism", "fidelity weight"],
+      "status": "live",
+      "owner": "5A"
+    },
+    {
+      "file": "npc-turn.ts",
+      "key": "npc-initiative-order",
+      "kind": "ordering among the week's actors",
+      "terms": ["the campaign a government is already running"],
+      "status": "live",
+      "owner": "5A"
+    },
+    {
+      "file": "npc-agent.ts",
+      "key": "npc-agent",
+      "kind": "score jitter on a government's chosen move",
+      "terms": ["jitter spread"],
+      "status": "live",
+      "owner": "5A"
+    },
+    {
+      "file": "operators.ts",
+      "key": "operator-emerge",
+      "kind": "hazard: an armed operator taking root in a host",
+      "terms": ["the host's pressure for the operator's kind"],
+      "status": "live",
+      "owner": "5C.2"
+    },
+    {
+      "file": "operators.ts",
+      "key": "operator-act",
+      "kind": "hazard: an operator acting from its host",
+      "terms": ["host-pressure (0.6 x the host's pressure for the operator's kind)", "destabilized (0.1 while the host is at war)", "regime-survival (-0.15 x the host's regime stability)"],
+      "status": "live",
+      "owner": "5C.2"
+    },
+    {
+      "file": "cabinet.ts",
+      "key": "cabinet",
+      "kind": "hazard: a minister breaking with the administration",
+      "terms": ["the minister's break rate from exposure, ambition and traits"],
+      "status": "live",
+      "owner": "integrator"
+    },
+    {
+      "file": "cabinet.ts",
+      "key": "cabinet-voice",
+      "kind": "the wording of a break already decided",
+      "terms": ["none: it draws words, not whether anything happens"],
+      "status": "live",
+      "owner": "integrator"
+    },
+    {
+      "file": "foreign-politics.ts",
+      "key": "foreign-election",
+      "kind": "hazard: a selection's result abroad, either a scheduled election on its day or a confidence vote in a parliamentary government",
+      "terms": ["the incumbent's standing (its system, legitimacy and regime stability)", "the seeded margin", "for a confidence vote: legitimacy and factionalism, after the mandate grace and outside the last quarter before an election"],
+      "status": "live",
+      "owner": "5B"
+    },
+    {
+      "file": "foreign-politics.ts",
+      "key": "coup",
+      "kind": "hazard: a coup attempt against a seated government",
+      "terms": ["regime-survival", "rivals-ambition", "destabilized"],
+      "status": "live",
+      "owner": "5B"
+    },
+    {
+      "file": "sovereign-default.ts",
+      "key": "default",
+      "kind": "hazard: a government missing a payment on its debt",
+      "terms": ["debt-burden", "destabilized", "regime-survival"],
+      "status": "live",
+      "owner": "5E"
+    }
+  ]
+}

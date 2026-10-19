@@ -1,0 +1,4 @@
+{
+  "$comment": "Hand-written aria-level deeper than 3 in apps/player, per file. Written by `node scripts/verify-heading-levels.mjs --update-baseline`; it may only shrink.",
+  "entries": {}
+}

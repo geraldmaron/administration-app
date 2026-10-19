@@ -1,0 +1,451 @@
+/* The policy and order screens, and the parts the emergency screen shares with them: the comparison's cells, the receipt column and the pipeline. */
+@layer rooms {
+  .emergency,
+  .act-done {
+    display: grid;
+    gap: var(--space-xl);
+    max-inline-size: 75rem;
+    padding-block-end: var(--space-xl);
+  }
+
+  .act-done:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  .emergency > section,
+  .act-done > section {
+    padding: var(--panel-pad);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .emergency section,
+  .act-done section {
+    display: grid;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  /* A comparison cell, colored by what it means for the President. */
+  .choice-cell {
+    font-size: var(--size-small);
+    line-height: var(--leading-snug);
+  }
+
+  .choice-cell[data-tone="favorable"] {
+    color: var(--status-success-ink);
+  }
+
+  .choice-cell[data-tone="adverse"] {
+    color: var(--status-danger-ink);
+  }
+
+  .choice-moves {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .act-problem {
+    margin: 0;
+    color: var(--status-danger-ink);
+    font-size: var(--size-small);
+  }
+
+  /* A portfolio comparison keeps one fully clickable card per domain. */
+  .portfolio__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .portfolio__door {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-2xs) var(--space-xs);
+    align-items: center;
+    min-block-size: var(--hit-min);
+    block-size: 100%;
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+    color: var(--color-text-primary);
+    line-height: var(--leading-compact);
+    text-decoration: none;
+  }
+
+  .portfolio__door:hover {
+    background: var(--color-ground-raised-hover);
+  }
+
+  .portfolio__door[aria-current="page"] {
+    border-color: var(--color-blue);
+    background: var(--color-blue-wash);
+  }
+
+  .portfolio__glyph {
+    color: var(--color-gold);
+  }
+
+  .portfolio__name {
+    font-weight: var(--weight-strong);
+    font-size: var(--size-small);
+  }
+
+  .portfolio__stance,
+  .portfolio__chair,
+  .portfolio__pledge {
+    grid-column: 1 / -1;
+    font-size: var(--size-label);
+    color: var(--color-text-secondary);
+  }
+
+  .portfolio__chair {
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+  }
+
+  .portfolio__pledge {
+    color: var(--color-gold);
+  }
+
+  /* The selected domain's head. */
+  .domain-head__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--size-title);
+    font-weight: var(--weight-strong);
+    line-height: var(--leading-snug);
+  }
+
+  .domain-head__question {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: var(--size-title);
+    line-height: var(--leading-body);
+  }
+
+  .domain-head__stance,
+  .domain-head__line {
+    margin: 0;
+    max-inline-size: var(--measure);
+    font-size: var(--size-small);
+    color: var(--color-text-secondary);
+  }
+
+  .domain-head__readings {
+    display: grid;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+  }
+
+  .domain-head__pledges {
+    margin: 0;
+    padding-inline-start: var(--space-lg);
+    font-size: var(--size-small);
+    color: var(--color-gold);
+  }
+
+  /* The order board: each stage a block of rows on one grid, the stage's valence as the leading bar. */
+  .order-board {
+    container-type: inline-size;
+    display: grid;
+    gap: var(--space-md);
+    min-inline-size: 0;
+  }
+
+  .order-board__content {
+    display: grid;
+    gap: var(--space-md);
+    min-inline-size: 0;
+  }
+
+  .order-board__filters {
+    display: grid;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+  }
+
+  .order-board__rows {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .order-board__row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 14rem) minmax(0, 1fr);
+    gap: var(--space-xs) var(--space-md);
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-raised);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .order-board__name {
+    font-weight: var(--weight-medium);
+  }
+
+  .order-board__line {
+    color: var(--color-text-secondary);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .order-board__line:only-child {
+    grid-column: 1 / -1;
+  }
+
+  @container (max-width: 34rem) {
+    .order-board__row {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .order-board__row > .order-board__line {
+      grid-column: 1 / -1;
+    }
+  }
+
+  /* Policy: the domains beside the selected domain's views. */
+  .policy-split {
+    display: grid;
+    gap: var(--space-xl);
+    max-inline-size: 80rem;
+    align-items: start;
+  }
+
+  .policy-domain-sidebar { display: none; }
+  .policy-domain-picker { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-sm); align-items: end; }
+
+  .policy-detail,
+  .policy-view {
+    display: grid;
+    gap: var(--space-lg);
+    min-inline-size: 0;
+  }
+
+  .policy-view__lead {
+    margin: 0;
+    max-inline-size: var(--measure);
+    color: var(--color-text-secondary);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .felt-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .felt-list__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-block: var(--space-xs);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-size: var(--size-small);
+  }
+
+  .felt-list__figure {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (min-width: 64em) {
+    .policy-split {
+      grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr);
+    }
+
+    .policy-domain-sidebar { display: block; }
+    .policy-domain-picker { display: none; }
+
+    .portfolio__list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* The order: the paper in the main column and a rail of status, terms and authorization. */
+  .order-layout {
+    display: grid;
+    gap: var(--space-xl);
+    max-inline-size: 80rem;
+    align-items: start;
+  }
+
+  .order-paper {
+    display: grid;
+    gap: var(--space-md);
+    min-inline-size: 0;
+  }
+
+  .order-rail {
+    display: grid;
+    gap: var(--space-lg);
+    min-inline-size: 0;
+  }
+
+  .order-rail__block {
+    display: grid;
+    gap: var(--space-sm);
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-ground-base);
+  }
+
+  .order-rail__block > p,
+  .order-rail__block > h2,
+  .order-rail__title {
+    margin: 0;
+  }
+
+  .order-rail__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--size-title);
+    line-height: var(--leading-snug);
+  }
+
+  .order-terms {
+    display: grid;
+    gap: 0;
+    margin: 0;
+  }
+
+  .order-terms__row {
+    display: grid;
+    gap: var(--space-2xs);
+    padding-block: var(--space-sm);
+    border-block-end: 1px solid var(--color-border-subtle);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .order-terms__row:last-child {
+    border-block-end: 0;
+  }
+
+  .order-terms dt {
+    color: var(--color-text-secondary);
+  }
+
+  .order-terms dd {
+    margin: 0;
+  }
+
+  .order-terms__list {
+    display: grid;
+    gap: var(--space-2xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 64em) {
+    .order-layout {
+      grid-template-columns: minmax(0, 1fr) clamp(20rem, 30vw, 26rem);
+    }
+
+    .order-rail {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .order-paper {
+      grid-column: 1;
+      grid-row: 1;
+    }
+  }
+}
+
+@layer rooms {
+  /* Inside the paper the directive's lists are data, not prose: set in the interface face, two columns where the page allows. */
+  .order-terms__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: var(--space-xs) var(--space-lg);
+    margin: var(--space-sm) 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-sans);
+    font-size: var(--size-small);
+    line-height: var(--leading-compact);
+  }
+
+  .order-terms__list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    padding-block: var(--space-2xs);
+    border-block-end: 1px solid var(--color-paper-rule);
+  }
+
+  .ui-document .ui-collection__foot {
+    font-family: var(--font-sans);
+  }
+}
+
+@layer rooms {
+  .portfolio__stance {
+    color: var(--color-text-primary);
+    font-size: var(--size-small);
+    font-weight: var(--weight-medium);
+  }
+
+  .portfolio__landing {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) 3.25rem;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-block: var(--space-2xs);
+  }
+
+  .portfolio__landing-figure {
+    font-size: var(--size-small);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+}
+
+@layer rooms {
+  .order-board__glyph {
+    color: var(--color-text-secondary);
+  }
+
+  .order-terms dt {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .order-terms dt .ui-icon {
+    flex: none;
+  }
+}

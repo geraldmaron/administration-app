@@ -1,0 +1,89 @@
+{
+  "results": [
+    {
+      "name": "economy",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "brief",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "security",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "economy",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "brief",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "security",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "economy",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "brief",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "security",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "economy",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "brief",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "violations": []
+    },
+    {
+      "name": "security",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "violations": []
+    }
+  ],
+  "errors": []
+}

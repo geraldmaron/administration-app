@@ -1,0 +1,35 @@
+{
+  "name": "@admin/world",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./maps": {
+      "types": "./dist/maps/index.d.ts",
+      "import": "./dist/maps/index.js"
+    }
+  },
+  "bin": {
+    "validate-dataset": "./dist/validate/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

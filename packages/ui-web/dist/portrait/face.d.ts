@@ -1,0 +1,13 @@
+import type { FaceGenome } from "./types";
+import type { Layout } from "./layout";
+import type { HairPalette, SkinPalette } from "./palette";
+export declare const LIPSTICK: Readonly<Record<Exclude<FaceGenome["makeup"]["lips"], "none">, string>>;
+export declare function faceDefs(id: string, L: Layout, skin: SkinPalette, iris: string): string;
+export declare function ear(L: Layout, g: FaceGenome, skin: SkinPalette, s: 1 | -1): string;
+export declare function neck(id: string, L: Layout, skin: SkinPalette): string;
+export declare function skinShading(id: string, L: Layout, skin: SkinPalette, blush?: number): string;
+export declare function eyes(id: string, L: Layout, g: FaceGenome, skin: SkinPalette): string;
+export declare function brows(id: string, L: Layout, g: FaceGenome, hair: HairPalette): string;
+export declare function nose(id: string, L: Layout, g: FaceGenome, skin: SkinPalette): string;
+export declare function mouth(id: string, L: Layout, g: FaceGenome, skin: SkinPalette): string;
+export declare function marks(L: Layout, g: FaceGenome, skin: SkinPalette, seed: (i: number) => number): string;
