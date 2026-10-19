@@ -7,6 +7,7 @@ Roles and rules: see `COORDINATION.md`. One writer at a time; overwrite, don't l
 **Mode:** Claude alone (the Codex bridge failed to connect)
 
 ## What was done
+- 2026-10-19, public repository and Pages (owner-approved at each step): the private repository is now `geraldmaron/administration-app-archive` (full history; `codex/reconcile-worktrees-2026-10-14` pushed there at `84877c591`). The new public `geraldmaron/administration-app` starts from one snapshot commit `7db5cbe88` (main and staging), with no license. The player deploys to <https://geraldmaron.github.io/administration-app/> via `.github/workflows/deploy-pages.yml` (run it from the Actions tab; pushes carry `[skip ci]`). Verified on the live URL: new game, deep-link reload, map. Detail: `docs/PLAN.md`, top entry.
 - 2026-10-19, BL-268: scenario replies lay, lift or mutually lift tariffs through the trade engine, the decision screen cites the statute, and a new audit holds a reply's words to its route. Seven scenarios were repaired, independently reviewed and baked. Gate green on the final tree (build, typecheck, lint, 9,380 tests, 88 verify gates). Record: `docs/audits/2026-10-17-scenario-harness/gates/bl-268.md`. Balance not run.
 - BL-222 (presidential authority): covert rungs 2 to 5 refuse the President without a standing finding; rung 2 writes its record; the "amend the prohibition" order is gone; the lethal option needs an armed conflict or imminent threat and excludes allies; capture is a force act gated on a Justice Department indictment; counsel's row on the lethal option; targeting-review row on strikes. Commits `26deca03d`, `5e948f860`. Hill golden re-taken on Node 22 (`/opt/homebrew/opt/node@22`).
 - BL-267: 38 inert gates stripped from 37 scenarios (`6da996220`, `bf8091d2b`). Gate of record green on that tree: build, typecheck, lint, all package tests, 88 verify gates.
@@ -15,6 +16,7 @@ Roles and rules: see `COORDINATION.md`. One writer at a time; overwrite, don't l
 - Not run: the balance harness. Nothing is pushed.
 
 ## Current state
+- Remotes: `origin` is the public repository, `archive` the private full-history one. New work branches from `origin/main`; the local `codex/reconcile-worktrees-2026-10-14` and older branches belong to the archive. Backups: `refs/safety/pre-public-2026-10-19`, `refs/safety/public-snapshot-2026-10-19`, `~/Developer/Projects/.admin-app-backups/admin-app-full-2026-10-19.bundle`.
 - HEAD `8685647c9` on `codex/reconcile-worktrees-2026-10-14`. Tree clean.
 - Gate after the placement patches: 88 verify gates and the content tests (1,110) pass; the full workspace test run was not repeated after them.
 
