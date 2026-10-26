@@ -1,5 +1,5 @@
 import type { Charter } from "@admin/world";
-import { supermajorityOf } from "./congress.js";
+import { seatedOf, supermajorityOf } from "./congress.js";
 import { voteOn, type CaucusVote } from "./congress-votes.js";
 import { caucusBreakShare } from "./electorate.js";
 import { ownIdentifierApproval } from "./opinion.js";
@@ -67,8 +67,13 @@ export function nextInabilityState(campaign: Campaign, ownIdentifiers: number): 
   return { ...rest, belowSince: current.belowSince ?? campaign.turn };
 }
 
-/** Whether a declaration is due this week. */
+/**
+ * Whether a declaration is due this week. Section 4 needs the Vice President to
+ * join the cabinet, so an empty vice presidency (a death before the successor
+ * is confirmed) leaves nobody to make it; the watch keeps running meanwhile.
+ */
 export function inabilityDeclarationDue(campaign: Campaign, state: InabilityState): boolean {
+  if (campaign.vicePresident === undefined) return false;
   if (state.belowSince === undefined) return false;
   if (campaign.turn - state.belowSince < turnsFor(INABILITY_SUSTAIN_DAYS)) return false;
   return state.failedTurn === undefined || campaign.turn - state.failedTurn >= turnsFor(INABILITY_RETRY_DAYS);
@@ -81,7 +86,7 @@ export function countInability(campaign: Campaign, ownIdentifiers: number): Inab
     voteOn(campaign, {
       chamber,
       appeal: INABILITY_APPEAL,
-      required: supermajorityOf(campaign.congress.chambers[chamber].seats),
+      required: supermajorityOf(seatedOf(campaign.congress, chamber)),
       stance: "opposition",
       counted: "against",
       administrationBreak: breaking,

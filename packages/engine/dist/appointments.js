@@ -1,7 +1,7 @@
 import { selectCabinetHolder, selectPerson } from "./state.js";
 import { counselDismissalEffects, projectCounselObstruction } from "./special-counsel.js";
 import { departureEffects, factionEffects } from "./cabinet.js";
-import { institutionForRole, leaderRoleOf, leadsInstitution, officeInstitution, seatCabinetOffice, } from "./institutions.js";
+import { institutionDef, institutionForRole, leaderRoleOf, leadsInstitution, officeInstitution, seatCabinetOffice, } from "./institutions.js";
 import { selectActiveNominations } from "./nomination-stages.js";
 import { campaignDay } from "./clock.js";
 import { orderByFit } from "./cast-fit.js";
@@ -36,8 +36,8 @@ export function presidentFit(campaign) {
  * passed over at founding are exactly the people still available later. A
  * campaign cannot conjure a better candidate by waiting.
  */
-export function selectAppointableFor(campaign, role) {
-    const pending = pendingNominees(campaign);
+export function selectAppointableFor(campaign, role, includeNominees = false) {
+    const pending = includeNominees ? new Set() : pendingNominees(campaign);
     const bench = Object.values(campaign.people).filter((runtime) => runtime.alive &&
         runtime.currentRole === undefined &&
         !pending.has(runtime.base.id) &&
@@ -210,6 +210,18 @@ function actingElsewhere(campaign, person, key) {
     const entry = Object.entries(campaign.actings ?? {}).find(([seat, holder]) => holder === person && seat !== key);
     return entry?.[0];
 }
+function holdsConfirmedOffice(campaign, person) {
+    return Object.values(campaign.institutions).some((runtime) => runtime.leader === person.base.id && institutionDef(runtime.id)?.offices[0]?.appointmentClass === "PAS");
+}
+export function actingClassOf(campaign, def, person) {
+    if (person.currentRole !== undefined)
+        return holdsConfirmedOffice(campaign, person) ? "confirmed-officer" : undefined;
+    const bench = selectAppointableFor(campaign, leaderRoleOf(def), true);
+    const index = bench.findIndex((runtime) => runtime.base.id === person.base.id);
+    if (index < 0)
+        return undefined;
+    return index === 0 ? "first-assistant" : "senior-employee";
+}
 function actingRefusal(campaign, seat, personId) {
     if (seat === campaign.founding.leadRole)
         return "That chair is yours. A head of government does not act for themselves.";
@@ -230,20 +242,182 @@ function actingRefusal(campaign, seat, personId) {
     const name = candidate.base.name;
     if (!candidate.alive)
         return `${name} is no longer available.`;
-    if (candidate.currentRole !== undefined)
-        return `${name} already holds another chair.`;
     if (candidate.base.nationality !== campaign.founding.nation)
         return `${name} is not one of your nationals.`;
     if (actingElsewhere(campaign, personId, actingKey(def, office)))
         return `${name} is already acting in another office.`;
+    const acting = actingClassOf(campaign, def, candidate);
+    if (!acting) {
+        return `${name} is not in a position the Vacancies Act reaches: only the office's first assistant, an officer already confirmed to another office, or a senior employee of the same agency may act.`;
+    }
     const pending = selectActiveNominations(campaign).find((nomination) => nomination.nominee === personId);
-    // A nominee may run the office they were sent up for, which is how most
-    // contested chairs are held in practice; a nominee for some other office is
-    // spoken for.
     if (pending && pending.office !== office.id)
         return `${name} is before the Senate for another office.`;
+    // 5 U.S.C. 3345(b)(1): a nominee may not also act, unless they were the first
+    // assistant. Only that exception is modeled; the confirmed-first-assistant
+    // exception in (b)(2) has no office here to apply to.
+    if (pending && acting !== "first-assistant") {
+        return `${name} has been nominated to ${office.title} and was not its first assistant, so the Vacancies Act bars ${name} from acting in it.`;
+    }
     return undefined;
 }
+/**
+ * What submitting a nomination does to the nominee's own acting service.
+ * 5 U.S.C. 3345(b)(1) bars a nominee from acting unless they were the first
+ * assistant, and the bar applies from the day the nomination is submitted, so
+ * an acting named first and nominated afterward stops acting that day and
+ * leaves the office with nobody signing.
+ */
+export function nominationEndsActing(campaign, seat, nominee) {
+    const found = actingSeat(seat);
+    if (!found || selectActing(campaign, seat) !== nominee)
+        return [];
+    const person = selectPerson(campaign, nominee);
+    if (!person || actingClassOf(campaign, found.def, person) === "first-assistant")
+        return [];
+    const ended = [
+        { kind: "acting", seat: actingKey(found.def, found.office) },
+        { kind: "institution", actingLapsed: [found.def.id] },
+    ];
+    // 3345(a) still names who may act, so the next eligible name takes the
+    // office the same day. Only when nobody is left do the office's functions
+    // wait: 3348(b)(2) leaves a non-head office's statutory functions to the head
+    // of the agency alone, and the feed says so.
+    const next = deputyFor(campaign, leaderRoleOf(found.def), nominee);
+    const seated = next ? actingEffects(campaign, seat, next) : undefined;
+    if (seated?.ok)
+        return [...ended, ...seated.effects];
+    return [
+        ...ended,
+        {
+            kind: "feed",
+            items: [
+                {
+                    turn: campaign.turn,
+                    kind: "governance",
+                    visibility: "public",
+                    headline: `${found.office.title} has no eligible acting officer; its statutory functions fall to the head of the agency alone.`,
+                },
+            ],
+        },
+    ];
+}
+const NOMINATION_ENDINGS = ["rejected", "withdrawn", "returned"];
+// The vacancy's age is a weekly counter, ticked after the nomination phase and
+// phased to the day the vacancy opened. Read against the calendar it can be
+// off by a week either way, so a nomination opened on the vacancy day must
+// still land inside the window it implies.
+const VACANCY_COUNTER_SKEW_DAYS = 14;
+function submissionDay(nomination) {
+    return nomination.history.find((step) => step.stage === "nominated")?.day;
+}
+/**
+ * The nominations submitted for this vacancy, in the order the Senate received
+ * them. A confirmed one closed an earlier vacancy and belongs to none of this
+ * one.
+ */
+function vacancyNominations(campaign, office, vacantDays, day) {
+    const windowStart = day - vacantDays - VACANCY_COUNTER_SKEW_DAYS;
+    return Object.values(campaign.nominations)
+        .filter((entry) => entry.office === office &&
+        entry.openedDay >= windowStart &&
+        entry.stage !== "confirmed" &&
+        entry.stage !== "sworn-in" &&
+        submissionDay(entry) !== undefined)
+        .sort((a, b) => submissionDay(a) - submissionDay(b) || a.openedDay - b.openedDay || a.id.localeCompare(b.id));
+}
+/**
+ * What the office's first and second nominations say about the acting clock
+ * right now: tolled while either is pending, restarted from the latest day one
+ * of them ended, and silent when neither has been submitted or both ended
+ * before this vacancy's clock began.
+ */
+function nominationClock(campaign, found, day) {
+    const vacantDays = campaign.institutions[found.def.id]?.vacantDays ?? 0;
+    const ledger = vacancyNominations(campaign, found.office.id, vacantDays, day).slice(0, 2);
+    if (ledger.some((entry) => !NOMINATION_ENDINGS.includes(entry.stage)))
+        return { tolled: true };
+    const ended = ledger.flatMap((entry) => entry.history.filter((step) => NOMINATION_ENDINGS.includes(step.stage)).map((step) => step.day));
+    return ended.length > 0 ? { restartFrom: Math.max(...ended) } : undefined;
+}
+/**
+ * 3346(a)(1) and (b) are alternatives, so a restart never takes days back from
+ * the period the vacancy itself earned (3349a stretches that one across a
+ * transition): the later of the two governs.
+ */
+function clockExpiry(clock, limit, vacancyExpiry) {
+    return "tolled" in clock ? undefined : Math.max(vacancyExpiry, clock.restartFrom + limit);
+}
+/**
+ * What a nomination's life does to the acting officer's clock, 5 U.S.C.
+ * 3346(a)(2) and (b). Submission of a first or second nomination tolls the 210
+ * days for as long as it is pending; its rejection, withdrawal or return
+ * restarts them from that day. A third nomination changes nothing. The clock
+ * is the one `actingLapseDay` stamps; this rewrites it, and the institution
+ * phase's lapse check keeps reading the same field. An office whose acting ran
+ * out its 210 days before the nomination was submitted names one again, since
+ * 3345(a) still says who may act.
+ */
+export function actingClockEffects(campaign, nomination, stage, day) {
+    const found = actingSeat(nomination.office);
+    const runtime = found ? campaign.institutions[found.def.id] : undefined;
+    const limit = found?.office.actingLimitDays;
+    const ends = NOMINATION_ENDINGS.includes(stage);
+    if (!found || !runtime || limit === undefined || (stage !== "nominated" && !ends))
+        return [];
+    const advanced = { ...nomination, stage, history: [...nomination.history, { stage, day, note: "" }] };
+    const view = { ...campaign, nominations: { ...campaign.nominations, [nomination.id]: advanced } };
+    const ledger = vacancyNominations(view, found.office.id, runtime.vacantDays, day).slice(0, 2);
+    if (!ledger.some((entry) => entry.id === nomination.id))
+        return [];
+    if (runtime.actingLeader === undefined) {
+        const successor = stage === "nominated" ? deputyFor(view, leaderRoleOf(found.def), nomination.nominee) : undefined;
+        const restored = successor ? actingEffects(view, nomination.office, successor, day) : undefined;
+        return restored?.ok ? restored.effects : [];
+    }
+    const clock = nominationClock(view, found, day);
+    const vacancyExpiry = runtime.actingExpiresDay ?? actingLapseDay(day - runtime.vacantDays, limit);
+    return clock ? [{ kind: "institution", institution: found.def.id, changes: { actingExpiresDay: clockExpiry(clock, limit, vacancyExpiry) } }] : [];
+}
+/**
+ * An older save's acting clock was stamped before the office's nominations
+ * moved it, so a nomination already pending when it loads would otherwise let
+ * the acting lapse. Reads the same rule the live clock does.
+ */
+export function reconcileActingClocks(campaign) {
+    const day = campaignDay(campaign);
+    let institutions = campaign.institutions;
+    for (const runtime of Object.values(campaign.institutions)) {
+        const def = institutionDef(runtime.id);
+        const found = def?.offices[0] ? actingSeat(def.offices[0].id) : undefined;
+        const limit = found?.office.actingLimitDays;
+        if (!found || limit === undefined || runtime.actingLeader === undefined)
+            continue;
+        const clock = nominationClock(campaign, found, day);
+        if (!clock)
+            continue;
+        const expiry = clockExpiry(clock, limit, runtime.actingExpiresDay ?? actingLapseDay(day - runtime.vacantDays, limit));
+        if (runtime.actingExpiresDay === expiry)
+            continue;
+        const { actingExpiresDay: _stale, ...rest } = runtime;
+        institutions = { ...institutions, [runtime.id]: expiry === undefined ? rest : { ...rest, actingExpiresDay: expiry } };
+    }
+    return institutions === campaign.institutions ? campaign : { ...campaign, institutions };
+}
+/**
+ * The day an acting officer's authority lapses under 5 U.S.C. 3346(a)(1):
+ * 210 days from the day the vacancy occurred, not the day somebody was named.
+ * A vacancy open in the 60 days after an inauguration starts its 210 days at
+ * the later of 90 days after the inauguration and 90 days after the vacancy
+ * (3349a). `actingClockEffects` tolls and restarts it as nominations come and go.
+ */
+export function actingLapseDay(vacancyDay, limitDays) {
+    const transition = vacancyDay < TRANSITION_WINDOW_DAYS;
+    const start = transition ? Math.max(TRANSITION_DELAY_DAYS, vacancyDay + TRANSITION_DELAY_DAYS) : vacancyDay;
+    return start + limitDays;
+}
+const TRANSITION_WINDOW_DAYS = 60;
+const TRANSITION_DELAY_DAYS = 90;
 /**
  * What seating an acting writes, where the seat can take one: the acting record
  * and the body's own acting authority, together. Two records, one change,
@@ -255,7 +429,11 @@ export function actingEffects(campaign, seat, person, fromDay = campaignDay(camp
     if (refusal)
         return { ok: false, reason: refusal };
     const { def, office } = actingSeat(seat);
-    const expires = office.actingLimitDays !== undefined ? { actingExpiresDay: fromDay + office.actingLimitDays } : {};
+    const vacantDays = campaign.institutions[def.id]?.vacantDays ?? 0;
+    const clock = nominationClock(campaign, { def, office }, fromDay);
+    const expires = office.actingLimitDays === undefined
+        ? {}
+        : { actingExpiresDay: clock ? clockExpiry(clock, office.actingLimitDays, campaign.institutions[def.id]?.actingExpiresDay ?? actingLapseDay(fromDay - vacantDays, office.actingLimitDays)) : actingLapseDay(fromDay - vacantDays, office.actingLimitDays) };
     return {
         ok: true,
         effects: [

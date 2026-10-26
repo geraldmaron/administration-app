@@ -1,6 +1,21 @@
 import type { CausalId } from "./causality.js";
 import type { NationId, StateId } from "@admin/world";
 import type { ConditionKind } from "./condition-kinds.js";
+import type { GameDate } from "./state.js";
+
+export type AuthorityClock = {
+  readonly id: string;
+  readonly authority: "s122" | "emergency";
+  readonly predicate: string;
+  /** All predicates covered by this episode; absent on older single-predicate saves. */
+  readonly predicates?: readonly string[];
+  readonly openedDate: GameDate;
+  readonly expiresDate: GameDate;
+  readonly recoveredDate?: GameDate;
+  readonly terminatedDate?: GameDate;
+  readonly authorizedThrough?: GameDate;
+  readonly causedBy?: CausalId;
+};
 
 // The declared-emergency shapes, and the one merge that writes them. Split out
 // of state-campaign.ts and effects.ts the same way state-condition.ts and
@@ -17,6 +32,7 @@ export type EmergencyScope = { readonly kind: "nation" } | { readonly kind: "sta
 
 export type DeclaredEmergency = {
   readonly id: string;
+  readonly authorityClockId?: string;
   readonly scope: EmergencyScope;
   /** What it was declared over — the condition kind, for the record and the press. */
   readonly cause: ConditionKind | "armed-conflict";

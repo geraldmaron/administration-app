@@ -187,12 +187,13 @@ export function cabinetOutcomeOf(holder: PersonRuntime): CabinetOutcome {
 /**
  * How a chair was emptied of the person who held it.
  *
- * Both leave a living person with no seat, and the difference between them is
- * the whole of what a former officer is: one walked out on the President and
- * one was pushed. A press room, a committee summons and a scenario that wants a
- * hostile witness all need to know which.
+ * The first two leave a living person with no seat, and the difference between
+ * them is the whole of what a former officer is: one walked out on the
+ * President and one was pushed. A press room, a committee summons and a
+ * scenario that wants a hostile witness all need to know which. A death in
+ * office empties the chair by the same path, so content can gate on it too.
  */
-export type CabinetDeparture = "resigned" | "dismissed";
+export type CabinetDeparture = "resigned" | "dismissed" | "died";
 
 /** The flag authored content gates on: `cabinet-departure:<how>:<role>`. */
 export function departureFlag(departure: CabinetDeparture, role: RoleId): string {
@@ -229,7 +230,7 @@ export function selectFormerService(campaign: Campaign, person: PersonId): Forme
   for (const flag of held.reverse()) {
     const [prefix, departure, role, subject] = flag.split(":");
     if (prefix !== DEPARTURE_PREFIX || subject !== (person as string)) continue;
-    if (departure !== "resigned" && departure !== "dismissed") continue;
+    if (departure !== "resigned" && departure !== "dismissed" && departure !== "died") continue;
     return { person, role: role as RoleId, departure };
   }
   return undefined;

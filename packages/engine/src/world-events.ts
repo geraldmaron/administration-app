@@ -3,25 +3,27 @@ import { hasIntelOnNation, selectActiveConflicts, selectNation, selectRelationsh
 import type { Effect, EffectPacket } from "./effects.js";
 import type { TurnPhase } from "./turn-loop.js";
 import { createRngStreams, type RngStreams } from "./rng.js";
-import { createGrudge } from "./relationships.js";
+import { createGrudge, retained } from "./relationships.js";
 import { liveTemperament } from "./temperament.js";
 import { liveMemberships } from "./instrument-gates.js";
+import { defenseHolds } from "./compacts.js";
+import { actsInWindow, type StatedAct } from "./npc-response.js";
 import { selectConflictBetween } from "./conflicts.js";
 import { daysBetween } from "./clock.js";
+import { elapsedDays } from "./pace.js";
 import { stampOf, type Willingness } from "./willingness.js";
 import { decideHostileAct, decideVote, eventPacket, filing, liveMembers, marker, onEdge } from "./world-events-filing.js";
 import { nameOf } from "./war-entry.js";
 import {
-  admissionVoteTerms,
   dyadKindOf,
   firedRecently,
   hostileActTerms,
   sanctionVoteTerms,
   sourcedRivals,
   templateOf,
-  withdrawalVoteTerms,
 } from "./world-event-templates.js";
 import { aidPackets, warAidPackets } from "./world-events-aid.js";
+import { rosterPackets } from "./world-membership.js";
 import { borderIncidentAssessmentPackets, borderIncidentPackets, borderIncidentPairKey } from "./border-incidents.js";
 
 // The world acting on itself: governments that are not the President's
@@ -103,27 +105,119 @@ function sanctionPackets(campaign: Campaign, streams: RngStreams): readonly Effe
 }
 
 // --- Border clash: two rivals' garrisons ---
+//
+// Whether a government is willing to clash with a rival is its own standing
+// decision; when it does is a weekly hazard. Run as a gate on willingness
+// alone, a willing pair clashed the week its cooldown lapsed and every clash
+// raised the tension that kept it willing, so India and Pakistan clashed nine
+// times in two years at one twelve-week gap. Clashes come in episodes instead:
+// a low base hazard, raised for a season by what has just passed between the
+// two, after a rest, and damped where the side that would be hit sits under a
+// defense treaty the other side is outside of.
 
 /** At most this many clashes a week, the likeliest first: a world where every rival border flares at once reads as noise. */
 const MAX_CLASHES = 2;
 
-function clashPairs(campaign: Campaign, blocked: ReadonlySet<string>): readonly (readonly [NationId, NationId, Relationship])[] {
+/**
+ * Planning values, for the owner to set against an armed-clash series once one
+ * is opened: a willing pair's weekly hazard outside any episode (about one
+ * clash in two years), how much each recent clash or show of force between the
+ * two raises it, and how fast that episode fades. The gain times the
+ * episode's length stays well below one clash per clash, so episodes end.
+ */
+const CLASH_BASE_RATE = 0.01;
+const EPISODE_GAIN = 2.5;
+const EPISODE_HALF_LIFE_DAYS = 56;
+/** How long a clash still counts toward an episode. */
+const EPISODE_WINDOW_WEEKS = 26;
+/** A defense treaty the side that would be hit sits under, and the would-be attacker is outside of. */
+const TREATY_DAMPING = 0.1;
+/** A body that has consulted over this attacker in the past year deters it again. */
+const CONSULTED_DAMPING = 0.5;
+const CONSULTATION_MEMORY_WEEKS = 52;
+
+const CLASH_KIND = "world-event:border-clash";
+const CONSULTATION_KIND = "world-event:consultation";
+
+type ClashSide = { readonly actor: NationId; readonly subject: NationId; readonly edge: Relationship };
+
+function willingToClash(campaign: Campaign, actor: NationId, subject: NationId, blocked: ReadonlySet<string>): ClashSide | undefined {
+  const edge = selectRelationship(campaign, actor, subject);
+  if (!edge || subject === campaign.founding.nation || blocked.has(borderIncidentPairKey(actor, subject))) return undefined;
+  const kind = dyadKindOf(actor, subject);
+  const sourced = kind === "hostile" || kind === "rivalrous";
+  if (!sourced && !(edge.tension >= 0.6 && edge.trust <= -0.3)) return undefined;
+  if (selectConflictBetween(campaign, actor, subject)) return undefined;
+  return { actor, subject, edge };
+}
+
+// Each neighboring pair once, with the sides that could fire: a clash is one
+// event between two garrisons, and reading it from both sides drew it twice.
+function clashPairs(campaign: Campaign, blocked: ReadonlySet<string>): readonly (readonly ClashSide[])[] {
   const player = campaign.founding.nation;
   return (Object.keys(campaign.nations) as NationId[])
     .filter((id) => id !== player)
-    .flatMap((actor) =>
-      (selectNation(campaign, actor)?.base.geo.neighbors ?? []).flatMap((subject) => {
-        const edge = selectRelationship(campaign, actor, subject);
-        if (!edge || subject === player || blocked.has(borderIncidentPairKey(actor, subject))) return [];
-        const kind = dyadKindOf(actor, subject);
-        const sourced = kind === "hostile" || kind === "rivalrous";
-        if (!sourced && !(edge.tension >= 0.6 && edge.trust <= -0.3)) return [];
-        if (selectConflictBetween(campaign, actor, subject)) return [];
-        const back = selectRelationship(campaign, subject, actor);
-        if (firedRecently(edge, "border-clash", campaign.turn) || firedRecently(back, "border-clash", campaign.turn)) return [];
-        return [[actor, subject, edge] as const];
-      }),
+    .sort()
+    .flatMap((a) =>
+      (selectNation(campaign, a)?.base.geo.neighbors ?? [])
+        .filter((b) => (a as string) < (b as string) && b !== player && campaign.nations[b] !== undefined)
+        .sort()
+        .flatMap((b) => {
+          const sides = [willingToClash(campaign, a, b, blocked), willingToClash(campaign, b, a, blocked)].flatMap((side) => (side ? [side] : []));
+          return sides.length > 0 ? [sides] : [];
+        }),
     );
+}
+
+/** The turns the pair has clashed on, newest first, read off both edges once each. */
+function clashTurns(campaign: Campaign, a: NationId, b: NationId): readonly number[] {
+  const edges = [selectRelationship(campaign, a, b), selectRelationship(campaign, b, a)];
+  const turns = edges.flatMap((edge) => (edge?.history ?? []).filter((event) => event.kind === CLASH_KIND).map((event) => event.turn));
+  return [...new Set(turns)].sort((x, y) => y - x);
+}
+
+const agedWeeks = (weeks: number) => retained(elapsedDays(weeks), EPISODE_HALF_LIFE_DAYS);
+
+/** What has just passed between the two: recent clashes and shows of force either way, each fading. */
+function episodeStock(campaign: Campaign, a: NationId, b: NationId, acts: readonly StatedAct[]): number {
+  const clashes = clashTurns(campaign, a, b)
+    .filter((turn) => campaign.turn - turn < EPISODE_WINDOW_WEEKS)
+    .reduce((sum, turn) => sum + agedWeeks(campaign.turn - turn), 0);
+  const force = acts
+    .filter((act) => act.instrument === "military" && act.rung >= 2 && ((act.actor === a && act.target === b) || (act.actor === b && act.target === a)))
+    .reduce((sum, act) => sum + agedWeeks(campaign.turn - act.turn), 0);
+  return clashes + force;
+}
+
+/** The defense bodies whose promise covers `subject` and do not count `actor` among their members. */
+function guarantorsOf(campaign: Campaign, subject: NationId, actor: NationId): readonly Organization[] {
+  const region = selectNation(campaign, subject)?.base.geo.region as string | undefined;
+  const actorBodies = new Set(liveMemberships(campaign, actor) as readonly string[]);
+  return liveMemberships(campaign, subject).flatMap((org) => {
+    const body = organizations.find((candidate) => candidate.id === org);
+    if (!body || body.kind !== "defense" || actorBodies.has(org as string)) return [];
+    return region !== undefined && defenseHolds(body.defenseScope, region) ? [body] : [];
+  });
+}
+
+function consultedRecently(campaign: Campaign, members: readonly NationId[], actor: NationId): boolean {
+  return members.some((member) =>
+    (selectRelationship(campaign, member, actor)?.history ?? []).some(
+      (event) => event.kind === CONSULTATION_KIND && campaign.turn - event.turn < CONSULTATION_MEMORY_WEEKS,
+    ),
+  );
+}
+
+/** The pair's weekly clash hazard: zero while it rests, the base raised by the episode, damped by a guarantee. */
+export function clashHazard(campaign: Campaign, actor: NationId, subject: NationId, acts: readonly StatedAct[]): number {
+  const last = clashTurns(campaign, actor, subject)[0];
+  // Both garrisons pull back and are reinforced before anything else happens.
+  if (last !== undefined && campaign.turn - last < templateOf("border-clash").cooldownWeeks) return 0;
+  const guarantors = guarantorsOf(campaign, subject, actor);
+  const members = guarantors.flatMap((body) => liveMembers(campaign, body.id));
+  const damping = guarantors.length === 0 ? 1 : TREATY_DAMPING * (consultedRecently(campaign, members, actor) ? CONSULTED_DAMPING : 1);
+  const rate = CLASH_BASE_RATE * (1 + EPISODE_GAIN * episodeStock(campaign, actor, subject, acts)) * damping;
+  return 1 - Math.exp(-rate);
 }
 
 function clashEffects(campaign: Campaign, actor: NationId, subject: NationId, line: string): readonly Effect[] {
@@ -140,112 +234,73 @@ function clashEffects(campaign: Campaign, actor: NationId, subject: NationId, li
   ];
 }
 
-function clashPackets(campaign: Campaign, streams: RngStreams, blocked: ReadonlySet<string>): readonly EffectPacket[] {
-  const { threshold } = templateOf("border-clash");
-  const fired = clashPairs(campaign, blocked).flatMap(([actor, subject, edge]) => {
-    const temper = liveTemperament(campaign, actor);
-    if (!temper) return [];
-    const terms = hostileActTerms(temper, edge, dyadKindOf(actor, subject), true);
-    const will = decideHostileAct(streams, terms, threshold, [actor, subject, "border-clash"]);
-    return will.acts ? [{ actor, subject, will }] : [];
+/**
+ * The guarantors consult when a clash lands on a party's border: one filed
+ * consultation per body, its members' alarm toward the attacker, and the
+ * record that deters that attacker against the body's members for a year.
+ */
+function consultationPackets(campaign: Campaign, actor: NationId, subject: NationId): readonly EffectPacket[] {
+  return guarantorsOf(campaign, subject, actor).map((body) => {
+    const members = liveMembers(campaign, body.id).filter((member) => member !== actor);
+    const line = `${body.name} members consult after the clash on ${nameOf(campaign, subject)}'s border with ${nameOf(campaign, actor)}.`;
+    const effects: readonly Effect[] = [
+      ...members.flatMap((member) =>
+        onEdge(campaign, {
+          kind: "relationship",
+          from: member,
+          to: actor,
+          deltas: { tension: 0.02 },
+          addHistory: { turn: campaign.turn, kind: CONSULTATION_KIND, description: line },
+        }),
+      ),
+      { kind: "feed", items: [{ turn: campaign.turn + 1, kind: "bloc", visibility: "public", headline: line, actor: subject, target: actor }] },
+    ];
+    return {
+      source: "simulate" as const,
+      actor: "world" as const,
+      turn: campaign.turn,
+      narration: { summary: line },
+      effects,
+      provenance: { origin: "world" as const, entities: [body.id as string, subject as string, actor as string], systems: ["world-events"] },
+    };
   });
-  return [...fired]
-    .sort((a, b) => b.will.margin - a.will.margin || `${a.actor}:${a.subject}`.localeCompare(`${b.actor}:${b.subject}`))
+}
+
+type Fired = { readonly actor: NationId; readonly subject: NationId; readonly will: Willingness; readonly hazard: number };
+
+// The side more willing to fire is the one that does; the pair then draws its
+// week once, keyed on the pair and the week, so the timing is the hazard's.
+function willingPairs(campaign: Campaign, streams: RngStreams, blocked: ReadonlySet<string>): readonly Fired[] {
+  const { threshold } = templateOf("border-clash");
+  const acts = actsInWindow(campaign);
+  return clashPairs(campaign, blocked).flatMap((sides) => {
+    const willing = sides.flatMap(({ actor, subject, edge }) => {
+      const temper = liveTemperament(campaign, actor);
+      if (!temper) return [];
+      const will = decideHostileAct(streams, hostileActTerms(temper, edge, dyadKindOf(actor, subject), true), threshold, [actor, subject, "border-clash"]);
+      return will.acts ? [{ actor, subject, will }] : [];
+    });
+    const side = [...willing].sort((x, y) => y.will.margin - x.will.margin || (x.actor as string).localeCompare(y.actor as string))[0];
+    if (!side) return [];
+    const hazard = clashHazard(campaign, side.actor, side.subject, acts);
+    const draw = streams.stream("border-clash-week", borderIncidentPairKey(side.actor, side.subject), campaign.turn).next();
+    return draw < hazard ? [{ ...side, hazard }] : [];
+  });
+}
+
+function clashPackets(campaign: Campaign, streams: RngStreams, blocked: ReadonlySet<string>): readonly EffectPacket[] {
+  return [...willingPairs(campaign, streams, blocked)]
+    .sort((a, b) => b.hazard - a.hazard || `${a.actor}:${a.subject}`.localeCompare(`${b.actor}:${b.subject}`))
     .slice(0, MAX_CLASHES)
-    .map(({ actor, subject, will }) => {
+    .flatMap(({ actor, subject, will }) => {
       const names = { actor: nameOf(campaign, actor), subject: nameOf(campaign, subject) };
       const item = filing(campaign, "border-clash", names, { actor, subject }, "public");
       const effects = [...clashEffects(campaign, actor, subject, item.headline), { kind: "feed" as const, items: [item] }];
-      return eventPacket(campaign, item.headline, effects, stampOf(will, actor as string, subject as string, "intelligence"), [actor, subject]);
+      return [
+        eventPacket(campaign, item.headline, effects, stampOf(will, actor as string, subject as string, "intelligence"), [actor, subject]),
+        ...consultationPackets(campaign, actor, subject),
+      ];
     });
-}
-
-// --- Accession and withdrawal: a body considers its roster at its summit ---
-
-/** Bodies meet about quarterly; an application is heard at a meeting, not any week. */
-const SUMMIT_EVERY_WEEKS = 13;
-/** How warm an outsider must read toward the members before it applies at all. Planning value. */
-const APPLICANT_TRUST = 0.4;
-/** How cold a member must have grown toward the others before leaving is on its agenda. Planning value. */
-const LEAVER_TRUST = -0.05;
-
-/** Bodies whose roster the world changes on its own. One the United States sits in admits nobody without the President, which is not modeled here. */
-function openBodies(campaign: Campaign): readonly Organization[] {
-  return organizations.filter((org) => !liveMembers(campaign, org.id).includes(campaign.founding.nation) && org.members.length > 2);
-}
-
-function applicant(campaign: Campaign, org: Organization, members: readonly NationId[]): NationId | undefined {
-  const inside = new Set(members as readonly string[]);
-  const conflicting = new Set(org.conflictsWith as readonly string[]);
-  const near = new Set(members.flatMap((m) => selectNation(campaign, m)?.base.geo.neighbors ?? []).map((id) => id as string));
-  const outsiders = [...near]
-    .filter((id) => !inside.has(id) && id !== (campaign.founding.nation as string) && campaign.nations[id as NationId])
-    .filter((id) => !liveMemberships(campaign, id as NationId).some((body) => conflicting.has(body as string)))
-    .map((id) => ({ id: id as NationId, trust: meanTrustFrom(campaign, id as NationId, members) }))
-    .filter((entry) => entry.trust >= APPLICANT_TRUST)
-    .sort((a, b) => b.trust - a.trust || (a.id as string).localeCompare(b.id as string));
-  return outsiders[0]?.id;
-}
-
-function meanTrustFrom(campaign: Campaign, from: NationId, to: readonly NationId[]): number {
-  const edges = to.flatMap((id) => selectRelationship(campaign, from, id) ?? []);
-  return edges.length < 2 ? -1 : edges.reduce((sum, edge) => sum + edge.trust, 0) / edges.length;
-}
-
-function admission(campaign: Campaign, org: Organization, streams: RngStreams): readonly EffectPacket[] {
-  const members = liveMembers(campaign, org.id);
-  const candidate = applicant(campaign, org, members);
-  if (!candidate) return [];
-  const { threshold } = templateOf("accession");
-  const votes = members.flatMap((member) => {
-    const edge = selectRelationship(campaign, member, candidate);
-    const temper = liveTemperament(campaign, member);
-    if (!edge || !temper) return [];
-    return [{ member, will: decideVote(streams, admissionVoteTerms(temper, edge), threshold, [member, org.id, candidate, "admit"]) }];
-  });
-  if (!passes(votes)) return [];
-  const names = { actor: org.name, subject: nameOf(campaign, candidate) };
-  const item = filing(campaign, "accession", names, { subject: candidate }, "public", campaign.turn % 2 === 0 ? 0 : 1);
-  const lead = votes[0]!;
-  const effects: readonly Effect[] = [
-    { kind: "membership", nation: candidate, org: org.id, change: "accede" },
-    marker(campaign, "accession", candidate, lead.member, item.headline),
-    { kind: "feed", items: [item] },
-  ];
-  // Each member's vote is its own decision of record, filed before the admission it made.
-  const record = votes.map((vote) =>
-    eventPacket(
-      campaign,
-      `${nameOf(campaign, vote.member)} voted ${vote.will.acts ? "to admit" : "against admitting"} ${names.subject} to the ${org.name}.`,
-      [],
-      stampOf(vote.will, vote.member as string, candidate as string, "public"),
-      [vote.member, candidate],
-    ),
-  );
-  return [...record, eventPacket(campaign, item.headline, effects, stampOf(lead.will, lead.member as string, candidate as string, "public"), [candidate, org.id])];
-}
-
-function withdrawal(campaign: Campaign, org: Organization, streams: RngStreams): readonly EffectPacket[] {
-  const members = liveMembers(campaign, org.id);
-  const { threshold } = templateOf("accession");
-  for (const member of members) {
-    const others = members.filter((id) => id !== member);
-    const trust = meanTrustFrom(campaign, member, others);
-    const temper = liveTemperament(campaign, member);
-    if (trust === -1 || trust > LEAVER_TRUST || !temper) continue;
-    const trade = others.reduce((sum, id) => sum + (selectRelationship(campaign, member, id)?.tradeDependence ?? 0), 0);
-    const will = decideVote(streams, withdrawalVoteTerms(temper, trust, trade), threshold, [member, org.id, "withdraw"]);
-    if (!will.acts) continue;
-    const item = filing(campaign, "accession", { actor: org.name, subject: nameOf(campaign, member) }, { subject: member }, "public", 2);
-    const effects: readonly Effect[] = [{ kind: "membership", nation: member, org: org.id, change: "withdraw" }, { kind: "feed", items: [item] }];
-    return [eventPacket(campaign, item.headline, effects, stampOf(will, member as string, org.id, "public"), [member, org.id])];
-  }
-  return [];
-}
-
-function rosterPackets(campaign: Campaign, streams: RngStreams): readonly EffectPacket[] {
-  if (campaign.turn % SUMMIT_EVERY_WEEKS !== 0) return [];
-  return openBodies(campaign).flatMap((org) => [...admission(campaign, org, streams), ...withdrawal(campaign, org, streams)]);
 }
 
 // --- Election interference: a rival working a vote abroad ---

@@ -1,4 +1,5 @@
-import { confirmationVote } from "./confirmation-count.js";
+import { officeDef } from "./institutions.js";
+import { confirmationVote, houseConfirmationVote } from "./confirmation-count.js";
 import { committeeDisposition } from "./committees.js";
 /** The stages a nomination is still moving through. */
 export const ACTIVE_STAGES = [
@@ -200,6 +201,24 @@ function clotureWouldSucceed(campaign, nomination) {
     const vote = confirmationVote(campaign, nomination.nominee);
     return vote.yeas >= vote.required;
 }
+/** The floor vote: the Senate's, and the House's as well for an office both houses confirm. */
+function voteResolution(campaign, nomination) {
+    const vote = confirmationVote(campaign, nomination.nominee);
+    if (!vote.passed) {
+        return { stage: "rejected", note: `Rejected, ${vote.yeas} to ${vote.nays}.`, outcome: "rejected on the floor" };
+    }
+    if (!officeDef(nomination.office)?.confirmedByBothHouses) {
+        return { stage: "confirmed", note: `Confirmed, ${vote.yeas} to ${vote.nays}.` };
+    }
+    const house = houseConfirmationVote(campaign, nomination.nominee);
+    return house.passed
+        ? { stage: "confirmed", note: `Confirmed, ${vote.yeas} to ${vote.nays} in the Senate and ${house.yeas} to ${house.nays} in the House.` }
+        : {
+            stage: "rejected",
+            note: `The Senate confirms, ${vote.yeas} to ${vote.nays}; the House rejects, ${house.yeas} to ${house.nays}.`,
+            outcome: "rejected in the House",
+        };
+}
 /**
  * What happens when the current stage's clock runs out.
  *
@@ -227,19 +246,13 @@ export function resolveStage(campaign, nomination) {
             };
         }
     }
-    if (nomination.stage === "vote") {
-        const vote = confirmationVote(campaign, nomination.nominee);
-        if (vote.passed) {
-            return { stage: "confirmed", note: `Confirmed, ${vote.yeas} to ${vote.nays}.` };
-        }
-        return {
-            stage: "rejected",
-            note: `Rejected, ${vote.yeas} to ${vote.nays}.`,
-            outcome: "rejected on the floor",
-        };
-    }
+    if (nomination.stage === "vote")
+        return voteResolution(campaign, nomination);
     const next = NEXT_STAGE[nomination.stage];
     if (!next)
         return { stage: nomination.stage, note: "" };
+    if (next === "vote" && officeDef(nomination.office)?.confirmedByBothHouses) {
+        return { stage: next, note: "The Senate and the House vote." };
+    }
     return { stage: next, note: STAGE_NOTES[next] ?? `Moves to ${next}.` };
 }

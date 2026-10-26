@@ -1,4 +1,4 @@
-import { authorityById, type ActFamily, type ActOption, type Authority } from "@admin/player-core";
+import { TARIFF_STATUTE_AUTHORITY, authorityById, type ActFamily, type ActOption, type Authority } from "@admin/player-core";
 
 // The law each foreign act rests on, as registry records.
 // Only ids are written here; the citation, title and summary come from
@@ -74,15 +74,8 @@ function resolved(ids: readonly string[]): readonly Authority[] {
   });
 }
 
-/** The authorities an act on a foreign government rests on. Engagement and treaty kinds fall to their family. */
-/** The registry record each tariff statute is filed under. */
-export const TARIFF_LAW: Readonly<Record<string, string>> = {
-  s232: "trade-expansion-232",
-  s301: "trade-act-301",
-  s201: "trade-act-201",
-  s122: "trade-act-122",
-  s338: "tariff-act-338",
-};
+/** Each tariff statute's registry record, keyed loosely so a measure's optional statute can index it. */
+export const TARIFF_LAW: Readonly<Record<string, string>> = TARIFF_STATUTE_AUTHORITY;
 
 /** The authorities an act on a foreign government rests on; a tariff rests on the law chosen for it. Engagement and treaty kinds fall to their family. */
 export function actAuthorities(option: Pick<ActOption, "id" | "family">, statute?: string): readonly Authority[] {

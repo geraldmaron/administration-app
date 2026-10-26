@@ -1,7 +1,7 @@
 import { sideOf } from "./conflicts.js";
 import { conflictsAsParty } from "./war-party.js";
 import { selectAuthorizationAgainst, selectNation, } from "./state.js";
-import { AUTHORIZATION_TERM_TURNS, CHAMBERS, carried, headOfGovernment, majorityOf, } from "./congress.js";
+import { AUTHORIZATION_TERM_TURNS, CHAMBERS, carried, headOfGovernment, majorityOf, seatedOf, } from "./congress.js";
 import { voteOn } from "./congress-votes.js";
 import { apply } from "./effects.js";
 import { addDays, compareDates } from "./clock.js";
@@ -89,7 +89,7 @@ export function projectForceAuthorization(campaign, target) {
     const votes = CHAMBERS.map((chamber) => voteOn(campaign, {
         chamber,
         appeal,
-        required: majorityOf(campaign.congress.chambers[chamber].seats),
+        required: majorityOf(seatedOf(campaign.congress, chamber)),
         // Nobody's measure, for the reason a treaty is not: the question is the
         // threat, which `threatAppeal` prices, and a chamber does not authorize
         // force for the President's party.

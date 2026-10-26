@@ -1,7 +1,7 @@
-import { useState, type ReactNode } from "react";
-import type { CampaignStore } from "@admin/player-core";
+import { useCallback, useState, type ReactNode } from "react";
+import type { CampaignStore, DraftStore } from "@admin/player-core";
 import { createDeviceStorage } from "../host/storage";
-import { CampaignContext, EntitlementContext, PreferencesContext } from "./contexts";
+import { CampaignContext, DraftsContext, EntitlementContext, PreferencesContext } from "./contexts";
 import { useEntitlementHandle, usePreferencesHandle } from "./device-settings";
 import DeviceStores from "./DeviceStores";
 
@@ -14,13 +14,16 @@ export function DeviceProviders({ children }: { readonly children: ReactNode }) 
   const [storage] = useState(createDeviceStorage);
   const preferences = usePreferencesHandle(storage);
   const entitlement = useEntitlementHandle(storage);
-  const [store, setStore] = useState<CampaignStore | null>(null);
+  const [stores, setStores] = useState<{ readonly campaigns: CampaignStore; readonly drafts: DraftStore } | null>(null);
+  const onReady = useCallback((campaigns: CampaignStore, drafts: DraftStore) => setStores({ campaigns, drafts }), []);
   return (
     <>
-      <DeviceStores storage={storage} preferences={preferences.preferences} onReady={setStore} />
+      <DeviceStores storage={storage} preferences={preferences.preferences} onReady={onReady} />
       <PreferencesContext.Provider value={preferences}>
         <EntitlementContext.Provider value={entitlement}>
-          <CampaignContext.Provider value={store}>{children}</CampaignContext.Provider>
+          <CampaignContext.Provider value={stores?.campaigns ?? null}>
+            <DraftsContext.Provider value={stores?.drafts ?? null}>{children}</DraftsContext.Provider>
+          </CampaignContext.Provider>
         </EntitlementContext.Provider>
       </PreferencesContext.Provider>
     </>

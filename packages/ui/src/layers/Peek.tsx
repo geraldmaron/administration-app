@@ -92,7 +92,7 @@ export function Peek({ name, identity, role, readings, onOpen, openLabel = "Open
   const at = place(anchor, window);
   return (
     <>
-      <Pressable ref={ref as never} onPress={show} aria-haspopup="dialog" aria-expanded={open} aria-label={`${name}: quick look`} borderRadius="chip" paddingHorizontal="2xs" alignSelf="flex-start">
+      <Pressable ref={ref as never} onPress={show} aria-haspopup="dialog" aria-expanded={open} aria-label={`${name}: quick look`} borderRadius="chip" paddingHorizontal="2xs" paddingVertical={14} marginVertical={-14} alignSelf="flex-start">
         <Text variant="label" textDecorationLine="underline" textDecorationStyle="dotted">
           {name}
         </Text>

@@ -44,3 +44,4 @@ export type InvestigationResult = {
 export declare function openTariffInvestigation(campaign: Campaign, statute: InvestigatedStatute, partner: NationId, sectorId: TradeSectorId): InvestigationResult;
 /** Rule on every investigation whose finding is due. */
 export declare const tariffFindingPhase: TurnPhase;
+export declare const tariffAuthorityPhase: TurnPhase;

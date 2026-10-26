@@ -53,7 +53,7 @@ function HillWeek({ campaign, system }: { readonly campaign: Campaign; readonly 
       </ReadingFrame>
       <Text variant="caption" tone="secondary">{room.verdict} This shows how they feel about you, but it doesn't tell you how they'll vote.</Text>
       {doors.length === 0 ? (
-        <Empty title="Nothing is waiting on Congress this week" detail="No floor votes are scheduled, no nominee waits on the Senate, and no bill waits for your signature." />
+        <Empty title="Nothing is waiting on Congress this week" detail="No floor vote is scheduled, no nominee waits on the Senate, and no bill waits for your signature." />
       ) : (
         <CardGrid columns={{ phone: 1, tablet: doors.length, desktop: doors.length, wide: doors.length }} gap="sm">{doors}</CardGrid>
       )}
@@ -82,7 +82,6 @@ export function Overview({ campaign, selection, onSelect, onView }: { readonly c
   const anyRoll = system.chambers.some((chamber) => chamber.lastRoll);
   return (
     <Column gap="xl">
-      <HillWeek campaign={campaign} system={system} />
       <Card id="hill-seats" title="The chambers" icon="subjectChamber" help={<CitedLawHelp title="The seating chart" meaning="Each dot is one member of Congress. They're seated left to right by party, then by where they stand on the economy. Press a dot to open that member's page. Gold rings mark the leaders you'll work with directly. Switch to the last vote to see how each member voted the last time their chamber voted. Pick a state to light up its members." />}>
         <Segmented<SeatMode> label="Color the seats by" options={[{ value: "party", label: "Party", icon: "flag" }, ...(anyRoll ? [{ value: "vote" as const, label: "Last vote", icon: "ballot" as const }] : [])]} value={mode} onChange={setMode} />
         {anyRoll ? null : <Note tone="tertiary">Neither chamber has voted yet, so the seats show party only.</Note>}
@@ -98,6 +97,7 @@ export function Overview({ campaign, selection, onSelect, onView }: { readonly c
           </Sticky>
         </Row>
       </Card>
+      <HillWeek campaign={campaign} system={system} />
       <WhereYouStand campaign={campaign} chambers={system.chambers} you={story.you} {...(story.senateClass ? { senateClass: story.senateClass } : {})} />
       <BillFlow campaign={campaign} system={system} onPropose={() => onView("bills")} />
       <RollRecord history={story.history} chambers={system.chambers} tally={story.tally} />

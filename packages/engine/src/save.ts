@@ -3,7 +3,7 @@ import { withCongressMembers } from "./congress-members.js";
 import type { Campaign } from "./state.js";
 import { repairCases } from "./case-defaults.js";
 import { campaignFoundingDate } from "./clock.js";
-import { deriveConfirmedRoles } from "./appointments.js";
+import { deriveConfirmedRoles, reconcileActingClocks } from "./appointments.js";
 import { withEconomyRecords, withPublicDebtRebase } from "./economy-records.js";
 import type { RuleChange, RulesState } from "./rules.js";
 import { withTypedLocations } from "./commitment-locations.js";
@@ -243,7 +243,7 @@ function withDemographics(campaign: Campaign): Campaign {
  * reads the campaign in the shape this build gives it.
  */
 export function normalizeCampaign(campaign: Campaign): Campaign {
-  const normalized = withSubjectTaskingsRevalidated(withSplitCasualties(withCongressMembers(repairCases(deriveConfirmedRoles(withEconomyRecords(withTypedLocations(withLegacyGodRules(withDemographics(withDefaults(withIntelligenceArchive(withoutRegime(campaign))))))))))));
+  const normalized = reconcileActingClocks(withSubjectTaskingsRevalidated(withSplitCasualties(withCongressMembers(repairCases(deriveConfirmedRoles(withEconomyRecords(withTypedLocations(withLegacyGodRules(withDemographics(withDefaults(withIntelligenceArchive(withoutRegime(campaign)))))))))))));
   const missing = Object.fromEntries(Object.entries(foundingCircuitSeats(normalized.seed, campaignFoundingDate(normalized).year))
     .filter(([id]) => !normalized.institutions[id]));
   return Object.keys(missing).length ? { ...normalized, institutions: { ...missing, ...normalized.institutions } } : normalized;

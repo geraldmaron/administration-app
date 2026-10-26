@@ -68,7 +68,7 @@ export function AttentionSettings() {
   const values = ATTENTION_SOURCES.map(valueOf);
   const count = (setting: AttentionSetting) => values.filter((value) => value === setting).length;
   return (
-    <SettingsGroup icon="notificationStack" title="What pauses time" description="Time keeps moving in the game until something needs you. Choose which kinds of events pause it.">
+    <SettingsGroup icon="notificationStack" title="What pauses time" description="Time keeps moving until something needs you. These set which kinds of event stop it.">
       <ReadingFrame
         title="How your choices add up"
         unit="Kinds of event, out of all of them"

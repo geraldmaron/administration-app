@@ -44,6 +44,35 @@ export declare function presetWorld2026(asOf?: GameDate): readonly Conflict[];
  */
 export declare function openingBoard(seed: string, nations?: Readonly<Record<string, NationRuntime>>, asOf?: GameDate): readonly Conflict[];
 /**
+ * One measure an inherited program files: what kind it is, the trade sector a
+ * sectoral program reaches (a list-based program designates named persons and
+ * reaches none), the day the authority it rests on took effect, so evasion
+ * reads a program the world has lived with for years as mature, and the
+ * primary text the scope and date were read from.
+ */
+export type InheritedProgram = {
+    readonly kind: "embargo" | "sanctions" | "asset-restriction";
+    readonly sector?: string;
+    readonly listed?: true;
+    /** An import ban at our border, which designates nobody abroad. */
+    readonly direction?: "imports";
+    /** 0..1 of the sector's sales the designated companies carry, where the program names companies. */
+    readonly covered?: number;
+    readonly since: GameDate;
+    /** The source's own words for the day the authority took effect, which `since` must match. */
+    readonly effective: string;
+    readonly source: string;
+};
+/**
+ * What each carried program actually reaches, read 2026-10-25, dated at the
+ * day its authority took effect. A comprehensive embargo stops what the target
+ * sells the United States; a sectoral designation reaches the sector's sales
+ * (or the designated companies' share of them) to everyone the dollar
+ * touches; an import ban stops only what crosses our border; a list-based
+ * program designates people and cuts no trade.
+ */
+export declare const INHERITED_PROGRAMS: Readonly<Record<string, readonly InheritedProgram[]>>;
+/**
  * Which world a campaign opens on: a board drawn from the campaign seed, or
  * the world as of 2026 held as a named preset. The seeded board is the
  * default; the preset exists so the real snapshot stays playable.

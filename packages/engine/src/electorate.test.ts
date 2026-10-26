@@ -26,6 +26,7 @@ import {
 import { approvalFor, selectElectorate } from "./opinion.js";
 import { ERA_POLARIZATION, POLARIZATION_DRIFT_MAX, stepPolarization, weeklyReversion } from "./polarization.js";
 import { createRngStreams, makeCampaignSeed } from "./rng.js";
+import { flagMarker } from "./marked-flags.js";
 import type { Campaign, PublicMood } from "./state.js";
 
 function withMood(mood: Partial<PublicMood>, turn = 1): Campaign {
@@ -34,7 +35,7 @@ function withMood(mood: Partial<PublicMood>, turn = 1): Campaign {
 }
 
 function withScandal(campaign: Campaign, flag: string): Campaign {
-  return { ...campaign, player: { ...campaign.player, flags: { ...campaign.player.flags, [flag]: true } } };
+  return { ...campaign, player: { ...campaign.player, flags: { ...campaign.player.flags, [flag]: true, [flagMarker(flag, campaign.turn)]: true } } };
 }
 
 const inputs = (valence: number, polarization = ERA_POLARIZATION): BlocInputs => ({

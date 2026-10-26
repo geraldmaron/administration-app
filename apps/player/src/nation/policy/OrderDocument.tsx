@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Campaign } from "@admin/engine";
 import { orderAuthorityRecord, sealFor } from "@admin/player-core";
-import { Badge, Column, DocParagraph, LegalCitation, OrderPaper, Seal, Stamp, Surface, Text } from "@admin/ui";
+import { Tag, Column, DocParagraph, LegalCitation, OrderPaper, Seal, Stamp, Surface, Text } from "@admin/ui";
 import { useOpenAuthority } from "../../law/AuthorityProvider";
 import { authorityWords, type OrderTerms } from "./order-terms";
 
@@ -19,7 +19,7 @@ export function OrderAuthorityCite({ terms, plain }: { readonly terms: OrderTerm
   return (
     <Column gap="sm">
       <LegalCitation citation={{ cite: authority.cite, title: record?.title ?? authority.name }} onPress={() => open(record?.cite ?? authority.cite)} />
-      {authority.kind === "needs-act" ? <Badge status="warning" icon="statusBlocked">Needs a new law from Congress</Badge> : null}
+      {authority.kind === "needs-act" ? <Tag tone="warning" icon="statusBlocked">Needs a new law from Congress</Tag> : null}
       <Para>{authorityWords(authority)}</Para>
     </Column>
   );
@@ -35,7 +35,7 @@ function FormalAuthority({ terms }: { readonly terms: OrderTerms }) {
     <Column gap="xs">
       <DocParagraph>{`This order is issued under ${authority.cite}.`}</DocParagraph>
       <LegalCitation citation={{ cite: authority.cite, title: record?.title ?? authority.name }} onPress={() => open(record?.cite ?? authority.cite)} />
-      {authority.kind === "needs-act" ? <Badge status="warning" icon="statusBlocked">Needs a new law from Congress</Badge> : null}
+      {authority.kind === "needs-act" ? <Tag tone="warning" icon="statusBlocked">Needs a new law from Congress</Tag> : null}
     </Column>
   );
 }

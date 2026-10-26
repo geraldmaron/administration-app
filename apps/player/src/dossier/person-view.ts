@@ -58,23 +58,23 @@ export function houseSeal(standing: PersonStanding): { readonly id: string; read
   }
 }
 
-export type StandingTag = { readonly label: string; readonly icon: IconName; readonly status: "info" | "outline" | "gold" };
+export type StandingTag = { readonly label: string; readonly icon: IconName; readonly tone: "info" | "outline" | "authority" };
 
 const STANDING_TAG: Partial<Record<PersonStanding["kind"], StandingTag>> = {
-  cabinet: { label: "Cabinet", icon: "westWing", status: "gold" },
-  agency: { label: "Agency head", icon: "building", status: "gold" },
-  hill: { label: "Congress", icon: "subjectCapitol", status: "outline" },
-  justice: { label: "Justice", icon: "court", status: "gold" },
-  governor: { label: "Governor", icon: "mapPin", status: "outline" },
-  "foreign-leader": { label: "Head of government", icon: "world", status: "info" },
-  foreign: { label: "Foreign official", icon: "world", status: "outline" },
-  former: { label: "Former official", icon: "archive", status: "outline" },
-  available: { label: "Available", icon: "appoint", status: "info" },
-  deceased: { label: "Deceased", icon: "neutral", status: "outline" },
+  cabinet: { label: "Cabinet", icon: "westWing", tone: "authority" },
+  agency: { label: "Agency head", icon: "building", tone: "authority" },
+  hill: { label: "Congress", icon: "subjectCapitol", tone: "outline" },
+  justice: { label: "Justice", icon: "court", tone: "authority" },
+  governor: { label: "Governor", icon: "mapPin", tone: "outline" },
+  "foreign-leader": { label: "Head of government", icon: "world", tone: "info" },
+  foreign: { label: "Foreign official", icon: "world", tone: "outline" },
+  former: { label: "Former official", icon: "archive", tone: "outline" },
+  available: { label: "Available", icon: "appoint", tone: "info" },
+  deceased: { label: "Deceased", icon: "neutral", tone: "outline" },
 };
 
 export function standingTag(standing: PersonStanding): StandingTag | undefined {
-  if (standing.kind === "agency" && standing.circuit) return { label: "Circuit judge", icon: "court", status: "gold" };
+  if (standing.kind === "agency" && standing.circuit) return { label: "Circuit judge", icon: "court", tone: "authority" };
   return STANDING_TAG[standing.kind];
 }
 

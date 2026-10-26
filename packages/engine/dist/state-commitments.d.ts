@@ -14,9 +14,9 @@ export type OutlayFunction = "defense" | "entitlements" | "discretionary" | "for
 /** Where the money comes from, on the same footing. */
 export type RevenueSource = "income" | "corporate" | "tariff" | "other";
 export type CommitmentKind = "aid" | "arms" | "deployment" | "basing" | "sustainment" | "program";
-/** What the commitment is *to*. The id is a nation, a conflict or an organization. */
+/** What the commitment is *to*. The id is a nation, a conflict, an organization or one of the President's own states. */
 export type CommitmentTarget = {
-    readonly kind: "nation" | "conflict" | "org";
+    readonly kind: "nation" | "conflict" | "org" | "state";
     readonly id: string;
 };
 /**
@@ -93,4 +93,10 @@ export type Commitment = {
     readonly causedBy?: CausalId;
     /** Where the force stands, for a commitment positioned at a base or in a theater. Absent means unplaced. */
     readonly location?: CommitmentLocation;
+    /**
+     * The order record a mission at home was sent under. The forces stay only
+     * while that order operates: a court pause, a rescission or a strike-down
+     * brings them home the next week, and the bill stops with them.
+     */
+    readonly authorizedBy?: string;
 };

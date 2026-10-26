@@ -48,9 +48,8 @@ function rowReason(campaign: Campaign, scandal: Scandal, title: string): string 
   return UNANSWERED;
 }
 
-/** Soft only in the week a dated story broke and before it has been answered. */
+/** Soft only in the week a story broke and before it has been answered. */
 function brokeThisWeek(campaign: Campaign, scandal: Scandal): boolean {
-  if (scandal.brokeTurn < 0) return false;
   if (scandalResponseTaken(campaign, scandal.id)) return false;
   return justHappened(campaign, scandal.brokeTurn);
 }

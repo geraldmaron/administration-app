@@ -59,7 +59,7 @@ describe("who a story names", () => {
     it("keeps the ids a save already carries, so closed flags and committee keys still find their story", () => {
         const campaign = onLedger(buildCampaign(), [decided(4, { institutional: ["emergency-powers-invoked"] })], 4);
         expect(only(campaign).id).toBe("scandal:act:ev-4");
-        const flagged = { ...buildCampaign(), player: { ...buildCampaign().player, flags: { "scandal:the-donors": true } } };
+        const flagged = { ...buildCampaign(), player: { ...buildCampaign().player, flags: { "scandal:the-donors": true, [flagMarker("scandal:the-donors", 0)]: true } } };
         expect(only(flagged).id).toBe("scandal:flag:scandal:the-donors");
         const closed = { ...campaign, turn: 5, player: { ...campaign.player, flags: { [scandalClosedFlag("scandal:act:ev-4")]: true } } };
         expect(only(closed).stage).toBe("resolved");

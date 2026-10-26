@@ -1,5 +1,6 @@
-import { type NationId } from "@admin/world";
+import { type NationId, type SectorId } from "@admin/world";
 import type { ConditionKind } from "./condition-kinds.js";
+import type { TradeSectorId } from "./trade-sectors.js";
 import { type AnchoredCommodityId, type CommodityId } from "./commodities.js";
 export type CommodityFamily = "crude" | "gas" | "grains" | "fertilizer" | "metals" | "minerals";
 export type CommodityReader = "pump" | "grocery" | "home-energy" | "farm-costs" | "factory-inputs" | "defense-tech";
@@ -46,6 +47,10 @@ export type CommodityDef = {
     readonly id: CommodityId;
     readonly name: string;
     readonly family: CommodityFamily;
+    /** The economy sector that sells it, which is what a measure scoped to a sector reaches. */
+    readonly sector: SectorId;
+    /** The trade sector its goods are filed under, which is what a measure naming goods reaches. */
+    readonly good: TradeSectorId;
     readonly reader: CommodityReader;
     readonly params: KernelParams;
     readonly routes: readonly CommodityRoute[];

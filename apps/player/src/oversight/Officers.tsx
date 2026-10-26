@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import type { Campaign, InstitutionId } from "@admin/engine";
-import { REMOVAL_CAUSES, costLines, removableOfficers, removalPacket, removalTerms, sealFor, type ActColumn, type ActComparison, type RemovableOfficer } from "@admin/player-core";
-import { Card, Empty, Row, Seal, Select, Text } from "@admin/ui";
+import { REMOVAL_CAUSES, costLines, place, removableOfficers, removalPacket, removalSuits, removalTerms, sealFor, type ActColumn, type ActComparison, type RemovableOfficer, type RemovalSuitRow } from "@admin/player-core";
+import { Card, Column, Empty, Row, Seal, Select, Tag, Text } from "@admin/ui";
+import { RowLink } from "../congress/parts";
 import { ActChooser } from "../congress/ActChooser";
 import type { ActCommit } from "../congress/commit";
 
@@ -10,15 +11,24 @@ import { LAW, movedWords } from "./model";
 
 const RULE_WORDS = { "at-will": "You can remove them at any time, for any reason.", "for-cause": "You can remove them only for a reason the law allows. Each reason makes the agency look more political by a different amount." } as const;
 
-/** One column per way the office can be emptied: one for an at-will office, one per statutory cause for a for-cause office. */
+const SUIT_TONE = { deciding: "pending", declined: "outline", "in-court": "warning", reinstated: "danger", "back-pay": "warning", "removal-stands": "success" } as const;
+const SUIT_WORDS = { deciding: "Deciding", declined: "Did not sue", "in-court": "In court", reinstated: "Reinstated", "back-pay": "Back pay", "removal-stands": "Removal stands" } as const;
+
+/**
+ * One column per way the office can be emptied: one for an at-will office, one
+ * per statutory cause for a for-cause office, and for a contested seat both,
+ * because the removal goes through with or without a stated reason.
+ */
 function comparison(campaign: Campaign, officer: RemovableOfficer): ActComparison {
-  const ways = officer.removal === "at-will" ? [{ id: "at-will", label: "Remove", cause: undefined as string | undefined }] : REMOVAL_CAUSES.map((cause) => ({ id: cause, label: `For ${cause.toLowerCase()}`, cause }));
+  const bare = [{ id: "at-will", label: officer.contested ? "Remove, no reason" : "Remove", cause: undefined as string | undefined }];
+  const caused = REMOVAL_CAUSES.map((cause) => ({ id: cause, label: `For ${cause.toLowerCase()}`, cause }));
+  const ways = officer.removal === "at-will" ? bare : officer.contested ? [...bare, ...caused] : caused;
   const priced = ways.map((way) => ({ way, terms: removalTerms(campaign, officer.institution, way.cause) }));
   const columns = priced.map(({ way, terms }): ActColumn => {
     if ("refusal" in terms) return { id: way.id, label: way.label, verb: "Remove the officer", refusal: terms.refusal, review: terms.refusal, cells: {} };
     return {
       id: way.id, label: way.label, verb: "Remove the officer",
-      review: `${officer.holder} leaves today, and ${officer.body} has no Senate-approved leader until the job is filled. It goes into the Record.`,
+      review: `${officer.holder} leaves today, and ${officer.body} has no Senate-approved leader until the job is filled.${officer.contested ? " They will probably sue to get the seat back." : ""} It goes into the Record.`,
       cells: { office: { lines: ["Empty until the Senate approves a replacement"] }, politics: { lines: [movedWords(terms.politicization.before, terms.politicization.after)], stance: terms.politicization.after > terms.politicization.before ? "adverse" : "neutral" }, cost: { lines: costLines(terms.cost).length ? costLines(terms.cost) : ["Nothing"], stance: "caution" } },
     };
   });
@@ -28,14 +38,35 @@ function comparison(campaign: Campaign, officer: RemovableOfficer): ActCompariso
   };
 }
 
+/** Each removal from a protected seat, and where the removed member's challenge stands; a filed suit opens its case. */
+function RemovalSuits({ rows }: { readonly rows: readonly RemovalSuitRow[] }) {
+  return (
+    <Column gap="xs">
+      <Text variant="label">Removed officials who can sue</Text>
+      {rows.map((row) => {
+        const body = (
+          <Column gap="xs" flex={1}>
+            <Row gap="sm" alignItems="center"><Text flex={1}>{row.member}, {row.title}</Text><Tag tone={SUIT_TONE[row.status]}>{SUIT_WORDS[row.status]}</Tag></Row>
+            <Text variant="caption">{row.reading}</Text>
+          </Column>
+        );
+        return row.caseId
+          ? <RowLink key={`${row.institution}:${row.member}`} label={`Open the case: ${row.member}`} href={place.case(row.caseId)}>{body}</RowLink>
+          : <Row key={`${row.institution}:${row.member}`} padding="sm">{body}</Row>;
+      })}
+    </Column>
+  );
+}
+
 /** The officers below the cabinet a President may remove, one chosen and each way of removing them read as its change from today. */
 export function Officers({ campaign, acts }: { readonly campaign: Campaign; readonly acts: ActCommit }) {
   const officers = useMemo(() => removableOfficers(campaign), [campaign]);
+  const suits = useMemo(() => removalSuits(campaign), [campaign]);
   const [institution, setInstitution] = useState<InstitutionId | undefined>(officers[0]?.institution);
   const officer = officers.find((row) => row.institution === institution) ?? officers[0];
   return (
     <Card title="Remove an officer" icon="reject" help={<CitedLawHelp title="Removing officials" meaning="Most officials who carry out the law answer to you, and you can remove them whenever you want. For some independent agencies, Congress has set a rule that you can remove the leader only for certain reasons." cites={[LAW.executivePower, LAW.takeCare]} />}>
-      {!officer ? <Empty title="No official can be removed right now" detail="Officials below the Cabinet who you may remove will be listed here." /> : (
+      {!officer ? <Empty title="No official can be removed right now" detail="No official below the Cabinet is open to removal." /> : (
         <ActChooser key={officer.institution} id="removal" title={`Compare removing ${officer.holder}`} comparison={comparison(campaign, officer)} acts={acts} authority={LAW.executivePower} danger again="Back to the officers"
           receiptTitle={() => `${officer.holder} removed as ${officer.title}`}
           packet={(option) => removalPacket(campaign, officer.institution, option === "at-will" ? undefined : option)}
@@ -44,11 +75,12 @@ export function Officers({ campaign, acts }: { readonly campaign: Campaign; read
               <Select label="Officer" options={officers.map((row) => ({ value: row.institution, label: `${row.body}: ${row.holder}` }))} value={officer.institution} onChange={setInstitution} />
               <Row gap="sm">
                 <Seal spec={sealFor(officer.institution, officer.body)} size={40} />
-                <Text variant="caption" flex={1}>{officer.title}, {officer.body}. {RULE_WORDS[officer.removal === "for-cause" ? "for-cause" : "at-will"]}</Text>
+                <Text variant="caption" flex={1}>{officer.title}, {officer.body}. {officer.contested ?? RULE_WORDS[officer.removal === "for-cause" ? "for-cause" : "at-will"]}</Text>
               </Row>
             </>
           } />
       )}
+      {suits.length ? <RemovalSuits rows={suits} /> : null}
     </Card>
   );
 }

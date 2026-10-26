@@ -61,6 +61,11 @@ export declare const ConditionKind: z.ZodEnum<{
     "fiscal-crisis": "fiscal-crisis";
     "energy-shortage": "energy-shortage";
     "housing-crunch": "housing-crunch";
+    cyberattack: "cyberattack";
+    "work-stoppage": "work-stoppage";
+    "bank-failure": "bank-failure";
+    "mass-casualty-attack": "mass-casualty-attack";
+    "wrongful-detention": "wrongful-detention";
 }>;
 export type ConditionKind = z.infer<typeof ConditionKind>;
 export declare const ScenarioCondition: z.ZodDiscriminatedUnion<[z.ZodObject<{
@@ -188,6 +193,11 @@ export declare const ScenarioCondition: z.ZodDiscriminatedUnion<[z.ZodObject<{
         "fiscal-crisis": "fiscal-crisis";
         "energy-shortage": "energy-shortage";
         "housing-crunch": "housing-crunch";
+        cyberattack: "cyberattack";
+        "work-stoppage": "work-stoppage";
+        "bank-failure": "bank-failure";
+        "mass-casualty-attack": "mass-casualty-attack";
+        "wrongful-detention": "wrongful-detention";
     }>>;
 }, z.core.$strip>, z.ZodObject<{
     kind: z.ZodLiteral<"coalition">;
@@ -403,6 +413,11 @@ export declare const ScenarioCondition: z.ZodDiscriminatedUnion<[z.ZodObject<{
         "fiscal-crisis": "fiscal-crisis";
         "energy-shortage": "energy-shortage";
         "housing-crunch": "housing-crunch";
+        cyberattack: "cyberattack";
+        "work-stoppage": "work-stoppage";
+        "bank-failure": "bank-failure";
+        "mass-casualty-attack": "mass-casualty-attack";
+        "wrongful-detention": "wrongful-detention";
     }>>;
     confidence: z.ZodOptional<z.ZodEnum<{
         low: "low";

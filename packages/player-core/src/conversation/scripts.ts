@@ -141,10 +141,17 @@ export function scenarioMatterId(scenarioId: string): string {
 export function scenarioMatterSource(campaign: Campaign, date: GameDate): readonly AttentionMatter[] {
   return pendingConversations(campaign).map((cast) => {
     const warranted = stagingWarranted(campaign, cast.def.class);
+    const urgency = cast.orderCase?.posture === "adverse-lower" || cast.def.severity === "critical" ? "hard" : warranted ? "soft" : "ambient";
     return {
       id: scenarioMatterId(scenarioOccurrenceKey(cast)),
       source: "scenario" as const,
-      urgency: cast.orderCase?.posture === "adverse-lower" || cast.def.severity === "critical" ? "hard" : warranted ? "soft" : "ambient",
+      urgency,
+      // One stop per staged occurrence, and again only when it turns hard. The
+      // id already names the occurrence, so a new episode is a new matter; an
+      // unchanged decision still waiting a week later is the level the
+      // President already knows about, exactly as a Desk row's signature reads
+      // it (soft and ambient are one level there too).
+      signature: urgency === "hard" ? "hard" : "open",
       title: cast.script.subject,
       reason: waitingReason(cast.def.severity, cast.def.class),
       // The class, not the scenario id: the director already refuses to stage

@@ -1,6 +1,5 @@
 import { FOUNDING_DYADS, organizations } from "@admin/world";
 import { relationshipKey } from "./state.js";
-import { compactTreatyId } from "./treaties.js";
 import { applyFoundingDyads } from "./founding-dyads.js";
 // The graph a campaign opens with. Nothing here is authored: a nation's
 // reading of another is derived from the stats and bands already beside it,
@@ -90,9 +89,13 @@ function blocRivalry(from, to) {
 function isNeighbor(from, to) {
     return from.geo.neighbors.some((n) => n === to.id);
 }
+// A lane in the reader's own books is a working relationship; one that rounds
+// to nothing there is not, whoever's short list it once made. Reading the
+// counterpart's books as well was tried: it opened about 2,400 edges between
+// small economies and the distant governments they sell to, and nearly
+// doubled the hostile pairs a founding board opens with.
 function tradesWith(from, to) {
-    return (from.stats.trade.topPartners.some((p) => p === to.id) ||
-        (from.stats.trade.tradeDependence[to.id] ?? 0) > 0);
+    return (from.stats.trade.tradeDependence[to.id] ?? 0) > 0;
 }
 const sourcedPairs = new Set(FOUNDING_DYADS.map((row) => `${row.pair[0]}:${row.pair[1]}`));
 /** A pair the sourced table names. Two governments at war with each other have a relationship whether or not they trade. */
@@ -152,11 +155,25 @@ function reach(from, to) {
     return clamp01(near + (1 - near) * lift);
 }
 /** Trade exposure in both directions; a lane is a relationship, not a one-way fact. */
+/**
+ * How much of a pair's trade one side reads as its own business: its own
+ * dependence on the lane, and a smaller part of the counterpart's.
+ */
+export function laneMagnitude(ours, theirs) {
+    return 0.65 * clamp01(ours) + 0.35 * clamp01(theirs);
+}
+/**
+ * Planning values: a lane is a relationship before it is a large one, so the
+ * tie carries a part that saturates early, up to `LANE_PRESENCE`, as well as
+ * the part that grows with the flow. `LANE_SCALE` is the lane magnitude at
+ * which that early part is about two-thirds built: half a percent of the
+ * economy, the size of an ordinary named partner in this dataset.
+ */
+const LANE_PRESENCE = 0.12;
+const LANE_SCALE = 0.005;
 function tradeTie(from, to) {
-    const ours = clamp01(from.stats.trade.tradeDependence[to.id] ?? 0);
-    const theirs = clamp01(to.stats.trade.tradeDependence[from.id] ?? 0);
-    const partner = from.stats.trade.topPartners.some((p) => p === to.id) ? 0.12 : 0;
-    return clamp01(0.65 * ours + 0.35 * theirs + partner);
+    const lane = laneMagnitude(from.stats.trade.tradeDependence[to.id] ?? 0, to.stats.trade.tradeDependence[from.id] ?? 0);
+    return clamp01(lane + LANE_PRESENCE * (1 - Math.exp(-lane / LANE_SCALE)));
 }
 /**
  * The instruments the pair already hold, inherited rather than signed.
@@ -178,8 +195,13 @@ function tradeTie(from, to) {
 function inheritedTreaties(from, to) {
     return sharedOrgs(from, to)
         .filter((id) => orgKind(id) === "defense")
-        .map(compactTreatyId);
+        .map(compactTreaty);
 }
+// The treaty module's compact id grammar, restated rather than imported: the
+// relationship memory phase reads this module, and a value import of the
+// treaty module would run back through the effects fold into that phase. The
+// graph tests compare these ids with `compactTreatyId`, so the two cannot drift.
+const compactTreaty = (org) => `compact:${org}`;
 /** What the shared compacts are worth, by kind and with diminishing returns. */
 function compactPull(from, to) {
     const shared = sharedOrgs(from, to);
@@ -292,4 +314,36 @@ export function buildInitialRelationships(nations, player) {
     // The sourced pairs go on last, so a derived edge is a default rather than a
     // fact, and anything appended after this call reads the pair as sourced.
     return applyFoundingDyads(graph, player);
+}
+const structuralCache = new WeakMap();
+function deriveStructural(from, to, player) {
+    const edge = deriveRelationship(from, to);
+    const overlaid = applyFoundingDyads({ [relationshipKey(from.id, to.id)]: edge }, player)[relationshipKey(from.id, to.id)] ?? edge;
+    return { trust: overlaid.trust, tension: overlaid.tension, militaryThreat: overlaid.militaryThreat };
+}
+/**
+ * Where `from`'s reading of `to` sits on its standing facts alone: the same
+ * derivation and sourced overlay the founding graph is built from, read off
+ * each nation's unmutated record and its live compact memberships. A favor, a
+ * slight or a week of war moves the live reading away from this; joining or
+ * leaving a compact moves this itself, which is why a withdrawal is never
+ * undone by time.
+ *
+ * Cached per pair of records, because the records never change inside a
+ * campaign and the memory phase reads every edge every week. A nation that has
+ * joined or left a body since founding is derived fresh.
+ */
+export function structuralReading(from, to, player) {
+    if (from.memberships || to.memberships) {
+        const live = (n) => (n.memberships ? { ...n.base, memberships: [...n.memberships] } : n.base);
+        return deriveStructural(live(from), live(to), player);
+    }
+    const byTarget = structuralCache.get(from.base) ?? new WeakMap();
+    const cached = byTarget.get(to.base);
+    if (cached)
+        return cached;
+    const reading = deriveStructural(from.base, to.base, player);
+    byTarget.set(to.base, reading);
+    structuralCache.set(from.base, byTarget);
+    return reading;
 }

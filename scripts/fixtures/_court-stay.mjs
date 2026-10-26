@@ -29,7 +29,9 @@ function adverse(seed) {
   const signature = signOrder(opening, charterOf(opening), ORDER, createRngStreams(opening.seed));
   if (!signature.ok || !signature.contested) return undefined;
   let campaign = apply(opening, signature.packet);
-  for (let elapsed = 0; elapsed < 20; elapsed += 1) {
+  // Lower merits take 60 to 270 days from filing (court-procedure.ts), so the
+  // search waits out the longest band before giving up on a seed.
+  for (let elapsed = 0; elapsed < 45; elapsed += 1) {
     const proceeding = campaign.judiciary.proceedings?.find((entry) => entry.subject.kind === "executive-order"
       && entry.subject.recordId === signature.record.id);
     if (proceeding?.lower) {
@@ -53,7 +55,9 @@ function requestStay(review) {
     throw new Error("A stay request changed authority before the court decided it");
   }
   let decided = week(pending);
-  decided = week(decided);
+  for (let elapsed = 0; elapsed < 8 && decided.judiciary.proceedings?.find((entry) => entry.id === review.proceeding.id)?.stayApplication?.status === "pending"; elapsed += 1) {
+    decided = week(decided);
+  }
   const ruling = decided.judiciary.proceedings?.find((entry) => entry.id === review.proceeding.id);
   if (ruling?.stayApplication?.status !== "granted" && ruling?.stayApplication?.status !== "denied")
     throw new Error("The court did not independently decide the stay request");
@@ -73,7 +77,8 @@ function defaulted(review) {
 
 function scheduledReview(stay, proceedingId) {
   let campaign = stay.decided;
-  for (let elapsed = 0; elapsed < 12; elapsed += 1) {
+  // Circuit merits take 90 to 365 days and the certiorari step 28 to 240.
+  for (let elapsed = 0; elapsed < 104; elapsed += 1) {
     const proceeding = campaign.judiciary.proceedings?.find((entry) => entry.id === proceedingId);
     if (!proceeding) throw new Error("The pending court proceeding disappeared during appeal");
     if (proceeding.stayApplication?.status !== stay.result)

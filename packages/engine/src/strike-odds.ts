@@ -3,6 +3,7 @@ import type { BenchMember } from "./judiciary.js";
 import type { ConstitutionalGround } from "./legislative-acts.js";
 import type { ExecutiveOrder } from "./orders.js";
 import { selectOrders, type Campaign, type PersonRuntime } from "./state.js";
+import { orderExposure } from "./order-exposure.js";
 
 // How far an order has reached past the office, and how likely the courts are
 // to say so. Split out of the order catalogue so the odds of review can be read
@@ -32,43 +33,46 @@ const STRIKE_MIN = 0.05;
 const STRIKE_MAX = 0.9;
 
 /**
- * How much of the overreach a statute answers for.
+ * How much of the statutory question an act of Congress answers.
  *
- * An authorized order is not an unreviewable one — a court can still find that
- * Congress had no power to authorize what it authorized — so the relief is
- * large and short of total. It is applied to the institutional term rather than
- * to the finished odds because what a statute changes is the reading of how far
- * the act reached past the office, which is the only thing that term measures.
+ * Applied only to the share of the overreach that is a question of delegated
+ * authority. The constitutional share is untouched: Congress cannot authorize
+ * what the Constitution forbids, so an authorized act still faces that
+ * challenge at full weight.
  */
 const AUTHORIZED_RELIEF = 0.45;
 
 /**
- * What the three grounds do to the institutional reading of an order.
+ * What the three grounds do to the statutory half of an order's reading.
  *
- * Silence leaves it exactly where it was, which is what makes this a widening
- * of the model rather than a retune of it: an order nobody has legislated about
- * is priced today the way it was priced before Congress could speak at all.
- *
- * Exported because the challenge and the strike-down are the same question put
- * to two bodies, and the relief a statute buys has to be the same size at both
- * or a player would read one number before signing and meet another at the
- * bench.
+ * Silence leaves it exactly where it was. Exported because the challenge and
+ * the strike-down are the same question put to two bodies, and the relief a
+ * statute buys has to be the same size at both.
  */
 export function groundFactor(ground: ConstitutionalGround): number {
   return ground === "authorized" ? 1 - AUTHORIZED_RELIEF : 1;
 }
 
-/** How much every previously contested order adds to the next one's odds. */
+/**
+ * The order's reach past the office as a court reads it on this ground: the
+ * statutory share scaled by what Congress said, the constitutional share as is.
+ */
+export function groundedReach(charter: Charter, order: ExecutiveOrder, ground: ConstitutionalGround): number {
+  const constitutional = orderExposure(order.id).constitutionalShare;
+  const grounds = (1 - constitutional) * groundFactor(ground) + constitutional;
+  return order.overreach * institutionalCheck(charter) * grounds;
+}
+
+/** How much every order a court has already struck down adds to the next one's reading. */
 const OVERREACH_STEP = 0.12;
 
 /**
- * What the administration's own record does to it. Only contested orders count:
- * an order nobody challenged did not establish that this government reaches too
- * far, and counting it would make the mere use of the instrument the offense
- * rather than the overreach.
+ * What the administration's own record does to it. Only orders a court struck
+ * down count: being sued is not being refused, and counting every filing would
+ * make the mere use of the instrument the offense rather than the overreach.
  */
 export function accumulatedOverreach(campaign: Campaign): number {
-  return selectOrders(campaign).filter((record) => record.contested).length * OVERREACH_STEP;
+  return selectOrders(campaign).filter((record) => record.review?.status === "struck-down").length * OVERREACH_STEP;
 }
 
 /** How far a minister can move the odds, either way. */
@@ -141,7 +145,7 @@ export function strikeDownChance(
   // weigh: it goes to the ceiling and no term below can bring it back down.
   if (ground === "forbidden") return STRIKE_MAX;
 
-  const institutional = order.overreach * institutionalCheck(charter) * groundFactor(ground);
+  const institutional = groundedReach(charter, order, ground);
   const base = 0.15 + institutional * 0.8;
 
   if (!bench || bench.length === 0) {
@@ -170,7 +174,7 @@ export function justiceStrikePropensity(
   ground: ConstitutionalGround = "silent",
 ): number {
   if (ground === "forbidden") return STRIKE_MAX;
-  const institutional = order.overreach * institutionalCheck(charter) * groundFactor(ground);
+  const institutional = groundedReach(charter, order, ground);
   const base = 0.15 + institutional * 0.8;
   const distance = ideologyDistanceFromLean(member.ideology, orderDomainLean(order));
   const skill = member.integrity * 0.55 + member.competence * 0.45;

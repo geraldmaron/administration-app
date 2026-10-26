@@ -1,6 +1,7 @@
+import { emergencyLegislationEffects } from "./emergency.js";
 import { IDEOLOGY_AXES } from "@admin/world";
 import { selectBills, selectBillsOnTheDesk, selectCurrentLaws, } from "./state.js";
-import { CHAMBERS, carried, floorThreshold, fundingContinuityDue, supermajorityOf, } from "./congress.js";
+import { CHAMBERS, carried, floorThreshold, fundingContinuityDue, seatedOf, supermajorityOf, } from "./congress.js";
 import { countFundingContinuityVote } from "./congress-votes.js";
 import { advanceBills, projectPassage, stanceOf } from "./bill-stages.js";
 import { voteOn } from "./congress-votes.js";
@@ -19,7 +20,7 @@ import { plankAlignment, plankDeliverable } from "./platform-deliverables.js";
 import { selectBudgetYear, selectFiscalYearEndTurn } from "./clock.js";
 import { signingWindowClosed, sittingDate } from "./signing-window.js";
 import { legislativeTrack } from "./reconciliation.js";
-import { LEGISLATIVE_ACTS, actCost, actOf, } from "./legislative-acts.js";
+import { LEGISLATIVE_ACTS, actCost, mergedAuthorityLimits, actOf, } from "./legislative-acts.js";
 // Law, as opposed to everything else a president can do.
 //
 // The instruments reach other capitals, the program is a standing position, an
@@ -55,6 +56,7 @@ export function lawConstraints(campaign) {
     // remember to consult.
     const disapproved = enacted.flatMap((bill) => actOf(bill)?.disapproves === true && bill.target !== undefined ? [bill.target] : []);
     return {
+        authorityDays: mergedAuthorityLimits(laws),
         blocksOrders: [...laws.flatMap((constraint) => constraint.blocksOrders ?? []), ...disapproved],
         authorizesOrders: [...new Set(enacted.flatMap((bill) => actOf(bill)?.constrains?.authorizesOrders ?? []))]
             .filter((orderId) => lawAuthorizesOrder(campaign, orderId) !== undefined),
@@ -170,6 +172,8 @@ export function billsOnTheAgenda(campaign) {
         if (lastEnacted !== undefined && (act.recurs === undefined || campaign.turn - lastEnacted < act.recurs)) {
             return false;
         }
+        if (act.targetsEmergency && act.targetsEmergency(campaign) === undefined)
+            return false;
         if (act.targetsOrder && act.targetsOrder(campaign) === undefined)
             return false;
         return act.arises(campaign);
@@ -194,7 +198,7 @@ export function projectOverride(campaign, bill) {
     return CHAMBERS.map((chamber) => voteOn(campaign, {
         chamber,
         appeal,
-        required: supermajorityOf(campaign.congress.chambers[chamber].seats),
+        required: supermajorityOf(seatedOf(campaign.congress, chamber)),
         ...(act ? { actId: act.id, ...(act.domestic ? { signature: act.domestic } : {}) } : {}),
         stance: act ? stanceOf(act) : "neutral",
         counted: "against",
@@ -234,6 +238,7 @@ function fundingEffect(campaign, funds) {
  */
 function enactmentEffects(campaign, act, bill) {
     return [
+        ...(act.emergencyAction ? emergencyLegislationEffects(campaign, bill.target, act.emergencyAction) : []),
         { kind: "metric", deltas: actCost(campaign, act) },
         { kind: "alignment", pull: act.alignment },
         ...orderStatEffects(campaign, act.nationEffects),
@@ -498,7 +503,7 @@ function passageVotes(campaign, act) {
     return CHAMBERS.map((chamber) => countFundingContinuityVote(campaign.congress, chamber, act.appeal, floorThreshold(campaign.congress, chamber, legislativeTrack(campaign, act)), campaign.states, campaign.people));
 }
 function introduced(campaign, act) {
-    const target = act.targetsOrder?.(campaign);
+    const target = act.targetsOrder?.(campaign) ?? act.targetsEmergency?.(campaign);
     const predecessor = act.revises?.family === "housing-supply"
         ? selectCurrentLaws(campaign).find((bill) => ["act-housing-supply", "act-housing-renewal", "act-housing-replacement"].includes(bill.act))
         : undefined;

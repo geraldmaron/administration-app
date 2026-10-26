@@ -1,6 +1,6 @@
 const {createRequire}=require('node:module');
 const fs=require('node:fs');
-const root='~/.codex/worktrees/player-visual-audit/admin-app';
+const root='<local path>';
 const req=createRequire(root+'/package.json');
 const {chromium}=req('@playwright/test');
 const out='/private/tmp/player-visual-audit';

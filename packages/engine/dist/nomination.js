@@ -1,3 +1,4 @@
+import { actingClockEffects, nominationEndsActing } from "./appointments.js";
 import { selectPerson } from "./state.js";
 import { institutionDef, leadsInstitution, officeDef, officeInstitution, } from "./institutions.js";
 import { campaignDay } from "./clock.js";
@@ -160,7 +161,7 @@ function nominationRefusal(campaign, office, nominee) {
     const elsewhere = selectActiveNominations(campaign).find((nomination) => nomination.nominee === nominee);
     if (elsewhere)
         return `${candidate.base.name} is already before the Senate for ${officeDef(elsewhere.office)?.title ?? "another office"}.`;
-    return seatRuleRefusal(office, candidate.base);
+    return seatRuleRefusal(campaign, office, candidate.base);
 }
 /**
  * Send a name up for an office.
@@ -211,6 +212,7 @@ export function openNomination(campaign, office, nominee) {
             narration: { summary: `${name} is put forward for ${def.title}.` },
             effects: [
                 { kind: "nomination", nomination },
+                ...nominationEndsActing(campaign, office, nominee),
                 // A cabinet chair going across the aisle is read by the President's
                 // own Secretaries the day it is announced, not the day it is seated.
                 ...(institution.cabinetRole && leadsInstitution(office) ? crossingLoyaltyEffects(campaign, nominee, institution.cabinetRole) : []),
@@ -253,6 +255,7 @@ export function withdrawNomination(campaign, id) {
                         outcome: "withdrawn",
                     },
                 },
+                ...actingClockEffects(campaign, nomination, "withdrawn", campaignDay(campaign)),
                 { kind: "metric", deltas: { standing: -0.012 } },
             ],
         },
@@ -262,14 +265,18 @@ export function withdrawNomination(campaign, id) {
 const CONFIRMATION_STANDING_GAIN = 0.01;
 const REJECTION_STANDING_COST = 0.03;
 const RETURNED_STANDING_COST = 0.015;
-function outcomeHeadline(state, nomination, stage) {
+export function outcomeHeadline(state, nomination, stage, outcome) {
     const name = selectPerson(state, nomination.nominee)?.base.name ?? "The nominee";
     const office = institutionDef(nomination.institution)?.offices.find((entry) => entry.id === nomination.office)?.title ?? "the post";
     const stake = `whether ${name} serves as ${office}`;
+    // An office both houses confirm is seated by Congress, and a House defeat
+    // follows a Senate yes, so the chamber that answered has to be the one named.
+    const confirmer = officeDef(nomination.office)?.confirmedByBothHouses ? "Congress" : "The Senate";
+    const rejecter = outcome === "rejected in the House" ? "The House" : "The Senate";
     if (stage === "confirmed")
-        return { headline: `The Senate confirms ${name} as ${office}.`, facts: { subject: name, stake } };
+        return { headline: `${confirmer} confirms ${name} as ${office}.`, facts: { subject: name, stake } };
     if (stage === "rejected")
-        return { headline: `The Senate rejects ${name} for ${office}.`, facts: { subject: name, stake } };
+        return { headline: `${rejecter} rejects ${name} for ${office}.`, facts: { subject: name, stake } };
     if (stage === "returned")
         return { headline: `${name}'s nomination for ${office} is returned to the President unconfirmed.`, facts: { subject: name, stake } };
     return undefined;
@@ -353,23 +360,28 @@ function weekSummary(advances) {
         return `${lost} of the President's nominations end without a seat.`;
     return "Nominations move through the Senate.";
 }
-export const nominationPhase = (state) => {
-    const { advances, standing } = advancesThisWeek(state, campaignDay(state));
-    if (advances.length === 0)
-        return [];
-    // The nominations this week's movement answers to, deduplicated and ordered
-    // so a replay walks the same trail. Only the ones the campaign actually has
-    // an opening event for: a name sent up before this field existed names
-    // nothing rather than naming something wrong.
-    const resolvedCauses = [
+/**
+ * The nominations this week's movement answers to, deduplicated and ordered
+ * so a replay walks the same trail. Only the ones the campaign actually has
+ * an opening event for: a name sent up before this field existed names
+ * nothing rather than naming something wrong.
+ */
+function resolvedCausesOf(state, advances) {
+    return [
         ...new Set(advances.flatMap((advance) => {
             const caused = selectNomination(state, advance.id)?.causedBy;
             return caused ? [caused] : [];
         })),
     ].sort();
+}
+export const nominationPhase = (state) => {
+    const { advances, standing } = advancesThisWeek(state, campaignDay(state));
+    if (advances.length === 0)
+        return [];
+    const resolvedCauses = resolvedCausesOf(state, advances);
     const wire = advances.flatMap((advance) => {
         const nomination = selectNomination(state, advance.id);
-        const line = nomination ? outcomeHeadline(state, nomination, advance.stage) : undefined;
+        const line = nomination ? outcomeHeadline(state, nomination, advance.stage, advance.outcome) : undefined;
         return line ? [{ turn: state.turn, kind: "governance", visibility: "public", ...line }] : [];
     });
     return [
@@ -388,6 +400,10 @@ export const nominationPhase = (state) => {
             narration: { summary: weekSummary(advances) },
             effects: [
                 ...advances.map((advance) => ({ kind: "nomination", advance })),
+                ...advances.flatMap((advance) => {
+                    const nomination = selectNomination(state, advance.id);
+                    return nomination ? actingClockEffects(state, nomination, advance.stage, advance.day) : [];
+                }),
                 // The Senate's answer is news the way the nomination was: the name
                 // went up on the wire, and the confirmation or the defeat comes back
                 // on it.

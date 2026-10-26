@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { approvalBreakdown, nowReadings, type ApprovalDrag, type BlocTopline, type JudgmentReading, type JudgmentRow, type OpinionTrends, type ToplineView } from "@admin/player-core";
-import { Badge, Card, CardGrid, Column, Pressable, ReadingFrame, Row, Sheet, Text, sparklineKey } from "@admin/ui";
+import { Tag, Card, CardGrid, Column, Pressable, ReadingFrame, Row, Sheet, Text, sparklineKey } from "@admin/ui";
 import { Track } from "@admin/ui/nation";
 import { CompareChart } from "../../compare/CompareChart";
 import { VALENCE_TEXT, VALENCE_TRACK, deltaValence, percent, signedPoints, valenceOf } from "../format";
@@ -56,8 +56,8 @@ function Judgment(props: JudgmentProps) {
           Counts for {percent(row.weight)} of your approval
         </Text>
         <Row gap="xs" wrap>
-          {row.salient ? <Badge status="warning">People are watching this</Badge> : null}
-          {drag ? <Badge status="danger">Dropping fastest</Badge> : null}
+          {row.salient ? <Tag tone="warning">People are watching this</Tag> : null}
+          {drag ? <Tag tone="danger">Dropping fastest</Tag> : null}
         </Row>
         <Course campaign={campaign} start={trends.start} series={trends.judgments.find((series) => series.id === row.driver)} label={`${row.label}, week by week`} />
       </Pressable>

@@ -2,9 +2,10 @@ import { useId, type ReactNode } from "react";
 import { usPartyOfPerson } from "@admin/engine";
 import { monogramFor, roleTitle } from "@admin/player-core";
 import type { Person } from "@admin/world";
-import { Badge, Column, Icon, Row, Surface, Text, View, useMedia, type IconName } from "@admin/ui";
+import { Column, Icon, Row, Surface, Tag, Text, View, useMedia, type IconName } from "@admin/ui";
 import { BandSteps, type ReadTone } from "@admin/ui/dossier";
 import { ChoiceMark, Legend, OptionCard, useRoving } from "@admin/ui/forms";
+import { PersonFace } from "../dossier/PersonFace";
 import { PARTY_INK, PartyMark } from "./glyphs";
 
 const FIT_WORD: Readonly<Record<string, string>> = { strong: "Strongest fit", good: "Good fit", fair: "Fair fit", poor: "Poor fit" };
@@ -27,10 +28,6 @@ export function RedactedPortrait({ name, party, size = 48 }: { readonly name: st
   );
 }
 
-export function PersonFace({ person, size = 48 }: { readonly person: Person; readonly size?: number }) {
-  const party = usPartyOfPerson(person);
-  return <RedactedPortrait name={person.name} size={size} {...(party ? { party } : {})} />;
-}
 
 export type Candidate = {
   readonly person: Person;
@@ -67,7 +64,7 @@ function PersonFacts({ candidate }: { readonly candidate: Candidate }) {
       {party ? <FactChip mark={<PartyMark party={party} size={12} />}>{PARTY_WORD[party] ?? party}</FactChip> : null}
       <FactChip icon="subjectPerson">{`Age ${person.age}`}</FactChip>
       <FactChip icon="mapPin">{place ?? person.birthplace ?? "Birthplace not on file"}</FactChip>
-      {crossesTheAisle ? <Badge status="info">From the other party</Badge> : null}
+      {crossesTheAisle ? <Tag tone="info">From the other party</Tag> : null}
     </Row>
   );
 }
@@ -168,7 +165,7 @@ export function StageGrid({ main, side, stickySide = false }: { readonly main: R
 }
 
 /** A side panel's card: a reading of the draft, never a control. */
-export function Reading({ icon, title, children }: { readonly icon?: Parameters<typeof Icon>[0]["name"]; readonly title: string; readonly children: ReactNode }) {
+export function TitledReading({ icon, title, children }: { readonly icon?: Parameters<typeof Icon>[0]["name"]; readonly title: string; readonly children: ReactNode }) {
   return (
     <Surface level="raised" pad="lg" role="region" aria-label={title}>
       <Column gap="md">

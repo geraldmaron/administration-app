@@ -44,7 +44,7 @@ function argValue(flag) {
 
 const opened = (seedText, weeks) => advanceWeeks(foundFixture({ seedText, leaderName: "Fixture President" }), weeks);
 
-// Below every rung of every ladder in CAPABILITY_MILESTONES (packages/engine/src/budget.ts),
+// Below every rung of every ladder in CAPABILITY_MILESTONES (packages/engine/src/budget-capability.ts),
 // so each account has a next rung to name. A real term reaches this only after years of
 // neglect, which is why no played fixture shows the rows.
 const WEAK = {

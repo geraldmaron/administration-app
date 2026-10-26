@@ -5,7 +5,7 @@ import { ChoiceList, Field, Segmented, Select, Slider, TextInput } from "@admin/
 import { withLeader, withoutLeaderField, type FoundingDraft } from "../draft";
 import { drawnFace, faceHeritage, faceRef } from "../faces";
 import { suggestName } from "../names";
-import { Commits, Reading, RedactedPortrait, StageGrid } from "../parts";
+import { Commits, TitledReading, RedactedPortrait, StageGrid } from "../parts";
 import { QuickPolitics, SchoolField } from "../ProfileFields";
 
 type Update = (change: (draft: FoundingDraft) => FoundingDraft) => void;
@@ -118,7 +118,7 @@ function Profile({ draft }: { readonly draft: FoundingDraft }) {
   const name = draft.leader.name.trim() || "The President";
   const home = draft.leader.homeState ? stateById.get(draft.leader.homeState)?.name : undefined;
   return (
-    <Reading icon="dossier" title="Your profile">
+    <TitledReading icon="dossier" title="Your profile">
       <Column gap="sm" alignItems="center">
         <RedactedPortrait name={name} party={draft.leader.party} size={112} />
         <Text variant="heading" serif center>
@@ -131,7 +131,7 @@ function Profile({ draft }: { readonly draft: FoundingDraft }) {
           There's no portrait. Your name and details stand in for one.
         </Text>
       </Column>
-    </Reading>
+    </TitledReading>
   );
 }
 

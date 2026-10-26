@@ -1,3 +1,26 @@
+## World dynamics program: 2026-10-25
+
+**Status (verified against git and the working tree, 2026-10-25): Waves 0, 1, 2 and 2R are landed, integrated and gated. Wave 3 is merged, integrated and gated (`bd7da1cdc`, `gates/w3.md`), and independently reviewed (the review's findings repaired, `gates/w3.md` addendum). Wave 3b and Wave 4 have not started. Nothing is pushed.** Branch `feat/world-dynamics` at `bd7da1cdc` plus the commit that closes the Wave 3 backlog items. Program: `docs/audits/2026-10-24-world-dynamics/PROGRAM.md` (§1 is the wave table); gates: `gates/w1.md`, `gates/w2.md`, `gates/w2r.md`; `gates/w3.md` records Wave 3. Method: `METHODOLOGY.md` (Codex gpt-6.1-sol). Lane notes with each lane's amendment text: `lanes/*.md`.
+
+A session summary that said work closed at Wave 2 was right about the last gate record at that time (2R); Wave 3's nine lanes and the E27 build were merged (each `lane/wd-*` tip is an ancestor of the branch head) and then integrated and gated at `bd7da1cdc`, so work did not stop at Wave 2.
+
+| Wave | Status |
+|---|---|
+| 0, measurement contracts | Landed (`9b8ba9e59`) |
+| 1 and 1R, paths, signs, accounting, clocks | Landed and integrated (`42821cfe6`, `gates/w1.md`) |
+| 2, connect consumers | Landed and integrated (`d32595f27`, `gates/w2.md`) |
+| 2R, review repairs | Landed (`0cb88edee` to `d2d7649f7`, `gates/w2r.md`) |
+| 3, coverage and calibration | Landed and integrated (`15b9609c8` to `96acca4f3`, integration `bd7da1cdc`, `gates/w3.md`); the independent review is repaired |
+| 3b, writers' room | Not started: BL-297, BL-310 |
+| 4, integrate and prove | Not started |
+
+- **Wave 3 items:** closed BL-306, BL-287, BL-292, BL-308, BL-309. Open with the remaining clauses in `docs/BACKLOG.md`: BL-285, BL-302, BL-290, BL-80, BL-307, BL-293, BL-294, BL-295, BL-296, BL-300, BL-105, BL-146. Opened: BL-311 to BL-318.
+- **Wave 3 gate (`gates/w3.md`):** clean build, typecheck, lint, the full suite and all 88 verify gates pass on `bd7da1cdc`; the Hill golden is re-taken and attributed merge by merge. Eight probes fail by design: geopolitics E (BL-293), opinion 10 (BL-288), engagement D2 (BL-296), engagement B2 (BL-297), and four home-event families (BL-294). BL-306, BL-287, BL-292, BL-308 and BL-309 are closed; the rest of the lanes' items stay open with their remaining clauses. New items: BL-312 to BL-318.
+- **Next:** the matched term-balance runs the review asked for; Wave 3b (the writers' room, BL-297, BL-310); then Wave 4.
+- **Balance (BL-311):** `term-balance.test.ts` fails two contracts. Reckless removal was 0 before the program began (the pre-program commit gives readings identical to Wave 0), so it is not a program regression. The careful-play gap over doing nothing was 0.104 before the program, 0.106 at Wave 1, crossed below 0.1 at the Wave 2 integration (0.097) and is 0.085 at the Wave 3 head. The harness has not run on the integrated tree.
+- **Owner rulings:** E27 adopted as drafted (2026-10-25; DECISIONS §6.10) and built. BL-300's per-pair objection floor was ruled and built (DECISIONS 4.8a, `OBJECTION_FLOOR`); only its 12-seed idle band waits for the balance run.
+- **Not run since Wave 3's integration:** the balance harness on the integrated tree (PROGRAM.md §4 carries the magnitudes), any browser or native check, and the independent review's triage.
+
 ## Public repository and GitHub Pages: 2026-10-19
 
 **Status: closed. The repository is public and the game plays at <https://geraldmaron.github.io/administration-app/>.** Verified in the browser on the live URL: the title screen loads, a Quick start presidency is sworn in and reaches the Brief, a reload of `/administration-app/nation` boots through `404.html`, and the map draws with its worker served from the subpath. The subpath export was also played locally first. Deploy run: Actions run 39272999022 (build and deploy green). The owner asked for a public repository with a clean history and the game playable from GitHub Pages, and chose each step in turn.

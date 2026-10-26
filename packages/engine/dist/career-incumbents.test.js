@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { foundedForBalance } from "./balance-harness.js";
-import { CAREER_INCUMBENT_ROLE, POLITICAL_OFFICE_INSTITUTIONS, careerOffices, removeOfficer, selectInstitutionLedBy, withCareerBench, withCareerIncumbents, } from "./career-incumbents.js";
+import { CAREER_INCUMBENT_ROLE, INDEPENDENT_AT_WILL_POLITICIZATION, POLITICAL_OFFICE_INSTITUTIONS, careerOffices, removalPoliticization, removeOfficer, selectInstitutionLedBy, withCareerBench, withCareerIncumbents, } from "./career-incumbents.js";
 import { VICE_PRESIDENCY_INSTITUTION_ID } from "./institution-catalog.js";
 import { apply } from "./effects.js";
 import { institutionTick, vacancyDrag } from "./institutions.js";
 import { institutionDef } from "./institutions.js";
 import { JUDICIARY_SEAT_INSTITUTIONS } from "./judiciary.js";
 const AT_WILL_BODY = "INST-FBI";
-const FOR_CAUSE_BODY = "INST-SEC";
+const FOR_CAUSE_BODY = "INST-NLRB";
+const AT_WILL_COMMISSION = "INST-FTC";
+const CONTESTED_COMMISSION = "INST-SEC";
 // The Federal Reserve, whose first office is the four-year chairmanship — the
 // one seat in this government the President has no way to end.
 const TERM_PROTECTED_BODY = "INST-FED";
@@ -75,6 +77,14 @@ describe("staffing the branch below the cabinet", () => {
             expect(seated.institutions[institution.id].vacancy).toBe(actedFor.has(institution.id));
         }
     });
+    it("runs an acting open at the inauguration to day 300, the 210 days starting 90 days in (5 U.S.C. 3349a)", () => {
+        const fresh = founded("incumbents-transition");
+        const limited = POLITICAL_OFFICE_INSTITUTIONS.filter((id) => institutionDef(id)?.offices[0]?.actingLimitDays === 210
+            && fresh.institutions[id]?.actingLeader !== undefined);
+        expect(limited.length).toBeGreaterThan(0);
+        for (const id of limited)
+            expect(fresh.institutions[id].actingExpiresDay, id).toBe(300);
+    });
     it("adds the bench it never drew without disturbing the cast it did", () => {
         const fresh = founded("incumbents-bench-backfill");
         const stale = withoutCareerBench(fresh);
@@ -136,6 +146,45 @@ describe("removing an officer", () => {
         const empty = removeOfficer(after, FOR_CAUSE_BODY, "Again.");
         expect(empty.ok).toBe(false);
         expect(removeOfficer(campaign, "INST-NOT-REAL").ok).toBe(false);
+    });
+    it("removes an executive-power commission's chair on the President's word, with a smaller political price than a protected removal", () => {
+        const campaign = founded("incumbents-commission");
+        const removed = removeOfficer(campaign, AT_WILL_COMMISSION);
+        expect(removed.ok).toBe(true);
+        if (!removed.ok)
+            return;
+        const after = apply(campaign, removed.packet);
+        const rise = after.institutions[AT_WILL_COMMISSION].politicization - campaign.institutions[AT_WILL_COMMISSION].politicization;
+        expect(rise).toBeCloseTo(INDEPENDENT_AT_WILL_POLITICIZATION, 3);
+        expect(rise).toBeLessThan(removalPoliticization(true));
+        expect(after.institutions[AT_WILL_COMMISSION].vacancy).toBe(true);
+        expect(after.institutions[AT_WILL_COMMISSION].contestedRemovals).toBeUndefined();
+    });
+    it("removes a contested commission's chair with no cause stated, at a protected removal's price, and records it", () => {
+        const campaign = founded("incumbents-contested");
+        expect(institutionDef(CONTESTED_COMMISSION).offices[0]).toMatchObject({ removal: "for-cause", removalContested: true });
+        const removed = removeOfficer(campaign, CONTESTED_COMMISSION);
+        expect(removed.ok).toBe(true);
+        if (!removed.ok)
+            return;
+        const after = apply(campaign, removed.packet);
+        const rise = after.institutions[CONTESTED_COMMISSION].politicization - campaign.institutions[CONTESTED_COMMISSION].politicization;
+        expect(rise).toBeCloseTo(removalPoliticization(true), 3);
+        expect(after.institutions[CONTESTED_COMMISSION].contestedRemovals).toEqual([
+            { person: campaign.institutions[CONTESTED_COMMISSION].leader, turn: campaign.turn },
+        ]);
+        expect(removed.packet.narration.summary).toMatch(/Trump v\. Slaughter/);
+    });
+    it("keeps the Federal Reserve and the NLRB protected, and only the FTC and the CFPB at will, among the commissions", () => {
+        const law = (id) => institutionDef(id).offices[0];
+        expect(["INST-FTC", "INST-CFPB"].map((id) => law(id).removal)).toEqual(["at-will", "at-will"]);
+        for (const id of ["INST-SEC", "INST-FCC", "INST-CFTC", "INST-FDIC", "INST-NRC"]) {
+            expect(law(id), id).toMatchObject({ removal: "for-cause", removalContested: true });
+        }
+        expect(law("INST-NLRB").removal).toBe("for-cause");
+        expect(law("INST-NLRB").removalContested).toBeUndefined();
+        expect(law("INST-FED").removal).toBe("term-protected");
+        expect(institutionDef("INST-FED").offices[1].removalContested).toBeUndefined();
     });
     // The class the engine enforced and no office in the catalog claimed, which
     // made the strongest of the three removal rules a branch nothing could reach.

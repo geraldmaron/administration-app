@@ -1,5 +1,5 @@
 import type { Charter } from "@admin/world";
-import { CHAMBER_NAMES, majorityOf, supermajorityOf } from "./congress.js";
+import { CHAMBER_NAMES, majorityOf, seatedOf, supermajorityOf } from "./congress.js";
 import { independentsSitWith, voteOn, type CaucusVote } from "./congress-votes.js";
 import type { Campaign } from "./state.js";
 import { caucusBreakShare } from "./electorate.js";
@@ -144,7 +144,7 @@ export function countRemovalVotes(
     const vote = voteOn(state, {
       chamber: spec.chamber,
       appeal: caseAppeal(pressure, rungs[spec.beat]!),
-      required: spec.required(state.congress.chambers[spec.chamber].seats),
+      required: spec.required(seatedOf(state.congress, spec.chamber)),
       stance: "opposition",
       counted: "against",
       administrationBreak: caucusBreak.breaking,

@@ -1,12 +1,12 @@
-import type { NationId } from "@admin/world";
+import { US_GOODS_TRADE, type NationId } from "@admin/world";
 import type { CausalId } from "./causality.js";
 import type { Campaign, GameDate } from "./state.js";
 import type { EffectPacket, Effect } from "./effects.js";
-import type { TurnPhase } from "./turn-loop.js";
 import { selectNation, selectRelationship } from "./state.js";
 import { tradeSector, TRADE_SECTORS, type TradeSectorDef, type TradeSectorId } from "./trade-sectors.js";
 import { CUSTOMS_COLLECTION, selectWorkDelivery } from "./executive-work.js";
-import { COERCION_AS_RATE, sectorFlow, sectorImports, volumeFall } from "./trade-volume.js";
+import { COERCION_AS_RATE, exportGoodsOf, leadingExportSector, retaliationFall, sectorFlow, sectorImports, volumeFall } from "./trade-volume.js";
+import { measureCut } from "./external-pressure.js";
 import { isTradeMeasureEffective } from "./order-authority.js";
 import type { TariffFinding, TariffStatute } from "./tariff-statutes.js";
 import { liftPriceMove } from "./trade-effects.js";
@@ -77,9 +77,15 @@ export type TradeMeasure = {
    */
   readonly actor?: NationId;
   readonly liftedTurn?: number;
+  /** The day it was lifted. Absent on a record lifted before the day was stored; readers fall back to the lifted week's date. */
+  readonly liftedDate?: GameDate;
   readonly expiresDate?: GameDate;
   /** Import-only suspensions leave American exports legally open. */
   readonly direction?: "imports" | "both";
+  /** A list-based program or a blocked account: it designates named persons or holdings, cuts no sector's trade and reaches no further. Absent on every other measure. */
+  readonly scope?: "listed";
+  /** 0..1 of the sector's sales the designated companies carry, where a designation names companies rather than the sector. Absent means all of it. */
+  readonly covered?: number;
   /**
    * The ledger event that imposed this measure.
    *
@@ -225,6 +231,8 @@ export type TariffIncidence = {
   /** Who is likely to answer, and where. */
   readonly retaliationChance: number;
   readonly retaliationTarget?: TradeSectorId;
+  /** The share of American sales in the target sector the answer would remove, if it lands. */
+  readonly retaliationCut: number;
 };
 
 // Most of the volume a tariff destroys does not come home. It goes to the next
@@ -299,6 +307,7 @@ export function tariffIncidence(
     inputCostRise,
     employmentEffect,
     retaliationChance: retaliation.chance,
+    retaliationCut: retaliation.cut,
     ...(retaliation.sector ? { retaliationTarget: retaliation.sector } : {}),
   };
 }
@@ -308,38 +317,61 @@ export function tariffIncidence(
 // the US export book. Small and alliance-dependent partners absorb, which is
 // why capability and alignment both enter here.
 const RETALIATION_FLOOR = 0.15;
-const RETALIATION_RATE_WEIGHT = 1.2;
+/** An answer is laid at this share of the rate it answers. */
+const ANSWER_RATE_SHARE = 0.8;
+/**
+ * Planning value: what the answer's bite is worth to the odds. Set so the
+ * mean odds across the founding partners of answering a 25 percent tariff
+ * stay where reading the rate itself put them (about 0.43).
+ */
+const RETALIATION_CUT_WEIGHT = 0.6;
 
+/**
+ * Whether a partner answers, read off what its answer would take from
+ * American sellers: the same export flow and the same response
+ * (`retaliationFall`) the trade book cuts once the answer lands, so the odds
+ * and the loss describe one flow.
+ */
 function retaliationOutlook(
   campaign: Campaign,
   target: NationId,
   rate: number,
-): { readonly chance: number; readonly sector?: TradeSectorId } {
+): { readonly chance: number; readonly sector?: TradeSectorId; readonly cut: number } {
   const relationship = selectRelationship(campaign, campaign.founding.nation, target);
   const nation = selectNation(campaign, target);
-  if (!relationship || !nation) return { chance: 0 };
+  if (!relationship || !nation) return { chance: 0, cut: 0 };
+  const sector = retaliationTargetFor(campaign, target);
+  const def = sector ? tradeSector(sector) : undefined;
+  const cut = def ? retaliationFall(def, answerRate(rate)) : 0;
   // A partner that depends on the US absorbs; one that does not, answers.
   const leverage = 1 - relationship.tradeDependence;
   const hostility = 1 - Math.max(0, relationship.alignment);
   const chance = clamp01(
-    round3(RETALIATION_FLOOR + rate * RETALIATION_RATE_WEIGHT * leverage * (0.5 + hostility * 0.5)),
+    round3(RETALIATION_FLOOR + cut * RETALIATION_CUT_WEIGHT * leverage * (0.5 + hostility * 0.5)),
   );
-  return { chance, sector: retaliationTargetFor(campaign, target) };
+  return { chance, cut, ...(sector ? { sector } : {}) };
 }
+
+const answerRate = (rate: number): number => round3(rate * ANSWER_RATE_SHARE);
 
 /**
  * What a partner would hit back at.
  *
  * Retaliators pick politically salient US exports rather than economically
  * optimal ones — the record is soybeans, bourbon, orange juice and motorcycles,
- * not the largest line in the book. So salience leads, and the partner has to
- * actually buy the thing.
+ * not the largest line in the book. So salience leads, the partner has to
+ * actually buy the thing, and the answer has to bite: goods its buyers can
+ * get elsewhere at the world price, which is what made those answers cost
+ * American sellers (the same border pass-through and substitutability
+ * `retaliationFall` cuts by). A partner does not answer by taxing aircraft it
+ * cannot buy from anyone else.
  */
 export function retaliationTargetFor(campaign: Campaign, partner: NationId): TradeSectorId | undefined {
+  const weight = (def: TradeSectorDef, exports: number) => def.retaliationSalience * def.borderPassThrough * def.substitutability * exports;
   return tradeEdgesWith(campaign, partner)
     .filter((edge) => edge.exports > 0)
     .map((edge) => ({ edge, def: tradeSector(edge.sector)! }))
-    .sort((a, b) => b.def.retaliationSalience * b.edge.exports - a.def.retaliationSalience * a.edge.exports)[0]
+    .sort((a, b) => weight(b.def, b.edge.exports) - weight(a.def, a.edge.exports))[0]
     ?.edge.sector;
 }
 
@@ -436,7 +468,7 @@ export function tariffPacket(
               answering: ids.measure,
               dueTurn: campaign.turn + RETALIATION_LAG_TURNS,
               sector: incidence.retaliationTarget,
-              rate: round3(rate * 0.8),
+              rate: answerRate(rate),
               landed: false,
             },
             chance: incidence.retaliationChance,
@@ -497,12 +529,17 @@ const MEASURE_AUTHORITY: Readonly<Record<CoerciveMeasureKind, string>> = {
  * A government cannot be export-controlled out of goods it does not buy. Where
  * the partner takes something from the United States that is licensed rather
  * than taxed — semiconductor equipment, critical minerals, defense articles,
- * telecom gear — denying it is an export control and BIS owns the authority.
- * Where it takes nothing of the kind, the same rung is a designation and OFAC
- * owns it.
+ * telecom gear — denying it can be an export control, which BIS owns. A
+ * designation, which OFAC owns, reaches the partner's sales to everyone the
+ * dollar touches, so it is the package wherever it takes more of the partner's
+ * trade than the control would, read off the same reach record the economy
+ * charges (`external-pressure.ts#measureCut`).
  */
 export function denialMeasureKind(campaign: Campaign, target: NationId): CoerciveMeasureKind {
-  return controlledExportTo(campaign, target) ? "export-control" : "sanctions";
+  const control = candidateMeasure(campaign, target, "export-control");
+  if (!control) return "sanctions";
+  const designation = candidateMeasure(campaign, target, "sanctions");
+  return designation && measureCut(campaign, designation) > measureCut(campaign, control) ? "sanctions" : "export-control";
 }
 
 function controlledExportTo(campaign: Campaign, target: NationId): TradeSectorId | undefined {
@@ -514,14 +551,28 @@ function controlledExportTo(campaign: Campaign, target: NationId): TradeSectorId
     .sort((a, b) => b.exports - a.exports)[0]?.sector;
 }
 
-/** Where a measure that is not a rate bites: what they sell us, or what we license them. */
-function measuredSector(
-  campaign: Campaign,
-  target: NationId,
-  kind: CoerciveMeasureKind,
-): TradeSectorId | undefined {
+/**
+ * Where a measure that is not a rate bites: what we license them for an
+ * export control; for a designation, the target's leading export to the
+ * world, where its reach bites; otherwise, and where neither is on file, what
+ * they sell us.
+ */
+function measuredSector(campaign: Campaign, target: NationId, kind: CoerciveMeasureKind): TradeSectorId | undefined {
   if (kind === "export-control") return controlledExportTo(campaign, target);
-  return tradeEdgesWith(campaign, target).find((edge) => edge.imports > 0)?.sector;
+  const sold = tradeEdgesWith(campaign, target).filter((edge) => edge.imports > 0).map((edge) => edge.sector);
+  if (kind !== "sanctions") return sold[0] ?? leadingExportSector(campaign, target);
+  // A further designation names the next export not already designated, so escalating never refiles what stands.
+  const goods = [...exportGoodsOf(selectNation(campaign, target)?.base.stats.trade.topExports ?? [], US_GOODS_TRADE[target as string]?.imports ?? {}), ...sold];
+  return goods.find((good) => !Object.values(campaign.trade.measures).some((m) => m.liftedTurn === undefined && m.origin === "us" && m.target === target && m.kind === "sanctions" && m.sector === good && m.scope !== "listed"));
+}
+
+/** The register's record of one measure the administration would file today, before any answer is scheduled. */
+function candidateMeasure(campaign: Campaign, target: NationId, kind: CoerciveMeasureKind): (TradeMeasure & { readonly kind: CoerciveMeasureKind }) | undefined {
+  const sector = measuredSector(campaign, target, kind);
+  if (!sector) return undefined;
+  // The register's own contract: a measure that is not a rate carries zero,
+  // so a prohibition never stacks against the ceiling a tariff is checked for.
+  return { id: `${kind}:${target}:${campaign.turn}`, kind, sector, target, rate: 0, imposedTurn: campaign.turn, imposedDate: campaign.calendar, authority: MEASURE_AUTHORITY[kind], origin: "us", actor: campaign.founding.nation };
 }
 
 /**
@@ -541,28 +592,14 @@ export function coerciveMeasureEffect(
   kind: CoerciveMeasureKind,
 ): Effect | undefined {
   if (actor !== campaign.founding.nation) return undefined;
-  const sector = measuredSector(campaign, target, kind);
-  if (!sector) return undefined;
+  const measure = candidateMeasure(campaign, target, kind);
+  if (!measure) return undefined;
   const asRate = COERCION_AS_RATE[kind];
-  const id = `${kind}:${target}:${campaign.turn}`;
+  const id = measure.id;
   const answer = retaliationOutlook(campaign, target, asRate);
   return {
     kind: "trade",
-    measure: {
-      id,
-      kind,
-      sector,
-      target,
-      // The register's own contract: a measure that is not a rate carries zero,
-      // so a prohibition never stacks against the ceiling a tariff is checked
-      // for.
-      rate: 0,
-      imposedTurn: campaign.turn,
-      imposedDate: campaign.calendar,
-      authority: MEASURE_AUTHORITY[kind],
-      origin: "us",
-      actor,
-    },
+    measure,
     ...(answer.chance > 0 && answer.sector
       ? {
           expect: {
@@ -571,7 +608,7 @@ export function coerciveMeasureEffect(
             answering: id,
             dueTurn: campaign.turn + RETALIATION_LAG_TURNS,
             sector: answer.sector,
-            rate: round3(asRate * 0.8),
+            rate: answerRate(asRate),
             landed: false,
           },
           chance: answer.chance,
@@ -598,7 +635,7 @@ function liftSummary(measure: TradeMeasure, sectorName: string, nationName: stri
     case "tariff":
       return `The tariff on ${sectorName} from ${nationName} is lifted.`;
     case "sanctions":
-      return `The sanctions on ${nationName} are lifted, and ${sectorName} moves again.`;
+      return measure.scope === "listed" ? `The designations under the ${nationName} program are lifted.` : `The sanctions on ${nationName} are lifted, and ${sectorName} moves again.`;
     case "asset-restriction":
       return `The freeze on ${nationName}'s assets is released.`;
     case "export-control":
@@ -660,81 +697,6 @@ export function liftMeasure(campaign: Campaign, id: TradeMeasureId): LiftResult 
     },
   };
 }
-
-// --- The turn phase --------------------------------------------------------
-
-/**
- * Trade's own week: expected retaliation arrives, and the price deviations
- * carried by each sector feed into the cost of living.
- *
- * Retaliation lands on a schedule rather than instantly, because it did:
- * partners answered a US action between two weeks and three months later, in
- * waves that tracked each escalation rather than as one reply.
- */
-export const tradePhase: TurnPhase = (state: Campaign) => {
-  const due = state.trade.retaliation.filter(
-    (record) => !record.landed && record.dueTurn <= state.turn,
-  );
-  const packets: EffectPacket[] = [];
-  for (const record of due) {
-    const def = tradeSector(record.sector);
-    const nationName = selectNation(state, record.by)?.base.identity.name ?? String(record.by);
-    const edge = tradeEdge(state, record.by, record.sector);
-    // What a retaliatory tariff costs is the US exports it lands on, which is
-    // the half of a trade war that never appeared in the old model at all.
-    const exportLoss = edge ? round2(edge.exports * record.rate * 0.5) : 0;
-    packets.push({
-      source: "simulate",
-      actor: "world",
-      turn: state.turn,
-      provenance: {
-        origin: "world",
-        // The tariff being answered. This used to be an empty list — the one
-        // place in the engine where a caller knew there was a cause and had no
-        // way to say which, so the two halves of a trade war sat on the ledger
-        // as unrelated sentences. The record carries it now.
-        ...(record.causedBy ? { causeIds: [record.causedBy] } : {}),
-        entities: [record.by],
-        systems: ["trade"],
-      },
-      narration: {
-        summary: `${nationName} answers with a ${Math.round(record.rate * 100)}% tariff on American ${def?.name.toLowerCase() ?? record.sector}.`,
-      },
-      effects: [
-        {
-          kind: "trade",
-          land: record.id,
-          measure: {
-            id: `retaliation-measure:${record.id}`,
-            kind: "tariff",
-            sector: record.sector,
-            target: record.by,
-            rate: record.rate,
-            imposedTurn: state.turn,
-            imposedDate: state.calendar,
-            authority: "INST-USTR",
-            origin: "retaliation",
-            actor: record.by,
-          },
-        },
-        { kind: "metric", deltas: { treasury: round2(-exportLoss / 52), standing: -0.008 } },
-        {
-          kind: "feed",
-          items: [
-            {
-              turn: state.turn,
-              kind: "press",
-              visibility: "public",
-              headline: `${nationName} retaliates against American ${def?.name.toLowerCase() ?? "exports"}.`,
-              facts: { subject: nationName },
-            },
-          ],
-        },
-      ],
-    });
-  }
-  return packets;
-};
 
 // --- Readings --------------------------------------------------------------
 

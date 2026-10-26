@@ -41,10 +41,28 @@ export const STANDING_CONDITIONS = [
     "energy-shortage",
     "housing-crunch",
 ];
-export const CONDITION_KINDS = [...ACUTE_CONDITIONS, ...STANDING_CONDITIONS];
+/**
+ * Happens to the country without a hazard table or an economic reading as its
+ * whole cause: an intrusion a foreign crew carried out, a national strike, a
+ * large bank closed, a mass killing, an American held abroad. Home only, and
+ * only the cases that reach a President; the ordinary run of each (thousands of
+ * intrusions, a few dozen strikes and bank closures a year) is the background
+ * the significant case is drawn from, not a record of its own. Onset lives in
+ * `condition-home-events.ts`, which reads each family's eligible cause from
+ * the campaign.
+ */
+export const HOME_EVENT_CONDITIONS = [
+    "cyberattack",
+    "work-stoppage",
+    "bank-failure",
+    "mass-casualty-attack",
+    "wrongful-detention",
+];
+export const CONDITION_KINDS = [...ACUTE_CONDITIONS, ...STANDING_CONDITIONS, ...HOME_EVENT_CONDITIONS];
 const _acuteMatchesWorld = true;
 void _acuteMatchesWorld;
 const STANDING = new Set(STANDING_CONDITIONS);
+const HOME_EVENTS = new Set(HOME_EVENT_CONDITIONS);
 /**
  * Which family a kind belongs to.
  *
@@ -54,7 +72,12 @@ const STANDING = new Set(STANDING_CONDITIONS);
  * the answer was never a fact about the record.
  */
 export function conditionFamily(kind) {
+    if (HOME_EVENTS.has(kind))
+        return "event";
     return STANDING.has(kind) ? "standing" : "acute";
+}
+export function isHomeEventCondition(kind) {
+    return HOME_EVENTS.has(kind);
 }
 export function isStandingCondition(kind) {
     return STANDING.has(kind);
@@ -70,11 +93,14 @@ export function isStandingCondition(kind) {
  * region stopped for a week has a week of digging out behind it, and that is
  * the shape the weekly rule is written for.
  *
- * Kept as a list over `AcuteCondition` rather than a third family, because an
- * incident is the same record, the same store and the same id scheme — only its
- * lifetime differs.
+ * A mass killing is the same shape: the afternoon is the event, and what
+ * follows is the response to it rather than a worsening of it.
+ *
+ * Kept as a list rather than a family of its own, because an incident is the
+ * same record, the same store and the same id scheme — only its lifetime
+ * differs.
  */
-export const INCIDENT_KINDS = ["tornado", "heat-wave"];
+export const INCIDENT_KINDS = ["tornado", "heat-wave", "mass-casualty-attack"];
 const INCIDENTS = new Set(INCIDENT_KINDS);
 export function isIncidentKind(kind) {
     return INCIDENTS.has(kind);

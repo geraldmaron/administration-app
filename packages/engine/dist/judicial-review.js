@@ -6,7 +6,10 @@ import { selectPerson } from "./state.js";
 import { routeDomestic } from "./domestic-signature.js";
 import { benchForVotes, decideCase } from "./court-votes.js";
 import { caseQuestion, composeOpinion } from "./court-opinions.js";
-import { appealGrantChance, appealGranted, courtStep, openedProceeding, thresholdPasses } from "./court-procedure.js";
+import { appealGrantChance, appealGranted, courtStep, courtWeeks, openedProceeding, thresholdPasses } from "./court-procedure.js";
+import { backgroundDocketEffects, doctrineShift } from "./background-docket.js";
+import { removalMatterEffects } from "./removal-court.js";
+import { orderExposure } from "./order-exposure.js";
 import { scheduleSupremeArgument } from "./court-calendar.js";
 import { solicitorGeneralStanding, standingAdjustment } from "./solicitor-general.js";
 import { statutoryMatterEffects } from "./statutory-matters.js";
@@ -20,7 +23,27 @@ import { priorGovernmentAdviceRecusal } from "./court-recusal.js";
 import { justiceStrikePropensity, strikeDownChance } from "./strike-odds.js";
 import { LOWER_BENCH_SOURCE_DATE } from "./lower-bench-source.js";
 import { JUDICIARY_SEAT_ROLE } from "./judiciary.js";
+import { missionInterimRelief } from "./mission-interim-relief.js";
+import { courtOrderRulingEffects } from "./court-orders.js";
 const STRUCK_DOWN_COST = { standing: -0.04, stability: -0.03 };
+/**
+ * What losing costs follows what was lost: a loud act more than a quiet one,
+ * and a remedy that undoes something already in effect more than one that
+ * cancels a rule before it landed.
+ */
+export function strikeDownCost(order, undoesLanded) {
+    const scale = (0.5 + orderExposure(order.id).salience) * (undoesLanded ? 1 : 0.5);
+    const round = (value) => Math.round(value * scale * 10000) / 10000;
+    return { standing: round(STRUCK_DOWN_COST.standing), stability: round(STRUCK_DOWN_COST.stability) };
+}
+/** A matter whose own record rules apply; an ordinary order challenge has none. */
+function specializedOf(proceeding) {
+    return proceeding.matter?.kind === "order-challenge" ? undefined : proceeding.matter;
+}
+/** Precedent moves the legal merits, never past the bounds the bench reads. */
+function withPrecedent(state, orderId, chance) {
+    return Math.max(0.02, Math.min(0.98, chance + doctrineShift(state, orderId)));
+}
 function assignCircuitPanel(state, proceeding, record, circuit, keep = []) {
     const seats = circuitPanelFor(state, circuit, proceeding.id, record, new Set(keep.map((judge) => judge.seatId))).slice(0, 3 - keep.length);
     if (seats.length !== 3 - keep.length)
@@ -36,8 +59,8 @@ function assignCircuitPanel(state, proceeding, record, circuit, keep = []) {
     const newlyRecused = circuitPanelRecusals(state, circuit, record).filter((entry) => !prior.some((earlier) => earlier.seatId === entry.seatId && earlier.judge === entry.judge));
     const assigned = [...keep, ...materialized.map(({ seat, person }) => ({ seatId: seat.id, judge: person.base.id }))];
     const next = { ...courtStep(proceeding, "circuit-merits", state.turn, keep.length ? "The circuit assigns another eligible judge after the remaining pair cannot agree."
-            : "The circuit assigns a three-judge panel. Its members will hear the appeal next week.", { circuitPanel: { assignedTurn: state.turn, assigned, recusals: [...prior, ...newlyRecused] } }),
-        nextTurn: state.turn + 1 };
+            : "The circuit assigns a three-judge panel. It will hear and decide the appeal on the circuit's calendar.", { circuitPanel: { assignedTurn: state.turn, assigned, recusals: [...prior, ...newlyRecused] } }),
+        nextTurn: keep.length ? state.turn + 1 : state.turn + courtWeeks(state.seed, proceeding.id, "circuitMerits") };
     return [...materialized.flatMap((entry) => entry.effects), { kind: "courtProceeding", set: next }];
 }
 function finalCase(state, record, proceeding, order, holding, decision) {
@@ -54,7 +77,7 @@ function finalCase(state, record, proceeding, order, holding, decision) {
             ? { majority: holding === "struck-down"
                     ? "This proclamation exceeds the showing required by 8 U.S.C. §1182(f). Its entry restriction is set aside prospectively; a refused visa application remains subject to the other admission rules and must be reconsidered, not automatically granted."
                     : "The proclamation's class restriction falls within 8 U.S.C. §1182(f). The refusal under this proclamation remains in force; no individual admission right is decided." }
-            : proceeding.matter && (proceeding.lower || decision) && decision?.disposition !== "equal-division"
+            : specializedOf(proceeding) && (proceeding.lower || decision) && decision?.disposition !== "equal-division"
                 ? { majority: holding === "struck-down"
                         ? `${proceeding.matter.kind === "agency-procedure" ? "The final lease-planning rule fails the required procedural record" : "The grant condition lacks the authority Congress must supply"}; this rule is set aside without disturbing the underlying law or other rules.`
                         : `${proceeding.matter.kind === "agency-procedure" ? "The agency record satisfies notice, comment and preservation of later sale and site review" : "The enacted grant terms support the condition"}; the challenged rule remains in force.` }
@@ -106,7 +129,8 @@ function finalEffects(state, record, proceeding, order, holding, decision) {
         return effects;
     }
     const rule = state.pendingRules.find((entry) => entry.id === record.id);
-    if (rule?.status === "pending" || rule?.status === "stayed") {
+    const unlanded = rule?.status === "pending" || rule?.status === "stayed";
+    if (unlanded) {
         effects.push({ kind: "pendingRule", set: { ...rule, status: "canceled", resolvedTurn: state.turn } });
     }
     else if (rule?.status === "in-effect") {
@@ -115,7 +139,7 @@ function finalEffects(state, record, proceeding, order, holding, decision) {
     else if (!rule) {
         effects.push({ kind: "orderRemedy", orderId: record.id });
     }
-    effects.push(...withdrawnFromStates(state, order), { kind: "metric", deltas: STRUCK_DOWN_COST }, orderDeed(ORDER_DOMAIN_BAND[order.domain], "failed", state.turn));
+    effects.push(...withdrawnFromStates(state, order), { kind: "metric", deltas: strikeDownCost(order, !unlanded) }, orderDeed(ORDER_DOMAIN_BAND[order.domain], "failed", state.turn));
     return effects;
 }
 function advance(state, charter, record, proceeding) {
@@ -132,18 +156,22 @@ function advance(state, charter, record, proceeding) {
         case "threshold":
             if (!(specializedThreshold(proceeding.matter, rule) ?? thresholdPasses(charter, order, ground, draw)))
                 return finalEffects(state, record, proceeding, order, "upheld");
-            return set(courtStep(proceeding, "interim", state.turn, "The lower court accepts the challenge for merits review."));
+            return set(courtStep(proceeding, "interim", state.turn, "The lower court accepts the challenge for merits review.", {}, proceeding.filedTurn + courtWeeks(state.seed, proceeding.id, "interim")));
         case "interim": {
             const rule = state.pendingRules.find((entry) => entry.id === record.id && entry.status === "pending");
             const activeAgencyRule = proceeding.matter?.kind === "agency-procedure"
                 ? state.pendingRules.find((entry) => entry.id === record.id && entry.status === "in-effect") : undefined;
             const constructionStay = proceeding.matter?.kind === "emergency-construction"
                 && constructionInterimRelief(state, record, charter, order, ground, draw);
-            const stay = Boolean((rule || activeAgencyRule) && (proceeding.matter ? ground === "forbidden" : draw < 0.5 * Math.min(0.9, order.overreach)));
+            const stay = Boolean((rule || activeAgencyRule) && (specializedOf(proceeding) ? ground === "forbidden" : draw < 0.5 * Math.min(0.9, order.overreach)));
+            // A mission order is a decree already on the street, so the relief is an injunction against it, not a stay of a rule.
+            const relief = !rule && !activeAgencyRule ? missionInterimRelief(state, charter, record, proceeding) : undefined;
+            const enjoined = relief !== undefined && draw < relief.chance;
             return [...set(courtStep(proceeding, "lower-merits", state.turn, constructionStay ? "The House shows likely merits success and an irreparable loss of the named project if uncommitted funds are spent. The court pauses new emergency-construction obligations; prior commitments may still be paid."
                     : stay ? activeAgencyRule ? "The lower court pauses this final lease-planning rule while it examines the agency record."
                         : "The lower court stays the unimplemented rule pending merits review."
-                        : "The lower court denies interim relief; the challenge continues.", { interim: constructionStay ? "construction-obligations-stayed" : stay ? activeAgencyRule ? "rule-paused" : "rule-stayed" : "denied" })),
+                        : enjoined ? "The district court enjoins the mission order pending its merits ruling: the plaintiffs show likely success and harm that cannot be undone. The federal forces sent under it stand down."
+                            : "The lower court denies interim relief; the challenge continues.", { interim: constructionStay ? "construction-obligations-stayed" : stay ? activeAgencyRule ? "rule-paused" : "rule-stayed" : enjoined ? "order-enjoined" : "denied" }, proceeding.filedTurn + courtWeeks(state.seed, proceeding.id, "lowerMerits"))),
                 ...(stay && activeAgencyRule ? [{ kind: "courtLimitedRelief", proceedingId: proceeding.id,
                         orderId: record.id, action: "apply", scope: "agency-rule", fraction: 1 }] : []),
                 ...(stay && rule ? [{ kind: "pendingRule", set: { ...rule, status: "stayed" } }] : [])];
@@ -151,8 +179,8 @@ function advance(state, charter, record, proceeding) {
         case "lower-merits": {
             const forum = DISTRICT_FORUM_READINGS.find((row) => row.id === proceeding.lowerForum?.id)
                 ?? districtForumFor(proceeding.matter?.state, proceeding.id, state.seed);
-            const legalChance = specializedMeritsChance(charter, order, proceeding.matter, rule, undefined, ground)
-                ?? strikeDownChance(charter, order, undefined, ground);
+            const legalChance = withPrecedent(state, order.id, specializedMeritsChance(charter, order, proceeding.matter, rule, undefined, ground)
+                ?? strikeDownChance(charter, order, undefined, ground));
             const modeledStrikeChance = districtStrikeChance(legalChance, forum, order);
             const holding = draw < modeledStrikeChance ? "struck-down" : "upheld";
             const responseDue = holding === "struck-down";
@@ -245,14 +273,14 @@ function advance(state, charter, record, proceeding) {
             const votes = participating.map(({ seatId, judge }) => {
                 const person = state.people[judge];
                 const member = { ideology: person.base.ideology, integrity: person.base.integrity, competence: person.base.competence };
-                const chance = specializedMeritsChance(charter, order, proceeding.matter, rule, member, ground)
-                    ?? justiceStrikePropensity(charter, order, member, ground);
+                const chance = withPrecedent(state, order.id, specializedMeritsChance(charter, order, proceeding.matter, rule, member, ground)
+                    ?? justiceStrikePropensity(charter, order, member, ground));
                 return { seatId, judge, vote: draw < chance ? "strike" : "uphold" };
             });
             if (votes.length === 2 && votes[0].vote !== votes[1].vote)
                 return assignCircuitPanel(state, proceeding, record, circuit, participating) ?? set({ ...courtStep(proceeding, "circuit-merits", state.turn, "The two remaining judges disagree. No panel judgment is entered while a third judge is assigned."), nextTurn: state.turn + 4 });
             const holding = votes.filter((vote) => vote.vote === "strike").length >= 2 ? "struck-down" : "upheld";
-            const next = courtStep(proceeding, "appeal", state.turn, `A ${votes.length === 2 ? "two-judge quorum of the assigned" : "three-judge"} ${circuit} Circuit panel ${holding === "struck-down" ? "sets aside" : "sustains"} the order, ${votes.filter((vote) => vote.vote === (holding === "struck-down" ? "strike" : "uphold")).length} to ${votes.filter((vote) => vote.vote !== (holding === "struck-down" ? "strike" : "uphold")).length}.`, { circuit: { court: circuit, ruledTurn: state.turn, holding, votes } });
+            const next = courtStep(proceeding, "appeal", state.turn, `A ${votes.length === 2 ? "two-judge quorum of the assigned" : "three-judge"} ${circuit} Circuit panel ${holding === "struck-down" ? "sets aside" : "sustains"} the order, ${votes.filter((vote) => vote.vote === (holding === "struck-down" ? "strike" : "uphold")).length} to ${votes.filter((vote) => vote.vote !== (holding === "struck-down" ? "strike" : "uphold")).length}.`, { circuit: { court: circuit, ruledTurn: state.turn, holding, votes } }, state.turn + courtWeeks(state.seed, proceeding.id, "certDisposition"));
             return [...set(next),
                 ...(holding === "struck-down" && rule?.status === "pending"
                     ? [{ kind: "pendingRule", set: { ...rule, status: "stayed" } }] : []),
@@ -266,7 +294,8 @@ function advance(state, charter, record, proceeding) {
                 const argued = { ...courtStep(proceeding, "supreme-merits", state.turn, "The Supreme Court hears argument; its opinion is expected in the usual late-June window if a quorum can sit.", { calendar: { ...proceeding.calendar, status: "argued" } }), nextTurn: proceeding.calendar.opinionTurn };
                 return set(argued);
             }
-            const decision = decideCase(charter, order, benchForVotes(state, record), ground, draw, proceeding.id, (member) => specializedMeritsChance(charter, order, proceeding.matter, rule, member, ground));
+            const decision = decideCase(charter, order, benchForVotes(state, record), ground, draw, proceeding.id, (member) => withPrecedent(state, order.id, specializedMeritsChance(charter, order, proceeding.matter, rule, member, ground)
+                ?? justiceStrikePropensity(charter, order, member, ground)));
             if (decision.disposition === "no-quorum") {
                 const carry = Boolean(proceeding.calendar && state.turn + 4 > proceeding.calendar.opinionTargetTurn);
                 const nextCalendar = carry ? { ...scheduleSupremeArgument(state), status: "carried" } : proceeding.calendar;
@@ -308,6 +337,9 @@ export function judicialReviewPhase(charter) {
         effects.push(...fairHousingMatterEffects(state));
         effects.push(...wageHourMatterEffects(state));
         effects.push(...surveillanceMatterEffects(state));
+        effects.push(...courtOrderRulingEffects(state));
+        effects.push(...removalMatterEffects(state));
+        effects.push(...backgroundDocketEffects(state));
         if (!effects.length)
             return [];
         return [{ source: "simulate", actor: "world", turn: state.turn + 1,

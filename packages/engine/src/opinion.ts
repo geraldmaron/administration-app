@@ -531,13 +531,37 @@ export const OPINION_DRIFT = 0.06;
  */
 export const SALIENT_OPINION_DRIFT = 0.2;
 
+/**
+ * Which way each front-page story pushes the judgments it makes louder. Every
+ * story the table names is bad news for its judgment, so a loud driver is
+ * re-read quickly only while it is being pushed down; a judgment climbing back
+ * toward its target while some story is still loud recovers at the ordinary
+ * pace. Keyed on `SALIENCE_MULTIPLIERS` so a new story must say which way it
+ * pushes.
+ */
+export const SALIENCE_PUSH = {
+  atWar: "down",
+  conditionActive: "down",
+  economicPain: "down",
+  disorder: "down",
+  scandalLive: "down",
+  pumpShock: "down",
+} as const satisfies Readonly<Record<keyof typeof SALIENCE_MULTIPLIERS, "up" | "down">>;
+
 /** The judgments some story on the front page is making louder this week. */
 export function salientDrivers(campaign: Campaign): ReadonlySet<OpinionDriver> {
-  const loud = new Set<OpinionDriver>();
+  return new Set(salientPushes(campaign).keys());
+}
+
+/** For each loud judgment, the directions the stories on the front page push it. */
+function salientPushes(campaign: Campaign): ReadonlyMap<OpinionDriver, ReadonlySet<"up" | "down">> {
+  const pushes = new Map<OpinionDriver, Set<"up" | "down">>();
   for (const key of selectSalience(campaign)) {
-    for (const driver of Object.keys(SALIENCE_MULTIPLIERS[key]) as OpinionDriver[]) loud.add(driver);
+    for (const driver of Object.keys(SALIENCE_MULTIPLIERS[key]) as OpinionDriver[]) {
+      pushes.set(driver, (pushes.get(driver) ?? new Set()).add(SALIENCE_PUSH[key]));
+    }
   }
-  return loud;
+  return pushes;
 }
 
 /**
@@ -638,9 +662,11 @@ export function driftOpinion(campaign: Campaign): PublicMood {
   const targets = opinionTargets(campaign);
   const mood = campaign.player.opinion;
   const next = { ...mood };
-  const loud = salientDrivers(campaign);
+  const pushes = salientPushes(campaign);
   for (const driver of OPINION_DRIVERS) {
-    const rate = loud.has(driver) ? SALIENT_OPINION_DRIFT : OPINION_DRIFT;
+    const gap = targets[driver] - mood[driver];
+    const pushed = pushes.get(driver)?.has(gap < 0 ? "down" : "up") === true;
+    const rate = pushed ? SALIENT_OPINION_DRIFT : OPINION_DRIFT;
     next[driver] = clamp01(mood[driver] + (targets[driver] - mood[driver]) * rate);
   }
   // Drivers only. The week's reversion of the stock is emitted by the phase as

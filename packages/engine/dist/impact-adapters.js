@@ -1,4 +1,4 @@
-import { CYBER_IMPACT_PROFILE, IMPACT_CALIBRATION, NATURAL_IMPACT_PROFILES, OUTBREAK_IMPACT_PROFILE } from "./impact-catalog.js";
+import { CYBER_IMPACT_PROFILE, HAZARD_FOOTPRINT_SHARE, IMPACT_CALIBRATION, NATURAL_IMPACT_PROFILES, OUTBREAK_IMPACT_PROFILE } from "./impact-catalog.js";
 import { openImpactEvent } from "./impact-calculation.js";
 import { weekCloseDate } from "./clock.js";
 /** A stated proxy until a case provides actual exposure and resilience data. */
@@ -27,7 +27,7 @@ export function conditionImpactEvent(campaign, condition) {
         return [];
     const cityPopulation = condition.city ? campaign.cities[condition.city]?.base.population : undefined;
     const scoped = cityPopulation ?? population * (condition.scope === "city" ? .002 : condition.scope === "region" ? .03 : .2);
-    const exposed = condition.kind === "pandemic" ? scoped : scoped * .05;
+    const exposed = condition.kind === "pandemic" ? scoped : scoped * HAZARD_FOOTPRINT_SHARE[condition.kind];
     const spec = { version: 1, id, nation: condition.nation, title: condition.beats[0]?.description ?? condition.kind,
         source: "condition", parentId: condition.id, accounting: { population: "self", economy: "parent" }, exposure: countryExposure(campaign, condition.nation, exposed), calibration: IMPACT_CALIBRATION,
         mechanism: condition.kind === "pandemic" ? { ...OUTBREAK_IMPACT_PROFILE, initialInfected: Math.min(Math.floor(exposed), Math.max(1, Math.round(exposed * .0001))), transmissionPerDay: .12 + condition.severity * .2 }

@@ -90,7 +90,7 @@ function AttentionRow({ item }: { readonly item: Item }) {
   return (
     <Pressable role="button" aria-label={`${item.title}. ${item.detail} ${item.does}.`} onPress={item.onPress} flexDirection="row" alignItems="center" gap="md" padding="md" borderWidth={1} borderColor="borderColor" borderRadius="card" backgroundColor={{ default: "surfaceRaised", hover: "surfaceHover", press: "backgroundPress" }}>
       <View width={36} height={36} borderRadius="chip" backgroundColor={item.valence === "bad" ? "dangerFill" : item.valence === "neutral" ? "chromeBackground" : "warningFill"} alignItems="center" justifyContent="center" aria-hidden>
-        <Icon name={item.icon} size={20} tone={item.valence === "bad" ? "accentInk" : item.valence === "neutral" ? "gold" : "warningInk"} />
+        <Icon name={item.icon} size={20} tone={item.valence === "bad" ? "dangerInk" : item.valence === "neutral" ? "gold" : "warningInk"} />
       </View>
       <Column flex={1} minWidth={0} gap="2xs">
         <Text variant="caption" weight="strong" tone={TAG_TONE[item.valence]}>

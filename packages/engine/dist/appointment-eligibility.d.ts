@@ -1,4 +1,5 @@
 import type { Person } from "@admin/world";
+import type { Campaign } from "./state.js";
 import { type OfficeId } from "./institutions.js";
 /** What kind of seat an office is, which decides the rules and the weights a pool reads it by. */
 export type SeatKind = "cabinet" | "deputy" | "agency" | "regulator" | "service-secretary" | "joint-chiefs" | "justice" | "circuit";
@@ -32,4 +33,4 @@ export declare function yearsOutOfUniform(person: Pick<Person, "career" | "age">
  * because a cabinet chair the agenda or a report proposes a name for has
  * always taken that name on the President's word.
  */
-export declare function seatRuleRefusal(office: OfficeId, person: Person): string | undefined;
+export declare function seatRuleRefusal(campaign: Campaign, office: OfficeId, person: Person): string | undefined;

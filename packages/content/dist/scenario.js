@@ -377,8 +377,8 @@ export const ScenarioReply = z.object({
             ]).optional(),
             /** Sign the existing federal relief order against this report's pinned governor request. */
             relief: z.literal(true).optional(),
-            /** Take an existing state response against this report's pinned governor request. */
-            localeAct: z.enum(["relief", "review"]).optional(),
+            /** Take an existing state response against this report's pinned state condition; the three coercive ones need unrest. */
+            localeAct: z.enum(["relief", "review", "property-surge", "task-force", "priority"]).optional(),
             /**
              * A real tariff on the counterpart's goods, under the trade law that fits.
              * On a `tradeMeasure` cast it answers the pinned retaliation and must match

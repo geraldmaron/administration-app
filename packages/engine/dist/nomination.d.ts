@@ -131,4 +131,11 @@ export declare function fillVacantOffices(campaign: Campaign, offices: readonly 
 export declare function openNomination(campaign: Campaign, office: OfficeId, nominee: PersonId): NominationResult;
 /** Pull a name back. Cheaper than losing a floor vote, and not free. */
 export declare function withdrawNomination(campaign: Campaign, id: NominationId): NominationResult;
+export declare function outcomeHeadline(state: Campaign, nomination: Nomination, stage: NominationStage, outcome?: string): {
+    readonly headline: string;
+    readonly facts: {
+        readonly subject: string;
+        readonly stake: string;
+    };
+} | undefined;
 export declare const nominationPhase: TurnPhase;

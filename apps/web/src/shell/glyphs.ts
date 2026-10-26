@@ -77,6 +77,11 @@ export const CONDITION_GLYPH: Readonly<Record<ConditionKind, IconName>> = {
   "fiscal-crisis": "eventFiscalCrisis",
   "energy-shortage": "eventEnergyShortage",
   "housing-crunch": "eventHousingCrunch",
+  cyberattack: "sectorTelecomCyber",
+  "work-stoppage": "departmentLabor",
+  "bank-failure": "sectorFinance",
+  "mass-casualty-attack": "departmentHomelandSecurity",
+  "wrongful-detention": "departmentNationalSecurity",
 };
 
 /** What the unnamed kinds of trouble wear: a scenario tagged "disaster" and a Record entry for an emergency, neither of which is an earthquake or unrest. */

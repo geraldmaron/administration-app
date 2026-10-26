@@ -29,6 +29,7 @@ import { outletReading } from "./press-beliefs.js";
 import type { PressOutlet } from "./press-outlets.js";
 import { usTicket } from "./party.js";
 import { createRngStreams } from "./rng.js";
+import { flagMarker } from "./marked-flags.js";
 import type { ActionRecord, AlignmentVector, Campaign, FeedItem } from "./state.js";
 
 // The partisan term as the acceptance criterion states it: the desk's reading of the President, at its format's partisanship.
@@ -279,7 +280,7 @@ describe("the press engagement as a story", () => {
     const result = takePressAction(campaign, charter, "press-conference", createRngStreams(campaign.seed));
     if (!result.ok) throw new Error(result.reason);
     expect(result.projection.subject.kind).toBe("record");
-    const flagged: Campaign = { ...campaign, player: { ...campaign.player, flags: { ...campaign.player.flags, "scandal:the-pipeline-contract": true } } };
+    const flagged: Campaign = { ...campaign, player: { ...campaign.player, flags: { ...campaign.player.flags, "scandal:the-pipeline-contract": true, [flagMarker("scandal:the-pipeline-contract", campaign.turn)]: true } } };
     const story = takePressAction(flagged, charter, "press-conference", createRngStreams(campaign.seed));
     if (!story.ok) throw new Error(story.reason);
     expect(story.projection.subject.kind).toBe("story");

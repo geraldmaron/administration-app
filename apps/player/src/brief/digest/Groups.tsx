@@ -1,5 +1,5 @@
 import { place, type ActGroup, type WireGroup } from "@admin/player-core";
-import { Badge, Column, Icon, PressRow, Row, Text } from "@admin/ui";
+import { Column, Icon, PressRow, Row, Tag, Text } from "@admin/ui";
 import { go } from "../../shell/navigate";
 
 /** The entries a week's record holds under one domain: each opens its Record entry, and says what it moved. */
@@ -19,8 +19,8 @@ export function ActGroups({ groups, empty }: { readonly groups: readonly ActGrou
             <Text variant="body" weight="medium" role="heading" aria-level={3}>
               {group.label}
             </Text>
-            {group.helped > 0 ? <Badge status="success">{`${group.helped} helped`}</Badge> : null}
-            {group.hurt > 0 ? <Badge status="danger">{`${group.hurt} cost you`}</Badge> : null}
+            {group.helped > 0 ? <Tag tone="success">{`${group.helped} helped`}</Tag> : null}
+            {group.hurt > 0 ? <Tag tone="danger">{`${group.hurt} cost you`}</Tag> : null}
           </Row>
           {group.rows.map((row) => (
             <PressRow key={row.id} label={`Open the Record entry: ${row.headline}`} href={place.event(row.id)} onPress={() => go(place.event(row.id))} padding="xs" borderRadius="chip" minHeight={44} flexDirection="row" alignItems="center" gap="sm">

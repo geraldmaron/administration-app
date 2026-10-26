@@ -530,7 +530,7 @@ The second half of a term stops expanding as polarization drains (prudent t158: 
 
 ## 10. Probe commands
 
-Scripts were written to the session scratchpad (`/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-admin-app/de978b3c-7bf2-4843-8068-0f815599efba/scratchpad/`, abbreviated `$P`) and import the committed engine `dist/`. Each 208-week run took about 45 seconds of one core.
+Scripts were written to the session scratchpad (`<scratch path>`, abbreviated `$P`) and import the committed engine `dist/`. Each 208-week run took about 45 seconds of one core.
 
 ```bash
 cd .

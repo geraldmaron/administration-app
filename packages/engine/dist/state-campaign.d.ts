@@ -15,7 +15,7 @@ import type { OpinionRecord } from "./opinion-record.js";
 import type { RelationsRecord } from "./relations-record.js";
 import type { RulesState } from "./rules.js";
 import type { PresidentialCase } from "./case-types.js";
-import type { DeclaredEmergency, ExternalThreatEmergency } from "./state-emergency.js";
+import type { AuthorityClock, DeclaredEmergency, ExternalThreatEmergency } from "./state-emergency.js";
 import type { MilitaryConstructionProject } from "./state-orders.js";
 import type { OffshoreLeaseSale } from "./offshore-leasing.js";
 import type { CleanPowerPurchase } from "./clean-power-purchasing.js";
@@ -352,6 +352,7 @@ export type Campaign = {
      * with a scope, a date and a cost, and it is the only thing that opens them.
      */
     readonly emergencies: Readonly<Record<string, DeclaredEmergency>>;
+    readonly authorityClocks?: Readonly<Record<string, AuthorityClock>>;
     /** Targeted IEEPA declarations, each tied to an observed foreign pursuit. */
     readonly externalEmergencies?: Readonly<Record<string, ExternalThreatEmergency>>;
     readonly pursuits: Readonly<Record<string, Pursuit>>;
@@ -610,6 +611,13 @@ export type Campaign = {
      * the source's business, not this record's.
      */
     readonly deferrals: Readonly<Record<string, GameDate>>;
+    /**
+     * The signature each matter carried the last time the world stopped for it,
+     * by matter id. A matter whose signature is unchanged does not stop the world
+     * again; one that left the desk and came back does. Absent on a save from
+     * before the ledger, which loads as nothing noticed.
+     */
+    readonly noticed?: Readonly<Record<string, string>>;
     /**
      * Durable presidential cases, keyed by id. Absent on a save that predates
      * the registry, which loads as no cases. Written only by a `case` effect

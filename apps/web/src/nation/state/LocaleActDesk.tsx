@@ -18,9 +18,14 @@ const VERBS: Readonly<Record<LocaleActId, string>> = {
   federalize: "Federalize the Guard",
   waiver: "Grant the waiver",
   review: "Order the review",
-  agents: "Send the agents in",
+  "property-surge": "Surge officers to protect property",
+  "immigration-operation": "Launch the immigration operation",
+  "task-force": "Stand up the task force",
+  proclaim: "Proclaim the order to disperse",
   troops: "Send in the troops",
+  priority: "Set the investigative priority",
   surveil: "Order the surveillance",
+  "surveil-under-order": "Surveil under the court order",
 };
 
 function requestCell(option: LocaleActOption, matter: LocaleMatter): ReactNode {
@@ -52,7 +57,11 @@ function RiskCell({ option }: { readonly option: LocaleActOption }) {
 
 const COERCION_LOOK: Readonly<Partial<Record<string, { readonly icon: IconName; readonly accent: IconBadgeTone }>>> = {
   federalize: { icon: "unitGroundFormation", accent: "red" },
-  agents: { icon: "departmentInvestigation", accent: "red" },
+  "property-surge": { icon: "departmentInvestigation", accent: "red" },
+  "immigration-operation": { icon: "departmentInvestigation", accent: "red" },
+  "task-force": { icon: "departmentInvestigation", accent: "red" },
+  proclaim: { icon: "unitGroundFormation", accent: "red" },
+  "surveil-under-order": { icon: "intel", accent: "red" },
   troops: { icon: "instrumentMilitary", accent: "red" },
   surveil: { icon: "intel", accent: "red" },
 };

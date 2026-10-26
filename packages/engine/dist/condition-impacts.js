@@ -99,6 +99,27 @@ export const IMPACTS = {
     // costs a government is the street and its standing, not the price level —
     // shelter cost is upstream of this condition, never downstream of it.
     "housing-crunch": { ...NO_IMPACT, regimeStability: 0.02, protestPressure: 0.05, reserveDrain: 0.01, macroPressure: { growth: 0.006, inflation: 0, unemployment: 0.004 } },
+    // Home events. Each bills the President's layer of the event only; where an
+    // impact record carries the physical loss (an intrusion's outage), the output
+    // term stays there and is not charged twice here.
+    //
+    // An intrusion's lost output is its impact record's; this is the public's
+    // read of a government whose systems were broken into.
+    cyberattack: { ...NO_IMPACT, regimeStability: 0.015, protestPressure: 0.005, reserveDrain: 0.01 },
+    // Onset reads prices and jobs (condition-home-events.ts), so the row writes
+    // neither: a stoppage is lost output and a public that blames whoever could
+    // have settled it.
+    "work-stoppage": { ...NO_IMPACT, regimeStability: 0.01, protestPressure: 0.02, reserveDrain: 0.005, macroPressure: { growth: 0.02, inflation: 0, unemployment: 0 } },
+    // Onset reads the rate rise and the cycle, neither of which this writes. A
+    // run on a large bank is credit pulled from the economy and a deposit
+    // guarantee the reserves stand behind.
+    "bank-failure": { ...NO_IMPACT, regimeStability: 0.02, protestPressure: 0.02, reserveDrain: 0.04, macroPressure: { growth: 0.03, inflation: 0, unemployment: 0.01 } },
+    // One afternoon, billed once (`INCIDENT_KINDS`): the country's order and its
+    // street, nothing in output.
+    "mass-casualty-attack": { ...NO_IMPACT, regimeStability: 0.02, protestPressure: 0.03, reserveDrain: 0.002 },
+    // A diplomatic file the country watches. Small, because one American held
+    // abroad is a test of the President rather than a cost to the country.
+    "wrongful-detention": { ...NO_IMPACT, regimeStability: 0.005 },
 };
 const HAZARD_WORDS = {
     pandemic: { noun: "an epidemic", label: "Outbreak" },
@@ -119,6 +140,11 @@ const HAZARD_WORDS = {
     "fiscal-crisis": { noun: "a debt crisis", label: "Debt crisis" },
     "energy-shortage": { noun: "an energy shortage", label: "Energy shortage" },
     "housing-crunch": { noun: "a housing crisis", label: "Housing crisis" },
+    cyberattack: { noun: "a cyberattack", label: "Cyberattack" },
+    "work-stoppage": { noun: "a national strike", label: "National strike" },
+    "bank-failure": { noun: "a bank failure", label: "Bank failure" },
+    "mass-casualty-attack": { noun: "a mass shooting", label: "Mass shooting" },
+    "wrongful-detention": { noun: "a wrongful detention", label: "American detained abroad" },
 };
 const CYCLONE_BASIN_WORDS = {
     atlantic: { noun: "a hurricane", label: "Hurricane" },

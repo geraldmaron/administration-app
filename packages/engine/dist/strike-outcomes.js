@@ -3,7 +3,7 @@ import { openImpactEvent, stepImpactEvent } from "./impact-calculation.js";
 import { countryExposure } from "./impact-adapters.js";
 import { IMPACT_CALIBRATION } from "./impact-catalog.js";
 import { NO_IMPACT_RESPONSE, ImpactExposure, ImpactSpec } from "./impact-event.js";
-import { forceScale } from "./force-packages.js";
+import { forceScale, specForRung } from "./force-packages.js";
 import { defenseHolds, sharedBodies } from "./compacts.js";
 import { selectRelationship } from "./state.js";
 /** A separate axis from accomplishing the military objective. */
@@ -39,7 +39,7 @@ export function resolveStrikeHarm(campaign, request, streams, missionSucceeded =
     const risk = strikeCivilianRisk(campaign, request);
     if (!risk)
         return undefined;
-    const rng = streams.stream("strike-civilian-harm", request.actor, request.target, campaign.turn, request.force?.count ?? 200);
+    const rng = streams.stream("strike-civilian-harm", request.actor, request.target, campaign.turn, request.force?.count ?? specForRung(4).preferred);
     const target = campaign.nations[request.target];
     const scale = forceScale(4, request.force);
     const spec = { version: 1, id: `impact:strike:${request.actor}:${request.target}:${campaign.ledger.length}`, nation: request.target,

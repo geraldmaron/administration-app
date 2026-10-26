@@ -2,6 +2,8 @@ import { type NationId, type StateId } from "@admin/world";
 import type { Campaign } from "./state.js";
 import { type AcuteCondition } from "./condition-kinds.js";
 import type { ExecutiveOrderRecord } from "./state-orders.js";
+import { type InsurrectionGround } from "./locale-missions.js";
+import type { LocaleActId } from "./locale-acts.js";
 export { energyLeasingOrderSubjects, regulatoryReviewOrderSubjects, leasePlanningArea, LEASE_PLANNING_AREAS } from "./order-authority-subjects.js";
 /** §2808(c)(2): this catalogue offers domestic emergency projects only (USD millions). */
 export declare const DOMESTIC_EMERGENCY_CONSTRUCTION_CAP = 100;
@@ -41,7 +43,17 @@ export type OrderSubject = {
     readonly kind: "construction";
     readonly sourceId: string;
     readonly declarationId: string;
+}
+/** A federal mission in one state; `mission` is the troop order's stated purpose, past which §1385 bars it. */
+ | {
+    readonly kind: "locale-mission";
+    readonly state: StateId;
+    readonly act: LocaleActId;
+    readonly ground?: InsurrectionGround;
+    readonly mission?: string;
 };
+/** One record per order, subject and week, so a re-signing the same week is refused rather than overwritten. */
+export declare function orderRecordId(orderId: string, turn: number, subject?: OrderSubject): string;
 /** A grant condition administers the program terms Congress enacted. */
 export declare function grantOrderSubjects(campaign: Campaign): readonly Extract<OrderSubject, {
     kind: "grant";

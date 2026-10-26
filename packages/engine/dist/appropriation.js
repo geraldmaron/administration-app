@@ -3,7 +3,10 @@ import { legislativeVoteOn } from "./congress-votes.js";
 import { possessive } from "./naming.js";
 import { sentenceList } from "./policy.js";
 import { BUDGET_ACCOUNT_SPECS, selectBudget } from "./budget.js";
-import { fiscalYearEnd, fiscalYearOf, selectBudgetYear, selectFiscalYearEndTurn, turnOnDate } from "./clock.js";
+import { addDays, compareDates, fiscalYearEnd, fiscalYearOf, selectBudgetYear, selectFiscalYearEndTurn, turnOnDate } from "./clock.js";
+import { sessionDayDate } from "./congressional-session.js";
+import { sittingDate } from "./signing-window.js";
+import { countRescission, pendingImpoundments, POCKET_RESCISSION_DISPOSITION_COST, REPEAT_UNLAWFUL_DEFERRAL_STEP, UNLAWFUL_DEFERRAL_DISPOSITION_COST, RESCISSION_WINDOW_SESSION_DAYS, selectImpoundments, withheldShare, } from "./impoundment.js";
 import { enactBudget, projectBudgetDraft, } from "./budget-draft.js";
 // The money, and the fact that Congress votes it line by line.
 //
@@ -203,4 +206,138 @@ function carriedOnly(campaign, candidate, projection) {
     // Cannot fail: every share in it was already accepted by the draft that
     // produced `candidate`, under the same caps and on the same turn.
     return restricted.ok ? restricted.candidate : candidate;
+}
+// --- Withholding what the book appropriated -----------------------------------
+//
+// A book is a ceiling the President may not quietly spend under. The two lawful
+// ways to spend less are a rescission and a deferral, both by special message
+// under the Impoundment Control Act; `impoundment.ts` runs them week by week.
+/** What a cut costs on the floor per share of the account asked back; the standing appeal of the account is read the other way. */
+const RESCISSION_RESISTANCE = 0.5;
+/** Asking Congress to cancel money is a political act whatever the vote: a base cost and one that grows with how much is asked. */
+const RESCISSION_BASE_COST = 0.02;
+const RESCISSION_PORTION_COST = 0.05;
+const SHARE_EPSILON = 0.0005;
+function availableShare(campaign, account) {
+    return Math.max(0, selectBudget(campaign)[account] - withheldShare(campaign, account));
+}
+function withholdingRefusal(campaign, request) {
+    if (!(request.portion > 0 && request.portion <= 1))
+        return "Ask for a fraction of the account: more than none and no more than all of it.";
+    const spec = BUDGET_ACCOUNT_SPECS[request.account];
+    if (availableShare(campaign, request.account) * request.portion < SHARE_EPSILON)
+        return `The ${spec.name.toLowerCase()} line has nothing appropriated that is not already held.`;
+    if (pendingImpoundments(campaign).some((message) => message.account === request.account)) {
+        return `A special message on the ${spec.name.toLowerCase()} line is already before Congress.`;
+    }
+    return undefined;
+}
+export function projectRescission(campaign, request) {
+    const today = sittingDate(campaign);
+    const windowEnds = sessionDayDate(today, RESCISSION_WINDOW_SESSION_DAYS);
+    const appeal = -ACCOUNT_APPEAL[request.account] - RESCISSION_RESISTANCE * request.portion;
+    return {
+        share: Math.round(availableShare(campaign, request.account) * request.portion * 10000) / 10000,
+        windowEnds,
+        pocket: compareDates(windowEnds, fiscalYearEnd(fiscalYearOf(today))) > 0,
+        votes: countRescission(campaign, appeal),
+    };
+}
+function messagePacket(campaign, message, summary, cost) {
+    const congress = {
+        ...campaign.congress,
+        disposition: Math.round(Math.max(0, Math.min(1, campaign.congress.disposition - cost)) * 1000) / 1000,
+        appropriation: { ...campaign.congress.appropriation, impoundments: [...selectImpoundments(campaign), message] },
+    };
+    return {
+        ok: true,
+        packet: {
+            source: "action",
+            actor: "player",
+            turn: campaign.turn,
+            narration: { summary },
+            effects: [
+                { kind: "congress", set: congress },
+                { kind: "feed", items: [{ turn: campaign.turn, kind: "press", visibility: "public", headline: summary }] },
+            ],
+        },
+    };
+}
+/**
+ * Ask Congress to cancel part of an account's appropriation (2 U.S.C. 683).
+ *
+ * The money is held while Congress considers the bill, and released if it has
+ * not completed action within 45 days of continuous session. A message sent
+ * so late that those days end after the fiscal year does is a pocket
+ * rescission: allowed to proceed, but contested, and priced.
+ */
+export function proposeRescission(campaign, request) {
+    const refusal = withholdingRefusal(campaign, request);
+    if (refusal)
+        return { ok: false, reason: refusal };
+    const today = sittingDate(campaign);
+    const fiscalYear = fiscalYearOf(today);
+    const spec = BUDGET_ACCOUNT_SPECS[request.account];
+    if (selectImpoundments(campaign).some((m) => m.kind === "rescission" && m.account === request.account && m.fiscalYear === fiscalYear && m.status === "released")) {
+        return { ok: false, reason: `The ${spec.name.toLowerCase()} money was released after the last rescission message this fiscal year, and the Act bars proposing it for rescission again.` };
+    }
+    const projection = projectRescission(campaign, request);
+    const message = {
+        id: `impound:rescission:${request.account}:${campaign.turn}`,
+        kind: "rescission",
+        account: request.account,
+        share: projection.share,
+        transmitted: today,
+        transmittedTurn: campaign.turn,
+        fiscalYear,
+        appeal: -ACCOUNT_APPEAL[request.account] - RESCISSION_RESISTANCE * request.portion,
+        ...(projection.pocket ? { pocket: true } : {}),
+        status: "pending",
+    };
+    const summary = projection.pocket
+        ? `A rescission message on the ${spec.name.toLowerCase()} line is sent too late for Congress to act before the money expires, and the Comptroller General is expected to call it unlawful.`
+        : `A rescission message asks Congress to cancel part of the ${spec.name.toLowerCase()} line; the money is held for up to 45 days of continuous session.`;
+    const cost = RESCISSION_BASE_COST + RESCISSION_PORTION_COST * request.portion + (projection.pocket ? POCKET_RESCISSION_DISPOSITION_COST : 0);
+    return messagePacket(campaign, message, summary, cost);
+}
+/**
+ * Hold part of an account's appropriation for a period inside the fiscal year
+ * (2 U.S.C. 684). Only a contingency or savings from efficiency is a lawful
+ * purpose; a deferral for policy reasons is sent anyway if the President
+ * chooses, and the Comptroller General reports it as unlawful and may sue.
+ */
+export function proposeDeferral(campaign, request) {
+    const refusal = withholdingRefusal(campaign, request);
+    if (refusal)
+        return { ok: false, reason: refusal };
+    if (!(request.days > 0))
+        return { ok: false, reason: "A deferral has to name a period." };
+    const today = sittingDate(campaign);
+    const heldThrough = addDays(today, request.days);
+    if (compareDates(heldThrough, fiscalYearEnd(fiscalYearOf(today))) > 0) {
+        return { ok: false, reason: "A deferral cannot run past the end of the fiscal year it is sent in." };
+    }
+    const spec = BUDGET_ACCOUNT_SPECS[request.account];
+    // The same funds withheld again in the same fiscal year carry the earlier
+    // review with them, so a string of short deferrals does not restart the
+    // Comptroller General's clock or the suit's.
+    const unlawful = selectImpoundments(campaign).filter((m) => m.kind === "deferral" && m.account === request.account && m.fiscalYear === fiscalYearOf(today) && m.gao?.inAccordance === false && request.purpose === "policy");
+    const earlier = unlawful.at(-1);
+    // Doing it again after the Comptroller General has said it is unlawful costs
+    // the Hill each time, a little more with each repeat, up to the first finding's price.
+    const repeatCost = Math.min(UNLAWFUL_DEFERRAL_DISPOSITION_COST, REPEAT_UNLAWFUL_DEFERRAL_STEP * unlawful.length);
+    const message = {
+        ...(earlier?.gao ? { gao: earlier.gao } : {}),
+        id: `impound:deferral:${request.account}:${campaign.turn}`,
+        kind: "deferral",
+        account: request.account,
+        share: Math.round(availableShare(campaign, request.account) * request.portion * 10000) / 10000,
+        transmitted: today,
+        transmittedTurn: campaign.turn,
+        fiscalYear: fiscalYearOf(today),
+        purpose: request.purpose,
+        heldThrough,
+        status: "pending",
+    };
+    return messagePacket(campaign, message, `A deferral message holds part of the ${spec.name.toLowerCase()} line for ${request.days} days.`, repeatCost);
 }

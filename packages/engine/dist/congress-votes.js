@@ -1,4 +1,4 @@
-import { majorityOf } from "./congress.js";
+import { majorityOf, seatedOf } from "./congress.js";
 import { memberVote } from "./member-votes.js";
 import { splitSupport } from "./caucus-count.js";
 import { breakSenateTie } from "./senate-tie.js";
@@ -89,7 +89,7 @@ export function legislativeVoteOn(campaign, question) {
     return legislativeCount(campaign.congress, campaign.states, campaign.people, { ...question, asOf: campaign.calendar });
 }
 function legislativeCount(congress, states, people, question) {
-    const majority = majorityOf(congress.chambers[question.chamber].seats);
+    const majority = majorityOf(seatedOf(congress, question.chamber));
     const needsCloture = question.chamber === "senate" && question.required > majority;
     const final = { ...countQuestion(congress, states, people, { ...question, required: majority }), procedure: "final-passage" };
     if (!needsCloture)

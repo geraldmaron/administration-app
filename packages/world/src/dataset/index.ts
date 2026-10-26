@@ -123,6 +123,8 @@ export * from "./scenario-cost-anchors.js";
 export * from "./commodity-producers.js";
 export * from "./chokepoint-flows.js";
 export * from "./chokepoint-cargo.js";
+export * from "./chokepoint-origins.js";
+export * from "./nation-oil-gas.js";
 export * from "./us-hulls.js";
 export * from "./price-anchors.js";
 export * from "./price-shares.js";

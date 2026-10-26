@@ -251,3 +251,27 @@ describe("a change of governing party", () => {
         expect(after.feed.some((item) => item.kind === "governance" && item.actor === id)).toBe(true);
     });
 });
+describe("a leader who dies in office", () => {
+    // Every government whose cast has nobody else eligible for the chair: without
+    // a stand-in, a death there left the dead leader holding it.
+    const lone = Object.keys(founded.nations).filter((nation) => {
+        const lead = leadRoleFor(founded, nation);
+        const holder = selectForeignSeat(founded, nation)?.person;
+        return nation !== founded.founding.nation && lead && holder && !Object.values(founded.people).some((runtime) => runtime.alive && runtime.base.nationality === nation && runtime.base.id !== holder && runtime.base.eligibleRoles.includes(lead));
+    });
+    it("is succeeded even where the cast drew nobody else for the chair, by someone in government", () => {
+        expect(lone.length).toBeGreaterThan(0);
+        for (const nation of lone.slice(0, 10)) {
+            const holder = selectForeignSeat(founded, nation).person;
+            const dead = { ...founded, people: { ...founded.people, [holder]: { ...founded.people[holder], alive: false } } };
+            const after = runWeek(dead);
+            const seat = selectForeignSeat(after, nation);
+            expect(seat.person).not.toBe(holder);
+            const successor = after.people[seat.person];
+            expect(successor.alive).toBe(true);
+            expect(successor.base.nationality).toBe(nation);
+            expect(successor.base.eligibleRoles.some((role) => role !== "role-journalist" && role !== "role-opposition-leader")).toBe(true);
+            expect(selectLeadershipChanges(after, nation)[0]).toMatchObject({ kind: "succession", cause: "death", predecessor: holder });
+        }
+    });
+});

@@ -55,7 +55,7 @@ function Doors({ used, ready, leading }: { readonly used: number | undefined; re
   return (
     <Column gap="sm">
       <Link href="/founding" asChild disabled={!ready}>
-        <Button kind={leading ? "secondary" : "gold"} icon="sign" disabled={!ready} block>
+        <Button kind={leading ? "secondary" : "seal"} icon="sign" disabled={!ready} block>
           Start a new presidency
         </Button>
       </Link>

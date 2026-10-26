@@ -8,7 +8,7 @@ import { CHOKEPOINT_FLOWS, type NationId } from "@admin/world";
 import { withWeeksElapsed } from "./__fixtures__/campaign.js";
 import { foundedForBalance } from "./balance-harness.js";
 import { commodityPhase } from "./commodity-phase.js";
-import { commodityShocks, ROUTE_CLOSURE, ROUTE_RISK } from "./commodity-shocks.js";
+import { commodityShocks, contestedRoutes, ROUTE_CLOSURE, ROUTE_RISK } from "./commodity-shocks.js";
 import { referenceIndex } from "./commodity-registry.js";
 import { openConflict } from "./conflicts.js";
 import { apply } from "./effects.js";
@@ -60,10 +60,18 @@ describe("the Bab el-Mandeb", () => {
 });
 
 describe("Hormuz", () => {
-  it("is charged on the flow its pipelines cannot carry round", () => {
+  // The flow the strait would have carried is net of what the war already took
+  // from the producers who ship it: the Emirates, a principal in this war, lose
+  // output to the war itself, and those barrels are not there to be stopped.
+  it("is charged on the flow its pipelines cannot carry round, net of what the war already took at origin", () => {
     const hormuz = row("CP-HORMUZ", "crude");
-    const route = commodityShocks(at("OMN", "ARE", 0.5), "crude").find((shock) => shock.kind === "route")!;
-    expect(route.loss).toBeCloseTo(hormuz.share * (1 - hormuz.bypass) * 0.5 * ROUTE_CLOSURE, 9);
+    const campaign = at("OMN", "ARE", 0.5);
+    const route = commodityShocks(campaign, "crude").find((shock) => shock.kind === "route")!;
+    const [contested] = contestedRoutes(campaign, "crude");
+    expect(contested!.upstreamLost).toBeGreaterThan(0);
+    expect(contested!.upstreamLost).toBeLessThan(1);
+    expect(route.loss).toBeCloseTo(hormuz.share * (1 - hormuz.bypass) * 0.5 * ROUTE_CLOSURE * (1 - contested!.upstreamLost), 9);
+    expect(route.loss).toBeLessThan(hormuz.share * (1 - hormuz.bypass) * 0.5 * ROUTE_CLOSURE);
   });
 });
 

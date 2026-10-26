@@ -16,7 +16,7 @@ import {
   VIETNAM_ID,
   worldNations,
 } from "@admin/world";
-import { buildInitialRelationships, deriveRelationship, hasStandingLink } from "./relationship-graph.js";
+import { buildInitialRelationships, deriveRelationship, hasStandingLink, structuralReading } from "./relationship-graph.js";
 import { compactTreatyId } from "./treaties.js";
 import { foundedForBalance } from "./balance-harness.js";
 import { relationshipKey, selectRelationship } from "./state.js";
@@ -208,3 +208,67 @@ describe("the campaign's opening relationship graph", () => {
     expect(JSON.stringify(first)).toBe(JSON.stringify(second));
   });
 });
+
+describe("the standing reading memory settles toward", () => {
+  const { campaign } = foundedForBalance("structural-reading");
+  const player = campaign.founding.nation;
+
+  it("is the founding reading itself while neither record has changed", () => {
+    const edge = selectRelationship(campaign, GERMANY_ID, player)!;
+    const reading = structuralReading(campaign.nations[GERMANY_ID]!, campaign.nations[player]!, player);
+    expect(reading).toEqual({ trust: edge.trust, tension: edge.tension, militaryThreat: edge.militaryThreat });
+  });
+
+  it("moves when a government leaves the compacts it shared, so a withdrawal is never undone by time", () => {
+    // A pair no sourced row names, so the derivation alone sets the reading.
+    const ireland = campaign.nations[IRELAND_ID]!;
+    const before = structuralReading(ireland, campaign.nations[GERMANY_ID]!, player);
+    const after = structuralReading({ ...ireland, memberships: [] }, campaign.nations[GERMANY_ID]!, player);
+    expect(after.trust).toBeLessThan(before.trust);
+  });
+});
+
+describe("trade ties read the size of the lane", () => {
+  const germany = byId.get(GERMANY_ID as string)!;
+  const ireland = byId.get(IRELAND_ID as string)!;
+  const withLane = (nation: typeof germany, partner: string, dependence: number, listed: boolean) => ({
+    ...nation,
+    stats: {
+      ...nation.stats,
+      trade: {
+        ...nation.stats.trade,
+        tradeDependence: { ...nation.stats.trade.tradeDependence, [partner]: dependence },
+        topPartners: listed
+          ? [...nation.stats.trade.topPartners.filter((p) => (p as string) !== partner), partner as typeof nation.stats.trade.topPartners[number]]
+          : nation.stats.trade.topPartners.filter((p) => (p as string) !== partner),
+      },
+    },
+  });
+
+  it("ignores whether a partner made the short list", () => {
+    const listed = deriveRelationship(withLane(ireland, GERMANY_ID, 0.02, true), germany);
+    const unlisted = deriveRelationship(withLane(ireland, GERMANY_ID, 0.02, false), germany);
+    expect(unlisted).toEqual(listed);
+  });
+
+  it("warms continuously with the lane, with no step anywhere along it", () => {
+    const at = (d: number) => deriveRelationship(withLane(ireland, GERMANY_ID, d, false), germany).alignment;
+    const steps = [0.001, 0.002, 0.004, 0.008, 0.016, 0.032].map(at);
+    for (let i = 1; i < steps.length; i++) expect(steps[i]!).toBeGreaterThanOrEqual(steps[i - 1]!);
+    expect(Math.abs(at(0.0051) - at(0.0049))).toBeLessThan(0.002);
+  });
+
+  it("opens a link only on a lane in the reader's own books", () => {
+    const traded = withLane(ireland, VIETNAM_ID, 0.001, false);
+    const untraded = { ...ireland, stats: { ...ireland.stats, trade: { ...ireland.stats.trade, tradeDependence: Object.fromEntries(Object.entries(ireland.stats.trade.tradeDependence).filter(([k]) => k !== (VIETNAM_ID as string))), topPartners: [VIETNAM_ID] } } };
+    const vietnam = byId.get(VIETNAM_ID as string)!;
+    expect(hasStandingLink(traded, vietnam)).toBe(true);
+    // Listed but with no lane in its books: whatever link remains has another basis.
+    expect(hasStandingLink(untraded, vietnam)).toBe(hasStandingLinkWithoutTrade(untraded, vietnam));
+  });
+});
+
+function hasStandingLinkWithoutTrade(from: Parameters<typeof hasStandingLink>[0], to: Parameters<typeof hasStandingLink>[1]): boolean {
+  const silent = { ...from, stats: { ...from.stats, trade: { ...from.stats.trade, tradeDependence: {}, topPartners: [] } } };
+  return hasStandingLink(silent, to);
+}

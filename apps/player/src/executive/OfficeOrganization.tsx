@@ -1,9 +1,10 @@
 import { useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { chairRead, formatDate, place, type OfficeFile } from "@admin/player-core";
-import { Empty, Badge, Button, CardGrid, Column, Row, Surface, Text } from "@admin/ui";
-import { DossierSection, Monogram, StaffingBadge } from "@admin/ui/dossier";
+import { Empty, Tag, Button, CardGrid, Column, Row, Surface, Text } from "@admin/ui";
+import { DossierSection, StaffingBadge } from "@admin/ui/dossier";
 import { CardTo, ChairReadBadge, ChairReadKey, InstitutionSeal, RowTo } from "./parts";
+import { PersonFace } from "../dossier/PersonFace";
 import { PersonName } from "../dossier/PersonPeek";
 import { rosterRowsOf, type RosterRow } from "./roster";
 
@@ -22,12 +23,12 @@ function Unit({ campaign, row }: { readonly campaign: Campaign; readonly row: Ro
         </Column>
       </Row>
       <Row gap="sm">
-        <Monogram name={node.holderName ?? "Vacant"} muted={!node.holder} size={32} />
+        <PersonFace campaign={campaign} id={node.holder} name={node.holderName ?? "Vacant"} muted={!node.holder} size={32} />
         {node.holder ? <PersonName campaign={campaign} id={node.holder} name={node.holderName ?? "The leader"} variant="caption" /> : <Text variant="caption" tone="tertiary">Nobody in the job</Text>}
       </Row>
       <Row gap="xs" wrap>
         {node.staffing === "confirmed" ? null : <StaffingBadge staffing={node.staffing} />}
-        {row.nominee ? <Badge status="info" icon="appoint">{`Nominee: ${row.nominee.name}`}</Badge> : null}
+        {row.nominee ? <Tag tone="info" icon="appoint">{`Nominee: ${row.nominee.name}`}</Tag> : null}
         {person ? <ChairReadBadge read={chairRead(person)} /> : null}
       </Row>
       {node.alerts[0] ? <Text variant="caption" tone="danger">{node.alerts[0].text}</Text> : null}
@@ -38,7 +39,7 @@ function Unit({ campaign, row }: { readonly campaign: Campaign; readonly row: Ro
 /** The agencies under an office drawn as the chart they are: the chair on top, a card per agency under it. */
 function Chart({ campaign, file }: { readonly campaign: Campaign; readonly file: OfficeFile }) {
   const rows = rosterRowsOf(campaign, file.agencies);
-  if (rows.length === 0) return <Empty title="No agencies report to this office" detail="It's a staff or a single office, so there's no organization chart below it to show." />;
+  if (rows.length === 0) return <Empty title="No agencies report to this office" detail="It's a staff or a single office, with no agencies below it." />;
   return (
     <Column gap="md" alignItems="stretch">
       <Surface level="raised" pad="md" alignSelf="center" accentEdge="gold">
@@ -81,7 +82,7 @@ function Commands({ file }: { readonly file: OfficeFile }) {
             <Text variant="body" flex={1} minWidth={160}>
               {command.name}
             </Text>
-            <Badge status="outline">{`Alert level: ${command.posture}`}</Badge>
+            <Tag tone="outline">{`Alert level: ${command.posture}`}</Tag>
           </Row>
         </RowTo>
       ))}
@@ -109,7 +110,7 @@ export function OfficeOrganization({ campaign, file }: { readonly campaign: Camp
 export function OfficeRecord({ file }: { readonly file: OfficeFile }) {
   return (
     <DossierSection n={1} icon="record" title="On the Record">
-      {file.record.length === 0 ? <Empty title="The Record doesn't name this office yet" detail="Orders, appointments and results that involve it will be listed here as they happen." /> : null}
+      {file.record.length === 0 ? <Empty title="The Record doesn't name this office yet" detail="No order, appointment or result involves it yet." /> : null}
       {file.record.map((row) => (
         <RowTo key={row.id} href={`/record/event/${encodeURIComponent(row.id)}`} label={`Open the Record entry: ${row.headline}`} borderTopWidth={0} borderBottomWidth={1} borderBottomColor="borderColor">
           <Row gap="md" between wrap padding="sm">

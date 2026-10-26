@@ -74,6 +74,11 @@ export declare function deskMatterSource(campaign: Campaign, date: GameDate, set
  *
  * Ranking, the cap and the subject collapse all happen once, in the engine, and
  * this is how a screen reads the result without re-deciding any of it.
+ *
+ * Only matters the world would stop for: one it already stopped for in its
+ * present form stays on the work list (`owedItems`) but no longer holds
+ * Continue, or a lapsed deferral would restore an obstruction the engine's own
+ * look no longer raises.
  */
 export declare function presentedItems(campaign: Campaign, settings?: AttentionPolicySettings): readonly AttentionItem[];
 /**

@@ -1,4 +1,4 @@
-import { lethalGround, likelihoodFromUnitInterval, type ActionProjection, type Campaign, type Consultee } from "@admin/engine";
+import { lethalGround, likelihoodFromUnitInterval, type ActionProjection, type Campaign, type Consultee, type RippleRelation } from "@admin/engine";
 import type { ForceAssetId, NationId } from "@admin/world";
 import { charterOf } from "../campaign/founding-options";
 import { consulteeEmblem } from "../government/office-emblem";
@@ -78,11 +78,12 @@ export type ActAssessment = {
 export const assessCell = (text: string, stance?: OddsStance, detail?: readonly string[]): AssessmentCell => ({ text, ...(stance ? { stance } : {}), ...(detail?.length ? { detail } : {}) });
 
 
-const RELATION_WORDS: Readonly<Record<string, string>> = {
+const RELATION_WORDS: Readonly<Record<RippleRelation, string>> = {
   "bloc-partner": "bloc partner",
   ally: "ally",
   "trade-partner": "trading partner",
   "bloc-peer": "bloc peer",
+  observer: "has a stake",
   domestic: "at home",
 };
 
@@ -100,7 +101,7 @@ function costCell(projection: ActionProjection): AssessmentCell {
 
 function reactionCell(campaign: Campaign, projection: ActionProjection): AssessmentCell {
   if (projection.ripples.length === 0) return assessCell("No government is expected to react");
-  const items = projection.ripples.slice(0, RIPPLES_SHOWN).map((ripple): AssessmentItem => ({ text: `${nameOf(campaign, ripple.nation)}, ${RELATION_WORDS[ripple.relation] ?? ripple.relation}: ${ripple.reason}`, nation: ripple.nation }));
+  const items = projection.ripples.slice(0, RIPPLES_SHOWN).map((ripple): AssessmentItem => ({ text: `${nameOf(campaign, ripple.nation)}, ${RELATION_WORDS[ripple.relation]}: ${ripple.reason}`, nation: ripple.nation }));
   return withItems(assessCell(projection.rippleVisibility === "if-exposed" ? "Only if it comes out" : `${projection.ripples.length} ${projection.ripples.length === 1 ? "government" : "governments"} react`), items);
 }
 

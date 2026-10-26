@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { legislativeAct, type Campaign } from "@admin/engine";
 import { floorSchedule, settledBills, transmitComparison, transmitPacket, type ActColumn, type FloorGroup, type FloorRow } from "@admin/player-core";
-import { Badge, Button, Card, CardLink, Column, Empty, Icon, ReadingFrame, Row, Select, Text, type IconName } from "@admin/ui";
+import { Tag, Button, Card, CardLink, Column, Empty, Icon, ReadingFrame, Row, Select, Text, type IconName } from "@admin/ui";
 import { Sponsor } from "./Sponsor";
 import { voteFrame } from "./mood";
 import { VoteCount } from "@admin/ui/legislature";
@@ -23,11 +23,11 @@ function BillRow({ campaign, row, group }: { readonly campaign: Campaign; readon
           <Column flex={1} minWidth={200} gap="2xs">
             <Row gap="xs" top>
               <Icon name="dossier" size={16} tone="colorSecondary" />
-              <Text variant="label" flexShrink={1}>{row.title}</Text>
+              <Text variant={desk ? "headline" : "label"} flexShrink={1}>{row.title}</Text>
             </Row>
             <Sponsor campaign={campaign} words={row.sponsor} />
           </Column>
-          <Badge status={desk ? "warning" : "outline"} icon={STAGE_ICON[group] ?? "dossier"}>{row.stageName}</Badge>
+          <Tag tone={desk ? "warning" : "outline"} icon={STAGE_ICON[group] ?? "dossier"}>{row.stageName}</Tag>
         </Row>
         <Text variant="caption" tone={STANCE_TONE[row.stance]}>{row.line}</Text>
         {row.counts.length > 0 ? (
@@ -83,11 +83,11 @@ function Transmit({ campaign, acts }: { readonly campaign: Campaign; readonly ac
           <ActChooser key={selected.id} id="transmit" title={selected.label} comparison={{ rows: comparison.rows, columns: [selected] }} acts={acts} authority={LAW.recommend} packet={(id) => transmitPacket(campaign, id)} again="Back to the agenda" onAgain={() => setPicked(undefined)} />
         </Column>
       ) : proposals.length === 0 ? (
-        <Note>You don't have any new proposals ready right now. You can follow the bills already in Congress above. New proposals open up as your term goes on.</Note>
+        <Note>You have no new proposals ready right now.</Note>
       ) : (
         <Column gap="sm">
           <Select label="Policy area" options={[{ value: "all", label: "All policy areas" }, ...topics.map((entry) => ({ value: entry, label: entry }))]} value={topic} onChange={setTopic} />
-          <Note>{filtered.length} {filtered.length === 1 ? "proposal" : "proposals"} you can send. Pick one to see what it costs, what it trades off, and its chances.</Note>
+          <Note>{filtered.length} {filtered.length === 1 ? "proposal" : "proposals"} ready to send.</Note>
           <Paged items={filtered} initial={4} noun="proposals" render={(column) => (
             <CardLink key={column.id} role="button" onPress={() => setPicked(column.id)} label={`Open the proposal: ${column.label}`} pad="md" gap="2xs">
               <Text variant="eyebrow" tone="gold">{topicOf(column)}</Text>
@@ -115,7 +115,7 @@ function Settled({ campaign }: { readonly campaign: Campaign }) {
               <Text variant="label">{row.title}</Text>
               <Sponsor campaign={campaign} words={row.sponsor} />
             </Column>
-            <Badge status={row.stageName === "Vetoed" ? "danger" : row.stageName.startsWith("Law") ? "success" : "outline"} icon={row.stageName === "Vetoed" ? "veto" : "statusIssued"}>{row.stageName}</Badge>
+            <Tag tone={row.stageName === "Vetoed" ? "danger" : row.stageName.startsWith("Law") ? "success" : "outline"} icon={row.stageName === "Vetoed" ? "veto" : "statusIssued"}>{row.stageName}</Tag>
             <Text variant="caption" flex={1} minWidth={200}>Vote: {row.counts.length === 0 ? "No vote was taken." : row.line}</Text>
           </Row>
         </RowLink>
@@ -140,11 +140,11 @@ export function Bills({ campaign, acts }: { readonly campaign: Campaign; readonl
       ) : null}
       {moving ? (
         <Card title="Moving through Congress" icon="gavel">
-          {floor ? <Group campaign={campaign} group={floor} /> : <Empty title="Nothing is up for a vote this week" detail="A bill shows here once a chamber schedules its vote." />}
+          {floor ? <Group campaign={campaign} group={floor} /> : <Empty title="Nothing is up for a vote this week" detail="No chamber has scheduled a vote." />}
           {committee.map((group) => <Group key={group.key} campaign={campaign} group={group} />)}
         </Card>
       ) : null}
-      {!desk && !moving ? <Empty title="No bills are moving right now" detail="A bill appears here when it's in committee, up for a vote, or waiting for your signature." /> : null}
+      {!desk && !moving ? <Empty title="No bills are moving right now" detail="None is in committee, up for a vote, or waiting for your signature." /> : null}
       <Transmit campaign={campaign} acts={acts} />
       <Settled campaign={campaign} />
     </Column>

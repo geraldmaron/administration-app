@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
-    "test:balance": "vitest run --config vitest.balance.config.ts"
+    "test:balance": "vitest run --config vitest.balance.config.ts",
+    "test:probes": "vitest run --config vitest.probes.config.ts"
   },
   "dependencies": {
     "@admin/world": "workspace:*",

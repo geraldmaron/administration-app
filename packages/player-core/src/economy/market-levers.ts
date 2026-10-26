@@ -3,7 +3,9 @@ import {
   leanOnTheFed,
   projectFedLean,
   projectFuelWaiver,
+  projectLimitedRelease,
   projectReserveRelease,
+  releaseLimitedReserve,
   releaseStrategicReserve,
   type Campaign,
   type EffectPacket,
@@ -13,11 +15,11 @@ import {
 } from "@admin/engine";
 import { formatDate } from "../format/figures";
 
-// The President's three market levers as the economy room offers them: each
+// The President's market levers as the economy room offers them: each
 // priced before it is pressed, or refused in the words of the law that
 // withholds it. The act itself is the engine's; this is its terms.
 
-export type MarketLeverKey = "fed-ease" | "fed-tighten" | "reserve" | "fuel-waiver";
+export type MarketLeverKey = "fed-ease" | "fed-tighten" | "reserve" | "reserve-limited" | "fuel-waiver";
 
 export type MarketLever =
   | { readonly key: MarketLeverKey; readonly label: string; readonly kind: "refused"; readonly refusal: string }
@@ -37,6 +39,7 @@ const LABELS: Readonly<Record<MarketLeverKey, string>> = {
   "fed-ease": "Press the Fed to cut",
   "fed-tighten": "Press the Fed to hold rates steady",
   reserve: "Release the Strategic Petroleum Reserve",
+  "reserve-limited": "Order a limited drawdown of the reserve",
   "fuel-waiver": "Issue an emergency fuel waiver",
 };
 
@@ -56,6 +59,7 @@ function fedLever(campaign: Campaign, key: "fed-ease" | "fed-tighten", direction
 /** Every market lever the President holds, priced or refused. */
 export function marketLevers(campaign: Campaign): readonly MarketLever[] {
   const reserve = projectReserveRelease(campaign);
+  const limited = projectLimitedRelease(campaign);
   const waiver = projectFuelWaiver(campaign);
   return [
     fedLever(campaign, "fed-ease", "ease"),
@@ -63,6 +67,9 @@ export function marketLevers(campaign: Campaign): readonly MarketLever[] {
     reserve.ok
       ? { key: "reserve", label: LABELS.reserve, kind: "available", cost: reserve.cost, risks: reserve.risks, effect: `Adds oil to the world market until ${formatDate(reserve.until)}.` }
       : { key: "reserve", label: LABELS.reserve, kind: "refused", refusal: reserve.reason },
+    limited.ok
+      ? { key: "reserve-limited", label: LABELS["reserve-limited"], kind: "available", cost: limited.cost, risks: limited.risks, effect: `Sells 30 million barrels into the world market until ${formatDate(limited.until)}. It needs no finding of a severe supply interruption, and the law allows one for each shortage.` }
+      : { key: "reserve-limited", label: LABELS["reserve-limited"], kind: "refused", refusal: limited.reason },
     waiver.ok
       ? { key: "fuel-waiver", label: LABELS["fuel-waiver"], kind: "available", cost: waiver.cost, risks: waiver.risks, effect: `Takes a few cents off a gallon of gas until ${formatDate(waiver.until)}.` }
       : { key: "fuel-waiver", label: LABELS["fuel-waiver"], kind: "refused", refusal: waiver.reason },
@@ -74,5 +81,6 @@ export function marketLeverAct(campaign: Campaign, key: MarketLeverKey): MarketL
   if (key === "fed-ease") return leanOnTheFed(campaign, "ease");
   if (key === "fed-tighten") return leanOnTheFed(campaign, "tighten");
   if (key === "reserve") return releaseStrategicReserve(campaign);
+  if (key === "reserve-limited") return releaseLimitedReserve(campaign);
   return issueFuelWaiver(campaign);
 }

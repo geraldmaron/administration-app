@@ -5,7 +5,7 @@ import { Haiku } from "../title/Haiku";
 
 export const KIND_WORD: Readonly<Record<LegacyMarkKind, string>> = { law: "Law", election: "Election", removal: "Removal", war: "War", pledge: "Pledge" };
 
-export const MARK_STATUS: Readonly<Record<LegacyTone, "success" | "danger" | "outline">> = { favorable: "success", adverse: "danger", neutral: "outline" };
+export const MARK_TONE: Readonly<Record<LegacyTone, "success" | "danger" | "outline">> = { favorable: "success", adverse: "danger", neutral: "outline" };
 
 export const PARTY_INK = { democrat: "partyDem", republican: "partyRep", independent: "partyInd" } as const;
 

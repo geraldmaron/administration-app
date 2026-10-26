@@ -48,7 +48,6 @@
     "NationStats:security.intelCapability <- packages/engine/src/state-selectors.ts#hasIntelOnRelationship": 1,
     "NationStats:trade.balance <- packages/engine/src/propensity.ts#coercionPropensity": 1,
     "NationStats:trade.topExports <- packages/engine/src/instruments-economic.ts#embargoedShare": 1,
-    "NationStats:trade.topPartners <- packages/engine/src/relationship-graph.ts#hasStandingLink": 1,
     "NationTraits:aggression <- packages/engine/src/npc-turn.ts#takesInitiative": 1,
     "NationTraits:isolationism <- packages/engine/src/npc-turn.ts#takesInitiative": 1,
     "NationTraits:opportunism <- packages/engine/src/npc-turn.ts#takesInitiative": 1,

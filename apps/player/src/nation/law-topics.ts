@@ -17,9 +17,9 @@ export const LAW_TOPICS = {
     title: "Using the military at home is rare",
     summary: "A law called the Posse Comitatus Act keeps the armed forces it covers from enforcing laws inside the country. The only exceptions are the ones the Constitution or Congress spells out.",
     limits:
-      "Section 251 is one path under the Insurrection Act. It needs an armed uprising against a state's government and a request from that state's lawmakers, or from its governor if the lawmakers can't meet. It isn't a way to answer protests or an ordinary emergency. Other paths in the law have their own conditions.",
+      "Section 251 is one path under the Insurrection Act. It needs an armed uprising against a state's government and a request from that state's lawmakers, or from its governor if the lawmakers can't meet. Section 252 covers obstruction that makes federal law impossible to enforce through the courts, and section 253 violence that denies people rights the state won't protect. None of them is a way to answer protests or an ordinary emergency, and each needs a proclamation ordering the insurgents to disperse first (section 254).",
     model:
-      "You can't send in extra federal agents, take command of a state's Guard, or send troops into a state in this game. Each would need a mission, legal findings, and steps the game doesn't track. Helping a state coordinate its own forces doesn't put them under your command or send them anywhere.",
+      "In this game each kind of force moves only on its own law. Federal officers can guard federal property, and a task force can work federal crimes with the governor's agreement, once unrest reaches the state. Troops go in only on a proclamation issued at least a week before. The Guard can be taken into federal service only for an invasion, a rebellion, or troops that could not restore order. The game reads a federal court's order left defied for a week as the obstruction section 252 describes. That is the game's own reading of the law, not a court's. Asking a governor to call out the Guard leaves it under the governor's command.",
     cites: ["18 U.S.C. §1385", "10 U.S.C. §§251–255", "10 U.S.C. §12406"],
   },
   "emergency-relief": {

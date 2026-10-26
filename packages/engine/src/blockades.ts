@@ -2,7 +2,8 @@ import type { NationId } from "@admin/world";
 import type { Effect } from "./effects.js";
 import { forceScale } from "./force-packages.js";
 import { chokepointExposure } from "./geography.js";
-import { liveNation, type InstrumentContext } from "./instrument-gates.js";
+import { liveNation, PROJECTION_CAPS, projectionAccess, type InstrumentContext } from "./instrument-gates.js";
+import { createRngStreams } from "./rng.js";
 import type { Campaign } from "./state.js";
 
 // A blockade as a standing state rather than a one-time write.
@@ -80,8 +81,26 @@ export function blockadeRecord(ctx: InstrumentContext, conflictId: string, sibli
   return { kind: "blockade", set };
 }
 
+/** The naval branch strength the blockade rung is stood up out of. */
+const BLOCKADE_NAVAL_STRENGTH = 0.3;
+
+/**
+ * Whether the blockading navy can still hold its station: the naval branch
+ * strength and the reach the blockade rung gates on, read now rather than only
+ * the week it was ordered. A navy that can no longer reach the coast stops
+ * nothing there, nor at any strait the coast sits on.
+ */
+export function blockadeReaches(campaign: Campaign, blockade: Pick<Blockade, "imposer" | "target">): boolean {
+  const imposer = campaign.nations[blockade.imposer];
+  if (!imposer || !campaign.nations[blockade.target]) return false;
+  if (imposer.stats.military.branchStrength.naval < BLOCKADE_NAVAL_STRENGTH) return false;
+  const ctx: InstrumentContext = { campaign, actor: blockade.imposer, target: blockade.target, streams: createRngStreams(campaign.seed) };
+  return projectionAccess(ctx, PROJECTION_CAPS[3], "").ok;
+}
+
 function stillOnStation(campaign: Campaign, blockade: Blockade): boolean {
   if (campaign.conflicts[blockade.conflictId]?.status !== "active") return false;
+  if (!blockadeReaches(campaign, blockade)) return false;
   if (blockade.commitmentId !== undefined && campaign.commitments[blockade.commitmentId]?.status !== "active") return false;
   if (blockade.obligationId === undefined) return true;
   const obligation = campaign.security.warPowers.obligations.find((entry) => entry.id === blockade.obligationId);

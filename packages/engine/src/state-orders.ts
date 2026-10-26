@@ -3,6 +3,8 @@ import type { NationId, PersonId, StateId } from "@admin/world";
 import type { AcuteCondition } from "./condition-kinds.js";
 import type { PolicyStatPath } from "./policy-stats.js";
 import type { GameDate } from "./state-campaign.js";
+import type { LocaleActId } from "./locale-acts.js";
+import type { InsurrectionGround } from "./locale-missions.js";
 
 // The president's own instrument, and what happens to it afterwards.
 //
@@ -37,7 +39,9 @@ export type ExecutiveOrderRecord = {
     | { readonly kind: "state"; readonly state: StateId; readonly cause: AcuteCondition;
       readonly declarationId: string; readonly billId: string; readonly amount: number }
     | { readonly kind: "grant"; readonly billId: string }
-    | { readonly kind: "construction"; readonly sourceId: string; readonly declarationId: string; readonly amount: number };
+    | { readonly kind: "construction"; readonly sourceId: string; readonly declarationId: string; readonly amount: number }
+    | { readonly kind: "locale-mission"; readonly state: StateId; readonly act: LocaleActId;
+      readonly ground?: InsurrectionGround; readonly mission?: string };
   /** The Defense Secretary's §2808 notice received by the congressional defense committees. */
   readonly constructionNotice?: { readonly receivedDay: number; readonly mayContractDay: number;
     readonly destinationState: StateId; readonly destinationProject: string; readonly directSupport: string;

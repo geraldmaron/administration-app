@@ -55,10 +55,25 @@ export type CourtSubject = {
     readonly kind: "state-election-access";
     readonly state: StateId;
     readonly electionTurn: number;
+}
+/** One consequential ruling the aggregate background docket selected for a doctrine the engine reads. */
+ | {
+    readonly kind: "background-docket";
+    readonly termYear: number;
+    readonly doctrine: string;
+}
+/** A member removed from a commission seat whose protection the Court's reasoning reaches sues to be reinstated. */
+ | {
+    readonly kind: "commission-removal";
+    readonly institution: string;
+    readonly person: PersonId;
+    readonly removalTurn: number;
 };
 /** Facts a filing must establish; old order opinions did not store this brief. */
 export type CourtMatter = {
-    readonly kind?: "agency-procedure" | "federal-state" | "statutory-authority" | "election-access" | "emergency-construction" | "entry-suspension" | "fair-housing-enforcement" | "wage-hour-enforcement" | "unlawful-surveillance";
+    readonly kind?: "agency-procedure" | "federal-state" | "statutory-authority" | "election-access" | "emergency-construction" | "entry-suspension" | "fair-housing-enforcement" | "wage-hour-enforcement" | "unlawful-surveillance"
+    /** An ordinary challenge to an order, with parties drawn from its injury; no specialized record rule applies. */
+     | "order-challenge" | "commission-removal";
     readonly state?: StateId;
     readonly title: string;
     readonly parties: readonly {
@@ -94,7 +109,9 @@ export type CourtProceeding = {
         readonly activeDemocratic: number;
         readonly vacancies: number;
     };
-    readonly interim?: "denied" | "rule-stayed" | "rule-paused" | "party-stayed" | "state-compliance-ordered" | "construction-obligations-stayed";
+    readonly interim?: "denied" | "rule-stayed" | "rule-paused" | "party-stayed" | "state-compliance-ordered" | "construction-obligations-stayed"
+    /** A decree already in effect, enjoined pending the merits: a federal mission in one state stands down. */
+     | "order-enjoined";
     readonly lower?: {
         readonly holding: CourtHolding;
         readonly ruledTurn: number;

@@ -1,19 +1,14 @@
 import { useRef, useState } from "react";
 import { usePathname } from "expo-router";
 import { selectEnding, type Campaign } from "@admin/engine";
-import { briefMatters, pendingConversations, presentedItems, type BriefMatter, type CampaignState } from "@admin/player-core";
+import { briefMatters, type BriefMatter, type CampaignState } from "@admin/player-core";
 import { Button, Row, useMedia } from "@admin/ui";
 import { useCampaignStore, usePreferences } from "../device/hooks";
 import { painted, refusalWords, settleAdvance } from "./advance";
 import { go } from "./navigate";
+import { useAttention } from "./useAttention";
 
-/** Whether this press may spend time: open work holds it, and it says why. */
-export function continueHold(waiting: number, blockingTitles: readonly string[]): string | undefined {
-  const decisions = waiting > 0 ? `${waiting === 1 ? "A decision is" : `${waiting} decisions are`} waiting for your answer.` : "";
-  const matters = blockingTitles.length > 0 ? `Time is paused for: ${blockingTitles.map((title) => title.replace(/\.$/, "")).join(", ")}.` : "";
-  if (!decisions && !matters) return undefined;
-  return `${decisions} ${matters} You can continue once you've answered or put off each one.`.trim();
-}
+export { continueHold } from "./useAttention";
 
 /** The matter holding the clock that a press should open first: the first that stops time and has a place to be answered. */
 export function firstHolding(matters: readonly BriefMatter[]): BriefMatter | undefined {
@@ -41,6 +36,7 @@ export function ContinueButton({ campaign, onSaid }: { readonly campaign: Campai
   const inFlight = useRef(false);
   const [running, setRunning] = useState(false);
   const media = useMedia();
+  const attention = useAttention(campaign);
   if (selectEnding(campaign) !== "in-office") {
     return (
       <Button kind="secondary" size="compact" icon="record" onPress={() => go("/ending")}>
@@ -48,9 +44,7 @@ export function ContinueButton({ campaign, onSaid }: { readonly campaign: Campai
       </Button>
     );
   }
-  const waiting = pendingConversations(campaign).length;
-  const blocking = presentedItems(campaign, preferences.attentionByKind).map((item) => item.title);
-  const hold = continueHold(waiting, blocking);
+  const hold = attention.state === "held" ? attention.reason : undefined;
   async function advance() {
     if (inFlight.current || hold) return;
     inFlight.current = true;
@@ -69,7 +63,7 @@ export function ContinueButton({ campaign, onSaid }: { readonly campaign: Campai
     }
   }
   const holding = hold ? firstHolding(briefMatters(campaign, preferences.attentionByKind).filter((matter) => matter.holds && matter.href?.split(/[?#]/)[0] !== pathname)) : undefined;
-  const count = waiting + blocking.length;
+  const count = attention.state === "held" ? attention.count : 0;
   return (
     <Row gap="sm">
       {/* While time is held the bar names how many matters hold it and opens the first, so no page gives its first screen to a banner. On a phone that control takes Continue's place, since the bar has room for one. */}
@@ -79,7 +73,7 @@ export function ContinueButton({ campaign, onSaid }: { readonly campaign: Campai
         </Button>
       ) : null}
       {hold && holding?.href && media.phone ? null : (
-        <Button kind={hold ? "secondary" : "gold"} size="compact" icon={hold ? "paused" : "dispatch"} disabled={Boolean(hold) || running} label={hold ? `You can't continue yet. ${hold}` : "Continue. Time moves forward until something needs you."} onPress={() => void advance()}>
+        <Button kind={hold ? "secondary" : "primary"} size="compact" icon={hold ? "paused" : "dispatch"} disabled={Boolean(hold) || running} label={hold ? `You can't continue yet. ${hold}` : "Continue. Time moves forward until something needs you."} onPress={() => void advance()}>
           {running ? "Running…" : "Continue"}
         </Button>
       )}

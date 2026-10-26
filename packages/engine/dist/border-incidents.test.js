@@ -92,7 +92,12 @@ describe("frontier incidents distinct from deliberate attacks", () => {
         expect(assessed.feed.at(-1).headline).toContain("cannot establish who fired first");
     });
     it("does not file a deliberate clash on the same pair and week as an independent incident", () => {
-        const base = npcBorderCampaign();
+        // A deliberate clash is a weekly hazard raised by an episode, so the pair
+        // is put in the middle of one: four clashes in the last two months.
+        const quiet = npcBorderCampaign();
+        const key = Object.keys(quiet.relationships)[0];
+        const episode = [5, 6, 7, 8].map((weeks) => ({ turn: quiet.turn - weeks, kind: "world-event:border-clash", description: "an earlier clash" }));
+        const base = { ...quiet, turn: quiet.turn + 8, relationships: { ...quiet.relationships, [key]: { ...quiet.relationships[key], history: episode.map((e) => ({ ...e, turn: e.turn + 8 })) } } };
         let witnessed = false;
         for (let index = 0; index < 5000 && !witnessed; index += 1) {
             const seed = makeCampaignSeed(`npc-border-hazard-${index}`);
@@ -128,7 +133,7 @@ describe("frontier incidents distinct from deliberate attacks", () => {
         const [a, b] = incident.parties;
         expect(after.nations[a].base.geo.neighbors).toContain(b);
         expect(after.relationships[relationshipKey(a, b)].trust).toBe(campaign.relationships[relationshipKey(a, b)].trust);
-        expect(historyPressure(after.relationships[relationshipKey(a, b)])).toBe(historyPressure(campaign.relationships[relationshipKey(a, b)]));
+        expect(historyPressure(after.relationships[relationshipKey(a, b)], after.turn)).toBe(historyPressure(campaign.relationships[relationshipKey(a, b)], after.turn));
         expect(after.relationships[relationshipKey(b, a)].grudges).toEqual([]);
         expect(after.feed.at(-1).actor).toBeUndefined();
         expect(after.feed.at(-1).headline).toContain("who fired first is not established");

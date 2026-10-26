@@ -2,7 +2,7 @@ import { usPartyOfPerson } from "./cast-fit.js";
 import type { NationId, PersonId, RoleId } from "@admin/world";
 import { INSTITUTION_CATALOG } from "./institution-catalog.js";
 import type { InstitutionId } from "./institutions.js";
-import { benchFor, caucusTarget, majorityCaucus, takeForCaucus } from "./hill.js";
+import { benchFor, caucusTarget, holdsSeat, majorityCaucus, takeForCaucus } from "./hill.js";
 import { partyForCaucus, usTicket } from "./party.js";
 import type { Campaign, CommitteeSeat, Congress, HillCaucus, PersonRuntime } from "./state.js";
 
@@ -176,8 +176,8 @@ export function seatCommittees(
     const flipped = sitting !== undefined && sitting.chairCaucus !== gavel;
     const sittingChair = flipped ? sitting?.ranking : sitting?.chair;
     const sittingRanking = flipped ? sitting?.chair : sitting?.ranking;
-    const chair = alive(people, sittingChair) ?? take(gavel);
-    const ranking = alive(people, sittingRanking) ?? take(otherCaucus(gavel));
+    const chair = stillSitting(congress, people, sittingChair) ?? take(gavel);
+    const ranking = stillSitting(congress, people, sittingRanking) ?? take(otherCaucus(gavel));
     seated[committee] = {
       committee,
       ...(chair ? { chair } : {}),
@@ -192,12 +192,14 @@ export function seatCommittees(
   return seated;
 }
 
-function alive(
+/** A panel's sitting member, kept only while alive and still a senator. */
+function stillSitting(
+  congress: Congress,
   people: Readonly<Record<string, PersonRuntime>>,
   person: PersonId | undefined,
 ): PersonId | undefined {
   if (!person) return undefined;
-  return people[person as string]?.alive === true ? person : undefined;
+  return people[person as string]?.alive === true && holdsSeat(congress, person, "senate") ? person : undefined;
 }
 
 /** The same, as the Congress it produces, for callers that hold one. */

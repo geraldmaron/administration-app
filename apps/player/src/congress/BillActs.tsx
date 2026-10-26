@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { actForText, amendableAct, committeeName, hasReconciliationInstruction, proposeBillText, reconciliationSubject, recommendBillConferenceText, requestBudgetResolution, selectSigningWindow, type Bill, type BillText, type Campaign, type HillPostId, type LegislativeAct } from "@admin/engine";
 import { LOBBY_APPROACHES, billFundingLines, deskComparison, deskPacket, formatDate, hillPosts, lobbyComparison, lobbyPacket, overrideReading, place, type ActComparison } from "@admin/player-core";
-import { Badge, Card, Column, Select, Surface, Text } from "@admin/ui";
+import { Tag, Card, Column, Select, Surface, Text } from "@admin/ui";
 import { ActChooser, STANCE_TONE } from "./ActChooser";
 import type { ActCommit } from "./commit";
 import { LAW, textName, vetoObjections } from "./model";
@@ -21,7 +21,7 @@ export function DeskActs({ campaign, bill, acts }: { readonly campaign: Campaign
   const override = onDesk ? overrideReading(campaign, bill) : undefined;
   return (
     <Card id="bill-desk" title="Your decision" icon="sign" edge="gold" help={<CitedLawHelp title="Signing or vetoing a bill" meaning="Once a bill passes both the House and the Senate, it comes to you. If you sign it, it becomes law. If you veto it, you send it back with your reasons, and it becomes law only if two-thirds of each chamber vote to override you. If you do neither for ten days (not counting Sundays) while Congress is in session, it becomes law without your signature." cites={[LAW.presentment]} />}>
-      {onDesk && !received ? <Badge status="warning" icon="schedule">{`Decide by ${formatDate(selectSigningWindow(campaign, bill).deadline)}`}</Badge> : null}
+      {onDesk && !received ? <Tag tone="warning" icon="schedule">{`Decide by ${formatDate(selectSigningWindow(campaign, bill).deadline)}`}</Tag> : null}
       {onDesk && !received ? <Note>If you don't sign or veto it by then, it becomes law without your signature.</Note> : null}
       {override && !received ? (
         <Surface level="sunken" pad="md">
@@ -39,13 +39,13 @@ export function DeskActs({ campaign, bill, acts }: { readonly campaign: Campaign
           acts={acts}
           authority={LAW.presentment}
           packet={(option) => deskPacket(campaign, bill.id, option === "veto" ? "veto" : "sign", objection)}
-          pending={(option) => (option === "veto" && objection.trim() === "" ? "Pick a reason for your veto first, then send the bill back." : undefined)}
+          pending={(option) => (option === "veto" && objection.trim() === "" ? "A veto goes back with a stated reason, and none is chosen yet." : undefined)}
           danger={(option) => option === "veto"}
           again="Back to the bill"
           receiptTitle={(column) => `${column.id === "veto" ? "Vetoed" : "Signed into law"}: ${bill.title}`}
           terms={
             <Column gap="sm">
-              <Select label="Your reason for a veto (you don't need one to sign)" options={objections.map((entry) => ({ value: entry.id, label: entry.label, detail: entry.message }))} value={reason} onChange={setReason} placeholder="Pick a reason" />
+              <Select label="Your reason for a veto (you don't need one to sign)" options={objections.map((entry) => ({ value: entry.id, label: entry.label, detail: entry.message }))} value={reason} onChange={setReason} placeholder="No reason given" />
               {act?.tradeoff ? <Note tone="tertiary">{act.tradeoff}</Note> : null}
             </Column>
           }

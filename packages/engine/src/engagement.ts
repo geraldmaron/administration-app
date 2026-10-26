@@ -2,7 +2,7 @@ import { agendaTheme, type AgendaTheme, type NationId, type NationTraits, type R
 import { selectNation, selectRelationship, selectRelationshipsFrom, type Campaign, type FeedItem } from "./state.js";
 import type { Effect, EffectPacket } from "./effects.js";
 import type { RngStreams } from "./rng.js";
-import { grudgeWeight } from "./relationships.js";
+import { grudgeWeight, relationshipAnchor } from "./relationships.js";
 import { liveTemperament, TEMPERAMENT_CENTER } from "./temperament.js";
 import { nationName } from "./naming.js";
 import { engagementLine } from "./wire.js";
@@ -57,6 +57,9 @@ type KindTerms = {
  * cooldown and this bound are set together.
  */
 export const ENGAGEMENT_BOUND = 0.06;
+
+/** Planning ceiling above standing trust for routine contact, shared by calls and envoys. */
+export const ROUTINE_TRUST_SURPLUS = 0.06;
 
 // Planning values, set so a call is almost always taken and a joint declaration
 // only between governments that already trust each other. A summit is how two
@@ -252,19 +255,29 @@ export type EngagementProjection = {
 const sized = (value: number, scale: number): number =>
   scale === 1 ? value : round4(Math.max(-ENGAGEMENT_BOUND, Math.min(ENGAGEMENT_BOUND, value * scale)));
 
+function routineTrust(campaign: Campaign, from: NationId, to: NationId, trust: number): number {
+  const edge = selectRelationship(campaign, from, to)!;
+  const anchor = relationshipAnchor(campaign, edge);
+  if (!anchor) return 0;
+  const room = Math.max(0, ROUTINE_TRUST_SURPLUS - Math.max(0, edge.trust - anchor.trust));
+  return Math.min(room, trust * room / ROUTINE_TRUST_SURPLUS);
+}
+
 function warmthEffects(campaign: Campaign, request: EngagementRequest, line: string): readonly Effect[] {
   const { warmth } = ENGAGEMENT_TERMS[request.kind];
   const scale = warmthScale(campaign, request);
   const deltas = { trust: sized(warmth.trust, scale), tension: sized(warmth.tension, scale), alignment: sized(warmth.alignment, scale) };
+  const onEdge = (from: NationId, to: NationId): Warmth => request.kind === "call" || request.kind === "envoy"
+    ? { ...deltas, trust: routineTrust(campaign, from, to, deltas.trust) } : deltas;
   return [
     {
       kind: "relationship",
       from: request.actor,
       to: request.target,
-      deltas,
+      deltas: onEdge(request.actor, request.target),
       addHistory: { turn: campaign.turn, kind: engagementHistoryKind(request.kind), description: line },
     },
-    { kind: "relationship", from: request.target, to: request.actor, deltas },
+    { kind: "relationship", from: request.target, to: request.actor, deltas: onEdge(request.target, request.actor) },
   ];
 }
 

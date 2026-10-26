@@ -60,14 +60,14 @@ function departments() {
     }));
 }
 const REGULATORS = [
-    { id: "INST-SEC", name: "Securities and Exchange Commission", abbr: "SEC", chair: "Chair of the Securities and Exchange Commission", committee: "CMTE-BANKING", seats: 5, termYears: 5, jurisdictions: ["securities"], authorities: ["securities-rulemaking", "enforcement", "disclosure"], domains: ["economy", "banking"] },
-    { id: "INST-FTC", name: "Federal Trade Commission", abbr: "FTC", chair: "Chair of the Federal Trade Commission", committee: "CMTE-COMMERCE", seats: 5, termYears: 7, jurisdictions: ["competition", "consumer"], authorities: ["antitrust", "consumer-protection", "rulemaking"], domains: ["economy", "technology"] },
-    { id: "INST-FCC", name: "Federal Communications Commission", abbr: "FCC", chair: "Chair of the Federal Communications Commission", committee: "CMTE-COMMERCE", seats: 5, termYears: 5, jurisdictions: ["communications"], authorities: ["spectrum", "licensing", "rulemaking"], domains: ["technology", "infrastructure"] },
-    { id: "INST-CFPB", name: "Consumer Financial Protection Bureau", abbr: "CFPB", chair: "Director of the Consumer Financial Protection Bureau", committee: "CMTE-BANKING", seats: 1, termYears: 5, jurisdictions: ["consumer-finance"], authorities: ["consumer-finance-rulemaking", "enforcement", "supervision"], domains: ["economy", "banking"] },
-    { id: "INST-CFTC", name: "Commodity Futures Trading Commission", abbr: "CFTC", chair: "Chair of the Commodity Futures Trading Commission", committee: "CMTE-AGRICULTURE", seats: 5, termYears: 5, jurisdictions: ["derivatives"], authorities: ["derivatives-rulemaking", "enforcement"], domains: ["economy", "agriculture"] },
-    { id: "INST-FDIC", name: "Federal Deposit Insurance Corporation", abbr: "FDIC", chair: "Chair of the Federal Deposit Insurance Corporation", committee: "CMTE-BANKING", seats: 5, termYears: 6, jurisdictions: ["banking"], authorities: ["deposit-insurance", "bank-supervision", "resolution"], domains: ["banking", "economy"] },
-    { id: "INST-NRC", name: "Nuclear Regulatory Commission", abbr: "NRC", chair: "Chair of the Nuclear Regulatory Commission", committee: "CMTE-ENVIRONMENT", seats: 5, termYears: 5, jurisdictions: ["nuclear"], authorities: ["nuclear-licensing", "safety-enforcement"], domains: ["energy", "environment"] },
-    { id: "INST-NLRB", name: "National Labor Relations Board", abbr: "NLRB", chair: "Chair of the National Labor Relations Board", committee: "CMTE-HELP", seats: 5, termYears: 5, jurisdictions: ["labor"], authorities: ["labor-adjudication", "election-supervision"], domains: ["labor", "domestic"] },
+    { id: "INST-SEC", name: "Securities and Exchange Commission", abbr: "SEC", chair: "Chair of the Securities and Exchange Commission", committee: "CMTE-BANKING", seats: 5, termYears: 5, jurisdictions: ["securities"], authorities: ["securities-rulemaking", "enforcement", "disclosure"], domains: ["economy", "banking"], removalLaw: "contested" },
+    { id: "INST-FTC", name: "Federal Trade Commission", abbr: "FTC", chair: "Chair of the Federal Trade Commission", committee: "CMTE-COMMERCE", seats: 5, termYears: 7, jurisdictions: ["competition", "consumer"], authorities: ["antitrust", "consumer-protection", "rulemaking"], domains: ["economy", "technology"], removalLaw: "at-will" },
+    { id: "INST-FCC", name: "Federal Communications Commission", abbr: "FCC", chair: "Chair of the Federal Communications Commission", committee: "CMTE-COMMERCE", seats: 5, termYears: 5, jurisdictions: ["communications"], authorities: ["spectrum", "licensing", "rulemaking"], domains: ["technology", "infrastructure"], removalLaw: "contested" },
+    { id: "INST-CFPB", name: "Consumer Financial Protection Bureau", abbr: "CFPB", chair: "Director of the Consumer Financial Protection Bureau", committee: "CMTE-BANKING", seats: 1, termYears: 5, jurisdictions: ["consumer-finance"], authorities: ["consumer-finance-rulemaking", "enforcement", "supervision"], domains: ["economy", "banking"], removalLaw: "at-will" },
+    { id: "INST-CFTC", name: "Commodity Futures Trading Commission", abbr: "CFTC", chair: "Chair of the Commodity Futures Trading Commission", committee: "CMTE-AGRICULTURE", seats: 5, termYears: 5, jurisdictions: ["derivatives"], authorities: ["derivatives-rulemaking", "enforcement"], domains: ["economy", "agriculture"], removalLaw: "contested" },
+    { id: "INST-FDIC", name: "Federal Deposit Insurance Corporation", abbr: "FDIC", chair: "Chair of the Federal Deposit Insurance Corporation", committee: "CMTE-BANKING", seats: 5, termYears: 6, jurisdictions: ["banking"], authorities: ["deposit-insurance", "bank-supervision", "resolution"], domains: ["banking", "economy"], removalLaw: "contested" },
+    { id: "INST-NRC", name: "Nuclear Regulatory Commission", abbr: "NRC", chair: "Chair of the Nuclear Regulatory Commission", committee: "CMTE-ENVIRONMENT", seats: 5, termYears: 5, jurisdictions: ["nuclear"], authorities: ["nuclear-licensing", "safety-enforcement"], domains: ["energy", "environment"], removalLaw: "contested" },
+    { id: "INST-NLRB", name: "National Labor Relations Board", abbr: "NLRB", chair: "Chair of the National Labor Relations Board", committee: "CMTE-HELP", seats: 5, termYears: 5, jurisdictions: ["labor"], authorities: ["labor-adjudication", "election-supervision"], domains: ["labor", "domestic"], removalLaw: "protected" },
 ];
 function independentRegulators() {
     return REGULATORS.map((reg) => ({
@@ -76,11 +76,17 @@ function independentRegulators() {
         abbr: reg.abbr,
         kind: "regulator",
         tier: 1,
-        mandate: `Regulate ${reg.jurisdictions.join(" and ")} under statute, independent of day-to-day direction.`,
+        mandate: reg.removalLaw === "at-will"
+            ? `Regulate ${reg.jurisdictions.join(" and ")} under statute; its members serve at the President's pleasure.`
+            : `Regulate ${reg.jurisdictions.join(" and ")} under statute, independent of day-to-day direction.`,
         jurisdictions: reg.jurisdictions,
         authorities: reg.authorities,
-        // A fixed term and for-cause removal are what independence *is* here.
-        // The President's influence is the seat that opens, not the order given.
+        // Structural independence (fixed terms, no OMB-style review, insulated
+        // delivery) is kept for every commission. What a holding took from the FTC
+        // and the CFPB is the protection against removal, so their chair office is
+        // at will and the President can supervise policy. Every other commission
+        // keeps its protection and its refusal of direction; where Slaughter's
+        // reasoning reaches it, the removal is contested rather than refused.
         independence: "independent",
         offices: [
             {
@@ -93,7 +99,8 @@ function independentRegulators() {
                 seats: reg.seats,
                 actingAuthority: reg.seats > 1 ? "board-quorum" : "vacancies-act",
                 ...(reg.seats > 1 ? {} : { actingLimitDays: 210 }),
-                removal: "for-cause",
+                removal: reg.removalLaw === "at-will" ? "at-will" : "for-cause",
+                ...(reg.removalLaw === "contested" ? { removalContested: true } : {}),
             },
         ],
         capabilities: ["rulemaking", "enforcement"],
@@ -251,7 +258,8 @@ function operatingComponents() {
 /**
  * The Office of the Vice President. It sits under the Presidency with no
  * cabinet role behind it: the Vice President is elected on the ticket, so the
- * office has no confirmation, no department and no seat at the break rolls.
+ * office has no department and no seat at the break rolls. A vacancy is filled
+ * by a nomination both houses confirm, never from the career bench.
  */
 export const VICE_PRESIDENCY_INSTITUTION_ID = "INST-OVP";
 export const INSTITUTION_CATALOG = [
@@ -337,10 +345,18 @@ export const INSTITUTION_CATALOG = [
         jurisdictions: ["executive"],
         authorities: ["senate-presidency", "succession"],
         independence: "executive",
-        // No office the President appoints to: the Vice President is elected on the
-        // ticket, so there is nothing here for a nomination, a career incumbent or
-        // a removal to reach. The founding seats them as the office's leader.
-        offices: [],
+        // Elected on the ticket, and seated by the founding as the office's leader.
+        // The office exists for the vacancy: under the Twenty-fifth Amendment,
+        // section 2, the President nominates a successor, who takes office on
+        // confirmation by a majority of both houses. Nobody acts in it, the
+        // President cannot remove its holder, and no career official is ever
+        // seated in it (career-incumbents.ts leaves it out).
+        offices: [
+            {
+                id: "OFF-VP", title: "Vice President", appointmentClass: "PAS", confirmingChamber: "senate", confirmedByBothHouses: true,
+                actingAuthority: "none", removal: "term-protected",
+            },
+        ],
         capabilities: ["coordination"],
         domains: ["executive"],
         foundingCapacity: 0.8,

@@ -2,9 +2,8 @@ import type { ReactNode } from "react";
 import type { CohortId } from "@admin/world";
 import type { Campaign } from "@admin/engine";
 import { STATE_GROUP_METHOD, formatRatio, place, statePeople, stateGroupRating, type GroupRating, type Standout, type StateDossier, type StatePeople } from "@admin/player-core";
-import { Button, CardGrid, Column, Icon, ReadingFrame, Row, Surface, Text, type ReadingHelp } from "@admin/ui";
+import { Pane, Button, CardGrid, Column, Icon, ReadingFrame, Row, Surface, Text, type ReadingHelp } from "@admin/ui";
 import { FigureBand, Track } from "@admin/ui/nation";
-import { Panel } from "@admin/ui/world";
 import { go } from "../../shell/navigate";
 import { VALENCE_TEXT, VALENCE_TRACK, gapText, percent, valenceOf } from "../format";
 import { AXIS_ICON } from "../glyphs";
@@ -132,19 +131,19 @@ export function People({ campaign, dossier, cohort }: { readonly campaign: Campa
   return (
     <Column gap="lg">
       {cohort ? (
-        <Panel title={selected ? `${selected.name} in ${dossier.name}` : "No data for this group"} icon="layerBlocs" edge="accent" lede={selected ? STATE_GROUP_METHOD : undefined}>
+        <Pane title={selected ? `${selected.name} in ${dossier.name}` : "No data for this group"} icon="layerBlocs" band="accent" line={selected ? STATE_GROUP_METHOD : undefined}>
           {selected ? <RatingFrame name={dossier.name}><RatingRow rating={selected} name={dossier.name} /></RatingFrame> : <Text variant="body">We don't have an estimate of how this group feels about you in {dossier.name}.</Text>}
-        </Panel>
+        </Pane>
       ) : null}
       <Headlines dossier={dossier} people={people} />
-      <Panel title={`What sets ${dossier.name} apart`} icon="layerBlocs">
+      <Pane title={`What sets ${dossier.name} apart`} icon="layerBlocs">
         <Standouts people={people} name={dossier.name} />
-      </Panel>
-      <Panel title="Who lives here, compared with the country" icon="graph">
+      </Pane>
+      <Pane title="Who lives here, compared with the country" icon="graph">
         <DemographicProfile name={dossier.name} axes={people.axes} />
-      </Panel>
+      </Pane>
       {people.ratings.length > 0 ? (
-        <Panel title={`How these groups rate you in ${dossier.name}`} icon="layerReading" lede="First, the four groups that are much more common here than in the country. Then, the two biggest groups.">
+        <Pane title={`How these groups rate you in ${dossier.name}`} icon="layerReading" line="The four groups much more common here than in the country, then the two biggest.">
           <RatingFrame name={dossier.name}>
             <Column gap="sm" role="list">
               {people.ratings.map((rating) => (
@@ -155,7 +154,7 @@ export function People({ campaign, dossier, cohort }: { readonly campaign: Campa
           <Text variant="caption" tone="tertiary">
             {STATE_GROUP_METHOD}
           </Text>
-        </Panel>
+        </Pane>
       ) : null}
     </Column>
   );
@@ -166,9 +165,9 @@ export function PeopleStrip({ campaign, dossier }: { readonly campaign: Campaign
   const people = statePeople(campaign, dossier.id);
   if (!people || people.standouts.length === 0) return null;
   return (
-    <Panel title={`What sets ${dossier.name} apart`} icon="subjectPerson" aside={<Button kind="secondary" size="compact" icon="chevron" onPress={() => go(place.stateView(dossier.id, "people"))}>How these groups rate you</Button>}>
+    <Pane title={`What sets ${dossier.name} apart`} icon="subjectPerson" actions={<Button kind="secondary" size="compact" icon="chevron" onPress={() => go(place.stateView(dossier.id, "people"))}>How these groups rate you</Button>}>
       <Standouts people={people} name={dossier.name} limit={4} />
       <DemographicProfile name={dossier.name} axes={people.axes} />
-    </Panel>
+    </Pane>
   );
 }

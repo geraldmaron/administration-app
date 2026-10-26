@@ -22,5 +22,7 @@ export const ORGANIZATIONS: readonly SealSpec[] = [
   seal("ORG-US-KOREA", "shield", ["white", "scarlet", "navy"], "chain-links", `U.S.-KOREA`, { monogram: "US-KR" }),
   seal("ORG-US-PHILIPPINES", "shield", ["navy", "scarlet", "gold"], "chain-links", `U.S.-PHILIPPINES`, { monogram: "US-PH" }),
   seal("ORG-ANZUS", "shield", ["navy", "gold", "white"], "southern-cross", `ANZUS`, { monogram: "ANZUS" }),
+  seal("ORG-SCO", "octagon", ["teal", "silver", "white"], "map-grid", `SHANGHAI COOPERATION · SCO`, { monogram: "SCO" }),
+  seal("ORG-UNSC", "roundel", ["ultramarine", "silver", "white"], "column", `SECURITY COUNCIL · UNSC`, { monogram: "UNSC", accents: { stars: 5 } }),
   seal("CRADLE-POTOMAC", "roundel", ["cream", "navy", "navy"], "shield-stars-stripes", `THE UNION · E PLURIBUS UNUM`, { accents: { stars: 13 } }),
 ];

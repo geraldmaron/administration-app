@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { seatKindOf, type Campaign, type OfficeId } from "@admin/engine";
 import { inquiryPipeline, inspectorsBoard, noticesOwed, sealFor, vacancyBoard } from "@admin/player-core";
-import { Badge, Card, Column, Page, Row, Seal, Stat, StatGrid, Surface, Text } from "@admin/ui";
+import { Tag, Card, Column, Page, Row, Seal, Reading, ReadingGrid, Surface, Text } from "@admin/ui";
 import { ViewTabs, type ViewTab } from "@admin/ui/nation";
 import { Authority } from "../congress/ActChooser";
 import { useActCommit } from "../congress/commit";
@@ -21,7 +21,7 @@ const BY_YOU = { tag: "Your checks on your government", basis: "What you tell yo
 function Basis({ direction }: { readonly direction: typeof OF_YOU }) {
   return (
     <Row gap="sm" wrap>
-      <Badge status="outline" icon="review">{direction.tag}</Badge>
+      <Tag tone="outline" icon="review">{direction.tag}</Tag>
       <Text variant="caption" tone="secondary" flex={1} minWidth={220}>{direction.basis}</Text>
     </Row>
   );
@@ -41,11 +41,11 @@ export function OversightScreen({ campaign, view, onView, seat }: { readonly cam
   const audits = inspectors.filter((row) => row.openMatters > 0 || row.posture !== "in-post").length;
   const obstructed = into.filter((row) => row.obstructed).length;
   const figures = [
-    ...(into.length > 0 ? [<Stat key="into" label="Investigations of you" value={String(into.length)} standing={obstructed > 0 ? "watch" : undefined} source={obstructed ? `${obstructed} where someone got in the way` : `${into.filter((row) => row.public).length} public`} size="heading" minWidth={0} />] : []),
-    ...(owed.length > 0 ? [<Stat key="owed" label="Reports you owe" value={String(owed.length)} standing="watch" source="To the intelligence committees" size="heading" minWidth={0} />] : []),
-    ...(directed.length > 0 ? [<Stat key="directed" label="Reviews you ordered" value={String(directed.length)} size="heading" minWidth={0} />] : []),
-    ...(audits > 0 ? [<Stat key="audits" label="Inspectors general at work" value={String(audits)} size="heading" minWidth={0} />] : []),
-    ...(vacancies.length > 0 ? [<Stat key="vacant" label="Empty jobs to fill" value={String(vacancies.length)} standing="watch" source="No nominee sent to the Senate" size="heading" minWidth={0} />] : []),
+    ...(into.length > 0 ? [<Reading key="into" name="Investigations of you" value={String(into.length)} standing={obstructed > 0 ? "watch" : undefined} source={obstructed ? `${obstructed} where someone got in the way` : `${into.filter((row) => row.public).length} public`} size="heading" minWidth={0} />] : []),
+    ...(owed.length > 0 ? [<Reading key="owed" name="Reports you owe" value={String(owed.length)} standing="watch" source="To the intelligence committees" size="heading" minWidth={0} />] : []),
+    ...(directed.length > 0 ? [<Reading key="directed" name="Reviews you ordered" value={String(directed.length)} size="heading" minWidth={0} />] : []),
+    ...(audits > 0 ? [<Reading key="audits" name="Inspectors general at work" value={String(audits)} size="heading" minWidth={0} />] : []),
+    ...(vacancies.length > 0 ? [<Reading key="vacant" name="Empty jobs to fill" value={String(vacancies.length)} standing="watch" source="No nominee sent to the Senate" size="heading" minWidth={0} />] : []),
   ];
   const tabs: readonly ViewTab<OversightView>[] = [
     { id: "inquiries", label: "Investigations", icon: "review", count: into.length + owed.length },
@@ -53,8 +53,9 @@ export function OversightScreen({ campaign, view, onView, seat }: { readonly cam
     { id: "inspectors", label: "Inspectors general", icon: "departmentInvestigation", count: audits },
     { id: "appointments", label: "Appointments", icon: "appoint", count: vacancies.length },
   ];
+  const lede = into.length + owed.length === 0 ? "No investigation of you is open and no report is owed." : `${into.length} ${into.length === 1 ? "investigation of you is" : "investigations of you are"} open${owed.length > 0 ? `, and ${owed.length} ${owed.length === 1 ? "report is" : "reports are"} owed` : ""}.`;
   return (
-    <Page eyebrow="Accountability" icon="review" title="Oversight" lede="Who's looking into your government, and the instructions you give it." emblem={<Seal spec={sealFor("INST-CONGRESS")} size={72} label="The United States Congress" />}>
+    <Page eyebrow="Accountability" icon="review" title="Oversight" lede={lede} emblem={<Seal spec={sealFor("INST-CONGRESS")} size={72} label="The United States Congress" />}>
       <Surface pad="lg" accentEdge="gold">
         <Column gap="md">
           <Row gap="sm" wrap>
@@ -62,7 +63,7 @@ export function OversightScreen({ campaign, view, onView, seat }: { readonly cam
             <Authority cite={LAW.inspectors} compact />
             <Authority cite={LAW.covertNotice} compact />
           </Row>
-          {figures.length > 0 ? <StatGrid max={figures.length}>{figures}</StatGrid> : <Text variant="body" tone="secondary">Nothing is open: no investigations of you, no reports owed, no reviews you ordered, no audits running, and no empty jobs to fill.</Text>}
+          {figures.length > 0 ? <ReadingGrid max={figures.length}>{figures}</ReadingGrid> : <Text variant="body" tone="secondary">Nothing is open: no investigations of you, no reports owed, no reviews you ordered, no audits running, and no empty jobs to fill.</Text>}
         </Column>
       </Surface>
       <ViewTabs label="Views of oversight" tabs={tabs.map(quiet)} selected={view} onSelect={onView} />

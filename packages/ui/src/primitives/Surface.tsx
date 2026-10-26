@@ -12,14 +12,15 @@ export const Surface = styled(View, {
   borderRadius: "card",
   borderWidth: 1,
   borderColor: "borderColor",
+  borderTopColor: "highlight",
   variants: {
-    // A panel rests on the ground with a soft contact shadow and a card inside it
-    // with a lighter one, so the levels read in light theme where the tints
-    // alone are too close; a sunken well sits flush, and `elevated` lifts a
-    // sheet, peek or inspector clear of both.
+    // Depth is light, not outline: a plane is lifted off the ground by its lit
+    // top edge and a tight contact shadow, a card inside it by its own tint; a
+    // sunken well sits flush, and `elevated` lifts a sheet, peek or inspector
+    // clear of both.
     level: {
-      base: { backgroundColor: "surface", shadowColor: "shadowColor", shadowOpacity: 0.7, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
-      raised: { backgroundColor: "surfaceRaised", shadowColor: "shadowColor", shadowOpacity: 0.45, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+      base: { backgroundColor: "surface", shadowColor: "shadowColor", shadowOpacity: 1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+      raised: { backgroundColor: "surfaceRaised", borderColor: "transparent", borderTopColor: "transparent", shadowOpacity: 0 },
       sunken: { backgroundColor: "backgroundStrong", shadowOpacity: 0 },
       flat: { backgroundColor: "transparent", borderWidth: 0, shadowOpacity: 0 },
     },
@@ -31,7 +32,7 @@ export const Surface = styled(View, {
       xl: { padding: "xl" },
     },
     elevated: {
-      true: { shadowColor: "shadowColor", shadowOpacity: 1, shadowRadius: 18, shadowOffset: { width: 0, height: 6 } },
+      true: { shadowColor: "shadowColor", shadowOpacity: 1, shadowRadius: 24, shadowOffset: { width: 0, height: 8 } },
     },
     interactive: {
       true: {
@@ -44,12 +45,13 @@ export const Surface = styled(View, {
         outlineOffset: 2,
       },
     },
+    // A card's character is a band across its top, never a colored side border.
     accentEdge: {
-      accent: { borderLeftWidth: 4, borderLeftColor: "accent" },
-      gold: { borderLeftWidth: 4, borderLeftColor: "goldRule" },
-      danger: { borderLeftWidth: 4, borderLeftColor: "danger" },
-      warning: { borderLeftWidth: 4, borderLeftColor: "warningInk" },
-      success: { borderLeftWidth: 4, borderLeftColor: "successInk" },
+      accent: { borderTopWidth: 3, borderTopColor: "accent" },
+      gold: { borderTopWidth: 3, borderTopColor: "goldRule" },
+      danger: { borderTopWidth: 3, borderTopColor: "danger" },
+      warning: { borderTopWidth: 3, borderTopColor: "warningInk" },
+      success: { borderTopWidth: 3, borderTopColor: "successInk" },
     },
     radius: {
       none: { borderRadius: 0 },

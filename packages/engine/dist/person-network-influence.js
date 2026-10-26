@@ -18,23 +18,45 @@ export function knownPersonContacts(campaign, actId) {
         }
     return [...latest.values()].filter((edge) => edge.accepted).sort((a, b) => `${a.from}:${a.to}`.localeCompare(`${b.from}:${b.to}`));
 }
-/** Formal issue reach caps an effort; it does not create contacts or obedience. */
+// Shared caucus membership is a weak connection; a delegation or a whip's
+// working relationship carries more. These are planning weights, not obedience.
+function standingBond(from, to, leaders) {
+    const caucus = from.chamber === to.chamber && from.party === to.party && from.party !== "independent";
+    return Math.max(from.state === to.state ? 0.5 : 0, caucus ? (leaders.has(from.person) || leaders.has(to.person) ? 0.75 : 0.02) : 0);
+}
+function issueLinks(campaign, person, bill) {
+    if (!campaign.people[person]?.alive)
+        return [];
+    const links = new Map();
+    const members = campaign.congress.members ?? [];
+    const source = members.find((member) => member.person === person);
+    const leaders = new Set(selectHill(campaign).filter((member) => member.post.role === "role-congressional-leader").map((member) => member.figure.person));
+    if (source)
+        for (const target of members) {
+            const bond = standingBond(source, target, leaders);
+            if (bond > 0 && target.person !== person && campaign.people[target.person]?.alive)
+                links.set(target.person, { from: person, to: target.person, bond });
+        }
+    for (const edge of knownPersonContacts(campaign, actOf(bill)?.id)) {
+        if (edge.from === person && edge.to !== person && campaign.people[edge.to]?.alive)
+            links.set(edge.to, { from: person, to: edge.to, bond: 1 });
+    }
+    return [...links.values()].sort((a, b) => b.bond - a.bond || a.to.localeCompare(b.to));
+}
+/** Weighted connectivity buys bounded reach, never a promise that anyone will agree. */
 export function issueReach(campaign, person, bill) {
-    const runtime = campaign.people[person];
-    if (!runtime?.alive)
+    if (!campaign.people[person]?.alive)
         return 0;
     const act = actOf(bill);
     const advocate = act?.committee ? ACT_ADVOCATE[act.committee] : undefined;
-    if (advocate && selectChairRunner(campaign, advocate)?.base.id === person)
+    const leader = selectHill(campaign).some((member) => member.figure.person === person && member.post.role === "role-congressional-leader");
+    if (leader || (advocate && selectChairRunner(campaign, advocate)?.base.id === person))
         return 8;
-    const hill = selectHill(campaign).find((member) => member.figure.person === person);
-    if (hill?.post.role === "role-congressional-leader")
-        return 8;
-    if (act?.committee && campaign.congress.committees[act.committee]?.chair === person)
-        return 6;
-    if (campaign.congress.members?.some((member) => member.person === person))
-        return 2;
-    return knownPersonContacts(campaign, act?.id).some((edge) => edge.from === person) ? 1 : 0;
+    const chair = act?.committee && campaign.congress.committees[act.committee]?.chair === person;
+    const member = campaign.congress.members?.some((entry) => entry.person === person);
+    const weight = issueLinks(campaign, person, bill).reduce((sum, edge) => sum + edge.bond, 0);
+    const office = chair ? 6 : member ? 2 : weight > 0 ? 1 : 0;
+    return Math.min(8, office + Math.floor(weight / 2));
 }
 /** Public eligibility only. Private willingness is considered when the request arrives. */
 export function availableIssueBrokers(campaign, bill) {
@@ -72,10 +94,9 @@ export function issueCooperationDecision(campaign, person, bill, direction, acti
 export function answersIssue(campaign, person, bill, direction, action, bond) {
     return issueCooperationDecision(campaign, person, bill, direction, action, bond)?.acts ?? false;
 }
-/** Directed breadth-first traversal: one actor once, two hops, office budget, and an independent answer at every step. */
+/** Directed breadth-first traversal: one actor once, two hops, bounded reach, and an independent answer at every step. */
 export function propagateIssue(campaign, source, bill, action, direction, exclude = []) {
     const reach = issueReach(campaign, source, bill);
-    const links = knownPersonContacts(campaign, actOf(bill)?.id);
     const visited = new Set([source, ...exclude]);
     const queue = [{ person: source, depth: 0 }];
     const responses = [];
@@ -83,13 +104,13 @@ export function propagateIssue(campaign, source, bill, action, direction, exclud
         const current = queue.shift();
         if (current.depth >= 2)
             continue;
-        for (const edge of links.filter((link) => link.from === current.person)) {
+        for (const edge of issueLinks(campaign, current.person, bill)) {
             if (visited.has(edge.to) || responses.length >= reach)
                 continue;
             visited.add(edge.to);
-            const accepted = answersIssue(campaign, edge.to, bill, direction, action, 1);
+            const accepted = answersIssue(campaign, edge.to, bill, direction, action, edge.bond);
             const depth = current.depth + 1;
-            responses.push({ ...edge, date: campaign.calendar, accepted, depth, delta: accepted ? direction * 0.06 / depth : 0,
+            responses.push({ from: edge.from, to: edge.to, actId: actOf(bill)?.id ?? bill.act, date: campaign.calendar, accepted, depth, delta: accepted ? direction * 0.06 / depth : 0,
                 account: accepted ? "Accepted an issue-specific conversation; no vote was promised." : "Declined the issue-specific argument." });
             if (accepted)
                 queue.push({ person: edge.to, depth });

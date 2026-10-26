@@ -400,7 +400,7 @@ describe("an emergency raises a case for a condition request and for a declarati
     } as DeclaredEmergency;
     const campaign = { ...base, emergencies: { [emergency.id]: emergency } };
     const [source] = sourcesOf(campaign, "emergency");
-    expect(source!.raise.id).toBe(`case:emergency:${emergency.id}:${emergency.renewedTurn + 52}`);
+    expect(source!.raise.id).toBe(`case:emergency:${emergency.id}:2029-03-10`);
     expect(source!.row.source).toBe("treaty-deadline");
   });
 });

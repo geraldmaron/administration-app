@@ -1,7 +1,7 @@
 import { type Charter, type RoleId } from "@admin/world";
 import type { AlignmentVector, Campaign, ExecutiveOrderRecord, PendingRule, PersonRuntime } from "./state.js";
 import { type OrderSubject } from "./order-subjects.js";
-export { constructionOrderSubjects, energyLeasingOrderSubjects, entryClassOrderSubjects, federalSiteOrderSubjects, firstOrderSubject, grantOrderSubjects, leasePlanningArea, LEASE_PLANNING_AREAS, regulatoryReviewOrderSubjects, reliefOrderSubjects, type OrderSubject } from "./order-subjects.js";
+export { constructionOrderSubjects, energyLeasingOrderSubjects, entryClassOrderSubjects, federalSiteOrderSubjects, firstOrderSubject, grantOrderSubjects, leasePlanningArea, LEASE_PLANNING_AREAS, orderRecordId, regulatoryReviewOrderSubjects, reliefOrderSubjects, type OrderSubject } from "./order-subjects.js";
 import type { Effect, EffectPacket } from "./effects.js";
 import type { RngStreams } from "./rng.js";
 import { type PolicyStatPath } from "./policy.js";
@@ -9,6 +9,7 @@ import type { ConstitutionalGround } from "./legislative-acts.js";
 import type { RungBand } from "./consequences.js";
 import { type DomesticSignature } from "./domestic-signature.js";
 import type { BenchMember } from "./judiciary.js";
+import { type FilingOdds } from "./legal-exposure.js";
 import { type OrderReview } from "./order-review.js";
 import { type OrderExecution } from "./execution.js";
 import type { MetricDeltas } from "./effect-types.js";
@@ -189,7 +190,12 @@ export declare function availableOrders(campaign: Campaign): readonly ExecutiveO
 export declare function dayOneOrders(campaign: Campaign): readonly ExecutiveOrder[];
 export type OrderProjection = {
     readonly order: ExecutiveOrder;
+    /** The chance somebody sues: who is injured, how loudly, in which court. Not whether they win. */
     readonly challengeChance: number;
+    /** Who would sue, and how likely each is to. */
+    readonly filing: FilingOdds;
+    /** The chance a court sets the order aside once it is challenged, on this week's ground and precedent. */
+    readonly meritsChance: number;
     readonly mechanism: Charter["removalMechanism"];
     readonly cost: MetricDeltas;
     readonly accumulated: number;
@@ -208,9 +214,10 @@ export type OrderProjection = {
 /**
  * What the player reads before signing. Pure and seed-independent, the same
  * contract `projectAction` holds: `signOrder` calls this and nothing else to
- * decide the odds, so the number shown is the number rolled against.
+ * decide the odds, so the number shown is the number rolled against. Pass the
+ * subject being signed: who is injured, and so who can sue, depends on it.
  */
-export declare function projectOrder(campaign: Campaign, charter: Charter, order: ExecutiveOrder): OrderProjection;
+export declare function projectOrder(campaign: Campaign, charter: Charter, order: ExecutiveOrder, subject?: OrderSubject): OrderProjection;
 export type OrderResult = {
     readonly ok: false;
     readonly reason: string;
@@ -228,7 +235,11 @@ export type OrderResult = {
  * different order first cannot change the roll on this one.
  */
 export declare function signOrder(campaign: Campaign, charter: Charter, orderId: string, streams: RngStreams, subject?: OrderSubject): OrderResult;
-/** How long a challenge takes to be heard and ruled on. */
+/**
+ * The fixed six-week clock the regulatory docket's derived litigation and the
+ * rulemaking pace still read. An order challenge no longer runs on it: its
+ * stages draw from the sourced bands in court-procedure.ts.
+ */
 export declare const JUDICIAL_REVIEW_TURNS = 6;
 export type { BenchMember };
 /**

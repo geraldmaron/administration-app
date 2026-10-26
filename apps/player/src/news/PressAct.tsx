@@ -102,7 +102,7 @@ export function PressAct({ campaign, id, title, comparison, acts, cite, packet, 
   return (
     <Column gap="md">
       {terms}
-      <CompareAuthorize title={title} options={optionsOf(comparison, cite)} selected={selected} onSelect={setSelected} verb={column?.verb ?? comparison.columns[0]?.verb ?? "Choose an option"} onAuthorize={authorize} tone={danger ? "danger" : "commit"} {...(column ? { review: column.review } : {})} {...(comparison.waiting ? { waiting: comparison.waiting } : {})} busy={acts.busy} />
+      <CompareAuthorize title={title} options={optionsOf(comparison, cite)} selected={selected} onSelect={setSelected} verb={column?.verb ?? comparison.columns[0]?.verb ?? "Respond"} onAuthorize={authorize} tone={danger ? "danger" : "commit"} {...(column ? { review: column.review } : {})} {...(comparison.waiting ? { waiting: comparison.waiting } : {})} busy={acts.busy} />
       {acts.problem && acts.by === id ? (
         <Text variant="label" tone="danger" role="alert">
           {acts.problem}

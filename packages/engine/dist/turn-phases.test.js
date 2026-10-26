@@ -132,6 +132,7 @@ describe("the canonical phase sequence", () => {
             "scandalPhase",
             "electionPhase",
             "governancePhase",
+            "officeSuccessionPhase",
             "foreignPoliticsPhase",
             "regimePhase",
             "grudgeDecayPhase",

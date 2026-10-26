@@ -7,23 +7,12 @@ import { createRngStreams } from "./rng.js";
 import { CIRCUIT_SEATS } from "./lower-bench.js";
 import { institutionDef } from "./institutions.js";
 import { vacancyBenchEffects } from "./appointment-bench.js";
+import { lifeTableQx } from "./officeholder-mortality.js";
 
-// CDC/NCHS United States Life Tables, 2024, qx total, ages 45-95. The
-// campaign's fictional justices do not have a biological-sex field, so a
-// portrait's gender presentation is not used as a mortality input.
-const LIFE_TABLE_QX_TOTAL = [
-  0.002786, 0.002942, 0.003133, 0.003359, 0.003615, 0.003898, 0.004205,
-  0.004529, 0.004873, 0.005252, 0.005652, 0.006104, 0.006656, 0.007316,
-  0.008040, 0.008779, 0.009511, 0.010252, 0.011021, 0.011837, 0.012723,
-  0.013783, 0.014771, 0.015845, 0.016966, 0.018110, 0.019489, 0.021136,
-  0.022936, 0.025125, 0.027586, 0.030376, 0.032830, 0.037438, 0.041077,
-  0.046154, 0.051126, 0.057587, 0.063598, 0.070988, 0.078467, 0.088254,
-  0.099057, 0.110928, 0.123911, 0.138036, 0.153317, 0.169746, 0.187293,
-  0.205902, 0.225491,
-] as const;
-
+// The judges' own adjustments to the shared life table (officeholder-mortality.ts).
+// They are drawn here once a year and nowhere else.
 export function judicialDeathChance(age: number): number {
-  const qx = LIFE_TABLE_QX_TOTAL[Math.max(0, Math.min(50, Math.floor(age) - 45))]!;
+  const qx = lifeTableQx(age);
   // Research note §2.2: judge/US-population ratios are empirical estimates,
   // not a claim that these fictional people carry observed health histories.
   return qx * (age < 65 ? 0.2 : age < 75 ? 0.25 : 0.6);

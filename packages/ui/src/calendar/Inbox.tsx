@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { View } from "@tamagui/core";
 import { Icon, type IconName } from "../icons/Icon";
-import { CountDot } from "../primitives/Badge";
+import { CountDot } from "../primitives/CountDot";
 import { Button, Pressable } from "../primitives/Button";
 import { Column, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";

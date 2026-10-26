@@ -13,9 +13,14 @@ const DONE_WORDS = {
   federalize: "The Guard was federalized",
   waiver: "A waiver was granted",
   review: "A federal review was ordered",
-  agents: "Federal agents were sent in",
+  "property-surge": "Federal officers were surged to protect property",
+  "immigration-operation": "An immigration operation was launched",
+  "task-force": "A federal task force was stood up",
+  proclaim: "An order to disperse was proclaimed",
   troops: "Active-duty troops were sent in",
+  priority: "An investigative priority was set",
   surveil: "Surveillance was ordered",
+  "surveil-under-order": "Surveillance began under a court order",
 } as const;
 
 /** What the state's open requests became: answered, deferred, or still waiting. */

@@ -4,7 +4,7 @@ import { Column, Icon, Meter, ReadingFrame, Row, Text, View, type IconName } fro
 import { StackedBar, segmentKeyEntries } from "@admin/ui/news";
 import { CheckCard } from "@admin/ui/forms";
 import { PARTY_INK } from "../glyphs";
-import { Reading } from "../parts";
+import { TitledReading } from "../parts";
 
 type Share = { readonly party: "democrat" | "independent" | "republican"; readonly seats: number; readonly label: string };
 
@@ -46,13 +46,13 @@ export function Arrival({ campaign }: { readonly campaign: Campaign }) {
   const line = (chamber: Chamber) => chamberMajorityLine(campaign, chamber);
   const halfMarks = [{ id: "half", label: "Half the country", at: 0.5, kind: "historical" as const }];
   return (
-    <Reading icon="subjectCapitol" title="What you start with">
+    <TitledReading icon="subjectCapitol" title="What you start with">
       <ReadingFrame title="Approval on day one" unit="% of adults who approve" period="On the day you take office" legend={[{ id: "approval", kind: "swatch", label: "Approval", ink: "accent", figure: formatRatio(approval) }, { id: "half", kind: "tick", label: "Line: half the country", ink: "gold", weight: 2 }]} help={{ meaning: "The filled part of the bar is the share of adults who approve of you when you take office. The line at the middle is half the country." }}>
         <Meter label="Approval" value={approval} figure={formatRatio(approval)} marks={halfMarks} />
       </ReadingFrame>
       <ChamberBar label="The Senate" composition={senate} anchor={anchor} verdict={line("senate")} />
       <ChamberBar label="The House" composition={house} anchor={anchor} verdict={line("house")} />
-    </Reading>
+    </TitledReading>
   );
 }
 

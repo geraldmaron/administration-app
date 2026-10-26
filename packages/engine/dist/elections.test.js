@@ -275,6 +275,22 @@ describe("the midterm", () => {
         const senate = seatSwing(0.8, "senate", congress.chambers.senate) / congress.chambers.senate.seats;
         expect(house).toBeGreaterThan(senate);
     });
+    it("loses more House seats the less popular the President, holding the map fixed", () => {
+        const house = { seats: 435, administration: 240, opposition: 195, independent: 0 };
+        const at = (share) => seatSwing(share, "house", house);
+        expect(at(0.35)).toBeLessThan(at(0.45));
+        expect(at(0.45)).toBeLessThan(at(0.55));
+        expect(at(0.55)).toBeLessThan(at(0.65));
+    });
+    it("loses more seats the more it holds, at the same standing", () => {
+        const big = { seats: 435, administration: 270, opposition: 165, independent: 0 };
+        const small = { seats: 435, administration: 200, opposition: 235, independent: 0 };
+        expect(seatSwing(0.4, "house", big)).toBeLessThan(seatSwing(0.4, "house", small));
+    });
+    it("never loses more than a third of what it holds, however low the standing", () => {
+        const house = { seats: 435, administration: 240, opposition: 195, independent: 0 };
+        expect(-seatSwing(0, "house", house)).toBeLessThanOrEqual(Math.ceil(house.administration / 3));
+    });
     it("transfers seats between the caucuses without inventing or destroying any", () => {
         const before = at(MIDTERM_WEEK).congress.chambers.house;
         const after = runPhase(at(MIDTERM_WEEK)).congress.chambers.house;

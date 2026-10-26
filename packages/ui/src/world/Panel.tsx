@@ -4,61 +4,8 @@ import { Icon, type IconName } from "../icons/Icon";
 import { Pressable } from "../primitives/Button";
 import { CardGrid } from "../primitives/CardGrid";
 import { Column, Row } from "../primitives/Stack";
-import { Surface } from "../primitives/Surface";
 import { Text } from "../primitives/Text";
 import { valenceFill, valenceText, type ReadingValence } from "./Readings";
-
-export type PanelProps = {
-  readonly title: string;
-  readonly icon?: IconName;
-  /** A count beside the title: how many rows the panel holds. */
-  readonly count?: number;
-  /** An emblem before the title: the seal of the body the panel speaks for. */
-  readonly emblem?: ReactNode;
-  /** Controls or a note at the head's right: a help, a citation. */
-  readonly aside?: ReactNode;
-  /** One sentence under the title. */
-  readonly lede?: string;
-  readonly children?: ReactNode;
-  readonly level?: "base" | "raised" | "sunken";
-  readonly edge?: "accent" | "gold" | "danger" | "warning" | "success";
-  readonly testID?: string;
-  /** The anchor a link that names this part of the page lands on. */
-  readonly id?: string;
-};
-
-/** A region of a working screen: its heading, what it holds, then the rows. */
-export function Panel({ title, icon, count, emblem, aside, lede, children, level = "base", edge, testID, id }: PanelProps) {
-  return (
-    <Surface level={level} pad="lg" role="region" aria-label={title} testID={testID} {...(id ? { id } : {})} {...(edge ? { accentEdge: edge } : {})}>
-      <Column gap="md">
-        <Row gap="sm" between wrap top>
-          <Row gap="sm" flexShrink={1}>
-            {emblem}
-            {!emblem && icon ? <Icon name={icon} size={22} tone="gold" weight="fill" /> : null}
-            <Text variant="title" role="heading" aria-level={2} flexShrink={1}>
-              {title}
-            </Text>
-            {count !== undefined ? (
-              <View paddingHorizontal="sm" borderRadius="pill" backgroundColor="pendingFill">
-                <Text variant="caption" weight="strong" tone="secondary" tabular>
-                  {count}
-                </Text>
-              </View>
-            ) : null}
-          </Row>
-          {aside ? <Row gap="sm" wrap flexShrink={1} maxWidth="100%">{aside}</Row> : null}
-        </Row>
-        {lede ? (
-          <Text variant="body" tone="secondary">
-            {lede}
-          </Text>
-        ) : null}
-        {children}
-      </Column>
-    </Surface>
-  );
-}
 
 export type TileProps = {
   readonly icon: IconName;

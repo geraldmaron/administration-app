@@ -1,7 +1,7 @@
 import type { Campaign } from "@admin/engine";
 import { formatDate, pendingAbout, place, weekLabel, type NationFile, type StandingTrend, type TrendChange } from "@admin/player-core";
-import { BenchmarkChart, Button, CardLink, Column, Icon, ReadingFrame, Row, Sparkline, Text, View, type IconName, type KeyEntry } from "@admin/ui";
-import { Panel, StateChip, StepReading, Unread } from "@admin/ui/world";
+import { Pane, BenchmarkChart, Button, CardLink, Column, Icon, ReadingFrame, Row, Sparkline, Text, View, type IconName, type KeyEntry } from "@admin/ui";
+import { StateChip, StepReading, Unread } from "@admin/ui/world";
 import { selectDateOfTurn } from "@admin/engine";
 import { BandFrame, CardTo, RELATIONSHIP_BANDS, RELATIONSHIP_LADDER, go, stanceValence } from "../parts";
 import { termDoor } from "../../handbook/term-door";
@@ -165,7 +165,7 @@ function PendingWith({ campaign, file }: { readonly campaign: Campaign; readonly
 function RelationshipNow({ campaign, file }: { readonly campaign: Campaign; readonly file: NationFile }) {
   const { standing } = file;
   return (
-    <Panel title="Where things stand" icon="layerTrust">
+    <Pane title="Where things stand" icon="layerTrust">
       <BandFrame title="How you and they see each other" meaning={RELATIONSHIP_BANDS} unit={RELATIONSHIP_LADDER} term={{ id: "their-trust", label: "Their trust in you" }}>
         {standing.theirs ? <StepReading icon="layerTrust" label={standing.theirs.caption} lit={standing.theirs.trust.level} word={standing.theirs.trust.word} valence={stanceValence(standing.theirs.trust.stance)} /> : <Unread>We don't know yet how they see you. Our intelligence agencies haven't been able to tell.</Unread>}
         {standing.ours ? <StepReading icon="subjectPerson" label={standing.ours.caption} lit={standing.ours.trust.level} word={standing.ours.trust.word} valence={stanceValence(standing.ours.trust.stance)} /> : null}
@@ -173,7 +173,7 @@ function RelationshipNow({ campaign, file }: { readonly campaign: Campaign; read
       </BandFrame>
       <PendingWith campaign={campaign} file={file} />
       <RelationshipHistory campaign={campaign} trend={standing.trend} />
-    </Panel>
+    </Pane>
   );
 }
 
@@ -185,7 +185,7 @@ const priorityAction = (item: CountryPriority): string => (item.href ? "Open the
 function Priorities({ file, onView }: { readonly file: NationFile; readonly onView: (view: CountryView) => void }) {
   const items = countryPriorities(file);
   return (
-    <Panel title="What needs attention" icon="caution" count={items.length}>
+    <Pane title="What needs attention" icon="caution" count={items.length}>
       {items.length === 0 ? (
         <Text variant="body" tone="secondary">
           Nothing needs your attention here. There's no war, trade penalty, promise, or tension with this country.
@@ -210,7 +210,7 @@ function Priorities({ file, onView }: { readonly file: NationFile; readonly onVi
           ))}
         </Column>
       )}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -232,10 +232,10 @@ export function CountryIdentity({ file, onOverview }: { readonly file: NationFil
   const alerts = countryPriorities(file).filter((item) => item.tone !== "neutral");
   return (
     <Row gap="md" wrap>
-      <Text variant="label" tone="secondary">
-        {regionName(file.leader.region)} · Capital: {file.leader.capital}
-      </Text>
       <StanceChip file={file} />
+      <Text variant="label" tone="secondary">
+        {file.leader.government} · {regionName(file.leader.region)} · Capital: {file.leader.capital}
+      </Text>
       {onOverview && alerts.length > 0 ? (
         <Button kind="quiet" size="compact" icon={alerts.some((item) => item.tone === "risk") ? "adverse" : "caution"} iconAfter="chevron" onPress={onOverview}>
           {`${alerts.length} ${alerts.length === 1 ? "alert" : "alerts"} for this country`}
@@ -249,10 +249,10 @@ export function CountryIdentity({ file, onOverview }: { readonly file: NationFil
 export function CountryHead({ campaign, file, onView }: { readonly campaign: Campaign; readonly file: NationFile; readonly onView: (view: CountryView) => void }) {
   return (
     <Column gap="lg">
-      <Panel id="country-leader" title="Head of government" icon="subjectPerson">
-        <Leader file={file} />
-      </Panel>
       <RelationshipNow campaign={campaign} file={file} />
+      <Pane id="country-leader" title="Head of government" icon="subjectPerson">
+        <Leader file={file} />
+      </Pane>
       <Priorities file={file} onView={onView} />
     </Column>
   );

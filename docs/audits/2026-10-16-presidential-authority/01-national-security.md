@@ -354,7 +354,8 @@ Each row gives: **Act** (id, file:line, what the player can do), **Law** (source
 - **History, 1957:** Eisenhower federalized the Arkansas Guard and sent the 101st Airborne to enforce federal court orders, citing then-§§332-334 (now the Insurrection Act) (archives.gov).
 - **Politics:** Extraordinary over a governor's objection; routine with consent.
 - **Verdict: UNDERSTATED.** It is refused entirely, though lawful on a narrow predicate.
-- **Fix (new act, high):** Offer it only as a hard case gated on:
+- **Shipped 2026-10-25 (WIP commit `39476ba62`, gate not yet run):** `federalize` in `locale-acts.ts`, predicate `federalServiceGround` in `locale-missions.ts`: an invasion (the United States defends a war), a rebellion (insurgency pressure at 0.2 or worse), or the regular forces tried and unable (a live proclamation, Insurrection Act troops there at least two weeks under an operative order, unrest at 0.5 or worse), the §12406(3) reading of *Trump v. Illinois*. A declaration or a protest opens nothing. Signs `order-guard-federalization` (`locale-mission-orders.ts`), which gets counsel, a state suit and an interim ruling (`mission-interim-relief.ts`); the Guard is a commitment bound to the state and the order (`commitments.ts`) at the weekly rate from `force-costs.ts`. One federalized Guard and one troop mission per state. Refusal text: `LOCALE_REFUSALS.federalize`. Orders going "through the governor" is carried by the governor-assent and mark effects, not a separate step.
+- **Original fix (new act, high):** Offer it only as a hard case gated on:
   - (a) a predicate the engine can hold: invasion; rebellion (an armed uprising condition, not protest); or an Insurrection Act proclamation in force (N53), per *Trump v. Illinois*;
   - (b) orders "through the governor" (registry limit);
   - (c) automatic litigation: a state suit, then a TRO risk, then appeal, with courts reading the predicate;
@@ -371,14 +372,16 @@ Each row gives: **Act** (id, file:line, what the player can do), **Law** (source
   - Portland and Operation Legend, 2020 (not opened).
 - **Politics:** Routine to notable. It becomes extraordinary only in coercive use, which `domestic-coercion.ts` already prices.
 - **Verdict: UNDERSTATED.** The game refuses a routine federal power.
-- **Fix (new act, high):** Enable it as a federal enforcement surge tied to a federal law the condition implicates (immigration, federal property, federal crimes), with the existing coercion-incident risk. Keep the "disorder" predicate optional. Never let it carry military forces.
+- **Shipped 2026-10-25 (WIP commit `39476ba62`, gate not yet run):** `agents` is split into three acts in `locale-acts.ts`: `property-surge` (40 U.S.C. §1315, answers unrest, no consent, `order-property-surge`), `immigration-operation` (8 U.S.C. §1357, routine enforcement in every state, scaled by foreign-born share, reachable from the home path, `order-immigration-operation`) and `task-force` (28 U.S.C. §533, at the governor's invitation, `order-joint-task-force`). All three carry the existing coercion risk (`domestic-coercion.ts`), none carries military forces, and each is excepted from a funding lapse (31 U.S.C. §1342).
+- **Original fix (new act, high):** Enable it as a federal enforcement surge tied to a federal law the condition implicates (immigration, federal property, federal crimes), with the existing coercion-incident risk. Keep the "disorder" predicate optional. Never let it carry military forces.
 
 ### N53. Send in active-duty troops (Insurrection Act)
 - **Act:** `locale-acts.ts:130-143`, refused: "the Insurrection Act, and the game doesn't include it yet" (`:216`).
 - **History:** Los Angeles 1992: Proclamation 6427 recites that the governor "requested Federal assistance" and commands persons to disperse, under chapter 15 of title 10 (govinfo 106 Stat. 5261). Little Rock 1957, without the state's consent (archives.gov). In 2025 the Act was discussed but not invoked; Trump said he would withdraw after *Trump v. Illinois* (Just Security).
 - **Politics:** With a governor's request, notable (1992). Without one, extraordinary (1957 and the civil-rights era).
 - **Verdict: UNDERSTATED.**
-- **Fix (new act, high):** Two tiers.
+- **Shipped 2026-10-25 (WIP commit `39476ba62`, gate not yet run):** two acts in `locale-acts.ts`, `proclaim` then `troops`, on the grounds in `locale-missions.ts` (`insurrectionGrounds`). §251: the governor assents and unrest reaching the state is at 0.4 or worse. §252: unrest placed in the state still at 0.3 or worse and a granted `injunction-enforcement` court order (`court-order-records.ts`) that the state has let stand with no answer since. §253: placed unrest at 0.6 or worse, the governor not assenting, no state answer in six weeks. The §254 proclamation is its own signed order (`order-insurrection-proclamation`), must come an earlier week and stays in force four weeks. Troops sign `order-insurrection-request` (§251) or `order-insurrection-enforcement` (§§252-253), carry the stated mission, and are one brigade combat team on a commitment bound to the order. The Posse Comitatus Act is pleaded in the suit beyond the stated mission. The game's reading of §252 ("impracticable by the ordinary course of judicial proceedings") is a modeled proxy and the player copy says so. Differs from the design brief: the brief read §252 off a two-week federal mission; the shipped code reads it off the court order (`OBSTRUCTION_WEEKS` = 1).
+- **Original fix (new act, high):** Two tiers.
   1. §251 at a governor's or legislature's request: a normal, gated act.
   2. §§252-253 without a request: a hard case. It requires the predicate (obstruction of federal law or of court orders, or violence denying rights the state will not protect), the §254 proclamation as its own step, counsel's opinion, litigation, and the political cost.
 
@@ -397,6 +400,7 @@ Each row gives: **Act** (id, file:line, what the player can do), **Law** (source
   2. Offer the lawful neighbor, "Set an investigative priority (memorandum to the Attorney General)," with First Amendment litigation and civil-liberties costs.
   3. Hide the "Order the surveillance" verb (`locale-acts.tsx:26`), or relabel it "Why you can't order this," so the refused act does not read as a button.
 - **Verdict: ACCURATE.**
+- **Shipped 2026-10-25 (WIP commit `39476ba62`, gate not yet run):** `surveil` stays refused in every case; its refusal now cites 50 U.S.C. §1812 and Executive Order 12333 §2.3 and points to the lawful neighbor (`LOCALE_REFUSALS.surveil`, `locale-missions.ts`). Added `priority` ("Set an investigative priority", 28 U.S.C. §509): a memorandum through `issueDirective` to `INST-DOJ`, one per state and week, which Justice may decline (`locale-act-effects.ts`). Added the court-ordered road: the President directs Justice to apply for a FISA, Title III, warrant or injunction order (`court-orders.ts`), the court rules on its own clock with the answer hidden until then (`court-order-records.ts`), and `surveil-under-order` opens only while a granted FISA or Title III order covers the state. Hiding the verb as a button is for the player-core and app lanes.
 
 ### N55. Grant a regulatory waiver
 - `locale-acts.ts:159-169`. Generic. Real waivers are statute-specific (for example fuel waivers, already an act at D14). **ACCURATE.** Low: cite the statute in the copy when known.
@@ -406,6 +410,7 @@ Each row gives: **Act** (id, file:line, what the player can do), **Law** (source
 
 ### N57. Force or collection with no unrest ("home acts")
 - `locale-acts.ts:347-381`. The same boundary applies (`:349`), so they are refused today. **ACCURATE.** If N52 and N53 land, keep this unprovoked path as the hard-case version, with the `UNPROVOKED_STANDING` doubling.
+- **Shipped 2026-10-25 (WIP commit `39476ba62`, gate not yet run):** `takeHomeAct` and `homeActAvailability` (`locale-acts.ts`, `locale-act-effects.ts`) now reach acts whose occasion is not `any`. Because the home path supplies no cause, acts that answer disorder (`property-surge`, `task-force`, `priority`) are refused there, and `immigration-operation`, whose occasion is routine enforcement, is the one act sent with no unrest. It charges `UNPROVOKED_STANDING` (2) times the standing and is always read as provoked for coercion.
 
 ### N58. Order: protect federal sites
 - `order-families.ts:79-96`; 40 U.S.C. §1315; "Federal buildings, grounds and property only." This matches the statute. OLC's 1971 view that protecting federal property is not "executing the laws" (cited in *Trump v. Illinois*) explains why this differs from troops. **ACCURATE.**

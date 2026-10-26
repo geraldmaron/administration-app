@@ -1098,7 +1098,11 @@ export const israelNation = NationInput.parse({
     military: {
       budget: 24_000, activeHeadcount: 170_000, reserveHeadcount: 465_000, readiness: 0.8, doctrineQuality: 0.85,
       branchStrength: { land: 0.5, air: 0.8, naval: 0.55, cyber: 0.85, space: 0.5 },
-      airliftCapacity: 0.5, sealiftCapacity: 0.3, arsenal: { warheads: 0, deliveryTriad: false, declared: false }, basesAbroad: 0,
+      airliftCapacity: 0.5, sealiftCapacity: 0.3,
+      // Israel keeps a policy of ambiguity, so `declared` stays false and no surface prints the count. The 90 is SIPRI's
+      // estimate of its stockpile at January 2026 (Yearbook 2026, ch. 8, table 8A.10, which also lists aircraft, Jericho
+      // missiles and submarine-launched cruise missiles, hence the means to deliver). A zero here read an armed state as unarmed.
+      arsenal: { warheads: 90, deliveryTriad: true, declared: false }, basesAbroad: 0,
     },
     security: { crimeIndex: 0.2, corruptionIndex: 0.3, insurgencyPressure: 0.35, borderControl: 0.7, intelCapability: 0.9, counterIntel: 0.9 },
     politics: { regimeStability: 0.6, legitimacy: 0.6, factionalism: 0.6, pressFreedom: 0.7, protestPressure: 0.45 },

@@ -293,6 +293,22 @@ export declare const OPINION_DRIFT = 0.06;
  * a judgment directly.
  */
 export declare const SALIENT_OPINION_DRIFT = 0.2;
+/**
+ * Which way each front-page story pushes the judgments it makes louder. Every
+ * story the table names is bad news for its judgment, so a loud driver is
+ * re-read quickly only while it is being pushed down; a judgment climbing back
+ * toward its target while some story is still loud recovers at the ordinary
+ * pace. Keyed on `SALIENCE_MULTIPLIERS` so a new story must say which way it
+ * pushes.
+ */
+export declare const SALIENCE_PUSH: {
+    readonly atWar: "down";
+    readonly conditionActive: "down";
+    readonly economicPain: "down";
+    readonly disorder: "down";
+    readonly scandalLive: "down";
+    readonly pumpShock: "down";
+};
 /** The judgments some story on the front page is making louder this week. */
 export declare function salientDrivers(campaign: Campaign): ReadonlySet<OpinionDriver>;
 /**

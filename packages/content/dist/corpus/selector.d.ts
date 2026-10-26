@@ -196,6 +196,11 @@ export declare const ScenarioSelector: z.ZodObject<{
             "fiscal-crisis": "fiscal-crisis";
             "energy-shortage": "energy-shortage";
             "housing-crunch": "housing-crunch";
+            cyberattack: "cyberattack";
+            "work-stoppage": "work-stoppage";
+            "bank-failure": "bank-failure";
+            "mass-casualty-attack": "mass-casualty-attack";
+            "wrongful-detention": "wrongful-detention";
         }>>;
     }, z.core.$strip>, z.ZodObject<{
         kind: z.ZodLiteral<"coalition">;
@@ -411,6 +416,11 @@ export declare const ScenarioSelector: z.ZodObject<{
             "fiscal-crisis": "fiscal-crisis";
             "energy-shortage": "energy-shortage";
             "housing-crunch": "housing-crunch";
+            cyberattack: "cyberattack";
+            "work-stoppage": "work-stoppage";
+            "bank-failure": "bank-failure";
+            "mass-casualty-attack": "mass-casualty-attack";
+            "wrongful-detention": "wrongful-detention";
         }>>;
         confidence: z.ZodOptional<z.ZodEnum<{
             low: "low";
@@ -559,6 +569,11 @@ export declare const ScenarioSelector: z.ZodObject<{
             "fiscal-crisis": "fiscal-crisis";
             "energy-shortage": "energy-shortage";
             "housing-crunch": "housing-crunch";
+            cyberattack: "cyberattack";
+            "work-stoppage": "work-stoppage";
+            "bank-failure": "bank-failure";
+            "mass-casualty-attack": "mass-casualty-attack";
+            "wrongful-detention": "wrongful-detention";
         }>>;
     }, z.core.$strip>>>;
     once: z.ZodOptional<z.ZodBoolean>;

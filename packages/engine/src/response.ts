@@ -128,6 +128,16 @@ export const RESPONSE_MEMBERS: Readonly<Record<ConditionKind, readonly Instituti
   "unemployment-shock": [],
   "fiscal-crisis": [],
   "housing-crunch": [],
+  // An intrusion is CISA's to contain and the FBI's to investigate. A mass
+  // killing is the FBI and ATF behind the state's own police. A strike, a
+  // failed bank and an American held abroad have no body to send: a mediator,
+  // a receivership and a negotiation are programs and diplomacy, not a
+  // deployment.
+  cyberattack: ["INST-CISA", "INST-FBI"],
+  "work-stoppage": [],
+  "bank-failure": [],
+  "mass-casualty-attack": ["INST-FBI", "INST-ATF", "INST-STATES"],
+  "wrongful-detention": [],
 };
 
 /** The states, who are a member of most responses and a subordinate of none. */

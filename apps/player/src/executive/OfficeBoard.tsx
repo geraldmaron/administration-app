@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Campaign } from "@admin/engine";
 import { formatRatio, type OverviewOffice, type OverviewSection } from "@admin/player-core";
-import { Badge, CardGrid, CardLink, Column, Key, Row, Sticky, Text, View, useMedia } from "@admin/ui";
+import { Tag, CardGrid, CardLink, Column, Key, Row, Sticky, Text, View, useMedia } from "@admin/ui";
 import { Select, TextInput, Toggle } from "@admin/ui/forms";
 import { StaffingBadge } from "@admin/ui/dossier";
 import { cabinetGroups, officeRead, selectedOffice, type CabinetGroup, type ExecutiveSearch, type GroupBy, type OrderBy, type StaffingFilter } from "./cabinet-view";
@@ -55,7 +55,7 @@ function OfficeCard({ campaign, office, selected, onSelect }: { readonly campaig
       <View flexGrow={1} />
       <Row gap="xs" wrap>
         <StaffingBadge staffing={node.staffing} />
-        {waiting > 0 ? <Badge status="danger" icon="caution">{`${waiting} need you`}</Badge> : null}
+        {waiting > 0 ? <Tag tone="danger" icon="caution">{`${waiting} need you`}</Tag> : null}
         {read ? <ChairReadBadge read={read} /> : null}
       </Row>
       {delivery ? (
@@ -103,7 +103,9 @@ function Group({ campaign, group, selected, branch, inline, onSelect }: GroupPro
         <Text variant="title" role="heading" aria-level={3}>
           {group.title}
         </Text>
-        <Badge status="outline">{String(group.offices.length)}</Badge>
+        <Text variant="label" tone="tertiary" tabular>
+          {group.offices.length}
+        </Text>
       </Row>
       {cards(group.offices.slice(0, cut))}
       {at < 0 ? null : <OfficeInspector campaign={campaign} office={selected} branch={branch} />}
@@ -152,7 +154,7 @@ export function OfficeBoard({ campaign, sections, branch, search, onSearch }: Of
         </Row>
       ) : (
         <Text variant="body" tone="secondary">
-          No offices match. Try clearing the search or changing the staffing filter.
+          No office matches the search and filters.
         </Text>
       )}
     </Column>

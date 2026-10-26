@@ -1,6 +1,6 @@
 import type { Campaign } from "@admin/engine";
 import { ECONOMY_HISTORY_RATES, cycleReading, place, sealFor, type EconomyMeasure } from "@admin/player-core";
-import { Badge, CardGrid, CardLink, Column, Icon, Page, Row, Seal, Text, type IconName } from "@admin/ui";
+import { Tag, CardGrid, CardLink, Column, Icon, Page, Row, Seal, Text, type IconName } from "@admin/ui";
 import { ViewTabs } from "@admin/ui/nation";
 import { Levers } from "./Levers";
 import { Markets } from "./Markets";
@@ -69,7 +69,7 @@ export function EconomyScreen({ campaign, search, onSearch }: { readonly campaig
   const view = search.view ?? "overview";
   const cycle = cycleReading(campaign);
   return (
-    <Page eyebrow="Council of Economic Advisers" icon="economyGrowth" title="Economy" lede="Jobs, prices, and how fast the economy is growing, plus the markets, trade, and government money behind them." emblem={<Seal spec={sealFor("INST-TREASURY")} size={72} />} actions={<Badge status="info" icon="economyGrowth">{cycle.word}</Badge>}>
+    <Page eyebrow="Council of Economic Advisers" icon="economyGrowth" title="Economy" emblem={<Seal spec={sealFor("INST-TREASURY")} size={72} />} actions={<Tag tone="info" icon="economyGrowth">{cycle.word}</Tag>}>
       <ViewTabs<EconomyView>
         label="Economy sections"
         tabs={[

@@ -56,6 +56,18 @@ export const CHAMBER_NAMES: Readonly<Record<Chamber, string>> = {
 const HOUSE_SEATS = 435;
 const SENATE_SEATS = 100;
 
+/**
+ * The members a chamber's count is taken over: its seats less the ones left
+ * vacant by a death. Both Houses decide by those present and voting, and the
+ * Constitution's two-thirds bars count the same way, so an empty seat is
+ * neither a yea nor a nay; Senate cloture's three fifths is of senators duly
+ * chosen and sworn, which excludes a vacancy too.
+ */
+export function seatedOf(congress: Congress, chamber: Chamber): number {
+  const vacant = (congress.members ?? []).filter((member) => member.chamber === chamber && member.vacancy !== undefined).length;
+  return congress.chambers[chamber].seats - vacant;
+}
+
 /** A simple majority of a chamber — one more than half, always an integer. */
 export function majorityOf(seats: number): number {
   return Math.floor(seats / 2) + 1;
@@ -102,7 +114,7 @@ export type LegislativeTrack = "ordinary" | "reconciliation" | "privileged";
  * really is decided by fifty-one.
  */
 export function floorThreshold(congress: Congress, chamber: Chamber, track: LegislativeTrack): number {
-  const { seats } = congress.chambers[chamber];
+  const seats = seatedOf(congress, chamber);
   const sixty = chamber === "senate" && track === "ordinary";
   return sixty ? clotureOf(seats) : majorityOf(seats);
 }
@@ -476,7 +488,10 @@ export const STRUCK_ORDER_MOOD_CAP = 0.15;
 export const STRUCK_ORDER_SEASON_TURNS = 26;
 
 function struckRecently(campaign: Campaign): number {
-  return campaign.judiciary.cases.filter((entry) => entry.holding === "struck-down" && campaign.turn - entry.ruledTurn <= STRUCK_ORDER_SEASON_TURNS).length;
+  // A ruling from the background docket narrows a doctrine in a case between
+  // other parties; it says nothing about this President's own acts.
+  return campaign.judiciary.cases.filter((entry) => entry.holding === "struck-down" && entry.subject?.kind !== "background-docket"
+    && campaign.turn - entry.ruledTurn <= STRUCK_ORDER_SEASON_TURNS).length;
 }
 
 /**

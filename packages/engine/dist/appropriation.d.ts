@@ -1,6 +1,8 @@
 import type { Appropriation, Campaign, ChamberVote, GameDate } from "./state.js";
 import { type CongressResult } from "./congress.js";
 import { type BudgetAccount } from "./budget.js";
+import { sessionDayDate } from "./congressional-session.js";
+import { countRescission, type DeferralPurpose } from "./impoundment.js";
 import { type BudgetDraftCandidate } from "./budget-draft.js";
 /**
  * The appropriation a new administration inherits on the day of the oath:
@@ -72,3 +74,38 @@ export declare function projectAppropriation(campaign: Campaign, candidate?: Bud
  * true because there is no book for a line to be missing from.
  */
 export declare function requestAppropriation(campaign: Campaign, candidate: BudgetDraftCandidate): CongressResult;
+export type WithholdingRequest = {
+    readonly account: BudgetAccount;
+    /** The fraction of what the account is appropriated, and not already held, that is asked for: above 0, up to 1. */
+    readonly portion: number;
+};
+export type DeferralRequest = WithholdingRequest & {
+    readonly purpose: DeferralPurpose;
+    /** How long the money is held from today. It cannot run past the end of the fiscal year. */
+    readonly days: number;
+};
+export type RescissionProjection = {
+    readonly share: number;
+    /** The date the 45th day of continuous session falls on, when the money must be released absent a bill. */
+    readonly windowEnds: ReturnType<typeof sessionDayDate>;
+    /** The window ends after the fiscal year does, so the money expires before it could be released. */
+    readonly pocket: boolean;
+    readonly votes: ReturnType<typeof countRescission>;
+};
+export declare function projectRescission(campaign: Campaign, request: WithholdingRequest): RescissionProjection;
+/**
+ * Ask Congress to cancel part of an account's appropriation (2 U.S.C. 683).
+ *
+ * The money is held while Congress considers the bill, and released if it has
+ * not completed action within 45 days of continuous session. A message sent
+ * so late that those days end after the fiscal year does is a pocket
+ * rescission: allowed to proceed, but contested, and priced.
+ */
+export declare function proposeRescission(campaign: Campaign, request: WithholdingRequest): CongressResult;
+/**
+ * Hold part of an account's appropriation for a period inside the fiscal year
+ * (2 U.S.C. 684). Only a contingency or savings from efficiency is a lawful
+ * purpose; a deferral for policy reasons is sent anyway if the President
+ * chooses, and the Comptroller General reports it as unlawful and may sue.
+ */
+export declare function proposeDeferral(campaign: Campaign, request: DeferralRequest): CongressResult;

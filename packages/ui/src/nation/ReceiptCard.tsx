@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Icon } from "../icons/Icon";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { Surface } from "../primitives/Surface";
 import { Column, Divider, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
@@ -26,7 +26,7 @@ export function ReceiptCard({ title, date, lines, outcome, record, children }: {
               {title}
             </Text>
           </Column>
-          {outcome === "refused" ? <Badge status="danger">Refused</Badge> : <Badge status="success">Recorded</Badge>}
+          {outcome === "refused" ? <Tag tone="danger">Refused</Tag> : <Tag tone="success">Recorded</Tag>}
         </Row>
         {lines.length > 0 ? (
           <Column gap="2xs">

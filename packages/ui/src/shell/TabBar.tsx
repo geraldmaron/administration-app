@@ -1,7 +1,7 @@
 import { Theme, View } from "@tamagui/core";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "../icons/Icon";
-import { CountDot } from "../primitives/Badge";
+import { CountDot } from "../primitives/CountDot";
 import { Text } from "../primitives/Text";
 import type { LinkComponent, NavItem } from "./nav-types";
 
@@ -15,8 +15,8 @@ export function TabBar({ items, activeId, Link }: { readonly items: readonly Nav
         aria-label="Main"
         flexDirection="row"
         backgroundColor="background"
-        borderTopWidth={2}
-        borderTopColor="goldRule"
+        borderTopWidth={1}
+        borderTopColor="borderColor"
         paddingBottom={Math.max(insets.bottom, 4)}
         paddingTop="2xs"
       >
@@ -24,13 +24,14 @@ export function TabBar({ items, activeId, Link }: { readonly items: readonly Nav
           const active = item.id === activeId;
           const count = (item.fresh ?? 0) + (item.waiting ?? 0);
           return (
-            <View key={item.id} flex={1}>
+            // Cells take their content's width and share what is left, so "Government" is not cut at 320px while "Brief" has room to spare.
+            <View key={item.id} flexGrow={1} flexBasis="auto">
               <Link href={item.href} label={item.label} current={active}>
                 <View alignItems="center" gap="2xs" minHeight="tab" justifyContent="center" paddingVertical="xs">
-                  <View position="relative">
-                    <Icon name={item.icon} size={24} tone={active ? "chromeColor" : "chromeSecondary"} weight={active ? "fill" : "regular"} />
+                  <View position="relative" paddingVertical="2xs" paddingHorizontal="md" borderRadius="pill" backgroundColor={active ? "selected" : "transparent"}>
+                    <Icon name={item.icon} size={24} tone={active ? "accent" : "colorTertiary"} weight={active ? "fill" : "regular"} />
                     {count > 0 ? (
-                      <View position="absolute" top={-6} right={-12}>
+                      <View position="absolute" top={-4} right={0}>
                         <CountDot count={count} label={`${count} waiting`} />
                       </View>
                     ) : null}
@@ -38,7 +39,6 @@ export function TabBar({ items, activeId, Link }: { readonly items: readonly Nav
                   <Text variant="caption" tone={active ? "primary" : "secondary"} weight={active ? "strong" : "regular"} numberOfLines={1}>
                     {item.label}
                   </Text>
-                  <View height={3} width={20} borderRadius="pill" backgroundColor={active ? "goldRule" : "transparent"} />
                 </View>
               </Link>
             </View>

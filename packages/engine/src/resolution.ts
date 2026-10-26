@@ -1,3 +1,4 @@
+import { AID_AMOUNT } from "./aid-amounts.js";
 import { strikeAssessmentReading, withStrikeAssessment } from "./strike-assessment.js";
 import { actionTermsProblem, supportProjection, type SupportChoice, type SupportProjection } from "./action-support.js";
 import { hitsBackHarder, failedForceEffects } from "./force-failure.js";
@@ -75,12 +76,13 @@ export type RiskBranch = {
   readonly description: string;
 };
 
-export type RippleRelation = "bloc-partner" | "ally" | "trade-partner" | "bloc-peer" | "domestic";
+export type RippleRelation = "bloc-partner" | "ally" | "trade-partner" | "bloc-peer" | "observer" | "domestic";
 
 export type Ripple = {
   readonly nation: NationId;
   readonly relation: RippleRelation;
   readonly magnitude: number;
+  readonly approves?: true; // the observer welcomes the move and warms toward the actor; absent, it cools
   readonly reason: string;
 };
 
@@ -227,8 +229,7 @@ function sharesBorder(actor: Nation, target: Nation): boolean {
 // default.
 const RUNG_WEIGHT: Record<RungLevel, number> = { 1: 0.2, 2: 0.45, 3: 1, 4: 2, 5: 3.5 };
 
-// Per-instrument cost of one unit of ladder.
-//
+// Per-instrument cost of one unit of ladder (planning values: US rung 3 is ~$20M/$60M/$150M).
 // `treasuryOfGdp` is a share of the *acting* nation's annual output: a flat sum
 // is a rounding error to a superpower and ruin to a mid-power. Stability,
 // standing and readiness are 0..1 metric movement and already relative.
@@ -236,14 +237,14 @@ const INSTRUMENT_UNIT_COST: Record<
   InstrumentId,
   { readonly treasuryOfGdp: number; readonly standing: number; readonly stability: number; readonly militaryReadiness: number }
 > = {
-  diplomatic: { treasuryOfGdp: 0.0000855, standing: 0.012, stability: 0.002, militaryReadiness: 0 },
-  economic: { treasuryOfGdp: 0.0002564, standing: 0.008, stability: 0.005, militaryReadiness: 0 },
+  diplomatic: { treasuryOfGdp: 0.00000073, standing: 0.012, stability: 0.002, militaryReadiness: 0 },
+  economic: { treasuryOfGdp: 0.0000022, standing: 0.008, stability: 0.005, militaryReadiness: 0 },
   // No readiness line, and for a harder reason than `military` below: covert
   // work does not spend the force at all. It spends the clandestine service,
   // which `COVERT_CAPABILITY_COST` bills and `capacityCost` quotes. Charging it
   // to the force closed the military ladder's gates through a channel the
   // player was never shown.
-  covert: { treasuryOfGdp: 0.0001923, standing: 0.003, stability: 0.003, militaryReadiness: 0 },
+  covert: { treasuryOfGdp: 0.0000055, standing: 0.003, stability: 0.003, militaryReadiness: 0 },
   // No readiness line: the military rungs bill the force through
   // `MILITARY_READINESS_COST`, which the gates are calibrated against and
   // `capacityCost` quotes. No money line: `force-costs.ts` prices the sorties,
@@ -253,7 +254,7 @@ const INSTRUMENT_UNIT_COST: Record<
   // rather than spending it, and what it takes at home is the argument about
   // spending abroad while there are needs at home — a small stability line,
   // never a standing one.
-  assistance: { treasuryOfGdp: 0.0004274, standing: 0, stability: 0.004, militaryReadiness: 0 },
+  assistance: { treasuryOfGdp: 0, standing: 0, stability: 0.004, militaryReadiness: 0 },
 };
 
 // Distance is paid for by anything that has to physically arrive: an airlift of
@@ -275,7 +276,7 @@ function projectCost(request: ResolutionRequest, actor: Nation, target: Nation, 
   const weight = RUNG_WEIGHT[request.rung];
   const reach = projectionMultiplier(request.instrument, actor, target, staging);
   const cost: MetricCost = {
-    treasury: basis ? -basis.upFront : -Math.round(unit.treasuryOfGdp * actor.stats.economy.gdp) * weight * reach,
+    treasury: basis ? -basis.upFront : request.instrument === "assistance" ? -AID_AMOUNT[request.rung] * reach : -Math.round(unit.treasuryOfGdp * actor.stats.economy.gdp * weight * reach * 100) / 100,
     standing: -unit.standing * weight,
     stability: -unit.stability * weight,
     militaryReadiness: -unit.militaryReadiness * weight,

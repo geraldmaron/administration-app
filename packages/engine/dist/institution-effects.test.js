@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { applyNomination } from "./institution-effects.js";
+import { applyInstitution, applyNomination } from "./institution-effects.js";
+import { foundedForBalance } from "./balance-harness.js";
+import { VICE_PRESIDENCY_INSTITUTION_ID } from "./institution-catalog.js";
 import { buildCampaign, person } from "./__fixtures__/campaign.js";
 const NOMINEE = "PER-NOMINEE";
 function pending(office, institution) {
@@ -58,5 +60,15 @@ describe("the Senate's confirmation", () => {
         });
         expect(after.institutions).toBe(campaign.institutions);
         expect(after.people[NOMINEE].currentRole).toBeUndefined();
+    });
+});
+describe("vacating the vice presidency", () => {
+    it("clears the Vice President and the Senate's chair even when the office has no runtime", () => {
+        const { campaign } = foundedForBalance("succession-line", "democrat");
+        expect(campaign.vicePresident).toBeDefined();
+        const { [VICE_PRESIDENCY_INSTITUTION_ID]: _office, ...institutions } = campaign.institutions;
+        const vacated = applyInstitution({ ...campaign, institutions }, { kind: "institution", institution: VICE_PRESIDENCY_INSTITUTION_ID, vacate: true });
+        expect(vacated.vicePresident).toBeUndefined();
+        expect(vacated.congress.presidingOfficer).toBeUndefined();
     });
 });

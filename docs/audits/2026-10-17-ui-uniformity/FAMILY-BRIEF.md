@@ -16,7 +16,7 @@ This is the common half of each family agent's brief for the 2026-10-17 UI unifo
   - the screen harness against the worktree server
 - Commands you may not run: `pnpm run build`, the workspace test, balance, and `tsc -b`. The exception is a player-core module you own: run its vitest file with `pnpm --filter @admin/player-core exec vitest run <file>`.
 - The worktree dev server is at http://localhost:8099. Capture with:
-  `node scripts/dev/shoot-screens.mjs --app player --port 8099 --out /private/tmp/claude-501/-Users-geralddagher-Developer-Projects-admin-app/82b95132-2fea-4494-9eef-c36259fc97cb/scratchpad/fam-<letter> --sizes 1440x900,390x844 --themes light,dark <routes>`
+  `node scripts/dev/shoot-screens.mjs --app player --port 8099 --out <scratch path>> --sizes 1440x900,390x844 --themes light,dark <routes>`
   Metro may not hot-reload `packages/ui`; your edits in `apps/player` reload.
 - "Before" captures of every route are in `.../scratchpad/caps2/`, named `<route-slug>-<w>x<h>-<theme>-partN.png`. Look at the images. The pass is judged on the rendered result, not on the code.
 

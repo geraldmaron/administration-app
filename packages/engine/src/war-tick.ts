@@ -25,6 +25,8 @@ import { accumulateCasualties, civilianDeaths, warDeathTolls } from "./war-attri
 import { munitionStrengthFactor } from "./munitions.js";
 import { posturePressureFactor } from "./combatant-commands.js";
 import { hullLossThisWeek, withHullDeaths } from "./hull-losses.js";
+import { pressDown, pressUp, pressedThreatLevel, pressedTrustLevel } from "./relationships.js";
+import { observerStance } from "./resolution-ripples.js";
 
 // The week a war is fought: who is stronger where the fighting is, what each
 // side loses, who comes in, and when one side is spent. One packet per war.
@@ -181,21 +183,46 @@ function attritionEffects(
   });
 }
 
+/**
+ * Planning values: how far below where it stands a bystander's trust in an
+ * aggressor is held, per unit of the front's heat (0.5 to 1.5) and of the
+ * bystander's own objection to the war, and how far above its standing
+ * assessment the aggressor's threat is held per unit of heat. The objection is
+ * the one third parties read every coercive act through: a friend of the
+ * victim, a government bound to defend it or trading with it objects most, a
+ * rival of the victim not at all.
+ */
+const WAR_CONDEMNATION_DROP = 0.2;
+const WAR_ALARM_RISE = 0.125;
+/** Beyond this, more ties to the victim do not deepen a bystander's verdict. */
+const MAX_OBJECTION = 1.5;
+
 // The world's answer to aggression: third parties move against the attacker,
 // and a repeat aggressor bleeds standing everywhere. The bully arc is priced
 // here rather than authored.
+//
+// Each bystander's reading of the aggressor is pressed toward a level, deeper
+// the hotter the front and the more the bystander objects, rather than stepped
+// down every week: a war the world watches for years is a war it has made up
+// its mind about. The repair after the war is relationship memory's.
 function worldOpinionEffects(campaign: Campaign, conflict: Conflict): Effect[] {
   const effects: Effect[] = [];
-  for (const id of Object.keys(campaign.nations)) {
+  const heat = 0.5 + conflict.intensity;
+  const victim = campaign.nations[conflict.defender]?.base;
+  if (!victim) return effects;
+  for (const id of Object.keys(campaign.nations).sort()) {
     const nation = id as NationId;
     if (sideOf(conflict, nation) !== undefined) continue;
-    if (!campaign.relationships[relationshipKey(nation, conflict.aggressor)]) continue;
-    effects.push({
-      kind: "relationship",
-      from: nation,
-      to: conflict.aggressor,
-      deltas: { trust: -0.02 * (0.5 + conflict.intensity), militaryThreat: 0.02 },
-    });
+    const relationship = campaign.relationships[relationshipKey(nation, conflict.aggressor)];
+    if (!relationship) continue;
+    const objection = Math.min(MAX_OBJECTION, Math.max(0, -observerStance(campaign, nation, conflict.aggressor, victim, "military")));
+    const trustLevel = pressedTrustLevel(campaign, relationship, WAR_CONDEMNATION_DROP * heat * objection);
+    const threatLevel = pressedThreatLevel(campaign, relationship, WAR_ALARM_RISE * heat);
+    if (trustLevel === undefined || threatLevel === undefined) continue;
+    const trust = pressDown(relationship.trust, trustLevel);
+    const militaryThreat = pressUp(relationship.militaryThreat, threatLevel);
+    if (trust === relationship.trust && militaryThreat === relationship.militaryThreat) continue;
+    effects.push({ kind: "relationship", from: nation, to: conflict.aggressor, set: { trust, militaryThreat } });
   }
   if (conflict.aggressor === campaign.founding.nation) {
     const priorWars = Object.values(campaign.conflicts).filter(

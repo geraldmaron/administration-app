@@ -2,14 +2,19 @@ import { SECTOR_LABELS, type Nation, type NationId } from "@admin/world";
 import { acted, named, standingCommitment, tradeRegister } from "./instrument-records.js";
 import { currencyBackstopFlag } from "./backstop.js";
 import { markedFlags } from "./marked-flags.js";
+import { AID_AMOUNT } from "./aid-amounts.js";
 import { GRANT_GROWTH_CAP, shockEffect } from "./external-shocks.js";
-import { selectConditionsFor, selectRelationship, type NationCondition } from "./state.js";
+import { selectConditionsFor, selectRelationship, type Campaign, type NationCondition } from "./state.js";
+import { FAVOR_HALF_LIFE_DAYS, retained } from "./relationships.js";
+import { elapsedDays } from "./pace.js";
 import { selectConflictBetween } from "./conflicts.js";
 import { borrowingCapacity, CREDIT_TO_LEND } from "./sovereign.js";
 import type { Effect } from "./effects.js";
 import { possessive, sentenceCase } from "./naming.js";
 import { tradeSector } from "./trade-sectors.js";
-import { denialMeasureKind, tradeEdgesWith } from "./trade.js";
+import { coerciveMeasureEffect, denialMeasureKind, tradeEdgesWith, type CoerciveMeasureKind } from "./trade.js";
+import { financialReachOf } from "./external-pressure.js";
+import { INSTITUTION_CATALOG } from "./institution-catalog.js";
 import { fittingTariffStatute, imposeTariff } from "./tariff-orders.js";
 import type { TradeSectorId } from "./trade-sectors.js";
 import {
@@ -68,11 +73,53 @@ function embargoSectorEffects(ctx: InstrumentContext): Effect[] {
   });
 }
 
-// --- Economic ladder: leverage requires an actual trade relationship (access) plus reserves to absorb the reply. ---
+// --- Economic ladder: leverage requires access to the target (a trade relationship, or for a designation a financial system its trade clears through) plus reserves to absorb the reply. ---
 
 function tradeAccess(actor: Nation, target: NationId): CapabilityCheck {
   const dependence = actor.stats.trade.tradeDependence[target];
   return requireTrue(dependence !== undefined && dependence > 0, "a live trade channel with the target (no exposure to leverage)");
+}
+
+/**
+ * The legal authority to designate or freeze. The administration needs an
+ * office that holds the power (`INSTITUTION_CATALOG`'s capability); another
+ * capital designates under its own law, which this model does not catalog.
+ */
+function designationAuthority(ctx: InstrumentContext, capability: "sanctions-designation" | "asset-freeze"): CapabilityCheck {
+  if (ctx.actor !== ctx.campaign.founding.nation) return requireTrue(true, "");
+  const held = INSTITUTION_CATALOG.some((def) => def.capabilities.includes(capability) && ctx.campaign.institutions[def.id] !== undefined);
+  return requireTrue(held, capability === "asset-freeze" ? "an office with the legal power to freeze a government's assets" : "an office with the legal power to designate a government for sanctions");
+}
+
+/**
+ * The administration's measure has to exist before the act is charged: a
+ * record the register can file against some part of the target's trade, and
+ * not the same restriction on the same trade already standing. Otherwise the
+ * act would take the target's reserves and leave nothing to lift, or take
+ * them again for a measure already in force.
+ */
+function fileableMeasure(ctx: InstrumentContext, kind: CoerciveMeasureKind): CapabilityCheck {
+  if (ctx.actor !== ctx.campaign.founding.nation) return requireTrue(true, "");
+  const effect = coerciveMeasureEffect(ctx.campaign, ctx.actor, ctx.target, kind);
+  const measure = effect?.kind === "trade" ? effect.measure : undefined;
+  if (!measure) return requireTrue(false, "a part of the target's trade the measure can be filed against");
+  const standing = Object.values(ctx.campaign.trade.measures).some((held) =>
+    held.liftedTurn === undefined && held.origin === "us" && held.target === ctx.target && held.kind === measure.kind && held.sector === measure.sector && held.scope !== "listed");
+  return requireTrue(!standing, "a restriction not already in force on the same trade");
+}
+
+/**
+ * A designation or a freeze bites through either channel: the trade the actor
+ * itself does with the target, or a financial system the target's trade with
+ * everyone else clears through (`financialReachOf`). Tariffs and embargoes
+ * cut trade and keep the trade gate alone.
+ */
+function designationReach(ctx: InstrumentContext): CapabilityCheck {
+  const dependence = liveNation(ctx.campaign, ctx.actor).stats.trade.tradeDependence[ctx.target] ?? 0;
+  return requireTrue(
+    dependence > 0 || financialReachOf(ctx.campaign, ctx.actor, ctx.target) > 0,
+    "a live trade channel with the target, or a financial system its trade clears through (no exposure to leverage)",
+  );
 }
 
 // A tenth: an increase, short of a ban, so a later increase can still stack
@@ -153,7 +200,9 @@ export const economicRungs: readonly InstrumentRung[] = [
     id: "economic-3",
     name: "Targeted Sanctions",
     gate: (ctx) => requireAll(
-      tradeAccess(liveNation(ctx.campaign, ctx.actor), ctx.target),
+      designationAuthority(ctx, "sanctions-designation"),
+      designationReach(ctx),
+      fileableMeasure(ctx, denialMeasureKind(ctx.campaign, ctx.target)),
       requireAtLeast(liveNation(ctx.campaign, ctx.actor).stats.economy.reserves, 2000, "reserves deep enough to absorb the reciprocal shock"),
     ),
     resolve: (ctx) => {
@@ -180,7 +229,9 @@ export const economicRungs: readonly InstrumentRung[] = [
     id: "economic-4",
     name: "Asset Freeze",
     gate: (ctx) => requireAll(
-      tradeAccess(liveNation(ctx.campaign, ctx.actor), ctx.target),
+      designationAuthority(ctx, "asset-freeze"),
+      designationReach(ctx),
+      fileableMeasure(ctx, "asset-restriction"),
       requireAtLeast(liveNation(ctx.campaign, ctx.actor).stats.economy.gdp, 20_000, "a GDP large enough to hold the target's assets at all, which only a major economy is"),
     ),
     resolve: (ctx) => [
@@ -314,13 +365,13 @@ function conditionRelief(ctx: InstrumentContext, amount: number, summary: string
  * Sized as a disaster response in the low hundreds of millions over two months,
  * against the administration's own output as every commitment is.
  */
-function reliefOperation(ctx: InstrumentContext): readonly Effect[] {
+function reliefOperation(ctx: InstrumentContext, delivered: number): readonly Effect[] {
   const condition = heaviestCondition(ctx);
   if (!condition) return [];
   const answering = { kind: condition.kind, nation: condition.nation };
   return standingCommitment(ctx, {
     kind: "aid",
-    shareOfGdp: RELIEF_SHARE_OF_GDP,
+    shareOfGdp: RELIEF_SHARE_OF_GDP * (delivered / RELIEF_PER_SHIPMENT),
     line: "foreignAffairs",
     weeks: RELIEF_WEEKS,
     rationale: "Relief is flown in for weeks after the first shipment lands, until the need it answers has passed.",
@@ -329,6 +380,69 @@ function reliefOperation(ctx: InstrumentContext): readonly Effect[] {
 
 const RELIEF_WEEKS = 8;
 const RELIEF_SHARE_OF_GDP = 0.00000055;
+
+/** What one shipment takes off the condition it answers, before jitter. */
+const RELIEF_PER_SHIPMENT = 0.06;
+
+/**
+ * Relief answers a need. The target has to be living through a condition, and
+ * the actor must not already be flying relief in against that same condition:
+ * a second shipment while the first operation still delivers answers nothing
+ * the first did not.
+ */
+function unmetNeed(ctx: InstrumentContext): CapabilityCheck {
+  const condition = heaviestCondition(ctx);
+  const answered = condition !== undefined && Object.values(ctx.campaign.commitments).some((commitment) =>
+    commitment.actor === ctx.actor && commitment.kind === "aid" && commitment.status === "active"
+    && commitment.addressedCondition?.kind === condition.kind && commitment.addressedCondition.nation === condition.nation);
+  return requireTrue(condition !== undefined && !answered, "a disaster or crisis at the target that relief from us is not already answering");
+}
+
+/** What a shipment delivers: its share, up to what the condition still weighs. */
+function reliefDelivered(ctx: InstrumentContext): number {
+  return Math.min(RELIEF_PER_SHIPMENT * jitter(ctx), heaviestCondition(ctx)?.severity ?? 0);
+}
+
+type AidPurpose = "civil" | "security";
+
+/** The record each kind of aid leaves on the giver's relationship, by the purpose it serves in the recipient's eyes. */
+const AID_RECORDS: Readonly<Record<AidPurpose, readonly string[]>> = {
+  civil: ["relief", "development-grant", "stabilization"],
+  security: ["arms-transfer"],
+};
+
+/**
+ * Planning value: how much one remembered act of aid for the same purpose
+ * damps the goodwill of the next. Goodwill from help falls as help becomes
+ * the expected thing, whatever the act is called.
+ */
+export const AID_SATURATION = 1;
+
+/**
+ * 0..1 of an act of aid's goodwill that still lands: each earlier act of the
+ * same purpose from the same giver to the same recipient, faded by the
+ * calendar at a favor's half-life (`FAVOR_HALF_LIFE_DAYS`), damps it.
+ */
+export function aidReception(campaign: Campaign, actor: NationId, target: NationId, purpose: AidPurpose): number {
+  const relationship = selectRelationship(campaign, actor, target);
+  if (!relationship) return 1;
+  const remembered = relationship.history
+    .filter((event) => AID_RECORDS[purpose].includes(event.kind))
+    .reduce((sum, event) => sum + retained(elapsedDays(campaign.turn - event.turn), FAVOR_HALF_LIFE_DAYS), 0);
+  return 1 / (1 + AID_SATURATION * remembered);
+}
+
+/** The recipient's reading of the giver, moved by as much of the goodwill as still lands. */
+function receivedToward(ctx: InstrumentContext, purpose: AidPurpose, deltas: NonNullable<RelationshipDeltas>): readonly Effect[] {
+  const reception = aidReception(ctx.campaign, ctx.actor, ctx.target, purpose);
+  const scaled = Object.fromEntries(Object.entries(deltas).map(([key, value]) => [key, (value ?? 0) * reception])) as NonNullable<RelationshipDeltas>;
+  return towardActor(ctx, scaled);
+}
+
+/** The giver's record of one act of aid, which the next act of the same purpose reads. */
+function aidRecord(ctx: InstrumentContext, kind: string, description: string): Effect {
+  return { kind: "relationship", from: ctx.actor, to: ctx.target, addHistory: { turn: ctx.campaign.turn, kind, description } };
+}
 
 function aidFlow(ctx: InstrumentContext, amount: number): readonly Effect[] {
   const actor = liveNation(ctx.campaign, ctx.actor);
@@ -380,14 +494,19 @@ export const assistanceRungs: readonly InstrumentRung[] = [
     rung: 1,
     id: "assistance-1",
     name: "Relief Shipment",
-    gate: (ctx) => requireAll(requireTrue(borrowingCapacity(ctx.campaign, ctx.actor) > 0, CREDIT_TO_LEND), requireAtLeast(liveNation(ctx.campaign, ctx.actor).stats.economy.reserves, 150, "reserves enough to buy a shipment and fly it")),
-    resolve: (ctx) => [
-      ...aidFlow(ctx, 60 * jitter(ctx)),
-      ...towardActor(ctx, { trust: 0.04 * jitter(ctx), tension: -0.02 * jitter(ctx) }),
-      { kind: "relationship", from: ctx.actor, to: ctx.target, deltas: { alignment: 0.02 * jitter(ctx) }, addHistory: { turn: ctx.campaign.turn, kind: "relief", description: `${sentenceCase(named(ctx, ctx.actor))} sent emergency relief to ${named(ctx, ctx.target)}.` } },
-      ...conditionRelief(ctx, 0.06 * jitter(ctx), `Foreign relief arrives and takes some of the weight off.`),
-      ...reliefOperation(ctx),
-    ],
+    gate: (ctx) => requireAll(requireTrue(borrowingCapacity(ctx.campaign, ctx.actor) > 0, CREDIT_TO_LEND), requireAtLeast(liveNation(ctx.campaign, ctx.actor).stats.economy.reserves, 150, "reserves enough to buy a shipment and fly it"), unmetNeed(ctx)),
+    resolve: (ctx) => {
+      // Money and goodwill follow what is delivered, not the label on the crate.
+      const delivered = reliefDelivered(ctx);
+      const share = delivered / RELIEF_PER_SHIPMENT;
+      return [
+        ...aidFlow(ctx, AID_AMOUNT[1] * share),
+        ...receivedToward(ctx, "civil", { trust: 0.04 * share, tension: -0.02 * share }),
+        { kind: "relationship", from: ctx.actor, to: ctx.target, deltas: { alignment: 0.02 * jitter(ctx) }, addHistory: { turn: ctx.campaign.turn, kind: "relief", description: `${sentenceCase(named(ctx, ctx.actor))} sent emergency relief to ${named(ctx, ctx.target)}.` } },
+        ...conditionRelief(ctx, delivered, `Foreign relief arrives and takes some of the weight off.`),
+        ...reliefOperation(ctx, delivered),
+      ];
+    },
   },
   {
     instrument: "assistance",
@@ -399,9 +518,10 @@ export const assistanceRungs: readonly InstrumentRung[] = [
       requireAtLeast(liveNation(ctx.campaign, ctx.actor).stats.economy.gdp, 5000, "a GDP large enough for a grant of this size to be development money rather than a gesture"),
     ),
     resolve: (ctx) => [
-      ...aidFlow(ctx, 240 * jitter(ctx)),
-      developmentShock(ctx, 240 * jitter(ctx)),
-      ...towardActor(ctx, { trust: 0.07 * jitter(ctx), alignment: 0.03 * jitter(ctx) }),
+      ...aidFlow(ctx, AID_AMOUNT[2]),
+      developmentShock(ctx, AID_AMOUNT[2]),
+      ...receivedToward(ctx, "civil", { trust: 0.07 * jitter(ctx), alignment: 0.03 * jitter(ctx) }),
+      aidRecord(ctx, "development-grant", `${sentenceCase(named(ctx, ctx.actor))} funded a development program in ${named(ctx, ctx.target)}.`),
     ],
   },
   {
@@ -415,7 +535,7 @@ export const assistanceRungs: readonly InstrumentRung[] = [
       inDifficulty(ctx),
     ),
     resolve: (ctx) => [
-      ...aidFlow(ctx, 700 * jitter(ctx)),
+      ...aidFlow(ctx, AID_AMOUNT[3]),
       {
         kind: "nationStat",
         nation: ctx.target,
@@ -427,7 +547,8 @@ export const assistanceRungs: readonly InstrumentRung[] = [
       // Money that holds a currency up is money the recipient's economy then
       // runs through the giver: help at this size buys dependence, which is
       // the honest reason a state offers it.
-      ...towardActor(ctx, { trust: 0.09 * jitter(ctx), tradeDependence: 0.06 * jitter(ctx) }),
+      ...receivedToward(ctx, "civil", { trust: 0.09 * jitter(ctx), tradeDependence: 0.06 * jitter(ctx) }),
+      aidRecord(ctx, "stabilization", `${sentenceCase(named(ctx, ctx.actor))} stood behind ${possessive(named(ctx, ctx.target))} currency.`),
       // The package is the backstop: reserves put behind the currency are what
       // the market reads, and the relief it buys lasts as long as they stand.
       { kind: "flag", set: markedFlags([currencyBackstopFlag(ctx.actor, ctx.target)], ctx.campaign.turn) },
@@ -444,19 +565,20 @@ export const assistanceRungs: readonly InstrumentRung[] = [
       trustAtLeast(ctx, 0.15, "enough trust to hand a government weapons and expect to know where they end up"),
     ),
     resolve: (ctx) => [
-      ...aidFlow(ctx, 400 * jitter(ctx)),
+      ...aidFlow(ctx, AID_AMOUNT[4]),
       { kind: "nationStat", nation: ctx.target, setStats: { military: { readiness: Math.min(1, liveNation(ctx.campaign, ctx.target).stats.military.readiness + 0.08 * jitter(ctx)) } } },
       // What is given away is gone: the transfer comes out of the giver's own
       // holdings, not out of nothing.
       { kind: "nationStat", nation: ctx.actor, setStats: { military: { readiness: Math.max(0, liveNation(ctx.campaign, ctx.actor).stats.military.readiness - 0.03 * jitter(ctx)) } } },
       ...standingCommitment(ctx, {
         kind: "arms",
-        shareOfGdp: 0.0000035,
+        shareOfGdp: 0.00000006,
         line: "defense",
         weeks: 26,
-        rationale: "A transfer is a schedule of deliveries, spares and training, not a single shipment.",
+        rationale: "The transfer is billed when it is ordered; the spares and training that follow it for half a year are this schedule.",
       }),
-      ...towardActor(ctx, { trust: 0.1 * jitter(ctx), militaryThreat: -0.05 * jitter(ctx) }),
+      ...receivedToward(ctx, "security", { trust: 0.1 * jitter(ctx), militaryThreat: -0.05 * jitter(ctx) }),
+      aidRecord(ctx, "arms-transfer", `${sentenceCase(named(ctx, ctx.actor))} transferred arms to ${named(ctx, ctx.target)}.`),
     ],
   },
   {
@@ -471,7 +593,7 @@ export const assistanceRungs: readonly InstrumentRung[] = [
       notAlreadyStanding(ctx, securityGuaranteeFlag(ctx.actor, ctx.target), "a promise still to make — this one is already given"),
     ),
     resolve: (ctx) => [
-      ...aidFlow(ctx, 900 * jitter(ctx)),
+      ...aidFlow(ctx, AID_AMOUNT[5]),
       { kind: "flag", set: [securityGuaranteeFlag(ctx.actor, ctx.target)] },
       { kind: "relationship", from: ctx.actor, to: ctx.target, deltas: { alignment: 0.12 * jitter(ctx), trust: 0.08 * jitter(ctx) }, addHistory: { turn: ctx.campaign.turn, kind: "guarantee", description: `${sentenceCase(named(ctx, ctx.actor))} guaranteed ${possessive(named(ctx, ctx.target))} security.` } },
       ...towardActor(ctx, { trust: 0.15 * jitter(ctx), alignment: 0.12 * jitter(ctx), militaryThreat: -0.1 * jitter(ctx) }),
@@ -486,7 +608,7 @@ export const assistanceRungs: readonly InstrumentRung[] = [
       { kind: "nationStat", nation: ctx.actor, setStats: { military: { readiness: Math.max(0, liveNation(ctx.campaign, ctx.actor).stats.military.readiness - 0.06 * jitter(ctx)) } } },
       ...standingCommitment(ctx, {
         kind: "basing",
-        shareOfGdp: 0.000007,
+        shareOfGdp: 0.0000003,
         line: "defense",
         forces: { branch: "air", unitType: "air.fighter", count: 48 },
         rationale: "A guarantee is believed because there are aircraft standing behind it, and they are standing there instead of somewhere else.",

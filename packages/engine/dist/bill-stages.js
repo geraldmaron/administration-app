@@ -1,5 +1,5 @@
 import { selectBills, } from "./state.js";
-import { CHAMBERS, carried, floorThreshold, majorityOf } from "./congress.js";
+import { CHAMBERS, carried, floorThreshold, majorityOf, seatedOf } from "./congress.js";
 import { legislativeVoteOn } from "./congress-votes.js";
 import { createRngStreams } from "./rng.js";
 import { readingsFor } from "./caucus-count.js";
@@ -89,6 +89,7 @@ const CONTROVERSY_BAND = 0.15;
 export function restrainsThePresident(act) {
     const constraint = act.constrains;
     return (act.disapproves === true ||
+        act.emergencyAction === "terminate" ||
         constraint?.barsUnilateralForce === true ||
         constraint?.bindsTheExecutive === true ||
         (constraint?.blocksOrders?.length ?? 0) > 0);
@@ -117,7 +118,7 @@ export function recordFloorVotes(votes, turn) {
     }));
 }
 function legislativeFloor(campaign, chamber, act, appeal, counted, readings, billId) {
-    const question = { chamber, appeal, required: majorityOf(campaign.congress.chambers[chamber].seats),
+    const question = { chamber, appeal, required: majorityOf(seatedOf(campaign.congress, chamber)),
         actId: act.id, stance: stanceOf(act), counted, ...(act.domestic ? { signature: act.domestic } : {}),
         ...(counted === "with" && readings ? { readings } : {}) };
     return legislativeVoteOn(campaign, { ...question,

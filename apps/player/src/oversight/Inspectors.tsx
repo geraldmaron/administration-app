@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { institutionInProse, type Campaign, type InstitutionId } from "@admin/engine";
 import { inspectorNoticePacket, inspectorNoticeTerms, inspectorsBoard, sealFor, type ActComparison, type InspectorNoticeTerms, type InspectorRow } from "@admin/player-core";
-import { Badge, Button, Card, Column, Empty, Row, Seal, Select, Sheet, Text } from "@admin/ui";
+import { Tag, Button, Card, Column, Empty, Row, Seal, Select, Sheet, Text } from "@admin/ui";
 import { ActChooser } from "../congress/ActChooser";
 import type { ActCommit } from "../congress/commit";
 import { Note } from "../congress/parts";
@@ -20,7 +20,7 @@ function InspectorItem({ row }: { readonly row: InspectorRow }) {
         <Text variant="label">{row.name}</Text>
         <Text variant="caption" tone="secondary">{row.openMatters === 0 ? "No audit running" : `${row.openMatters} audit${row.openMatters === 1 ? "" : "s"} running`}</Text>
       </Column>
-      <Badge status={posture.status} icon={row.posture === "in-post" ? "approve" : "caution"}>{`${posture.label}${row.leaves ? ` · ${row.posture === "removed" ? "left" : "leaves"} ${row.leaves}` : ""}`}</Badge>
+      <Tag tone={posture.status} icon={row.posture === "in-post" ? "approve" : "caution"}>{`${posture.label}${row.leaves ? ` · ${row.posture === "removed" ? "left" : "leaves"} ${row.leaves}` : ""}`}</Tag>
     </Row>
   );
 }
@@ -39,17 +39,17 @@ function NoticeComposer({ campaign, removable, acts }: { readonly campaign: Camp
   const [reason, setReason] = useState<string | undefined>(undefined);
   const chosen = removable.find((row) => row.institution === institution) ?? removable[0];
   const terms = useMemo(() => (chosen ? inspectorNoticeTerms(campaign, chosen.institution) : undefined), [campaign, chosen]);
-  if (!chosen || !terms) return <Empty title="No inspector general is in office" detail="Once one is confirmed, you can see their audits and removal terms here." />;
+  if (!chosen || !terms) return <Empty title="No inspector general is in office" detail="None has been confirmed yet." />;
   if ("refusal" in terms) return <Note tone="warning">{terms.refusal}</Note>;
   return (
     <ActChooser key={chosen.institution} id="ig-notice" title={`Removal notice: ${chosen.name}`} comparison={noticeComparison(terms)} acts={acts} authority={LAW.inspectors} danger again="Back to the inspectors"
-      pending={() => (reason ? undefined : "Pick the reason you'll give first.")}
+      pending={() => (reason ? undefined : "No reason chosen yet.")}
       receiptTitle={() => `Removal notice sent for the inspector general at ${institutionInProse(terms.name)}`}
       packet={() => inspectorNoticePacket(campaign, terms.institution, reason ?? "")}
       terms={
         <Column gap="sm">
           <Select label="Inspector general" options={removable.map((row) => ({ value: row.institution, label: row.name }))} value={chosen.institution} onChange={setInstitution} />
-          <Select label="Reason you'll give" options={REASONS.map((entry) => ({ value: entry, label: entry }))} value={reason} onChange={setReason} placeholder="Pick a statement" />
+          <Select label="Reason you'll give" options={REASONS.map((entry) => ({ value: entry, label: entry }))} value={reason} onChange={setReason} placeholder="No statement chosen" />
           <Note tone="tertiary">This is your official statement, not proof of wrongdoing. The game doesn't judge whether this reason would hold up legally.</Note>
         </Column>
       } />
@@ -64,7 +64,7 @@ export function Inspectors({ campaign, acts }: { readonly campaign: Campaign; re
   const quiet = rows.filter((row) => !busy.includes(row));
   return (
     <Card title="Inspectors general" icon="departmentInvestigation" help={<CitedLawHelp title="Inspectors general" meaning="An inspector general is a watchdog inside an agency. They check its work, look into problems, and report to the agency's head and to Congress. You can remove one, but you have to tell both the House and the Senate your reasons in writing 30 days before." steps={["Send Congress a written notice with your reasons", "30 days pass, and the inspector stays until then", "The office is empty, and any audit keeps going"]} cites={[LAW.inspectors]} />}>
-      {busy.length === 0 ? <Empty title="No audits or removal notices" detail="An inspector general's audit or a pending removal notice will show here." /> : busy.map((row) => <InspectorItem key={row.institution} row={row} />)}
+      {busy.length === 0 ? <Empty title="No audits or removal notices" detail="No inspector general has an audit open or a removal notice pending." /> : busy.map((row) => <InspectorItem key={row.institution} row={row} />)}
       {quiet.length > 0 ? <Row><Button kind="secondary" size="compact" icon="folder" onPress={() => setShowAll(true)}>{`Inspectors in office · ${quiet.length}`}</Button></Row> : null}
       <Sheet open={showAll} onClose={() => setShowAll(false)} title="Inspectors general in office" eyebrow="No audit running" wide>
         <Note>These offices have no audit running right now. That shows how busy they are, not how independent or how good they are.</Note>

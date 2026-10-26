@@ -1,10 +1,14 @@
 import {
+  COURT_ORDER_KINDS,
   DIRECTIVE_KIND_WEIGHT,
   EMERGENCY_DECLARATION_AUTHORITY,
   EXECUTIVE_ORDERS,
   INSTITUTION_IDS,
+  LOCALE_ACTS,
+  LOCALE_MISSION_ORDERS,
   directiveRefusal,
   institutionDef,
+  localeActAuthority,
   type DirectiveKind,
 } from "@admin/engine";
 import { describe, expect, it } from "vitest";
@@ -75,6 +79,25 @@ describe("engine citations", () => {
     expect(byOrder.get("order-entry-suspension")).toBe("ina-212f");
     expect(byOrder.get("order-price-controls")).toBe("economic-stabilization-act");
     expect(byOrder.get("order-regulatory-review")).toBe("const-art2-s3");
+  });
+
+  it("resolves the law of every mission order, every locale act and every court order Justice can seek", () => {
+    const cited = [
+      ...LOCALE_MISSION_ORDERS.map((order) => [order.id, order.authority] as const),
+      ...LOCALE_ACTS.map((act) => [act.id, localeActAuthority(act)] as const),
+      ...Object.values(COURT_ORDER_KINDS).map((kind) => [kind.kind, kind.authority] as const),
+    ];
+    const unresolved = cited.filter(([id, authority]) => !authority ? !["waiver", "review"].includes(id) : !orderAuthorityRecord(authority));
+    expect(unresolved.map(([id]) => id)).toEqual([]);
+    const byId = new Map(cited.map(([id, authority]) => [id, authority ? orderAuthorityRecord(authority)?.id : undefined]));
+    expect(byId.get("order-immigration-operation")).toBe("ina-officer-powers");
+    expect(byId.get("order-joint-task-force")).toBe("doj-investigative-officials");
+    expect(byId.get("request-deployment")).toBe("guard-state-duty-502f");
+    expect(byId.get("priority")).toBe("attorney-general-functions");
+    expect(byId.get("title-iii-order")).toBe("title-iii-interception");
+    expect(byId.get("search-warrant")).toBe("search-warrant-rule-41");
+    expect(byId.get("injunction-enforcement")).toBe("united-states-as-plaintiff");
+    expect(byId.get("fisa-order")).toBe("fisa");
   });
 
   it("resolves every directive refusal's authority, or exempts it for a stated reason", () => {

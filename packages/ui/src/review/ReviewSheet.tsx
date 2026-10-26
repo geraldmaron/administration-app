@@ -35,12 +35,13 @@ function stagesOf(result: ReviewResultView | undefined): readonly StageView[] {
   ];
 }
 
-function Terms({ terms }: { readonly terms: ReviewTermsView }) {
-  if (terms.lines.length === 0) return null;
+/** The terms an act is put to the President on, in order, as one list. */
+export function TermLines({ lines }: { readonly lines: ReviewTermsView["lines"] }) {
+  if (lines.length === 0) return null;
   return (
     <Surface level="sunken" pad="md" role="list" aria-label="The details">
       <Column gap="sm">
-        {terms.lines.map((line) => (
+        {lines.map((line) => (
           <Column key={line.label} gap="2xs" role="listitem">
             <Text variant="eyebrow" tone="secondary">
               {line.label}
@@ -113,7 +114,7 @@ export function ReviewSheet({ phase, terms, result, onConfirm, onClose, onOpenRe
           <Text variant="label" tone={phase === "result" && result?.kind === "refused" ? "danger" : "secondary"}>
             {leadOf(phase, terms.tier, result)}
           </Text>
-          <Terms terms={terms} />
+          <TermLines lines={terms.lines} />
           {phase === "ready" && terms.tier === "full" ? (
             <Surface level="raised" pad="md" accentEdge={terms.danger ? "danger" : "gold"}>
               <Row gap="sm" top>

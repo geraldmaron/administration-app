@@ -4,7 +4,8 @@ function simpleMajority(seats) {
 export function breakSenateTie(congress, vote, counted = "with") {
     if (vote.chamber !== "senate" || vote.yeas !== vote.nays)
         return vote;
-    if (vote.required !== simpleMajority(congress.chambers.senate.seats))
+    const vacant = (congress.members ?? []).filter((member) => member.chamber === "senate" && member.vacancy !== undefined).length;
+    if (vote.required !== simpleMajority(congress.chambers.senate.seats - vacant))
         return vote;
     const officer = congress.presidingOfficer;
     if (!officer)

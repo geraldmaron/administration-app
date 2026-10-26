@@ -1,5 +1,5 @@
 import { formatMoney, type NationPower, type TieRow } from "@admin/player-core";
-import { Column, Icon, ReadingFrame, Row, Stat, StatGrid, Text, type IconName } from "@admin/ui";
+import { Column, Icon, ReadingFrame, Row, Reading, ReadingGrid, Text, type IconName } from "@admin/ui";
 import { BarRow, BarScale, Unread } from "@admin/ui/world";
 import { NationChip } from "../parts";
 
@@ -29,7 +29,7 @@ export function TieFlags({ ties, limit = 6 }: { readonly ties: readonly TieRow[]
             </Row>
             {own.length > limit ? (
               <Text variant="caption" tone="tertiary">
-                Showing {limit} of {own.length}. See the Diplomacy tab for the full list.
+                Showing {limit} of {own.length}.
               </Text>
             ) : null}
           </Column>
@@ -60,11 +60,11 @@ export function PowerStats({ power, max = 3 }: { readonly power: NationPower; re
   const share = power.militarySpendShareOfGdp;
   return (
     <Column gap="sm">
-      <StatGrid max={max}>
-        <Stat icon="subjectPerson" label="People" value={headcount(power.population)} size="heading" />
-        <Stat icon="economyGrowth" label="Economy" value={formatMoney(power.gdpUsdMillions)} period="a year" size="heading" />
-        <Stat icon="budget" label="Per person" value={`$${Math.round(power.gdpPerCapitaUsd).toLocaleString("en-US")}`} period="a year" size="heading" />
-      </StatGrid>
+      <ReadingGrid max={max}>
+        <Reading icon="subjectPerson" name="People" value={headcount(power.population)} size="heading" />
+        <Reading icon="economyGrowth" name="Economy" value={formatMoney(power.gdpUsdMillions)} period="a year" size="heading" />
+        <Reading icon="budget" name="Per person" value={`$${Math.round(power.gdpPerCapitaUsd).toLocaleString("en-US")}`} period="a year" size="heading" />
+      </ReadingGrid>
       {spend === undefined ? (
         <Unread>We don't know how much it spends on defense. Our intelligence agencies can't see this budget.</Unread>
       ) : (

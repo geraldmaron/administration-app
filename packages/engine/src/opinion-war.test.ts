@@ -7,11 +7,17 @@ import { describe, expect, it } from "vitest";
 import type { NationId } from "@admin/world";
 import { foundedForBalance } from "./balance-harness.js";
 import { openConflict } from "./conflicts.js";
+import { apply } from "./effects.js";
+import { issueForceAuthorization, resolveDueAuthorizations } from "./force-authorization.js";
+import { resolveAction } from "./resolution.js";
+import { createRngStreams } from "./rng.js";
+import { atCampaignTurn, withWeeksElapsed } from "./__fixtures__/campaign.js";
 import {
   CASUALTY_CAP,
   RALLY,
   WAR_UNEASE,
   casualtyCost,
+  rallyFatigueFactor,
   rallyFor,
   warOpinionTerms,
   warSecurityContribution,
@@ -89,5 +95,71 @@ describe("the war term", () => {
     const first = warOpinionTerms(atWar(BARE));
     expect(warSecurityContribution(first)).toBeCloseTo(-WAR_UNEASE * 0.5, 9);
     expect(warSecurityDetail(first)).toContain("unsettles");
+  });
+});
+
+describe("a public rallies less to each war after the first", () => {
+  const USA = BARE.founding.nation;
+  const war = (id: string, startedTurn: number, defender: string, over: Partial<Conflict> = {}): Conflict => ({
+    ...openConflict(USA, defender as NationId, startedTurn, "A test war."),
+    id,
+    ...over,
+  });
+  const ledger = (...wars: Conflict[]): Campaign => ({
+    ...BARE,
+    turn: 100,
+    conflicts: Object.fromEntries(wars.map((entry) => [entry.id, entry])),
+  });
+
+  it("gives the first war its whole rally and a later one less, with ended wars still remembered", () => {
+    const first = war("w1", 60, "IRN");
+    const second = war("w2", 67, "IRQ");
+    const campaign = ledger(first, second);
+    expect(rallyFatigueFactor(campaign, first, USA)).toBe(1);
+    expect(rallyFatigueFactor(campaign, second, USA)).toBeLessThan(0.6);
+    const ended = ledger({ ...first, status: "settled", endedTurn: 70 }, second);
+    expect(rallyFatigueFactor(ended, second, USA)).toBe(rallyFatigueFactor(campaign, second, USA));
+  });
+
+  it("forgets slowly: a war a year and a half later is rallied to nearly as fully", () => {
+    const first = war("w1", 10, "IRN");
+    const later = war("w2", 90, "IRQ");
+    expect(rallyFatigueFactor(ledger(first, later), later, USA)).toBeGreaterThan(0.7);
+  });
+
+  it("is not fed by a blockade, which never earned a rally", () => {
+    const blockade = war("w1", 60, "IRN", { opening: "blockade" });
+    const invasion = war("w2", 67, "IRQ");
+    expect(rallyFatigueFactor(ledger(blockade, invasion), invasion, USA)).toBe(1);
+  });
+
+  it("holds the lift of seven wars in seven weeks below the first war's alone", () => {
+    const wars = ["IRN", "IRQ", "SYR", "LBY", "YEM", "AFG", "SOM"].map((d, i) => war(`w${i}`, 60 + i * 7, d));
+    const campaign = { ...ledger(...wars), turn: 60 + 6 * 7 };
+    const alone = { ...campaign, conflicts: { w0: { ...wars[0]!, startedTurn: campaign.turn } }, turn: campaign.turn };
+    expect(warOpinionTerms(campaign).rally).toBeLessThan(warOpinionTerms(alone).rally / 2);
+  });
+
+  it("reaches the ledger only through congressional authorization, one vote per war", () => {
+    const at60 = atCampaignTurn(foundedForBalance("opinion-war-serial").campaign, 60);
+    const base = { ...at60, congress: { ...at60.congress, disposition: 0.95 } };
+    const invade = (campaign: Campaign, target: string) =>
+      resolveAction(campaign, { actor: USA, target: target as NationId, instrument: "military", rung: 5 }, createRngStreams(campaign.seed));
+    const first = invade(base, "IRN");
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    const afterFirst = withWeeksElapsed(apply(base, first.packet), 7);
+    const refused = invade(afterFirst, "IRQ");
+    expect(refused.ok).toBe(false);
+    const issued = issueForceAuthorization(afterFirst, "IRQ" as NationId);
+    expect(issued.ok).toBe(true);
+    if (!issued.ok) return;
+    const voted = resolveDueAuthorizations({ ...apply(afterFirst, issued.packet), calendar: issued.act.dueDate }).campaign;
+    const second = invade(voted, "IRQ");
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    const both = apply(voted, second.packet);
+    const [early, late] = Object.values(both.conflicts).filter((c) => c.aggressor === USA).sort((a, b) => a.startedTurn - b.startedTurn);
+    expect(rallyFatigueFactor(both, late!, USA)).toBeLessThan(rallyFatigueFactor(both, early!, USA));
   });
 });

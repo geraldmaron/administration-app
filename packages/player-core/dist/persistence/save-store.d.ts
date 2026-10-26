@@ -119,6 +119,18 @@ export type SaveStore = CampaignLibraryStore & {
      */
     readSitting(): Promise<unknown | null>;
     writeSitting(sitting: unknown | null): Promise<void>;
+    /**
+     * The President's unsigned drafts, kept beside the campaign in play. Not part
+     * of the campaign either: a draft is a working paper the simulation has not
+     * acted on, so the engine's save format never carries it.
+     */
+    /**
+     * Bound to a named slot rather than to whichever is active when the write
+     * runs: a write queued behind a load of another administration would
+     * otherwise land on that one.
+     */
+    readDrafts(id: string): Promise<unknown | null>;
+    writeDrafts(id: string, drafts: unknown | null): Promise<void>;
 };
 export type SaveStoreOptions = {
     /** Injected so tests can play an absence without waiting one out. */
@@ -127,6 +139,7 @@ export type SaveStoreOptions = {
 };
 export declare function campaignPayloadKey(id: string): string;
 export declare function campaignSittingKey(id: string): string;
+export declare function campaignDraftsKey(id: string): string;
 /**
  * How much room is left in the vault.
  *

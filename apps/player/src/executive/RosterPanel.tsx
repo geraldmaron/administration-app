@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { chairRead, personFile } from "@admin/player-core";
-import { Empty, Badge, Button, Column, Row, Surface, Text, useMedia } from "@admin/ui";
+import { Empty, Tag, Button, Column, Row, Surface, Text, useMedia } from "@admin/ui";
 import { Select } from "@admin/ui/forms";
-import { BandSteps, Monogram, StaffingBadge } from "@admin/ui/dossier";
+import { BandSteps, StaffingBadge } from "@admin/ui/dossier";
 import { InstitutionSeal, RowTo } from "./parts";
+import { PersonFace } from "../dossier/PersonFace";
 import { PersonName } from "../dossier/PersonPeek";
 import { readingTone } from "./present";
 import { onlyNeedingYou, type RosterRow, type RosterScope } from "./roster";
@@ -38,12 +39,12 @@ function Holder({ campaign, row }: { readonly campaign: Campaign; readonly row: 
   const { node } = row;
   return (
     <Row gap="sm" flexBasis={200} flexGrow={1} top>
-      <Monogram name={node.holderName ?? "Vacant"} muted={!node.holder} size={32} />
+      <PersonFace campaign={campaign} id={node.holder} name={node.holderName ?? "Vacant"} muted={!node.holder} size={32} />
       <Column flex={1} gap="2xs">
         {node.holder ? <PersonName campaign={campaign} id={node.holder} name={node.holderName ?? "The leader"} /> : <Text variant="caption" tone="tertiary">{row.nominee ? "Nobody in the job yet" : "Nobody in the job or nominated"}</Text>}
         <Row gap="xs" wrap>
           {node.staffing === "confirmed" ? null : <StaffingBadge staffing={node.staffing} />}
-          {row.nominee ? <Badge status="info" icon="appoint">{`Nominee: ${row.nominee.name}, ${row.nominee.stage}`}</Badge> : null}
+          {row.nominee ? <Tag tone="info" icon="appoint">{`Nominee: ${row.nominee.name}, ${row.nominee.stage}`}</Tag> : null}
         </Row>
       </Column>
     </Row>
@@ -93,9 +94,9 @@ function Line({ campaign, row, first }: { readonly campaign: Campaign; readonly 
         <Column flexBasis={160} flexGrow={1} gap="2xs">
           {node.alerts.length === 0 && backlog === 0 ? <Text variant="caption" tone="tertiary">Nothing waiting</Text> : null}
           {node.alerts.map((alert) => (
-            <Badge key={alert.kind} status="danger" icon="caution">
+            <Tag key={alert.kind} tone="danger" icon="caution">
               {alert.text}
-            </Badge>
+            </Tag>
           ))}
           {backlog > 0 ? <Text variant="caption" tone="secondary">{`${backlog} items of work piled up`}</Text> : null}
         </Column>
@@ -115,7 +116,7 @@ export function RosterPanel({ campaign, scopes, scope, need, onScope }: { readon
   const [sort, setSort] = useState<Sort>("order");
   const [all, setAll] = useState(false);
   const rows = useMemo(() => (current ? sortRoster(campaign, current.rows, sort) : []), [campaign, current, sort]);
-  if (!current) return <Empty title="No offices match this filter" detail="Choose another group or clear the filter to see every office." />;
+  if (!current) return <Empty title="No offices match this filter" detail={need ? "No office in any group is waiting on you." : "There are no offices to list."} />;
   const visible = all ? rows : rows.slice(0, PAGE);
   return (
     <Column gap="md" role="region" aria-label="Every office and its agencies">

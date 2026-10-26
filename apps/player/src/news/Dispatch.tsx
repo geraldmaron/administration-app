@@ -113,7 +113,7 @@ export function Dispatch({ campaign, index }: { readonly campaign: Campaign; rea
   if (!reading) {
     return (
       <Page eyebrow="Press" icon="press" title="We couldn't find this story" lede="The link may be old, or the story may be from one of your other games." actions={<BackButton parent={place.press()} parentLabel="Coverage" />}>
-        <Empty title="Nothing to show here" detail="Open a story from Coverage to read it." />
+        <Empty title="Nothing to show here" />
       </Page>
     );
   }

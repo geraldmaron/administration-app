@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { apply, createRngStreams, issueAction, signFinding, INSTRUMENT_RUNGS, type Campaign } from "@admin/engine";
+import { apply, createRngStreams, issueAction, signFinding, INSTRUMENT_RUNGS, type Campaign, type NationCondition } from "@admin/engine";
 import type { NationId } from "@admin/world";
 import { openingCampaign } from "../__fixtures__/opening";
 import { ACT_OPTIONS, actHref, issuedInstrumentHref } from "./catalogue";
@@ -10,10 +10,14 @@ import { actWorkspace } from "./workspace";
 const opening = openingCampaign({ seedText: "act-workspace" });
 const targets = (Object.keys(opening.nations) as NationId[]).filter((id) => id !== opening.founding.nation);
 // Covert rungs 2 to 5 need a finding on the target, so every target has one.
-const campaign = targets.reduce((board, target) => {
+const found = targets.reduce((board, target) => {
   const signed = signFinding(board, "Support the opposition abroad.", target, "written", "full-committees");
   return signed.ok ? apply(board, signed.packet) : board;
 }, opening);
+// Emergency relief answers a need, so one recipient is living through a flood.
+const FLOOD: NationCondition = { id: "condition:flood:MEX:0", nation: "MEX" as NationId, kind: "flood", scope: "region",
+  severity: 0.5, startedTurn: found.turn, status: "active", beats: [] };
+const campaign: Campaign = { ...found, conditions: { ...found.conditions, [FLOOD.id]: FLOOD } };
 
 function open(target: NationId, optionId: string, config = {}) {
   const view = actWorkspace(campaign, target, { option: optionId, ...config });

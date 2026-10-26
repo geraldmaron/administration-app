@@ -16,6 +16,8 @@ export declare const ORG_US_JAPAN: Organization["id"];
 export declare const ORG_US_KOREA: Organization["id"];
 export declare const ORG_US_PHILIPPINES: Organization["id"];
 export declare const ORG_ANZUS: Organization["id"];
+export declare const ORG_SCO: Organization["id"];
+export declare const ORG_UNSC: Organization["id"];
 export type OrganizationSource = {
     readonly source: string;
     readonly asOf: string;

@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Redirect, router } from "expo-router";
+import { InlineField } from "@admin/ui/forms";
 import {
-  Badge,
+  Pane,
+  Reading,
+  Tag,
+  Zone,
   Empty,
   ErrorState,
   Key,
@@ -34,7 +38,6 @@ import {
   Sheet,
   SignatureBlock,
   Sparkline,
-  Stat,
   Surface,
   Text,
   Theme,
@@ -204,6 +207,64 @@ function ReadingSpecimens() {
 }
 
 /** Waiting, empty and failed states, the quick look, the one result, and the law beside an act. */
+/** The desk's own pieces: a pane, readings that change shape with their room, values edited where they are read, and zones. */
+function DeskSpecimens() {
+  const [release, setRelease] = useState(4.25);
+  const [posture, setPosture] = useState("watch");
+  const [note, setNote] = useState("Fuel prices first");
+  return (
+    <SpecimenGroup title="Desk">
+      <Pane kicker="Since you took office" title="How the country is doing" actions={<Tag tone="info">Weekly</Tag>}>
+        <Row gap="md" wrap>
+          <Reading name="Approval" value="52%" delta={{ text: "1.8 pts", direction: "up", better: "up" }} period="since inauguration" source="Tracking poll" minWidth={220} history={<Sparkline values={[0.49, 0.5, 0.5, 0.51, 0.52]} valence="good" />} />
+          <Reading name="Inflation" value="2.9%" basis="estimate" delta={{ text: "0.3 pts", direction: "up", better: "down" }} source="Nowcast" minWidth={180} />
+          <Reading name="Growth next quarter" value="2.1%" basis="forecast" source="Council of Economic Advisers" minWidth={160} onPress={() => undefined} />
+        </Row>
+      </Pane>
+      <Pane title="Levers you hold" kicker="Edit in place" band="gold">
+        <Row gap="md" between wrap>
+          <Text variant="label" tone="secondary">Strategic reserve release, million barrels a day</Text>
+          <InlineField label="Reserve release" value={release} baseline={4.25} step={0.25} min={0} max={10} onChange={setRelease} />
+        </Row>
+        <Row gap="md" between wrap>
+          <Text variant="label" tone="secondary">Posture toward Caspia</Text>
+          <InlineField kind="choice" label="Posture" value={posture} baseline="watch" onChange={setPosture} options={[{ value: "engage", label: "Engage" }, { value: "watch", label: "Watch" }, { value: "pressure", label: "Pressure" }]} />
+        </Row>
+        <Row gap="md" between wrap>
+          <Text variant="label" tone="secondary">Briefing order</Text>
+          <InlineField kind="text" label="Briefing order" value={note} onChange={setNote} immediate hint="A view setting: sets at once" />
+        </Row>
+      </Pane>
+      <Row gap="sm" wrap>
+        <Tag tone="success">Ahead</Tag>
+        <Tag tone="danger">Behind</Tag>
+        <Tag tone="warning">Due in 3 days</Tag>
+        <Tag tone="info">Briefing</Tag>
+        <Tag tone="pending">Draft</Tag>
+        <Tag tone="authority">Signed</Tag>
+      </Row>
+      <Row gap="md" wrap top>
+        {(["desk", "paper", "situation"] as const).map((zone) => (
+          <View key={zone} flex={1} minWidth={240}>
+            <Pane zone={zone} kicker={zone} title={zone === "desk" ? "On the desk" : zone === "paper" ? "On paper" : "Situation room"}>
+              <Reading name="Senate votes in hand" value="51" delta={{ text: "2", direction: "up", better: "up" }} period="whip count" minWidth={0} />
+              <Row gap="sm" wrap>
+                <Tag tone="success">Ahead</Tag>
+                <Button kind="primary">Act</Button>
+              </Row>
+            </Pane>
+          </View>
+        ))}
+      </Row>
+      <Zone zone="theater" fill>
+        <View padding="lg" borderRadius="card" borderWidth={1} borderColor="borderColorStrong">
+          <Text variant="label" tone="secondary">The theater zone: the deepest ground, where the map and its overlays sit.</Text>
+        </View>
+      </Zone>
+    </SpecimenGroup>
+  );
+}
+
 function StateSpecimens() {
   return (
     <SpecimenGroup title="States, quick look and result">
@@ -235,23 +296,27 @@ function Specimens() {
   return (
     <Column gap="2xl">
       <SpecimenGroup title="Type">
-        <Text variant="hero">Hero 48</Text>
-        <Text variant="display">Display 32</Text>
-        <Text variant="heading">Heading 22</Text>
-        <Text variant="title">Title 18</Text>
-        <Text variant="body">Body 16. The reading size for every paragraph the President reads.</Text>
-        <Text variant="label">Label 14</Text>
+        <Text variant="hero">Hero 60, ceremony</Text>
+        <Text variant="headline">Headline 30. Their offensive crossed the border</Text>
+        <Text variant="voice">Voice 19. "We will not be the first to move."</Text>
+        <Text variant="display">Page title 28</Text>
+        <Text variant="heading">Heading 20</Text>
+        <Text variant="title">Title 17</Text>
+        <Text variant="body">Body 15. The reading size for every paragraph the President reads.</Text>
+        <Text variant="label">Label 13</Text>
         <Text variant="caption" tone="secondary">
           Caption 12
         </Text>
-        <Text variant="document">Document serif. Paper in the fiction.</Text>
+        <Text variant="figureXl">52.4%</Text>
+        <Text variant="clock">MON 20 JAN 2029 · WEEK 1</Text>
+        <Text variant="document">Document 18. Paper in the fiction.</Text>
       </SpecimenGroup>
       <SpecimenGroup title="Actions">
         <Row gap="sm" wrap>
           <Button kind="primary" icon="sign">
             Sign the order
           </Button>
-          <Button kind="gold" icon="statusIssued">
+          <Button kind="seal" icon="statusIssued">
             Take the oath
           </Button>
           <Button kind="secondary" icon="review">
@@ -268,31 +333,32 @@ function Specimens() {
           </Button>
         </Row>
         <Row gap="sm" wrap>
-          <Badge status="success" icon="favorable">
+          <Tag tone="success" icon="favorable">
             Ahead of target
-          </Badge>
-          <Badge status="warning" icon="caution">
+          </Tag>
+          <Tag tone="warning" icon="caution">
             Watch
-          </Badge>
-          <Badge status="danger" icon="adverse">
+          </Tag>
+          <Tag tone="danger" icon="adverse">
             Below the floor
-          </Badge>
-          <Badge status="info">In committee</Badge>
-          <Badge status="gold" icon="law">
+          </Tag>
+          <Tag tone="info">In committee</Tag>
+          <Tag tone="authority" icon="law">
             Statutory
-          </Badge>
+          </Tag>
         </Row>
       </SpecimenGroup>
       <SpecimenGroup title="Readings">
         <Surface>
           <Row gap="xl" wrap top>
-            <Stat label="Approval" value="47%" icon="graph" delta={{ text: "2 pts", direction: "up", better: "up" }} period="since last week" source="Weekly tracking poll, n=1,500" minWidth={220} reading={<Sparkline values={[0.44, 0.45, 0.43, 0.45, 0.47]} valence="good" />} />
-            <Stat label="Inflation" value="3.4%" icon="economyInflation" delta={{ text: "0.3 pts", direction: "up", better: "down" }} period="year over year" standing="watch" />
-            <Stat label="Deficit" value="$1.9T" icon="budget" delta={{ text: "$40B", direction: "down", better: "down" }} period="annualized" />
+            <Reading name="Approval" value="47%" icon="graph" delta={{ text: "2 pts", direction: "up", better: "up" }} period="since last week" source="Weekly tracking poll, n=1,500" minWidth={220} history={<Sparkline values={[0.44, 0.45, 0.43, 0.45, 0.47]} valence="good" />} />
+            <Reading name="Inflation" value="3.4%" icon="economyInflation" delta={{ text: "0.3 pts", direction: "up", better: "down" }} period="year over year" standing="watch" />
+            <Reading name="Deficit" value="$1.9T" icon="budget" delta={{ text: "$40B", direction: "down", better: "down" }} period="annualized" />
           </Row>
         </Surface>
         <Meter label="Approval compared with past presidents" value={0.47} figure="47%" marks={[{ id: "floor", label: "Removal pressure below 35%", at: 0.35, kind: "gate" }, { id: "avg", label: "Postwar average 54%", at: 0.54, kind: "historical" }]} />
       </SpecimenGroup>
+      <DeskSpecimens />
       <ReadingSpecimens />
       <StateSpecimens />
       <SpecimenGroup title="Benchmark chart">
@@ -401,8 +467,8 @@ function CatalogPage() {
               Situation room surface
             </Text>
             <Row gap="xl" wrap top>
-              <Stat label="Forces deployed" value="12,400" icon="unitGroundFormation" delta={{ text: "3,100", direction: "up", tone: "watch" }} period="this week" />
-              <Stat label="War Powers clock" value="Day 41 of 60" icon="pending" standing="watch" />
+              <Reading name="Forces deployed" value="12,400" icon="unitGroundFormation" delta={{ text: "3,100", direction: "up", tone: "watch" }} period="this week" />
+              <Reading name="War Powers clock" value="Day 41 of 60" icon="pending" standing="watch" />
             </Row>
             <Button kind="primary" icon="review">
               Convene the National Security Council

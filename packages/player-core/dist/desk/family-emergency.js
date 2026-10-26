@@ -1,4 +1,4 @@
-import { EMERGENCY_RENEWAL_TURNS, daysBetween, emergencyCauseLabel, reliefSignature, renewalIsOpen, selectConditionsFor, selectDateOfTurn, selectDeclaredEmergencies, weeksToLapse, } from "@admin/engine";
+import { authorityDeadline, emergencyAuthorityClock, daysBetween, emergencyCauseLabel, reliefSignature, renewalIsOpen, selectConditionsFor, selectDateOfTurn, selectDeclaredEmergencies, weeksToLapse, } from "@admin/engine";
 import { stateById } from "@admin/world";
 import { anchored, place } from "../navigation/places";
 import { conditionReadings } from "../world/board-state";
@@ -7,6 +7,7 @@ import { conditionRoute } from "./condition-route";
 import { governorRequestGroups, guardRequestCandidates } from "./attention-requests";
 import { familyRaise } from "./family-raise";
 import { weekCount } from "../summons/clock-math";
+import { dateKey } from "../calendar/window";
 // The emergency family: a state waiting on Washington for relief, and a
 // declaration the President has to decide whether to continue. A Guard ask
 // about a state already waiting is that emergency's own act, so it rides on
@@ -99,10 +100,9 @@ function renewalTitle(emergency) {
     return `The ${where} emergency over ${emergencyCauseLabel(emergency.cause).toLowerCase()} ends unless you renew it`;
 }
 function renewalSource(campaign, emergency) {
-    const lapseTurn = emergency.renewedTurn + EMERGENCY_RENEWAL_TURNS;
-    const due = selectDateOfTurn(campaign, lapseTurn);
+    const due = authorityDeadline(campaign, emergencyAuthorityClock(campaign, emergency));
     const weeks = weeksToLapse(emergency, campaign.turn);
-    const id = `case:emergency:${emergency.id}:${lapseTurn}`;
+    const id = `case:emergency:${emergency.id}:${dateKey(due)}`;
     const title = renewalTitle(emergency);
     const declaration = anchored(place.emergencyDeclaration(emergency.id), "emergency-declared");
     return {
@@ -115,7 +115,7 @@ function renewalSource(campaign, emergency) {
             urgency: weeks <= RENEWAL_CLOSING_WEEKS ? "soft" : "ambient",
             subject: `emergency:${emergency.id}`,
             title,
-            reason: "The special powers it gave you end on its one-year anniversary unless you renew it.",
+            reason: "The special powers it gave you end on its next anniversary unless you renew it.",
             href: declaration,
             stance: weeks <= RENEWAL_CLOSING_WEEKS ? "adverse" : "caution",
             figure: weekCount(Math.max(0, weeks)),

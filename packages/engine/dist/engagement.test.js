@@ -6,7 +6,7 @@ import { relationshipKey, selectRelationship } from "./state.js";
 import { addDays } from "./clock.js";
 import { campaignDay } from "./nomination.js";
 import { apply } from "./effects.js";
-import { ENGAGEMENT_BOUND, ENGAGEMENT_KINDS, ENGAGEMENT_TERMS, ENVOY_WEIGHT, engagementAvailable, engagementCandidates, engagementHold, engagementPacket, projectEngagement, projectReceive, receiveDecision, receivePreview, warmthScale, } from "./engagement.js";
+import { ENGAGEMENT_BOUND, ENGAGEMENT_KINDS, ENGAGEMENT_TERMS, ROUTINE_TRUST_SURPLUS, ENVOY_WEIGHT, engagementAvailable, engagementCandidates, engagementHold, engagementPacket, projectEngagement, projectReceive, receiveDecision, receivePreview, warmthScale, } from "./engagement.js";
 import { envoyBenchLean, envoyLean, presidentRapport, secretaryOfState, STATE_BENCH_HALF_SPREAD, VACANT_BENCH_LEAN, } from "./treaty-counterpart.js";
 import { foundedForBalance } from "./balance-harness.js";
 import { foreignLeaderFor } from "./foreign-leader.js";
@@ -18,6 +18,9 @@ vi.mock("./willingness.js", async (original) => {
 });
 import { decideNpcAction } from "./npc-agent.js";
 import { engagementTurn } from "./npc-turn.js";
+import { FAVOR_HALF_LIFE_DAYS, grudgeDecayPhase, relationshipAnchor } from "./relationships.js";
+import { TREATY_TERMS } from "./treaties.js";
+import { createSave, loadSave } from "./save.js";
 // One priced path for the President and every other government: what the
 // projection promises is what a received engagement writes, the receiving
 // government decides through the willingness model, and no step is larger than
@@ -45,6 +48,86 @@ function paired(overrides = {}) {
     };
 }
 const streams = (campaign) => createRngStreams(campaign.seed);
+function standingPair() {
+    const base = paired();
+    return { ...base, relationships: Object.fromEntries(Object.entries(base.relationships).map(([key, edge]) => [key, { ...edge, trust: relationshipAnchor(base, edge).trust }])) };
+}
+function makeContact(base, kind, reverse = false) {
+    const request = { actor: reverse ? ALP : USA, target: reverse ? USA : ALP, kind };
+    const projection = projectEngagement(base, request);
+    const made = engagementPacket(base, request, streams(base));
+    if (!made.ok || !made.received)
+        throw new Error("Expected routine contact to be received");
+    expect(made.packet.effects.filter((effect) => effect.kind === "relationship")).toEqual(projection.effects);
+    return apply(base, made.packet);
+}
+describe("routine engagement saturation", () => {
+    it("shares diminishing trust returns across calls, envoys and either initiator", () => {
+        const base = standingPair();
+        const trust = (state) => selectRelationship(state, ALP, USA).trust;
+        const called = makeContact(base, "call");
+        const envoy = makeContact(called, "envoy");
+        const reversed = makeContact(envoy, "call", true);
+        expect(trust(called) - trust(base)).toBeGreaterThan(trust(envoy) - trust(called));
+        expect(trust(envoy) - trust(called)).toBeGreaterThan(trust(reversed) - trust(envoy));
+        expect(makeContact(loadSave(createSave(called)), "envoy")).toEqual(envoy);
+        const visit = { actor: USA, target: ALP, kind: "visit" };
+        expect(projectEngagement(envoy, visit).effects).toEqual(projectEngagement(base, visit).effects);
+    });
+    it("keeps four years of calls and alternating routine instruments below a mutual defense treaty", () => {
+        for (const withEnvoys of [false, true]) {
+            let state = standingPair();
+            const initial = selectRelationship(state, ALP, USA).trust;
+            const gains = [];
+            for (let week = 0; week < 208; week++) {
+                for (const kind of ["call", "envoy"]) {
+                    if (kind === "envoy" && !withEnvoys || week % ENGAGEMENT_TERMS[kind].cooldownWeeks !== 0)
+                        continue;
+                    const before = selectRelationship(state, ALP, USA).trust;
+                    state = makeContact(state, kind);
+                    gains.push(selectRelationship(state, ALP, USA).trust - before);
+                    expect(selectRelationship(state, ALP, USA).trust - initial).toBeLessThanOrEqual(ROUTINE_TRUST_SURPLUS + 1e-12);
+                }
+                state = grudgeDecayPhase(state).reduce(apply, state);
+                state = { ...state, turn: state.turn + 1, calendar: addDays(state.calendar, 7) };
+            }
+            const surplus = selectRelationship(state, ALP, USA).trust - initial;
+            const late = gains.slice(-4).reduce((sum, gain) => sum + gain, 0) / 4;
+            expect(late).toBeLessThan(gains[0]);
+            expect(surplus).toBeGreaterThan(0);
+            expect(surplus).toBeLessThan(TREATY_TERMS.alliance.effect.trust);
+            console.log(`[hill-engagement] ${withEnvoys ? "calls+envoys" : "calls"}: first=${gains[0]}; lateMean=${late}; banked=${surplus}; treaty=${TREATY_TERMS.alliance.effect.trust}`);
+        }
+    });
+    it("holds tension down at saturation, leaves grudges intact, and regains room after decay", () => {
+        const base = standingPair();
+        const saturated = { ...base, relationships: Object.fromEntries(Object.entries(base.relationships).map(([key, edge]) => [key, { ...edge, trust: edge.trust + ROUTINE_TRUST_SURPLUS, grudges: [{ cause: "Prior injury", weight: 0.25, createdTurn: 0, decayRate: 0.001 }] }])) };
+        const next = makeContact(saturated, "call");
+        expect(selectRelationship(next, ALP, USA).trust).toBeCloseTo(selectRelationship(saturated, ALP, USA).trust, 12);
+        expect(selectRelationship(next, ALP, USA).tension).toBeLessThan(selectRelationship(saturated, ALP, USA).tension);
+        expect(selectRelationship(next, ALP, USA).grudges).toEqual(selectRelationship(saturated, ALP, USA).grudges);
+        let rested = saturated;
+        for (let week = 0; week < FAVOR_HALF_LIFE_DAYS / 7; week++)
+            rested = grudgeDecayPhase(rested).reduce(apply, rested);
+        expect(selectRelationship(makeContact(rested, "call"), ALP, USA).trust).toBeGreaterThan(selectRelationship(rested, ALP, USA).trust);
+    });
+    it("measures each directed edge against its own anchor and preserves treaty-created room", () => {
+        const base = standingPair();
+        const key = relationshipKey(ALP, USA);
+        const edge = base.relationships[key];
+        const asymmetric = { ...base, relationships: { ...base.relationships, [key]: { ...edge, trust: edge.trust + ROUTINE_TRUST_SURPLUS } } };
+        const before = selectRelationship(asymmetric, USA, ALP).trust;
+        const called = makeContact(asymmetric, "call");
+        expect(called.relationships[key].trust).toBeCloseTo(asymmetric.relationships[key].trust, 12);
+        expect(selectRelationship(called, USA, ALP).trust).toBeGreaterThan(before);
+        const record = { id: "treaty:alliance", treaty: `alliance:${USA}:${ALP}`, title: "Mutual defense", kind: "alliance", counterpart: ALP, signedTurn: 0, status: "ratified" };
+        const allied = { ...base, treaties: { [record.id]: record } };
+        const anchored = { ...allied, relationships: Object.fromEntries(Object.entries(allied.relationships).map(([id, relation]) => [id, { ...relation, trust: relationshipAnchor(allied, relation).trust }])) };
+        const after = makeContact(anchored, "call");
+        expect(after.treaties).toEqual(anchored.treaties);
+        expect(selectRelationship(after, ALP, USA).trust).toBeGreaterThan(selectRelationship(anchored, ALP, USA).trust);
+    });
+});
 describe("the engagement family", () => {
     it("weighs only a fresh disclosed warning aimed at the recipient when receiving an envoy", () => {
         const base = paired();

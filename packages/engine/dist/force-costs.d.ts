@@ -17,6 +17,10 @@ export type RungPrice = {
     readonly weekly: number;
 };
 export declare const US_FORCE_PRICES: Readonly<Record<RungLevel, RungPrice>>;
+/** USD millions a week for one Guard call-up deployed in a US state, at CBO's per-thousand monthly rate. */
+export declare function domesticGuardWeek(): number;
+/** USD millions a week for active-duty troops deployed at home, at the 2018 border deployment's average rate. */
+export declare function domesticBrigadeWeek(): number;
 /**
  * What a unit of force costs this government against what it costs the United
  * States: its military spending per active service member over the US figure.

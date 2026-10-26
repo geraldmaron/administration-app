@@ -37,11 +37,12 @@ export type RiskBranch = {
     readonly chance: number;
     readonly description: string;
 };
-export type RippleRelation = "bloc-partner" | "ally" | "trade-partner" | "bloc-peer" | "domestic";
+export type RippleRelation = "bloc-partner" | "ally" | "trade-partner" | "bloc-peer" | "observer" | "domestic";
 export type Ripple = {
     readonly nation: NationId;
     readonly relation: RippleRelation;
     readonly magnitude: number;
+    readonly approves?: true;
     readonly reason: string;
 };
 export type RippleVisibility = "always" | "if-exposed";

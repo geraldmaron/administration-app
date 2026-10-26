@@ -88,7 +88,7 @@ export type ReplyCommitment = {
     /** Authored relief reply remains visible but disabled when its report has no lawful allocation. */
     readonly reliefRefusal?: string;
     readonly locale?: {
-        readonly act: "relief" | "review";
+        readonly act: "relief" | "review" | "property-surge" | "task-force" | "priority";
         readonly state: import("@admin/world").StateId;
         readonly cause: import("./condition-kinds.js").ConditionKind;
     };

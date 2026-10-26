@@ -1,4 +1,4 @@
-import { BRAND_DESK_PATH, BRAND_PORTAL_PATH, BRAND_VIEW_BOX } from "@admin/design";
+import { LEGACY_BRAND_DESK_PATH, LEGACY_BRAND_PORTAL_PATH, LEGACY_BRAND_VIEW_BOX } from "./brand-geometry";
 
 export type BrandGlyphProps = {
   readonly size?: number;
@@ -12,12 +12,12 @@ export function BrandGlyph({ size = 18, className }: BrandGlyphProps) {
       className={className}
       width={size}
       height={size}
-      viewBox={BRAND_VIEW_BOX}
+      viewBox={LEGACY_BRAND_VIEW_BOX}
       aria-hidden="true"
       focusable="false"
     >
-      <path d={BRAND_PORTAL_PATH} fill="currentColor" />
-      <path d={BRAND_DESK_PATH} fill="var(--color-gold, currentColor)" />
+      <path d={LEGACY_BRAND_PORTAL_PATH} fill="currentColor" />
+      <path d={LEGACY_BRAND_DESK_PATH} fill="var(--color-gold, currentColor)" />
     </svg>
   );
 }

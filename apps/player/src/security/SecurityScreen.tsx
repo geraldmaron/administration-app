@@ -39,9 +39,8 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 /** The headline in a sentence, from the same counts the tiles draw. */
 function lede({ readiness, postures, operations, obligations }: SecurityOverview): string {
   const raised = postures.surge + postures.heightened;
-  const stance = raised === 0 ? "Every command is at its normal alert level." : `${plural(raised, "command")} ${raised === 1 ? "is" : "are"} on high alert.`;
-  const owed = obligations.open > 0 ? ` You have ${plural(obligations.open, "War Powers deadline")} open${obligations.overdue > 0 ? `, and ${obligations.overdue} ${obligations.overdue === 1 ? "is" : "are"} overdue` : ""}.` : "";
-  return `Military readiness is ${readiness.reading.figure}. ${stance} ${plural(operations.total, "operation")} ${operations.total === 1 ? "is" : "are"} running.${owed}`;
+  const owed = obligations.overdue > 0 ? `, ${plural(obligations.overdue, "War Powers deadline")} overdue` : obligations.open > 0 ? `, ${plural(obligations.open, "War Powers deadline")} open` : "";
+  return `Readiness ${readiness.reading.figure}, ${plural(raised, "command")} on high alert, ${plural(operations.total, "operation")} running${owed}.`;
 }
 
 type ViewProps = { readonly campaign: Campaign; readonly board: SecurityBoard; readonly overview: SecurityOverview; readonly view: SecurityView; readonly service: string | undefined; readonly onService: (service: string | undefined) => void; readonly onOpen: (act: SecurityAct) => void };
@@ -50,7 +49,7 @@ type ViewProps = { readonly campaign: Campaign; readonly board: SecurityBoard; r
 function ForcesArea({ board }: { readonly board: SecurityBoard }) {
   const placed = board.commands.filter((card) => card.hasArea && card.places > 0);
   return (
-    <MapPanelSlot title="Where US forces are" lens="forces" camera="world" note="Each country is shaded by how many US forces it hosts. Open one to see its details.">
+    <MapPanelSlot title="Where US forces are" lens="forces" camera="world" note="Each country is shaded by how many US forces it hosts.">
       <Text variant="body" tone="secondary">{placed.length === 0 ? "No regional command has forces abroad." : placed.map((card) => `${card.abbr}: ${plural(card.places, "place")}`).join(" · ")}</Text>
     </MapPanelSlot>
   );

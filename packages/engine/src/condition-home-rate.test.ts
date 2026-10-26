@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import { STATE_DISASTER_ELIGIBILITY, type NationId } from "@admin/world";
 import { addDays } from "./clock.js";
 import { ACUTE_CONDITIONS, isIncidentKind } from "./condition-kinds.js";
-import { HOME_DISASTER_ONSET_RATE, claimOnsetSlots, type OnsetCandidate } from "./condition-onset.js";
+import { HOME_SIGNIFICANT_SHARE, claimOnsetSlots, homeHazardChance, type OnsetCandidate } from "./condition-onset.js";
 import { conditionPhase } from "./conditions.js";
 import { foundedForBalance } from "./balance-harness.js";
 import { apply } from "./effects.js";
@@ -80,9 +80,12 @@ describe("how often the country is struck", () => {
     expect(cityScoped / home.length).toBeGreaterThan(0.6);
   });
 
-  it("leaves the world's own rate where it was: the home rate is its own constant", () => {
-    // Five times the world's, and the world's is untouched at 0.012.
-    expect(HOME_DISASTER_ONSET_RATE).toBe(0.06);
+  it("leaves the world's own rate where it was: the home rate reads the national record", () => {
+    // Severe storms are 8.4 billion-dollar events a year (NOAA, 2005-2024), and
+    // the home queue keeps the significant share of them; the world's own rate
+    // is untouched at 0.012.
+    expect(homeHazardChance("tornado")).toBeCloseTo(1 - Math.exp((-8.4 * HOME_SIGNIFICANT_SHARE * 7) / 365), 10);
+    expect(homeHazardChance("pandemic")).toBeCloseTo(1 - Math.exp((-0.2 * 7) / 365), 10);
     const abroad = RUNS.flatMap(({ opened }) =>
       opened.filter((condition) => condition.nation !== USA && ACUTE.has(condition.kind)),
     );
@@ -148,7 +151,7 @@ describe("where a home condition lands", () => {
     }
   });
 
-  it("weights a city by its population, so the biggest eligible metro leads", () => {
+  it("weights a city by its state's fire record and then its population, so the biggest metro of the most-burned state leads", () => {
     const cities = placements("wildfire", "city").map((place) => place.city!);
     const counts = new Map<string, number>();
     for (const city of cities) counts.set(city, (counts.get(city) ?? 0) + 1);

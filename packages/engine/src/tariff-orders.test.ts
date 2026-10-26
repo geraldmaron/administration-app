@@ -1,3 +1,7 @@
+import { foundedForBalance } from "./balance-harness.js";
+import { createSave, loadSave } from "./save.js";
+import { advanceOneDay } from "./day-step.js";
+import { defaultTurnPhases } from "./turn-loop.js";
 import { describe, expect, it } from "vitest";
 import type { NationId } from "@admin/world";
 import { buildCampaign } from "./__fixtures__/campaign.js";
@@ -14,7 +18,7 @@ import {
   tariffStatuteStanding,
 } from "./tariff-orders.js";
 import { TARIFF_STATUTES } from "./tariff-statutes.js";
-import { suppliersOf, type TradeMeasure } from "./trade.js";
+import { liftMeasure, suppliersOf, type TradeMeasure } from "./trade.js";
 import { expireTradeMeasures } from "./trade-effects.js";
 
 const PARTNER = "ALP" as NationId;
@@ -72,17 +76,12 @@ describe("a tariff rests on a statute", () => {
   });
 
   it("holds Section 122 to 15 percent and 150 days", () => {
-    const campaign = buildCampaign();
-    const standing = tariffStatuteStanding(campaign, "s122", PARTNER, TRADED);
-    if (!standing.available) {
-      // A partner that buys more from us than it sells can't be singled out.
-      expect(standing.reason).toContain("can't single it out");
-      return;
-    }
-    expect(imposeTariff(campaign, "s122", PARTNER, TRADED, 0.2).ok).toBe(false);
-    const imposed = imposeTariff(campaign, "s122", PARTNER, TRADED, 0.15);
-    expect(imposed.ok).toBe(true);
-    if (!imposed.ok) return;
+    const campaign = foundedForBalance("section-122-cap").campaign;
+    const partner = "CHN" as NationId;
+    expect(tariffStatuteStanding(campaign, "s122", partner, TRADED).available).toBe(true);
+    expect(imposeTariff(campaign, "s122", partner, TRADED, 0.2).ok).toBe(false);
+    const imposed = imposeTariff(campaign, "s122", partner, TRADED, 0.15);
+    if (!imposed.ok) throw new Error(imposed.reason);
     const effect = imposed.packet.effects.find((entry) => entry.kind === "trade" && entry.measure);
     const expires = effect?.kind === "trade" ? effect.measure?.expiresDate : undefined;
     expect(expires).toEqual(addDays(campaign.calendar, 150));
@@ -150,5 +149,83 @@ describe("a tariff rests on a statute", () => {
     expect(lapsed.trade.sectorPrice[TRADED] ?? 0).toBe(found.trade.sectorPrice[TRADED] ?? 0);
     expect(Object.values(lapsed.trade.measures).filter((measure) => measure.origin === "us").every((measure) => measure.liftedTurn !== undefined)).toBe(true);
     expect(lapsed.trade.retaliation).toEqual(signed.trade.retaliation);
+  });
+});
+
+describe("Section 122 authority episodes", () => {
+  const real = foundedForBalance("authority-clocks").campaign;
+  const china = "CHN" as NationId;
+  const mexico = "MEX" as NationId;
+  function imposed(campaign = real, partner = china, sector = "semiconductors", rate = 0.1): Campaign {
+    const result = imposeTariff(campaign, "s122", partner, sector, rate);
+    if (!result.ok) throw new Error(result.reason);
+    return apply(campaign, result.packet);
+  }
+  function withBalance(campaign: Campaign, deficit: boolean): Campaign {
+    const home = campaign.nations[campaign.founding.nation]!;
+    const trade = { ...home.stats.trade, exports: home.stats.trade.imports * (deficit ? 0.5 : 1.1) };
+    return { ...campaign, nations: { ...campaign.nations, [home.base.id]: { ...home, stats: { ...home.stats, trade } } } };
+  }
+
+  it("expires on day 150 across countries and goods, including a late additional measure", () => {
+    const first = imposed();
+    expect(imposeTariff(real, "s122", china, "semiconductors", 0.151).ok).toBe(false);
+    const later = imposed(atDate(first, addDays(real.calendar, 149)), mexico, "textiles-apparel");
+    expect(Object.values(later.trade.measures).filter((m) => m.statute === "s122").map((m) => m.expiresDate))
+      .toEqual([addDays(real.calendar, 150), addDays(real.calendar, 150)]);
+    const expired = advanceOneDay(later, defaultTurnPhases);
+    expect(Object.values(expired.trade.measures).filter((m) => m.statute === "s122" && m.liftedTurn === undefined)).toHaveLength(0);
+    for (const partner of [china, mexico]) expect(imposeTariff(expired, "s122", partner, "textiles-apparel", 0.1).ok).toBe(false);
+  });
+
+  it("lifting and reissuing preserves the deadline and origin across reload", () => {
+    const first = imposed();
+    const measure = Object.values(first.trade.measures).find((m) => m.statute === "s122")!;
+    const lifted = liftMeasure(first, measure.id);
+    if (!lifted.ok) throw new Error(lifted.reason);
+    const reloaded = loadSave(JSON.parse(JSON.stringify(createSave(apply(first, lifted.packet)))));
+    const again = imposed(atDate(reloaded, addDays(real.calendar, 100)));
+    expect(Object.values(again.trade.measures).filter((m) => m.statute === "s122").every((m) => compareDates(m.expiresDate!, addDays(real.calendar, 150)) === 0)).toBe(true);
+    expect(Object.values(again.authorityClocks ?? {})).toHaveLength(1);
+    expect(Object.values(again.authorityClocks ?? {})[0]?.causedBy).toBe(Object.values(first.authorityClocks ?? {})[0]?.causedBy);
+    expect(imposeTariff(atDate(again, addDays(real.calendar, 151)), "s122", china, "semiconductors", 0.01).ok).toBe(false);
+  });
+
+  it("requires recorded national recovery before a later deficit can start another episode", () => {
+    const expired = expireTradeMeasures(atDate(imposed(), addDays(real.calendar, 150)));
+    const recovered = withBalance(expired, false);
+    expect(imposeTariff(recovered, "s122", china, "semiconductors", 0.1).ok).toBe(false);
+    const recorded = tariffFindingPhase(recovered).reduce(apply, recovered);
+    const recurrence = atDate(withBalance(recorded, true), addDays(real.calendar, 200));
+    const second = imposed(recurrence);
+    expect(Object.values(second.authorityClocks ?? {})).toHaveLength(2);
+    expect(Object.values(second.trade.measures).find((m) => m.liftedTurn === undefined && m.statute === "s122")?.expiresDate).toEqual(addDays(real.calendar, 350));
+    expect(imposed(loadSave(JSON.parse(JSON.stringify(createSave(recurrence)))))).toEqual(second);
+  });
+
+  it("cannot infer recovery from a new partner, a new sector, or merely waiting", () => {
+    const expired = expireTradeMeasures(atDate(imposed(), addDays(real.calendar, 800)));
+    expect(imposeTariff(expired, "s122", mexico, "textiles-apparel", 0.1).ok).toBe(false);
+    expect(tariffStatuteStanding(expired, "s122", mexico, "textiles-apparel").reason).toContain("payments episode");
+  });
+
+  it("corrects a legacy reissue's extended deadline before the daily expiry gate", () => {
+    const first = imposed();
+    const original = Object.values(first.trade.measures).find((measure) => measure.statute === "s122")!;
+    const reissue = { ...original, id: "legacy-reissue", imposedDate: addDays(real.calendar, 100), expiresDate: addDays(real.calendar, 250) };
+    const legacy: Campaign = { ...first, authorityClocks: undefined, calendar: addDays(real.calendar, 149),
+      trade: { ...first.trade, measures: { [original.id]: { ...original, liftedTurn: first.turn }, [reissue.id]: reissue } } };
+    const next = advanceOneDay(loadSave(JSON.parse(JSON.stringify(createSave(legacy)))), defaultTurnPhases);
+    expect(next.trade.measures[reissue.id]?.expiresDate).toEqual(addDays(real.calendar, 150));
+    expect(next.trade.measures[reissue.id]?.liftedTurn).toBeDefined();
+  });
+
+  it("anchors a legacy save to its earliest Section 122 measure, even when lifted", () => {
+    const first = imposed();
+    const legacy = { ...first, authorityClocks: undefined };
+    const expired = expireTradeMeasures(atDate(legacy, addDays(real.calendar, 160)));
+    const loaded = loadSave(JSON.parse(JSON.stringify(createSave(expired))));
+    expect(imposeTariff(loaded, "s122", mexico, "textiles-apparel", 0.1).ok).toBe(false);
+    expect(tariffStatuteStanding(loaded, "s338", mexico, "textiles-apparel").reason).not.toContain("payments episode");
   });
 });

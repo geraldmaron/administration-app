@@ -1,6 +1,6 @@
 import { selectCurrentLaws, type Campaign } from "./state.js";
 import type { StateId } from "@admin/world";
-import { hasLapsed } from "./emergency.js";
+import { selectDeclaredEmergencies } from "./emergency.js";
 import { campaignDay } from "./clock.js";
 import type { EffectPacket } from "./effects.js";
 import type { MilitaryConstructionProject } from "./state-orders.js";
@@ -29,9 +29,9 @@ export function applyMilitaryConstructionProject(state: Campaign, effect: Milita
 export function constructionAuthorityAvailable(campaign: Campaign, order: ExecutiveOrderRecord): boolean {
   if (order.subject?.kind !== "construction" || !order.constructionNotice || order.review?.status === "struck-down"
     || order.rescindedTurn !== undefined) return false;
-  const emergency = campaign.emergencies[order.subject.declarationId];
+  const declarationId = order.subject.declarationId;
   return hasProspectiveOrderAuthority(campaign, order.id)
-    && Boolean(emergency && emergency.endedTurn === undefined && !hasLapsed(emergency, campaign.turn));
+    && selectDeclaredEmergencies(campaign).some((emergency) => emergency.id === declarationId);
 }
 
 /** Commit enacted balances, then pay only commitments actually made. */

@@ -48,11 +48,17 @@ function agencyAfterFinalRule(state: Campaign): Campaign {
   return rulemakingPhase(due).reduce(apply, due);
 }
 
+/** The next week, or the dated turn an open stage is waiting for. */
+function nextCourtTurn(state: Campaign): number {
+  const waits = (state.judiciary.proceedings ?? []).filter((entry) => entry.stage !== "final").map((entry) => entry.nextTurn);
+  return Math.max(state.turn + 1, waits.length ? Math.min(...waits) : 0);
+}
+
 function resolved(state: Campaign): Campaign | undefined {
   for (let week = 0; week < 12; week += 1) {
     state = phase(state).reduce(apply, state);
     if (state.judiciary.cases.some((entry) => entry.matter?.kind === "agency-procedure")) return state;
-    state = { ...state, turn: state.turn + 1 };
+    state = { ...state, turn: nextCourtTurn(state) };
   }
   return undefined;
 }
@@ -98,7 +104,7 @@ describe("agency and state-initiated judicial matters", () => {
       ? { ...entry, process: { noticeWeeks: 6, commentsAnswered: true, siteReviewPreserved: true } } : entry) };
     const deficient = { ...filed, pendingRules: filed.pendingRules.map((entry) => entry.id === rule.id
       ? { ...entry, process: { noticeWeeks: 6, commentsAnswered: false, siteReviewPreserved: true } } : entry) };
-    const review = (state: Campaign) => { const next = { ...atInterim({ ...state, turn: state.turn + 1 }), turn: state.turn + 2 }; return phase(next).reduce(apply, next); };
+    const review = (state: Campaign) => { const at = atInterim({ ...state, turn: state.turn + 1 }); const next = { ...at, turn: nextCourtTurn(at) }; return phase(next).reduce(apply, next); };
     expect(review(complete).judiciary.proceedings?.[0]?.interim).toBe("denied");
     const stayed = review(deficient);
     expect(stayed.judiciary.proceedings?.[0]?.interim).toBe("rule-paused");

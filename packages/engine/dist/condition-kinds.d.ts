@@ -9,8 +9,20 @@ export type AcuteCondition = (typeof ACUTE_CONDITIONS)[number];
  */
 export declare const STANDING_CONDITIONS: readonly ["unrest", "recession", "inflation-shock", "unemployment-shock", "fiscal-crisis", "energy-shortage", "housing-crunch"];
 export type StandingCondition = (typeof STANDING_CONDITIONS)[number];
-export declare const CONDITION_KINDS: readonly ["earthquake", "flood", "drought", "cyclone", "wildfire", "pandemic", "tornado", "winter-storm", "heat-wave", "unrest", "recession", "inflation-shock", "unemployment-shock", "fiscal-crisis", "energy-shortage", "housing-crunch"];
-export type ConditionKind = AcuteCondition | StandingCondition;
+/**
+ * Happens to the country without a hazard table or an economic reading as its
+ * whole cause: an intrusion a foreign crew carried out, a national strike, a
+ * large bank closed, a mass killing, an American held abroad. Home only, and
+ * only the cases that reach a President; the ordinary run of each (thousands of
+ * intrusions, a few dozen strikes and bank closures a year) is the background
+ * the significant case is drawn from, not a record of its own. Onset lives in
+ * `condition-home-events.ts`, which reads each family's eligible cause from
+ * the campaign.
+ */
+export declare const HOME_EVENT_CONDITIONS: readonly ["cyberattack", "work-stoppage", "bank-failure", "mass-casualty-attack", "wrongful-detention"];
+export type HomeEventCondition = (typeof HOME_EVENT_CONDITIONS)[number];
+export declare const CONDITION_KINDS: readonly ["earthquake", "flood", "drought", "cyclone", "wildfire", "pandemic", "tornado", "winter-storm", "heat-wave", "unrest", "recession", "inflation-shock", "unemployment-shock", "fiscal-crisis", "energy-shortage", "housing-crunch", "cyberattack", "work-stoppage", "bank-failure", "mass-casualty-attack", "wrongful-detention"];
+export type ConditionKind = AcuteCondition | StandingCondition | HomeEventCondition;
 /**
  * Which family a kind belongs to.
  *
@@ -19,7 +31,8 @@ export type ConditionKind = AcuteCondition | StandingCondition;
  * standing conditions existed answers this question correctly today, because
  * the answer was never a fact about the record.
  */
-export declare function conditionFamily(kind: ConditionKind): "acute" | "standing";
+export declare function conditionFamily(kind: ConditionKind): "acute" | "standing" | "event";
+export declare function isHomeEventCondition(kind: ConditionKind): kind is HomeEventCondition;
 export declare function isStandingCondition(kind: ConditionKind): kind is StandingCondition;
 /**
  * The acute kinds that are one bad afternoon rather than a state the country is
@@ -32,9 +45,12 @@ export declare function isStandingCondition(kind: ConditionKind): kind is Standi
  * region stopped for a week has a week of digging out behind it, and that is
  * the shape the weekly rule is written for.
  *
- * Kept as a list over `AcuteCondition` rather than a third family, because an
- * incident is the same record, the same store and the same id scheme — only its
- * lifetime differs.
+ * A mass killing is the same shape: the afternoon is the event, and what
+ * follows is the response to it rather than a worsening of it.
+ *
+ * Kept as a list rather than a family of its own, because an incident is the
+ * same record, the same store and the same id scheme — only its lifetime
+ * differs.
  */
-export declare const INCIDENT_KINDS: readonly AcuteCondition[];
+export declare const INCIDENT_KINDS: readonly ConditionKind[];
 export declare function isIncidentKind(kind: ConditionKind): boolean;

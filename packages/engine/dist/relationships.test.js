@@ -5,7 +5,10 @@ import { apply } from "./effects.js";
 import { rungDefinition } from "./instruments.js";
 import { createRngStreams, makeCampaignSeed } from "./rng.js";
 import { advanceTurn } from "./turn-loop.js";
-import { bothDirections, createGrudge, deedPressure, disposition, grudgeDecayPhase, grudgeDecayRate, grudgeWeight, historyPressure, repeatDrag, } from "./relationships.js";
+import { foundedForBalance } from "./balance-harness.js";
+import { TREATY_TERMS } from "./treaties.js";
+import { relationshipKey } from "./state.js";
+import { FAVOR_HALF_LIFE_DAYS, PRESSURE_BUILD_HALF_LIFE_DAYS, pressDown, pressUp, WAR_GRUDGE_FLOOR, approach, durableShifts, grievanceHalfLifeDays, migrateGrudge, relationshipAnchor, bothDirections, createGrudge, deedPressure, disposition, grudgeDecayPhase, ageGrudge, grudgeDecayRate, grudgeWeight, historyPressure, repeatDrag, } from "./relationships.js";
 const phasesWithDecay = { simulate: grudgeDecayPhase, select: () => [] };
 describe("relationship directionality", () => {
     it("reads both directions independently, even when only one exists", () => {
@@ -25,7 +28,10 @@ describe("grudge decay rate", () => {
     });
 });
 describe("grudge decay over the turn loop", () => {
-    it("reduces grudge weight each turn and eventually removes it", () => {
+    it("reduces grudge weight each turn and forgets a transient grudge once it has faded", () => {
+        // A grievance now halves over years rather than clearing in weeks, so the
+        // forgetting is checked on the aging rule directly rather than by running
+        // a decade of turns through the loop.
         const withGrudge = apply(buildCampaign(), {
             source: "action",
             actor: "player",
@@ -40,11 +46,15 @@ describe("grudge decay over the turn loop", () => {
                 },
             ],
         });
+        const weights = [];
         let state = withGrudge;
-        for (let i = 0; i < 20; i++)
+        for (let i = 0; i < 20; i++) {
             state = advanceTurn(state, phasesWithDecay);
-        const rel = state.relationships[`${relationship.from}:${relationship.to}`];
-        expect(rel.grudges).toEqual([]);
+            weights.push(state.relationships[`${relationship.from}:${relationship.to}`].grudges[0]?.weight ?? 0);
+        }
+        for (let i = 2; i < weights.length; i++)
+            expect(weights[i]).toBeLessThan(weights[i - 1]);
+        expect(ageGrudge(createGrudge("border incursion", 0.3, 1, 0.5), 365 * 30)).toBeUndefined();
     });
     it("every grudge-decay change is attributable to a packet with narration", () => {
         const withGrudge = apply(buildCampaign(), {
@@ -60,8 +70,8 @@ describe("grudge decay over the turn loop", () => {
         // decay passes over it — there is nothing to attribute until it ticks.
         const next = advanceTurn(advanceTurn(withGrudge, phasesWithDecay), phasesWithDecay);
         expect(next.ledger.at(-1)?.description).toMatch(/fade with time/);
-        // Named as the player knows them, never by code.
-        expect(next.ledger.at(-1)?.description).not.toContain(`between ${relationship.from} and`);
+        // Never by code: the line is the world's bookkeeping, not a named pair.
+        expect(next.ledger.at(-1)?.description).not.toContain(relationship.from);
     });
     it("does not age a grievance in the same week it was planted", () => {
         // Decay runs after every phase that plants a grudge, and the runner hands
@@ -120,7 +130,7 @@ describe("grudge decay over the turn loop", () => {
 });
 describe("historyPressure", () => {
     it("is zero for a relationship with no history", () => {
-        expect(historyPressure(relationship)).toBe(0);
+        expect(historyPressure(relationship, 10)).toBe(0);
     });
     it("is zero for history entries no write site's kind ever produces uncoercively or uncooperatively", () => {
         // "demarche" (the softest diplomatic rung), an authored consequence's
@@ -136,7 +146,7 @@ describe("historyPressure", () => {
                 { turn: 4, kind: "intervention", description: "an intervention occurred" },
             ],
         };
-        expect(historyPressure(withUnclassified)).toBe(0);
+        expect(historyPressure(withUnclassified, 5)).toBe(0);
     });
     it("is negative for a recent severed relationship and positive for a recent guarantee", () => {
         const severed = {
@@ -147,15 +157,15 @@ describe("historyPressure", () => {
             ...relationship,
             history: [{ turn: 5, kind: "guarantee", description: "security was guaranteed" }],
         };
-        expect(historyPressure(severed)).toBeLessThan(0);
-        expect(historyPressure(guaranteed)).toBeGreaterThan(0);
+        expect(historyPressure(severed, 6)).toBeLessThan(0);
+        expect(historyPressure(guaranteed, 6)).toBeGreaterThan(0);
     });
     it("weighs a failed covert operation the same coercive direction as an outright severance", () => {
         const failedOp = {
             ...relationship,
             history: [{ turn: 5, kind: "failed-covert-1", description: "an operation was caught" }],
         };
-        expect(historyPressure(failedOp)).toBeLessThan(0);
+        expect(historyPressure(failedOp, 6)).toBeLessThan(0);
     });
     it("weighs the most recent classified act more than an older one competing against it", () => {
         // Same two acts, opposite order: whichever is more recent should pull
@@ -175,7 +185,7 @@ describe("historyPressure", () => {
                 { turn: 10, kind: "severance", description: "a fresh breach" },
             ],
         };
-        expect(historyPressure(recentGuarantee)).toBeGreaterThan(historyPressure(recentSeverance));
+        expect(historyPressure(recentGuarantee, 11)).toBeGreaterThan(historyPressure(recentSeverance, 11));
     });
     it("stays within a fraction of the trust/tension scale even with a long coercive record", () => {
         const history = Array.from({ length: 20 }, (_, i) => ({
@@ -184,7 +194,7 @@ describe("historyPressure", () => {
             description: `breach ${i}`,
         }));
         const longRecord = { ...relationship, history };
-        expect(historyPressure(longRecord)).toBeGreaterThan(-0.2);
+        expect(historyPressure(longRecord, 20)).toBeGreaterThan(-0.2);
     });
 });
 describe("disposition reads relationship.history", () => {
@@ -408,7 +418,161 @@ describe("repeatDrag", () => {
             { turn: 1, kind: "demarche", description: "a quiet warning" },
             { turn: 2, kind: "demarche", description: "a second one" },
         ];
-        expect(historyPressure({ ...relationship, history })).toBe(0);
+        expect(historyPressure({ ...relationship, history }, 3)).toBe(0);
         expect(repeatDrag(withHistory(3, history), nationA.id, nationB.id, "diplomatic")).toBeGreaterThan(0);
+    });
+});
+describe("relationship memory ages by the calendar", () => {
+    const { campaign: founded } = foundedForBalance("relationship-memory");
+    const player = founded.founding.nation;
+    const counterpart = Object.values(founded.relationships).find((r) => r.from === player && !r.to.startsWith("U")).to;
+    const key = relationshipKey(counterpart, player);
+    const edge = founded.relationships[key];
+    const npcPair = Object.values(founded.relationships).find((r) => r.from !== player && r.to !== player);
+    const weeks = (state, n) => Array.from({ length: n }).reduce((c) => advanceTurn(c, phasesWithDecay), state);
+    const withEdge = (patch, base = founded) => ({
+        ...base,
+        relationships: { ...base.relationships, [key]: { ...base.relationships[key], ...patch } },
+    });
+    it("uses one approach-to-target form, so pace never changes how much is remembered", () => {
+        expect(approach(1, 0, 90, 90)).toBeCloseTo(0.5, 12);
+        expect(approach(approach(0.4, 0.1, 7, 273), 0.1, 7, 273)).toBeCloseTo(approach(0.4, 0.1, 14, 273), 12);
+        const grudge = createGrudge("slight", 0.3, 1, 0.4);
+        const twice = ageGrudge(ageGrudge(grudge, 7), 7);
+        expect(twice.weight).toBeCloseTo(ageGrudge(grudge, 14).weight, 12);
+    });
+    it("holds a grievance two to four favor half-lives, by the aggrieved party's vengefulness", () => {
+        expect(grievanceHalfLifeDays(0)).toBe(2 * FAVOR_HALF_LIFE_DAYS);
+        expect(grievanceHalfLifeDays(1)).toBe(4 * FAVOR_HALF_LIFE_DAYS);
+        expect(grudgeDecayRate(0.9)).toBeLessThan(grudgeDecayRate(0.1));
+    });
+    it("opens every edge exactly at its standing reading, so the first week moves nothing", () => {
+        for (const relationship of Object.values(founded.relationships)) {
+            const anchor = relationshipAnchor(founded, relationship);
+            expect(anchor.trust).toBe(relationship.trust);
+            expect(anchor.tension).toBe(relationship.tension);
+            expect(anchor.militaryThreat).toBe(relationship.militaryThreat);
+        }
+        const after = weeks(founded, 1);
+        expect(after.relationships).toEqual(founded.relationships);
+    });
+    it("fades a favor by its half-life and repairs an equal injury more slowly", () => {
+        const favored = weeks(withEdge({ trust: edge.trust + 0.1 }), 39);
+        const injured = weeks(withEdge({ trust: edge.trust - 0.1 }), 39);
+        const favorLeft = favored.relationships[key].trust - edge.trust;
+        const injuryLeft = edge.trust - injured.relationships[key].trust;
+        expect(favorLeft).toBeCloseTo(0.05, 2);
+        expect(injuryLeft).toBeGreaterThan(favorLeft);
+        // An unaffected pair is the control: nothing moved it, so nothing does.
+        expect(favored.relationships[relationshipKey(npcPair.from, npcPair.to)]).toEqual(npcPair);
+    });
+    it("bounds what steady routine contact can bank instead of adding it up forever", () => {
+        // A call's +0.02 every four weeks for four years: the old graph kept every
+        // one; now each fades, so the gain settles near 0.02 / (1 - 2^(-28/273)).
+        const ceiling = 0.02 / (1 - Math.pow(2, -28 / FAVOR_HALF_LIFE_DAYS));
+        let state = founded;
+        for (let week = 0; week < 208; week++) {
+            if (week % 4 === 0)
+                state = withEdge({ trust: Math.min(1, state.relationships[key].trust + 0.02) }, state);
+            state = advanceTurn(state, phasesWithDecay);
+        }
+        const banked = state.relationships[key].trust - edge.trust;
+        expect(banked).toBeGreaterThan(0.1);
+        expect(banked).toBeLessThanOrEqual(ceiling + 1e-9);
+    });
+    it("keeps repeated injuries cumulative while each is still remembered", () => {
+        const once = withEdge({ grudges: [createGrudge("slight", 0.1, 1, 0.5)] });
+        const often = withEdge({ grudges: Array.from({ length: 4 }, (_, i) => createGrudge(`slight ${i}`, 0.1, 1, 0.5)) });
+        const [a, b] = [weeks(once, 26), weeks(often, 26)];
+        expect(grudgeWeight(b.relationships[key])).toBeGreaterThan(3 * grudgeWeight(a.relationships[key]));
+    });
+    it("leaves a war's grudge at its floor and lets an ordinary one go", () => {
+        const war = ageGrudge(createGrudge("war:war:A:B:3", 0.6, 1, 0.5), 365 * 20);
+        expect(war.weight).toBeGreaterThanOrEqual(WAR_GRUDGE_FLOOR);
+        expect(war.weight).toBeCloseTo(WAR_GRUDGE_FLOOR, 2);
+        expect(ageGrudge(createGrudge("a clash on the border", 0.6, 1, 0.5), 365 * 20)).toBeUndefined();
+    });
+    it("restates an older save's weekly step as the daily rate it stood for", () => {
+        const legacy = { cause: "slight", weight: 0.2, createdTurn: 3, decayRate: 0.06 };
+        expect(migrateGrudge(legacy)).toEqual({ ...legacy, decayRate: grudgeDecayRate(0.5) });
+        // The old step bottomed out at 0.02 for every vengefulness from 5/6 up, so
+        // that rate maps to the least vengeful temper that could have produced it.
+        const floored = { ...legacy, decayRate: 0.02 };
+        expect(migrateGrudge(floored).decayRate).toBe(grudgeDecayRate(1 - 0.02 / 0.12));
+        expect(migrateGrudge(floored).decayRate).toBeGreaterThan(grudgeDecayRate(1));
+        const current = createGrudge("slight", 0.2, 3, 0.5);
+        expect(migrateGrudge(current)).toBe(current);
+    });
+    it("holds a treaty in force at its own terms, both ways, and drops it once withdrawn", () => {
+        const kinds = Object.keys(TREATY_TERMS);
+        for (const kind of kinds) {
+            const record = { id: `treaty:${kind}:${counterpart}:2`, treaty: `${kind}:${player}:${counterpart}`, title: kind, kind, counterpart, signedTurn: 2, status: "ratified" };
+            const signed = { ...founded, treaties: { [record.id]: record } };
+            for (const [from, to] of [[player, counterpart], [counterpart, player]]) {
+                const [shift] = durableShifts(signed, from, to);
+                expect(shift).toEqual({ cause: `treaty:${record.id}`, trust: TREATY_TERMS[kind].effect.trust, tension: TREATY_TERMS[kind].effect.tension, militaryThreat: 0 });
+            }
+            const withdrawn = { ...founded, treaties: { [record.id]: { ...record, status: "withdrawn" } } };
+            expect(durableShifts(withdrawn, player, counterpart)).toEqual([]);
+        }
+    });
+    it("settles to the same bytes whatever order the records were written in", () => {
+        const records = ["alliance", "trade", "arms-control", "executive-agreement"].map((kind, i) => ({
+            id: `treaty:${kind}:${counterpart}:${i + 2}`, treaty: `${kind}:${player}:${counterpart}`, title: kind, kind, counterpart, signedTurn: i + 2, status: "ratified",
+        }));
+        const build = (ordered) => ({
+            ...withEdge({ trust: edge.trust + 0.3001, history: [{ turn: 1, kind: "severance", description: "a" }, { turn: 1, kind: "relief", description: "b" }] }),
+            treaties: Object.fromEntries(ordered.map((r) => [r.id, r])),
+        });
+        const forward = build(records);
+        const backward = build([...records].reverse());
+        const reversedHistory = { ...backward, relationships: { ...backward.relationships, [key]: { ...backward.relationships[key], history: [...backward.relationships[key].history].reverse() } } };
+        expect(relationshipAnchor(backward, backward.relationships[key])).toEqual(relationshipAnchor(forward, forward.relationships[key]));
+        expect(disposition(reversedHistory.relationships[key], reversedHistory)).toBe(disposition(forward.relationships[key], forward));
+        expect(grudgeDecayPhase(backward)).toEqual(grudgeDecayPhase(forward));
+        expect(weeks(backward, 60).relationships[key]).toEqual(weeks(forward, 60).relationships[key]);
+    });
+    it("presses a reading toward a level at the build half-life and never back past it", () => {
+        expect(pressDown(0.4, 0.2)).toBeCloseTo(0.2 + 0.2 * Math.pow(2, -7 / PRESSURE_BUILD_HALF_LIFE_DAYS), 12);
+        expect(pressDown(0.1, 0.2)).toBe(0.1);
+        expect(pressUp(0.1, 0.3)).toBeGreaterThan(0.1);
+        expect(pressUp(0.5, 0.3)).toBe(0.5);
+        const settled = Array.from({ length: 104 }).reduce((t) => pressDown(t, -0.1), 0.3);
+        expect(settled).toBeGreaterThanOrEqual(-0.1);
+        expect(settled).toBeCloseTo(-0.1, 6);
+    });
+    it("lets the fear a war raised fade once the war is over, but holds it while it is fought", () => {
+        const raised = withEdge({ militaryThreat: Math.min(1, edge.militaryThreat + 0.3) });
+        const conflict = { id: `war:${counterpart}:${player}:2`, aggressor: counterpart, defender: player, joined: { aggressor: [], defender: [] }, status: "active" };
+        const fighting = { ...raised, conflicts: { [conflict.id]: conflict } };
+        const over = { ...raised, conflicts: { [conflict.id]: { ...conflict, status: "settled" } } };
+        const quiet = weeks(raised, 104).relationships[key].militaryThreat;
+        const ended = weeks(over, 104).relationships[key].militaryThreat;
+        const held = weeks(fighting, 104).relationships[key].militaryThreat;
+        expect(quiet).toBeLessThan(edge.militaryThreat + 0.3);
+        expect(quiet).toBeGreaterThan(edge.militaryThreat);
+        expect(ended).toBeGreaterThan(quiet);
+        expect(held).toBeGreaterThan(ended);
+    });
+    it("keeps a severance and a war below the founding reading after five years", () => {
+        const severed = { ...withEdge({ trust: edge.trust - 0.3 }), player: { ...founded.player, flags: { ...founded.player.flags, [`severed-relations:${counterpart}:${player}`]: true } } };
+        const conflict = { id: `war:${counterpart}:${player}:2`, aggressor: counterpart, defender: player, joined: { aggressor: [], defender: [] }, status: "defender-victory" };
+        const fought = { ...withEdge({ trust: edge.trust - 0.3 }), conflicts: { [conflict.id]: conflict } };
+        for (const state of [severed, fought]) {
+            const later = weeks(state, 260).relationships[key];
+            expect(edge.trust - later.trust).toBeGreaterThan(0.05);
+        }
+        const active = { ...conflict, status: "active" };
+        expect(durableShifts({ ...founded, conflicts: { [conflict.id]: active } }, player, counterpart)[0].trust).toBeLessThan(durableShifts(fought, player, counterpart)[0].trust);
+        const carried = { ...active, inherited: { asOf: founded.calendar, source: "probe" } };
+        expect(durableShifts({ ...founded, conflicts: { [conflict.id]: carried } }, player, counterpart)).toEqual([]);
+        // A government that enters the carried war later makes a new enemy of each
+        // principal on the other side, and that pairing is not in the founding data.
+        const joiner = Object.keys(founded.nations).sort().find((id) => id !== player && id !== counterpart);
+        const entered = { ...carried, joined: { aggressor: [joiner], defender: [] } };
+        const withEntrant = { ...founded, conflicts: { [conflict.id]: entered } };
+        expect(durableShifts(withEntrant, joiner, player).map((s) => s.cause)).toEqual([`war:${conflict.id}`]);
+        expect(durableShifts(withEntrant, player, joiner)[0].trust).toBeLessThan(0);
+        expect(durableShifts(withEntrant, player, counterpart)).toEqual([]);
     });
 });

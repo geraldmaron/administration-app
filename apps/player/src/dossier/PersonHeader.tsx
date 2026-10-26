@@ -1,6 +1,6 @@
 import type { Campaign } from "@admin/engine";
 import { place, subjectHref, type PersonFile } from "@admin/player-core";
-import { Badge, Column, Icon, Row, Surface, Text, View, useMedia } from "@admin/ui";
+import { Tag, Column, Icon, Row, Surface, Text, View, useMedia } from "@admin/ui";
 import { fileNumber } from "@admin/ui/dossier";
 import type { ChairActs } from "../executive/acts";
 import { InstitutionSeal, LinkText } from "../executive/parts";
@@ -14,10 +14,10 @@ function Chips({ campaign, file }: { readonly campaign: Campaign; readonly file:
   const party = partyOf(campaign, file);
   return (
     <Row gap="xs" wrap alignItems="center">
-      {tag ? <Badge status={tag.status} icon={tag.icon}>{tag.label}</Badge> : null}
-      {party ? <Badge status="outline">{party.name}</Badge> : null}
+      {tag ? <Tag tone={tag.tone} icon={tag.icon}>{tag.label}</Tag> : null}
+      {party ? <Tag tone="outline">{party.name}</Tag> : null}
       {standing.kind === "foreign" || standing.kind === "foreign-leader" ? <LinkText href={subjectHref({ kind: "nation", id: standing.nation })} variant="caption">{standing.nationName}</LinkText> : null}
-      {file.dossier.nomination ? <Badge status="warning" icon="pending">Nominee</Badge> : null}
+      {file.dossier.nomination ? <Tag tone="warning" icon="pending">Nominee</Tag> : null}
     </Row>
   );
 }
@@ -68,7 +68,7 @@ export function PersonHeader({ campaign, file, acts, asOf }: HeaderProps) {
           <PersonActs campaign={campaign} file={file} acts={acts} />
         ) : (
           <Text variant="caption" tone="secondary">
-            You don't need to do anything about this person today. Their record and connections are here whenever you want them.
+            Nothing about this person needs you today.
           </Text>
         )}
       </Column>

@@ -10,7 +10,7 @@ Recommend targeted semantic and navigation repairs first, followed by restrained
 - [Verification and limitations](VERIFICATION.md)
 - [Capture archive](evidence-index.html)
 
-Base: `011d0c042fbb2e4e1bbb52c7b5b7b3d17e165fbb`. Isolated worktree: `~/.codex/worktrees/player-visual-audit/admin-app`. Separate localhost server on port 5187; disposable Playwright browser contexts. Original checkout and player saves were not changed.
+Base: `011d0c042fbb2e4e1bbb52c7b5b7b3d17e165fbb`. Isolated worktree: `<local path>`. Separate localhost server on port 5187; disposable Playwright browser contexts. Original checkout and player saves were not changed.
 
 Six findings cover contradictory commodity direction, map preference propagation, commodity identity and supplier links, chart geometry/context, repeated readings, and weak surface hierarchy. Broad desktop wrapping was not reproduced. Measured usable widths were 1128, 1152 and 1200px at desktop widths 1280, 1440 and 1920.
 

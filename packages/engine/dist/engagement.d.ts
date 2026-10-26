@@ -29,6 +29,8 @@ type KindTerms = {
  * cooldown and this bound are set together.
  */
 export declare const ENGAGEMENT_BOUND = 0.06;
+/** Planning ceiling above standing trust for routine contact, shared by calls and envoys. */
+export declare const ROUTINE_TRUST_SURPLUS = 0.06;
 export declare const ENGAGEMENT_TERMS: Readonly<Record<EngagementKind, KindTerms>>;
 /** The trust each side must hold before a joint declaration is on the table at all. */
 export declare const DECLARATION_TRUST = 0.3;

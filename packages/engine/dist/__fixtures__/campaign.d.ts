@@ -554,7 +554,7 @@ export declare const person: {
         postgraduate: boolean;
     };
     career: {
-        archetype: "medicine" | "civil-service" | "military-command" | "intelligence-service" | "diplomatic-corps" | "private-law" | "business" | "academia" | "party-organizing" | "local-government" | "state-media" | "independent-press" | "activism" | "labor-union" | "judiciary";
+        archetype: "business" | "judiciary" | "medicine" | "civil-service" | "military-command" | "intelligence-service" | "diplomatic-corps" | "private-law" | "academia" | "party-organizing" | "local-government" | "state-media" | "independent-press" | "activism" | "labor-union";
         years: number;
         startAge: number;
     }[];

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useMedia } from "@tamagui/core";
 import type { UsParty } from "@admin/engine";
 import { place } from "@admin/player-core";
-import { Badge, Button, Column, EntityLink, Icon, Peek, Pressable, ReadingFrame, Row, Segmented, Sparkline, Text, TextInput, Toggle, sparklineKey, type KeyEntry } from "@admin/ui";
+import { Tag, Button, Column, EntityLink, Icon, Peek, Pressable, ReadingFrame, Row, Segmented, Sparkline, Text, TextInput, Toggle, View, sparklineKey, type KeyEntry } from "@admin/ui";
 import { DataTable, Track, type TableColumn } from "@admin/ui/nation";
 import { go } from "../../shell/navigate";
 import { VALENCE_TEXT, VALENCE_TRACK, type Valence } from "../format";
@@ -54,14 +54,14 @@ function Flags({ row }: { readonly row: StateTableRow }) {
   return (
     <Row gap="2xs" wrap justifyContent="flex-end">
       {row.conditions > 0 ? (
-        <Badge status="warning" icon="caution">
+        <Tag tone="warning" icon="caution">
           {row.conditions} {row.conditions === 1 ? "problem" : "problems"}
-        </Badge>
+        </Tag>
       ) : null}
       {row.declared ? (
-        <Badge status="gold" icon="order">
+        <Tag tone="authority" icon="order">
           Emergency
-        </Badge>
+        </Tag>
       ) : null}
     </Row>
   );
@@ -96,9 +96,9 @@ function Needs({ row, withFlags }: { readonly row: StateTableRow; readonly withF
   }
   return (
     <Column gap="2xs" alignItems="flex-end">
-      <Badge status="warning" icon="caution">
+      <Tag tone="warning" icon="caution">
         {row.needs} to answer
-      </Badge>
+      </Tag>
       <Text variant="caption" tone="secondary" textAlign="right">
         {row.needTitles.join(", ")}
       </Text>
@@ -107,7 +107,7 @@ function Needs({ row, withFlags }: { readonly row: StateTableRow; readonly withF
   );
 }
 
-function Reading({ row, withMove }: { readonly row: StateTableRow; readonly withMove?: boolean }) {
+function StateReadingCell({ row, withMove }: { readonly row: StateTableRow; readonly withMove?: boolean }) {
   return (
     <Column gap="2xs" alignSelf="stretch">
       <Text variant="label" tone={row.valence ? VALENCE_TEXT[row.valence] : "primary"} textAlign="right">
@@ -171,8 +171,10 @@ function useTier(): Tier {
 /** The row's box: checked when the state is chosen, so the list and the map always show the same set. */
 function Pick({ row, on, onToggle }: { readonly row: StateTableRow; readonly on: boolean; readonly onToggle: (id: string) => void }) {
   return (
-    <Pressable role="checkbox" aria-checked={on} aria-label={on ? `${row.name} is selected. Take it out` : `Select ${row.name}`} onPress={() => onToggle(row.id)} width={28} height={28} alignItems="center" justifyContent="center" borderRadius="control" borderWidth={2} borderColor={on ? "accent" : "borderColorStrong"} backgroundColor={on ? { default: "accentFill", hover: "accentFillHover" } : { default: "surface", hover: "surfaceHover" }}>
-      {on ? <Icon name="approve" size={16} tone="accentInk" weight="bold" /> : null}
+    <Pressable role="checkbox" aria-checked={on} aria-label={on ? `${row.name} is selected. Take it out` : `Select ${row.name}`} onPress={() => onToggle(row.id)} width={44} height={44} alignItems="center" justifyContent="center">
+      <View width={28} height={28} alignItems="center" justifyContent="center" borderRadius="control" borderWidth={2} borderColor={on ? "accent" : "borderColorStrong"} backgroundColor={on ? { default: "accentFill", hover: "accentFillHover" } : { default: "surface", hover: "surfaceHover" }}>
+        {on ? <Icon name="approve" size={16} tone="accentInk" weight="bold" /> : null}
+      </View>
     </Pressable>
   );
 }
@@ -203,7 +205,7 @@ function columnsFor({ readingLabel, withRecord, compact, chosen, onToggle, tier 
           { id: "relationship", label: "Relationship", sortKey: "relationship" as const, align: "end" as const, flex: tier === "tablet" ? 1.7 : 1.4, render: (row: StateTableRow) => <Relationship row={row} /> },
           { id: "needs", label: roomy ? "Needs you" : "Needs you and alerts", sortKey: "needs" as const, first: "descending" as const, align: "end" as const, flex: 1, render: (row: StateTableRow) => <Needs row={row} withFlags={!roomy} /> },
         ]),
-    { id: "reading", label: readingLabel, sortKey: "reading", first: "descending", align: "end", render: (row) => <Reading row={row} withMove={foldMove} /> },
+    { id: "reading", label: readingLabel, sortKey: "reading", first: "descending", align: "end", render: (row) => <StateReadingCell row={row} withMove={foldMove} /> },
     ...(withRecord && !foldMove ? [{ id: "change", label: "Since last week", sortKey: "change" as const, first: "descending" as const, align: "end" as const, render: (row: StateTableRow) => <Move row={row} /> }] : []),
     ...(compact || !roomy ? [] : [{ id: "flags", label: "Alerts", sortKey: "flags" as const, first: "descending" as const, align: "end" as const, render: (row: StateTableRow) => <Flags row={row} /> }]),
   ];
@@ -250,7 +252,7 @@ export function StatesTable(props: StatesTableProps) {
         pressHint={onChoose ? "Press a row to manage that state on the map. The state's name opens its page." : "Press a state's name to open its page."}
         help={{ meaning: "Each row is a state. The bar in the reading column shows where its figure sits, and the thin line across it is the halfway point where the state is evenly split.", steps: ["Sort by any column heading.", "Check the boxes to manage several states at once."] }}
       >
-        <DataTable caption={`All states, by ${readingLabel.toLowerCase()}`} columns={columnsFor({ ...props, tier })} rows={shown} rowKey={(row) => row.id} sort={sort} onSort={onSort} initial={compact ? 10 : 15} noun="states" empty={`No states match. Clear the filters to see all ${rows.length}.`} selected={(row) => chosen?.includes(row.id) === true} {...(onChoose ? { rowPress: { onPress: (row: StateTableRow) => onChoose(row.id), label: (row: StateTableRow) => `Manage ${row.name} on the map` } } : {})} />
+        <DataTable caption={`All states, by ${readingLabel.toLowerCase()}`} columns={columnsFor({ ...props, tier })} rows={shown} rowKey={(row) => row.id} sort={sort} onSort={onSort} initial={compact ? 10 : 15} noun="states" empty={`No states match these filters.`} selected={(row) => chosen?.includes(row.id) === true} {...(onChoose ? { rowPress: { onPress: (row: StateTableRow) => onChoose(row.id), label: (row: StateTableRow) => `Manage ${row.name} on the map` } } : {})} />
       </ReadingFrame>
     </Column>
   );

@@ -23,13 +23,18 @@ export function blockedAssetForOrder(campaign, owner, orderRecordId) {
         orderRecordId, emergencyId: emergency.id, tradeMeasureId: `asset-restriction:${orderRecordId}`,
         blockedTurn: campaign.turn, status: "blocked" };
 }
-/** The linked trade restriction is the operational bar on dealings in this account. */
+/**
+ * The linked trade restriction is the operational bar on dealings in this
+ * account. It is filed as listed: one modeled account is not the owner's whole
+ * trade, so it reaches no sector and no third party until an account's own
+ * scope is represented.
+ */
 export function assetBlockingEffects(campaign, asset) {
     const template = coerciveMeasureEffect(campaign, campaign.founding.nation, asset.owner, "asset-restriction");
     if (template?.kind !== "trade" || !template.measure)
         return [];
     return [{ kind: "blockedAsset", set: asset }, { ...template,
-            measure: { ...template.measure, id: asset.tradeMeasureId } }];
+            measure: { ...template.measure, id: asset.tradeMeasureId, scope: "listed" } }];
 }
 /** The block ceases when its order or specific emergency no longer stands. */
 export const blockedAssetPhase = (campaign) => {

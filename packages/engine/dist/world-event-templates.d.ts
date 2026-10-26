@@ -38,8 +38,23 @@ export declare function hostileActTerms(temper: NationTraits, edge: Relationship
 export declare function sanctionVoteTerms(temper: NationTraits, edge: Relationship): readonly Term[];
 /** A member voting on whether to admit a government: its own ties to the applicant and the trade between them. */
 export declare function admissionVoteTerms(temper: NationTraits, edge: Relationship): readonly Term[];
-/** A member deciding whether to leave: how little it still trusts the others, what it trades with them, and whether it would rather stand alone. */
-export declare function withdrawalVoteTerms(temper: NationTraits, meanTrust: number, meanTrade: number): readonly Term[];
+/** What a member weighs about leaving a body: what it resents, what it would give up, and what the exit itself costs. */
+export type WithdrawalReading = {
+    /** Its mean trust toward the other members. */
+    readonly meanTrust: number;
+    /** Its mean trade dependence on them. */
+    readonly trade: number;
+    /** On a defense body, the worst threat it reads from outside the body: what the guarantee is worth to it. */
+    readonly protection: number;
+    /** The grudges it carries against members and the coercion they have lately aimed at it, 0..1. */
+    readonly grievance: number;
+    /** What the body's own exit costs: unpicking a customs union costs most, leaving a forum least. */
+    readonly exitCost: number;
+    /** The body has no exit clause, so leaving repudiates a treaty. */
+    readonly repudiation: boolean;
+};
+/** A member deciding whether to leave a body, from what it resents, what it would lose and what leaving costs. */
+export declare function withdrawalVoteTerms(temper: NationTraits, reading: WithdrawalReading): readonly Term[];
 /** A government deciding whether to send help after a disaster. */
 export declare function aidTerms(temper: NationTraits, edge: Relationship, severity: number, proximity: number, sharesBody: boolean): readonly Term[];
 /** The history kind a firing leaves on the acting government's edge, which is also how its cooldown is read. */

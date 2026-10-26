@@ -148,7 +148,7 @@ export function SelectionCard({ campaign, system, mode, selection, onSelect }: {
   return (
     <Surface level="sunken" pad="md" alignSelf="stretch" aria-live="polite">
       <Column gap="sm">
-        <Text variant="title">{delegation ? delegation.name : "Pick a state"}</Text>
+        <Text variant="title">{delegation ? delegation.name : "No state picked"}</Text>
         <Select label="Show a state's members" options={system.delegations.map((entry) => ({ value: entry.state, label: entry.name }))} value={state} onChange={(next) => onSelect({ state: next })} placeholder="All states" />
         {delegation ? (
           <>
@@ -164,7 +164,7 @@ export function SelectionCard({ campaign, system, mode, selection, onSelect }: {
             </Row>
           </>
         ) : (
-          <Note>Pick a state to light up its members in both chambers and list them here. Press any seat to open that member's page.</Note>
+          <Note>No state is picked, so every member shows in both chambers.</Note>
         )}
       </Column>
     </Surface>

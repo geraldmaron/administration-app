@@ -63,7 +63,7 @@ describe("what a foreign government runs at home", () => {
   });
 
   it("shows the last change a government made to its program, from the wire", () => {
-    const changed = selectFeed(later).filter((item) => item.kind === "governance");
+    const changed = selectFeed(later).filter((item) => item.kind === "governance" && item.actor !== undefined && item.actor in later.nations);
     expect(changed.length).toBeGreaterThan(0);
     const item = changed.at(-1)!;
     expect(nationProgram(later, item.actor!)!.lastChange?.headline).toBe(

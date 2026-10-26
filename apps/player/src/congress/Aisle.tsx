@@ -102,7 +102,7 @@ function AisleChamber({ campaign, chamber, you, senateClass }: { readonly campai
         <Text variant="caption" aria-live="polite">
           <Text variant="caption" weight="strong">{shown.title}.</Text> {shown.line} You can see them shaded on the scale above.
         </Text>
-        <Paged items={rows} initial={10} noun="members" empty="No one sits at that spot on the scale. Try another spot." render={(member) => <MemberRow key={member.seat} campaign={campaign} member={member} showUp={showUp} />} />
+        <Paged items={rows} initial={10} noun="members" empty="No one sits at that spot on the scale." render={(member) => <MemberRow key={member.seat} campaign={campaign} member={member} showUp={showUp} />} />
       </Column>
     </Surface>
   );
@@ -115,7 +115,7 @@ export function WhereYouStand({ campaign, chambers, you, senateClass }: { readon
       title="Where you stand with Congress"
       icon="layerLean"
     >
-      {chambers.length === 0 ? <Empty title="No members have taken their seats" detail="Where members stand on the economy appears once the chambers are seated." /> : null}
+      {chambers.length === 0 ? <Empty title="No members have taken their seats" detail="The chambers are not seated yet." /> : null}
       {chambers.map((chamber) => <AisleChamber key={chamber.chamber} campaign={campaign} chamber={chamber} you={you} {...(senateClass ? { senateClass } : {})} />)}
     </Card>
   );

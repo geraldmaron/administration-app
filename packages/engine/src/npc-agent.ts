@@ -16,6 +16,7 @@ import { leaderPersonalityOn } from "./leader-index.js";
 import { engagementAffinity, engagementCandidates, projectReceive, type EngagementRequest } from "./engagement.js";
 import { coercionClaims } from "./coercion-tempo.js";
 import { firstTempoRefusal } from "./npc-tempo.js";
+import { responseBook, responsePull, type ResponseIntent } from "./npc-response.js";
 
 // The NPC utility agent: what a nation does when nobody is telling it to.
 // Every candidate move is priced by the same projectAction() the player sees,
@@ -40,6 +41,7 @@ export type NpcScoreTerms = {
   readonly salience: number; // how much of this government's foreign policy is about this country — always >= 0
   readonly redLine: number; // the answer this government promised to an act of this kind — always >= 0
   readonly survival: number; // what a government losing its own hold does about it — signed
+  readonly response: number; // the answer it owes for what this target just did to it or a close partner — always >= 0
   readonly jitter: number; // deterministic tie-break, never large enough to flip a real preference
 };
 
@@ -55,6 +57,8 @@ export type NpcCandidate = {
    * sentence the world reads names the same promise the score was raised by.
    */
   readonly answering?: RedLineCrossing;
+  /** The act this move answers, where its score was raised by one: what the bulletin names it as answering. */
+  readonly responding?: ResponseIntent;
 };
 
 export type NpcRejection = {
@@ -106,6 +110,7 @@ const WEIGHTS = {
   salience: 0.7,
   redLine: 1.2,
   survival: 0.5,
+  response: 1.5,
 } as const;
 
 // Below this, doing nothing is the better move. Set so that a nation with no
@@ -190,10 +195,19 @@ function escalationFit(rung: RungLevel, actor: Nation): number {
   return 1 - Math.abs(rung / 5 - appetite(actor.traits));
 }
 
+// How hard alignment brakes coercing a partner, at full alignment and for the
+// most coercive instrument. Planning value, set so military pressure on a
+// partner aligned at two thirds loses about half a point of score and a
+// protest about a tenth: partners still quarrel, over trade far more than
+// with troops. Scaled by reliability, because a government that keeps its
+// word keeps faith with the side it has chosen.
+const ALIGNMENT_BRAKE = 1;
+
 // The things that stop a nation short of what it would otherwise like to do:
 // a legalistic state balks at covert work and at the top of the ladder, an
-// isolationist one balks at acting abroad at all, and a reliable one does not
-// casually turn on a nation it has signed something with.
+// isolationist one balks at acting abroad at all, a reliable one does not
+// casually turn on a nation it has signed something with, and none of them
+// readily turns its pressure on a partner it is aligned with.
 function restraint(
   request: ResolutionRequest,
   actor: Nation,
@@ -223,7 +237,9 @@ function restraint(
   // has to persuade in advance. It bites only at the top of the ladder, which
   // is where ratification is actually the question.
   const assemblyDrag = height >= 4 ? ratification * RATIFICATION_STEP * (height - 3) : 0;
-  return -(covertScruple + ladderScruple + inward + treatyScruple + assemblyDrag);
+  const partnerScruple =
+    Math.max(0, relationship.alignment) * ALIGNMENT_BRAKE * (0.5 + 0.5 * temper.reliability) * INSTRUMENT_COERCION[request.instrument];
+  return -(covertScruple + ladderScruple + inward + treatyScruple + assemblyDrag + partnerScruple);
 }
 
 /**
@@ -288,6 +304,8 @@ type ActorStanding = {
   readonly ratification: number;
   readonly crossings: readonly RedLineCrossing[];
   readonly runtime: NationRuntime;
+  /** What it means to answer, by the government it would answer. */
+  readonly intents: ReadonlyMap<string, ResponseIntent>;
 };
 
 function scoreTerms(
@@ -317,6 +335,7 @@ function scoreTerms(
     salience: salience(actor, targetNation, relationship),
     redLine: redLinePull(answering, request.rung),
     survival: survival(standing.runtime, request.instrument),
+    response: responsePull(standing.intents.get(request.target as string), request.instrument, request.rung),
     jitter: (draw - 0.5) * JITTER_SPREAD,
   };
 }
@@ -334,6 +353,7 @@ export function scoreOf(terms: NpcScoreTerms): number {
     terms.salience * WEIGHTS.salience +
     terms.redLine * WEIGHTS.redLine +
     terms.survival * WEIGHTS.survival +
+    terms.response * WEIGHTS.response +
     terms.jitter;
   return Math.round(weighted * 10000) / 10000;
 }
@@ -425,6 +445,7 @@ function weigh(
       score: scoreOf(terms) * (request.target === campaign.founding.nation ? measure : 1),
       terms,
       ...(answering ? { answering } : {}),
+      ...(terms.response > 0 ? { responding: standing.intents.get(request.target as string)! } : {}),
     },
   };
 }
@@ -500,6 +521,7 @@ function engagementTerms(
     salience: salience(actor, liveNation(campaign, request.target), relationship),
     redLine: 0,
     survival: 0,
+    response: 0,
     jitter: (draw - 0.5) * JITTER_SPREAD,
   };
 }
@@ -541,12 +563,29 @@ function decisionContext(campaign: Campaign, actor: NationId, options: NpcDecisi
     ratification: ratificationDrag(actorRuntime),
     crossings: crossingsAgainst(campaign, actor),
     runtime: actorRuntime,
+    intents: responseBook(campaign).get(actor as string) ?? new Map<string, ResponseIntent>(),
   };
   // What the President's record and position say about pressing them. Hoisted:
   // the profile reads the whole ledger, so recomputing it per candidate would
   // make the scan quadratic in the length of the campaign.
   const measure = playerTargetMeasure(campaign, actorNation.traits);
   return { actorNation, outward, targets, standing, measure };
+}
+
+/**
+ * Who this government has a cause to coerce: a quarrel the record names, or an
+ * act it has yet to answer. `answerOnly` holds the targets whose only cause is
+ * the act to answer.
+ */
+function causesAgainst(campaign: Campaign, context: DecisionContext): { coercible: ReadonlySet<string>; answerOnly: ReadonlySet<string> } {
+  const { actorNation, outward, targets, standing } = context;
+  const quarrel = new Set(
+    targets
+      .filter((target) => coercionCause(campaign, actorNation, target, outward.get(target as string)!, standing.crossings) !== undefined)
+      .map((target) => target as string),
+  );
+  const answerOnly = new Set(targets.map((t) => t as string).filter((t) => standing.intents.has(t) && !quarrel.has(t)));
+  return { coercible: new Set([...quarrel, ...answerOnly]), answerOnly };
 }
 
 export function decideNpcAction(
@@ -557,18 +596,18 @@ export function decideNpcAction(
 ): NpcDecision {
   const context = decisionContext(campaign, actor, options);
   const { actorNation, outward, targets, standing, measure } = context;
-  const coercible = new Set(
-    targets
-      .filter((target) => coercionCause(campaign, actorNation, target, outward.get(target as string)!, standing.crossings) !== undefined)
-      .map((target) => target as string),
-  );
+  const { coercible, answerOnly } = causesAgainst(campaign, context);
 
   const ranked: NpcCandidate[] = [];
   const rejected: NpcRejection[] = [];
   for (const request of everyRequest(actor, targets, coercible)) {
     const weighed = weigh(campaign, request, actorNation, outward, standing, measure, streams);
     if ("rejection" in weighed) rejected.push(weighed.rejection);
-    else ranked.push(weighed.candidate);
+    // Where the act to answer is the only cause, only an answer is a candidate:
+    // being sanctioned is a reason to answer the sanction, not to blockade.
+    else if (!answerOnly.has(request.target as string) || request.instrument === "assistance" || weighed.candidate.terms.response > 0) {
+      ranked.push(weighed.candidate);
+    }
   }
   ranked.sort(candidateOrder);
 
@@ -603,6 +642,7 @@ const STAMPED_TERMS: Readonly<Record<Exclude<keyof NpcScoreTerms, "jitter">, { r
   salience: { key: "salience", source: "interest" },
   redLine: { key: "red-line", source: "obligation" },
   survival: { key: "survival", source: "situation" },
+  response: { key: "response", source: "situation" },
 };
 
 const round4 = (v: number) => Math.round(v * 10000) / 10000 || 0;

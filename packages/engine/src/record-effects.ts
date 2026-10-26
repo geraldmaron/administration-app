@@ -13,7 +13,7 @@ import type {
   PendingRule,
   Pursuit,
 } from "./state.js";
-import type { DeclaredEmergency, ExternalThreatEmergency } from "./state-emergency.js";
+import type { AuthorityClock, DeclaredEmergency, ExternalThreatEmergency } from "./state-emergency.js";
 import type { DecisionFraming } from "./press-framing.js";
 
 // The multi-turn world records, and the one operation that writes all of them.
@@ -72,6 +72,7 @@ export type CommitmentEffect = { readonly kind: "commitment"; readonly set: Comm
 export type ConditionEffect = { readonly kind: "condition"; readonly set: NationCondition };
 export type PursuitEffect = { readonly kind: "pursuit"; readonly set: Pursuit };
 export type EmergencyEffect = { readonly kind: "emergency"; readonly set: DeclaredEmergency };
+export type AuthorityClockEffect = { readonly kind: "authorityClock"; readonly set: AuthorityClock };
 export type ExternalEmergencyEffect = { readonly kind: "externalEmergency"; readonly set: ExternalThreatEmergency };
 
 export function applyCommitment(state: Campaign, effect: CommitmentEffect): Campaign {
@@ -88,6 +89,10 @@ export function applyPursuit(state: Campaign, effect: PursuitEffect): Campaign {
 
 export function applyEmergency(state: Campaign, effect: EmergencyEffect): Campaign {
   return { ...state, emergencies: setById(state.emergencies, effect.set) };
+}
+
+export function applyAuthorityClock(state: Campaign, effect: AuthorityClockEffect): Campaign {
+  return { ...state, authorityClocks: setById(state.authorityClocks ?? {}, effect.set) };
 }
 
 export function applyExternalEmergency(state: Campaign, effect: ExternalEmergencyEffect): Campaign {

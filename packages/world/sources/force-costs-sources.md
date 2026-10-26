@@ -60,3 +60,25 @@ The up-front price is multiplied by the engine's existing projection factor (`ge
 - No public figure isolates the incremental cost of a deployment for any unit; every running cost here is a full peacetime operating cost, so the weekly bills are upper bounds on the incremental cost.
 - The exercise, the brigade's shipping and the cross-checks above are reported figures from the press quoting officials, not budget documents.
 - The strike sortie rests on one campaign's first ten days. A strike flown entirely by standoff missiles (`strikesByMissile`) is priced the same way, by the aircraft the package names.
+
+## Domestic deployments (opened 2026-10-25)
+
+Added for the federal force a President can send into a state (`packages/engine/src/locale-acts.ts`): the Guard federalized under 10 U.S.C. §12406, the Guard a governor deploys at the President's request under 32 U.S.C. §502(f), and active-duty troops under the Insurrection Act. Requests were made with a generic user agent and carried no personal identifiers.
+
+| Act | Weekly bill | Read from |
+|---|---|---|
+| Federalize the Guard | 3,000 members at $19.5M per 1,000 a month: about $13.5M a week | `guard-domestic-thousand-month`, `guard-call-up` |
+| Ask the governor to deploy the Guard | the same 3,000 for 8 weeks, charged up front: about $108M | `guard-domestic-thousand-month`, `guard-call-up` |
+| Send in active-duty troops | the border deployment's $132M over 12 weeks, in 2026 dollars: about $14.5M a week | `active-border-deployment-cost`, `active-border-deployment-weeks`, `cpi-2018`, `cpi-2026` |
+
+A month is 365.25 / 12 days. The up-front $20M to federalize and $25M to move a brigade, and the officer-year of about $300k loaded that prices the enforcement acts, stay the game's planning values; no row reads them.
+
+1. **NPR via OPB, "Trump's National Guard deployments could cost over $1 billion this year, CBO projects" (2026-01-28),** `https://www.opb.org/article/2026/01/28/cbo-projects-national-guard-deployments-could-cost-over-dollar1-billion-this-year/`. "The CBO estimates that it could cost between $18 million and $21 million for every additional 1,000 soldiers"; a member's pay, health care, lodging, food and transportation run "$311 to $607 per day"; the 2025 deployments cost about $496 million. The estimate answered 11 senators led by Sen. Jeff Merkley.
+2. **CBS News, "Troop deployments to U.S. cities cost nearly half a billion dollars in 2025,"** `https://www.cbsnews.com/news/troop-deployments-to-u-s-cities-cost-nearly-half-a-billion-dollars-in-2025/`. "Deploying 1,000 members of the National Guard to any city would cost $18 to $21 million per month, depending mainly on the city's cost of living"; the Washington, D.C. deployment "could cost around $55 million per month if the size of the deployment continues at about 2,950 members," which is $18.6M per 1,000 and agrees with the range. `guard-call-up` takes its 3,000 from that size.
+3. **Military.com, "Cost of Deploying Active-Duty Troops to Border: $132 Million and Counting" (2019-01-29),** `https://www.military.com/daily-news/2019/01/29/cost-deploying-active-duty-troops-border-132-million-and-counting.html`. "About $132 million has been spent on the active-duty troops who began deploying to Texas, Arizona and California in early November," Vice Adm. Michael Gilday, the Joint Staff's operations director, to the House Armed Services Committee; "about 5,900 active-duty troops initially deployed," down to "about 2,100." `active-border-deployment-weeks` is the span from early November 2018 to the hearing, rounded to 12.
+
+### What is thin
+
+- The CBO document itself was not opened (cbo.gov refused the request); its figures are read as two outlets reported them.
+- The border figure has no stated start date and covers a force that shrank by nearly two-thirds, so its weekly rate is an average over a falling head count, not a brigade's steady cost.
+- Not opened in this pass, and not seeded: the Los Angeles deployment's reported $134M for 60 days (Military Times), which would be about $15.6M a week; the size of the June 2025 Los Angeles order; the Portland and Chicago head counts; a brigade combat team's head count; and the FBI and ICE per-officer costs the planning pass named as cross-checks on the $300k officer-year.

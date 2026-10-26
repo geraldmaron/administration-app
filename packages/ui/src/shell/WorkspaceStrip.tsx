@@ -1,6 +1,6 @@
 import { View } from "@tamagui/core";
 import { Theme } from "@tamagui/core";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
 import { Seal, type SealProps } from "../seals/Seal";
@@ -30,7 +30,7 @@ export function WorkspaceStrip({ seal, workspace, office, development }: Workspa
               </Text>
             </Text>
           </Row>
-          {development ? <Badge status="warning">DEVELOPMENT</Badge> : null}
+          {development ? <Tag tone="warning">DEVELOPMENT</Tag> : null}
         </Row>
       </View>
     </Theme>

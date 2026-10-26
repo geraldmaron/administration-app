@@ -14,8 +14,8 @@ const POLITICS = "United States political processes, public opinion, policy or m
 
 function targetNote(kind: TaskingTargetKind): string {
   if (kind === "domestic-politics") return `This would point spying at ${POLITICS}. The agency's lawyers will refuse, and your request stays on the record.`;
-  if (kind === "foreign-person") return "You can't point spying at one foreign person from here. Pick a foreign government instead.";
-  return "You can't point spying at one person from here. Where someone is from, or the office they hold, doesn't prove where they live or give a legal reason to watch them. Pick a state or a foreign government instead.";
+  if (kind === "foreign-person") return "Collection against an individual foreign person is unavailable.";
+  return "You can't point spying at one person from here. Where someone is from, or the office they hold, doesn't prove where they live or give a legal reason to watch them. Collection here covers states or foreign governments.";
 }
 
 /** Pointing an element of the community at a question: who, with what discipline, at what, and what it is to answer. */
@@ -136,8 +136,8 @@ export function ShareReportPanel({ campaign, id, acts, onClose }: PanelProps & {
       })}
     >
       <Text variant="body" tone="secondary">{report?.target}: {report?.question}. You can send one report to several governments, one decision at a time.</Text>
-      <Field label="Send it to" help={selected?.reason ?? "Check who gets it and the limits on sharing before you send it."}>
-        {(control) => <Select {...control} label="Send it to" value={recipient as string | undefined} placeholder="Pick a government" onChange={(value) => setRecipient(value as NationId)} options={recipients.map((entry) => ({ value: entry.id as string, label: entry.name }))} />}
+      <Field label="Send it to" help={selected?.reason ?? "No recipient has been selected."}>
+        {(control) => <Select {...control} label="Send it to" value={recipient as string | undefined} placeholder="No government chosen" onChange={(value) => setRecipient(value as NationId)} options={recipients.map((entry) => ({ value: entry.id as string, label: entry.name }))} />}
       </Field>
       {report?.findings.length ? (
         report.findings.map((finding, index) => (

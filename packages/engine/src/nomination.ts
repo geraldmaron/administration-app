@@ -1,3 +1,4 @@
+import { actingClockEffects, nominationEndsActing } from "./appointments.js";
 import type { PersonId } from "@admin/world";
 import type { CausalId } from "./causality.js";
 import type { Campaign, PersonRuntime } from "./state.js";
@@ -272,7 +273,7 @@ function nominationRefusal(campaign: Campaign, office: OfficeId, nominee: Person
   if ((candidate.base.nationality as string) !== (campaign.founding.nation as string)) return `${candidate.base.name} is not one of your nationals.`;
   const elsewhere = selectActiveNominations(campaign).find((nomination) => nomination.nominee === nominee);
   if (elsewhere) return `${candidate.base.name} is already before the Senate for ${officeDef(elsewhere.office)?.title ?? "another office"}.`;
-  return seatRuleRefusal(office, candidate.base);
+  return seatRuleRefusal(campaign, office, candidate.base);
 }
 
 /**
@@ -325,6 +326,7 @@ export function openNomination(campaign: Campaign, office: OfficeId, nominee: Pe
       narration: { summary: `${name} is put forward for ${def.title}.` },
       effects: [
         { kind: "nomination", nomination },
+        ...nominationEndsActing(campaign, office, nominee),
         // A cabinet chair going across the aisle is read by the President's
         // own Secretaries the day it is announced, not the day it is seated.
         ...(institution.cabinetRole && leadsInstitution(office) ? crossingLoyaltyEffects(campaign, nominee, institution.cabinetRole) : []),
@@ -367,6 +369,7 @@ export function withdrawNomination(campaign: Campaign, id: NominationId): Nomina
             outcome: "withdrawn",
           },
         },
+        ...actingClockEffects(campaign, nomination, "withdrawn", campaignDay(campaign)),
         { kind: "metric", deltas: { standing: -0.012 } },
       ],
     },
@@ -379,16 +382,21 @@ const CONFIRMATION_STANDING_GAIN = 0.01;
 const REJECTION_STANDING_COST = 0.03;
 const RETURNED_STANDING_COST = 0.015;
 
-function outcomeHeadline(
+export function outcomeHeadline(
   state: Campaign,
   nomination: Nomination,
   stage: NominationStage,
+  outcome?: string,
 ): { readonly headline: string; readonly facts: { readonly subject: string; readonly stake: string } } | undefined {
   const name = selectPerson(state, nomination.nominee)?.base.name ?? "The nominee";
   const office = institutionDef(nomination.institution)?.offices.find((entry) => entry.id === nomination.office)?.title ?? "the post";
   const stake = `whether ${name} serves as ${office}`;
-  if (stage === "confirmed") return { headline: `The Senate confirms ${name} as ${office}.`, facts: { subject: name, stake } };
-  if (stage === "rejected") return { headline: `The Senate rejects ${name} for ${office}.`, facts: { subject: name, stake } };
+  // An office both houses confirm is seated by Congress, and a House defeat
+  // follows a Senate yes, so the chamber that answered has to be the one named.
+  const confirmer = officeDef(nomination.office)?.confirmedByBothHouses ? "Congress" : "The Senate";
+  const rejecter = outcome === "rejected in the House" ? "The House" : "The Senate";
+  if (stage === "confirmed") return { headline: `${confirmer} confirms ${name} as ${office}.`, facts: { subject: name, stake } };
+  if (stage === "rejected") return { headline: `${rejecter} rejects ${name} for ${office}.`, facts: { subject: name, stake } };
   if (stage === "returned") return { headline: `${name}'s nomination for ${office} is returned to the President unconfirmed.`, facts: { subject: name, stake } };
   return undefined;
 }
@@ -476,15 +484,14 @@ function weekSummary(advances: readonly Advance[]): string {
   return "Nominations move through the Senate.";
 }
 
-export const nominationPhase: TurnPhase = (state: Campaign) => {
-  const { advances, standing } = advancesThisWeek(state, campaignDay(state));
-  if (advances.length === 0) return [];
-
-  // The nominations this week's movement answers to, deduplicated and ordered
-  // so a replay walks the same trail. Only the ones the campaign actually has
-  // an opening event for: a name sent up before this field existed names
-  // nothing rather than naming something wrong.
-  const resolvedCauses = [
+/**
+ * The nominations this week's movement answers to, deduplicated and ordered
+ * so a replay walks the same trail. Only the ones the campaign actually has
+ * an opening event for: a name sent up before this field existed names
+ * nothing rather than naming something wrong.
+ */
+function resolvedCausesOf(state: Campaign, advances: readonly Advance[]): readonly CausalId[] {
+  return [
     ...new Set(
       advances.flatMap((advance) => {
         const caused = selectNomination(state, advance.id)?.causedBy;
@@ -492,10 +499,17 @@ export const nominationPhase: TurnPhase = (state: Campaign) => {
       }),
     ),
   ].sort();
+}
+
+export const nominationPhase: TurnPhase = (state: Campaign) => {
+  const { advances, standing } = advancesThisWeek(state, campaignDay(state));
+  if (advances.length === 0) return [];
+
+  const resolvedCauses = resolvedCausesOf(state, advances);
 
   const wire = advances.flatMap((advance) => {
     const nomination = selectNomination(state, advance.id);
-    const line = nomination ? outcomeHeadline(state, nomination, advance.stage) : undefined;
+    const line = nomination ? outcomeHeadline(state, nomination, advance.stage, advance.outcome) : undefined;
     return line ? [{ turn: state.turn, kind: "governance" as const, visibility: "public" as const, ...line }] : [];
   });
 
@@ -515,6 +529,10 @@ export const nominationPhase: TurnPhase = (state: Campaign) => {
       narration: { summary: weekSummary(advances) },
       effects: [
         ...advances.map((advance) => ({ kind: "nomination" as const, advance })),
+        ...advances.flatMap((advance) => {
+          const nomination = selectNomination(state, advance.id);
+          return nomination ? actingClockEffects(state, nomination, advance.stage, advance.day) : [];
+        }),
         // The Senate's answer is news the way the nomination was: the name
         // went up on the wire, and the confirmation or the defeat comes back
         // on it.

@@ -1,5 +1,7 @@
 import { currentEventId } from "./causality.js";
 import { institutionDef, deriveImplementationQuality, leaderCompetenceOf, leadsInstitution, officeInstitution, seatOfficer } from "./institutions.js";
+import { VICE_PRESIDENCY_INSTITUTION_ID } from "./institution-catalog.js";
+import { withoutVicePresident, withVicePresident } from "./vice-president.js";
 function withDerived(people, runtime, changes) {
     const next = { ...runtime, ...changes };
     const def = institutionDef(runtime.id);
@@ -81,9 +83,14 @@ export function applyInstitution(state, effect) {
     const projects = effect.projects && effect.projects.length > 0
         ? { ...(state.projects ?? {}), ...Object.fromEntries(effect.projects.map((program) => [program.id, program])) }
         : state.projects;
-    if (institutions === state.institutions && directives === state.directives && services === state.services && projects === state.projects)
-        return state;
-    return { ...state, institutions, directives, ...(services ? { services } : {}), ...(projects ? { projects } : {}) };
+    // The vice presidency empties the Senate's chair as well, and that must not
+    // depend on the office having a runtime to empty.
+    const vacatesVicePresident = effect.vacate === true && effect.institution === VICE_PRESIDENCY_INSTITUTION_ID;
+    if (institutions === state.institutions && directives === state.directives && services === state.services && projects === state.projects) {
+        return vacatesVicePresident ? withoutVicePresident(state) : state;
+    }
+    const next = { ...state, institutions, directives, ...(services ? { services } : {}), ...(projects ? { projects } : {}) };
+    return vacatesVicePresident ? withoutVicePresident(next) : next;
 }
 // A confirmed leader lifts morale a little: the building reads it as being
 // taken seriously, whoever the person is.
@@ -113,13 +120,14 @@ function seatConfirmed(state, nomination) {
     const lowerBenchSeat = before.lowerBenchSeat
         ? { lowerBenchSeat: { ...before.lowerBenchSeat, appointingParty: state.congress.administrationParty } }
         : {};
-    return {
+    const filled = {
         ...seated,
         institutions: {
             ...seated.institutions,
             [institution.id]: withDerived(seated.people, led, { morale: Math.min(1, before.morale + CONFIRMATION_MORALE_LIFT), ...judicial, ...lowerBenchSeat }),
         },
     };
+    return institution.id === VICE_PRESIDENCY_INSTITUTION_ID ? withVicePresident(filled, nomination.nominee) : filled;
 }
 export function applyNomination(state, effect) {
     let nominations = state.nominations;

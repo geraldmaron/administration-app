@@ -1,24 +1,26 @@
 import type { Nation, NationId } from "@admin/world";
-import { selectNation, selectRelationship, type Campaign } from "./state.js";
+import { selectActiveConflicts, selectNation, selectPursuitAgainst, selectRelationship, type Campaign } from "./state.js";
 import { nationName, possessive, sentenceCase } from "./naming.js";
 import type { EffectContribution, ResolutionRequest, Ripple, RippleRelation } from "./resolution.js";
 import type { Effect } from "./effects.js";
 import { defenseHolds, sharedBodies } from "./compacts.js";
+import { sideOf } from "./conflicts.js";
+import { relationshipAnchor } from "./relationships.js";
+import { laneMagnitude } from "./relationship-graph.js";
+import type { InstrumentId } from "./instrument-ids.js";
 
 // Who else reacts to a move between two capitals, and by how much: the third
 // parties a projection names before it is committed, and the actor's own
 // institutions once a move is coercive enough to strain them.
-
-// A bloc partner reacts hardest of all, and it is the only relation here that
-// is about the *actor* rather than the target: turning on a state you have
-// signed the same compact with tells every other signatory what the compact is
-// worth. An ally of the target is alarmed; a co-signatory has been informed.
-const RELATION_SENSITIVITY: Record<Exclude<RippleRelation, "domestic">, number> = {
-  "bloc-partner": 0.12,
-  ally: 0.08,
-  "bloc-peer": 0.05,
-  "trade-partner": 0.04,
-};
+//
+// A government's reaction is its own reading of what the move does to it,
+// signed and scaled by its ties to both sides: how much it values the target,
+// whether it is bound to defend it, what it stands to lose with it, how much
+// it fears the actor, and whether it is already doing the same thing itself.
+// A rival of the target reads the move as none of its business — enemy-of-
+// enemy alignment is conditional, so rivalry earns neutrality, never approval.
+// Approval is earned only by a government already running the same policy
+// against the same target, and is bounded so a move cannot be repeated for it.
 
 // Above this severity a coercive move abroad costs the actor something at
 // home: institutions, not only foreign capitals, react to what is done in
@@ -26,65 +28,198 @@ const RELATION_SENSITIVITY: Record<Exclude<RippleRelation, "domestic">, number> 
 const DOMESTIC_RIPPLE_THRESHOLD = 0.5;
 const DOMESTIC_RIPPLE_SCALE = 0.02;
 
+/** Planning value: trust a fully concerned observer moves per unit of the move's severity. */
+const RIPPLE_SCALE = 0.1;
+
+/** A reaction below this moves nothing a reading can show, and is not named. */
+const MIN_RIPPLE = 0.0005;
+
+/**
+ * Planning values: how each concern weighs. A friend's bond and a binding
+ * guarantee count most; a compact one signatory turns on in front of the
+ * others counts more than either, because it tells every member what the
+ * compact is worth.
+ */
+const CONCERN = { bond: 0.5, obligation: 0.4, compactBreach: 0.6, exposure: 0.6, alarm: 0.25 } as const;
+
+/**
+ * Planning values, by what the move is: the general norm against it any
+ * government holds, how much it disrupts the target's trade, and how much
+ * the observer's own fear of the actor is woken by it.
+ */
+const CHARACTER: Readonly<Record<Exclude<InstrumentId, "assistance">, { readonly norm: number; readonly exposure: number; readonly alarm: number }>> = {
+  diplomatic: { norm: 0, exposure: 0.2, alarm: 0.3 },
+  economic: { norm: 0.05, exposure: 1, alarm: 0.3 },
+  covert: { norm: 0.15, exposure: 0.3, alarm: 0.5 },
+  military: { norm: 0.3, exposure: 1, alarm: 1 },
+};
+
+/** Planning value: how much a partner's trade makes its recovery the observer's own business. */
+const AID_EXPOSURE = 0.3;
+/** Planning value: approval from a government already running the same policy. */
+const SHARED_POLICY_APPROVAL = 0.3;
+/** Planning value: the most approval can lift an observer above where it stands with the actor. */
+export const APPROVAL_CEILING = 0.08;
+/**
+ * Planning value: the most objection alone can take an observer's trust below
+ * where it stands with the actor. Deeper than the approval ceiling because a
+ * grievance weighs more than a favor of the same size; bounded because an
+ * observer that already reads a frequent coercer as one learns little from
+ * the next act.
+ */
+export const OBJECTION_FLOOR = 0.25;
+/** Lane magnitude read as full exposure: about a twentieth of an economy, the dataset's largest named partners. */
+const EXPOSURE_SATURATION = 0.05;
+
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
 // A country as the ripple sentence carries it, "the United Kingdom" rather than its id.
 function named(campaign: Campaign, id: NationId): string {
   const nation = selectNation(campaign, id);
   return nation ? nationName(nation.base.identity) : (id as string);
 }
 
-function thirdPartyRelation(
-  campaign: Campaign,
-  third: NationId,
-  target: Nation,
-  actorId: NationId,
-): { readonly relation: Exclude<RippleRelation, "domestic">; readonly reason: string } | undefined {
-  if (third === actorId || third === target.id) return undefined;
-  // Checked before anything else: a nation that shares a bloc with both sides
-  // is not simply an ally of the target, and reading it as one would price the
-  // most expensive thing a state can do to its own alliance as the cheapest.
-  const thirdNation = selectNation(campaign, third)?.base;
-  const actorNation = selectNation(campaign, actorId)?.base;
-  const sharedWithTarget = sharedBodies(thirdNation?.memberships ?? [], target.memberships);
-  const sharedWithActor = new Set(sharedBodies(thirdNation?.memberships ?? [], actorNation?.memberships ?? []).map((body) => body.id));
-  const commonDefense = sharedWithTarget.find((body) =>
-    sharedWithActor.has(body.id) && body.kind === "defense" && defenseHolds(body.defenseScope, target.geo.region as string));
-  if (commonDefense) {
-    return {
-      relation: "bloc-partner",
-      reason: `${sentenceCase(named(campaign, third))} shares ${commonDefense.name}'s defense promise with both ${named(campaign, actorId)} and ${named(campaign, target.id)}, and now knows what it is worth.`,
-    };
-  }
-  const towardTarget = selectRelationship(campaign, third, target.id);
-  const bilateralDefense = Object.values(campaign.treaties).some((record) =>
-    record.kind === "alliance" && record.status === "ratified" &&
-    ((third === campaign.founding.nation && record.counterpart === target.id) ||
-      (target.id === campaign.founding.nation && record.counterpart === third)));
-  const sharedDefense = sharedWithTarget.some((body) => body.kind === "defense" && defenseHolds(body.defenseScope, target.geo.region as string));
-  if (towardTarget && (towardTarget.trust >= 0.4 || bilateralDefense || sharedDefense)) {
-    return { relation: "ally", reason: `${sentenceCase(named(campaign, third))} is aligned with ${named(campaign, target.id)} and reads the move as a threat.` };
-  }
-  const sharedBloc = sharedWithTarget[0];
-  if (sharedBloc) {
-    return { relation: "bloc-peer", reason: `${sentenceCase(named(campaign, third))} and ${named(campaign, target.id)} belong to ${sharedBloc.name} and must judge this move in their own interests.` };
-  }
-  if (target.stats.trade.topPartners.some((p) => (p as string) === (third as string))) {
-    return { relation: "trade-partner", reason: `${sentenceCase(named(campaign, third))} trades heavily with ${named(campaign, target.id)} and absorbs the disruption.` };
-  }
-  return undefined;
-}
-
-type ThirdParty = {
-  readonly nation: NationId;
-  readonly relation: Exclude<RippleRelation, "domestic">;
-  readonly reason: string;
+/** The facts an observer reads a move through. */
+type ObserverTies = {
+  readonly standing: number;
+  readonly bond: number;
+  readonly obligation: number;
+  readonly compactBreach: number;
+  readonly exposure: number;
+  readonly fearOfActor: number;
+  readonly fearOfTarget: number;
+  readonly actorBond: number;
+  readonly sharedPolicy: boolean;
+  readonly defenseBody?: string;
+  readonly bloc?: string;
 };
 
-// Who cares about a move, and why, is a fact about the campaign, the actor and
-// the target; the instrument and rung only scale it. The NPC agent weighs every
-// instrument and rung against every capital it keeps a relationship with, and
-// rescanning all 196 governments for each of those candidates was more than
-// half the cost of a week. Kept per campaign object, which is never mutated, so
-// a snapshot's answers are dropped with the snapshot.
+function defenseTies(campaign: Campaign, observer: NationId, actor: NationId, target: Nation): Pick<ObserverTies, "obligation" | "compactBreach" | "defenseBody" | "bloc"> {
+  const observerNation = selectNation(campaign, observer)?.base;
+  const actorNation = selectNation(campaign, actor)?.base;
+  const withTarget = sharedBodies(observerNation?.memberships ?? [], target.memberships);
+  const withActor = new Set(sharedBodies(observerNation?.memberships ?? [], actorNation?.memberships ?? []).map((body) => body.id));
+  const holds = (body: (typeof withTarget)[number]) => body.kind === "defense" && defenseHolds(body.defenseScope, target.geo.region as string);
+  const common = withTarget.find((body) => withActor.has(body.id) && holds(body));
+  const shared = withTarget.find(holds);
+  const named = common ?? shared;
+  const bilateral = Object.values(campaign.treaties).some((record) =>
+    record.kind === "alliance" && record.status === "ratified" &&
+    ((observer === campaign.founding.nation && record.counterpart === target.id) ||
+      (target.id === campaign.founding.nation && record.counterpart === observer)));
+  return {
+    obligation: shared || bilateral ? 1 : 0,
+    compactBreach: common ? 1 : 0,
+    ...(named ? { defenseBody: named.name } : {}),
+    ...(withTarget[0] ? { bloc: withTarget[0].name } : {}),
+  };
+}
+
+// Already doing it: at war with the target from the other side, pressing a
+// campaign of its own against it, or standing in a breach of relations with it.
+function runsSamePolicy(campaign: Campaign, observer: NationId, target: NationId): boolean {
+  if (selectPursuitAgainst(campaign, observer, target)) return true;
+  if (campaign.player.flags[`severed-relations:${observer}:${target}`]) return true;
+  return selectActiveConflicts(campaign).some((conflict) => {
+    const mine = sideOf(conflict, observer);
+    const theirs = sideOf(conflict, target);
+    return mine !== undefined && theirs !== undefined && mine !== theirs;
+  });
+}
+
+function observerTies(campaign: Campaign, observer: NationId, actor: NationId, target: Nation): ObserverTies | undefined {
+  const toActor = selectRelationship(campaign, observer, actor);
+  if (!toActor) return undefined;
+  const toTarget = selectRelationship(campaign, observer, target.id);
+  const trust = toTarget?.trust ?? 0;
+  // The live lane where the graph holds it, since an embargo takes it to zero
+  // there; the founding books otherwise.
+  const ours = toTarget?.tradeDependence ?? selectNation(campaign, observer)?.stats.trade.tradeDependence[target.id] ?? 0;
+  const theirs = selectRelationship(campaign, target.id, observer)?.tradeDependence ?? target.stats.trade.tradeDependence[observer] ?? 0;
+  const lane = laneMagnitude(ours, theirs);
+  const defense = defenseTies(campaign, observer, actor, target);
+  // A government with no reading of the target, no trade with it and no body
+  // in common has nothing at stake in the move and is not an observer of it.
+  if (!toTarget && lane === 0 && !defense.bloc) return undefined;
+  return {
+    // The line is the sign of the observer's trust in the target: a government
+    // that distrusts the target at all reads its coercion as none of its
+    // business, and one with no reading of it at all has no rivalry with it.
+    // At zero trust only trade, the norm and fear of the actor are left, so
+    // the step across the line is small.
+    standing: trust < 0 ? 0 : 1,
+    bond: clamp01(trust),
+    exposure: clamp01(lane / EXPOSURE_SATURATION),
+    fearOfActor: toActor.militaryThreat,
+    fearOfTarget: toTarget?.militaryThreat ?? 0,
+    actorBond: clamp01(toActor.trust),
+    sharedPolicy: runsSamePolicy(campaign, observer, target.id),
+    ...defense,
+  };
+}
+
+/** How strongly the observer objects to a coercive move, 0 upward. */
+function objection(ties: ObserverTies, character: (typeof CHARACTER)[keyof typeof CHARACTER]): number {
+  const bound = CONCERN.obligation * ties.obligation + CONCERN.compactBreach * ties.compactBreach;
+  const interested =
+    CONCERN.bond * ties.bond +
+    CONCERN.exposure * ties.exposure * character.exposure +
+    CONCERN.alarm * ties.fearOfActor * character.alarm +
+    character.norm;
+  // A government afraid of the target is partly reassured by its being
+  // coerced, and one that trusts the actor gives it some benefit of the doubt.
+  const relief = 1 - 0.6 * ties.fearOfTarget;
+  const benefit = 1 - 0.5 * ties.actorBond;
+  return (bound + ties.standing * interested) * relief * benefit;
+}
+
+/**
+ * The observer's signed reading of the move: below zero it objects, above
+ * zero it approves. Exported because a war the world watches week after week
+ * is read through the same ties as the act that opened it.
+ */
+export function observerStance(campaign: Campaign, observer: NationId, actor: NationId, target: Nation, instrument: InstrumentId): number {
+  const ties = observerTies(campaign, observer, actor, target);
+  return ties ? stanceFrom(ties, instrument) : 0;
+}
+
+function stanceFrom(ties: ObserverTies, instrument: InstrumentId): number {
+  if (instrument === "assistance") {
+    // Help to a friend, or to a partner whose trade the observer depends on,
+    // is a favor done to the observer too; help to a government it is already
+    // working against is not.
+    const welcome = CONCERN.bond * ties.bond + CONCERN.obligation * ties.obligation + AID_EXPOSURE * ties.exposure;
+    return ties.sharedPolicy ? -SHARED_POLICY_APPROVAL : ties.standing * welcome;
+  }
+  return (ties.sharedPolicy ? SHARED_POLICY_APPROVAL : 0) - objection(ties, CHARACTER[instrument]);
+}
+
+function relationOf(ties: ObserverTies): Exclude<RippleRelation, "domestic"> {
+  if (ties.compactBreach) return "bloc-partner";
+  if (ties.obligation || ties.bond >= 0.4) return "ally";
+  if (ties.bloc) return "bloc-peer";
+  if (ties.exposure > 0) return "trade-partner";
+  return "observer";
+}
+
+function reasonFor(campaign: Campaign, observer: NationId, actor: NationId, target: Nation, ties: ObserverTies, approves: boolean): string {
+  const who = sentenceCase(named(campaign, observer));
+  if (approves) return `${who} is already pressing ${named(campaign, target.id)} itself and welcomes the company.`;
+  if (ties.compactBreach) return `${who} shares ${ties.defenseBody}'s defense promise with both ${named(campaign, actor)} and ${named(campaign, target.id)}, and now knows what it is worth.`;
+  if (ties.obligation || ties.bond >= 0.4) return `${who} is aligned with ${named(campaign, target.id)} and reads the move as a threat.`;
+  if (ties.bloc) return `${who} and ${named(campaign, target.id)} belong to ${ties.bloc} and must judge this move in their own interests.`;
+  if (ties.exposure > 0) return `${who} trades heavily with ${named(campaign, target.id)} and absorbs the disruption.`;
+  return `${who} reads the move against its own interests.`;
+}
+
+type ThirdParty = { readonly nation: NationId; readonly ties: ObserverTies };
+
+// Who could care about a move, and through what ties, is a fact about the
+// campaign, the actor and the target; the instrument and rung only weigh it.
+// The NPC agent weighs every instrument and rung against every capital it
+// keeps a relationship with, and rescanning all 196 governments for each of
+// those candidates was more than half the cost of a week. Kept per campaign
+// object, which is never mutated, so a snapshot's answers go with it.
 const thirdPartiesBySnapshot = new WeakMap<Campaign, Map<string, readonly ThirdParty[]>>();
 
 function thirdPartiesOf(campaign: Campaign, actor: NationId, target: Nation): readonly ThirdParty[] {
@@ -97,13 +232,10 @@ function thirdPartiesOf(campaign: Campaign, actor: NationId, target: Nation): re
   const known = bySnapshot.get(key);
   if (known) return known;
   const parties: ThirdParty[] = [];
-  for (const third of Object.keys(campaign.nations) as NationId[]) {
-    const match = thirdPartyRelation(campaign, third, target, actor);
-    if (!match) continue;
-    // A third party can only cool toward the actor if it has a reading of the
-    // actor to cool. Without that relationship there is nothing to move.
-    if (!selectRelationship(campaign, third, actor)) continue;
-    parties.push({ nation: third, relation: match.relation, reason: match.reason });
+  for (const third of (Object.keys(campaign.nations) as NationId[]).sort()) {
+    if (third === actor || third === target.id) continue;
+    const ties = observerTies(campaign, third, actor, target);
+    if (ties) parties.push({ nation: third, ties });
   }
   bySnapshot.set(key, parties);
   return parties;
@@ -117,20 +249,22 @@ export function projectRipples(
   actorName: string,
 ): readonly Ripple[] {
   const ripples: Ripple[] = [];
-  for (const match of thirdPartiesOf(campaign, request.actor, target)) {
-    const third = match.nation;
+  for (const { nation: third, ties } of thirdPartiesOf(campaign, request.actor, target)) {
+    const stance = stanceFrom(ties, request.instrument);
+    const magnitude = severity * RIPPLE_SCALE * Math.abs(stance);
+    if (magnitude < MIN_RIPPLE) continue;
+    // Assistance welcomed by a friend of the target is approval, as is
+    // coercion joined by a government already doing the same.
+    const approves = stance > 0;
     ripples.push({
       nation: third,
-      relation: match.relation,
-      magnitude: severity * RELATION_SENSITIVITY[match.relation],
-      // The relation is the same fact either way — who is close enough to the
-      // target to care — but what they conclude is not. A nation aligned with
-      // the target reads a strike as a threat and a shipment as a favor done
-      // to a friend, so the sentence cannot be the coercive one for both.
+      relation: relationOf(ties),
+      magnitude,
+      ...(approves ? { approves: true } : {}),
       reason:
         request.instrument === "assistance"
           ? `${sentenceCase(named(campaign, third))} notices whose crates arrived in ${named(campaign, target.id)}, and who was not there.`
-          : match.reason,
+          : reasonFor(campaign, third, request.actor, target, ties, approves),
     });
   }
   if (severity >= DOMESTIC_RIPPLE_THRESHOLD) {
@@ -144,6 +278,30 @@ export function projectRipples(
   return ripples;
 }
 
+// Approval only closes the distance to a ceiling above where the observer
+// stands with the actor, so joining somebody else's pressure on the same
+// target cannot be repeated into a store of goodwill. Objection settles toward
+// a floor below it: every act is charged in proportion to the room left above
+// the floor, so the first act from where the pair stands costs its full
+// magnitude, each repeat still costs something, and a frequent coercer's
+// standing with one observer plateaus instead of falling without end.
+function objectionDelta(campaign: Campaign, observer: NationId, actor: NationId, magnitude: number): number {
+  const relationship = selectRelationship(campaign, observer, actor);
+  if (!relationship) return 0;
+  const anchor = relationshipAnchor(campaign, relationship);
+  const floor = (anchor?.trust ?? relationship.trust) - OBJECTION_FLOOR;
+  const room = Math.max(0, Math.min(1, (relationship.trust - floor) / OBJECTION_FLOOR));
+  return magnitude * room;
+}
+
+function approvalDelta(campaign: Campaign, observer: NationId, actor: NationId, magnitude: number): number {
+  const relationship = selectRelationship(campaign, observer, actor);
+  if (!relationship) return 0;
+  const anchor = relationshipAnchor(campaign, relationship);
+  const ceiling = (anchor?.trust ?? relationship.trust) + APPROVAL_CEILING;
+  return Math.max(0, Math.min(magnitude, ceiling - relationship.trust));
+}
+
 export function rippleContribution(
   campaign: Campaign,
   request: ResolutionRequest,
@@ -151,23 +309,19 @@ export function rippleContribution(
 ): EffectContribution {
   const effects: Effect[] = [];
   let stability = 0;
-  // A third party close to the target moves *away* from whoever coerced it and
-  // *toward* whoever helped it. Same relations, same magnitudes, opposite sign:
-  // without this, feeding a country would cost the actor the friendship of
-  // every friend that country has.
-  const direction = request.instrument === "assistance" ? -1 : 1;
   for (const ripple of ripples) {
     if (ripple.relation === "domestic") {
       stability -= ripple.magnitude;
       continue;
     }
     if (!selectRelationship(campaign, ripple.nation, request.actor)) continue;
-    effects.push({
-      kind: "relationship",
-      from: ripple.nation,
-      to: request.actor,
-      deltas: { trust: -ripple.magnitude * direction, tension: ripple.magnitude * 0.6 * direction },
-    });
+    if (ripple.approves) {
+      const lift = approvalDelta(campaign, ripple.nation, request.actor, ripple.magnitude);
+      if (lift > 0) effects.push({ kind: "relationship", from: ripple.nation, to: request.actor, deltas: { trust: lift, tension: -lift * 0.6 } });
+      continue;
+    }
+    const cost = objectionDelta(campaign, ripple.nation, request.actor, ripple.magnitude);
+    if (cost > 0) effects.push({ kind: "relationship", from: ripple.nation, to: request.actor, deltas: { trust: -cost, tension: cost * 0.6 } });
   }
   return { effects, metricDeltas: stability === 0 ? {} : { stability } };
 }

@@ -6,6 +6,14 @@ import type { RungLevel } from "./instruments.js";
 import type { TurnPhase } from "./turn-loop.js";
 export declare const CHAMBERS: readonly Chamber[];
 export declare const CHAMBER_NAMES: Readonly<Record<Chamber, string>>;
+/**
+ * The members a chamber's count is taken over: its seats less the ones left
+ * vacant by a death. Both Houses decide by those present and voting, and the
+ * Constitution's two-thirds bars count the same way, so an empty seat is
+ * neither a yea nor a nay; Senate cloture's three fifths is of senators duly
+ * chosen and sworn, which excludes a vacancy too.
+ */
+export declare function seatedOf(congress: Congress, chamber: Chamber): number;
 /** A simple majority of a chamber — one more than half, always an integer. */
 export declare function majorityOf(seats: number): number;
 /** Two thirds, the bar an override and a treaty have to clear. */

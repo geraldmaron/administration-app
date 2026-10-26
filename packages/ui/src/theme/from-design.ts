@@ -5,27 +5,18 @@
 // theme it sits under decides the color.
 
 import {
-  anchor,
-  chrome,
   classification,
-  dark,
-  darkHighContrast,
-  ground,
-  highContrast,
-  layout,
-  line,
-  paper,
-  paperDark,
-  partyPalettes,
+  desk,
+  deskRadius,
+  deskShadow,
+  deskType,
   divergingPalettes,
+  layout,
+  partyPalettes,
   COLOR_VISIONS,
   type ColorVision,
-  radius,
-  situation,
+  type DeskRoles,
   space,
-  status,
-  text,
-  typography,
 } from "@admin/design";
 
 const REM = 16;
@@ -58,27 +49,54 @@ export const sizeScale = {
 
 export const radiusScale = {
   0: 0,
-  chip: radius.chip,
-  control: radius.control,
-  card: radius.card,
-  sheet: radius.sheet,
-  pill: radius.pill,
+  chip: deskRadius.xs,
+  control: deskRadius.sm,
+  card: deskRadius.md,
+  sheet: deskRadius.lg,
+  pill: deskRadius.pill,
 } as const;
 
 export const zIndexScale = { 0: 0, raised: 10, nav: 50, sheet: 100, toast: 200 } as const;
 
+const px = (style: keyof typeof deskType.style) => deskType.style[style].size * REM;
+const leadingPx = (style: keyof typeof deskType.style) => deskType.style[style].leading * REM;
+
 /** Type sizes in px from the rem roles; the player's text size scales the root, not each role. */
 export const fontSize = {
-  caption: typography.size.caption * REM,
-  label: typography.size.label * REM,
-  body: typography.size.body * REM,
-  title: typography.size.title * REM,
-  heading: typography.size.heading * REM,
-  display: 2 * REM,
-  figure: typography.size.figure * REM,
-  hero: 3 * REM,
-  document: typography.size.document * REM,
-  true: typography.size.body * REM,
+  caption: px("caption"),
+  label: px("label"),
+  body: px("body"),
+  title: px("title"),
+  heading: px("heading"),
+  display: px("pageTitle"),
+  figure: px("figure"),
+  figureXl: px("figureXl"),
+  headline: px("headline"),
+  voice: px("voice"),
+  hero: px("hero"),
+  document: px("document"),
+  clock: px("clock"),
+  code: px("code"),
+  true: px("body"),
+} as const;
+
+/** Line heights in px for each size, from the same style table. */
+export const lineHeight = {
+  caption: leadingPx("caption"),
+  label: leadingPx("label"),
+  body: leadingPx("body"),
+  title: leadingPx("title"),
+  heading: leadingPx("heading"),
+  display: leadingPx("pageTitle"),
+  figure: leadingPx("figure"),
+  figureXl: leadingPx("figureXl"),
+  headline: leadingPx("headline"),
+  voice: leadingPx("voice"),
+  hero: leadingPx("hero"),
+  document: leadingPx("document"),
+  clock: leadingPx("clock"),
+  code: leadingPx("code"),
+  true: leadingPx("body"),
 } as const;
 
 /** Every theme carries exactly these keys; a missing key would be a color a component silently loses. */
@@ -106,6 +124,20 @@ export type ThemeRoles = {
   outlineColor: string;
   placeholderColor: string;
   shadowColor: string;
+  /** A selected row or card's fill; the selection also carries a 2px accent edge or ring. */
+  selected: string;
+  /** The top light that lifts a plane off the ground instead of a border. */
+  highlight: string;
+  /** The command bar and dock: translucent over the ground so the attention light reads through. */
+  glass: string;
+  /** The attention light behind the work plane, per state; transparent where it must not show (contrast themes). */
+  attentionClear: string;
+  attentionWaiting: string;
+  attentionHeld: string;
+  /** The attention pip and its word in the command bar. */
+  attentionClearPip: string;
+  attentionWaitingPip: string;
+  attentionHeldPip: string;
   accent: string;
   accentFill: string;
   accentFillHover: string;
@@ -118,6 +150,8 @@ export type ThemeRoles = {
   danger: string;
   dangerFill: string;
   dangerFillHover: string;
+  /** Text and icons on `dangerFill`; its own role, because a zone that re-maps `accentInk` for its own fill must not re-ink the red one. */
+  dangerInk: string;
   /** The pale danger wash a reading cell or a notice sits on; ink stays the theme's text. */
   dangerSoft: string;
   infoInk: string;
@@ -143,19 +177,6 @@ export type ThemeRoles = {
   badInk: string;
 };
 
-const sharedChrome = {
-  chromeBackground: chrome.navy,
-  chromeColor: chrome.text,
-  chromeSecondary: chrome.secondary,
-  chromeBorder: chrome.border,
-};
-
-const party = {
-  partyDem: partyPalettes.standard.democrat,
-  partyRep: partyPalettes.standard.republican,
-  partyInd: partyPalettes.standard.independent,
-};
-
 /** The cool and warm step either side of the middle: strong enough to read on white and on navy alike. */
 const COOL_STEP = 1;
 const WARM_STEP = 5;
@@ -165,198 +186,166 @@ function divergeOf(vision: ColorVision): { readonly divergeCool: string; readonl
   return { divergeCool: ramp[COOL_STEP], divergeWarm: ramp[WARM_STEP] };
 }
 
-export const light: ThemeRoles = {
-  background: ground.base,
-  backgroundHover: ground.raisedHover,
-  backgroundPress: ground.overlayHover,
-  backgroundFocus: ground.raisedHover,
-  backgroundStrong: ground.abyss,
-  surface: ground.base,
-  surfaceRaised: ground.raised,
-  surfaceHover: ground.raisedHover,
-  color: text.primary,
-  colorHover: text.primary,
-  colorPress: text.primary,
-  colorFocus: text.primary,
-  colorSecondary: text.secondary,
-  colorTertiary: text.tertiary,
-  colorDisabled: text.disabled,
-  borderColor: line.subtle,
-  borderColorHover: line.strong,
-  borderColorFocus: line.focus,
-  borderColorPress: line.strong,
-  borderColorStrong: line.strong,
-  outlineColor: line.focus,
-  placeholderColor: text.tertiary,
-  shadowColor: "rgba(11, 20, 36, 0.14)",
-  accent: anchor.blue,
-  accentFill: anchor.blueFill,
-  accentFillHover: anchor.blueFillHover,
-  accentInk: anchor.white,
-  gold: anchor.gold,
-  goldRule: anchor.goldDeep,
-  goldFill: dark.anchor.gold,
-  goldInk: text.onLight,
-  danger: anchor.red,
-  dangerFill: anchor.redFill,
-  dangerFillHover: anchor.redFillHover,
-  dangerSoft: status.danger.fill,
-  infoInk: status.info.ink,
-  infoFill: status.info.fill,
-  successInk: status.success.ink,
-  successFill: status.success.fill,
-  warningInk: status.warning.ink,
-  warningFill: status.warning.fill,
-  pendingInk: status.pending.ink,
-  pendingFill: status.pending.fill,
-  ...sharedChrome,
-  ...party,
-  ...divergeOf("standard"),
-  goodInk: status.success.ink,
-  badInk: anchor.red,
-};
+/** The desk's roles under the names every component already reads. */
+function rolesOf(d: DeskRoles, shadow: string, scheme: "day" | "night"): ThemeRoles {
+  return {
+    background: d.plane,
+    backgroundHover: d.raisedHover,
+    backgroundPress: d.pressed,
+    backgroundFocus: d.raisedHover,
+    backgroundStrong: d.ground,
+    surface: d.plane,
+    surfaceRaised: d.raised,
+    surfaceHover: d.raisedHover,
+    color: d.ink,
+    colorHover: d.ink,
+    colorPress: d.ink,
+    colorFocus: d.ink,
+    colorSecondary: d.ink2,
+    colorTertiary: d.ink3,
+    colorDisabled: d.inkDisabled,
+    borderColor: d.line,
+    borderColorHover: d.lineStrong,
+    borderColorFocus: d.focus,
+    borderColorPress: d.lineStrong,
+    borderColorStrong: d.lineStrong,
+    outlineColor: d.focus,
+    placeholderColor: d.ink3,
+    shadowColor: shadow,
+    selected: d.selected,
+    // Native draws the top light as a border, not an inset shadow; on a white day plane a white edge would read as a gap, so day takes the hairline.
+    highlight: scheme === "day" ? d.line : d.highlight,
+    glass: d.glass,
+    attentionClear: d.attentionClear,
+    attentionWaiting: d.attentionWaiting,
+    attentionHeld: d.attentionHeld,
+    attentionClearPip: d.attentionClearPip,
+    attentionWaitingPip: d.attentionWaitingPip,
+    attentionHeldPip: d.attentionHeldPip,
+    accent: d.signal,
+    accentFill: d.signalFill,
+    accentFillHover: d.signalFillHover,
+    accentInk: d.onSignal,
+    gold: d.brass,
+    goldRule: d.brass,
+    goldFill: d.brassFill,
+    goldInk: d.onBrass,
+    danger: d.alarm,
+    dangerFill: d.alarmFill,
+    dangerFillHover: d.alarmFillHover,
+    dangerInk: d.onAlarm,
+    dangerSoft: d.dangerWash,
+    infoInk: d.info,
+    infoFill: d.infoWash,
+    successInk: d.success,
+    successFill: d.successWash,
+    warningInk: d.warning,
+    warningFill: d.warningWash,
+    pendingInk: d.pending,
+    pendingFill: d.pendingWash,
+    chromeBackground: d.plane,
+    chromeColor: d.ink,
+    chromeSecondary: d.ink2,
+    chromeBorder: d.line,
+    partyDem: d.partyDem,
+    partyRep: d.partyRep,
+    partyInd: d.partyInd,
+    ...divergeOf("standard"),
+    goodInk: d.success,
+    badInk: d.alarm,
+  };
+}
 
-export const darkTheme: ThemeRoles = {
-  background: dark.ground.base,
-  backgroundHover: dark.ground.raisedHover,
-  backgroundPress: dark.ground.overlayHover,
-  backgroundFocus: dark.ground.raisedHover,
-  backgroundStrong: dark.ground.abyss,
-  surface: dark.ground.base,
-  surfaceRaised: dark.ground.raised,
-  surfaceHover: dark.ground.raisedHover,
-  color: dark.text.primary,
-  colorHover: dark.text.primary,
-  colorPress: dark.text.primary,
-  colorFocus: dark.text.primary,
-  colorSecondary: dark.text.secondary,
-  colorTertiary: dark.text.tertiary,
-  colorDisabled: dark.text.disabled,
-  borderColor: dark.line.subtle,
-  borderColorHover: dark.line.strong,
-  borderColorFocus: dark.line.focus,
-  borderColorPress: dark.line.strong,
-  borderColorStrong: dark.line.strong,
-  outlineColor: dark.line.focus,
-  placeholderColor: dark.text.tertiary,
-  shadowColor: "rgba(0, 0, 0, 0.45)",
-  accent: dark.anchor.blue,
-  accentFill: dark.anchor.blueFill,
-  accentFillHover: dark.anchor.blueFillHover,
-  accentInk: dark.anchor.white,
-  gold: dark.anchor.gold,
-  goldRule: dark.anchor.goldDeep,
-  goldFill: dark.anchor.gold,
-  goldInk: text.onLight,
-  danger: dark.anchor.red,
-  dangerFill: dark.anchor.redFill,
-  dangerFillHover: dark.anchor.redFillHover,
-  dangerSoft: dark.status.danger.fill,
-  infoInk: dark.status.info.ink,
-  infoFill: dark.status.info.fill,
-  successInk: dark.status.success.ink,
-  successFill: dark.status.success.fill,
-  warningInk: dark.status.warning.ink,
-  warningFill: dark.status.warning.fill,
-  pendingInk: dark.status.pending.ink,
-  pendingFill: dark.status.pending.fill,
-  ...sharedChrome,
-  chromeBackground: dark.ground.abyss,
-  partyDem: "#55B4F2",
-  partyRep: "#F0625C",
-  partyInd: "#B9B2A3",
-  ...divergeOf("standard"),
-  goodInk: dark.status.success.ink,
-  badInk: dark.anchor.red,
-};
+export const light: ThemeRoles = rolesOf(desk.day, deskShadow.day.lift1, "day");
+export const darkTheme: ThemeRoles = rolesOf(desk.night, deskShadow.night.lift1, "night");
+const lightContrast: ThemeRoles = rolesOf(desk.dayContrast, deskShadow.day.lift1, "day");
+const darkContrast: ThemeRoles = rolesOf(desk.nightContrast, deskShadow.night.lift1, "night");
 
-const lightContrast: ThemeRoles = {
-  ...light,
-  colorSecondary: highContrast.textSecondary,
-  colorTertiary: highContrast.textTertiary,
-  borderColor: highContrast.lineSubtle,
-  borderColorStrong: highContrast.lineStrong,
-};
-
-const darkContrast: ThemeRoles = {
-  ...darkTheme,
-  colorSecondary: darkHighContrast.textSecondary,
-  colorTertiary: darkHighContrast.textTertiary,
-  borderColor: darkHighContrast.lineSubtle,
-  borderColorStrong: darkHighContrast.lineStrong,
-};
-
-/** The navy masthead and navigation. */
+/** The command bar and the mode navigation: glass over the ground, the desk's own inks. */
 function chromeOf(base: ThemeRoles): ThemeRoles {
+  return { ...base, background: base.glass };
+}
+
+/** Issued documents: paper in the fiction under either theme. Actions turn to ink, so a button on paper reads as print. */
+function paperOf(base: ThemeRoles, d: DeskRoles): ThemeRoles {
   return {
     ...base,
-    background: base.chromeBackground,
-    backgroundHover: chrome.navyHover,
-    backgroundPress: chrome.navyHover,
-    backgroundFocus: chrome.navyHover,
-    surface: base.chromeBackground,
-    surfaceRaised: chrome.navyHover,
-    surfaceHover: chrome.navyHover,
-    color: chrome.text,
-    colorHover: chrome.text,
-    colorPress: chrome.text,
-    colorFocus: chrome.text,
-    colorSecondary: chrome.secondary,
-    colorTertiary: chrome.secondary,
-    borderColor: chrome.border,
-    borderColorStrong: chrome.border,
-    outlineColor: chrome.focus,
-    accent: chrome.focus,
-    gold: dark.anchor.gold,
+    background: d.paper,
+    backgroundHover: d.paper,
+    backgroundStrong: d.paper,
+    surface: d.paper,
+    surfaceRaised: d.paper,
+    surfaceHover: d.paper,
+    color: d.paperInk,
+    colorHover: d.paperInk,
+    colorPress: d.paperInk,
+    colorFocus: d.paperInk,
+    colorSecondary: d.paperInk2,
+    colorTertiary: d.paperInk2,
+    placeholderColor: d.paperInk2,
+    borderColor: d.paperRule,
+    borderColorHover: d.paperRuleStrong,
+    borderColorPress: d.paperRuleStrong,
+    borderColorStrong: d.paperRuleStrong,
+    borderColorFocus: d.paperInk,
+    outlineColor: d.paperInk,
+    selected: d.paperRule,
+    highlight: d.paper,
+    // The desk's red fill is lightened at night; on paper a destructive act takes the deepest red so the paper-colored label holds.
+    dangerFill: desk.dayContrast.alarmFill,
+    dangerFillHover: desk.dayContrast.alarmFillHover,
+    dangerInk: d.paper,
+    accent: d.paperInk,
+    accentFill: d.paperInk,
+    accentFillHover: d.paperInk2,
+    accentInk: d.paper,
+    gold: d.paperInk,
+    goldRule: d.paperRuleStrong,
+    goldFill: d.paperInk,
+    goldInk: d.paper,
   };
 }
 
-/** Issued documents: paper in the fiction under either theme. */
-function paperOf(base: ThemeRoles, sheet: { surface: string; ink: string; rule: string }): ThemeRoles {
+/** The watch floor: classified material, crises, the command picture. Dark in every theme; amber is its signal. */
+function situationOf(base: ThemeRoles, d: DeskRoles): ThemeRoles {
   return {
-    ...light,
-    background: sheet.surface,
-    surface: sheet.surface,
-    surfaceRaised: sheet.surface,
-    color: sheet.ink,
-    colorHover: sheet.ink,
-    colorPress: sheet.ink,
-    colorFocus: sheet.ink,
-    borderColor: sheet.rule,
-    borderColorStrong: sheet.ink,
-    chromeBackground: base.chromeBackground,
+    ...base,
+    background: d.situationPlane,
+    // Hover lifts toward the dark desk's own hover tint; the situation rule is a line color and, in the contrast themes, white.
+    backgroundHover: base.surfaceHover,
+    backgroundPress: base.backgroundPress,
+    backgroundFocus: base.surfaceHover,
+    backgroundStrong: d.situationGround,
+    surface: d.situationPlane,
+    surfaceRaised: d.situationPlane,
+    surfaceHover: base.surfaceHover,
+    color: d.situationInk,
+    colorHover: d.situationInk,
+    colorPress: d.situationInk,
+    colorFocus: d.situationInk,
+    colorSecondary: d.situationInk2,
+    colorTertiary: d.situationInk2,
+    placeholderColor: d.situationInk2,
+    borderColor: d.situationLine,
+    borderColorStrong: d.situationInk2,
+    borderColorFocus: d.situationAccent,
+    outlineColor: d.situationAccent,
+    highlight: d.situationLine,
+    accent: d.situationAccent,
+    // The room's one primary action is amber, not the desk's blue, with a dark label.
+    accentFill: d.situationActionFill,
+    accentFillHover: d.situationActionFillHover,
+    accentInk: d.onSituationAction,
+    gold: d.situationAccent,
+    goldRule: d.situationAccent,
   };
 }
 
-/** The watch floor: classified documents, crises, the command picture. */
-const situationRoles: ThemeRoles = {
-  ...darkTheme,
-  background: situation.ground,
-  backgroundHover: situation.raisedHover,
-  backgroundPress: situation.raisedHover,
-  backgroundFocus: situation.raisedHover,
-  backgroundStrong: "#000000",
-  surface: situation.surface,
-  surfaceRaised: situation.raised,
-  surfaceHover: situation.raisedHover,
-  color: situation.text,
-  colorHover: situation.text,
-  colorPress: situation.text,
-  colorFocus: situation.text,
-  colorSecondary: situation.secondary,
-  colorTertiary: situation.tertiary,
-  borderColor: situation.line,
-  borderColorStrong: situation.lineStrong,
-  borderColorFocus: situation.focus,
-  outlineColor: situation.focus,
-  accent: situation.accent,
-  accentFill: situation.accentFill,
-  accentFillHover: situation.accent,
-  accentInk: "#06090F",
-  danger: situation.alert,
-  badInk: situation.alert,
-  gold: situation.accent,
-};
+/** The map and spatial views: the deepest ground as the plane, so overlays and data colors read. */
+function theaterOf(base: ThemeRoles): ThemeRoles {
+  // On the day ground the strong rule falls under 3:1, so a control edge in the theater takes the tertiary ink, which holds on both grounds.
+  return { ...base, background: base.backgroundStrong, surface: base.backgroundStrong, borderColorStrong: base.colorTertiary };
+}
 
 const baseThemes = {
   light,
@@ -367,22 +356,26 @@ const baseThemes = {
   dark_chrome: chromeOf(darkTheme),
   light_contrast_chrome: chromeOf(lightContrast),
   dark_contrast_chrome: chromeOf(darkContrast),
-  light_paper: paperOf(light, paper),
-  dark_paper: paperOf(darkTheme, paperDark),
-  light_contrast_paper: paperOf(lightContrast, paper),
-  dark_contrast_paper: paperOf(darkContrast, paperDark),
-  light_situation: situationRoles,
-  dark_situation: situationRoles,
-  light_contrast_situation: situationRoles,
-  dark_contrast_situation: situationRoles,
+  light_paper: paperOf(light, desk.day),
+  dark_paper: paperOf(darkTheme, desk.night),
+  light_contrast_paper: paperOf(lightContrast, desk.dayContrast),
+  dark_contrast_paper: paperOf(darkContrast, desk.nightContrast),
+  light_situation: situationOf(darkTheme, desk.day),
+  dark_situation: situationOf(darkTheme, desk.night),
+  light_contrast_situation: situationOf(darkContrast, desk.dayContrast),
+  dark_contrast_situation: situationOf(darkContrast, desk.nightContrast),
+  light_theater: theaterOf(light),
+  dark_theater: theaterOf(darkTheme),
+  light_contrast_theater: theaterOf(lightContrast),
+  dark_contrast_theater: theaterOf(darkContrast),
 } as const satisfies Record<string, ThemeRoles>;
 
 type BaseThemeKey = keyof typeof baseThemes;
-type Section = "chrome" | "paper" | "situation";
+type Section = "chrome" | "paper" | "situation" | "theater";
 type VisionName = Exclude<ColorVision, "standard">;
 type VisionThemeKey<K extends string> = K extends `${infer Head}_${Section}` ? `${Head}_${VisionName}_${Section}` : `${K}_${VisionName}`;
 
-const SECTIONS: readonly string[] = ["chrome", "paper", "situation"];
+const SECTIONS: readonly string[] = ["chrome", "paper", "situation", "theater"];
 const VISIONS: readonly VisionName[] = COLOR_VISIONS.filter((vision): vision is VisionName => vision !== "standard");
 
 /** Tamagui resolves a nested `<Theme name="protan">` by appending it to the parent's name, ahead of any section (`dark_protan_chrome`), so every base theme gets one variant per vision and a section keeps the party inks. */
@@ -405,6 +398,14 @@ function visionThemes(): { readonly [K in BaseThemeKey as VisionThemeKey<K>]: Th
 }
 
 export const themes = { ...baseThemes, ...visionThemes() };
+
+/** The page's own theme under a section: `dark_protan_chrome` is drawn as `dark_protan`. A layer that leaves its section (a sheet) takes this one. */
+export function pageThemeOf(name: string): string {
+  return name
+    .split("_")
+    .filter((part) => !SECTIONS.includes(part))
+    .join("_");
+}
 
 export type ThemeKey = keyof typeof themes;
 

@@ -111,7 +111,7 @@ export function standoffReach(ctx: InstrumentContext): CapabilityCheck {
 /**
  * Whether a strike this actor can make is a missile strike: it lacks the air
  * force the flown strike needs and its missiles reach. The strike's resolution
- * reads this so a missile salvo does not commit two hundred airframes.
+ * reads this so a missile salvo does not commit a hundred airframes.
  */
 export function strikesByMissile(ctx: InstrumentContext): boolean {
   const air = liveNation(ctx.campaign, ctx.actor).stats.military.branchStrength.air;
@@ -191,6 +191,17 @@ export function projectionAccess(ctx: InstrumentContext, cap: number, capability
  * with; pairing the two is what turns a permanent capability into a rate.
  */
 /**
+ * The one nuclear test every refusal reads: warheads, declared, and a means to
+ * deliver them. Force (below) and the operations against a government's hold
+ * on power (`regime-acts.ts`) both refuse such a target; an arsenal a
+ * government has never declared is read as it presents itself, and only
+ * stiffens the odds.
+ */
+export function declaresDeliverableArsenal(arsenal: Nation["stats"]["military"]["arsenal"]): boolean {
+  return arsenal.warheads > 0 && arsenal.declared !== false && arsenal.deliveryTriad;
+}
+
+/**
  * A government with a declared arsenal and the means to deliver it is not
  * offered as a target of force by anyone: no blockade, strike or invasion. The
  * test is the dataset's own (`arsenal.declared` and `deliveryTriad`), so no
@@ -199,8 +210,7 @@ export function projectionAccess(ctx: InstrumentContext, cap: number, capability
  * still stiffens the odds (`resolution.ts`), which is information, not a wall.
  */
 export function outsideNuclearDeterrence(ctx: InstrumentContext): CapabilityCheck {
-  const arsenal = liveNation(ctx.campaign, ctx.target).stats.military.arsenal;
-  const deterred = arsenal.warheads > 0 && arsenal.declared !== false && arsenal.deliveryTriad;
+  const deterred = declaresDeliverableArsenal(liveNation(ctx.campaign, ctx.target).stats.military.arsenal);
   return requireTrue(!deterred, "a target without a declared nuclear arsenal it can deliver, since force against one is refused");
 }
 

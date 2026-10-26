@@ -1,8 +1,7 @@
-import type { NationId } from "@admin/world";
+import { type NationId } from "@admin/world";
 import type { CausalId } from "./causality.js";
 import type { Campaign, GameDate } from "./state.js";
 import type { EffectPacket, Effect } from "./effects.js";
-import type { TurnPhase } from "./turn-loop.js";
 import { type TradeSectorDef, type TradeSectorId } from "./trade-sectors.js";
 import type { TariffFinding, TariffStatute } from "./tariff-statutes.js";
 export type TradeMeasureId = string;
@@ -34,9 +33,15 @@ export type TradeMeasure = {
      */
     readonly actor?: NationId;
     readonly liftedTurn?: number;
+    /** The day it was lifted. Absent on a record lifted before the day was stored; readers fall back to the lifted week's date. */
+    readonly liftedDate?: GameDate;
     readonly expiresDate?: GameDate;
     /** Import-only suspensions leave American exports legally open. */
     readonly direction?: "imports" | "both";
+    /** A list-based program or a blocked account: it designates named persons or holdings, cuts no sector's trade and reaches no further. Absent on every other measure. */
+    readonly scope?: "listed";
+    /** 0..1 of the sector's sales the designated companies carry, where a designation names companies rather than the sector. Absent means all of it. */
+    readonly covered?: number;
     /**
      * The ledger event that imposed this measure.
      *
@@ -129,6 +134,8 @@ export type TariffIncidence = {
     /** Who is likely to answer, and where. */
     readonly retaliationChance: number;
     readonly retaliationTarget?: TradeSectorId;
+    /** The share of American sales in the target sector the answer would remove, if it lands. */
+    readonly retaliationCut: number;
 };
 /**
  * What a tariff does, all the way through.
@@ -143,8 +150,12 @@ export declare function tariffIncidence(campaign: Campaign, target: NationId, se
  *
  * Retaliators pick politically salient US exports rather than economically
  * optimal ones — the record is soybeans, bourbon, orange juice and motorcycles,
- * not the largest line in the book. So salience leads, and the partner has to
- * actually buy the thing.
+ * not the largest line in the book. So salience leads, the partner has to
+ * actually buy the thing, and the answer has to bite: goods its buyers can
+ * get elsewhere at the world price, which is what made those answers cost
+ * American sellers (the same border pass-through and substitutability
+ * `retaliationFall` cuts by). A partner does not answer by taxing aircraft it
+ * cannot buy from anyone else.
  */
 export declare function retaliationTargetFor(campaign: Campaign, partner: NationId): TradeSectorId | undefined;
 export type TradeResult = {
@@ -181,9 +192,11 @@ export type CoerciveMeasureKind = Exclude<TradeMeasureKind, "tariff">;
  * A government cannot be export-controlled out of goods it does not buy. Where
  * the partner takes something from the United States that is licensed rather
  * than taxed — semiconductor equipment, critical minerals, defense articles,
- * telecom gear — denying it is an export control and BIS owns the authority.
- * Where it takes nothing of the kind, the same rung is a designation and OFAC
- * owns it.
+ * telecom gear — denying it can be an export control, which BIS owns. A
+ * designation, which OFAC owns, reaches the partner's sales to everyone the
+ * dollar touches, so it is the package wherever it takes more of the partner's
+ * trade than the control would, read off the same reach record the economy
+ * charges (`external-pressure.ts#measureCut`).
  */
 export declare function denialMeasureKind(campaign: Campaign, target: NationId): CoerciveMeasureKind;
 /**
@@ -213,15 +226,6 @@ export type LiftResult = {
  * longer be computed. A lift is a lift; what it undoes is on the record.
  */
 export declare function liftMeasure(campaign: Campaign, id: TradeMeasureId): LiftResult;
-/**
- * Trade's own week: expected retaliation arrives, and the price deviations
- * carried by each sector feed into the cost of living.
- *
- * Retaliation lands on a schedule rather than instantly, because it did:
- * partners answered a US action between two weeks and three months later, in
- * waves that tracked each escalation rather than as one reply.
- */
-export declare const tradePhase: TurnPhase;
 export type TradeExposure = {
     readonly sector: TradeSectorDef;
     readonly priceMove: number;

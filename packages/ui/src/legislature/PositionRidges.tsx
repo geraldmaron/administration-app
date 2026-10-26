@@ -33,8 +33,8 @@ export function PositionRidges({ label, groups, you, band, onPick, keyed = true 
         {shapes.map((shape) =>
           shape.median !== undefined ? (
             <View key={shape.id} position="absolute" top={0} left={pct(shape.median)} marginLeft={-16} width={32} alignItems="center">
-              <View paddingHorizontal="xs" borderRadius="chip" backgroundColor={PARTY_INK[shape.id as Party]}>
-                <Text variant="caption" weight="strong" tabular color="accentInk">
+              <View paddingHorizontal="xs" borderRadius="chip" backgroundColor="surface" borderWidth={2} borderColor={PARTY_INK[shape.id as Party]}>
+                <Text variant="caption" weight="strong" tabular>
                   {shape.count}
                 </Text>
               </View>

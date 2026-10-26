@@ -1,6 +1,9 @@
 import { STATE_IDS, type StateId } from "@admin/world";
 import { hazardNoun } from "./condition-impacts.js";
 import { conditionFamily } from "./condition-kinds.js";
+import { conditionImpactEvent } from "./impact-adapters.js";
+import { createRngStreams } from "./rng.js";
+import { nationFootprint } from "./us-placement.js";
 import { OMISSION_DECAY } from "./state-geography.js";
 import type { Campaign, NationCondition, PendingClaim } from "./state.js";
 import type { EffectPacket, StateEffect } from "./effects.js";
@@ -48,15 +51,14 @@ export function claimWindowTurns(severity: number): number {
 export const LOCAL_CLAIM_WEIGHT = 0.8;
 
 /**
- * Share of the local weight a nationwide condition carries *per state*.
+ * Share of the local weight a nationwide standing condition carries *per state*.
  *
- * A nation-scope condition names no state at all (`placeUsOnset` returns no
- * place for it), so without this the broadest 15% of emergencies in the game
- * would open no claim anywhere and cost nothing to ignore — teaching the player
- * that the bigger the disaster, the safer it is to walk away. It is well under
- * 1 because this weight lands on every state at once: a national emergency
+ * A recession names no state, so without this the broadest economic trouble in
+ * the game would open no claim anywhere and cost nothing to ignore. It is well
+ * under 1 because this weight lands on every state at once: a national slump
  * ignored should anger the whole country a little, not anger each state as much
- * as its own local disaster would.
+ * as its own local disaster would. A nationwide hazard is different: it has a
+ * footprint (`nationFootprint`), and every state inside it is living through it.
  */
 export const NATIONAL_CLAIM_SHARE = 0.25;
 
@@ -65,7 +67,8 @@ const round3 = (value: number): number => Math.round(value * 1000) / 1000;
 
 export function claimWeightFor(condition: NationCondition): number {
   const local = clamp01(condition.severity) * LOCAL_CLAIM_WEIGHT;
-  return round3(condition.state ? local : local * NATIONAL_CLAIM_SHARE);
+  const inside = condition.state !== undefined || conditionFamily(condition.kind) === "acute";
+  return round3(inside ? local : local * NATIONAL_CLAIM_SHARE);
 }
 
 function claimReason(condition: NationCondition, stateName: string): string {
@@ -104,11 +107,97 @@ export function claimFor(condition: NationCondition, stateName: string, turn: nu
  * would reset its own deadline every week, so it could never expire and the
  * neglect could never be charged — the mechanic would silently do nothing.
  * A state is asked once per emergency; ignoring that once is what marks.
+ *
+ * A hazard asks from where it struck: its state, or for a nationwide one the
+ * states of its footprint, drawn on a stream keyed to the condition so every
+ * reader of the same condition agrees on its reach. A standing condition is
+ * the whole country's. A home event (a strike, a detention abroad) is no
+ * state's to ask about unless it happened in one.
  */
-function statesOwedBy(condition: NationCondition): readonly StateId[] {
+export function statesOwedBy(campaign: Campaign, condition: NationCondition): readonly StateId[] {
   if (condition.status !== "active") return [];
   if (condition.state) return [condition.state];
-  return STATE_IDS;
+  const family = conditionFamily(condition.kind);
+  if (family === "event") return [];
+  if (family === "standing") return STATE_IDS;
+  return nationFootprint(campaign, condition.kind, createRngStreams(campaign.seed).stream("condition-footprint", condition.id).next());
+}
+
+/**
+ * The statewide per capita impact indicator for a major-disaster declaration,
+ * in dollars: $1.94 for incidents from October 1, 2025 (FEMA notice, Federal
+ * Register document 2026-19855; 44 C.F.R. 206.48(b)(1)). Public damage in a
+ * state at or above this times its population is the threshold FEMA reads as
+ * beyond the state's own capacity.
+ */
+export const STATEWIDE_PER_CAPITA_INDICATOR = 1.94;
+
+/**
+ * The public share of a disaster's losses: about a quarter. FEMA's Disaster
+ * Relief Fund has obligated about $40 billion a year since 2020 (CRS IF12834,
+ * December 2024) against $137 billion a year of billion-dollar losses over
+ * 2020-2024 (NOAA NCEI). An approximation across years and events, not a
+ * per-event fact.
+ */
+export const PUBLIC_LOSS_SHARE = 0.25;
+
+/**
+ * The same share for the two hazards whose losses are crops, power and lives
+ * rather than public works: heat and drought. The OpenFEMA record for 2005 to
+ * 2024 names no heat incident and one drought emergency across roughly nine
+ * significant heat events and nine droughts, so the share is set where even a
+ * severe nationwide heat wave stays under the indicator. That is the record's
+ * own answer to whether a heat request is lawful: it is, and it is seldom made.
+ */
+export const PUBLIC_LOSS_SHARE_UNBUILT = 0.005;
+
+/**
+ * How close to the indicator a governor's own estimate has to come before the
+ * state asks: half of it. A design value. Governors do ask below the line, and
+ * some asks are turned down: OpenFEMA's DeclarationDenials record 217
+ * major-disaster denials from 2005 to 2024 against about 1,280 declarations,
+ * roughly one request in seven. That ratio is not this file's target, because
+ * the record's requests include the many small events that never become a
+ * condition; among the significant events the game opens, about one request in
+ * fifty lacks the capacity finding.
+ */
+export const REQUEST_SHARE_OF_INDICATOR = 0.5;
+
+/**
+ * The public damage this condition did, in USD millions, before any response:
+ * the first day's asset loss of its impact record, or of the record its onset
+ * would have opened when the condition was written without one.
+ */
+export function estimatedPublicLossUSDm(campaign: Campaign, condition: NationCondition): number {
+  const event = campaign.impactEvents?.[`impact:${condition.id}`] ?? conditionImpactEvent(campaign, condition)[0]?.event;
+  const mechanism = event?.spec.mechanism;
+  if (!event || !mechanism || mechanism.kind !== "natural") return 0;
+  const exposure = event.spec.exposure;
+  const share = mechanism.hazard === "heat-wave" || mechanism.hazard === "drought" ? PUBLIC_LOSS_SHARE_UNBUILT : PUBLIC_LOSS_SHARE;
+  return exposure.assetsUSDm * mechanism.damageShare * mechanism.intensity * (1 - 0.7 * exposure.resilience) * share;
+}
+
+type GovernorAsk = { readonly requests: boolean; readonly beyondCapacity: boolean };
+
+/**
+ * Whether this state's governor asks for a major-disaster declaration, and
+ * whether the ask carries a finding that the damage is beyond the state.
+ *
+ * Read off the damage the state carries against its own population, which is
+ * the indicator FEMA reads. A nationwide epidemic is beyond every state by
+ * nature, as 2020 found; an epidemic held in one region asks on its severity.
+ */
+function governorAsk(campaign: Campaign, condition: NationCondition, state: StateId, reach: readonly StateId[]): GovernorAsk {
+  if (condition.kind === "pandemic") {
+    const beyond = condition.scope === "nation" || condition.severity >= 0.5;
+    return { requests: beyond, beyondCapacity: beyond };
+  }
+  const people = (id: StateId) => campaign.states[id]?.population ?? 0;
+  const reachPeople = reach.reduce((sum, id) => sum + people(id), 0);
+  const share = reachPeople > 0 ? people(state) / reachPeople : 0;
+  const damage = estimatedPublicLossUSDm(campaign, condition) * share * 1_000_000;
+  const threshold = STATEWIDE_PER_CAPITA_INDICATOR * people(state);
+  return { requests: threshold > 0 && damage >= REQUEST_SHARE_OF_INDICATOR * threshold, beyondCapacity: damage >= threshold };
 }
 
 /** One line for the week, whether the emergency reached one state or all of them. */
@@ -132,14 +221,21 @@ export const obligationPhase: TurnPhase = (state) => {
   const packets: EffectPacket[] = [];
   for (const condition of opening) {
     const effects: StateEffect[] = [];
-    for (const id of statesOwedBy(condition)) {
+    const reach = statesOwedBy(state, condition);
+    const hazard = conditionFamily(condition.kind) === "acute";
+    for (const id of reach) {
       const runtime = state.states[id];
       if (!runtime) continue;
       const claim = claimFor(condition, runtime.base.name, state.turn);
+      const ask = hazard ? governorAsk(state, condition, id, reach) : undefined;
+      // A request is the governor's ask, not the President's answer: the
+      // plan, the state's own resources and the cost share are what every
+      // request certifies (44 C.F.R. 206.36), and whether the law then allows a
+      // declaration is checked when the President declares (stafford.ts).
       effects.push({ kind: "state", state: id, reason: claim.reason, addClaim: claim,
-        ...(conditionFamily(condition.kind) === "acute" ? { setStaffordRequest: {
+        ...(ask?.requests ? { setStaffordRequest: {
           id: `stafford-request:${condition.id}:${id}`, conditionId: condition.id, cause: condition.kind,
-          requestedTurn: state.turn, beyondStateCapacity: condition.severity >= 0.5, responsePlan: true,
+          requestedTurn: state.turn, beyondStateCapacity: ask.beyondCapacity, responsePlan: true,
           resourcesCommitted: true, costShareAccepted: true,
         } } : {}) });
     }

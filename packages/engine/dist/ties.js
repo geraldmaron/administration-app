@@ -1,3 +1,5 @@
+import { grievanceHalfLifeDays, retained } from "./relationships.js";
+import { elapsedDays } from "./pace.js";
 // The one place a tie is read and the one place it is written.
 //
 // A tie is written only by `apply`, through the `tie` effect, and every write
@@ -16,6 +18,10 @@ export function tieOf(people, person) {
 }
 export function rapportOf(people, person) {
     return tieOf(people, person)?.rapport ?? NEUTRAL_RAPPORT;
+}
+/** People have no vengefulness trait; their dated injuries use the shared midpoint half-life. */
+export function personalGrudgeWeight(campaign, person) {
+    return (tieOf(campaign.people, person)?.grudges ?? []).reduce((sum, grudge) => sum + grudge.weight * retained(elapsedDays(campaign.turn - grudge.turn), grievanceHalfLifeDays(0.5)), 0);
 }
 /** How warm the member holding a Hill post is toward the administration. */
 export function figureRapport(people, figure) {

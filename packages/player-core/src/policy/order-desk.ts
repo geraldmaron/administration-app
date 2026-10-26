@@ -124,7 +124,7 @@ export function orderDesk(campaign: Campaign, charter: Charter, orderId: string,
   const order = executiveOrder(orderId);
   if (!order) return undefined;
   const availability = orderAvailability(campaign, order, subject);
-  const projection = projectOrder(campaign, charter, order);
+  const projection = projectOrder(campaign, charter, order, subject);
   const parts: DeskParts = {
     order,
     available: availability.ok,

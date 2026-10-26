@@ -39,7 +39,7 @@ function conditionItems(campaign: Campaign): readonly FeedItem[] {
 
 describe("an incident is a condition with a shorter lifetime", () => {
   it("names only the kinds that are over the moment they happen", () => {
-    expect([...INCIDENT_KINDS]).toEqual(["tornado", "heat-wave"]);
+    expect([...INCIDENT_KINDS]).toEqual(["tornado", "heat-wave", "mass-casualty-attack"]);
     expect(isIncidentKind("tornado")).toBe(true);
     expect(isIncidentKind("winter-storm")).toBe(false);
     expect(isIncidentKind("flood")).toBe(false);

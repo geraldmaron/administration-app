@@ -4,7 +4,7 @@ import { CHARTER_MILITARY_JUNTA, CHARTER_PRESIDENTIAL_REPUBLIC } from "@admin/wo
 import { judicialReviewPhase } from "./judicial-review.js";
 import { buildCampaign, nationA, person, atCampaignTurn } from "./__fixtures__/campaign.js";
 import { apply } from "./effects.js";
-import { createRngStreams, makeCampaignSeed } from "./rng.js";
+import { createRngStreams } from "./rng.js";
 import { openConflict } from "./conflicts.js";
 import { EMERGENCY_MISSING, EXECUTIVE_ORDERS, ORDER_DOMAIN_BAND, availableOrders, executiveOrder, orderAvailability, orderCost, latestRuleForOrder, projectOrder, reliefOrderSubjects, signOrder, RULEMAKING_TURNS } from "./orders.js";
 import { negatedStatEffects } from "./order-contribution.js";
@@ -50,10 +50,8 @@ function courtToFinal(campaign) {
             return state;
         const proceeding = state.judiciary.proceedings?.find((entry) => entry.subject.kind === "executive-order"
             && entry.subject.recordId === state.orders.at(-1)?.id);
-        // A granted Supreme appeal waits for its recorded argument or opinion date.
-        // Keep ordinary weekly steps for the lower-response deadline and circuit path.
-        const nextTurn = proceeding?.stage === "supreme-merits"
-            ? Math.max(state.turn + 1, proceeding.nextTurn) : state.turn + 1;
+        // Each stage waits for its own dated step; the lower-response deadline is a week.
+        const nextTurn = Math.max(state.turn + 1, proceeding?.nextTurn ?? 0);
         state = atCampaignTurn(state, nextTurn);
     }
     throw new Error("court did not reach final disposition");
@@ -106,13 +104,25 @@ function withPriorityBacklog(campaign) {
                 "precision-fires": { ...state.us["precision-fires"],
                     onOrder: [{ arrives: addDays(campaign.calendar, 156 * 7), count: 0.05 }] } } } };
 }
+// The fixture's nation is smaller than Michigan alone, and a governor's damage
+// estimate reads the nation's own scale (obligations.ts), so the relief chain
+// estimates on a country the size of the states it is made of; the packets it
+// files are then applied to the campaign under test unchanged.
+function atStateScale(campaign) {
+    const states = Object.values(campaign.states);
+    const population = states.reduce((sum, state) => sum + state.population, 0);
+    const gdp = states.reduce((sum, state) => sum + state.base.grp, 0);
+    const home = campaign.nations[campaign.founding.nation];
+    const stats = { ...home.stats, demography: { ...home.stats.demography, population }, economy: { ...home.stats.economy, gdp, gdpPerCapita: gdp * 1_000_000 / population } };
+    return { ...campaign, nations: { ...campaign.nations, [campaign.founding.nation]: { ...home, stats } } };
+}
 function withReliefRequest(campaign) {
     const state = "MI";
     const condition = { id: `condition:flood:${campaign.founding.nation}:${campaign.turn}`, nation: campaign.founding.nation,
         kind: "flood", scope: "region", severity: 0.6, startedTurn: campaign.turn,
         status: "active", beats: [], state };
     const running = { ...campaign, conditions: { ...campaign.conditions, [condition.id]: condition } };
-    const requested = obligationPhase(running).reduce(apply, running);
+    const requested = obligationPhase(atStateScale(running)).reduce(apply, running);
     const declaration = declareStaffordDisaster(requested, state);
     if (!declaration.ok)
         throw new Error(declaration.reason);
@@ -157,6 +167,7 @@ function contestedOrders(count) {
         turn: i,
         contested: true,
         challengeChance: 0.3,
+        review: { dueTurn: i, status: "struck-down", ruledTurn: i },
     }));
 }
 const streams = createRngStreams(buildCampaign().seed);
@@ -165,7 +176,9 @@ const streams = createRngStreams(buildCampaign().seed);
 // five percent no challenge reaches, so the contested cases roll on a seed
 // whose draw does not; each still asserts the signing came out contested.
 const CONTESTED_BORROWER = "order-defense-production";
-const contestedRoll = createRngStreams(makeCampaignSeed("contested-roll"));
+// A draw of zero files the suit whatever the order's filing odds are: these
+// tests are about what follows a suit, not about how often one is filed.
+const contestedRoll = { stream: () => ({ next: () => 0, nextInt: (min) => min }) };
 // Narrowing helper: every one of these calls is expected to succeed, and a
 // cast would hide the day one of them stops.
 function packetOf(result) {
@@ -318,14 +331,24 @@ describe("the three grounds an order stands on", () => {
         expect(strikeDownChance(CHARTER, seizure, bench, "authorized")).toBeLessThan(strikeDownChance(CHARTER, seizure, bench, "silent"));
         expect(strikeDownChance(CHARTER, seizure, undefined, "authorized")).toBeLessThan(strikeDownChance(CHARTER, seizure, undefined, "silent"));
     });
+    it("leaves an authorized order its constitutional exposure: a statute cures only the statutory question", () => {
+        // Grant conditions are mostly a Spending Clause question, border checks mostly statutory.
+        const grants = executiveOrder("order-grant-conditions");
+        const border = executiveOrder("order-border-controls");
+        const relief = (order) => strikeDownChance(CHARTER, order, undefined, "silent") - strikeDownChance(CHARTER, order, undefined, "authorized");
+        expect(strikeDownChance(CHARTER, grants, undefined, "authorized")).toBeGreaterThan(0.15);
+        expect(relief(grants) / grants.overreach).toBeLessThan(relief(border) / border.overreach);
+    });
     it("puts an order Congress forbade at the top of the range whatever the bench thinks of it", () => {
         const bench = benchMembersForReview(governing());
         expect(strikeDownChance(CHARTER, seizure, bench, "forbidden")).toBe(0.9);
     });
-    it("lowers the challenge odds on the page too, and names the act that carried it", () => {
+    it("lowers the merits on the page too, leaves the chance of a suit alone, and names the act that carried it", () => {
         const silent = projectOrder(governing(), CHARTER, seizure);
         const authorized = projectOrder(enacted(governing(), DEFENSE_ACT), CHARTER, seizure);
-        expect(authorized.challengeChance).toBeLessThan(silent.challengeChance);
+        // Whether anyone sues reads injury and salience; a statute changes who wins.
+        expect(authorized.meritsChance).toBeLessThan(silent.meritsChance);
+        expect(authorized.filing.chance).toBe(silent.filing.chance);
         expect(silent.ground).toBe("silent");
         expect(authorized.ground).toBe("authorized");
         expect(authorized.authorizedBy).toBe(legislativeAct(DEFENSE_ACT).title);
@@ -368,10 +391,10 @@ describe("who can refuse an order", () => {
     });
 });
 describe("overreach compounds", () => {
-    it("counts only the orders that were actually contested", () => {
+    it("counts only the orders a court actually struck down, not every suit", () => {
         const campaign = governing();
-        const uncontested = { ...campaign, orders: contestedOrders(3).map((r) => ({ ...r, contested: false })) };
-        expect(accumulatedOverreach(uncontested)).toBe(0);
+        const onlySued = { ...campaign, orders: contestedOrders(3).map((r) => ({ ...r, review: { dueTurn: r.turn, status: "pending" } })) };
+        expect(accumulatedOverreach(onlySued)).toBe(0);
         expect(accumulatedOverreach({ ...campaign, orders: contestedOrders(3) })).toBeGreaterThan(0);
     });
     it("makes the next order harder for every one the institutions have already refused", () => {

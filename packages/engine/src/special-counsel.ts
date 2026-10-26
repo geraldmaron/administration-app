@@ -6,7 +6,10 @@ import { institutionDef } from "./institutions.js";
 import { committeeForInstitution, committeeName } from "./committees.js";
 import type { TurnPhase } from "./turn-loop.js";
 import type { OversightMatter } from "./oversight.js";
-import { isMatterOpen, matterSource } from "./oversight.js";
+import { isMatterOpen, matterSource, selectMatter } from "./oversight.js";
+import { certifyOrder, type ReviewInput } from "./order-review.js";
+import { stampOf } from "./willingness.js";
+import { selectChairRunner } from "./appointments.js";
 
 // The prosecutor the President cannot instruct.
 //
@@ -20,12 +23,14 @@ import { isMatterOpen, matterSource } from "./oversight.js";
 //
 // A special counsel is what the department does about that. The Attorney
 // General appoints one out of a matter the department can no longer be seen to
-// be handling itself, and from that day nobody in the administration supervises
-// it: there is no presidential verb anywhere in this file, and none anywhere
-// else that reaches its matter. What is left to the President is the chair the
-// appointment came out of. Emptying it does not stop the counsel — it marks its
-// matter obstructed, permanently, on the record, which is the price of the only
-// move the office has.
+// be handling itself. Under 28 C.F.R. 600.7 the counsel answers to no official
+// for day-to-day work, but the Attorney General personally may ask for an
+// explanation of any step, conclude a step should not be pursued, and remove
+// the counsel for good cause, telling Congress each time (600.9). There is no
+// presidential verb here: the President can ask the Attorney General to use
+// those powers, and the Attorney General's own judgment decides. The other
+// move is the chair the appointment came out of; emptying it does not stop the
+// counsel and marks its matter obstructed, permanently, on the record.
 
 /** The department a counsel is appointed out of, and the panel notified. */
 const COUNSEL_DEPARTMENT = "INST-DOJ";
@@ -120,7 +125,7 @@ function appointedCounsel(campaign: Campaign, predicate: OversightMatter): Overs
     beats: [
       {
         turn: campaign.turn,
-        description: `The Attorney General appoints a special counsel to take over ${predicate.subject}. Nobody in the administration supervises it.`,
+        description: `The Attorney General appoints a special counsel to take over ${predicate.subject}. No official supervises its day-to-day work.`,
       },
     ],
   };
@@ -263,5 +268,111 @@ export function projectCounselObstruction(campaign: Campaign, role: RoleId): Cou
   return {
     counsel,
     reasoning: `${matterSource(counsel[0]!)} is sitting. Dismissing the Attorney General does not close it: the ${committeeName(judiciaryCommittee())} is notified, the matter is marked obstructed for good, and the chamber reads the removal as the answer to the inquiry.`,
+  };
+}
+
+// --- What the Attorney General can do about a counsel -------------------------
+
+/** The causes 28 C.F.R. 600.7(d) lists for removing a special counsel. */
+export type CounselRemovalGround =
+  | "misconduct"
+  | "dereliction-of-duty"
+  | "incapacity"
+  | "conflict-of-interest"
+  | "policy-violation";
+
+export type CounselSupervision =
+  | { readonly kind: "countermand"; readonly matterId: string }
+  | { readonly kind: "remove"; readonly matterId: string; readonly ground: CounselRemovalGround };
+
+export type CounselSupervisionResult =
+  | { readonly ok: true; readonly packet: EffectPacket }
+  | { readonly ok: false; readonly reason: string };
+
+/** Congress is told of a countermand when the investigation ends; the leak risk is priced when it is ordered. */
+const COUNTERMAND_DISPOSITION_COST = 0.06;
+/** A removal is notified to both Judiciary Committees the day it happens. */
+const REMOVAL_DISPOSITION_COST = 0.12;
+/** Removing the counsel of an inquiry aimed at the administration reads as the answer to it. */
+const SELF_INTEREST_REMOVAL_COST = 0.1;
+
+/**
+ * How far each act sits past the Attorney General's ordinary supervision,
+ * on the scale the legality review uses. Declining a single step is the less
+ * extreme; ending the appointment is the more, and more so when the inquiry is
+ * aimed at the administration that is asking.
+ */
+const COUNTERMAND_REACH = 0.5;
+const REMOVAL_REACH = 0.7;
+const SELF_INTEREST_REACH = 0.25;
+
+function supervisionInput(matter: OversightMatter, kind: CounselSupervision["kind"]): ReviewInput {
+  const base = kind === "remove" ? REMOVAL_REACH : COUNTERMAND_REACH;
+  return { reach: base + (matter.direction === "received" ? SELF_INTEREST_REACH : 0), accumulated: matter.obstructed ? 0.5 : 0, ground: "silent" };
+}
+
+const SUPERVISION_COPY = {
+  countermand: {
+    carried: "concludes a proposed step by the special counsel is so inappropriate or unwarranted under established Departmental practice that it should not be pursued, and will tell Congress when the investigation ends",
+    declined: "declines to overrule a step by the special counsel",
+  },
+  remove: {
+    carried: "removes the special counsel, giving the counsel the specific reason in writing and notifying the Judiciary Committees",
+    declined: "declines to remove the special counsel",
+  },
+} as const;
+
+function supervisedMatter(matter: OversightMatter, request: CounselSupervision, turn: number, attorneyGeneral: string): OversightMatter {
+  const description = `${attorneyGeneral} ${SUPERVISION_COPY[request.kind].carried}.`;
+  const beats = [...matter.beats, { turn, description }];
+  if (request.kind === "countermand") return { ...matter, beats };
+  return { ...matter, stage: "closed", closedTurn: turn, public: true, obstructed: matter.obstructed || matter.direction === "received", beats };
+}
+
+/**
+ * Ask the Attorney General to supervise a sitting special counsel.
+ *
+ * Under 28 C.F.R. 600.7(b) the Attorney General may conclude a step should not
+ * be pursued, and under 600.7(d) alone may remove a counsel, for a listed
+ * cause. The President has neither power. What the President can do is ask, and
+ * the answer is the Attorney General's: the same legality weighing an order
+ * gets, without a draw. A request the Attorney General declines is recorded on
+ * the matter and costs nothing else, which is the protection's whole purpose.
+ */
+export function superviseSpecialCounsel(campaign: Campaign, request: CounselSupervision): CounselSupervisionResult {
+  const matter = selectMatter(campaign, request.matterId);
+  if (!matter || !isSpecialCounselMatter(matter) || !isMatterOpen(matter)) {
+    return { ok: false, reason: "That special counsel is not sitting." };
+  }
+  const role = attorneyGeneralRole();
+  const attorneyGeneral = role ? selectChairRunner(campaign, role) : undefined;
+  if (!attorneyGeneral) return { ok: false, reason: "There is no Attorney General in post to act on the request." };
+
+  const willingness = certifyOrder(attorneyGeneral.base, supervisionInput(matter, request.kind), false);
+  const name = attorneyGeneral.base.name;
+  const decision = stampOf(willingness, attorneyGeneral.base.id as string, request.matterId, "public");
+  const carried = willingness.acts;
+  const updated = carried
+    ? supervisedMatter(matter, request, campaign.turn, name)
+    : { ...matter, beats: [...matter.beats, { turn: campaign.turn, description: `${name} ${SUPERVISION_COPY[request.kind].declined}.` }] };
+  const summary = `${name} ${SUPERVISION_COPY[request.kind][carried ? "carried" : "declined"]}.`;
+  const cost = request.kind === "remove"
+    ? REMOVAL_DISPOSITION_COST + (matter.direction === "received" ? SELF_INTEREST_REMOVAL_COST : 0)
+    : COUNTERMAND_DISPOSITION_COST;
+  return {
+    ok: true,
+    packet: {
+      source: "action",
+      actor: "player",
+      turn: campaign.turn,
+      provenance: { origin: "decision", entities: [attorneyGeneral.base.id as string], systems: ["oversight"], decision },
+      narration: { summary },
+      effects: [
+        { kind: "oversight", matters: [updated] },
+        ...(carried
+          ? [{ kind: "congress" as const, set: { ...campaign.congress, disposition: round3(clamp01(campaign.congress.disposition - cost)) } }]
+          : []),
+      ],
+    },
   };
 }

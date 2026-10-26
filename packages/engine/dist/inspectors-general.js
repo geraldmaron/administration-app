@@ -191,9 +191,46 @@ export function projectInspectorRemoval(campaign, institution) {
  */
 const NOTICE_DISPOSITION_COST = 0.05;
 const OBSTRUCTING_NOTICE_DISPOSITION_COST = 0.12;
-/** How far filing notice moves Congress. Obstructing a live audit costs more than a quiet office. */
-export function inspectorNoticeCost(obstructs) {
-    return obstructs ? OBSTRUCTING_NOTICE_DISPOSITION_COST : NOTICE_DISPOSITION_COST;
+/** What a notice that does not give the reasons the law requires adds: Congress was owed an explanation and did not get one. */
+const DEFICIENT_NOTICE_DISPOSITION_COST = 0.06;
+/** How far filing notice moves Congress. Obstructing a live audit costs more than a quiet office, and a deficient notice more again. */
+export function inspectorNoticeCost(obstructs, deficient = false) {
+    return (obstructs ? OBSTRUCTING_NOTICE_DISPOSITION_COST : NOTICE_DISPOSITION_COST) + (deficient ? DEFICIENT_NOTICE_DISPOSITION_COST : 0);
+}
+/** An account that states a conclusion and cites what it points at, where the callers hold only a sentence. */
+export function conclusoryAccount(statement, matterId, turn) {
+    return {
+        ground: "loss-of-confidence",
+        particulars: statement.trim() ? [{ matterId, turn, statement: statement.trim() }] : [],
+    };
+}
+/**
+ * The ways an account fails to be case-specific, judged on the records the
+ * campaign holds and never on the words of a statement: a conclusory ground, a
+ * particular citing no record that exists, conduct dated outside the
+ * inspector's service, or conduct that is the audit the office exists to run.
+ */
+export function accountDefects(campaign, inspector, account) {
+    const defects = new Set();
+    if (account.ground === "loss-of-confidence")
+        defects.add("conclusory");
+    for (const particular of account.particulars) {
+        const matter = campaign.oversight.matters.find((entry) => entry.id === particular.matterId);
+        if (!matter)
+            defects.add("no-such-record");
+        else if (matter.origin.kind === "inspector-general" && matter.origin.institution === inspector.institution)
+            defects.add("protected-audit");
+        if (particular.turn < inspector.seatedTurn || particular.turn > campaign.turn)
+            defects.add("outside-tenure");
+    }
+    return [...defects].sort();
+}
+function isAccount(value) {
+    const candidate = value;
+    return typeof value === "object" && candidate !== null && typeof candidate.ground === "string" && Array.isArray(candidate.particulars);
+}
+function noticeCongressEffect(campaign, cost) {
+    return { kind: "congress", set: { ...campaign.congress, disposition: round3(clamp01(campaign.congress.disposition - cost)) } };
 }
 /**
  * File the written notice that empties an inspector general's office in thirty
@@ -202,8 +239,16 @@ export function inspectorNoticeCost(obstructs) {
  * Not a removal. The office is still occupied, the audit is still running, and
  * both stay that way for the whole notice period — which is the point of the
  * protection and the reason this returns a filing rather than a vacancy.
+ *
+ * The notice has to carry an account: a ground and the particulars of the
+ * case. Without particulars there is no communication of reasons at all and
+ * nothing is filed. With them, the campaign's own records decide whether the
+ * account is case-specific, and a deficient one is filed on the record as
+ * deficient and costs the Hill more. The statute gives the President the
+ * removal and gives Congress the right to be told why, so the price of a thin
+ * notice is the question it invites.
  */
-export function fileInspectorRemovalNotice(campaign, institution, reason) {
+export function fileInspectorRemovalNotice(campaign, institution, account) {
     const inspector = selectInspector(campaign, institution);
     if (!inspectorIsSeated(inspector)) {
         return { ok: false, reason: "There is no inspector general in that office to remove." };
@@ -214,16 +259,19 @@ export function fileInspectorRemovalNotice(campaign, institution, reason) {
             reason: `You have already moved to remove this inspector general; they leave in week ${inspector.noticeFiledTurn + igRemovalNoticeTurns()}.`,
         };
     }
-    if (reason.trim().length === 0) {
-        return { ok: false, reason: "You have to state your reasons for removing the inspector general." };
+    if (!isAccount(account) || account.particulars.length === 0) {
+        return { ok: false, reason: "You have to state your reasons for removing the inspector general: a ground and the particulars of the case." };
     }
+    const defects = accountDefects(campaign, inspector, account);
     const projection = projectInspectorRemoval(campaign, institution);
     const noticed = {
         ...inspector,
         noticeFiledTurn: campaign.turn,
-        noticeReasons: [...inspector.noticeReasons, reason],
+        noticeReasons: [...inspector.noticeReasons, ...account.particulars.map((particular) => particular.statement)],
+        ...(defects.length > 0 ? { noticeDeficiencies: defects } : {}),
     };
     const obstructed = projection.openMatters.map((matter) => obstruct(matter, campaign.turn, projection.institutionName));
+    const deficient = defects.length > 0;
     return {
         ok: true,
         packet: {
@@ -231,17 +279,11 @@ export function fileInspectorRemovalNotice(campaign, institution, reason) {
             actor: "player",
             turn: campaign.turn,
             narration: {
-                summary: `${leader(campaign)} files written notice of intent to remove the inspector general at ${institutionInProse(projection.institutionName)}. The office empties in thirty days.`,
+                summary: `${leader(campaign)} files written notice of intent to remove the inspector general at ${institutionInProse(projection.institutionName)}. The office empties in thirty days.${deficient ? " The notice does not give the detailed, case-specific reasons the law requires." : ""}`,
             },
             effects: [
                 { kind: "oversight", inspectors: [noticed], ...(obstructed.length > 0 ? { matters: obstructed } : {}) },
-                {
-                    kind: "congress",
-                    set: {
-                        ...campaign.congress,
-                        disposition: round3(clamp01(campaign.congress.disposition - inspectorNoticeCost(projection.obstructs))),
-                    },
-                },
+                noticeCongressEffect(campaign, inspectorNoticeCost(projection.obstructs, deficient)),
             ],
         },
     };

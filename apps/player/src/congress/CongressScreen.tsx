@@ -11,11 +11,16 @@ import { Overview } from "./Overview";
 import { Delegations, Members, Nominations, Powers } from "./Rosters";
 import { quiet } from "./parts";
 
-function useTabs(campaign: Campaign): readonly ViewTab<CongressView>[] {
+function hillLede(moving: number, nominees: number): string {
+  const parts = [...(moving > 0 ? [`${moving} ${moving === 1 ? "bill is" : "bills are"} moving`] : []), ...(nominees > 0 ? [`${nominees} ${nominees === 1 ? "nominee waits" : "nominees wait"} on the Senate`] : [])];
+  return parts.length > 0 ? `${parts.join(" and ")}.` : "Nothing is on the floor and no nominee waits on the Senate.";
+}
+
+function useHill(campaign: Campaign): { readonly tabs: readonly ViewTab<CongressView>[]; readonly lede: string } {
   return useMemo(() => {
     const moving = floorSchedule(campaign).reduce((sum, group) => sum + group.rows.length, 0);
     const noms = senateNominations(campaign, campaignDay(campaign));
-    return [
+    const tabs: readonly ViewTab<CongressView>[] = [
       { id: "overview", label: "Overview", icon: "subjectCapitol" },
       { id: "bills", label: "Bills and agenda", icon: "dossier", count: moving },
       { id: "nominations", label: "Nominations", icon: "appoint", count: noms.before.length + noms.preparing.length },
@@ -23,6 +28,7 @@ function useTabs(campaign: Campaign): readonly ViewTab<CongressView>[] {
       { id: "delegations", label: "States", icon: "flag", count: STATE_IDS.length },
       { id: "powers", label: "War powers and funding", icon: "law", count: extensionNotices(campaign).length },
     ];
+    return { tabs, lede: hillLede(moving, noms.before.length) };
   }, [campaign]);
 }
 
@@ -39,9 +45,9 @@ export type CongressScreenProps = {
 /** Congress as a workspace: the chambers drawn as one system first, then the full working lists by view. */
 export function CongressScreen({ campaign, view, onView, selection, onSelect, caucus, onCaucus }: CongressScreenProps) {
   const acts = useActCommit(campaign);
-  const tabs = useTabs(campaign);
+  const { tabs, lede } = useHill(campaign);
   return (
-    <Page eyebrow="United States Congress" icon="subjectCapitol" title="Congress" lede="The House and the Senate, how they feel about you, and the bills and nominees in front of them." emblem={<Seal spec={sealFor("INST-CONGRESS")} size={72} label="The United States Congress" />}>
+    <Page eyebrow="United States Congress" icon="subjectCapitol" title="Congress" lede={lede} emblem={<Seal spec={sealFor("INST-CONGRESS")} size={72} label="The United States Congress" />}>
       <ViewTabs label="Congress views" tabs={tabs.map(quiet)} selected={view} onSelect={onView} />
       <Column gap="xl">
         {view === "overview" ? <Overview campaign={campaign} selection={selection} onSelect={onSelect} onView={onView} /> : null}

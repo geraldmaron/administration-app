@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { sealFor, type FindingRow } from "@admin/player-core";
 import { Button, Column, FindingPaper, Row, Seal, Text } from "@admin/ui";
+import { NationLink } from "../world/parts";
 
 // Each open covert finding as the paper the President signed: the section 503
 // form, its scope and description, and the date it was signed. How the
@@ -13,7 +14,7 @@ function OpenFinding({ row, signer }: { readonly row: FindingRow; readonly signe
     <Column gap="sm">
       <Row gap="sm" wrap between>
         <Column flex={1} minWidth={200} gap="2xs">
-          <Text variant="label">{row.targetName}</Text>
+          <NationLink nation={row.target} name={row.targetName} />
           <Text variant="caption" tone="secondary">{`Signed ${row.signed}. ${row.told}. ${row.activities} ${row.activities === 1 ? "action" : "actions"} under it so far.`}</Text>
         </Column>
         <Button kind="quiet" size="compact" icon={open ? "restorePanel" : "dossier"} aria-expanded={open} onPress={() => setOpen(!open)}>

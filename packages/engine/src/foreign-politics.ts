@@ -453,11 +453,28 @@ function changePacket(campaign: Campaign, input: ChangeInput): EffectPacket {
   };
 }
 
+const OUTSIDE_GOVERNMENT: ReadonlySet<string> = new Set(["role-journalist", OPPOSITION_ROLE]);
+
+/**
+ * Who takes a chair whose holder died when the cast drew nobody else for it:
+ * the constitution's stand-in, read as the governing party's strongest national
+ * in government, else any national in government. A third of the governments
+ * have no second candidate for the chair, and without this a death there left
+ * a dead leader in office for good.
+ */
+function standIn(campaign: Campaign, nation: NationId, seat: ForeignSeat): Person | undefined {
+  const sameParty = (runtime: PersonRuntime): number => Number(seat.party !== undefined && runtime.base.party === seat.party);
+  return Object.values(campaign.people)
+    .filter((runtime) => runtime.alive && runtime.base.nationality === nation && runtime.base.id !== seat.person &&
+      runtime.base.eligibleRoles.some((role) => !OUTSIDE_GOVERNMENT.has(role as string)))
+    .sort((a, b) => sameParty(b) - sameParty(a) || byStanding(a, b))[0]?.base;
+}
+
 function deathInOffice(campaign: Campaign, nation: NationId, seat: ForeignSeat): EffectPacket | undefined {
   if (!seat.person || campaign.people[seat.person]?.alive !== false) return undefined;
   const heir = foreignLeaderFor(campaign, nation);
-  const person = heir ? campaign.people[heir.person]?.base : undefined;
-  if (!person || person.id === seat.person) return undefined;
+  const person = heir && heir.person !== seat.person ? campaign.people[heir.person]?.base : standIn(campaign, nation, seat);
+  if (!person) return undefined;
   const next = seat.next;
   const newSeat = successorSeat(campaign, nation, person, campaign.calendar, next, { provenance: "played" });
   return changePacket(campaign, { nation, kind: "succession", cause: "death", seat: newSeat, previous: seat });

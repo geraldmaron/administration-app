@@ -13,16 +13,22 @@ export const Text = styled(CoreText, {
   lineHeight: "body",
   variants: {
     variant: {
-      eyebrow: { fontSize: "caption", lineHeight: "caption", fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
+      eyebrow: { fontSize: "caption", lineHeight: "caption", fontWeight: "600", letterSpacing: 1, textTransform: "uppercase" },
       caption: { fontSize: "caption", lineHeight: "caption" },
-      label: { fontSize: "label", lineHeight: "label", fontWeight: "600" },
+      label: { fontSize: "label", lineHeight: "label", fontWeight: "500" },
       body: { fontSize: "body", lineHeight: "body" },
-      title: { fontSize: "title", lineHeight: "title", fontWeight: "600" },
-      heading: { fontFamily: "heading", fontSize: "heading", lineHeight: "heading", fontWeight: "700" },
-      display: { fontFamily: "heading", fontSize: "display", lineHeight: "display", fontWeight: "700", letterSpacing: -0.5 },
-      hero: { fontFamily: "heading", fontSize: "hero", lineHeight: "hero", fontWeight: "700", letterSpacing: -0.8 },
-      figure: { fontFamily: "heading", fontSize: "figure", lineHeight: "figure", fontWeight: "700", fontVariant: ["tabular-nums"] },
+      title: { fontFamily: "heading", fontSize: "title", lineHeight: "title", fontWeight: "600" },
+      heading: { fontFamily: "heading", fontSize: "heading", lineHeight: "heading", fontWeight: "600", letterSpacing: -0.2 },
+      display: { fontFamily: "heading", fontSize: "display", lineHeight: "display", fontWeight: "600", letterSpacing: -0.4 },
+      figure: { fontSize: "figure", lineHeight: "figure", fontWeight: "500", letterSpacing: -0.3, fontVariant: ["tabular-nums"] },
+      figureXl: { fontSize: "figureXl", lineHeight: "figureXl", fontWeight: "500", letterSpacing: -0.9, fontVariant: ["tabular-nums"] },
+      // Newsreader is ceremony, voice and paper: a matter's title, the President's own words, the title screen, an issued document.
+      headline: { fontFamily: "serif", fontSize: "headline", lineHeight: "headline", fontWeight: "500", letterSpacing: -0.3 },
+      voice: { fontFamily: "serif", fontSize: "voice", lineHeight: "voice", fontStyle: "italic" },
+      hero: { fontFamily: "serif", fontSize: "hero", lineHeight: "hero", fontWeight: "500", letterSpacing: -1.2 },
       document: { fontFamily: "serif", fontSize: "document", lineHeight: "document" },
+      clock: { fontFamily: "mono", fontSize: "clock", lineHeight: "clock", fontWeight: "500", letterSpacing: 0.3 },
+      code: { fontFamily: "mono", fontSize: "code", lineHeight: "code", fontWeight: "500", letterSpacing: 0.5 },
     },
     tone: {
       primary: { color: "color" },
@@ -36,6 +42,7 @@ export const Text = styled(CoreText, {
       warning: { color: "warningInk" },
       info: { color: "infoInk" },
       inverse: { color: "accentInk" },
+      onDanger: { color: "dangerInk" },
       goldInk: { color: "goldInk" },
     },
     weight: {

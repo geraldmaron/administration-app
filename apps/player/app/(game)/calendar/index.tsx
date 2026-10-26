@@ -54,7 +54,7 @@ function MonthView({ campaign, events }: { readonly campaign: Campaign; readonly
       <ReadingFrame title={`Dated matters in ${MONTHS[cursor.month - 1]} ${cursor.year}`} unit="One mark for each dated matter" period={`${MONTHS[cursor.month - 1]} ${cursor.year}`} legend={MONTH_KEY} pressHint="Press a day to see what falls on it." help={{ meaning: "Each day shows a mark for every dated matter that falls on it. The shape and color say how much it matters. A square stops time, a dot needs your answer and a ring is only on the calendar. Today is filled in blue." }}>
         <MonthGrid weekdays={WEEKDAYS} weeks={weeks} selected={selected} onSelect={setSelected} keyed={false} />
       </ReadingFrame>
-      <Agenda days={days} empty="Nothing is scheduled for this day. Pick a marked day to see what's on it." />
+      <Agenda days={days} empty="Nothing is scheduled for this day." />
     </Column>
   );
 }
@@ -69,12 +69,12 @@ function CalendarScreen({ campaign }: { readonly campaign: Campaign }) {
       eyebrow="Office of the Staff Secretary"
       icon="schedule"
       title="Calendar"
-      lede={`${events.length} dates to watch before your term ends${hard ? `. ${hard} of them ${hard === 1 ? "pauses" : "pause"} time when ${hard === 1 ? "it arrives" : "they arrive"}` : ""}. Each one says what runs out if you do nothing, and which law sets the date.`}
+      lede={`${events.length} dates to watch before your term ends${hard ? `. ${hard} of them ${hard === 1 ? "pauses" : "pause"} time when ${hard === 1 ? "it arrives" : "they arrive"}` : ""}.`}
       actions={<Segmented label="Show" options={[{ value: "agenda", label: "Agenda", icon: "ballot" }, { value: "month", label: "Month", icon: "schedule" }]} value={view} onChange={setView} />}
     >
       <Term campaign={campaign} />
       {view === "agenda" ? (
-        <Section id="next-120-days" icon="schedule" title="Next 120 days" helper="Every dated matter, soonest first. A row opens the matter, and the names in it open a quick look.">
+        <Section id="next-120-days" icon="schedule" title="Next 120 days" helper="Dated matters, soonest first.">
           <Agenda days={upcoming} empty="Nothing is coming up in the next 120 days." />
         </Section>
       ) : (

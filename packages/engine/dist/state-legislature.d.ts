@@ -2,9 +2,10 @@ import type { CausalId } from "./causality.js";
 import type { CasualtyBand } from "./state-world.js";
 import type { ConsequenceCard, ConsequenceContext } from "./consequences.js";
 import type { ResolutionRequest } from "./resolution.js";
-import type { NationId, PersonId, StateId, TreatyId } from "@admin/world";
+import type { NationId, PersonId, StateId } from "@admin/world";
 import type { RungLevel } from "./instruments.js";
 import type { BudgetAccount } from "./budget.js";
+import type { ImpoundmentMessage } from "./impoundment.js";
 import type { GameDate } from "./state-campaign.js";
 import type { PressAction } from "./state-press.js";
 import type { SharedCredit } from "./state-ties.js";
@@ -128,6 +129,8 @@ export type Appropriation = {
     readonly throughTurn: number;
     readonly onPriorYear: boolean;
     readonly priorYear: readonly BudgetAccount[];
+    /** Special messages withholding budget authority under the Impoundment Control Act; absent until the first is sent. */
+    readonly impoundments?: readonly ImpoundmentMessage[];
 };
 /**
  * A seat of power inside a chamber, as opposed to a seat in one.
@@ -549,9 +552,9 @@ export type Bill = {
         readonly throughTurn: number;
     };
     /**
-     * The executive order this bill is written against, for the one kind of act
+     * The executive order or declared emergency this bill is written against, for an act
      * that is about a particular thing the President already did rather than
-     * about the country generally: a joint resolution of disapproval.
+     * about the country generally: disapproval, emergency termination or renewal.
      *
      * Stored on the instance rather than on the catalogue entry because the
      * catalogue cannot know it — Congress picks the rule it is disapproving the
@@ -683,18 +686,4 @@ export type TermClock = {
     readonly outcome?: TermOutcome;
 };
 export type { PressAction, PressCorps, PressEngagement, ScandalResponse, ScandalVerb } from "./state-press.js";
-export type TreatyKind = "alliance" | "trade" | "arms-control" | "executive-agreement";
-export type TreatyStatus = "signed" | "ratified" | "in-force-by-signature" | "rejected" | "withdrawn";
-export type TreatyRecord = {
-    readonly id: string;
-    /** The instrument as the relationship graph names it once it is in force. */
-    readonly treaty: TreatyId;
-    readonly title: string;
-    readonly kind: TreatyKind;
-    readonly counterpart: NationId;
-    readonly signedTurn: number;
-    readonly status: TreatyStatus;
-    /** The Senate's count, once it has taken one. Absent for an instrument that never goes up. */
-    readonly vote?: ChamberVote;
-    readonly resolvedTurn?: number;
-};
+export type { TreatyKind, TreatyRecord, TreatyStatus } from "./state-treaties.js";

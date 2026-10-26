@@ -114,7 +114,7 @@ export const METRIC_COPY: Readonly<Record<string, MetricCopy>> = {
   "stats.trade.imports": { description: "Annual goods and services imports, USD millions." },
   "stats.trade.balance": { description: "Exports minus imports, USD millions. A surplus is leverage to withhold; a deficit is exposure." },
   "stats.trade.topExports": { description: "Up to ten sector ids, most important first, from the closed sector list. What an embargo actually bites on." },
-  "stats.trade.topPartners": { description: "Up to forty partner nation ids ranked by modeled trade attraction, written at assembly by the gravity model. The list every trade gate reads." },
+  "stats.trade.topPartners": { description: "The five largest partner nation ids by modeled trade attraction, written at assembly by the gravity model. A display list: no engine rule reads membership in it; every lane's size is in tradeDependence." },
   "stats.trade.tradeDependence": { description: "Partner nation id to the share of this nation's trade that runs through it, written at assembly. Sums to at most the nation's trade exposure." },
 
   // --- Energy -------------------------------------------------------------

@@ -29,6 +29,8 @@ function inWorldDollars(anchor: string): number {
   return row.value * (figure(`cpi-${WORLD_YEAR}`) / figure(`cpi-${row.dollarYear}`));
 }
 
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
 const DAYS_PER_YEAR = 365;
 const DAYS_PER_WEEK = 7;
 const WEEKS_PER_YEAR = 52;
@@ -61,6 +63,19 @@ function usRungPrices(): Readonly<Record<RungLevel, RungPrice>> {
 }
 
 export const US_FORCE_PRICES: Readonly<Record<RungLevel, RungPrice>> = usRungPrices();
+
+/** The mean Gregorian month, which is how CBO's monthly Guard figure becomes a week. */
+const DAYS_PER_MONTH = 365.25 / 12;
+
+/** USD millions a week for one Guard call-up deployed in a US state, at CBO's per-thousand monthly rate. */
+export function domesticGuardWeek(): number {
+  return round2((figure("guard-call-up") / 1000) * inWorldDollars("guard-domestic-thousand-month") * (DAYS_PER_WEEK / DAYS_PER_MONTH));
+}
+
+/** USD millions a week for active-duty troops deployed at home, at the 2018 border deployment's average rate. */
+export function domesticBrigadeWeek(): number {
+  return round2(inWorldDollars("active-border-deployment-cost") / figure("active-border-deployment-weeks"));
+}
 
 /**
  * What a unit of force costs this government against what it costs the United
@@ -112,8 +127,6 @@ export type ForceCostBasis = {
   /** USD millions charged each week the force stays committed; 0 where nothing recurs. */
   readonly weekly: number;
 };
-
-const round2 = (value: number) => Math.round(value * 100) / 100;
 
 export function forceCostBasis(
   rung: RungLevel,

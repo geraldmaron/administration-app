@@ -3,7 +3,7 @@ import { GOVERNING_STYLE_WORDS, STAGE_TITLE, formatDate, orderRejections, type F
 import { IDEOLOGY_AXES, leaderBackgroundById, schoolById } from "@admin/world";
 import { Button, Seal, Column, DocParagraph, Document, Icon, Row, SignatureBlock, Surface, Text, type IconName } from "@admin/ui";
 import { CAREER_GLYPH, PartyMark, STYLE_GLYPH } from "../glyphs";
-import { Reading, RedactedPortrait, StageGrid } from "../parts";
+import { TitledReading, RedactedPortrait, StageGrid } from "../parts";
 import { AxisReading } from "../questions/ProfileQuestionnaire";
 import type { Founding } from "../useFounding";
 import { DrawnTeam } from "./DrawnTeam";
@@ -69,7 +69,7 @@ function ProfileReview({ founding }: { readonly founding: Founding }) {
   const party = { democrat: "Democratic Party", republican: "Republican Party", independent: "Independent" }[leader.party];
   const career = leaderBackgroundById.get(leader.backgroundId as string);
   return (
-    <Reading icon="dossier" title="Your profile">
+    <TitledReading icon="dossier" title="Your profile">
       <Row gap="lg" top wrap>
         <RedactedPortrait name={leader.name || "The President"} party={leader.party} size={72} />
         <Column flex={1} gap="xs" minWidth={200}>
@@ -91,7 +91,7 @@ function ProfileReview({ founding }: { readonly founding: Founding }) {
       <Button kind="quiet" size="compact" icon="return" onPress={() => founding.goTo(setupMode === "long" ? "politics" : "person")}>
         Change these choices
       </Button>
-    </Reading>
+    </TitledReading>
   );
 }
 
@@ -105,11 +105,11 @@ function FirstMorning({ founding }: { readonly founding: Founding }) {
         ? ["Your setup isn't ready for the oath yet", "Fix the items in the list, and you'll see your first day here."]
         : ["Getting your first day ready…", "You'll see the Congress you'll work with and how the public feels about you."];
   return (
-    <Reading icon="loadingOrbit" title={title}>
+    <TitledReading icon="loadingOrbit" title={title}>
       <Text variant="body" tone="secondary" role={founding.oath.status === "failed" ? "alert" : "status"}>
         {words}
       </Text>
-    </Reading>
+    </TitledReading>
   );
 }
 

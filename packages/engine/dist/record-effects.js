@@ -40,6 +40,9 @@ export function applyPursuit(state, effect) {
 export function applyEmergency(state, effect) {
     return { ...state, emergencies: setById(state.emergencies, effect.set) };
 }
+export function applyAuthorityClock(state, effect) {
+    return { ...state, authorityClocks: setById(state.authorityClocks ?? {}, effect.set) };
+}
 export function applyExternalEmergency(state, effect) {
     return { ...state, externalEmergencies: setById(state.externalEmergencies ?? {}, effect.set) };
 }

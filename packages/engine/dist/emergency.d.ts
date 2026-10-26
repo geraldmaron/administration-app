@@ -1,7 +1,7 @@
 import type { StateId } from "@admin/world";
 import type { Campaign, ConditionKind, NationCondition } from "./state.js";
-import type { DeclaredEmergency, EmergencyScope } from "./state-emergency.js";
-import type { EffectPacket } from "./effects.js";
+import type { AuthorityClock, DeclaredEmergency, EmergencyScope } from "./state-emergency.js";
+import type { Effect, EffectPacket } from "./effects.js";
 import type { TurnPhase } from "./turn-loop.js";
 /**
  * Weeks a declaration stands before it lapses unrenewed.
@@ -24,8 +24,14 @@ export declare const EMERGENCY_COST_COMPOUNDING = 0.02;
 export declare function emergencyId(scope: EmergencyScope, cause: DeclaredEmergency["cause"], turn: number): string;
 export declare function emergencyCauseLabel(cause: DeclaredEmergency["cause"]): string;
 export declare function isStanding(emergency: DeclaredEmergency): boolean;
-/** Every declaration still in force this week. */
-export declare function selectDeclaredEmergencies(campaign: Campaign): readonly DeclaredEmergency[];
+export type EmergencyReading = DeclaredEmergency & {
+    readonly clockReading: {
+        readonly turn: number;
+        readonly daysLeft: number;
+        readonly presidentialRenewal: boolean;
+    };
+};
+export declare function selectDeclaredEmergencies(campaign: Campaign): readonly EmergencyReading[];
 /**
  * Weeks before the anniversary in which the continuation may be published.
  *
@@ -36,11 +42,11 @@ export declare function selectDeclaredEmergencies(campaign: Campaign): readonly 
  */
 export declare const EMERGENCY_NOTICE_TURNS = 13;
 /** Whether a declaration has gone past its renewal window and lapsed. */
-export declare function hasLapsed(emergency: DeclaredEmergency, turn: number): boolean;
+export declare function hasLapsed(emergency: DeclaredEmergency | EmergencyReading, turn: number, campaign?: Campaign): boolean;
 /** Weeks until this declaration lapses unrenewed. Negative once it has. */
-export declare function weeksToLapse(emergency: DeclaredEmergency, turn: number): number;
+export declare function weeksToLapse(emergency: DeclaredEmergency | EmergencyReading, turn: number): number;
 /** Whether the continuation notice is open this week. */
-export declare function renewalIsOpen(emergency: DeclaredEmergency, turn: number): boolean;
+export declare function renewalIsOpen(emergency: DeclaredEmergency | EmergencyReading, turn: number): boolean;
 /**
  * Whether a declaration authorizes an act against this state.
  *
@@ -109,3 +115,8 @@ export declare function weeklyStandingCost(emergency: DeclaredEmergency, turn: n
  * the power is not held by inertia.
  */
 export declare const emergencyPhase: TurnPhase;
+export declare function authorityDeadline(campaign: Campaign, clock: AuthorityClock): Campaign["calendar"];
+export declare function authorityHasExpired(campaign: Campaign, clock: AuthorityClock, now?: import("./state-campaign.js").GameDate): boolean;
+export declare function emergencyAuthorityClock(campaign: Campaign, emergency: DeclaredEmergency): AuthorityClock;
+export declare function emergencyExpiryPhase(campaign: Campaign): readonly EffectPacket[];
+export declare function emergencyLegislationEffects(campaign: Campaign, target: string | undefined, action: "terminate" | "renew"): readonly Effect[];

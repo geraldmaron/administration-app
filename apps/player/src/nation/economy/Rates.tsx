@@ -1,9 +1,8 @@
 import { useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { ECONOMY_HISTORY_RATES, MAX_PEERS, PEER_GROUP, comparisonView, economyHistory, economyReading, peerComparisonView, peerSet, rateDriverReadings, type DriverRow, type EconomyHistoryRate, type EconomyMeasure, type PeerMeasure } from "@admin/player-core";
-import { BenchmarkChart, Badge, CardGrid, CheckCard, Column, Icon, Pressable, ReadingFrame, Row, Segmented, Select, Sheet, Button, Text, type IconName, type ReadingHelp } from "@admin/ui";
+import { Pane, BenchmarkChart, Tag, CardGrid, CheckCard, Column, Icon, Pressable, ReadingFrame, Row, Segmented, Select, Sheet, Button, Text, type IconName, type ReadingHelp } from "@admin/ui";
 import { Track } from "@admin/ui/nation";
-import { Panel } from "@admin/ui/world";
 import { CompareChart } from "../../compare/CompareChart";
 import { CompareDoor } from "../../compare/CompareDoor";
 import { VALENCE_TEXT, VALENCE_TRACK, valenceOf } from "../format";
@@ -55,9 +54,9 @@ function AgainstUnitedStates({ campaign, rate, windowId, onWindow }: { readonly 
     <Column gap="sm">
       <Select label="Years from US history" options={view.windows.map((window) => ({ value: window.id, label: `${windowYears(window.label)}${window.available ? "" : " · no data"}`, disabled: !window.available }))} value={view.selected.id} onChange={onWindow} />
       <Row gap="xs" wrap>
-        <Badge status="outline">{rate === "growth" ? "Compared by quarter" : "Compared by month"}</Badge>
+        <Tag tone="outline">{rate === "growth" ? "Compared by quarter" : "Compared by month"}</Tag>
         {eraOf(view.selected.label) ? <Text variant="caption" tone="secondary">{eraOf(view.selected.label)}</Text> : null}
-        {approximate ? <Badge status="warning" icon="caution">Rough comparison</Badge> : null}
+        {approximate ? <Tag tone="warning" icon="caution">Rough comparison</Tag> : null}
       </Row>
       {view.unavailable ? (
         <Text variant="body" tone="secondary" role="status">
@@ -263,7 +262,7 @@ export function Rates(props: RatesProps) {
   const history = economyHistory(campaign, selected);
   const historyWindow = props.historyWindow ?? (history.points.some((point) => point.kind === "played") ? "term" : "published");
   return (
-    <Panel title="Key numbers" icon="economyGrowth">
+    <Pane title="Key numbers" icon="economyGrowth">
       <CardGrid columns={{ phone: 1, tablet: 3, desktop: 3, wide: 3 }} role="radiogroup" aria-label="Key numbers">
         {ECONOMY_HISTORY_RATES.map((rate) => {
           const entry = economyReading(campaign, rate);
@@ -305,6 +304,6 @@ export function Rates(props: RatesProps) {
         <AgainstUnitedStates campaign={campaign} rate={selected} windowId={props.comparisonWindow} onWindow={props.onComparisonWindow} />
       )}
       <Drivers campaign={campaign} rate={selected} />
-    </Panel>
+    </Pane>
   );
 }

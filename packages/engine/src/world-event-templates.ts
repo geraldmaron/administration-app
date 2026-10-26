@@ -81,7 +81,10 @@ export const TEMPLATES: readonly WorldEventTemplate[] = [
     dyads: ["hostile", "rivalrous"],
     question: "world-event",
     threshold: 0.55,
-    cooldownWeeks: 12,
+    // The rest after a clash, not its rhythm: when the pair clashes again is
+    // the episode hazard's, so a rest long enough to set a timer is the one
+    // thing this must not be.
+    cooldownWeeks: 4,
     writes: ["relationships (both edges: tension, trust, military threat)", "a grudge on the side that was hit", "feed"],
     bank: {
       headlines: [
@@ -243,13 +246,37 @@ export function admissionVoteTerms(temper: NationTraits, edge: Relationship): re
   ];
 }
 
-/** A member deciding whether to leave: how little it still trusts the others, what it trades with them, and whether it would rather stand alone. */
-export function withdrawalVoteTerms(temper: NationTraits, meanTrust: number, meanTrade: number): readonly Term[] {
+/** What a member weighs about leaving a body: what it resents, what it would give up, and what the exit itself costs. */
+export type WithdrawalReading = {
+  /** Its mean trust toward the other members. */
+  readonly meanTrust: number;
+  /** Its mean trade dependence on them. */
+  readonly trade: number;
+  /** On a defense body, the worst threat it reads from outside the body: what the guarantee is worth to it. */
+  readonly protection: number;
+  /** The grudges it carries against members and the coercion they have lately aimed at it, 0..1. */
+  readonly grievance: number;
+  /** What the body's own exit costs: unpicking a customs union costs most, leaving a forum least. */
+  readonly exitCost: number;
+  /** The body has no exit clause, so leaving repudiates a treaty. */
+  readonly repudiation: boolean;
+};
+
+// Planning values. Set so a member that trusts the others at zero and trades
+// with them at the median holds, and one that resents them, has been coerced
+// by them and has little to lose goes; a treaty that says nothing about
+// leaving costs a legalistic government most to repudiate.
+const REPUDIATION_COST = 0.15;
+
+/** A member deciding whether to leave a body, from what it resents, what it would lose and what leaving costs. */
+export function withdrawalVoteTerms(temper: NationTraits, reading: WithdrawalReading): readonly Term[] {
   return [
-    { key: "bond", source: "interest", value: round4(-0.6 * meanTrust) },
-    { key: "stakes", source: "interest", value: round4(-0.4 * meanTrade) },
-    { key: "obligation", source: "obligation", value: -0.1 },
+    { key: "bond", source: "interest", value: round4(-0.6 * reading.meanTrust) },
+    { key: "enmity", source: "situation", value: round4(0.4 * reading.grievance) },
+    { key: "stakes", source: "interest", value: round4(-0.8 * reading.trade - 0.5 * reading.protection) },
+    { key: "obligation", source: "obligation", value: round4(-0.1 - reading.exitCost - (reading.repudiation ? REPUDIATION_COST : 0)) },
     { key: "isolationism", source: "trait", value: round4(0.4 * (temper.isolationism - TEMPERAMENT_CENTER.isolationism)) },
+    { key: "legalism", source: "trait", value: round4(reading.repudiation ? -0.3 * (temper.legalism - TEMPERAMENT_CENTER.legalism) : 0) },
   ];
 }
 

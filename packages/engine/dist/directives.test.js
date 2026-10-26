@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildCampaign } from "./__fixtures__/campaign.js";
+import { foundedForBalance } from "./balance-harness.js";
+import { dismissMinister, selectChairRunner } from "./appointments.js";
 import { apply } from "./effects.js";
 import { INSTITUTION_CATALOG, institutionDef } from "./institutions.js";
 import { selectOversightPressure } from "./oversight.js";
@@ -12,12 +14,11 @@ function issue(campaign, request) {
 }
 const def = (id) => institutionDef(id);
 describe("the refusal function", () => {
-    it("serves the Bureau, the Service, the Board and an independent commission from one call", () => {
+    it("serves the Service, the Board and an adjudicating commission from one call", () => {
         const bars = [
-            ["INST-FBI", "investigation"],
             ["INST-IRS", "targeting"],
             ["INST-FED", "monetary"],
-            ["INST-SEC", "enforcement-posture"],
+            ["INST-NLRB", "enforcement-posture"],
         ];
         for (const [institution, kind] of bars) {
             const memorandum = directiveRefusal(def(institution), kind);
@@ -27,19 +28,28 @@ describe("the refusal function", () => {
             expect(memorandum.signedBy).not.toEqual("");
         }
     });
-    it("rests the law enforcement family on one authority rather than five", () => {
-        const family = ["INST-DOJ", "INST-FBI", "INST-DEA", "INST-ATF", "INST-USMS"];
-        const reasons = new Set(family.map((id) => directiveRefusal(def(id), "investigation").reason));
-        expect(reasons.size).toEqual(1);
+    it("leaves a directive to Justice to the Attorney General's judgment rather than refusing it as if a statute barred it", () => {
+        for (const id of ["INST-DOJ", "INST-FBI", "INST-DEA", "INST-ATF", "INST-USMS"]) {
+            expect(directiveRefusal(def(id), "investigation"), id).toBeUndefined();
+            expect(directiveRefusal(def(id), "targeting"), id).toBeUndefined();
+        }
+    });
+    it("lets the President supervise an at-will commission's policy, and bars one whose members keep their protection", () => {
+        for (const id of ["INST-FTC", "INST-CFPB"]) {
+            expect(directiveRefusal(def(id), "enforcement-posture"), id).toBeUndefined();
+        }
+        for (const id of ["INST-SEC", "INST-FCC", "INST-CFTC", "INST-NLRB"]) {
+            expect(directiveRefusal(def(id), "enforcement-posture"), id).toBeDefined();
+        }
     });
     it("cites the taxpayer-specific bar at the IRS and the Federal Reserve Act at the Board", () => {
         expect(directiveRefusal(def("INST-IRS"), "targeting").authority).toContain("7217");
         expect(directiveRefusal(def("INST-FED"), "monetary").authority).toContain("Federal Reserve Act");
     });
-    it("builds an independent commission's memorandum out of its own catalog entry", () => {
-        const memorandum = directiveRefusal(def("INST-FTC"), "enforcement-posture");
-        expect(memorandum.reason).toContain("Federal Trade Commission");
-        expect(memorandum.reason).toContain("7-year terms");
+    it("builds an adjudicating commission's memorandum out of its own catalog entry", () => {
+        const memorandum = directiveRefusal(def("INST-NLRB"), "enforcement-posture");
+        expect(memorandum.reason).toContain("National Labor Relations Board");
+        expect(memorandum.reason).toContain("5-year terms");
         expect(memorandum.reason).toContain("removable only for cause");
     });
     it("lets an executive body take the instructions its statute leaves with the President", () => {
@@ -157,7 +167,7 @@ describe("the second refusal", () => {
         expect(campaign.oversight.matters).toHaveLength(1);
     });
     it("counts refusals per body rather than across the government", () => {
-        let campaign = buildCampaign();
+        let campaign = foundedForBalance("directives-per-body").campaign;
         campaign = issue(campaign, { institution: "INST-IRS", kind: "targeting", subject: "a donor" });
         campaign = issue(campaign, { institution: "INST-FBI", kind: "investigation", subject: "a rival" });
         expect(campaign.oversight.matters).toHaveLength(0);
@@ -242,8 +252,91 @@ describe("what a body can be told to do at all", () => {
                 continue;
             for (const kind of directableKinds(def.id)) {
                 const result = issueDirective(campaign, { institution: def.id, kind, subject: "a named subject" });
-                expect(result.ok).toBe(true);
+                const unstaffedJustice = !result.ok && result.reason.includes("Attorney General's authority");
+                expect(result.ok || unstaffedJustice).toBe(true);
             }
         }
+    });
+});
+describe("casework at Justice goes through the Attorney General", () => {
+    const AG_ROLE = "role-attorney-general";
+    function withAttorneyGeneral(seed, traits) {
+        const { campaign } = foundedForBalance(seed);
+        const id = campaign.player.cabinet[AG_ROLE];
+        const person = campaign.people[id];
+        return {
+            ...campaign,
+            people: {
+                ...campaign.people,
+                [id]: { ...person, base: { ...person.base, integrity: traits.integrity, loyalty: traits.loyalty, traits: [traits.trait] } },
+            },
+        };
+    }
+    it("has a principled Attorney General decline to point the department at a named person, and signs the refusal as a judgment", () => {
+        const campaign = withAttorneyGeneral("directives-ag-principled", { integrity: 1, loyalty: 0.2, trait: "principled" });
+        const after = issue(campaign, { institution: "INST-DOJ", kind: "targeting", subject: "a senator who opposed the bill" });
+        const [directive] = selectDirectives(after);
+        expect(directive.status).toEqual("refused");
+        expect(directive.memorandum.signedBy).toEqual("The Attorney General");
+        expect(directive.memorandum.reason).toContain("no statute entitles the President");
+        expect(directive.judgment.acts).toBe(false);
+        expect(after.institutions["INST-DOJ"].politicization).toBeGreaterThan(campaign.institutions["INST-DOJ"].politicization);
+    });
+    it("has a deferential Attorney General open the file, and the bend and the scrutiny land on the department", () => {
+        const campaign = withAttorneyGeneral("directives-ag-deferential", { integrity: 0.05, loyalty: 1, trait: "corrupt" });
+        const first = issue(campaign, { institution: "INST-DOJ", kind: "investigation", subject: "a donor" });
+        const [directive] = selectDirectives(first);
+        expect(directive.status).toEqual("carried");
+        expect(directive.memorandum).toBeUndefined();
+        expect(directive.judgment.acts).toBe(true);
+        expect(first.institutions["INST-DOJ"].politicization).toBeCloseTo(campaign.institutions["INST-DOJ"].politicization + directiveMove("investigation").politicization, 3);
+        expect(first.oversight.matters).toHaveLength(0);
+        const second = issue({ ...first, turn: first.turn + 1 }, { institution: "INST-DOJ", kind: "investigation", subject: "a publisher" });
+        expect(second.oversight.matters).toHaveLength(1);
+        expect(second.oversight.matters[0].direction).toEqual("received");
+    });
+    it("weighs the same instruction harder the longer the record of such instructions", () => {
+        let campaign = withAttorneyGeneral("directives-ag-record", { integrity: 0.5, loyalty: 0.6, trait: "principled" });
+        const stamps = [];
+        for (const subject of ["a", "b", "c", "d"]) {
+            campaign = { ...campaign, turn: campaign.turn + 1 };
+            campaign = issue(campaign, { institution: "INST-DOJ", kind: "investigation", subject });
+            stamps.push(selectDirectives(campaign).at(-1).judgment.score);
+        }
+        expect([...stamps].sort((x, y) => y - x)).toEqual(stamps);
+        expect(stamps[3]).toBeLessThan(stamps[0]);
+    });
+    it("pauses casework at Justice when nobody holds the Attorney General's authority, even with a stale acting record", () => {
+        const { campaign } = foundedForBalance("directives-ag-vacant");
+        const dismissed = dismissMinister(campaign, AG_ROLE);
+        if (!dismissed.ok)
+            throw new Error(dismissed.reason);
+        const after = apply(campaign, dismissed.packet);
+        expect(after.actings?.[AG_ROLE]).toBeDefined();
+        const { actingLeader: _l, actingExpiresDay: _e, ...rest } = after.institutions["INST-DOJ"];
+        const lapsed = { ...after, institutions: { ...after.institutions, "INST-DOJ": { ...rest, vacancy: true } } };
+        expect(selectChairRunner(lapsed, AG_ROLE)).toBeUndefined();
+        const result = issueDirective(lapsed, { institution: "INST-DOJ", kind: "targeting", subject: "a political opponent" });
+        expect(result.ok).toBe(false);
+    });
+    it("still bars the IRS outright and never lets the judgment route reach it", () => {
+        const after = issue(foundedForBalance("directives-irs").campaign, { institution: "INST-IRS", kind: "targeting", subject: "a taxpayer" });
+        const [directive] = selectDirectives(after);
+        expect(directive.status).toEqual("refused");
+        expect(directive.memorandum.authority).toContain("7217");
+        expect(directive.judgment).toBeUndefined();
+    });
+});
+describe("a commission whose chair serves at the President's pleasure", () => {
+    it("carries a policy instruction instead of refusing it", () => {
+        const { campaign } = foundedForBalance("directives-commission");
+        const after = issue(campaign, { institution: "INST-FTC", kind: "enforcement-posture", subject: "a lighter touch on mergers" });
+        expect(selectDirectives(after)[0].status).not.toEqual("refused");
+        expect(after.institutions["INST-FTC"].politicization).toBeCloseTo(campaign.institutions["INST-FTC"].politicization, 5);
+    });
+    it("offers no named-matter instruction to a commission, whose matters are decided by its own vote", () => {
+        const { campaign } = foundedForBalance("directives-commission-casework");
+        const result = issueDirective(campaign, { institution: "INST-FTC", kind: "targeting", subject: "a named firm" });
+        expect(result.ok).toBe(false);
     });
 });

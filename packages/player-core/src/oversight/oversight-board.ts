@@ -1,5 +1,6 @@
 import {
   campaignDay,
+  conclusoryAccount,
   fileInspectorRemovalNotice,
   INSPECTED_INSTITUTIONS,
   igRemovalNoticeTurns,
@@ -168,6 +169,12 @@ export function inspectorsBoard(campaign: Campaign): readonly InspectorRow[] {
   }).sort((a, b) => b.openMatters - a.openMatters || a.name.localeCompare(b.name));
 }
 
+/** The account the board files until a surface collects particulars: the President's sentence, citing the audit it answers when one is running. */
+function noticeAccount(campaign: Campaign, institution: InstitutionId, reason: string) {
+  const audit = selectMattersFor(campaign, institution).find(isMatterOpen);
+  return conclusoryAccount(reason, audit?.id ?? "", campaign.turn);
+}
+
 /** What filing notice against one inspector general does, read off the packet the filing commits. */
 export type InspectorNoticeTerms = {
   readonly institution: InstitutionId;
@@ -182,7 +189,7 @@ export type InspectorNoticeTerms = {
 
 /** The stated reason does not change the price, so it is read with one supplied; the control asks for the real one. */
 export function inspectorNoticeTerms(campaign: Campaign, institution: InstitutionId): InspectorNoticeTerms | { readonly refusal: string } {
-  const result = fileInspectorRemovalNotice(campaign, institution, "stated");
+  const result = fileInspectorRemovalNotice(campaign, institution, noticeAccount(campaign, institution, "stated"));
   if (!result.ok) return { refusal: result.reason };
   const congress = result.packet.effects.find((effect) => effect.kind === "congress");
   const oversight = result.packet.effects.find((effect) => effect.kind === "oversight");
@@ -198,7 +205,7 @@ export function inspectorNoticeTerms(campaign: Campaign, institution: Institutio
 
 /** The filing itself, with the President's own reasons, built on the campaign it is committed against. */
 export function inspectorNoticePacket(campaign: Campaign, institution: InstitutionId, reason: string): EffectPacket {
-  const result = fileInspectorRemovalNotice(campaign, institution, reason);
+  const result = fileInspectorRemovalNotice(campaign, institution, noticeAccount(campaign, institution, reason));
   if (!result.ok) throw new Error(result.reason);
   return result.packet;
 }

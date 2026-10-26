@@ -1,4 +1,4 @@
-import { campaignDay, fileInspectorRemovalNotice, INSPECTED_INSTITUTIONS, igRemovalNoticeTurns, inspectorIsSeated, institutionDef, isMatterOpen, matterRipensTurn, matterSource, notifyCommittees, selectDateOfTurn, selectFindings, selectInspector, selectMattersFor, selectNation, selectOversightPressure, } from "@admin/engine";
+import { campaignDay, conclusoryAccount, fileInspectorRemovalNotice, INSPECTED_INSTITUTIONS, igRemovalNoticeTurns, inspectorIsSeated, institutionDef, isMatterOpen, matterRipensTurn, matterSource, notifyCommittees, selectDateOfTurn, selectFindings, selectInspector, selectMattersFor, selectNation, selectOversightPressure, } from "@admin/engine";
 import { federalSitePoint } from "@admin/world";
 import { formatDate } from "../format/figures";
 // The oversight board: every inquiry running into or out of the government,
@@ -90,9 +90,14 @@ export function inspectorsBoard(campaign) {
         ];
     }).sort((a, b) => b.openMatters - a.openMatters || a.name.localeCompare(b.name));
 }
+/** The account the board files until a surface collects particulars: the President's sentence, citing the audit it answers when one is running. */
+function noticeAccount(campaign, institution, reason) {
+    const audit = selectMattersFor(campaign, institution).find(isMatterOpen);
+    return conclusoryAccount(reason, audit?.id ?? "", campaign.turn);
+}
 /** The stated reason does not change the price, so it is read with one supplied; the control asks for the real one. */
 export function inspectorNoticeTerms(campaign, institution) {
-    const result = fileInspectorRemovalNotice(campaign, institution, "stated");
+    const result = fileInspectorRemovalNotice(campaign, institution, noticeAccount(campaign, institution, "stated"));
     if (!result.ok)
         return { refusal: result.reason };
     const congress = result.packet.effects.find((effect) => effect.kind === "congress");
@@ -108,7 +113,7 @@ export function inspectorNoticeTerms(campaign, institution) {
 }
 /** The filing itself, with the President's own reasons, built on the campaign it is committed against. */
 export function inspectorNoticePacket(campaign, institution, reason) {
-    const result = fileInspectorRemovalNotice(campaign, institution, reason);
+    const result = fileInspectorRemovalNotice(campaign, institution, noticeAccount(campaign, institution, reason));
     if (!result.ok)
         throw new Error(result.reason);
     return result.packet;

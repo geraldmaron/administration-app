@@ -21,15 +21,6 @@ export function niceTicks(low: number, high: number, target = 4): readonly numbe
   return ticks;
 }
 
-/** Round-number ticks inside [low, high] for the shared horizontal axis, endpoints included where they are round. */
-export function axisTicks(low: number, high: number, target = 5): readonly number[] {
-  if (high <= low) return [low];
-  const step = Math.max(1, niceStep(high - low, target));
-  const ticks: number[] = [];
-  for (let tick = Math.ceil(low / step - 1e-9) * step; tick <= high + 1e-9; tick += step) ticks.push(clean(tick));
-  return ticks;
-}
-
 /** The index in a sorted list of positions that is nearest `value`. */
 export function nearestIndex(positions: readonly number[], value: number): number {
   let best = 0;

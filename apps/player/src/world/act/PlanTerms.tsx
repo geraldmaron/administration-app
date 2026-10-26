@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { STRIKE_OBJECTIVES, formatMoney, type ActConfig, type ActTerms, type TariffGood, type TariffGoodReading, type TariffLawRow, type TariffPackageReading, type TradeSectorRow } from "@admin/player-core";
-import { Button, ChoiceList, ChoiceMark, Column, Field, Icon, Pressable, ReadingFrame, Row, Slider, Text, Toggle } from "@admin/ui";
+import { Button, ChoiceList, ChoiceMark, Column, Icon, Pressable, ReadingFrame, Row, Text, Toggle } from "@admin/ui";
+import { InlineField } from "@admin/ui/forms";
 import { PairedBars, Pips, Unread } from "@admin/ui/world";
 import { assetGlyph } from "../glyphs";
 import { barPercent, tradeGlyph, tradeKey, tradeScale } from "../trade";
@@ -73,9 +74,10 @@ function GoodRow({ row, scale, picked, reading, onToggle, onRate }: { readonly r
       {picked ? (
         <Column gap="md" paddingHorizontal="md" paddingBottom="md">
           {reading?.status === "tariff" ? (
-            <Field label={`Added on ${row.name.toLowerCase()}: ${picked.rate}%`}>
-              {(control) => <Slider {...control} min={1} max={max} step={1} value={Math.min(picked.rate, max)} valueText={`${picked.rate}% added`} onChange={onRate} />}
-            </Field>
+            <Column gap="xs">
+              <Text variant="label">{`Added on ${row.name.toLowerCase()}`}</Text>
+              <InlineField label={`Added tariff on ${row.name.toLowerCase()}`} min={1} max={max} step={1} value={Math.min(picked.rate, max)} format={(value) => `${value}%`} onChange={onRate} />
+            </Column>
           ) : null}
           {reading ? <GoodReading reading={reading} /> : null}
         </Column>
@@ -98,12 +100,13 @@ function Goods({ name, goods, picked, reading, onGoods }: { readonly name: strin
     <Column gap="md">
       <Column gap="2xs">
         <Text variant="label">Goods</Text>
-        <Text variant="caption" tone="secondary">{`Tick every kind of goods from ${name} you want to cover. Each one gets its own rate, and one review signs them all.`}</Text>
+        <Text variant="caption" tone="secondary">{`The order covers goods from ${name}, each at its own added rate. Each kind of goods is a whole category. If you leave one out, none of it from ${name} is covered by the order.`}</Text>
       </Column>
       {picked.length > 1 ? (
-        <Field label={sameRate ? `Same rate for all ${picked.length}: ${picked[0]!.rate}%` : `Set one rate for all ${picked.length}`} help="Moving this sets every ticked good to the same rate. You can still change each one below.">
-          {(control) => <Slider {...control} min={1} max={room} step={1} value={Math.min(picked[0]!.rate, room)} valueText={`${picked[0]!.rate}% added to each`} onChange={(value) => onGoods(picked.map((good) => ({ ...good, rate: value })))} />}
-        </Field>
+        <Column gap="xs">
+          <Text variant="label">{sameRate ? `Common rate for ${picked.length} goods` : `Common rate for ${picked.length} goods with separate rates`}</Text>
+          <InlineField label="Common added tariff" min={1} max={room} step={1} value={Math.min(picked[0]!.rate, room)} format={(value) => `${value}%`} hint="Applies to every good in this order" onChange={(value) => onGoods(picked.map((good) => ({ ...good, rate: value })))} />
+        </Column>
       ) : null}
       {reading && picked.length > 1 ? (
         <Text variant="body" weight="medium">{`${reading.ordered} of ${picked.length} goods in the order · about +${formatMoney(reading.revenue)} a year`}</Text>
@@ -149,9 +152,11 @@ function Tariff({ name, terms, goods, picked, reading, onGoods, onConfig }: { re
 function Force({ terms, onConfig }: { readonly terms: NonNullable<ActTerms["force"]>; readonly onConfig: OnConfig }) {
   if (terms.closedReason) return <Unread>{terms.closedReason}</Unread>;
   return (
-    <Field label={`How many: ${terms.countText}`} help={[terms.purpose, `Your staff suggests ${terms.preferredText}.`, terms.availableText, terms.sizing].filter(Boolean).join(" ")} aside={<Icon name={assetGlyph(terms.unitType)} size={24} tone="colorSecondary" />}>
-      {(control) => <Slider {...control} min={terms.min} max={terms.max} step={1} value={terms.count} valueText={terms.countText} onChange={(count) => onConfig({ count })} />}
-    </Field>
+    <Column gap="xs">
+      <Row gap="sm"><Icon name={assetGlyph(terms.unitType)} size={24} tone="colorSecondary" /><Text variant="label">Force in the plan</Text></Row>
+      <InlineField label="Force count" min={terms.min} max={terms.max} step={1} value={terms.count} onChange={(count) => onConfig({ count })} hint={terms.countText} />
+      <Text variant="caption" tone="secondary">{[terms.purpose, `Your staff suggests ${terms.preferredText}.`, terms.availableText, terms.sizing].filter(Boolean).join(" ")}</Text>
+    </Column>
   );
 }
 
@@ -205,7 +210,7 @@ export function PlanTerms({ name, terms, config, onConfig, goods, tariff }: { re
   if (none && config.option === "tariff") {
     return (
       <Column gap="sm" role="status">
-        <Text variant="body">Pick goods we buy from them and a rate that keeps the total under 100%.</Text>
+        <Text variant="body">These goods or rates are outside the available tariff terms.</Text>
         <Row>
           <Button kind="secondary" size="compact" onPress={() => onConfig({ sector: undefined, rate: undefined, goods: undefined })}>
             Start the tariff over

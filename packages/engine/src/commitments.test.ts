@@ -22,6 +22,7 @@ import { foundedForBalance } from "./balance-harness.js";
 import { openConflict } from "./conflicts.js";
 import { createRngStreams } from "./rng.js";
 import { standingCommitment } from "./instrument-records.js";
+import type { StateId } from "@admin/world";
 
 const TARGET = "ALP" as NationId;
 
@@ -605,5 +606,51 @@ describe("commitment identity", () => {
     const once = open(base, money(base, 200));
     const twice = open(once, money(base, 200));
     expect(Object.keys(twice.commitments)).toEqual(Object.keys(once.commitments));
+  });
+});
+
+describe("forces sent into one of the country's own states", () => {
+  const MN = "MN" as StateId;
+  const stateDraft = (campaign: Campaign, extra: Partial<CommitmentDraft> = {}): CommitmentDraft => ({
+    ...money(campaign, 20), kind: "deployment", target: { kind: "state", id: MN }, review: { endsTurn: campaign.turn + 8 },
+    rationale: "Troops for Minnesota.", ...extra,
+  });
+  const standing = (campaign: Campaign) => commitmentPhase(campaign).flatMap((packet) => packet.effects)
+    .reduce((sum, effect) => sum + (effect.kind === "metric" ? effect.deltas.standing ?? 0 : 0), 0);
+  /** A week on, so the commitment counts as the administration's own and not one inherited at the oath. */
+  const later = (campaign: Campaign): Campaign => ({ ...campaign, turn: campaign.turn + 1 });
+
+  it("adds no kept-promises standing, where the same promise to another country does", () => {
+    const campaign = foundedForBalance("commitments-state-target").campaign;
+    const toState = later(open(campaign, stateDraft(campaign)));
+    const toNation = later(open(campaign, { ...money(campaign, 20), review: { endsTurn: campaign.turn + 8 } }));
+    const none = later(campaign);
+    expect(standing(toState)).toBe(standing(none));
+    expect(standing(toNation)).toBeGreaterThan(standing(none));
+  });
+
+  it("refuses to wind down a commitment that an order authorized, in any status", () => {
+    const campaign = foundedForBalance("commitments-authorized").campaign;
+    const opened = open(campaign, stateDraft(campaign, { authorizedBy: "order-guard-federalization:MN:1" }));
+    const id = Object.values(opened.commitments).find((entry) => entry.authorizedBy)!.id;
+    for (const status of ["wound-down", "suspended"] as const) {
+      const result = setCommitmentStatus(opened, id, status, "Done.");
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toBe("Rescind the order that sent them.");
+    }
+    const free = open(campaign, stateDraft(campaign));
+    const freeId = Object.values(free.commitments).find((entry) => entry.target.kind === "state")!.id;
+    expect(setCommitmentStatus(free, freeId, "wound-down", "Done.").ok).toBe(true);
+  });
+
+  it("opens through a lapse in appropriations only when the draft is excepted", () => {
+    const campaign = foundedForBalance("commitments-lapse").campaign;
+    const lapsed: Campaign = { ...campaign, congress: { ...campaign.congress,
+      appropriation: { ...campaign.congress.appropriation, throughTurn: campaign.turn - 3 } } };
+    const refused = openCommitment(lapsed, stateDraft(lapsed));
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) expect(refused.reason).toContain("lapsed");
+    expect(openCommitment(lapsed, stateDraft(lapsed, { excepted: true })).ok).toBe(true);
+    expect(openCommitment(campaign, stateDraft(campaign)).ok).toBe(true);
   });
 });

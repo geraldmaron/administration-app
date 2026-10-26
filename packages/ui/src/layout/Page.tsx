@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ScrollView } from "react-native";
 import { View, useMedia } from "@tamagui/core";
-import { Icon, type IconName } from "../icons/Icon";
+import type { IconName } from "../icons/Icon";
 import { Column, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
 import { PageScrollProvider, usePageScroll } from "./anchors";
@@ -34,7 +34,7 @@ export { pageGutter } from "./gutter";
  * grows with the window. The header carries the page's identity so every
  * screen says where the President is and what it is for before any data.
  */
-export function Page({ eyebrow, title, lede, icon, actions, emblem, children, wide, testID, bare }: PageProps) {
+export function Page({ eyebrow, title, lede, actions, emblem, children, wide, testID, bare }: PageProps) {
   const media = useMedia();
   const pad = pageGutter(media);
   const { page, scrollRef, contentRef, onScroll } = usePageScroll();
@@ -48,12 +48,9 @@ export function Page({ eyebrow, title, lede, icon, actions, emblem, children, wi
             {/* On a phone the title shares the emblem's line rather than wrapping beneath it, so the page starts a screen higher. */}
             <Column gap="2xs" flexGrow={1} flexShrink={1} flexBasis={media.phone ? 0 : 320} minWidth={media.phone ? 160 : 0}>
               {eyebrow ? (
-                <Row gap="xs">
-                  {icon ? <Icon name={icon} size={16} tone="gold" weight="fill" /> : null}
-                  <Text variant="eyebrow" tone="gold">
-                    {eyebrow}
-                  </Text>
-                </Row>
+                <Text variant="eyebrow" tone="tertiary">
+                  {eyebrow}
+                </Text>
               ) : null}
               <Text variant={media.phone ? "heading" : "display"} role="heading" aria-level={1}>
                 {title}

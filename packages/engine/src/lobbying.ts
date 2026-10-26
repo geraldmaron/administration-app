@@ -55,7 +55,7 @@ import {
   lobbyFavorAvailability,
   type FiscalMatter,
 } from "./lobbying-favors.js";
-import { NEUTRAL_TRUST, figureRapport, tieOf, withRapportRead, type TieEffect } from "./ties.js";
+import { NEUTRAL_TRUST, figureRapport, personalGrudgeWeight, tieOf, withRapportRead, type TieEffect } from "./ties.js";
 import type { MetricDeltas } from "./effect-types.js";
 
 // What a president spends to change a count.
@@ -275,8 +275,8 @@ function memberTerms(campaign: Campaign, member: HillMember, approach: LobbyAppr
   }
   const person = member.person;
   return [
-    // A member who already leans toward this administration is the easy one.
-    { key: "disposition", source: "situation", value: (figureRapport(campaign.people, member.figure) - 0.5) * 0.4 },
+    // Remembered injuries belong in this term so preview and resolution charge them once.
+    { key: "disposition", source: "situation", value: (figureRapport(campaign.people, member.figure) - 0.5) * 0.4 - 0.2 * clamp01(personalGrudgeWeight(campaign, member.figure.person)) },
     // An ambitious member with a career of their own is the hard one.
     { key: "ambition", source: "trait", value: person ? (0.5 - person.ambition) * 0.2 : 0 },
     { key: "integrity", source: "trait", value: person ? (person.integrity - 0.5) * -0.1 : 0 },

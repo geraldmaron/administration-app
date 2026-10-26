@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import type { Campaign, ConflictSide } from "@admin/engine";
 import { callComparison, callPacket, endComparison, endPacket, INTENSITY_BANDS, joinComparison, joinPacket, place, type WarAuthorization, type WarCompact, type WarMeter, type WarScreenReading, type WarSide } from "@admin/player-core";
-import { Badge, Button, CardGrid, Column, Empty, Icon, Page, ReadingFrame, Row, Surface, Text, Theme, View, useMedia } from "@admin/ui";
-import { Beat, Panel, ShareBar, Unread } from "@admin/ui/world";
+import { Pane, Tag, Button, CardGrid, Column, Empty, Icon, Page, Reading, ReadingFrame, Row, Surface, Text, Theme, View, useMedia } from "@admin/ui";
+import { Beat, ShareBar, Unread } from "@admin/ui/world";
 import { BackButton } from "../../shell/BackButton";
 import { ActsReceipt, SetAct, useWorldActs, type WorldActs } from "../acts";
 import { topicAuthorities } from "../law";
-import { CardTo, FlagOf, MapPanelSlot, NationName, RowTo, splitColumn, TopicLaw } from "../parts";
+import { CardTo, FlagOf, MapPanelSlot, NationLink, NationName, RowTo, splitColumn, TopicLaw } from "../parts";
 import { AuthorizationAct, WarPowersSection } from "./WarPowers";
 
 const score = (value: number) => `${Math.round(value * 100)}`;
@@ -72,7 +72,7 @@ function WarOverview({ reading }: { readonly reading: WarScreenReading }) {
                 State of the war
               </Text>
             </Row>
-            <Badge status={reading.over ? "outline" : "danger"}>{reading.statusWord}</Badge>
+            <Tag tone={reading.over ? "outline" : "danger"}>{reading.statusWord}</Tag>
           </Row>
           <Row gap="md" wrap>
             <Principal side={reading.sides.defender} />
@@ -81,17 +81,10 @@ function WarOverview({ reading }: { readonly reading: WarScreenReading }) {
             </Text>
             <Principal side={reading.sides.aggressor} />
           </Row>
+          <Text variant="body">{reading.cause}</Text>
           <CardGrid columns={{ phone: 1, tablet: 1, desktop: 3, wide: 3 }} gap="xl">
             <Column gap="xs" flexGrow={1}>
-              <Text variant="eyebrow" tone="secondary">
-                Fighting intensity
-              </Text>
-              <Text variant="figure">
-                {score(reading.intensity.value)}
-                <Text variant="caption" tone="secondary">
-                  /100 · {reading.intensity.word}
-                </Text>
-              </Text>
+              <Reading name="Fighting intensity" value={`${score(reading.intensity.value)}/100 · ${reading.intensity.word}`} basis="estimate" size="title" minWidth={0} />
               <ReadingFrame title="How heavy the fighting is" unit="Staff estimate, 0 to 100" legend={INTENSITY_KEY} help={{ meaning: "The bar fills as the fighting gets heavier. The word is the reading: Held is under 15 of 100, Simmering 15 to 39, Hot 40 to 69 and Intense 70 or more. It is a staff estimate, not a count of the dead and wounded." }}>
                 <IntensityBar reading={reading} />
               </ReadingFrame>
@@ -102,7 +95,7 @@ function WarOverview({ reading }: { readonly reading: WarScreenReading }) {
               </Text>
               <Text variant="title">{role}</Text>
               <Text variant="caption" tone="tertiary">
-                {reading.usRole === "outside" ? "Joining would be a separate decision for you" : "Your decisions and legal authority are below"}
+                {reading.usRole === "outside" ? (reading.over ? "You did not fight in this war" : "Joining would be a separate decision for you") : reading.over ? "Your forces fought in this war" : "Your forces are committed to this war"}
               </Text>
             </Column>
             <Column gap="xs" flexGrow={1}>
@@ -124,18 +117,13 @@ function WarOverview({ reading }: { readonly reading: WarScreenReading }) {
 function SideReading({ meter, label, adverse = false }: { readonly meter: WarMeter | undefined; readonly label: string; readonly adverse?: boolean }) {
   return (
     <Column gap="2xs" flexGrow={1}>
-      <Text variant="caption" tone="secondary">
-        {label}
-      </Text>
       {meter ? (
         <>
-          <Text variant="label" weight="strong">
-            {score(meter.value)}/100 · {meter.word}
-          </Text>
+          <Reading name={label} value={`${score(meter.value)}/100 · ${meter.word}`} basis="estimate" size="title" minWidth={0} />
           <ShareBar value={meter.value} valence={adverse ? "watch" : "info"} label={`${label}: staff estimate ${score(meter.value)} of 100, ${meter.word}`} />
         </>
       ) : (
-        <Unread>Unknown</Unread>
+        <Unread>{`${label}: unknown`}</Unread>
       )}
     </Column>
   );
@@ -204,7 +192,7 @@ function History({ reading }: { readonly reading: WarScreenReading }) {
   const beats = [...reading.beats].reverse();
   const [shown, setShown] = useState(BEATS_FIRST);
   return (
-    <Panel title="History" icon="record" count={beats.length} lede="Newest first.">
+    <Pane title="History" icon="record" count={beats.length} line="Newest first.">
       {beats.length === 0 ? <Empty title="Nothing has happened in this war yet" /> : null}
       {beats.slice(0, shown).map((beat, index) => (
         <Beat key={`${index}-${beat.date}-${beat.description}`} date={beat.date}>
@@ -216,14 +204,14 @@ function History({ reading }: { readonly reading: WarScreenReading }) {
           {`Show all ${beats.length} events`}
         </Button>
       ) : null}
-    </Panel>
+    </Pane>
   );
 }
 
 function Forces({ reading }: { readonly reading: WarScreenReading }) {
   if (reading.forces.length === 0) return <Unread>We don't know of any troop placements here. That doesn't mean either side has no military.</Unread>;
   return (
-    <Panel title="Troops in the area" icon="shield" count={reading.forces.length} lede="These are the troop placements we know about. They don't show each side's full strength, and troop numbers are shown as rough ranges.">
+    <Pane title="Troops in the area" icon="shield" count={reading.forces.length} line="These are the troop placements we know about. They don't show each side's full strength, and troop numbers are shown as rough ranges.">
       {reading.forces.map((force) => (
         <Row key={force.id} gap="md" wrap paddingVertical="xs" borderTopWidth={1} borderTopColor="borderColor">
           <Column flexBasis={200} flexGrow={1}>
@@ -235,7 +223,7 @@ function Forces({ reading }: { readonly reading: WarScreenReading }) {
           <Text variant="caption" tone="secondary" width={180}>{force.precision === "installation" ? "Known base" : "General area only"}</Text>
         </Row>
       ))}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -264,14 +252,14 @@ function AuthorizationNote({ authorization }: { readonly authorization: WarAutho
 
 /** Every decision the war offers: entering, asking Congress first, ending it, calling the allies. */
 function Decisions({ campaign, reading, acts }: Decide) {
-  if (reading.over) return <Unread>This war is over. You can still look back at what happened and who took part, but there are no more decisions to make.</Unread>;
+  if (reading.over) return <Unread>This war is over, and its record is closed to further decisions.</Unread>;
   return (
     <Column gap="lg">
       {reading.usRole === "outside" ? <JoinAct campaign={campaign} reading={reading} acts={acts} /> : null}
       {reading.usRole === "outside" && reading.authorizations.length > 0 ? (
-        <Panel title="Asking Congress to approve force" icon="gavel" emblem={<Icon name="subjectCapitol" size={22} tone="gold" />}>
+        <Pane title="Asking Congress to approve force" icon="gavel" emblem={<Icon name="subjectCapitol" size={22} tone="gold" />}>
           {reading.authorizations.map((authorization) => (authorization.state === "open" ? <AuthorizationAct key={authorization.nation} campaign={campaign} authorization={authorization} acts={acts} /> : <AuthorizationNote key={authorization.nation} authorization={authorization} />))}
-        </Panel>
+        </Pane>
       ) : null}
       {reading.usRole !== "outside" ? (
         <Column gap="sm">
@@ -298,29 +286,26 @@ export function WarScreen({ campaign, reading }: { readonly campaign: Campaign; 
             {sidesOf(reading).map((side) => (
               <Row key={side.side} gap="xs" wrap>
                 <Text variant="label" width={140}>{side.label}</Text>
-                {side.members.map((member) => <FlagOf key={member.nation} nation={member.nation} name={member.name} height={16} />)}
+                {side.members.map((member) => <NationLink key={member.nation} nation={member.nation} name={member.name} height={16} />)}
               </Row>
             ))}
           </MapPanelSlot>
         </Column>
         <Column {...splitColumn(media.desktop, 1)}>
-          <Panel title="Why it started and how it might end" icon="review">
-            <Text variant="eyebrow" tone="secondary">Cause</Text>
-            <Text variant="body">{reading.cause}</Text>
-            <Text variant="eyebrow" tone="secondary">Chance of a peace deal · staff estimate</Text>
-            {reading.peace ? <Text variant="body"><Text variant="body" weight="strong">{SETTLEMENT[reading.peace.forecast]}. </Text>{reading.peace.offered ? `${reading.peace.counterpart} has offered peace terms. ` : ""}{reading.peace.reasoning}</Text> : <Text variant="body" tone="secondary">Your staff can't yet say whether this war is likely to end in a deal.</Text>}
-          </Panel>
+          <Pane title="Prospect of peace" icon="review">
+            {reading.peace ? <Column gap="sm"><Reading name="Chance of a peace deal" value={SETTLEMENT[reading.peace.forecast]} basis="forecast" size="title" /><Text variant="body">{reading.peace.offered ? `${reading.peace.counterpart} has offered peace terms. ` : ""}{reading.peace.reasoning}</Text></Column> : <Text variant="body" tone="secondary">Your staff can't yet say whether this war is likely to end in a deal.</Text>}
+          </Pane>
         </Column>
       </Row>
-      <Panel title="The parties" icon="shield" lede="Support and war weariness are your staff's estimates, from 0 to 100. They aren't polls, military strength, or the odds of winning. If our intelligence agencies can't read a side, it shows as unknown.">
+      <Pane title="The parties" icon="shield" line="Support and war weariness are your staff's estimates, from 0 to 100. They aren't polls, military strength, or the odds of winning. If our intelligence agencies can't read a side, it shows as unknown.">
         <CardGrid columns={{ phone: 1, tablet: 1, desktop: 2, wide: 2 }} gap="lg">
           {sidesOf(reading).map((side) => <SideEvidence key={side.side} side={side} />)}
         </CardGrid>
-      </Panel>
+      </Pane>
       <Forces reading={reading} />
-      <Panel id="war-join" title="Your decisions" icon="order" lede="What you do in the war and what Congress approves are separate. Each choice shows what it changes from today, and you'll review it before it goes through." aside={<TopicLaw topic="war-powers" />}>
+      <Pane id="war-join" title="Your decisions" icon="order" line="Your military orders and Congress's authorization each carry their own consequences." actions={<TopicLaw topic="war-powers" />}>
         <Decisions campaign={campaign} reading={reading} acts={acts} />
-      </Panel>
+      </Pane>
       <WarPowersSection campaign={campaign} papers={reading.papers} acts={acts} />
       <History reading={reading} />
     </Page>

@@ -1,24 +1,94 @@
-import { selectRelationship } from "./state.js";
-import { selectNation } from "./state-selectors.js";
+import { relationshipKey, selectRelationship } from "./state.js";
+// The graph module is the one value import, and it reaches nothing that imports
+// this module back; it restates the treaty id grammar to keep it that way.
+import { structuralReading } from "./relationship-graph.js";
 // Relationships are directed: how United States reads a neighbor need not match
 // how that neighbor reads United States. Grudges are how a cheap
-// betrayal stays expensive: each carries the cause, its starting weight, the
-// turn it was created, and a decay rate set by the aggrieved party's
-// vengefulness, so a vengeful nation forgives slower than a forgiving one.
-const BASE_GRUDGE_DECAY = 0.12;
-const MIN_GRUDGE_DECAY = 0.02;
-// Higher vengefulness -> slower decay. A maximally vengeful nation (1.0)
-// decays at MIN_GRUDGE_DECAY; a maximally forgiving one (0.0) decays at
-// BASE_GRUDGE_DECAY.
+// betrayal stays expensive: each carries the cause, its weight, the turn it was
+// created, and a decay rate set by the aggrieved party's vengefulness, so a
+// vengeful nation forgives slower than a forgiving one.
+// --- How memory ages ---
+//
+// Every reading of memory here ages by the one shared approach-to-target form,
+// `next = target + (current - target) * 2^(-elapsedDays / halfLifeDays)`, so a
+// favor and a slight both fade by the calendar rather than by a fixed step a
+// week, and a fast or slow pace of play ages them identically.
+//
+// Two half-lives, because the record says injuries outlast kindnesses: a
+// government that was helped forgets faster than one that was wronged. Both
+// are planning values, chosen inside the candidate ranges the world-dynamics
+// program set (a favor fades over 26 to 52 weeks; a grievance lasts two to
+// four times as long) and checked against idle campaigns, not sourced figures.
+/** Planning value: days for half of a favor above a pair's standing reading to fade. 39 weeks. */
+export const FAVOR_HALF_LIFE_DAYS = 273;
+/**
+ * Planning value: how many favor half-lives a grievance takes to halve, at the
+ * forgiving and the vengeful end of the scale. A nation's vengefulness places it
+ * between the two.
+ */
+export const GRIEVANCE_HALF_LIFE_MULTIPLE = { forgiving: 2, vengeful: 4 };
+const DAYS_PER_WEEK = 7;
+/** What is left of a departure from target after `elapsedDays`, at `halfLifeDays`. */
+export function retained(elapsedDays, halfLifeDays) {
+    return Math.pow(2, -Math.max(0, elapsedDays) / halfLifeDays);
+}
+/** The shared form: `current` moved toward `target` by `elapsedDays` of memory. */
+export function approach(current, target, elapsedDays, halfLifeDays) {
+    return target + (current - target) * retained(elapsedDays, halfLifeDays);
+}
+/** Days for half of a grievance to fade, for a government of this vengefulness. */
+export function grievanceHalfLifeDays(vengefulness) {
+    const v = Math.max(0, Math.min(1, vengefulness));
+    const { forgiving, vengeful } = GRIEVANCE_HALF_LIFE_MULTIPLE;
+    return FAVOR_HALF_LIFE_DAYS * (forgiving + (vengeful - forgiving) * v);
+}
+/**
+ * A grudge's stored decay rate: the share of its fading weight it loses each
+ * day. Higher vengefulness, slower decay. Stored rather than re-derived so a
+ * grievance keeps the temper of the government that formed it.
+ */
 export function grudgeDecayRate(vengefulness) {
-    const rate = BASE_GRUDGE_DECAY * (1 - vengefulness);
-    return Math.max(MIN_GRUDGE_DECAY, rate);
+    return 1 - retained(1, grievanceHalfLifeDays(vengefulness));
 }
 export function createGrudge(cause, weight, createdTurn, vengefulness) {
     return { cause, weight, createdTurn, decayRate: grudgeDecayRate(vengefulness) };
 }
-function decayOneGrudge(grudge) {
-    return { ...grudge, weight: Math.max(0, grudge.weight - grudge.decayRate) };
+// Saves written before grudges aged by the calendar stored a flat weekly step
+// of 0.12 * (1 - vengefulness), never below 0.02. A daily rate is never near
+// that size (the fastest grievance half-life gives about 0.0013), so a stored
+// rate at or above this line can only be the old step. The migration is
+// representative rather than exact: the step is inverted to a vengefulness,
+// and every temper from 5/6 up stored the same floored 0.02, so those come back
+// as 5/6, the least vengeful temper that could have written it.
+const LEGACY_RATE_LINE = 0.01;
+const LEGACY_BASE_STEP = 0.12;
+/** A grudge from an older save, restated in the daily rate; a current one unchanged. */
+export function migrateGrudge(grudge) {
+    if (grudge.decayRate < LEGACY_RATE_LINE)
+        return grudge;
+    const vengefulness = Math.max(0, Math.min(1, 1 - grudge.decayRate / LEGACY_BASE_STEP));
+    return { ...grudge, decayRate: grudgeDecayRate(vengefulness) };
+}
+// The durable part of a grudge, by its cause. A war is remembered for
+// generations after its bitterness has cooled, so the grievance a war leaves
+// fades toward this floor and never below it. Every other cause fades to
+// nothing: a universal floor would make every slight permanent.
+/** Planning value: the least a war's grudge ever weighs. */
+export const WAR_GRUDGE_FLOOR = 0.15;
+/** The weight below which a grudge with no durable floor is forgotten outright. */
+const GRUDGE_FORGOTTEN = 0.005;
+function grudgeFloor(grudge) {
+    return grudge.cause.startsWith("war:") ? Math.min(grudge.weight, WAR_GRUDGE_FLOOR) : 0;
+}
+/** One grudge aged by `elapsedDays`, or undefined once it is forgotten. */
+export function ageGrudge(grudge, elapsedDays) {
+    const current = migrateGrudge(grudge);
+    const floor = grudgeFloor(current);
+    const days = Math.max(0, elapsedDays);
+    const weight = floor + (current.weight - floor) * Math.pow(1 - current.decayRate, days);
+    if (floor === 0 && weight < GRUDGE_FORGOTTEN)
+        return undefined;
+    return { ...current, weight };
 }
 // Sum of live grudge weight — the thing an NPC decision reads to answer
 // "why do they hate us" without re-deriving it from history each time.
@@ -71,6 +141,12 @@ const HISTORY_RECENCY_DECAY = 0.6;
 // under a hundredth of the most recent one, so tracking further back buys
 // nothing but iteration cost.
 const HISTORY_TRACK_LIMIT = 10;
+// A remembered act fades by the calendar as well as by what came after it, at
+// the half-life of its kind: a cooperative act as a favor does, a coercive one
+// as a grievance does at the middle of the vengefulness scale, since the
+// record carries no temper of its own.
+const COOPERATIVE_HISTORY_HALF_LIFE_DAYS = FAVOR_HALF_LIFE_DAYS;
+const COERCIVE_HISTORY_HALF_LIFE_DAYS = grievanceHalfLifeDays(0.5);
 // The remembered pattern's pull on disposition, independent of any live
 // grudge. Grudges and this term are read from disjoint slices of what a
 // relationship logs: the two call sites that create a grudge either write it
@@ -84,15 +160,26 @@ const HISTORY_TRACK_LIMIT = 10;
 // event here is never also live as a grudge weight on the same relationship;
 // the two systems price different things — a grudge is a live, decaying
 // grievance an NPC decision reads directly, this is the longer-running
-// "what has this counterpart generally done" signal that survives long after
-// any one grudge has decayed to nothing.
-export function historyPressure(relationship) {
+// "what has this counterpart generally done" signal.
+//
+// `now` is the turn the record is read on; an act's age is measured from it.
+export function historyPressure(relationship, now) {
     const classified = relationship.history
-        .map((event) => ({ turn: event.turn, sign: classifyHistoryEvent(event.kind) }))
+        .map((event) => ({ turn: event.turn, kind: event.kind, sign: classifyHistoryEvent(event.kind) }))
         .filter((event) => event.sign !== 0)
-        .sort((a, b) => b.turn - a.turn)
+        // Newest first, and acts of one week in a fixed order by kind, because rank
+        // sets each act's weight and the record's write order is not a fact.
+        .sort((a, b) => b.turn - a.turn || (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0))
         .slice(0, HISTORY_TRACK_LIMIT);
-    return classified.reduce((sum, event, rank) => sum + event.sign * HISTORY_RECENCY_BASE * Math.pow(HISTORY_RECENCY_DECAY, rank), 0);
+    return classified.reduce((sum, event, rank) => {
+        const halfLife = event.sign > 0 ? COOPERATIVE_HISTORY_HALF_LIFE_DAYS : COERCIVE_HISTORY_HALF_LIFE_DAYS;
+        const age = retained((now - event.turn) * DAYS_PER_WEEK, halfLife);
+        return sum + event.sign * HISTORY_RECENCY_BASE * Math.pow(HISTORY_RECENCY_DECAY, rank) * age;
+    }, 0);
+}
+/** The newest turn on a relationship's record: the only clock a bare relationship carries. */
+function newestRecordedTurn(relationship) {
+    return relationship.history.reduce((latest, event) => Math.max(latest, event.turn), 0);
 }
 const COERCIVE_DEED_FAMILIES = ["diplomatic", "economic", "military"];
 const DEED_BANDS = ["low", "mid", "high"];
@@ -147,6 +234,8 @@ function landedDeedFlag(nation, family, band) {
 export function deedPressure(flags, relationship, player) {
     if (relationship.to !== player || relationship.from === player)
         return 0;
+    // Summed in the declared family and band order, never the flag set's write
+    // order, so the same record reads to the same bytes on every replay.
     const weight = COERCIVE_DEED_FAMILIES.reduce((familySum, family) => familySum +
         DEED_BANDS.reduce((bandSum, band) => flags[landedDeedFlag(relationship.from, family, band)]
             ? bandSum + DEED_HIGH_WATER * DEED_FAMILY_WEIGHT[family] * DEED_BAND_WEIGHT[band]
@@ -248,59 +337,248 @@ export function repeatDrag(campaign, actor, target, instrument) {
 //
 // The campaign is optional because the deed record lives in the player's flag
 // set rather than on the relationship, and a caller that only has the
-// relationship in hand still gets every term that is derivable from it.
+// relationship in hand still gets every term that is derivable from it. Such a
+// caller has no calendar either, so the record is read as of its own newest
+// entry.
 export function disposition(relationship, campaign) {
     const deeds = campaign ? deedPressure(campaign.player.flags, relationship, campaign.founding.nation) : 0;
+    const now = campaign?.turn ?? newestRecordedTurn(relationship);
     const raw = relationship.trust -
         relationship.tension -
         grudgeWeight(relationship) * 0.5 +
-        historyPressure(relationship) +
+        historyPressure(relationship, now) +
         deeds;
     return Math.max(-1, Math.min(1, raw));
 }
 export function bothDirections(campaign, a, b) {
     return { aToB: selectRelationship(campaign, a, b), bToA: selectRelationship(campaign, b, a) };
 }
-// The ledger is read by a player, who knows Lithuania and not LTU.
-const nameOf = (state, id) => selectNation(state, id)?.base.identity.name ?? id;
-// A turn phase: decay every relationship's grudges by one tick, dropping any
-// that have decayed to zero weight. Produces one packet per relationship
-// whose grudges actually changed, each with narration, so every state change
-// remains attributable — the player-facing "why" is derivable from state
-// rather than guessed.
+// What a treaty in force does to the pair, restated from the treaty module's
+// terms for the cycle reason at the head of this file; a test pins each value
+// to `TREATY_TERMS`. The full effect, because a treaty in force is the
+// relationship it describes for as long as it stands.
+const TREATY_STANDING = {
+    alliance: { trust: 0.18, tension: -0.12 },
+    trade: { trust: 0.1, tension: -0.06 },
+    "arms-control": { trust: 0.12, tension: -0.2 },
+    "executive-agreement": { trust: 0.06, tension: -0.04 },
+};
+const TREATY_IN_FORCE = new Set(["ratified", "in-force-by-signature"]);
+/** Planning value: a standing breach of relations, at the severance rung's own unjittered size. */
+const SEVERANCE_STANDING = { trust: -0.3, tension: 0.3, militaryThreat: 0 };
+const SEVERED_FLAG_PREFIX = "severed-relations:";
+/** Planning value: a war being fought, at the size a government joining one writes against its enemy. */
+const WAR_STANDING = { trust: -0.3, tension: 0.35, militaryThreat: 0.3 };
+/** Planning value: what a war leaves between the two sides once either is out of it. */
+const WAR_SCAR = { trust: -0.1, tension: 0.05, militaryThreat: 0.05 };
+function pushShift(index, from, to, shift) {
+    const key = relationshipKey(from, to);
+    index.set(key, [...(index.get(key) ?? []), shift]);
+}
+function treatyShifts(campaign, index) {
+    const player = campaign.founding.nation;
+    for (const record of Object.values(campaign.treaties ?? {})) {
+        if (!TREATY_IN_FORCE.has(record.status))
+            continue;
+        const shift = { cause: `treaty:${record.id}`, ...TREATY_STANDING[record.kind], militaryThreat: 0 };
+        pushShift(index, player, record.counterpart, shift);
+        pushShift(index, record.counterpart, player, shift);
+    }
+}
+function severanceShifts(campaign, index) {
+    for (const [flag, on] of Object.entries(campaign.player.flags)) {
+        if (!on || !flag.startsWith(SEVERED_FLAG_PREFIX))
+            continue;
+        const [from, to] = flag.slice(SEVERED_FLAG_PREFIX.length).split(":");
+        pushShift(index, from, to, { cause: "severance", ...SEVERANCE_STANDING });
+    }
+}
+// A war the board carried into the oath is already in the founding reading
+// between its two principals, because the sourced dyads record the hostility it
+// stands for, and a carried war opens with nobody joined. So only that one pair
+// is passed over: a government that enters a carried war later makes a new
+// enemy, and that pairing is added like any war begun on this watch.
+function warShifts(campaign, index) {
+    for (const conflict of Object.values(campaign.conflicts ?? {})) {
+        const left = new Set(conflict.left ?? []);
+        const aggressors = [conflict.aggressor, ...conflict.joined.aggressor];
+        const defenders = [conflict.defender, ...conflict.joined.defender];
+        for (const a of aggressors) {
+            for (const d of defenders) {
+                if (conflict.inherited && a === conflict.aggressor && d === conflict.defender)
+                    continue;
+                const fighting = conflict.status === "active" && !left.has(a) && !left.has(d);
+                const shift = { cause: `war:${conflict.id}`, ...(fighting ? WAR_STANDING : WAR_SCAR) };
+                pushShift(index, a, d, shift);
+                pushShift(index, d, a, shift);
+            }
+        }
+    }
+}
+// Floating-point addition is not associative, so the causes on a pair are put
+// in one total order before anything sums them: two campaigns holding the same
+// records written in a different order must settle to the same bytes.
+function compareShifts(a, b) {
+    if (a.cause !== b.cause)
+        return a.cause < b.cause ? -1 : 1;
+    return a.trust - b.trust || a.tension - b.tension || a.militaryThreat - b.militaryThreat;
+}
+function buildDurableIndex(campaign) {
+    const index = new Map();
+    treatyShifts(campaign, index);
+    severanceShifts(campaign, index);
+    warShifts(campaign, index);
+    return new Map([...index].map(([key, shifts]) => [key, [...shifts].sort(compareShifts)]));
+}
+// Read once per campaign state: every phase that settles a reading toward its
+// anchor reads the same records, and the state is never mutated in place.
+const durableCache = new WeakMap();
+function durableIndexOf(campaign) {
+    const cached = durableCache.get(campaign);
+    if (cached)
+        return cached;
+    const index = buildDurableIndex(campaign);
+    durableCache.set(campaign, index);
+    return index;
+}
+/** Every durable cause standing between `from` and `to`, as `from` reads `to`, in their summing order. */
+export function durableShifts(campaign, from, to) {
+    return durableIndexOf(campaign).get(relationshipKey(from, to)) ?? [];
+}
+const clampTrust = (v) => Math.max(-1, Math.min(1, v));
+const clampTension = (v) => Math.max(0, Math.min(1, v));
+function anchorFrom(campaign, relationship, durable) {
+    const from = campaign.nations[relationship.from];
+    const to = campaign.nations[relationship.to];
+    if (!from || !to)
+        return undefined;
+    const structural = structuralReading(from, to, campaign.founding.nation);
+    return {
+        trust: clampTrust(durable.reduce((sum, shift) => sum + shift.trust, structural.trust)),
+        tension: clampTension(durable.reduce((sum, shift) => sum + shift.tension, structural.tension)),
+        militaryThreat: clampTension(durable.reduce((sum, shift) => sum + shift.militaryThreat, structural.militaryThreat)),
+    };
+}
+/** Where this relationship's trust, tension and threat settle once every favor and slight has faded. */
+export function relationshipAnchor(campaign, relationship) {
+    return anchorFrom(campaign, relationship, durableShifts(campaign, relationship.from, relationship.to));
+}
+// --- Standing pressures ---
 //
+// A pressure that holds for weeks — a compact fracturing around its members, a
+// war the world is watching — presses a reading toward a level below where the
+// pair stands, rather than taking a fixed step off it every week. It closes on
+// that level at the build half-life while the pressure lasts, never moves the
+// reading back up, and once the pressure ends the memory phase repairs it at the
+// grievance half-life like any other injury. A flat weekly step had no level:
+// a fracture that ran for a year took half a point off every bystander pair,
+// and two years drove a quiet world from about 140 hostile pairs to about 700.
+/** Planning value: days for a standing pressure to close half the distance to the level it holds a reading at. */
+export const PRESSURE_BUILD_HALF_LIFE_DAYS = 28;
+/** One week of a standing pressure: toward `level`, never back the other way. */
+export function pressDown(current, level) {
+    return current > level ? approach(current, level, DAYS_PER_WEEK, PRESSURE_BUILD_HALF_LIFE_DAYS) || 0 : current;
+}
+/** The same, for a reading a pressure raises. */
+export function pressUp(current, level) {
+    return current < level ? approach(current, level, DAYS_PER_WEEK, PRESSURE_BUILD_HALF_LIFE_DAYS) || 0 : current;
+}
+/**
+ * The trust a standing pressure holds `relationship` at: `drop` below where
+ * the pair stands. Undefined where either nation has no record to stand on.
+ */
+export function pressedTrustLevel(campaign, relationship, drop) {
+    const anchor = relationshipAnchor(campaign, relationship);
+    return anchor ? clampTrust(anchor.trust - drop) : undefined;
+}
+/** The threat a standing pressure holds `relationship` at: `rise` above what the two records give. */
+export function pressedThreatLevel(campaign, relationship, rise) {
+    const from = campaign.nations[relationship.from];
+    const to = campaign.nations[relationship.to];
+    if (!from || !to)
+        return undefined;
+    return Math.min(1, structuralReading(from, to, campaign.founding.nation).militaryThreat + rise);
+}
+// --- The weekly memory phase ---
+// Close enough to the standing reading to stop moving: below this the weekly
+// step is smaller than any reading a player or a decision can tell apart, and
+// stopping keeps a settled pair off the week's packet.
+const SETTLED = 0.0005;
+function settle(current, target, halfLifeDays) {
+    const next = approach(current, target, DAYS_PER_WEEK, halfLifeDays);
+    return Math.abs(next - target) < SETTLED ? target : next || 0;
+}
+// A reading above where the pair settles is a favor and fades at the favor
+// half-life; one below is an injury and recovers at the grievance half-life of
+// the government doing the reading. Tension and threat run the other way
+// round: a fear a war raised fades as slowly as the grievance it came with.
+function settledReading(campaign, relationship, anchor) {
+    const grievance = grievanceHalfLifeDays(campaign.nations[relationship.from]?.traits.vengefulness ?? 0.5);
+    const fadeOf = (aboveIsInjury) => (aboveIsInjury ? grievance : FAVOR_HALF_LIFE_DAYS);
+    return {
+        trust: settle(relationship.trust, anchor.trust, relationship.trust > anchor.trust ? FAVOR_HALF_LIFE_DAYS : grievance),
+        tension: settle(relationship.tension, anchor.tension, fadeOf(relationship.tension > anchor.tension)),
+        militaryThreat: settle(relationship.militaryThreat, anchor.militaryThreat, fadeOf(relationship.militaryThreat > anchor.militaryThreat)),
+    };
+}
 // A grievance created this week is passed over. Decay runs after the phases
 // that plant grudges, so without the guard a betrayal would be forgiven its
-// first tick in the very week it was committed. Nobody starts forgetting an
-// injury while it is still happening: time only runs on a grudge once the week
-// that made it has closed.
+// first tick in the very week it was committed.
+function agedGrudges(relationship, turn) {
+    if (relationship.grudges.length === 0)
+        return undefined;
+    const aged = relationship.grudges.flatMap((grudge) => {
+        if (grudge.createdTurn === turn)
+            return [grudge];
+        const next = ageGrudge(grudge, DAYS_PER_WEEK);
+        return next ? [next] : [];
+    });
+    const changed = aged.length !== relationship.grudges.length || aged.some((g, i) => g !== relationship.grudges[i]);
+    return changed ? aged : undefined;
+}
+function agedRelationship(campaign, relationship, durable) {
+    const grudges = agedGrudges(relationship, campaign.turn);
+    const anchor = anchorFrom(campaign, relationship, durable.get(relationshipKey(relationship.from, relationship.to)) ?? []);
+    const reading = anchor ? settledReading(campaign, relationship, anchor) : undefined;
+    const moved = reading !== undefined &&
+        (reading.trust !== relationship.trust || reading.tension !== relationship.tension || reading.militaryThreat !== relationship.militaryThreat);
+    if (!grudges && !moved)
+        return undefined;
+    return {
+        kind: "relationship",
+        from: relationship.from,
+        to: relationship.to,
+        ...(moved ? { set: reading } : {}),
+        ...(grudges ? { replaceGrudges: grudges } : {}),
+    };
+}
+/**
+ * A turn phase: one week of memory on every relationship. Grudges fade toward
+ * their cause's floor, and trust, tension and threat settle toward the pair's standing
+ * reading, a favor faster than an injury. One packet for the whole graph,
+ * because this is the world's weekly bookkeeping rather than an act, and a
+ * packet per pair would put thousands of ledger lines a week on the record.
+ */
 export const grudgeDecayPhase = (state) => {
-    const packets = [];
-    for (const [key, relationship] of Object.entries(state.relationships)) {
-        if (relationship.grudges.length === 0)
-            continue;
-        const decayed = relationship.grudges
-            .map((grudge) => (grudge.createdTurn === state.turn ? grudge : decayOneGrudge(grudge)))
-            .filter((g) => g.weight > 0);
-        const changed = decayed.length !== relationship.grudges.length ||
-            decayed.some((g, i) => g.weight !== relationship.grudges[i].weight);
-        if (!changed)
-            continue;
-        const effect = {
-            kind: "relationship",
-            from: relationship.from,
-            to: relationship.to,
-            replaceGrudges: decayed,
-        };
-        packets.push({
+    const durable = durableIndexOf(state);
+    const effects = Object.keys(state.relationships)
+        .sort()
+        .flatMap((key) => {
+        const effect = agedRelationship(state, state.relationships[key], durable);
+        return effect ? [effect] : [];
+    });
+    if (effects.length === 0)
+        return [];
+    const entities = [...new Set(effects.flatMap((effect) => [effect.from, effect.to]))].sort();
+    return [
+        {
             source: "simulate",
             actor: "world",
             turn: state.turn,
-            narration: { summary: `Old grievances between ${nameOf(state, relationship.from)} and ${nameOf(state, relationship.to)} fade with time.` },
-            effects: [effect],
-            provenance: { origin: "world", entities: [relationship.from, relationship.to], systems: ["relations"] },
-        });
-        void key; // key is derivable from relationship.from/to; kept for iteration clarity only
-    }
-    return packets;
+            background: true,
+            narration: { summary: "Old favors and grievances between governments fade with time." },
+            effects,
+            provenance: { origin: "world", entities, systems: ["relations"] },
+        },
+    ];
 };

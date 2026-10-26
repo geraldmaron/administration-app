@@ -6,6 +6,7 @@ import { openConflict } from "./conflicts.js";
 import { joinConflict } from "./war-entry.js";
 import { foundedForBalance } from "./balance-harness.js";
 import { relationshipKey } from "./state.js";
+import { pressedThreatLevel, pressedTrustLevel } from "./relationships.js";
 import { HELD_FRONT_INTENSITY, OPENING_WAR_SUPPORT, aftermathPacket, commandQuality, conflictPhase, settle, strengthRatio } from "./war-tick.js";
 import { fullFrontPersonnel, sideCombatants } from "./war-forces.js";
 import { OUTCOME_LINES } from "./war-outcomes.js";
@@ -302,3 +303,26 @@ describe("a war's last week", () => {
     expect(after.commitments[id]?.status).toBe("wound-down");
   });
 });
+
+describe("the world's reading of an aggressor", () => {
+  it("settles at a level set by the front's heat instead of falling every week of a long war", () => {
+    const { campaign: founded } = foundedForBalance("war-opinion-level");
+    const conflict = Object.values(founded.conflicts).find((c) => c.status === "active")!;
+    const bystander = Object.keys(founded.nations).sort().find(
+      (id) => outsideOf(conflict, id) && founded.relationships[relationshipKey(id as NationId, conflict.aggressor)],
+    ) as NationId;
+    const key = relationshipKey(bystander, conflict.aggressor);
+    let state: Campaign = founded;
+    for (let w = 0; w < 104; w++) state = week(state);
+    const reading = state.relationships[key]!;
+    const hottest = pressedTrustLevel(state, reading, 0.2 * 1.5 * 1.5)!;
+    expect(founded.relationships[key]!.trust - reading.trust).toBeGreaterThan(0);
+    expect(reading.trust).toBeGreaterThanOrEqual(hottest - 1e-9);
+    expect(reading.militaryThreat).toBeLessThanOrEqual(pressedThreatLevel(state, reading, 0.125 * 1.5)! + 1e-9);
+  });
+});
+
+function outsideOf(conflict: Conflict, id: string): boolean {
+  const sides = [conflict.aggressor, conflict.defender, ...conflict.joined.aggressor, ...conflict.joined.defender] as string[];
+  return !sides.includes(id);
+}

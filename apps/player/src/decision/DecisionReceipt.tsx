@@ -30,7 +30,7 @@ export function DecisionReceipt({ campaign, decided, here }: { readonly campaign
         <Section icon="microphone" title="What your staff said next">
           <Column gap="sm" role="list">
             {decided.beats.map((beat, index) => (
-              <Text key={index} role="listitem" variant="body" serif>
+              <Text key={index} role="listitem" variant="voice">
                 {beat.text}
               </Text>
             ))}

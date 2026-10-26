@@ -1,6 +1,6 @@
 import { underDeclaredEmergency, projectGovernorWillingness } from "@admin/engine";
 import { PARTY_WORDS, governorDispositionWord } from "./state-dossier";
-import { localeActOptions, localeMatters } from "./locale-act-options";
+import { localeMatters, localeMissions, openLocaleActCount } from "./locale-act-options";
 const MEANING = {
     likely: "Likely to agree to sending in the National Guard.",
     close: "Could go either way on sending in the National Guard.",
@@ -29,6 +29,7 @@ export function stateRelationship(campaign, id) {
         needs: matters.map((matter) => ({ cause: matter.cause, title: matter.title, requested: matter.request !== undefined })),
         needsCount: matters.length,
         declared: underDeclaredEmergency(campaign, id),
-        actCount: lead ? localeActOptions(campaign, id, lead.cause).filter((option) => !option.locked).length : 0,
+        actCount: lead ? openLocaleActCount(campaign, id, lead.cause) : 0,
+        missions: localeMissions(campaign, id),
     };
 }

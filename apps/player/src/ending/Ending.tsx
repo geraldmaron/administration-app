@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { closestCalls, compareSeries, electorsReading, finaleChamberParties, finaleReading, formatRatio, legacyReading, place, sealFor, type FinaleContest, type FinaleReading, type LegacyMark, type LegacyReading } from "@admin/player-core";
-import { Badge, BenchmarkChart, Button, CardLink, Column, Icon, Meter, Page, PressRow, ReadingFrame, Row, Seal, Text, View, useMedia } from "@admin/ui";
+import { BenchmarkChart, Button, CardLink, Column, Icon, Meter, Page, PressRow, ReadingFrame, Row, Seal, Tag, Text, View, useMedia } from "@admin/ui";
 import { StackedBar, segmentKeyEntries } from "@admin/ui/news";
 import { TermLine } from "@admin/ui/record";
 import { termDoor } from "../handbook/term-door";
@@ -9,7 +9,7 @@ import { go } from "../news/story-parts";
 import { RecordArea } from "../record/Panel";
 import { Haiku } from "../title/Haiku";
 import { SelfComparison } from "../record/RecordSections";
-import { KIND_WORD, MARK_STATUS, NotYet, PARTY_INK, TERM_MARK_KEY } from "./parts";
+import { KIND_WORD, MARK_TONE, NotYet, PARTY_INK, TERM_MARK_KEY } from "./parts";
 
 /** The night that settled it: the electors on one bar against the majority, the popular vote, and the states it came down to. */
 function Night({ campaign, contest }: { readonly campaign: Campaign; readonly contest: FinaleContest }) {
@@ -40,7 +40,7 @@ function Night({ campaign, contest }: { readonly campaign: Campaign; readonly co
       <Column>
         {calls.slice(0, shown).map((row) => (
           <PressRow key={row.state} label={`Open ${row.name}`} href={place.state(row.state)} onPress={() => go(place.state(row.state))} flexDirection="row" alignItems="center" gap="sm" paddingVertical="xs" paddingHorizontal="xs" minHeight={44} borderRadius="control">
-            <View width={52}><Badge status={row.forYou ? "success" : "danger"}>{row.forYou ? "Won" : "Lost"}</Badge></View>
+            <View width={52}><Tag tone={row.forYou ? "success" : "danger"}>{row.forYou ? "Won" : "Lost"}</Tag></View>
             <Column flex={1} minWidth={0} gap="2xs">
               <Text variant="label">{row.name}</Text>
               <Text variant="caption" tone="secondary">{`${row.electoralVotes} electoral ${row.electoralVotes === 1 ? "vote" : "votes"}. ${row.margin}.`}</Text>
@@ -87,7 +87,7 @@ function Marks({ marks, legacy }: { readonly marks: readonly LegacyMark[]; reado
       {latest.length === 0 ? <Text variant="body" tone="secondary">No decisions were marked this term.</Text> : null}
       {latest.slice(0, shown).map((mark) => (
         <Row key={mark.key} gap="sm" top>
-          <View width={80}><Badge status={MARK_STATUS[mark.tone]}>{KIND_WORD[mark.kind]}</Badge></View>
+          <View width={80}><Tag tone={MARK_TONE[mark.tone]}>{KIND_WORD[mark.kind]}</Tag></View>
           <Column flex={1}><Text variant="label">{mark.label}</Text><Text variant="caption" tone="tertiary">{mark.date}</Text></Column>
         </Row>
       ))}
@@ -148,7 +148,7 @@ export function Ending({ campaign }: { readonly campaign: Campaign }) {
       <Text variant="body" tone="secondary">Read your legacy next, or look back over the whole term in the Record.</Text>
       <Haiku id="term-end" />
       <Row gap="sm" wrap role="navigation" aria-label="What comes next">
-        <Button kind="gold" icon="record" onPress={() => go(place.legacy())}>Read the legacy</Button>
+        <Button kind="seal" icon="record" onPress={() => go(place.legacy())}>Read the legacy</Button>
         <Button kind="secondary" icon="record" onPress={() => go(place.record())}>Open the Record</Button>
         <Button kind="quiet" icon="archive" onPress={() => go(place.administrations())}>Your administrations</Button>
       </Row>

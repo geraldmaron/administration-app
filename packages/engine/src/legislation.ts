@@ -1,3 +1,4 @@
+import { emergencyLegislationEffects } from "./emergency.js";
 import { IDEOLOGY_AXES } from "@admin/world";
 import {
   selectBills,
@@ -13,6 +14,7 @@ import {
   carried,
   floorThreshold,
   fundingContinuityDue,
+  seatedOf,
   supermajorityOf,
 } from "./congress.js";
 import { countFundingContinuityVote } from "./congress-votes.js";
@@ -38,6 +40,7 @@ import { legislativeTrack } from "./reconciliation.js";
 import {
   LEGISLATIVE_ACTS,
   actCost,
+  mergedAuthorityLimits,
   actOf,
   type ConstitutionalGround,
   type LawConstraint,
@@ -83,6 +86,7 @@ export function lawConstraints(campaign: Campaign): LawConstraint {
     actOf(bill)?.disapproves === true && bill.target !== undefined ? [bill.target] : [],
   );
   return {
+    authorityDays: mergedAuthorityLimits(laws),
     blocksOrders: [...laws.flatMap((constraint) => constraint.blocksOrders ?? []), ...disapproved],
     authorizesOrders: [...new Set(enacted.flatMap((bill) => actOf(bill)?.constrains?.authorizesOrders ?? []))]
       .filter((orderId) => lawAuthorizesOrder(campaign, orderId) !== undefined),
@@ -207,6 +211,7 @@ export function billsOnTheAgenda(campaign: Campaign): readonly LegislativeAct[] 
     if (lastEnacted !== undefined && (act.recurs === undefined || campaign.turn - lastEnacted < act.recurs)) {
       return false;
     }
+    if (act.targetsEmergency && act.targetsEmergency(campaign) === undefined) return false;
     if (act.targetsOrder && act.targetsOrder(campaign) === undefined) return false;
     return act.arises(campaign);
   });
@@ -232,7 +237,7 @@ export function projectOverride(campaign: Campaign, bill: Bill): readonly Chambe
     voteOn(campaign, {
       chamber,
       appeal,
-      required: supermajorityOf(campaign.congress.chambers[chamber].seats),
+      required: supermajorityOf(seatedOf(campaign.congress, chamber)),
       ...(act ? { actId: act.id, ...(act.domestic ? { signature: act.domestic } : {}) } : {}),
       stance: act ? stanceOf(act) : "neutral",
       counted: "against",
@@ -280,6 +285,7 @@ function fundingEffect(campaign: Campaign, funds: NonNullable<LegislativeAct["fu
  */
 function enactmentEffects(campaign: Campaign, act: LegislativeAct, bill: Bill): readonly Effect[] {
   return [
+    ...(act.emergencyAction ? emergencyLegislationEffects(campaign, bill.target, act.emergencyAction) : []),
     { kind: "metric", deltas: actCost(campaign, act) },
     { kind: "alignment", pull: act.alignment },
     ...orderStatEffects(campaign, act.nationEffects),
@@ -562,7 +568,7 @@ function passageVotes(campaign: Campaign, act: LegislativeAct): readonly Chamber
 }
 
 function introduced(campaign: Campaign, act: LegislativeAct): Bill {
-  const target = act.targetsOrder?.(campaign);
+  const target = act.targetsOrder?.(campaign) ?? act.targetsEmergency?.(campaign);
   const predecessor = act.revises?.family === "housing-supply"
     ? selectCurrentLaws(campaign).find((bill) =>
         ["act-housing-supply", "act-housing-renewal", "act-housing-replacement"].includes(bill.act))

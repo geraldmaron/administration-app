@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Campaign } from "@admin/engine";
 import { formatDate, formatMoney, impactReports, place, sealFor, type RecordEntryReading } from "@admin/player-core";
-import { Badge, Button, Column, Empty, EntityLink, Icon, PressRow, Row, Seal, Surface, Text } from "@admin/ui";
+import { Button, Column, Empty, EntityLink, Icon, PressRow, Reading, Row, Seal, Surface, Tag, Text } from "@admin/ui";
 import { CausalChain, Fact, MoveTable, StageTrack } from "@admin/ui/record";
 import { stateById, worldNations } from "@admin/world";
 import { BackButton } from "../shell/BackButton";
@@ -81,9 +81,9 @@ function Accounting({ entry }: { readonly entry: RecordEntryReading }) {
       {entry.accounting.map((cost, index) => (
         <Column key={index} gap="xs">
           <Row gap="md" wrap>
-            <Fact label="Expected when you decided" value={formatMoney(cost.estimated)} />
-            <Fact label="Actual borrowing" value={formatMoney(cost.booked)} />
-            <Fact label={cost.variance >= 0 ? "Over the estimate" : "Under the estimate"} value={formatMoney(Math.abs(cost.variance))} />
+            <Reading name="Expected when you decided" value={formatMoney(cost.estimated)} basis="estimate" />
+            <Reading name="Actual borrowing" value={formatMoney(cost.booked)} />
+            <Reading name={cost.variance >= 0 ? "Over the estimate" : "Under the estimate"} value={formatMoney(Math.abs(cost.variance))} />
           </Row>
           <Text variant="caption" tone="secondary">{`${cost.source}. ${cost.method === "band" ? "A rough estimate. The exact parts of the cost aren't known." : "Worked out from the numbers given."} The difference between the two is based on planning guesses.`}</Text>
         </Column>
@@ -150,10 +150,10 @@ export function RecordDetail({ campaign, entry, standalone, onOpen, onClose }: P
         <Row>{standalone ? <BackButton parent="/record" parentLabel="All entries" /> : <Button kind="quiet" size="compact" icon="return" onPress={onClose}>All entries</Button>}</Row>
         <Column gap="sm">
           <Row gap="sm" wrap>
-            <Badge status={entry.actor === "player" ? "gold" : "outline"}>{entry.actorWord}</Badge>
-            <Badge status={entry.status.startsWith("Under way") ? "warning" : "success"}>{entry.status}</Badge>
+            <Tag tone={entry.actor === "player" ? "authority" : "outline"}>{entry.actorWord}</Tag>
+            <Tag tone={entry.status.startsWith("Under way") ? "warning" : "success"}>{entry.status}</Tag>
           </Row>
-          <Text variant="heading" role="heading" aria-level={2}>{entry.headline}</Text>
+          <Text variant="headline" role="heading" aria-level={2}>{entry.headline}</Text>
           {lede ? <Text variant="body" tone="secondary">{lede}</Text> : null}
           <Institutions entry={entry} />
         </Column>

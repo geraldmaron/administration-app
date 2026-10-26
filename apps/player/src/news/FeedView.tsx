@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { COVERAGE_TONES, COVERAGE_TONE_WORD, TOPIC_LABEL, coverageTopics, filterCoverage, type CoverageRow, type CoverageTone, type DeskRow } from "@admin/player-core";
 import { Button, Column, Empty, Row, Sheet, Surface, Text } from "@admin/ui";
 import { Select } from "@admin/ui/forms";
-import { ArticleRow } from "@admin/ui/news";
+import { Wire } from "@admin/ui/news";
 import { namingNation, nationsInCoverage } from "./front-page";
 import { coverageFilterOf, filterCount, type PressParams } from "./press-params";
 import { storySummary } from "./story-parts";
@@ -73,21 +73,14 @@ export function FeedView({ rows, desks, params, onParams }: Props) {
         </Row>
       </Row>
       <Sheet open={open} onClose={() => setOpen(false)} title="Filter stories" eyebrow="All stories" footer={<Button kind="primary" block onPress={() => setOpen(false)}>{`Show ${filtered.length.toLocaleString("en-US")} stories`}</Button>}>
-        <Text variant="body" tone="secondary">
-          Pick a topic, news outlet, tone, or country to see fewer stories. Your choices stay in the page link, so you can come back to them.
-        </Text>
         <Filters rows={rows} desks={desks} params={params} onParams={(next) => { setShown(PAGE); onParams(next); }} />
       </Sheet>
       {filtered.length === 0 ? (
         <Surface level="sunken">
-          <Empty title="No stories match these filters" detail="Try removing one." icon="press" />
+          <Empty title="No stories match these filters" detail="No story fits all of them." icon="press" />
         </Surface>
       ) : (
-        <Surface pad="none" role="list" aria-label="Stories, newest first">
-          {visible.map((row, i) => (
-            <ArticleRow key={row.index} story={storySummary(row)} first={i === 0} />
-          ))}
-        </Surface>
+        <Wire label="Stories, newest first" stories={visible.map((row) => storySummary(row))} storyKey={(_, i) => String(visible[i]!.index)} />
       )}
       {filtered.length > visible.length ? (
         <Row gap="sm" between wrap>

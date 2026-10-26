@@ -26,6 +26,19 @@ export type OperatorCrisis = {
 export declare function operatorPressure(kind: OperatorKind, nation: Nation): number;
 export declare function operatorId(kind: OperatorKind, host: NationId, turn: number): string;
 export declare function emergingOperators(campaign: Campaign, streams: RngStreams): OperatorRuntime[];
+/**
+ * How strongly an intrusion crew draws each victim: the victim's share of the
+ * world's output (there is more to steal and more to ransom), raised where the
+ * crew's host government is hostile to it, and lowered by the victim's own
+ * counterintelligence. The host's own networks are one victim among the rest.
+ * A crew that could only break into its own country was a crew that never
+ * reached the United States from anywhere.
+ */
+export declare function cyberVictimWeights(campaign: Campaign, host: NationId): readonly {
+    readonly nation: NationId;
+    readonly weight: number;
+}[];
+export declare function cyberVictim(campaign: Campaign, host: NationId, roll: number): NationId;
 export declare function crisisFor(campaign: Campaign, operator: OperatorRuntime): OperatorCrisis | undefined;
 /** What sets an operator's weekly act rate, each term already weighted: its host's pressure, a war, and the regime's grip. */
 export declare function operatorActTerms(campaign: Campaign, operator: OperatorRuntime): readonly Term[];

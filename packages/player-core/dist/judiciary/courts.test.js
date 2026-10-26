@@ -6,6 +6,7 @@ import { caseFile } from "./case-file";
 import { benchReading, courtDocket, justiceFile, leanAxes } from "./courts";
 import { judicialNominations } from "./judicial-nominations";
 import { appointmentDesk, deskPlan, DESK_CANDIDATES } from "../appointments/desk";
+import { removalPacket } from "../oversight/appointments-pipeline";
 // A draw of zero is under any odds, so the first order a challenge can reach
 // comes back contested: the order the screens read is one the engine itself
 // signed, not a record written by hand.
@@ -285,5 +286,42 @@ describe("judicial nominations", () => {
         expect(row?.withdrawal?.cost).toEqual({ standing: -0.012 });
         expect(appointmentDesk(sent).seats.some((entry) => entry.office === seat.office)).toBe(false);
         expect(benchReading(sent).seats.find((entry) => entry.seat === 6)?.pending?.name).toBe(pick.name);
+    });
+});
+describe("a removed commissioner's suit on the docket and in the case file", () => {
+    const SEC = "INST-SEC";
+    function suing() {
+        const opening = openingCampaign();
+        let state = apply(opening, removalPacket(opening, SEC));
+        const phase = judicialReviewPhase(charterOf(state));
+        for (let week = 0; week < 6 && !state.judiciary.proceedings?.some((entry) => entry.subject.kind === "commission-removal"); week += 1)
+            state = { ...phase(state).reduce(apply, state), turn: state.turn + 1 };
+        return state;
+    }
+    it("names the removal suit on the docket and reads its case file while it is pending", () => {
+        const state = suing();
+        const proceeding = state.judiciary.proceedings?.find((entry) => entry.subject.kind === "commission-removal");
+        if (!proceeding)
+            throw new Error("the removed chair did not sue");
+        const row = courtDocket(state).pending.find((entry) => entry.id === proceeding.id);
+        expect(row?.groundWords).toMatch(/Trump v\. Slaughter/);
+        const file = caseFile(state, proceeding.id);
+        expect(file.summary).toMatch(/Removed as/);
+        expect(file.unreversed).toMatch(/removal stands while the case goes on/);
+        expect(file.timeline.length).toBeGreaterThan(0);
+    });
+    it("says what the judgment did: reinstatement with back pay, back pay alone, or nothing", () => {
+        const state = suing();
+        const proceeding = state.judiciary.proceedings?.find((entry) => entry.subject.kind === "commission-removal");
+        if (!proceeding || proceeding.subject.kind !== "commission-removal")
+            throw new Error("the removed chair did not sue");
+        const ruledAs = (holding, reinstated) => ({ ...state,
+            institutions: { ...state.institutions, [SEC]: { ...state.institutions[SEC], ...(reinstated ? { leader: proceeding.subject.kind === "commission-removal" ? proceeding.subject.person : undefined } : {}) } },
+            judiciary: { ...state.judiciary, cases: [...state.judiciary.cases, { id: proceeding.id, subject: proceeding.subject, matter: proceeding.matter,
+                        question: proceeding.matter.question, ground: "forbidden", filedTurn: proceeding.filedTurn, dueTurn: state.turn, ruledTurn: state.turn,
+                        holding, votes: [], opinion: { majority: "m" }, procedure: { forum: "lower", history: proceeding.history } }] } });
+        expect(caseFile(ruledAs("struck-down", true), proceeding.id).unreversed).toMatch(/back in the seat.*back pay/);
+        expect(caseFile(ruledAs("struck-down", false), proceeding.id).unreversed).toMatch(/couldn't be returned.*back pay/);
+        expect(caseFile(ruledAs("upheld", false), proceeding.id).unreversed).toMatch(/let the removal stand/);
     });
 });

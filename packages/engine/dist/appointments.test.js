@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { VICE_PRESIDENT_ROLE_ID } from "@admin/world";
 import { buildCampaign, person } from "./__fixtures__/campaign.js";
-import { deriveConfirmedRoles, dismissMinister, projectDismissal, selectAppointableFor, } from "./appointments.js";
+import { actingClassOf, actingClockEffects, actingLapseDay, appointActing, deputyFor, selectActing, deriveConfirmedRoles, dismissMinister, projectDismissal, selectAppointableFor, } from "./appointments.js";
 import { apply } from "./effects.js";
 import { foundedForBalance } from "./balance-harness.js";
 import { advanceTurn } from "./turn-loop.js";
@@ -9,6 +9,7 @@ import { campaignTurnPhases } from "./turn-phases.js";
 import { openNomination } from "./nomination.js";
 import { selectNominationForOffice } from "./nomination-stages.js";
 import { institutionForRole } from "./institutions.js";
+import { campaignDay } from "./clock.js";
 import { CURRENT_SCHEMA_VERSION, loadSave } from "./save.js";
 import { selectCabinet, selectCabinetHolder, selectCabinetSeats, selectPerson, selectPlayerLedger } from "./state.js";
 // The shared fixture seats one chair and it is the player's own, which is the
@@ -323,4 +324,130 @@ describe("the derivation over founded governments", () => {
             }
         });
     }
+});
+describe("acting appointments under the Vacancies Act (5 U.S.C. 3345-3346)", () => {
+    const TREASURY = "role-treasury-minister";
+    const ENERGY = "role-energy-secretary";
+    function emptiedTreasury() {
+        const { campaign } = foundedForBalance("vacancies-act");
+        const holder = campaign.player.cabinet[TREASURY];
+        const result = dismissMinister(campaign, TREASURY);
+        if (!result.ok)
+            throw new Error(result.reason);
+        const dismissed = apply(campaign, result.packet);
+        // Take the automatic deputy back out so the President names the acting.
+        const acting = dismissed.actings?.[TREASURY];
+        const cleared = { ...dismissed, actings: Object.fromEntries(Object.entries(dismissed.actings ?? {}).filter(([seat]) => seat !== TREASURY)) };
+        expect(acting).toBeDefined();
+        expect(holder).not.toEqual(acting);
+        const runtime = cleared.institutions["INST-TREASURY"];
+        const { actingLeader: _a, actingExpiresDay: _e, ...rest } = runtime;
+        return { ...cleared, institutions: { ...cleared.institutions, ["INST-TREASURY"]: rest } };
+    }
+    const def = institutionForRole(TREASURY);
+    it("lets the first assistant, a confirmed officer from another department, and a senior employee of the same agency act", () => {
+        const state = emptiedTreasury();
+        const bench = selectAppointableFor(state, TREASURY, true);
+        expect(bench.length).toBeGreaterThan(1);
+        expect(actingClassOf(state, def, bench[0])).toBe("first-assistant");
+        expect(actingClassOf(state, def, bench[1])).toBe("senior-employee");
+        const secretary = state.people[state.player.cabinet[ENERGY]];
+        expect(actingClassOf(state, def, secretary)).toBe("confirmed-officer");
+        expect(appointActing(state, TREASURY, secretary.base.id).ok).toBe(true);
+        expect(appointActing(state, TREASURY, bench[1].base.id).ok).toBe(true);
+    });
+    it("refuses somebody outside those classes, even a national with no other chair", () => {
+        const state = emptiedTreasury();
+        const outsider = Object.values(state.people).find((runtime) => runtime.alive && runtime.currentRole === undefined && !runtime.base.eligibleRoles.some((role) => role === TREASURY) && runtime.base.nationality === state.founding.nation);
+        expect(actingClassOf(state, def, outsider)).toBeUndefined();
+        const result = appointActing(state, TREASURY, outsider.base.id);
+        expect(result.ok).toBe(false);
+        if (!result.ok)
+            expect(result.reason).toContain("Vacancies Act");
+    });
+    it("bars a nominee from acting unless the nominee was the first assistant", () => {
+        const state = emptiedTreasury();
+        const [first, second] = selectAppointableFor(state, TREASURY, true);
+        const nominated = (nominee) => {
+            const opened = openNomination(state, def.offices[0].id, nominee.base.id);
+            if (!opened.ok)
+                throw new Error(opened.reason);
+            return apply(state, opened.packet);
+        };
+        const withSecond = nominated(second);
+        const barred = appointActing(withSecond, TREASURY, second.base.id);
+        expect(barred.ok).toBe(false);
+        if (!barred.ok)
+            expect(barred.reason).toContain("first assistant");
+        expect(appointActing(nominated(first), TREASURY, first.base.id).ok).toBe(true);
+    });
+    it("ends an acting's service the day they are nominated, unless they were the first assistant", () => {
+        const state = emptiedTreasury();
+        const [first, second] = selectAppointableFor(state, TREASURY, true);
+        const seatedSecond = apply(state, appointActing(state, TREASURY, second.base.id).packet);
+        expect(selectActing(seatedSecond, TREASURY)).toBe(second.base.id);
+        const opened = openNomination(seatedSecond, def.offices[0].id, second.base.id);
+        if (!opened.ok)
+            throw new Error(opened.reason);
+        const nominated = apply(seatedSecond, opened.packet);
+        // The next eligible name takes the office the same day rather than leaving it empty.
+        expect(selectActing(nominated, TREASURY)).toBe(first.base.id);
+        const seatedFirst = apply(state, appointActing(state, TREASURY, first.base.id).packet);
+        const openedFirst = openNomination(seatedFirst, def.offices[0].id, first.base.id);
+        if (!openedFirst.ok)
+            throw new Error(openedFirst.reason);
+        expect(selectActing(apply(seatedFirst, openedFirst.packet), TREASURY)).toBe(first.base.id);
+    });
+    describe("the acting clock while nominations come and go (3346(a)(2), (b))", () => {
+        function actingState() {
+            const base = emptiedTreasury();
+            const [first, , third] = selectAppointableFor(base, TREASURY, true);
+            const seated = apply(base, appointActing(base, TREASURY, first.base.id).packet);
+            const aged = { ...seated, institutions: { ...seated.institutions, "INST-TREASURY": { ...seated.institutions["INST-TREASURY"], vacantDays: 60 } } };
+            return { state: aged, nominee: third };
+        }
+        const nominationFor = (state, nominee, id, stages) => ({
+            id, office: def.offices[0].id, institution: def.id, nominee: nominee.base.id, stage: "nominated", stageEnteredDay: 40, openedDay: 40,
+            controversies: [], history: stages.map((stage) => ({ stage, day: 1, note: "" })),
+        });
+        const expiry = (state) => state.institutions["INST-TREASURY"].actingExpiresDay;
+        it("tolls the 210 days when a first nomination is submitted, and restarts them from a withdrawal", () => {
+            const { state, nominee } = actingState();
+            expect(expiry(state)).toBeDefined();
+            const nomination = nominationFor(state, nominee, "n1", ["nominated"]);
+            const withNomination = { ...state, nominations: { ...state.nominations, n1: nomination } };
+            const tolled = apply(withNomination, { source: "simulate", actor: "world", turn: 1, narration: { summary: "x" }, effects: [...actingClockEffects(withNomination, { ...nomination, history: [] }, "nominated", 40)] });
+            expect(expiry(tolled)).toBeUndefined();
+            const restarted = apply(tolled, { source: "simulate", actor: "world", turn: 1, narration: { summary: "x" }, effects: [...actingClockEffects(tolled, nomination, "withdrawn", 90)] });
+            // The vacancy opened on day 30, inside the transition window, so its own 210 days run to 330: a withdrawal on day 90 restarts to 300 and never shortens that.
+            expect(expiry(restarted)).toBe(Math.max(actingLapseDay(90 - 60, 210), 90 + 210));
+            expect(expiry(restarted)).toBe(330);
+        });
+        it("restarts nothing for a nomination withdrawn before it was submitted, or for a third nomination", () => {
+            const { state, nominee } = actingState();
+            const early = nominationFor(state, nominee, "n0", ["vetting"]);
+            expect(actingClockEffects(state, early, "withdrawn", 50)).toEqual([]);
+            const crowded = {
+                ...state,
+                nominations: { ...state.nominations, a: nominationFor(state, nominee, "a", ["nominated"]), b: nominationFor(state, nominee, "b", ["nominated"]) },
+            };
+            const third = { ...nominationFor(state, nominee, "c", ["nominated"]), openedDay: 41 };
+            expect(actingClockEffects({ ...crowded, nominations: { ...crowded.nominations, c: third } }, third, "nominated", 60)).toEqual([]);
+        });
+    });
+    it("counts the 210 days from the vacancy, with the transition rule for a vacancy in the first 60 days", () => {
+        expect(actingLapseDay(200, 210)).toBe(410);
+        expect(actingLapseDay(60, 210)).toBe(270);
+        expect(actingLapseDay(59, 210)).toBe(149 + 210);
+        expect(actingLapseDay(30, 210)).toBe(120 + 210);
+        expect(actingLapseDay(0, 210)).toBe(90 + 210);
+        expect(actingLapseDay(-40, 210)).toBe(90 + 210);
+    });
+    it("stamps the lapse day from the day the vacancy opened, not the day somebody was named", () => {
+        const state = emptiedTreasury();
+        const vacant = { ...state, institutions: { ...state.institutions, "INST-TREASURY": { ...state.institutions["INST-TREASURY"], vacantDays: 100 } } };
+        const pick = deputyFor(vacant, TREASURY);
+        const seatedState = apply(vacant, appointActing(vacant, TREASURY, pick).packet);
+        expect(seatedState.institutions["INST-TREASURY"].actingExpiresDay).toBe(actingLapseDay(campaignDay(vacant) - 100, 210));
+    });
 });

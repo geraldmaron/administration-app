@@ -28,7 +28,11 @@ export type InabilityCount = {
 };
 /** The week's update of the inability watch: when the President's own side went under the line, if it has. */
 export declare function nextInabilityState(campaign: Campaign, ownIdentifiers: number): InabilityState;
-/** Whether a declaration is due this week. */
+/**
+ * Whether a declaration is due this week. Section 4 needs the Vice President to
+ * join the cabinet, so an empty vice presidency (a death before the successor
+ * is confirmed) leaves nobody to make it; the watch keeps running meanwhile.
+ */
 export declare function inabilityDeclarationDue(campaign: Campaign, state: InabilityState): boolean;
 /** Two thirds of each chamber, with the President's own caucus breaking by their identifiers. */
 export declare function countInability(campaign: Campaign, ownIdentifiers: number): InabilityCount;

@@ -9,6 +9,12 @@
  * half a year of weekly pressure on the inflation target and then it stops. It
  * is not a standing inflation rate, and nothing here writes the price level.
  *
+ * Lifting the tariff takes the wedge back out the same way: whatever share of
+ * the step had passed through by the lift phases back out over the next half
+ * year, as the shelf price itself returns (`trade-effects.ts#liftPriceMove`).
+ * So a tariff imposed and lifted, however many times, leaves the price level
+ * where it started, and one that stands keeps its wedge.
+ *
  * Both halves of the partner share are read off the recorded trade table, not
  * the live volumes: the live volumes fall under the tariff itself, so a step
  * read off them would print one figure in the preview and another once signed.
@@ -42,6 +48,8 @@ export type TariffPriceMove = {
   readonly thisWeek: number;
   /** Each administration tariff in force, with its step and how far it has phased in. */
   readonly measures: readonly TariffStepInForce[];
+  /** The rise lifted tariffs had passed through that is still phasing back out, as a fraction of the price level. */
+  readonly unwinding: number;
 };
 
 const round6 = (value: number) => Math.round(value * 1_000_000) / 1_000_000 + 0;
@@ -73,20 +81,34 @@ export function tariffPriceStep(partner: NationId, sector: TradeSectorId, rate: 
 }
 
 function isPricedTariff(measure: TradeMeasure): boolean {
-  return measure.kind === "tariff" && measure.origin === "us" && measure.liftedTurn === undefined;
+  return measure.kind === "tariff" && measure.origin === "us";
+}
+
+/** What a lifted tariff had passed through by its lift, and whether this week is still inside the half year it takes to come back out. */
+function unwound(campaign: Campaign, measure: TradeMeasure, step: number): number {
+  const lifted = measure.liftedTurn!;
+  const sinceLift = campaign.turn - lifted;
+  if (sinceLift < 0 || sinceLift >= TARIFF_PHASE_WEEKS) return 0;
+  const weeksIn = Math.max(0, Math.min(lifted - measure.imposedTurn, TARIFF_PHASE_WEEKS));
+  return (step * weeksIn) / TARIFF_PHASE_WEEKS;
 }
 
 export function projectTariffPrices(campaign: Campaign): TariffPriceMove {
   const measures: TariffStepInForce[] = [];
   let phasing = 0;
+  let unwinding = 0;
   for (const measure of Object.values(campaign.trade.measures)) {
     if (!isPricedTariff(measure)) continue;
     const age = campaign.turn - measure.imposedTurn;
     if (age < 0) continue;
     const step = tariffPriceStep(measure.target, measure.sector, measure.rate);
+    if (measure.liftedTurn !== undefined) {
+      unwinding += unwound(campaign, measure, step);
+      continue;
+    }
     measures.push({ measure: measure.id, step, weeksIn: Math.min(age, TARIFF_PHASE_WEEKS) });
     if (age < TARIFF_PHASE_WEEKS) phasing += step;
   }
   const step = round6(phasing);
-  return { step, thisWeek: round6((step * WEEKS_PER_YEAR) / TARIFF_PHASE_WEEKS), measures };
+  return { step, thisWeek: round6(((phasing - unwinding) * WEEKS_PER_YEAR) / TARIFF_PHASE_WEEKS), measures, unwinding: round6(unwinding) };
 }

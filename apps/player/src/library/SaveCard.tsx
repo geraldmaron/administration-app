@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { formatDate, isRetiredStatus, type CampaignSummary } from "@admin/player-core";
 import { worldNations } from "@admin/world";
-import { Badge, Button, CardLink, Column, Divider, Icon, Row, Surface, Text } from "@admin/ui";
+import { Button, CardLink, Column, Divider, Icon, Row, Surface, Tag, Text } from "@admin/ui";
 import { Field, TextInput } from "@admin/ui/forms";
 import { Fact } from "@admin/ui/record";
 import { SAVE_FILES_SUPPORTED } from "./save-file";
@@ -119,7 +119,7 @@ function Header({ summary, active, opens }: { readonly summary: CampaignSummary;
       <Text variant="title" flex={1} minWidth={160}>
         {summary.name}
       </Text>
-      {active ? <Badge status="gold">In play</Badge> : healthy ? null : <Badge status="danger" icon="caution">Can't be opened</Badge>}
+      {active ? <Tag tone="authority">In play</Tag> : healthy ? null : <Tag tone="danger" icon="caution">Can't be opened</Tag>}
       {opens ? (
         <Row gap="2xs">
           <Text variant="label" tone="accent">{active ? "Continue" : "Open"}</Text>

@@ -11,7 +11,7 @@ export type Scandal = {
     readonly origin: ScandalOrigin;
     /** What the story charges, whatever opened it; decides its gravity and which answer fits. */
     readonly charge: ScandalCharge;
-    /** The week it broke; `-1` for a flagged scandal with no date of its own. */
+    /** The week it broke; for a flagged scandal, the week the engine first saw the flag. */
     readonly brokeTurn: number;
     readonly stage: ScandalStage;
     /**
@@ -98,8 +98,8 @@ export declare function selectScandalForInquiry(campaign: Campaign): Scandal | u
 /** One live story as a board draws it: what it is, how long it has run, which desk keeps it alive and what it costs. */
 export type ScandalReading = {
     readonly scandal: Scandal;
-    /** Weeks since it broke, zero on the week itself; absent for a story with no date. */
-    readonly weeksRunning?: number;
+    /** Weeks since it broke, zero on the week itself. */
+    readonly weeksRunning: number;
     /** The most adversarial desk in the room: the one desk a story needs to stay alive. */
     readonly keptAliveBy: {
         readonly id: string;

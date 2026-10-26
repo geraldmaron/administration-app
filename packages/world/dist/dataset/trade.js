@@ -41,6 +41,14 @@ function partnerCap(from) {
 // Kazakhstan) still rounds to a nonzero share rather than disappearing.
 const MIN_SHARE = 0.0003;
 const MIN_DEPENDENCE = 0.0001;
+// How many partners a government's "top partners" names: the largest by
+// modeled share, the way the World Bank's WITS trade summary reports a
+// country's "Top 5 Export and Import partners" by trade value
+// (https://wits.worldbank.org/CountryProfile/en/Country/IRN/Year/LTST/Summary,
+// opened 2026-10-25). Every lane that clears the floors stays in
+// `tradeDependence`, which is where a flow's magnitude lives; the list is the
+// handful a reader would name, not everyone with a nonzero flow.
+const TOP_PARTNERS = 5;
 // Bilateral trade a government has embargoed does not show up as a smaller
 // number in customs data — it shows up as almost nothing, because the formal
 // channel is the thing sanctioned. Gravity (size and distance) cannot know
@@ -70,9 +78,18 @@ export function greatCircleKm(a, b) {
         Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
     return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
 }
+// A shared body cheapens trade by what it binds. The Shanghai Cooperation
+// Organization removes no tariff between its members and runs no common
+// market (the registry gives it no trade competence), so it adds no pull.
+// Counted, it lifted India past Turkey as Iran's partner on membership alone.
+// Every other political body without a trade competence (BRICS, the
+// AU, the G7) still counts here, as it did when the partner lists were cut;
+// leaving them all out reorders thirty-one countries' partners, a change to
+// the founding world that waits for a balance run.
+const NO_TRADE_PULL = new Set(["ORG-SCO"]);
 const sharedBlocs = (a, b) => {
     const theirs = new Set(b.memberships ?? []);
-    return (a.memberships ?? []).filter((org) => theirs.has(org)).length;
+    return (a.memberships ?? []).filter((org) => theirs.has(org) && !NO_TRADE_PULL.has(org)).length;
 };
 // The pull one economy exerts on another's trade. Asymmetric only through the
 // partner's size: a small state feels a giant neighbor far more than the
@@ -125,14 +142,19 @@ export function partnerShares(from, all) {
 export function deriveTrade(from, all) {
     const exposure = tradeExposure(from.stats);
     const shares = partnerShares(from, all);
-    const topPartners = [];
     const tradeDependence = {};
     for (const { partner, share } of shares) {
-        topPartners.push(partner);
         const dependence = round4(share * exposure);
         if (dependence >= MIN_DEPENDENCE)
             tradeDependence[partner] = dependence;
     }
+    // Ranked by share, before the lane to the President is appended out of
+    // order, so the list is the largest flows and nothing else.
+    const topPartners = shares
+        .slice()
+        .sort((a, b) => b.share - a.share || a.partner.localeCompare(b.partner))
+        .slice(0, TOP_PARTNERS)
+        .map((row) => row.partner);
     return { topPartners, tradeDependence };
 }
 // Applied at assembly, after geography and memberships (both are inputs) and

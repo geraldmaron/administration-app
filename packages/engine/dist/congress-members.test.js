@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { foundedForBalance } from "./balance-harness.js";
 import { recompose } from "./election-seating.js";
-import { seatCongressMembers } from "./congress-members.js";
+import { memberCandidates, seatCongressMembers, withMember } from "./congress-members.js";
 import { voteOn } from "./congress-votes.js";
 import { withRapportRead } from "./ties.js";
 import { legislativeAct } from "./legislative-acts.js";
@@ -91,5 +91,40 @@ describe("persistent congressional members", () => {
         const migrated = loadSave(createSave({ ...campaign, congress, bills: { old: { id: "old", act: "act-housing-supply", title: "Old law", sponsor: "administration", introducedTurn: 1, status: "law", passage: [oldVote] } } }));
         expect(migrated.congress.members).toHaveLength(535);
         expect(migrated.bills.old.passage).toEqual([oldVote]);
+    });
+});
+describe("a seat that changes hands between elections", () => {
+    const senator = campaign.congress.members.find((member) => member.chamber === "senate" && member.party !== "independent");
+    const other = senator.party === "democrat" ? "republican" : "democrat";
+    it("moves the chamber's count with a change of party, and only then", () => {
+        const person = memberCandidates(campaign.people, other)[0];
+        const moved = withMember(campaign.congress, senator.seat, { ...senator, person, party: other });
+        const room = campaign.congress.chambers.senate;
+        const anchor = campaign.congress.caucusAnchor;
+        expect(moved.chambers.senate.seats).toBe(room.seats);
+        expect(moved.chambers.senate.administration - room.administration).toBe(senator.party === anchor ? -1 : 1);
+        expect(moved.chambers.house).toEqual(campaign.congress.chambers.house);
+        expect(withMember(campaign.congress, senator.seat, { ...senator, person }).chambers).toEqual(campaign.congress.chambers);
+    });
+    it("offers only unseated, living, eligible people of the party, in a fixed order", () => {
+        const candidates = memberCandidates(campaign.people, other);
+        expect(candidates.length).toBeGreaterThan(0);
+        expect([...candidates].sort()).toEqual(candidates);
+        for (const id of candidates.slice(0, 20)) {
+            const runtime = campaign.people[id];
+            expect(runtime.alive && runtime.currentRole === undefined).toBe(true);
+        }
+    });
+    it("refills a vacancy at the next seating and keeps an appointee's date with the voters", () => {
+        const house = campaign.congress.members.find((member) => member.chamber === "house");
+        const due = { year: 2030, month: 11, day: 5 };
+        const vacancy = { since: campaign.calendar, path: "special-election", fillsOn: due };
+        const congress = withMember(withMember(campaign.congress, house.seat, { ...house, vacancy }), senator.seat, { ...senator, electionDue: due });
+        const people = { ...campaign.people, [house.person]: { ...campaign.people[house.person], alive: false } };
+        const reseated = seatCongressMembers(congress, campaign.states, people);
+        const refilled = reseated.members.find((member) => member.seat === house.seat);
+        expect(refilled.vacancy).toBeUndefined();
+        expect(refilled.person).not.toBe(house.person);
+        expect(reseated.members.find((member) => member.seat === senator.seat).electionDue).toEqual(due);
     });
 });

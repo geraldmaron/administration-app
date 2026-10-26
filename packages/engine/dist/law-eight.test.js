@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ACUTE_CONDITIONS, CONDITION_KINDS, STANDING_CONDITIONS, conditionFamily, isStandingCondition, } from "./condition-kinds.js";
+import { ACUTE_CONDITIONS, CONDITION_KINDS, HOME_EVENT_CONDITIONS, STANDING_CONDITIONS, conditionFamily, isStandingCondition, } from "./condition-kinds.js";
 import { STANDING_ONSET_READS, conditionImpactWrites } from "./conditions.js";
 import { campaignPhaseSequence } from "./turn-phases.js";
 import { usaCharter } from "@admin/world";
@@ -32,13 +32,17 @@ describe("Law 8 — no condition writes the stat it is gated on", () => {
     });
     it("splits the two families exhaustively and without overlap", () => {
         expect(new Set(CONDITION_KINDS).size).toBe(CONDITION_KINDS.length);
-        expect(CONDITION_KINDS.length).toBe(ACUTE_CONDITIONS.length + STANDING_CONDITIONS.length);
+        expect(CONDITION_KINDS.length).toBe(ACUTE_CONDITIONS.length + STANDING_CONDITIONS.length + HOME_EVENT_CONDITIONS.length);
         for (const kind of ACUTE_CONDITIONS) {
             expect(conditionFamily(kind), kind).toBe("acute");
             expect(isStandingCondition(kind), kind).toBe(false);
         }
         for (const kind of STANDING_CONDITIONS) {
             expect(conditionFamily(kind), kind).toBe("standing");
+        }
+        for (const kind of HOME_EVENT_CONDITIONS) {
+            expect(conditionFamily(kind), kind).toBe("event");
+            expect(isStandingCondition(kind), kind).toBe(false);
         }
     });
 });

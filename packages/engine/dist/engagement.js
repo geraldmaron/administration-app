@@ -1,6 +1,6 @@
 import { agendaTheme } from "@admin/world";
 import { selectNation, selectRelationship, selectRelationshipsFrom } from "./state.js";
-import { grudgeWeight } from "./relationships.js";
+import { grudgeWeight, relationshipAnchor } from "./relationships.js";
 import { liveTemperament, TEMPERAMENT_CENTER } from "./temperament.js";
 import { nationName } from "./naming.js";
 import { engagementLine } from "./wire.js";
@@ -14,6 +14,8 @@ export const ENGAGEMENT_KINDS = ["call", "envoy", "visit", "summit", "declaratio
  * cooldown and this bound are set together.
  */
 export const ENGAGEMENT_BOUND = 0.06;
+/** Planning ceiling above standing trust for routine contact, shared by calls and envoys. */
+export const ROUTINE_TRUST_SURPLUS = 0.06;
 // Planning values, set so a call is almost always taken and a joint declaration
 // only between governments that already trust each other. A summit is how two
 // tense governments meet, so it is the one that works mostly on tension. A
@@ -171,19 +173,29 @@ function receiveTerms(campaign, request) {
 }
 /** One reading's step, sized by the Secretary's craft and never past the family's bound. */
 const sized = (value, scale) => scale === 1 ? value : round4(Math.max(-ENGAGEMENT_BOUND, Math.min(ENGAGEMENT_BOUND, value * scale)));
+function routineTrust(campaign, from, to, trust) {
+    const edge = selectRelationship(campaign, from, to);
+    const anchor = relationshipAnchor(campaign, edge);
+    if (!anchor)
+        return 0;
+    const room = Math.max(0, ROUTINE_TRUST_SURPLUS - Math.max(0, edge.trust - anchor.trust));
+    return Math.min(room, trust * room / ROUTINE_TRUST_SURPLUS);
+}
 function warmthEffects(campaign, request, line) {
     const { warmth } = ENGAGEMENT_TERMS[request.kind];
     const scale = warmthScale(campaign, request);
     const deltas = { trust: sized(warmth.trust, scale), tension: sized(warmth.tension, scale), alignment: sized(warmth.alignment, scale) };
+    const onEdge = (from, to) => request.kind === "call" || request.kind === "envoy"
+        ? { ...deltas, trust: routineTrust(campaign, from, to, deltas.trust) } : deltas;
     return [
         {
             kind: "relationship",
             from: request.actor,
             to: request.target,
-            deltas,
+            deltas: onEdge(request.actor, request.target),
             addHistory: { turn: campaign.turn, kind: engagementHistoryKind(request.kind), description: line },
         },
-        { kind: "relationship", from: request.target, to: request.actor, deltas },
+        { kind: "relationship", from: request.target, to: request.actor, deltas: onEdge(request.target, request.actor) },
     ];
 }
 function namesOf(campaign, request) {

@@ -22,7 +22,7 @@ const gulfWar = () => {
 describe("the market levers against the markets left alone", () => {
     it("carries every lever and no column for waiting, with the Fed's own date said beside them", () => {
         const comparison = leverComparison(calm);
-        expect(comparison.columns.map((column) => column.id)).toEqual(["fed-ease", "fed-tighten", "reserve", "fuel-waiver"]);
+        expect(comparison.columns.map((column) => column.id)).toEqual(["fed-ease", "fed-tighten", "reserve", "reserve-limited", "fuel-waiver"]);
         expect(comparison.waiting).toMatch(/the Fed decides on its own on/);
         expect(comparison.untouched.crude).toBeGreaterThan(0);
     });
@@ -42,6 +42,19 @@ describe("the market levers against the markets left alone", () => {
         const reserve = comparison.columns.find((column) => column.id === "reserve");
         expect(reserve.refusal).toBeUndefined();
         expect(reserve.outlook.crude).toBeLessThan(comparison.untouched.crude);
+    });
+    it("offers a limited drawdown against a shortage, once for that shortage, and refuses it in a calm market", () => {
+        expect(leverComparison(calm).columns.find((column) => column.id === "reserve-limited").refusal).toMatch(/no supply is being lost/);
+        const war = gulfWar();
+        const comparison = leverComparison(war);
+        const limited = comparison.columns.find((column) => column.id === "reserve-limited");
+        expect(limited.refusal).toBeUndefined();
+        expect(limited.outlook.crude).toBeLessThan(comparison.untouched.crude);
+        const ordered = marketLeverAct(war, "reserve-limited");
+        if (!ordered.ok)
+            throw new Error(ordered.reason);
+        const after = apply(war, ordered.packet);
+        expect(marketLeverAct(after, "reserve-limited").ok).toBe(false);
     });
     it("projects the gallon cheaper under a fuel waiver, from the packet the commit applies", () => {
         const war = gulfWar();

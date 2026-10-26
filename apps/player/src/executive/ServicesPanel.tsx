@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import type { ProjectRow, ProjectsReading, ServiceRow, ServiceTone, ServicesReading } from "@admin/player-core";
-import { Badge, Column, HelpButton, Row, Surface, Text, useMedia, type InkRole } from "@admin/ui";
+import { Tag, Column, HelpButton, Row, Surface, Text, useMedia, type InkRole } from "@admin/ui";
 import { Segmented } from "@admin/ui/forms";
 import { BarKey } from "@admin/ui/dossier";
 import { InstitutionSeal, OwnLayer, RowTo } from "./parts";
@@ -36,7 +36,7 @@ function Name({ row, sealOf, sub }: { readonly row: { readonly name: string; rea
           {sub}
         </Text>
         <Row gap="xs">
-          <Badge status={STATUS[row.tone]}>{row.statusLabel}</Badge>
+          <Tag tone={STATUS[row.tone]}>{row.statusLabel}</Tag>
           {row.tone === "good" || row.tone === "neutral" ? null : (
             <OwnLayer>
               <HelpButton label={`Why ${row.name} is ${row.statusLabel.toLowerCase()}`} content={{ title: row.name, meaning: row.why, steps: [row.action] }} />

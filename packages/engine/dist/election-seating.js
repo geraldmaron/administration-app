@@ -27,33 +27,43 @@ export function simulated(turn, summary, effects) {
     return { source: "simulate", actor: "world", turn, narration: { summary }, effects };
 }
 /**
- * The seats a president's party loses for being the president's party.
- *
- * Structural rather than earned: the out party turns out at a midterm and the
- * in party does not, and an administration on exactly even standing still comes
- * back to a smaller caucus. Without it the midterm would be a referendum that a
- * merely adequate presidency wins, which is not what a midterm is.
+ * The Senate's structural midterm drag: the out party turns out at a midterm
+ * and the in party does not. The House carries the same fact inside
+ * `HOUSE_MIDTERM.neutralShare`.
  */
 const MIDTERM_PENALTY = 0.04;
+/** How far the count moves a third of the Senate; the class up and its close states bound the rest. */
+const SENATE_MIDTERM_SENSITIVITY = 0.05;
 /**
- * How far the count moves seats, per chamber.
+ * How a midterm moves the House, fitted to the post-1946 record.
  *
- * Most seats are not competitive, which is the fact these numbers encode. A
- * national swing of ten points does not move ten percent of a chamber; it
- * moves the handful of districts that were close, and the rest hold whatever
- * they held. The first version read the swing against the *whole* chamber and
- * produced midterms that moved seventy-seven House seats — larger than 1894,
- * every time, in both directions.
+ * Gallup's table of eighteen midterms (Jones, Gallup, September 12, 2018) puts
+ * the president's party's net House seats against the president's job approval
+ * at -97.7 + 1.41 per point of approval, correlation .66, residual standard
+ * deviation about 17 seats (the least-squares fit and its residual are computed
+ * from that table, an observation of the record and not a causal estimate). A
+ * 40% president loses about 41 on that line, a 60% one about 13, and a 69% one
+ * breaks even; the historical means are 37 below 50% and 14 above.
+ *
+ * A seat is lost where it is held and contestable, so the swing is a share of
+ * the seats the president's party holds in competitive states (and, in a good
+ * year, of the opposition's), not a flat count. That is what makes 2010
+ * (255 seats held, -63) and 2014 (201 held, -13) different elections at the
+ * same approval. The residual the line leaves, candidate quality and the year's
+ * issues, is not modeled, so a given approval returns a seat-count band across
+ * starting seats and geography rather than the line's scatter.
+ *
+ * `sensitivity` is the fraction of at-risk seats moved per point of ballot
+ * share (1.4 puts about 300 seats per unit of share on a typical House);
+ * `neutralShare` is the ballot share at which the president's party holds its
+ * seats; `ceiling` is the most of its at-risk seats a party loses (the postwar
+ * worst, 63 of 255 held in 2010, is a quarter of the seats and about 0.3 of
+ * those at risk). Planning values: the slope and neutral point put the
+ * ballot share of a term with six laws on the line at 40% and 60% approval
+ * (shares near .48 and .57), the ceiling the worst postwar loss. A term with
+ * fewer laws reads a lower share at the same approval and so loses more.
  */
-const SWING_SENSITIVITY = {
-    // Every seat is up, but only the marginal ones are in play. At 0.12 a
-    // ten-point national swing costs about ten House seats and a rout costs
-    // forty, which is the range the last century actually produced.
-    house: 0.12,
-    // A third of the chamber faces the voters, and it is apportioned by state
-    // rather than by population — so the same national swing moves far less of it.
-    senate: 0.05,
-};
+export const HOUSE_MIDTERM = { sensitivity: 1.4, neutralShare: 0.61, ceiling: 0.31 };
 /**
  * How far a presidential year moves seats, per chamber.
  *
@@ -110,12 +120,15 @@ function flippableSenateSeats(campaign, seatClass, losing) {
 }
 /** What the country does to one chamber, in seats. */
 export function seatSwing(share, chamber, composition, campaign, kind = "midterm") {
-    const sensitivity = kind === "midterm" ? SWING_SENSITIVITY[chamber] : COATTAIL_SENSITIVITY[chamber];
+    const sensitivity = kind === "midterm" ? SENATE_MIDTERM_SENSITIVITY : COATTAIL_SENSITIVITY[chamber];
     const penalty = kind === "midterm" ? MIDTERM_PENALTY : 0;
     const net = (share - 0.5) * 2 * sensitivity - penalty;
-    const moved = chamber === "house" && campaign && Object.keys(campaign.states).length > 0
-        ? Math.round(houseSeatsMoved(campaign, net))
-        : Math.round(composition.seats * net);
+    const geography = chamber === "house" && campaign && Object.keys(campaign.states).length > 0 ? campaign : undefined;
+    const moved = kind === "midterm" && chamber === "house"
+        ? midtermHouseSeatsMoved(share, composition, geography)
+        : geography
+            ? Math.round(houseSeatsMoved(geography, net))
+            : Math.round(composition.seats * net);
     const bounded = Math.max(-composition.administration, Math.min(composition.opposition, moved));
     if (chamber !== "senate" || !campaign)
         return bounded;
@@ -127,6 +140,24 @@ export function seatSwing(share, chamber, composition, campaign, kind = "midterm
     const losing = bounded < 0 ? anchor : otherMajorParty(anchor);
     const room = flippableSenateSeats(campaign, seatClass, losing);
     return Math.sign(bounded) * Math.min(Math.abs(bounded), room);
+}
+/** The fraction of at-risk seats a party loses (negative) or gains, bending toward the ceiling rather than passing it. */
+function boundedFraction(raw) {
+    const { ceiling } = HOUSE_MIDTERM;
+    return Math.sign(raw) * ceiling * (1 - Math.exp(-Math.abs(raw) / ceiling));
+}
+/** The seats a party holds that a swing could reach: each state's seats, less the share its lean keeps safe. */
+function seatsAtRisk(composition, campaign, side) {
+    if (!campaign)
+        return composition[side] * TYPICAL_COMPETITIVE_SHARE;
+    return Object.values(campaign.states).reduce((sum, runtime) => sum + (runtime.delegation?.house[side] ?? 0) * (1 - Math.abs(runtime.lean)), 0);
+}
+/** Without a map, the share of a party's seats the 2020s states leave in play (measured across founded campaigns). */
+const TYPICAL_COMPETITIVE_SHARE = 0.84;
+function midtermHouseSeatsMoved(share, composition, campaign) {
+    const fraction = boundedFraction((share - HOUSE_MIDTERM.neutralShare) * HOUSE_MIDTERM.sensitivity);
+    const exposed = seatsAtRisk(composition, campaign, fraction < 0 ? "administration" : "opposition");
+    return Math.round(exposed * fraction);
 }
 function houseSeatsMoved(campaign, net) {
     let moved = 0;

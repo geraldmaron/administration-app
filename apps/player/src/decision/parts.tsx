@@ -31,7 +31,7 @@ export const DEADLINE_KEY = [
 ] as const;
 
 /** A running window as a meter that empties: what is left of it, and the date it closes. */
-export function Deadline({ clock }: { readonly clock: MatterClock }) {
+export function ClockReading({ clock }: { readonly clock: MatterClock }) {
   const left = Math.max(0, clock.left);
   const tone = left <= clock.window * 0.25 ? "danger" : left <= clock.window * 0.5 ? "warningInk" : "accent";
   return (

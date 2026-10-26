@@ -93,6 +93,7 @@ export const QUESTION_TERMS = {
         "salience",
         "red-line",
         "survival",
+        "response",
     ],
     "unrest-onset": ["most-hurt-cohort", "driving-act"],
     "join-war": [...WAR_TERMS],

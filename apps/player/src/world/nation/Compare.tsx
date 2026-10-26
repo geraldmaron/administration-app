@@ -2,8 +2,7 @@ import { useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { PEER_RULES, place, type CompareMetricId, type PeerRule, type Subject } from "@admin/player-core";
 import type { NationId } from "@admin/world";
-import { Button, Column, Icon, Row, Text, type MatrixMetric, type MatrixRow } from "@admin/ui";
-import { Panel } from "@admin/ui/world";
+import { Pane, Button, Column, Icon, Row, Text, type MatrixMetric, type MatrixRow } from "@admin/ui";
 import { CompareChart } from "../../compare/CompareChart";
 import { RankedMatrix } from "../../compare/RankedMatrix";
 import { formatterFor } from "../../compare/format";
@@ -42,7 +41,7 @@ export function CompareSection({ campaign, nation, name }: { readonly campaign: 
   }));
   const subjects: readonly Subject[] = useMemo(() => [{ kind: "self" }, { kind: "nation", id: nation }], [nation]);
   return (
-    <Panel title={`${name} compared with the United States and similar countries`} icon="graph" lede="Public numbers are shown for every country. Estimates from our intelligence agencies only appear where they know enough.">
+    <Pane title={`${name} compared with the United States and similar countries`} icon="graph" line="Public numbers are shown for every country. Estimates from our intelligence agencies only appear where they know enough.">
       <ChooseOne label="Compare with" value={rule} onChange={setRule} options={PEER_RULES.map((entry) => ({ value: entry, label: RULE_LABELS[entry] }))} />
       <Text variant="caption" tone="secondary">
         {matrix.peers.empty ?? matrix.peers.basis}
@@ -70,6 +69,6 @@ export function CompareSection({ campaign, nation, name }: { readonly campaign: 
       ) : null}
       <ChooseOne label="Compare one number over time" value={metric} onChange={setMetric} options={matrix.columns.map((column) => ({ value: column.id, label: column.label }))} />
       <CompareChart campaign={campaign} metric={metric} subjects={subjects} window="term" height={220} />
-    </Panel>
+    </Pane>
   );
 }

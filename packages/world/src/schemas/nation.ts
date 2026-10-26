@@ -145,13 +145,11 @@ export const NationStats = z.object({
     imports: z.number().nonnegative(),
     balance: z.number(),
     topExports: z.array(SectorId).max(10),
-    // Not truncated to a display-sized list: a great power's real trade is
-    // spread thin across dozens of partners at a small share each, and this
-    // array is what the economic instrument ladder's tradeAccess gate reads,
-    // so a nation missing from it is one rungs 2-5 can never be aimed at.
-    // The played nation keeps every partner whose lane clears the
-    // derivation's share floor (trade.ts's partnerCap), so the bound is the
-    // roster: nobody trades with more governments than exist.
+    // The five largest modeled partner shares, in order: the cut the World
+    // Bank WITS Trade Summary uses for its top export and import partners.
+    // Every lane's magnitude, the President's included, is in
+    // tradeDependence, and that is what the instrument ladder's trade gate
+    // and the relationship edges read. The bound is the roster.
     topPartners: z.array(NationId).max(200),
     tradeDependence: z.record(NationId, z.number().min(0).max(1)),
   }),

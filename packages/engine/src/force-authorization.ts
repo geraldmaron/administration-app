@@ -17,6 +17,7 @@ import {
   carried,
   headOfGovernment,
   majorityOf,
+  seatedOf,
   type CongressResult,
 } from "./congress.js";
 import { voteOn } from "./congress-votes.js";
@@ -139,7 +140,7 @@ export function projectForceAuthorization(campaign: Campaign, target: NationId):
     voteOn(campaign, {
       chamber,
       appeal,
-      required: majorityOf(campaign.congress.chambers[chamber].seats),
+      required: majorityOf(seatedOf(campaign.congress, chamber)),
       // Nobody's measure, for the reason a treaty is not: the question is the
       // threat, which `threatAppeal` prices, and a chamber does not authorize
       // force for the President's party.

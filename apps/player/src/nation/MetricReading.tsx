@@ -1,9 +1,8 @@
 import type { ReactNode } from "react";
 import type { Campaign, EffectActor, MetricSet } from "@admin/engine";
 import { METRIC_MEANINGS, METRIC_PROVENANCE, formatDate, nowReadings, place, recordRows, type ReadingMove } from "@admin/player-core";
-import { Column, Pressable, ReadingFrame, Row, Text } from "@admin/ui";
+import { Pane, Column, Pressable, ReadingFrame, Row, Text } from "@admin/ui";
 import { Collection, Diverging } from "@admin/ui/nation";
-import { Panel } from "@admin/ui/world";
 import { CompareChart } from "../compare/CompareChart";
 import { go } from "../shell/navigate";
 import { VALENCE_TEXT, valenceOf } from "./format";
@@ -22,7 +21,7 @@ export function MetricReading({ campaign, metric, children }: { readonly campaig
   if (!reading) return null;
   const week = reading.week;
   return (
-    <Panel title={reading.label} icon="graph" lede={METRIC_MEANINGS[metric]}>
+    <Pane title={reading.label} icon="graph" line={METRIC_MEANINGS[metric]}>
       <Row gap="lg" wrap top>
         <Column gap="2xs" minWidth={160}>
           <Text variant="figure" tone={VALENCE_TEXT[valenceOf(reading.stance)]} tabular>
@@ -46,7 +45,7 @@ export function MetricReading({ campaign, metric, children }: { readonly campaig
       <Text variant="caption" tone="tertiary">
         {METRIC_PROVENANCE[metric]}
       </Text>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -96,8 +95,8 @@ export function MetricActs({ campaign, metric, actor, title, empty, bare }: { re
   );
   // A screen that frames the list in its own card asks for it bare.
   return bare ? list : (
-    <Panel title={title} icon="record">
+    <Pane title={title} icon="record">
       {list}
-    </Panel>
+    </Pane>
   );
 }

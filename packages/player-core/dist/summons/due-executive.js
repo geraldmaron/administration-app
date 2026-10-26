@@ -254,6 +254,18 @@ export function nextRung(pressure) {
 }
 /** Within this much of the next rung, the ladder is close enough to interrupt the week. */
 const RUNG_REACH = 0.08;
+/**
+ * Which approach the removal summons belongs to: the rung it is nearing, or
+ * nothing while pressure is out of reach. The summons is a level on the Desk;
+ * the world stops for it once per value of this, and again only after pressure
+ * has left reach and come back.
+ */
+export function removalEpisode(campaign) {
+    if (removalDue(campaign) === undefined)
+        return undefined;
+    const rung = nextRung(selectRemoval(campaign).pressure);
+    return rung === undefined ? undefined : `rung:${rung}`;
+}
 export const REMOVAL_TITLE = "Pressure to remove you is nearing the next step";
 export function removalDue(campaign) {
     const removal = selectRemoval(campaign);

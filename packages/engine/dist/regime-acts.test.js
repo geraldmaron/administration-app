@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { worldDataset } from "@admin/world";
 import { foundedForBalance } from "./balance-harness.js";
 import { coupTerms } from "./foreign-politics.js";
+import { declaresDeliverableArsenal } from "./instrument-gates.js";
 import { exposureChance, exposureEffects, exposureScandalFlag, nuclearArmed, operationsWeek, politicalActionPressure, sponsoredCoupTerm, } from "./regime-acts.js";
 import { REGIME_DIALS } from "./regime-dials.js";
 import { coercionClaims, NPC_REGIME_OPERATIONS } from "./coercion-tempo.js";
@@ -174,5 +175,26 @@ describe("removing a leader", () => {
         const effects = regimeActResolve(ctxFor(withFinding(withThreat(base, target), target), US, target, "kill"));
         expect(effects.some((effect) => effect.kind === "regime")).toBe(true);
         expect(effects.some((effect) => effect.kind === "leadership" || effect.kind === "person")).toBe(true);
+    });
+});
+describe("an undeclared arsenal", () => {
+    const { campaign } = foundedForBalance("regime-undeclared");
+    const israel = "ISR";
+    const withArsenal = (declared) => {
+        const runtime = campaign.nations[israel];
+        const arsenal = { ...runtime.stats.military.arsenal, warheads: 90, deliveryTriad: true, declared };
+        const stats = { ...runtime.stats, military: { ...runtime.stats.military, arsenal } };
+        return { ...campaign, nations: { ...campaign.nations, [israel]: { ...runtime, stats } } };
+    };
+    it("leaves a government that has never declared its warheads open to operations against its hold on power", () => {
+        expect(nuclearArmed(withArsenal(false), israel)).toBe(false);
+        // The dataset's own Israel: warheads and a means to deliver them, never declared.
+        expect(campaign.nations[israel].stats.military.arsenal.warheads).toBeGreaterThan(0);
+        expect(nuclearArmed(campaign, israel)).toBe(false);
+    });
+    it("refuses the same government once it declares them, the test force applies", () => {
+        expect(nuclearArmed(withArsenal(true), israel)).toBe(true);
+        expect(declaresDeliverableArsenal(withArsenal(true).nations[israel].stats.military.arsenal)).toBe(true);
+        expect(declaresDeliverableArsenal(withArsenal(false).nations[israel].stats.military.arsenal)).toBe(false);
     });
 });

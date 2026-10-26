@@ -4,7 +4,7 @@ import { worldDataset } from "@admin/world";
 import { foundingOptions, openingChoices } from "../campaign/founding-options";
 import { GLOSSARY } from "../glossary/index";
 import { entityEntries, resolveRef } from "./entity-entries";
-import { SEARCH_GROUPS, chapterEntries, groupResults, placeEntries, search, termEntries } from "./search-index";
+import { SEARCH_GROUPS, chapterEntries, groupResults, placeEntries, search, termEntries, verbEntries } from "./search-index";
 const built = new Set(["/", "/brief", "/washington", "/nation", "/world", "/record", "/founding", "/administrations", "/settings", "/recovery"]);
 const entries = [...placeEntries((href) => built.has(href)), ...termEntries(GLOSSARY)];
 describe("search", () => {
@@ -12,6 +12,12 @@ describe("search", () => {
         const hrefs = entries.flatMap((entry) => (entry.kind === "place" ? [entry.href] : []));
         expect(hrefs).toContain("/settings");
         expect(hrefs).not.toContain("/washington/congress");
+    });
+    it("offers verbs whose screen exists and sends each to that screen", () => {
+        const verbs = verbEntries((href) => href === "/washington/office/press" || href === "/nation/budget");
+        expect(verbs.map((verb) => verb.title)).toEqual(["Answer reporters", "Set the budget"]);
+        const found = search(verbs, "reporters")[0];
+        expect(found?.kind === "verb" && found.href).toBe("/washington/office/press?view=respond");
     });
     it("lists places for an empty query", () => {
         const results = search(entries, "  ");

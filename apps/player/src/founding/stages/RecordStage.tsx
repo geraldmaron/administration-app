@@ -5,7 +5,7 @@ import { Column, Meter, ReadingFrame, Text } from "@admin/ui";
 import { ChoiceList } from "@admin/ui/forms";
 import { withLeader, type FoundingDraft } from "../draft";
 import { CAREER_GLYPH, CardGlyph, ROUTE_GLYPH } from "../glyphs";
-import { Commits, Reading, StageGrid } from "../parts";
+import { Commits, TitledReading, StageGrid } from "../parts";
 
 type Update = (change: (draft: FoundingDraft) => FoundingDraft) => void;
 
@@ -35,7 +35,7 @@ function LeaderReadings({ attributes }: { readonly attributes: LeaderAttributes 
   const unread = LEADER_READINGS.filter((reading) => !attributeIsRead(reading.key, "president"));
   const word = (reading: (typeof LEADER_READINGS)[number]) => (reading.judged ? attributeVerdict(attributes[reading.key]) : amountWord(attributes[reading.key]));
   return (
-    <Reading icon="graph" title="What your life story gives you">
+    <TitledReading icon="graph" title="What your life story gives you">
       <ReadingFrame
         title="Your readings"
         unit="Each on a scale from none to the most there is"
@@ -56,7 +56,7 @@ function LeaderReadings({ attributes }: { readonly attributes: LeaderAttributes 
           {unread.map((reading) => `${reading.label} (${word(reading).toLowerCase()})`).join(" and ")} {unread.length === 1 ? "is" : "are"} part of your life story. {unread.length === 1 ? "It doesn't" : "They don't"} count once you're President.
         </Text>
       ) : null}
-    </Reading>
+    </TitledReading>
   );
 }
 

@@ -1,14 +1,17 @@
 import type { BudgetAccount } from "@admin/engine";
 import type { DraftAccountRow } from "@admin/player-core";
-import { Button, Column, Icon, ReadingFrame, Row, Slider, Surface, Text } from "@admin/ui";
+import { Pane, Button, Column, Icon, ReadingFrame, Row, Slider, Surface, Text } from "@admin/ui";
+import { InlineField } from "@admin/ui/forms";
 import { Track, shareSegments } from "@admin/ui/nation";
 import { StackedBar, segmentKeyEntries } from "@admin/ui/news";
-import { Panel } from "@admin/ui/world";
 import { ACCOUNT_GLYPH } from "../glyphs";
 import { markEntry } from "../keys";
 
 /** A twentieth of a point of national income: the finest step a line is drafted in. */
 export const DRAFT_STEP = 0.0005;
+
+/** A share snapped to the drafting step, on a grid through today's amount so stepping from an amount off a round step stays on it. */
+export const onDraftGrid = (share: number, inForce: number): number => inForce + Math.round((share - inForce) / DRAFT_STEP) * DRAFT_STEP;
 
 /** A share of national income as the table prints it, to a hundredth of a point. */
 export const incomeShare = (share: number): string => `${(share * 100).toFixed(2)}%`;
@@ -20,6 +23,8 @@ export function pointChange(change: number): string {
 }
 
 const DIRECTION_WORDS = { building: "Builds it up", holding: "Keeps it level", "drawing down": "Lets it run down" } as const;
+/** A share as hundredths of a point, rounded so a restored line equals today's exactly. */
+const points = (share: number): number => Number((share * 100).toFixed(2));
 const isMoved = (row: DraftAccountRow): boolean => Math.abs(row.draft - row.inForce) >= DRAFT_STEP / 2;
 
 /**
@@ -28,7 +33,7 @@ const isMoved = (row: DraftAccountRow): boolean => Math.abs(row.draft - row.inFo
  * the account (gold), so the request is read against both.
  */
 function Line({ row, onChange }: { readonly row: DraftAccountRow; readonly onChange: (account: BudgetAccount, share: number) => void }) {
-  const set = (share: number) => onChange(row.account, Math.min(row.cap, Math.max(0, Math.round(share / DRAFT_STEP) * DRAFT_STEP)));
+  const set = (share: number) => onChange(row.account, Math.min(row.cap, Math.max(0, onDraftGrid(share, row.inForce))));
   const at = (share: number) => (row.cap > 0 ? share / row.cap : 0);
   return (
     <Surface level={isMoved(row) ? "raised" : "base"} pad="md" accentEdge={isMoved(row) ? "accent" : undefined}>
@@ -42,9 +47,16 @@ function Line({ row, onChange }: { readonly row: DraftAccountRow; readonly onCha
             </Text>
           </Column>
           <Column alignItems="flex-end">
-            <Text variant="title" tabular>
-              {incomeShare(row.draft)}
-            </Text>
+            <InlineField
+              label={`${row.name} amount, in points of national income`}
+              value={points(row.draft)}
+              baseline={points(row.inForce)}
+              min={0}
+              max={points(row.cap)}
+              step={DRAFT_STEP * 100}
+              format={(pts) => `${pts.toFixed(2)}%`}
+              onChange={(pts) => set(pts / 100)}
+            />
             <Text variant="caption" tone="secondary">
               {pointChange(row.draft - row.inForce)}
             </Text>
@@ -79,7 +91,7 @@ export function AllocationEditor({ rows, onChange, onReset }: { readonly rows: r
   const draft = rows.reduce((sum, row) => sum + row.draft, 0);
   const split = shareSegments(rows.map((row) => ({ id: row.account, label: row.name, share: row.draft, figure: `${((row.draft / draft) * 100).toFixed(0)}%` })));
   return (
-    <Panel title="How the money is split" icon="budget" lede="Drag a line, or use the arrow keys, to set how much it gets each year. Amounts are a share of national income, which is everything the country earns in a year." aside={<Button kind="quiet" size="compact" icon="return" disabled={!moved} onPress={onReset}>Reset to the current budget</Button>}>
+    <Pane title="How the money is split" icon="budget" line="Each line's amount is a share of national income, which is everything the country earns in a year." actions={<Button kind="quiet" size="compact" icon="return" disabled={!moved} onPress={onReset}>Reset to the current budget</Button>}>
       {draft > 0 ? (
         <ReadingFrame title="Where your proposed money goes" unit="% of the total you propose" legend={segmentKeyEntries(split)} help={{ meaning: "The bar is your whole proposal, cut into the five budget lines. A wider part is a bigger share of the money." }}>
           <StackedBar label="Where your proposed money goes" segments={split} height={14} />
@@ -102,6 +114,6 @@ export function AllocationEditor({ rows, onChange, onReset }: { readonly rows: r
         </Text>
         <Text variant="label">{pointChange(draft - inForce)}</Text>
       </Row>
-    </Panel>
+    </Pane>
   );
 }

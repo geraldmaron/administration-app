@@ -1,7 +1,7 @@
 import type { Campaign } from "@admin/engine";
 import { POSTURE_WORDS, commandFile, place, type CommandFile, type CommandZoneForces } from "@admin/player-core";
-import { Button, Column, Empty, Icon, Page, ReadingFrame, Row, Sheet, Text } from "@admin/ui";
-import { BarRow, BarScale, Panel, StateChip, Unread } from "@admin/ui/world";
+import { Pane, Button, Column, Empty, Icon, Page, ReadingFrame, Row, Sheet, Text } from "@admin/ui";
+import { BarRow, BarScale, StateChip, Unread } from "@admin/ui/world";
 import { BackButton } from "../shell/BackButton";
 import { ActsReceipt, useWorldActs } from "../world/acts";
 import { AssetLine } from "../world/forces";
@@ -16,7 +16,7 @@ const pct = (share: number) => `${Math.round(share * 100)}%`;
 function Header({ file }: { readonly file: CommandFile }) {
   const { card } = file;
   return (
-    <Panel title="Alert level and commander" icon="shield" aside={<TopicLaw topic="commands" />}>
+    <Pane title="Alert level and commander" icon="shield" actions={<TopicLaw topic="commands" />}>
       <Row gap="sm" wrap>
         <StateChip valence={POSTURE_VALENCE[card.effective]} icon={card.effective === "routine" ? "favorable" : card.effective === "heightened" ? "caution" : "adverse"}>{POSTURE_WORDS[card.effective]}</StateChip>
         {card.effective !== card.ordered ? <Text variant="caption" tone="secondary">You ordered {card.ordered}. It stays at {card.effective} while it's in action.</Text> : null}
@@ -34,11 +34,11 @@ function Header({ file }: { readonly file: CommandFile }) {
       <Text variant="caption" tone="secondary">{file.chainBreaks.length > 0 ? file.chainBreaks.join(" ") : "Your orders reach this region in full."}</Text>
       {file.engagedAgainst.length + file.engagedToward.length > 0 ? <Text variant="body">In action{file.engagedAgainst.length > 0 ? ` against ${file.engagedAgainst.join(", ")}` : ""}{file.engagedToward.length > 0 ? `${file.engagedAgainst.length > 0 ? ". Forces are also committed toward " : ", with forces committed toward "}${file.engagedToward.join(", ")}` : ""}.</Text> : null}
       {file.reliefs > 0 ? <Text variant="caption" tone="warning">You've removed {file.reliefs} {file.reliefs === 1 ? "commander" : "commanders"} here. Each one makes your orders slower to get through.</Text> : null}
-    </Panel>
+    </Pane>
   );
 }
 
-function Zone({ zone }: { readonly zone: CommandZoneForces }) {
+function ForceZone({ zone }: { readonly zone: CommandZoneForces }) {
   return (
     <Column gap="xs" paddingVertical="sm" borderTopWidth={1} borderTopColor="borderColor">
       <Text variant="label">{zone.name}</Text>
@@ -59,25 +59,25 @@ function Zone({ zone }: { readonly zone: CommandZoneForces }) {
 
 function Forces({ file }: { readonly file: CommandFile }) {
   return (
-    <Panel title="Forces by zone and base" icon="mapPin" count={file.zones.length}>
-      {file.zones.length === 0 ? <Unread>{`No US forces are in this area yet. Troops you send to ${file.card.abbr}'s area, or base there, will show up here.`}</Unread> : file.zones.map((zone) => <Zone key={zone.zone} zone={zone} />)}
+    <Pane title="Forces by zone and base" icon="mapPin" count={file.zones.length}>
+      {file.zones.length === 0 ? <Unread>{`No US forces are recorded in ${file.card.abbr}'s area.`}</Unread> : file.zones.map((zone) => <ForceZone key={zone.zone} zone={zone} />)}
       {file.assignment.length > 0 ? (
         <ReadingFrame title="Forces from each service" unit={`Share of each service's total force that is under ${file.card.abbr}`} help={{ meaning: `Each bar is how much of that service's whole force is assigned to ${file.card.abbr}. Every bar uses the same scale, 0 to 100%.` }}>
           <BarScale from="0%" to="100%" unit="Of the service" labelWidth={140} />
           {file.assignment.map((row) => <BarRow key={row.branch} label={row.label} value={row.share} figure={pct(row.share)} labelWidth={140} />)}
         </ReadingFrame>
       ) : null}
-    </Panel>
+    </Pane>
   );
 }
 
 function Area({ file }: { readonly file: CommandFile }) {
   return (
-    <Panel title="Area it covers" icon="world" count={file.nations.length}>
+    <Pane title="Area it covers" icon="world" count={file.nations.length}>
       {file.nations.length === 0 ? <Text variant="body" tone="secondary">No country or sea is part of this command's area yet.</Text> : <Row gap="xs" wrap>{file.nations.map((nation) => <NationChip key={nation.id} nation={nation.id} name={nation.name} />)}</Row>}
       {file.amendments.map((row) => <Text key={`${row.nation}-${row.date}`} variant="caption" tone="secondary">{row.date}: {row.nation} moved from {row.from} to {row.to}. {row.rationale}</Text>)}
       {file.missions.length > 0 ? <Text variant="caption" tone="secondary">Ongoing missions: {file.missions.join("; ")}.</Text> : null}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -104,20 +104,20 @@ export function CommandScreen({ campaign, id, action, onAction }: { readonly cam
     );
   }
   return (
-    <Page title={file.card.abbr} eyebrow="World · security · military command" icon="shield" lede={file.card.name} emblem={<SealOf id={file.card.id} name={file.card.name} size={64} label={`Emblem of ${file.card.name}`} />} wide>
+    <Page title={file.card.name} eyebrow={`World · security · ${file.card.abbr}`} icon="shield" lede={`${POSTURE_WORDS[file.card.effective]} alert${file.card.hasArea ? ` across ${file.nations.length} countries` : " on a worldwide mission"}.`} emblem={<SealOf id={file.card.id} name={file.card.name} size={64} label={`Emblem of ${file.card.name}`} />} wide>
       <Sheet open={action !== undefined} onClose={() => open(undefined)} wide eyebrow={file.card.abbr} title={ACTS.find((entry) => entry.act === action)?.label ?? "Command action"}>
         {acts.committed ? <ActsReceipt acts={{ ...acts, dismiss: () => open(undefined) }} again={`Back to ${file.card.abbr}`} /> : action ? <CommandActPanel key={action} act={action} campaign={campaign} file={file} acts={acts} onClose={() => open(undefined)} /> : null}
       </Sheet>
       <Row><BackButton parent={place.security()} parentLabel="Security" /></Row>
+      <MapPanelSlot title={`${file.card.abbr}'s area`} lens="forces" marks="forces" camera={file.camera} {...(file.selection ? { selection: file.selection } : {})} note="Countries in this command's area are highlighted and shaded by how many US forces they host.">
+        <Text variant="caption" tone="secondary">{file.nations.length} {file.nations.length === 1 ? "country" : "countries"} in its area. {file.zones.length} {file.zones.length === 1 ? "zone has" : "zones have"} forces.</Text>
+      </MapPanelSlot>
       <Header file={file} />
-      <Panel title="What you can do" icon="sign">
+      <Pane title="What you can do" icon="sign">
         <Row gap="sm" wrap>
           {ACTS.filter((entry) => file.card.hasArea || entry.act !== "amend").map((entry) => <Button key={entry.act} kind="secondary" size="compact" onPress={() => open(entry.act)}>{entry.label}</Button>)}
         </Row>
-      </Panel>
-      <MapPanelSlot title={`${file.card.abbr}'s area`} lens="forces" marks="forces" camera={file.camera} {...(file.selection ? { selection: file.selection } : {})} note="Countries in this command's area stand out from the rest. Each is shaded by how many US forces it hosts. Open one to see its details.">
-        <Text variant="caption" tone="secondary">{file.nations.length} {file.nations.length === 1 ? "country" : "countries"} in its area. {file.zones.length} {file.zones.length === 1 ? "zone has" : "zones have"} forces.</Text>
-      </MapPanelSlot>
+      </Pane>
       <Forces file={file} />
       <Area file={file} />
     </Page>

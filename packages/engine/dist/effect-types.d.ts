@@ -13,7 +13,7 @@ import type { PositionAssessment } from "./position-assessment.js";
 import type { CityId, Grudge, NationId, PersonId, RelationshipEvent, RoleId, SectorId, StateId, TreatyId } from "@admin/world";
 import type { OversightEffect } from "./oversight.js";
 import type { FeedEffect } from "./record-effects.js";
-import type { AppropriationEffect, CapRaiseEffect, CommitmentEffect, ConditionEffect, EmergencyEffect, ExternalEmergencyEffect, FundingLapseEffect, OrderFramingEffect, PendingRuleEffect, CourtCaseEffect, CourtProceedingEffect, SolicitorGeneralEffect, PursuitEffect } from "./record-effects.js";
+import type { AppropriationEffect, CapRaiseEffect, CommitmentEffect, ConditionEffect, EmergencyEffect, AuthorityClockEffect, ExternalEmergencyEffect, FundingLapseEffect, OrderFramingEffect, PendingRuleEffect, CourtCaseEffect, CourtProceedingEffect, SolicitorGeneralEffect, PursuitEffect } from "./record-effects.js";
 import type { CaseEffect } from "./case-types.js";
 import type { TieEffect } from "./ties.js";
 export type { TieEffect };
@@ -146,6 +146,10 @@ export type AttentionEffect = {
     readonly defer?: Readonly<Record<string, GameDate>>;
     /** Matter ids the President has taken back up before their date. */
     readonly resume?: readonly string[];
+    /** Matter id to the signature the world has just stopped for it as. */
+    readonly notice?: Readonly<Record<string, string>>;
+    /** Matter ids whose notice no longer stands: gone from the desk, or changed form. */
+    readonly forget?: readonly string[];
 };
 export type IssuedActEffect = {
     readonly kind: "issuedAct";
@@ -341,7 +345,7 @@ export type DocketEffect = {
     readonly admit?: readonly DocketEntry[];
     readonly remove?: readonly string[];
 };
-export type Effect = ImpactEventEffect | BorderIncidentEffect | BlockadeEffect | NpcTempoEffect | HullLossEffect | MetricEffect | RelationshipEffect | NationStatEffect | PopulationTollEffect | CityEffect | StateEffect | SectorEffect | FlagEffect | PersonEffect | TieEffect | CabinetEffect | PolicyEffect | BudgetEffect | OperatorEffect | AlignmentEffect | OpinionEffect | RemovalEffect | ActingEffect | CabinetAgendaEffect | CycleEffect | MacroStateEffect | ExternalShockEffect | BooksEffect | DebtLimitEffect | ChoiceBorrowingEffect | CohortEffect | ConflictEffect | InstitutionEffect | NominationEffect | TradeEffect | CommandEffect | IntelligenceEffect | AssessmentEffect | FindingEffect | WarPowersEffect | ScenarioFamilyEffect | CommitmentEffect | ConditionEffect | EmergencyEffect | ExternalEmergencyEffect | MilitaryConstructionProjectEffect | OffshoreLeaseSaleEffect | CleanPowerPurchaseEffect | BlockedAssetEffect | PursuitEffect | OrderEffect | CongressEffect | BillEffect | TermClockEffect | PressEffect | TreatyEffect | OrderReviewEffect | OrderRescissionEffect | OrderRemedyEffect | CourtLimitedReliefEffect | OrderFramingEffect | PendingRuleEffect | CourtCaseEffect | CourtProceedingEffect | SolicitorGeneralEffect | CapRaiseEffect | FundingLapseEffect | AppropriationEffect | GodModeEffect | RulesEffect | OversightEffect | AttentionEffect | DocketEffect | CaseEffect | IssuedActEffect | PledgeEffect | ForecastEffect | MarketsEffect | MunitionsEffect | LeadershipEffect | MembershipEffect | RegimeEffect | IndictmentEffect | FeedEffect;
+export type Effect = ImpactEventEffect | BorderIncidentEffect | BlockadeEffect | NpcTempoEffect | HullLossEffect | MetricEffect | RelationshipEffect | NationStatEffect | PopulationTollEffect | CityEffect | StateEffect | SectorEffect | FlagEffect | PersonEffect | TieEffect | CabinetEffect | PolicyEffect | BudgetEffect | OperatorEffect | AlignmentEffect | OpinionEffect | RemovalEffect | ActingEffect | CabinetAgendaEffect | CycleEffect | MacroStateEffect | ExternalShockEffect | BooksEffect | DebtLimitEffect | ChoiceBorrowingEffect | CohortEffect | ConflictEffect | InstitutionEffect | NominationEffect | TradeEffect | CommandEffect | IntelligenceEffect | AssessmentEffect | FindingEffect | WarPowersEffect | ScenarioFamilyEffect | CommitmentEffect | ConditionEffect | EmergencyEffect | AuthorityClockEffect | ExternalEmergencyEffect | MilitaryConstructionProjectEffect | OffshoreLeaseSaleEffect | CleanPowerPurchaseEffect | BlockedAssetEffect | PursuitEffect | OrderEffect | CongressEffect | BillEffect | TermClockEffect | PressEffect | TreatyEffect | OrderReviewEffect | OrderRescissionEffect | OrderRemedyEffect | CourtLimitedReliefEffect | OrderFramingEffect | PendingRuleEffect | CourtCaseEffect | CourtProceedingEffect | SolicitorGeneralEffect | CapRaiseEffect | FundingLapseEffect | AppropriationEffect | GodModeEffect | RulesEffect | OversightEffect | AttentionEffect | DocketEffect | CaseEffect | IssuedActEffect | PledgeEffect | ForecastEffect | MarketsEffect | MunitionsEffect | LeadershipEffect | MembershipEffect | RegimeEffect | IndictmentEffect | FeedEffect;
 export type EffectPacket = {
     readonly source: EffectSource;
     readonly actor: EffectActor;
@@ -384,4 +388,13 @@ export type EffectPacket = {
      * the Record can leave it out without changing any causal id.
      */
     readonly background?: boolean;
+    /**
+     * Presentation bookkeeping: what the President has been shown, not anything
+     * the administration did. It travels the same gate but leaves no ledger entry
+     * and takes no number from the causal sequence, because that sequence is
+     * part of the result and what was shown depends on the player's attention
+     * settings. Its provenance is its key: the matter ids in `provenance.entities`
+     * and the signatures in the effect.
+     */
+    readonly presentation?: boolean;
 };

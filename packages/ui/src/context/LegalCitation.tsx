@@ -17,7 +17,7 @@ export type CitationView = {
  * takes the interface face rather than the copy-string monospace.
  */
 export function LegalCitation({ citation, onPress, compact }: { readonly citation: CitationView; readonly onPress?: () => void; readonly compact?: boolean }) {
-  const chip = { flexDirection: "row", alignItems: "center", gap: "xs", alignSelf: "flex-start", maxWidth: "100%", paddingHorizontal: "sm", paddingVertical: "2xs", borderWidth: 1, borderColor: "goldRule", borderRadius: "chip" } as const;
+  const chip = { flexDirection: "row", alignItems: "center", gap: "xs", alignSelf: "flex-start", maxWidth: "100%", paddingHorizontal: "sm", paddingVertical: "2xs", minHeight: 24, borderWidth: 1, borderColor: "goldRule", borderRadius: "chip" } as const;
   const words = (pressable: boolean) => (
     <>
       <Icon name="law" size={14} tone="gold" weight="fill" />

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { selectFamilyRun, type Campaign } from "@admin/engine";
 import { ARC_DISPOSITION_WORDS, formatDate, formatMoney, place, recordEntry, type ArcRow, type ImpactReportRow } from "@admin/player-core";
-import { Badge, Button, CardLink, Column, Empty, EntityLink, Icon, PressRow, Row, Sheet, Surface, Text } from "@admin/ui";
+import { Button, CardLink, Column, Empty, EntityLink, Icon, PressRow, Reading, Row, Sheet, Surface, Tag, Text } from "@admin/ui";
 import { Fact } from "@admin/ui/record";
 import { go } from "../news/story-parts";
 
@@ -26,17 +26,17 @@ function ImpactSheet({ campaign, report, onClose }: { readonly campaign: Campaig
             <EntityLink label={report.nationName} icon="flag" href={event.spec.nation === campaign.founding.nation ? place.nation() : place.country(event.spec.nation)} onPress={() => go(event.spec.nation === campaign.founding.nation ? place.nation() : place.country(event.spec.nation))} />
             {cause ? <EntityLink label={`What caused it: ${cause.headline}`} icon="record" href={place.event(cause.id)} onPress={() => { onClose(); go(place.event(cause.id)); }} /> : <Text variant="caption" tone="secondary">The Record doesn't show what caused this.</Text>}
           </Row>
-          <Text variant="caption" tone="secondary">These numbers are ranges because early counts are guesses. Each update can change them and how sure the agency is. They aren't the game's hidden totals.</Text>
+          <Text variant="caption" tone="secondary">These numbers are ranges because early counts are guesses. Each update can change them and how sure the agency is.</Text>
           {event.reports.map((file) => (
             <Surface key={file.revision} level="raised" pad="md">
               <Column gap="xs">
                 <Text variant="label">{`${formatDate(file.date)} · Update ${file.revision}`}</Text>
                 <Text variant="caption" tone="secondary">{`${file.stage} · ${file.confidence} confidence`}</Text>
                 <Row gap="md" wrap>
-                  <Fact label="Reported deaths" value={range(file.deaths.low, file.deaths.high)} />
-                  <Fact label="Injured or severely ill" value={range(file.injured.low, file.injured.high)} />
-                  <Fact label="People without services" value={range(file.serviceDisruption.low, file.serviceDisruption.high)} />
-                  <Fact label="Estimated economic loss" value={`${formatMoney(file.lossUSDm.low)}–${formatMoney(file.lossUSDm.high)}`} />
+                  <Reading name="Reported deaths" value={range(file.deaths.low, file.deaths.high)} basis="estimate" />
+                  <Reading name="Injured or severely ill" value={range(file.injured.low, file.injured.high)} basis="estimate" />
+                  <Reading name="People without services" value={range(file.serviceDisruption.low, file.serviceDisruption.high)} basis="estimate" />
+                  <Reading name="Estimated economic loss" value={`${formatMoney(file.lossUSDm.low)}–${formatMoney(file.lossUSDm.high)}`} basis="estimate" />
                 </Row>
                 <Text variant="caption" tone="secondary">{file.basis}</Text>
               </Column>
@@ -61,12 +61,12 @@ export function ImpactReportList({ campaign, reports, initial = 6 }: { readonly 
             <Text variant="label">{report.title}</Text>
             <Row gap="sm" wrap>
               <Text variant="caption" tone="secondary">{report.nationName}</Text>
-              <Badge status="pending" icon="pending">{report.stage}</Badge>
-              <Badge status="info">{`${report.confidence} confidence`}</Badge>
+              <Tag tone="pending" icon="pending">{report.stage}</Tag>
+              <Tag tone="info">{`${report.confidence} confidence`}</Tag>
               <Text variant="caption" tone="tertiary">{formatDate(report.reported)}</Text>
             </Row>
             <Row gap="md" wrap>
-              {report.figures.map((figure) => <Fact key={figure.label} label={figure.label} value={figure.range} />)}
+              {report.figures.map((figure) => <Reading key={figure.label} name={figure.label} value={figure.range} basis="estimate" />)}
             </Row>
           </Column>
         </CardLink>

@@ -1,6 +1,6 @@
 import { NATIONAL_OUTLETS, outletDisposition } from "./press-outlets.js";
 import { outletActReading, recentActPull } from "./press-beliefs.js";
-import { markedFlags } from "./marked-flags.js";
+import { flagMarker, markedFlags } from "./marked-flags.js";
 import { scandalAnswer } from "./scandal-response.js";
 import { datedScandalIdentities, flagIdentity, scandalFlags, SCANDAL_GRAVITY, SCANDAL_LIVE_FLAG, } from "./scandal-origins.js";
 export { CABINET_LEAK_STORY_SHARE, SCANDAL_GRAVITY, SCANDAL_LIVE_FLAG } from "./scandal-origins.js";
@@ -152,18 +152,13 @@ function scandalAt(identity, campaign) {
     const reading = heat(campaign, identity);
     return { ...withoutUndefined(identity), gravity, stage: reading.stage, intensity: round3(reading.heat * gravity) };
 }
-/**
- * A flag-authored scandal with no date on it, standing at full weight for as
- * long as its flag does: the reading this channel has always had, kept for
- * every flag set by something that does not stamp a marker.
- */
-function undatedFlagScandal(flag) {
-    return { ...withoutUndefined(flagIdentity(flag, -1)), gravity: SCANDAL_GRAVITY.flagged, stage: "developing", intensity: 1 };
-}
 /** Every scandal this campaign carries, broken or long since dead. */
 export function selectScandals(campaign) {
     const dated = datedScandalIdentities(campaign).map((identity) => scandalAt(identity, campaign));
-    const flagged = scandalFlags(campaign).map(({ flag, setTurn }) => setTurn === undefined ? undatedFlagScandal(flag) : scandalAt(flagIdentity(flag, setTurn), campaign));
+    // A flag with no date is not a story yet: `scandalPhase` stamps it the first
+    // week it is seen, and the story starts from that stamp rather than standing
+    // at full weight for as long as the flag does.
+    const flagged = scandalFlags(campaign).flatMap(({ flag, setTurn }) => setTurn === undefined ? [] : [scandalAt(flagIdentity(flag, setTurn), campaign)]);
     return [...dated, ...flagged];
 }
 /** The scandals still standing this week: what a board draws from. */
@@ -194,7 +189,7 @@ export function selectScandalBoard(campaign) {
         .sort((a, b) => b.intensity - a.intensity || a.id.localeCompare(b.id))
         .map((scandal) => ({
         scandal,
-        ...(scandal.brokeTurn < 0 ? {} : { weeksRunning: Math.max(0, campaign.turn - scandal.brokeTurn) }),
+        weeksRunning: Math.max(0, campaign.turn - scandal.brokeTurn),
         keptAliveBy: { id: desk.outlet.id, name: desk.outlet.name, hostility: round3(desk.hostility) },
         integrityCharge: round3(scandal.intensity * SCANDAL_INTEGRITY_WEIGHT),
     }));
@@ -308,16 +303,44 @@ function livePacket(campaign, live) {
  * story is judged against the room it actually died in.
  */
 export const scandalPhase = (campaign) => {
-    const stories = selectScandals(campaign);
+    const unstamped = scandalFlags(campaign).filter(({ setTurn }) => setTurn === undefined).map(({ flag }) => flag);
+    // The stamp packet lands after this phase has read the board, so the board is
+    // read as it will stand once the stamps do: the live flag and the lifecycle
+    // flags then agree with what the selectors return this same week.
+    const dated = unstamped.length > 0 ? withMarkers(campaign, unstamped) : campaign;
+    const stories = selectScandals(dated);
     const closing = stories.filter((scandal) => scandal.stage === "resolved" && !scandalIsClosed(campaign, scandal.id));
     const running = stories.filter((scandal) => scandal.stage === "developing" && campaign.player.flags[scandalLegsFlag(scandal.id)] !== true);
     const live = livePacket(campaign, stories.some((scandal) => scandal.stage !== "resolved"));
     return [
+        ...(unstamped.length > 0 ? [stampPacket(campaign, unstamped)] : []),
         ...(closing.length > 0 ? [closingPacket(campaign, closing)] : []),
         ...(running.length > 0 ? [legsPacket(campaign, running)] : []),
         ...(live ? [live] : []),
     ];
 };
+function withMarkers(campaign, flags) {
+    const markers = Object.fromEntries(flags.map((flag) => [flagMarker(flag, campaign.turn), true]));
+    return { ...campaign, player: { ...campaign.player, flags: { ...campaign.player.flags, ...markers } } };
+}
+/**
+ * Dates, once, every authored scandal flag that arrived without a marker (a
+ * writer that does not stamp, or a save from before stamps were required), so
+ * its story ages from the week the engine first saw it. The flag keeps its
+ * identity: the story id is derived from the flag alone, so an answer or a
+ * closing already filed against it still applies.
+ */
+function stampPacket(campaign, flags) {
+    return {
+        turn: campaign.turn,
+        actor: "world",
+        source: "simulate",
+        background: true,
+        provenance: { origin: "world", confidence: "observed", visibility: "public", systems: ["press"] },
+        narration: { summary: flags.length === 1 ? "A scandal flag is dated." : `${flags.length} scandal flags are dated.` },
+        effects: [{ kind: "flag", set: markedFlags(flags, campaign.turn) }],
+    };
+}
 /** The stories that got their legs this week, kept, so the climate no longer decides them. Bookkeeping, off the Record. */
 function legsPacket(campaign, running) {
     return {

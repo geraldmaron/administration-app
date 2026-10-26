@@ -1,4 +1,4 @@
-import { BEAT_THRESHOLDS, DAYS_PER_TURN, campaignFoundingDate, compareDates, composeAttentionStop, institutionDef, institutionForRole, selectActiveConflicts, selectConditionsFor, selectDeliveryShortfall, selectNextMilestones, selectOrders, selectRemoval, selectVacancies, seatKindOf, withoutDeferred, } from "@admin/engine";
+import { BEAT_THRESHOLDS, DAYS_PER_TURN, campaignFoundingDate, compareDates, daysBetween, composeAttentionStop, institutionDef, institutionForRole, selectActiveConflicts, selectConditionsFor, selectDeliveryShortfall, selectNextMilestones, selectOrders, selectRemoval, selectVacancies, seatKindOf, withoutDeferred, withoutNoticed, } from "@admin/engine";
 import { readingBand } from "../reading";
 import { cabinetSeats } from "../cabinet/seats";
 import { unauthorizedReadings } from "../congress/congress-reading";
@@ -7,6 +7,7 @@ import { PLACES, anchored, place } from "../navigation/places";
 import { institutionActionsHref, roleActionsHref } from "../shell/office-of";
 import { subjectHref } from "../shell/subject";
 import { appropriationDue } from "../summons/due-legislative";
+import { removalEpisode } from "../summons/due-executive";
 import { summonsItems } from "../summons/rows";
 import { conditionReadings, warReadings } from "../world/board-state";
 import { warPowersHome } from "../world/war-powers-home";
@@ -509,8 +510,34 @@ function collapseBySubject(rows) {
 function isCaseRow(row) {
     return row.id.startsWith("case:");
 }
+/** How near a deadline stands, in the steps that change what the President should do about it. */
+function deadlineStage(date, dueDate) {
+    if (dueDate === undefined)
+        return "open";
+    const days = daysBetween(date, dueDate);
+    if (days <= 0)
+        return "due";
+    return days <= 7 ? "week" : "far";
+}
+/**
+ * What the world last stopped the President for this row as: whether it is hard, how the
+ * thing is going and how close its deadline is. A worse stance, a nearer
+ * deadline or a harder urgency is a material change and stops the world again;
+ * the same row a week later is not. The removal summons is the one exception,
+ * keyed by the rung it is nearing, because pressure drifting inside one
+ * approach is the level the country already knows about.
+ */
+function signatureOf(item, campaign, date) {
+    if (item.summons === "removal-beat")
+        return removalEpisode(campaign) ?? "removal:out-of-reach";
+    // Soft and ambient are one level here: a standing file raises itself for a
+    // week when it develops (urgency "soft") and sits ambient after, and
+    // counting that pulse as a change would stop the world for every development
+    // of a condition whose stance has not moved. Only hard is a different kind.
+    return `${item.urgency === "hard" ? "hard" : "open"}|${item.stance}|${deadlineStage(date, item.dueDate)}`;
+}
 /** The rows as the engine's composer takes them: the one projection, said once. */
-function mattersOf(items, date) {
+function mattersOf(items, date, campaign) {
     return items.map((item) => ({
         id: item.id,
         source: item.source,
@@ -519,6 +546,7 @@ function mattersOf(items, date) {
         reason: item.reason,
         subject: item.subject,
         date,
+        ...(campaign === undefined ? {} : { signature: signatureOf(item, campaign, date) }),
         ...(item.dueDate === undefined ? {} : { dueDate: item.dueDate }),
     }));
 }
@@ -542,7 +570,7 @@ export function matterFor(item, date) {
  * it collided with and then never resurface.
  */
 export function deskMatterSource(campaign, date, settings) {
-    return applyAttentionPolicy(mattersOf(attentionItems(campaign), date), settings, date, campaignFoundingDate(campaign));
+    return applyAttentionPolicy(mattersOf(attentionItems(campaign), date, campaign), settings, date, campaignFoundingDate(campaign));
 }
 /**
  * The one composition, with the rows kept alongside so a surface can draw them.
@@ -560,9 +588,11 @@ export function deskMatterSource(campaign, date, settings) {
  */
 function composed(campaign, settings) {
     const items = attentionItems(campaign);
-    const matters = applyAttentionPolicy(mattersOf(items, campaign.calendar), settings, campaign.calendar, campaignFoundingDate(campaign));
+    const matters = applyAttentionPolicy(mattersOf(items, campaign.calendar, campaign), settings, campaign.calendar, campaignFoundingDate(campaign));
+    const live = withoutDeferred(matters, campaign.deferrals, campaign.calendar);
     return {
-        stop: composeAttentionStop(withoutDeferred(matters, campaign.deferrals, campaign.calendar)),
+        stop: composeAttentionStop(live),
+        eligible: composeAttentionStop(withoutNoticed(live, campaign.noticed)),
         byId: new Map(items.map((item) => [item.id, item])),
     };
 }
@@ -577,10 +607,15 @@ function rowsFor(matters, byId) {
  *
  * Ranking, the cap and the subject collapse all happen once, in the engine, and
  * this is how a screen reads the result without re-deciding any of it.
+ *
+ * Only matters the world would stop for: one it already stopped for in its
+ * present form stays on the work list (`owedItems`) but no longer holds
+ * Continue, or a lapsed deferral would restore an obstruction the engine's own
+ * look no longer raises.
  */
 export function presentedItems(campaign, settings) {
-    const { stop, byId } = composed(campaign, settings);
-    return rowsFor(stop.presented, byId);
+    const { eligible, byId } = composed(campaign, settings);
+    return rowsFor(eligible.presented, byId);
 }
 /**
  * Everything the President is actually owed: the three, then what is queued

@@ -52,7 +52,7 @@ function ReliefPanel({ campaign, file, acts, onClose }: PanelProps) {
       review={() => `The deputy takes over as acting commander today. ${who} goes back to their permanent rank and stays in the military.`}
       commission={() => ({ title: `${who} removed from ${abbr}`, lines: [{ label: "Your reason", value: reason.trim() }], packet: () => reliefOrder(campaign, id, reason.trim()) })}
     >
-      <ChoiceList label="Why you're removing them" help="Pick the reason you'll give. It records your judgment. It doesn't say they did anything wrong." value={reason} onChange={setReason} options={RELIEF_REASONS.map((value) => ({ value, label: value }))} />
+      <ChoiceList label="Why you're removing them" help="Your stated reason records your judgment about this command." value={reason} onChange={setReason} options={RELIEF_REASONS.map((value) => ({ value, label: value }))} />
     </ActFrame>
   );
 }

@@ -20,6 +20,11 @@ const FOOTPRINT = {
     "fiscal-crisis": "economy",
     "energy-shortage": "economy",
     "housing-crunch": "economy",
+    cyberattack: "event",
+    "work-stoppage": "economy",
+    "bank-failure": "economy",
+    "mass-casualty-attack": "event",
+    "wrongful-detention": "event",
 };
 // Every noun a headline can carry for a kind, the basin names for a cyclone
 // included, longest first so "a winter storm" is not read as something shorter.
@@ -101,6 +106,11 @@ const ONSET_LEDE = {
     "fiscal-crisis": (place) => `${capitalize(place)} can no longer borrow on terms it can pay.`,
     "energy-shortage": (place) => `${capitalize(place)} is short of the fuel and power it runs on.`,
     "housing-crunch": (place) => `${capitalize(place)} is in a housing crisis.`,
+    cyberattack: (place) => `Hackers have broken into systems ${place} runs on.`,
+    "work-stoppage": (place) => `A national strike has stopped work in ${place}.`,
+    "bank-failure": (place) => `Regulators have closed a large bank in ${place}.`,
+    "mass-casualty-attack": (place) => `A gunman has killed people in ${place}.`,
+    "wrongful-detention": (place) => `A government abroad is holding a citizen of ${place}.`,
 };
 /** The hazard as a second reference: "an earthquake" is "the earthquake" once the lede has named it. */
 export function theHazard(noun) {
@@ -111,6 +121,7 @@ const COST = {
     weather: (place, noun) => `${capitalize(theHazard(noun))} ${plural(noun) ? "draw" : "draws"} down ${possessive(place)} reserves and ${plural(noun) ? "slow" : "slows"} its economy for as long as ${plural(noun) ? "they last" : "it lasts"}.`,
     health: (place) => `The epidemic draws on ${possessive(place)} reserves and keeps people out of work while it runs.`,
     order: (place) => `Unrest is a direct challenge to whoever governs ${place}, and it is paid for in order before anything else.`,
+    event: (place, noun) => `${capitalize(theHazard(noun))} is a test of whoever governs ${place}, and it is paid for in the public's confidence.`,
     economy: (place, noun) => `${capitalize(theHazard(noun))} ${plural(noun) ? "are" : "is"} paid for in ${possessive(place)} jobs, prices and reserves.`,
 };
 function ledeFor(read, place) {

@@ -1,7 +1,7 @@
 import type { PersonId, RoleId } from "@admin/world";
 import type { CaucusReadings } from "./caucus-count.js";
 import { voteOn, type CaucusVote, type VoteQuestion } from "./congress-votes.js";
-import { majorityOf } from "./congress.js";
+import { majorityOf, seatedOf } from "./congress.js";
 import { crossesTheAisle, usPartyOfPerson, type FitPresident } from "./cast-fit.js";
 import { selectCabinet, selectPerson, type Campaign } from "./state.js";
 import type { Effect } from "./effect-types.js";
@@ -102,7 +102,7 @@ export function confirmationQuestion(campaign: Campaign, nominee: PersonId): Vot
     chamber: "senate",
     appeal: CONFIRMATION_DEFERENCE,
     merit: Math.round(nomineeAppeal(campaign, nominee) * RECORD_PER_MEMBER * 1000) / 1000,
-    required: majorityOf(campaign.congress.chambers.senate.seats),
+    required: majorityOf(seatedOf(campaign.congress, "senate")),
     stance: "neutral",
     ...(readings ? { readings } : {}),
   };
@@ -111,6 +111,17 @@ export function confirmationQuestion(campaign: Campaign, nominee: PersonId): Vot
 /** The Senate's count on this nominee today, tallied by caucus. */
 export function confirmationVote(campaign: Campaign, nominee: PersonId): CaucusVote {
   return voteOn(campaign, confirmationQuestion(campaign, nominee));
+}
+
+/**
+ * The House's count on a nominee it must also confirm: the Vice President
+ * under the Twenty-fifth Amendment, section 2, "by a majority vote of both
+ * Houses". The same question as the Senate's, put to the House and counted
+ * over its seated members.
+ */
+export function houseConfirmationVote(campaign: Campaign, nominee: PersonId): CaucusVote {
+  const question = confirmationQuestion(campaign, nominee);
+  return voteOn(campaign, { ...question, chamber: "house", required: majorityOf(seatedOf(campaign.congress, "house")) });
 }
 
 /** Whether a count clears the majority comfortably enough to need no fight. */

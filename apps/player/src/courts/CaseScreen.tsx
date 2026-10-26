@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Campaign } from "@admin/engine";
 import { caseFile, caseProcess, place, sealFor, type CaseFile } from "@admin/player-core";
-import { Badge, Card, Column, OpinionPaper, Page, Row, Seal, Stamp, Text, View } from "@admin/ui";
+import { Tag, Card, Column, OpinionPaper, Page, Row, Seal, Stamp, Text, View } from "@admin/ui";
 import { fileNumber } from "@admin/ui/dossier";
 import { Authority } from "../congress/ActChooser";
 import { useActCommit } from "../congress/commit";
@@ -85,7 +85,7 @@ function JusticeVote({ campaign, vote }: { readonly campaign: Campaign; readonly
   const body = (
     <Row between gap="sm">
       <PersonName campaign={campaign} id={personIdOf(vote.href)} name={vote.name} role="Justice of the Supreme Court" />
-      <Badge status={vote.vote === "strike" ? "danger" : "success"} icon={vote.vote === "strike" ? "statusBlocked" : "statusIssued"}>{verdict}</Badge>
+      <Tag tone={vote.vote === "strike" ? "danger" : "success"} icon={vote.vote === "strike" ? "statusBlocked" : "statusIssued"}>{verdict}</Tag>
     </Row>
   );
   return vote.href ? <RowLink label={`Open ${vote.name}'s file. Voted to ${verdict.toLowerCase()}`} href={vote.href}>{body}</RowLink> : <View padding="sm">{body}</View>;
@@ -127,8 +127,8 @@ export function CaseScreen({ campaign, id }: { readonly campaign: Campaign; read
   return (
     <Page eyebrow="Federal court case" icon="court" title={file.orderName} lede={file.question} emblem={<Seal spec={sealFor(forumSeal(file))} size={64} label={forumOf(file)} />} actions={<BackButton parent={`${place.courts()}?view=docket`} parentLabel="All cases" />}>
       <Row gap="sm" wrap>
-        <Badge status={status.status} icon="gavel">{status.label}</Badge>
-        <Badge status="outline" icon="record">{`Case number · ${file.id}`}</Badge>
+        <Tag tone={status.status} icon="gavel">{status.label}</Tag>
+        <Tag tone="outline" icon="record">{`Case number · ${file.id}`}</Tag>
         <Authority cite={LAW.limits} compact />
       </Row>
       {process ? <CasePath process={process} contested={file.matter?.authority ?? file.orderName} ground={file.groundWords} /> : null}

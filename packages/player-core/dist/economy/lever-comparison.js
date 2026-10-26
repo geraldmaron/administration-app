@@ -10,6 +10,7 @@ const SHORT = {
     "fed-ease": { label: "Press the Fed to cut", verb: "Press the Fed" },
     "fed-tighten": { label: "Press the Fed to hold", verb: "Press the Fed" },
     reserve: { label: "Release the reserve", verb: "Order the drawdown" },
+    "reserve-limited": { label: "Limited drawdown", verb: "Order the limited drawdown" },
     "fuel-waiver": { label: "Fuel waiver", verb: "Issue the waiver" },
 };
 /** The market phase the shipped week runs, taken from the week's own sequence. */

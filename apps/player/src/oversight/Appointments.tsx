@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Campaign, OfficeId, PipelineReading } from "@admin/engine";
 import { appointmentDesk, costLines, deskPicks, deskPlan, place, sealFor, type ActComparison, type DeskPick, type DeskSeat, type SeatGroup } from "@admin/player-core";
-import { Badge, Button, ChoiceList, Column, Icon, Meter, Pressable, ReadingFrame, Row, Seal, Surface, Text } from "@admin/ui";
+import { Tag, Button, ChoiceList, Column, Icon, Meter, Pressable, ReadingFrame, Row, Seal, Surface, Text } from "@admin/ui";
 import { PersonName } from "../dossier/PersonPeek";
 import { termDoor } from "../handbook/term-door";
 import { ActChooser } from "../congress/ActChooser";
@@ -58,7 +58,7 @@ function SeatRow({ campaign, seat, pick, taken, open, onToggle, onPick }: { read
           <RowLink label={`Open ${picked.name}'s file`} href={place.person(picked.personId)}>
             <Row gap="sm" wrap>
               <PersonName campaign={campaign} id={picked.personId} name={picked.name} role={`Your pick for ${seat.title}`} />
-              <Badge status={picked.fit === "poor" ? "warning" : "success"}>{FIT_WORDS[picked.fit]}</Badge>
+              <Tag tone={picked.fit === "poor" ? "warning" : "success"}>{FIT_WORDS[picked.fit]}</Tag>
               <Text variant="caption" tone="secondary" flexGrow={1} flexBasis={220}>Your staff's estimate: {picked.vote.passed ? "would be confirmed" : "would fall short"}, {picked.vote.yeas} to {picked.vote.nays}, with {picked.vote.required} needed</Text>
             </Row>
           </RowLink>
@@ -98,7 +98,7 @@ export function AppointmentDesk({ campaign, acts, scope, focus, empty, pipeline 
     rows: [{ key: "names", label: "The nominations" }, { key: "cost", label: "Cost" }, ...(plan.refused.length ? [{ key: "refused", label: "Not sent" }] : []), { key: "follows", label: "What happens next" }],
     waiting: "While a job is empty, the agency delivers less each week, and an empty court seat leaves fewer judges to hear a case. People filling in can keep going where the law allows.",
     columns: [
-      { id: "send", label: verb, verb, ...(count === 0 ? { refusal: "Pick someone for at least one job first." } : {}), review: "Each person's background check starts today. No one takes the job until the Senate votes.", cells: { names: { lines: plan.lines.map((line) => `${line.name} for ${line.title}`) }, cost: { lines: costLines(plan.cost).length ? costLines(plan.cost) : ["Nothing"], stance: "caution" }, refused: { lines: plan.refused.map((row) => `${row.title}: ${row.reason}`) }, follows: { lines: ["The Senate moves at its own pace. Sending more names at once slows down every Senate vote."] } } },
+      { id: "send", label: verb, verb, ...(count === 0 ? { refusal: "No one is named for any job yet." } : {}), review: "Each person's background check starts today. No one takes the job until the Senate votes.", cells: { names: { lines: plan.lines.map((line) => `${line.name} for ${line.title}`) }, cost: { lines: costLines(plan.cost).length ? costLines(plan.cost) : ["Nothing"], stance: "caution" }, refused: { lines: plan.refused.map((row) => `${row.title}: ${row.reason}`) }, follows: { lines: ["The Senate moves at its own pace. Sending more names at once slows down every Senate vote."] } } },
     ],
   };
   return (

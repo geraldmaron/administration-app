@@ -1,15 +1,15 @@
 import Svg, { Circle } from "react-native-svg";
 import { COLOR_VISION_PALETTES, CEREMONY_CHOICES, THEME_CHOICES, type CeremonyChoice, type ColorVisionPalette, type ThemeChoice } from "@admin/player-core";
 import { partyPalettes } from "@admin/design";
-import type { IconName } from "@admin/ui";
+import { Row, View, type IconName } from "@admin/ui";
 import { ChoiceList, Segmented, Toggle } from "@admin/ui/forms";
 import { usePreferences } from "../device/hooks";
 import { SettingsGroup } from "./parts";
 
 const THEME: Readonly<Record<ThemeChoice, { readonly label: string; readonly detail: string; readonly icon: IconName }>> = {
   system: { label: "System", detail: "Matches your device's light or dark setting, and changes when it does.", icon: "utilityThemeSystem" },
-  light: { label: "Light", detail: "A white background with navy menus.", icon: "utilityThemeLight" },
-  dark: { label: "Dark", detail: "A navy background that's easier on the eyes in low light.", icon: "utilityThemeDark" },
+  light: { label: "Day", detail: "A light background for bright rooms.", icon: "utilityThemeLight" },
+  dark: { label: "Night", detail: "A dark background that's easier on the eyes in low light.", icon: "utilityThemeDark" },
 };
 
 const VISION: Readonly<Record<ColorVisionPalette, { readonly label: string; readonly detail: string }>> = {
@@ -38,14 +38,20 @@ export function Appearance() {
   const { preferences, update } = usePreferences();
   return (
     <SettingsGroup icon="utilitySettings" title="Appearance and accessibility" description="These settings apply to every presidency saved on this device, and they change right away.">
-      <Segmented
-        label="Theme"
-        help={THEME[preferences.theme ?? "system"].detail}
-        options={THEME_CHOICES.map((theme) => ({ value: theme, label: THEME[theme].label, icon: THEME[theme].icon }))}
-        value={preferences.theme ?? "system"}
-        onChange={(theme) => update({ theme })}
-      />
-      <Toggle label="High contrast" hint="Makes text, borders, and outlines darker and easier to see." value={preferences.highContrast === true} onChange={(highContrast) => update({ highContrast })} />
+      <Row gap="xl" wrap top>
+        <View flexGrow={1} flexShrink={1} flexBasis={320}>
+          <Segmented
+            label="Theme"
+            help={THEME[preferences.theme ?? "system"].detail}
+            options={THEME_CHOICES.map((theme) => ({ value: theme, label: THEME[theme].label, icon: THEME[theme].icon }))}
+            value={preferences.theme ?? "system"}
+            onChange={(theme) => update({ theme })}
+          />
+        </View>
+        <View flexGrow={1} flexShrink={1} flexBasis={280}>
+          <Toggle label="High contrast" hint="Makes text, borders, and outlines darker and easier to see." value={preferences.highContrast === true} onChange={(highContrast) => update({ highContrast })} />
+        </View>
+      </Row>
       <ChoiceList
         label="Colors for color blindness"
         minCardWidth={260}

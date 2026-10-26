@@ -2,8 +2,7 @@ import { useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { STATE_IDS, type StateId } from "@admin/world";
 import { COMPARE_METRICS, COMPARE_METRIC_IDS, PEER_RULES, compareSnapshot, historyOptions, peerSet, place, resolveHistory, selfVersus, subjectKey, weekLabel, type CompareMetricId, type CompareWindow, type PeerRule, type Subject } from "@admin/player-core";
-import { Badge, Button, CheckCard, Column, Icon, Page, Row, Segmented, Select, Surface, Text, View, useMedia, type MatrixRow } from "@admin/ui";
-import { Panel } from "@admin/ui/world";
+import { Pane, Tag, Button, CheckCard, Column, Icon, Page, Row, Segmented, Select, Surface, Text, View, useMedia, type MatrixRow } from "@admin/ui";
 import { go } from "../shell/navigate";
 import { CompareChart } from "./CompareChart";
 import { RankedMatrix } from "./RankedMatrix";
@@ -27,11 +26,11 @@ function SelfVersusPanel({ campaign, metric }: { readonly campaign: Campaign; re
   const versus = selfVersus(campaign, metric);
   const format = formatterFor(versus.format);
   return (
-    <Panel title={`How your ${versus.label.toLowerCase()} compares`} icon="favorable" lede={versus.now === undefined ? versus.unavailable : `This week: ${format(versus.now)}.`}>
+    <Pane title={`How your ${versus.label.toLowerCase()} compares`} icon="favorable" line={versus.now === undefined ? versus.unavailable : `This week: ${format(versus.now)}.`}>
       <Column gap="xs" role="list">
         {versus.comparisons.map((entry) => (
           <Row key={entry.id} gap="sm" top role="listitem">
-            <View minWidth={64} alignItems="flex-start">{entry.standing ? <Badge status={STANDING[entry.standing]}>{entry.standing === "better" ? "Better" : entry.standing === "worse" ? "Worse" : "Same"}</Badge> : <Badge status="outline">No figure</Badge>}</View>
+            <View minWidth={64} alignItems="flex-start">{entry.standing ? <Tag tone={STANDING[entry.standing]}>{entry.standing === "better" ? "Better" : entry.standing === "worse" ? "Worse" : "Same"}</Tag> : <Tag tone="outline">No figure</Tag>}</View>
             <Column flex={1}>
               <Text variant="label">{entry.label}{entry.value === undefined ? "" : ` · ${format(entry.value)}`}</Text>
               <Text variant="body" tone="secondary">{entry.sentence}</Text>
@@ -39,7 +38,7 @@ function SelfVersusPanel({ campaign, metric }: { readonly campaign: Campaign; re
           </Row>
         ))}
       </Column>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -52,7 +51,7 @@ function Matrix({ campaign, metric, subjects }: { readonly campaign: Campaign; r
     return { id: row.id, label: row.label, values: row.values, ...(row.self ? { self: true } : {}), ...(row.reference ? { reference: true } : {}), ...(door ? { onPress: () => go(door) } : {}) };
   });
   return (
-    <Panel title="Side by side" icon="graph" lede="Rows from the past are there for reference and aren't ranked against today's.">
+    <Pane title="Side by side" icon="graph" line="Rows from the past are there for reference and aren't ranked against today's.">
       <RankedMatrix title={`${COMPARE_METRICS[metric].label} and related numbers`} initialSort={metric} metrics={snapshot.metrics.map((entry) => ({ id: entry.id, label: entry.label, better: entry.better, format: formatterFor(entry.format), ...(entry.benchmark ? { benchmark: entry.benchmark } : {}) }))} rows={rows} />
       {refusals.length > 0 ? (
         <Column gap="2xs">
@@ -65,7 +64,7 @@ function Matrix({ campaign, metric, subjects }: { readonly campaign: Campaign; r
           ))}
         </Column>
       ) : null}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -93,7 +92,7 @@ function SubjectBuilder({ campaign, metric, subjects, onToggle }: { readonly cam
   const states = STATE_IDS.filter((id) => campaign.states[id]);
   const [state, setState] = useState<StateId | undefined>(undefined);
   return (
-    <Panel title="Compare with" icon="layerBlocs" lede={`Up to ${MAX_SUBJECTS} lines, counting yours. ${spec.label} can be shown for: ${spec.subjects.map((kind) => ({ self: "you", "self-at": "your own past weeks", nation: "other countries", state: "the states", history: "real history" })[kind]).join(", ")}. If you add something that has no number, we'll tell you why instead of making one up.`}>
+    <Pane title="Compare with" icon="layerBlocs" line={`Up to ${MAX_SUBJECTS} lines, counting yours. ${spec.label} can be shown for: ${spec.subjects.map((kind) => ({ self: "you", "self-at": "your own past weeks", nation: "other countries", state: "the states", history: "real history" })[kind]).join(", ")}. Missing figures retain their source's explanation.`}>
       <Column gap="xs">
         <Text variant="label">Your own past</Text>
         <Row gap="xs" wrap>
@@ -110,7 +109,7 @@ function SubjectBuilder({ campaign, metric, subjects, onToggle }: { readonly cam
         <Text variant="label">A state</Text>
         <Row gap="sm" wrap>
           <Column flex={1} minWidth={200}>
-            <Select label="State to add" options={states.map((id) => ({ value: id, label: campaign.states[id]?.base.name ?? id }))} value={state} onChange={setState} placeholder="Choose a state" />
+            <Select label="State to add" options={states.map((id) => ({ value: id, label: campaign.states[id]?.base.name ?? id }))} value={state} onChange={setState} placeholder="No state added" />
           </Column>
           <Button kind="secondary" size="compact" icon="mapPin" disabled={!state} onPress={() => state && onToggle({ kind: "state", id: state })}>
             {state && hasSubject(subjects, { kind: "state", id: state }) ? "Remove the state" : "Add the state"}
@@ -128,7 +127,7 @@ function SubjectBuilder({ campaign, metric, subjects, onToggle }: { readonly cam
           ))}
         </Row>
       </Column>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -148,7 +147,7 @@ function Chosen({ campaign, metric, subjects, onToggle }: { readonly campaign: C
         Lines in the chart:
       </Text>
       {subjects.map((subject) => subject.kind === "self" ? (
-        <Badge key="self" status="info" icon="flag">You</Badge>
+        <Tag key="self" tone="info" icon="flag">You</Tag>
       ) : (
         <Button key={subjectKey(subject)} kind="secondary" size="compact" iconAfter="close" label={`Remove ${name(subject)}`} onPress={() => onToggle(subject)}>
           {name(subject)}
@@ -170,7 +169,7 @@ export function CompareWorkspace({ campaign, address, onAddress }: { readonly ca
   const spec = COMPARE_METRICS[metric];
   const toggle = (subject: Subject) => onAddress({ ...address, subjects: toggleSubject(subjects, subject) });
   return (
-    <Page eyebrow="Office of the Chief of Staff · performance" icon="graph" title="Compare" lede="Compare one number with history, your own past, other countries, and the states. If a number doesn't exist, this page says so instead of guessing.">
+    <Page eyebrow="Office of the Chief of Staff · performance" icon="graph" title="Compare" lede={`Your ${spec.label.toLowerCase()} beside the available records.`}>
       <Surface pad="lg">
         <Row gap="md" wrap top>
           <Column flex={1} minWidth={220} gap="2xs">
@@ -187,10 +186,10 @@ export function CompareWorkspace({ campaign, address, onAddress }: { readonly ca
       </Surface>
       <Row gap="lg" top wrap={!media.desktop}>
         <Column flex={3} minWidth={300} gap="lg">
-          <Panel title="Over time" icon="graph" lede="Press a line's name to take it off the chart. Add more under Compare with.">
+          <Pane title="Over time" icon="graph" line={`${subjects.length} ${subjects.length === 1 ? "subject" : "subjects"} over ${span === "term" ? "your term" : `the last ${span} weeks`}.`}>
             <Chosen campaign={campaign} metric={metric} subjects={subjects} onToggle={toggle} />
             <CompareChart campaign={campaign} metric={metric} subjects={subjects} window={span} more={false} height={media.phone ? 220 : 280} />
-          </Panel>
+          </Pane>
         </Column>
         <Column flex={2} minWidth={300} gap="lg">
           <SelfVersusPanel campaign={campaign} metric={metric} />

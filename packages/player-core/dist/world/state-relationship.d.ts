@@ -1,5 +1,6 @@
 import { type Campaign, type UsParty } from "@admin/engine";
 import type { StateId } from "@admin/world";
+import { type LocaleMissionView } from "./locale-act-options";
 export type RelationshipBand = "allied" | "cooperative" | "guarded" | "opposed";
 export type StateRelationship = {
     readonly id: StateId;
@@ -29,6 +30,8 @@ export type StateRelationship = {
     readonly declared: boolean;
     /** Acts open against the lead matter this week; zero when there is nothing to answer. */
     readonly actCount: number;
+    /** Federal missions running in the state, newest first. */
+    readonly missions: readonly LocaleMissionView[];
 };
 /** Where the President stands with one state: its governor, what it needs from Washington, and what can be done about it. */
 export declare function stateRelationship(campaign: Campaign, id: StateId): StateRelationship | undefined;

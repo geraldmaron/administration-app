@@ -49,3 +49,20 @@ export function contrastRatio(foreground: string, background: string): number {
 // means heading and display sizes only; label/body/caption are all normal text.
 export const AA_NORMAL_TEXT = 4.5;
 export const AA_NON_TEXT = 3; // borders, focus rings, meaningful graphics
+/** WCAG 2.1 AAA for normal text: what the contrast themes hold every text pair to. */
+export const AAA_NORMAL_TEXT = 7;
+
+/**
+ * A translucent `#RRGGBBAA` color as it renders over an opaque ground, so a
+ * wash or a selection tint is measured as the eye sees it. Opaque colors pass
+ * through unchanged.
+ */
+export function composite(color: string, ground: string): string {
+  const body = color.replace("#", "");
+  if (body.length !== 8) return color;
+  const alpha = Number.parseInt(body.slice(6), 16) / 255;
+  const top = parseHex(`#${body.slice(0, 6)}`);
+  const under = parseHex(ground);
+  const mix = (a: number, b: number) => Math.round(a * alpha + b * (1 - alpha)).toString(16).padStart(2, "0");
+  return `#${mix(top.r, under.r)}${mix(top.g, under.g)}${mix(top.b, under.b)}`;
+}

@@ -1,5 +1,6 @@
 import { selectActiveConflicts, selectBills, } from "./state.js";
-import { hasLapsed, selectDeclaredEmergencies } from "./emergency.js";
+import { authorityDeadline, emergencyAuthorityClock, hasLapsed, selectDeclaredEmergencies } from "./emergency.js";
+import { daysBetween } from "./clock.js";
 import { playerGdp } from "./policy.js";
 import { TURNS_PER_YEAR } from "./pace.js";
 import { FISCAL_ACTS, playerStats } from "./legislative-acts-fiscal.js";
@@ -17,6 +18,12 @@ import { DOMESTIC_ACTS, TARGETED_DOMESTIC_ACTS } from "./legislative-acts-domest
 // The fiscal family lives in legislative-acts-fiscal.ts and is re-exported here,
 // so every reader of the catalogue still has one import to make.
 export { CONTINUING_RESOLUTION_TURNS } from "./legislative-acts-fiscal.js";
+export function mergedAuthorityLimits(laws) {
+    return Object.fromEntries(["s122", "emergency"].flatMap((authority) => {
+        const days = laws.flatMap((law) => law.authorityDays?.[authority] ?? []);
+        return days.length ? [[authority, Math.min(...days)]] : [];
+    }));
+}
 /**
  * Whether the country is in one of the two cases the Suspension Clause names.
  *
@@ -32,8 +39,21 @@ export { CONTINUING_RESOLUTION_TURNS } from "./legislative-acts-fiscal.js";
  * authority of their own to hold anyone without charge (18 U.S.C. §4001(a)).
  */
 export function underRebellionOrInvasion(campaign) {
-    const rebellion = selectDeclaredEmergencies(campaign).some((emergency) => !hasLapsed(emergency, campaign.turn) && emergency.cause === "unrest");
+    const rebellion = selectDeclaredEmergencies(campaign).some((emergency) => !hasLapsed(emergency, campaign.turn, campaign) && emergency.cause === "unrest");
     return rebellion || selectActiveConflicts(campaign).some((conflict) => conflict.defender === campaign.founding.nation);
+}
+function emergencyTarget(campaign, action) {
+    const pending = new Set(selectBills(campaign).filter((bill) => bill.status !== "dead" && bill.status !== "law"
+        && actOf(bill)?.emergencyAction === action).map((bill) => bill.target));
+    return selectDeclaredEmergencies(campaign).find((record) => {
+        if (pending.has(record.id) || record.scope.kind !== "nation")
+            return false;
+        if (action === "terminate")
+            return true;
+        const clock = emergencyAuthorityClock(campaign, record);
+        return daysBetween(campaign.calendar, authorityDeadline(campaign, clock)) <= 30
+            && selectBills(campaign).some((bill) => bill.status === "law" && actOf(bill)?.constrains?.authorityDays?.emergency !== undefined);
+    })?.id;
 }
 const always = () => true;
 /**
@@ -99,6 +119,24 @@ export const LEGISLATIVE_ACTS = [
         arises: (campaign) => campaign.congress.unauthorized.length > 0,
     },
     {
+        id: "act-emergency-termination", committee: "CMTE-HOMELAND",
+        title: "A Joint Resolution Terminating a National Emergency",
+        summary: "Ends the named national emergency under 50 U.S.C. §1622(a) when enacted. The President may veto it; Congress may override the veto by two thirds in both chambers.",
+        sponsor: "opposition", track: "privileged", appeal: 0.1,
+        cost: {}, nationEffects: {}, alignment: {}, recurs: 0,
+        targetsEmergency: (campaign) => emergencyTarget(campaign, "terminate"), emergencyAction: "terminate",
+        arises: (campaign) => emergencyTarget(campaign, "terminate") !== undefined,
+    },
+    {
+        id: "act-emergency-renewal", committee: "CMTE-HOMELAND",
+        title: "A Joint Resolution Renewing a National Emergency",
+        summary: "Extends the named emergency's statutory authority for ninety days beyond its current deadline under the Emergency Powers Limitation Act.",
+        sponsor: "administration", appeal: 0.1,
+        cost: {}, nationEffects: {}, alignment: {}, recurs: 0,
+        targetsEmergency: (campaign) => emergencyTarget(campaign, "renew"), emergencyAction: "renew",
+        arises: (campaign) => emergencyTarget(campaign, "renew") !== undefined,
+    },
+    {
         id: "act-emergency-powers-limitation",
         committee: "CMTE-HOMELAND",
         title: "The Emergency Powers Limitation Act",
@@ -108,7 +146,7 @@ export const LEGISLATIVE_ACTS = [
         cost: { stability: -0.02 },
         nationEffects: { "politics.legitimacy": 0.05, "politics.pressFreedom": 0.04 },
         alignment: { authLibertarian: -0.35 },
-        constrains: { blocksOrders: ["order-emergency-construction"] },
+        constrains: { blocksOrders: ["order-emergency-construction"], authorityDays: { emergency: 90 } },
         // Re-arms when a *new* order draws a contest, the same way the floor took
         // this up the first time: the order it names is already closed off,
         // so what brings Congress back is a fresh emergency the statute did not

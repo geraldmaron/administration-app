@@ -41,7 +41,7 @@ export default function More() {
   const groups = navGroups();
   const extras: readonly NavItem[] = ended ? [{ id: "ending", label: "How it ended", href: place.ending(), icon: "record" }, { id: "legacy", label: "Legacy", href: place.legacy(), icon: "archive" }] : [];
   return (
-    <Page eyebrow="The Administration" icon="menu" title="More" lede="Every screen in the game, grouped by what you want to do." actions={<BackButton parent={place.brief()} parentLabel="Brief" />}>
+    <Page eyebrow="The Administration" icon="menu" title="More" lede="The rest of the game, grouped by institution." actions={<BackButton parent={place.brief()} parentLabel="Brief" />}>
       <CardGrid columns={{ phone: 1, tablet: 2, desktop: 3, wide: 3 }} gap="xl">
         {groups.map((group) => (
           <Group key={group.id} label={group.label} items={group.items} />

@@ -4,10 +4,11 @@ import { committeeInquiryPhase } from "./committee-inquiry.js";
 import { COERCION_TEMPO_WEEKS, MAX_INCIDENT_ODDS, coercedFlag, coercionOutcome, coercionOutlook, recentCoercion, surveillanceFlag, } from "./domestic-coercion.js";
 import { apply } from "./effects.js";
 import { flagMarker } from "./marked-flags.js";
-import { homeActAvailability, localeAct, localeAvailability, takeHomeAct, takeLocaleAct } from "./locale-acts.js";
+import { homeActAvailability, localeAct, localeAvailability } from "./locale-acts.js";
+import { takeHomeAct, takeLocaleAct } from "./locale-act-effects.js";
 const { campaign: base } = foundedForBalance("coercion");
 const MN = "MN";
-const agents = localeAct("agents").coercion;
+const agents = localeAct("property-surge").coercion;
 const troops = localeAct("troops").coercion;
 /** A run of earlier acts on the record, each stamped `weeksAgo` before now. */
 function withRun(campaign, weeksAgo) {
@@ -28,8 +29,8 @@ function firstIncident(campaign, risk = troops) {
     throw new Error("no incident in 200 weeks; the odds are wrong");
 }
 describe("force and collection aimed at Americans", () => {
-    it("requires an unmodeled federal mission even when unrest is present", () => {
-        const act = localeAct("agents");
+    it("refuses a surge over a flood and over unrest the record does not show", () => {
+        const act = localeAct("property-surge");
         expect(localeAvailability(base, MN, act, "flood").ok).toBe(false);
         expect(localeAvailability(base, MN, act, "unrest").ok).toBe(false);
     });
@@ -98,11 +99,11 @@ describe("force and collection aimed at Americans", () => {
         expect(opened(watched(0.95)).some((matter) => matter.origin.kind === "committee" && matter.origin.committee === "CMTE-INTEL")).toBe(false);
     });
     it("cannot bypass the authority boundary through an unprompted entry point", () => {
-        for (const id of ["agents", "troops"]) {
+        for (const id of ["property-surge", "troops"]) {
             const result = takeHomeAct(base, MN, id);
             expect(result.ok).toBe(false);
             if (!result.ok)
-                expect(result.reason).toContain("doesn't include");
+                expect(result.reason).toMatch(/^This needs /);
         }
         expect(coercionOutlook(base, agents, false).odds).toBeGreaterThan(coercionOutlook(base, agents).odds);
     });
@@ -111,11 +112,12 @@ describe("force and collection aimed at Americans", () => {
         expect(homeActAvailability(base, MN, localeAct("relief")).ok).toBe(false);
     });
     it("refuses resident surveillance with and without unrest before obligating funds or filing a report", () => {
-        for (const result of [takeLocaleAct(base, MN, "surveil", "unrest"), takeHomeAct(base, MN, "surveil")]) {
-            expect(result.ok).toBe(false);
-            if (!result.ok)
-                expect(result.reason).toContain("Attorney General");
-        }
+        const asked = takeLocaleAct(base, MN, "surveil", "unrest");
+        expect(asked.ok).toBe(false);
+        if (!asked.ok)
+            expect(asked.reason).toContain("Attorney General");
+        // The home path never carries a boundary act, so it refuses without naming the procedures.
+        expect(takeHomeAct(base, MN, "surveil").ok).toBe(false);
         expect(homeActAvailability(base, MN, localeAct("surveil")).ok).toBe(false);
     });
 });

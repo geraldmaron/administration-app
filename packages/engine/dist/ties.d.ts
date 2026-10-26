@@ -37,6 +37,8 @@ export type TieEffect = {
 type People = Readonly<Record<string, PersonRuntime>>;
 export declare function tieOf(people: People, person: PersonId | string): Tie | undefined;
 export declare function rapportOf(people: People, person: PersonId | string): number;
+/** People have no vengefulness trait; their dated injuries use the shared midpoint half-life. */
+export declare function personalGrudgeWeight(campaign: Pick<Campaign, "people" | "turn">, person: PersonId | string): number;
 /** How warm the member holding a Hill post is toward the administration. */
 export declare function figureRapport(people: People, figure: HillFigure): number;
 /** The same people, with one person's rapport read as something else: for a projection, never a write. */

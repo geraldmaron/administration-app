@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildCampaign, nationB } from "./__fixtures__/campaign.js";
+import { buildCampaign, nationB, person } from "./__fixtures__/campaign.js";
 import { directiveAction, tariffAction, tariffLiftAction } from "./conversation-report-actions.js";
+import { seatOfficer } from "./institutions.js";
 const campaign = buildCampaign();
 const measure = {
     id: "retaliation-measure:probe", kind: "tariff", sector: "textiles-apparel", target: nationB.id,
@@ -13,7 +14,9 @@ const matter = {
     direction: "received", subject: "the sealed case file", openedTurn: campaign.turn,
     stage: "reported", public: false, obstructed: false, beats: [],
 };
-const withMatter = { ...campaign, oversight: { ...campaign.oversight, matters: [...campaign.oversight.matters, matter] } };
+const oversightOnly = { ...campaign, oversight: { ...campaign.oversight, matters: [...campaign.oversight.matters, matter] } };
+// Casework at Justice is the Attorney General's to take or decline, so a directive needs a sitting one.
+const withMatter = seatOfficer(oversightOnly, "INST-DOJ", person.id);
 describe("typed conversation commands", () => {
     it("executes the actual tariff and refuses a missing, lifted, or retargeted source", () => {
         const request = { target: nationB.id, sector: "textiles-apparel", rate: 0.15, answering: measure.id,
@@ -63,6 +66,10 @@ describe("typed conversation commands", () => {
         expect(live.effects.some((effect) => effect.kind === "institution")).toBe(true);
         expect(live.summary).toBeTruthy();
         expect(directiveAction(campaign, request).ok).toBe(false);
+        const unstaffed = directiveAction(oversightOnly, request);
+        expect(unstaffed.ok).toBe(false);
+        if (!unstaffed.ok)
+            expect(unstaffed.reason).toContain("Nobody holds the Attorney General's authority");
         const closed = { ...withMatter, oversight: { ...withMatter.oversight,
                 matters: [{ ...matter, stage: "closed", closedTurn: campaign.turn }] } };
         expect(directiveAction(closed, request).ok).toBe(false);

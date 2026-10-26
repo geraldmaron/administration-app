@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import type { PersonId, StateId } from "@admin/world";
 import { buildCampaign } from "./__fixtures__/campaign.js";
-import { stateOppositionThisWeek, pickStateOpposition, type StateOppositionSeat } from "./state-suits.js";
+import { attorneyGeneralSelection, opposingAttorneyGeneral, statePartyName, statePlaintiffs, stateOppositionThisWeek, pickStateOpposition, type StateOppositionSeat } from "./state-suits.js";
 import type { AdministrationParty, Campaign, UsMajorParty, UsParty } from "./state.js";
 
 const AK = "AK" as StateId;
@@ -113,5 +113,35 @@ describe("opposition governor signal", () => {
     expect(pickStateOpposition(seats, "republican")).toBeNull();
     expect(pickStateOpposition(seats, "independent")).toBeNull();
     expect(pickStateOpposition(seats, "independent", "democrat")?.stateId).toBe(CA);
+  });
+});
+
+describe("state plaintiffs come from injury and the attorney general's office", () => {
+  const withLean = (campaign: Campaign, id: StateId, lean: number): Campaign =>
+    ({ ...campaign, states: { ...campaign.states, [id]: { ...campaign.states[id]!, lean } } });
+
+  it("lets a governor's appointee follow the governor, and an elected one follow the state", () => {
+    const base = withPresident(buildCampaign(), "republican", "republican");
+    expect(attorneyGeneralSelection(WY)).toBe("governor");
+    expect(attorneyGeneralSelection(CA)).toBe("elected");
+    // A Democratic governor in Wyoming appoints a Democrat; a Democratic
+    // governor of a strongly Republican elected-AG state does not supply one.
+    const governors = withGovernors(base, [{ id: WY, party: "democrat" }, { id: AL, party: "democrat" }]);
+    expect(opposingAttorneyGeneral(withLean(governors, WY, 0.6), WY)).toBe(1);
+    expect(opposingAttorneyGeneral(withLean(governors, AL, 0.6), AL)).toBeLessThan(0.01);
+    expect(opposingAttorneyGeneral(withLean(governors, CA, -0.4), CA)).toBeGreaterThan(0.99);
+  });
+
+  it("names no state without an injury it can claim, and ranks injured, opposed states first", () => {
+    const base = withLean(withLean(withPresident(buildCampaign(), "republican", "republican"), CA, -0.4), AL, 0.5);
+    expect(statePlaintiffs(base, { CA: 1, AL: 1 }, "none", 1)).toEqual([]);
+    const named = statePlaintiffs(base, { CA: 1, AL: 1 }, "proprietary", 1);
+    expect(named.map((entry) => entry.stateId)).toEqual([CA]);
+    expect(statePlaintiffs(base, { CA: 1 }, "residents", 1)[0]!.weight).toBeLessThan(named[0]!.weight);
+  });
+
+  it("captions a state the way it styles itself", () => {
+    expect(statePartyName(CA, "California")).toBe("State of California, by its Attorney General");
+    expect(statePartyName("VA" as StateId, "Virginia")).toMatch(/^Commonwealth of Virginia/);
   });
 });

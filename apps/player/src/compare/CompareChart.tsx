@@ -56,8 +56,7 @@ const periodWords = (span: CompareWindow): string => (span === "term" ? "Your te
 function chartHelp(metric: CompareMetricId, better: ChartModel["better"]) {
   const term = TERMS[metric];
   return {
-    meaning: "Your line is the thick one. Each thinner dashed line is something you chose to compare with: another country, a state, one of your own past weeks, or a past presidency. A gold line is a fixed reference from the record.",
-    steps: ["Find your line, the thick one.", "Read each line's name and latest figure at the right edge.", `${better === "up" ? "Higher" : "Lower"} is better for this reading.`],
+    meaning: `Your line is the thick one. Each thinner dashed line is something you chose to compare with, such as another country, a state, one of your own past weeks, or a past presidency. A gold line is a fixed reference from the record. ${better === "up" ? "Higher" : "Lower"} is better for this reading.`,
     ...(term ? { term: termDoor(term.id, term.label) } : {}),
   };
 }

@@ -7,6 +7,8 @@ import { feedVisibility, MAX_NPC_ACTIONS_PER_TURN, npcActionPhase, npcActorsThis
 import { advanceTurn, noopPhase } from "./turn-loop.js";
 import { decideNpcAction, explainNpcDecision, npcActStamp, toTerms } from "./npc-agent.js";
 import { createGrudge } from "./relationships.js";
+import { resolveAction } from "./resolution.js";
+import { apply } from "./effects.js";
 
 const seed = makeCampaignSeed("npc-turn-seed");
 const streams = () => createRngStreams(seed);
@@ -342,5 +344,41 @@ describe("who gets the week", () => {
       return order;
     };
     expect(walk()).toEqual(walk());
+  });
+});
+
+describe("a government with something to answer", () => {
+  // The player sanctions ALP the week before each draw, so ALP holds a fresh
+  // intent to answer in every week measured; nothing else differs.
+  function sanctionedAt(campaign: Campaign, turn: number): Campaign {
+    const before = { ...campaign, turn: turn - 1 };
+    const sanction = resolveAction(before, { actor: nationA.id, target: nationB.id, instrument: "economic", rung: 1 }, streams(), "action");
+    if (!sanction.ok) throw new Error(`sanction refused: ${sanction.reason}`);
+    return { ...apply(before, sanction.packet), turn };
+  }
+
+  it("takes the week more often while the act is fresh, and still never past the cap", () => {
+    const campaign = threeNationCampaign();
+    let quiet = 0;
+    let coerced = 0;
+    for (let turn = 2; turn <= 61; turn++) {
+      if (npcActorsThisTurn({ ...campaign, turn }, streams()).includes(nationB.id)) quiet += 1;
+      const drawn = npcActorsThisTurn(sanctionedAt(campaign, turn), streams());
+      expect(drawn.length).toBeLessThanOrEqual(MAX_NPC_ACTIONS_PER_TURN);
+      if (drawn.includes(nationB.id)) coerced += 1;
+    }
+    expect(coerced).toBeGreaterThan(quiet);
+  });
+});
+
+describe("an answer on the wire", () => {
+  it("names the act it answers in the bulletin", () => {
+    const calm = threeNationCampaign({ trust: 0.3, tension: 0.05 });
+    const sanction = resolveAction(calm, { actor: nationA.id, target: nationB.id, instrument: "economic", rung: 1 }, streams(), "action");
+    if (!sanction.ok) throw new Error(`sanction refused: ${sanction.reason}`);
+    const after = { ...apply(calm, sanction.packet), turn: calm.turn + 1 };
+    const outcome = runNpcTurn(after, nationB.id, streams());
+    expect(outcome?.decision.chosen?.responding?.toward).toBe(nationA.id);
+    expect(outcome?.feedItem?.headline).toMatch(/^Alpland answers /);
   });
 });

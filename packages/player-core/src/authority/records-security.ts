@@ -5,6 +5,9 @@ import type { Authority } from "./types.js";
 export const uscode = (title: number, section: string): string =>
   `https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title${title}-section${section}&num=0&edition=prelim`;
 
+/** The official govinfo edition of one section, which resolves to the current annual Code. */
+export const govinfoCode = (title: number, section: string): string => `https://www.govinfo.gov/link/uscode/${title}/${section}`;
+
 const WAR_AND_FORCE: readonly Authority[] = [
   {
     id: "war-powers-resolution",
@@ -91,6 +94,7 @@ const WAR_AND_FORCE: readonly Authority[] = [
       "Help under §251 needs the request of the state's legislature, or its governor if the legislature cannot be convened",
     ],
     sourceUrl: uscode(10, "251"),
+    glossaryTerms: ["proclamation-to-disperse"],
     covers: [{ code: "usc", title: 10, from: "251", to: "255" }],
   },
   {
@@ -103,6 +107,7 @@ const WAR_AND_FORCE: readonly Authority[] = [
     enables: [],
     limits: ["Federal troops can't police at home unless a statute such as the Insurrection Act expressly allows it"],
     sourceUrl: uscode(18, "1385"),
+    glossaryTerms: ["posse-comitatus"],
     covers: [{ code: "usc", title: 18, from: "1385" }],
   },
   {
@@ -198,8 +203,65 @@ const INTELLIGENCE: readonly Authority[] = [
     enables: ["Seek a court order for electronic surveillance of a foreign power or its agent"],
     limits: ["Surveillance outside the Act's procedures is a federal crime", "The person surveilled unlawfully may sue the officials responsible"],
     sourceUrl: uscode(50, "1801"),
+    glossaryTerms: ["fisc-order"],
     aliases: ["Foreign Intelligence Surveillance Act", "FISA"],
     covers: [{ code: "usc", title: 50, from: "1801", to: "1813" }],
+  },
+];
+
+/** The orders Justice asks a court for. Statute text read on Cornell LII; links go to the official govinfo edition. */
+const COURT_ORDERS: readonly Authority[] = [
+  {
+    id: "title-iii-interception",
+    cite: "18 U.S.C. §2518",
+    title: "Court orders to intercept wire, oral or electronic communications",
+    shortTitle: "Title III",
+    kind: "statute",
+    summary:
+      "A federal judge can let investigators listen in on a person's calls or messages, on a sworn application approved at a senior level of the Justice Department. The judge has to find probable cause that a listed federal crime is being committed and that ordinary investigation has failed or would.",
+    enables: ["Ask a federal judge, through the Justice Department, for an order to intercept the communications of someone committing a listed federal crime"],
+    limits: [
+      "Probable cause that a person is committing an offense §2516 lists, such as riot, and that the communications will concern it (§2518(3)(a)-(b))",
+      "Normal investigative procedures tried and failed, or unlikely to work, or too dangerous (§2518(3)(c))",
+      "No longer than necessary and never more than thirty days. An extension needs a new application and new findings (§2518(5))",
+    ],
+    sourceUrl: govinfoCode(18, "2518"),
+    glossaryTerms: ["title-iii-order"],
+    aliases: ["Title III order", "wiretap order", "Title III of the Omnibus Crime Control and Safe Streets Act"],
+    covers: [{ code: "usc", title: 18, from: "2516" }, { code: "usc", title: 18, from: "2518" }],
+  },
+  {
+    id: "search-warrant-rule-41",
+    cite: "Fed. R. Crim. P. 41",
+    title: "Search and seizure (Federal Rule of Criminal Procedure 41)",
+    shortTitle: "Rule 41",
+    kind: "regulation",
+    summary:
+      "A magistrate judge must issue a search warrant when a federal officer or prosecutor shows probable cause to search for evidence of a crime, contraband, or a person to be arrested. The warrant names what is to be searched and seized.",
+    enables: ["Have federal agents ask a magistrate judge for a warrant to search for evidence of a federal crime"],
+    limits: [
+      "Probable cause, on an affidavit or other information, to search for and seize the person or property (Rule 41(c), (d)(1))",
+      "The warrant must be executed within a time it sets, no longer than 14 days, and in the daytime unless the judge allows otherwise (Rule 41(e)(2)(A))",
+    ],
+    sourceUrl: "https://www.govinfo.gov/content/pkg/USCODE-2024-title18/pdf/USCODE-2024-title18-app-federalru-rule41.pdf",
+    glossaryTerms: ["search-warrant"],
+    aliases: ["Federal Rule of Criminal Procedure 41", "Rule 41"],
+  },
+  {
+    id: "united-states-as-plaintiff",
+    cite: "28 U.S.C. §§1331, 1345",
+    title: "Civil actions by the United States in the district courts",
+    kind: "statute",
+    summary:
+      "The federal district courts hear civil suits arising under federal law, and suits the United States itself brings. That is how the Justice Department asks a court to order a state or a person to stop obstructing a federal law.",
+    enables: ["Have the Justice Department sue in federal district court to enforce a federal law, and ask for an injunction"],
+    limits: [
+      "The court decides, and an injunction binds only the parties it names",
+      "The United States must still show it is likely to win and that the law is being obstructed",
+    ],
+    sourceUrl: govinfoCode(28, "1345"),
+    glossaryTerms: ["enforcement-injunction"],
+    covers: [{ code: "usc", title: 28, from: "1331" }, { code: "usc", title: 28, from: "1345" }],
   },
 ];
 
@@ -307,6 +369,23 @@ const BORDERS: readonly Authority[] = [
     covers: [{ code: "usc", title: 8, from: "1182" }],
   },
   {
+    id: "ina-officer-powers",
+    cite: "8 U.S.C. §1357",
+    title: "Powers of immigration officers (Immigration and Nationality Act, §287)",
+    kind: "statute",
+    summary:
+      "Immigration officers can question anyone they believe is not a citizen about their right to be in the country. They can arrest without a warrant someone they have reason to believe is here unlawfully and likely to escape before a warrant can be obtained.",
+    enables: ["Send immigration officers to question and arrest people they believe are removable"],
+    limits: [
+      "A warrantless arrest needs reason to believe the person is here unlawfully and is likely to escape before a warrant can be obtained (§1357(a)(2))",
+      "The person arrested is taken without unnecessary delay before an officer who can examine their right to remain",
+      "It is power over the immigration laws, not a general police power over everyone in a state",
+    ],
+    sourceUrl: govinfoCode(8, "1357"),
+    aliases: ["INA §287", "Section 287"],
+    covers: [{ code: "usc", title: 8, from: "1357" }],
+  },
+  {
     id: "case-zablocki",
     cite: "1 U.S.C. §112b",
     title: "The Case-Zablocki Act",
@@ -321,4 +400,4 @@ const BORDERS: readonly Authority[] = [
   },
 ];
 
-export const SECURITY_AUTHORITIES: readonly Authority[] = [...WAR_AND_FORCE, ...INTELLIGENCE, ...EMERGENCIES, ...BORDERS];
+export const SECURITY_AUTHORITIES: readonly Authority[] = [...WAR_AND_FORCE, ...INTELLIGENCE, ...COURT_ORDERS, ...EMERGENCIES, ...BORDERS];

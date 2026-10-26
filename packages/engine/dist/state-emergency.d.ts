@@ -1,6 +1,20 @@
 import type { CausalId } from "./causality.js";
 import type { NationId, StateId } from "@admin/world";
 import type { ConditionKind } from "./condition-kinds.js";
+import type { GameDate } from "./state.js";
+export type AuthorityClock = {
+    readonly id: string;
+    readonly authority: "s122" | "emergency";
+    readonly predicate: string;
+    /** All predicates covered by this episode; absent on older single-predicate saves. */
+    readonly predicates?: readonly string[];
+    readonly openedDate: GameDate;
+    readonly expiresDate: GameDate;
+    readonly recoveredDate?: GameDate;
+    readonly terminatedDate?: GameDate;
+    readonly authorizedThrough?: GameDate;
+    readonly causedBy?: CausalId;
+};
 /**
  * Where a declaration reaches. A state-scoped declaration cannot authorize an
  * order against the rest of the country, which is the whole reason scope is
@@ -14,6 +28,7 @@ export type EmergencyScope = {
 };
 export type DeclaredEmergency = {
     readonly id: string;
+    readonly authorityClockId?: string;
     readonly scope: EmergencyScope;
     /** What it was declared over — the condition kind, for the record and the press. */
     readonly cause: ConditionKind | "armed-conflict";

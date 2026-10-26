@@ -24,7 +24,7 @@ function RemoveOfficer({ campaign, file, acts }: Props) {
       id: "remove",
       label: `Remove ${file.person.name}`,
       ...(lever.kind === "available" ? { price: { cost: lever.cost, risks: lever.risks } } : { unavailable: lever.kind === "refused" ? lever.refusal : lever.rule }),
-      ...(lever.kind === "available" && forCause && stated.length === 0 ? { unavailable: "Pick a reason first." } : {}),
+      ...(lever.kind === "available" && forCause && stated.length === 0 ? { unavailable: "Removal for cause needs a stated reason." } : {}),
     },
   ];
   const remove = () => {
@@ -35,7 +35,7 @@ function RemoveOfficer({ campaign, file, acts }: Props) {
     <Column gap="sm">
       {forCause ? (
         <Column gap="xs">
-          <Select label="Reason for removal" placeholder="Pick a reason" value={cause} onChange={setCause} options={REMOVAL_CAUSES.map((entry) => ({ value: entry, label: entry }))} />
+          <Select label="Reason for removal" placeholder="No reason given" value={cause} onChange={setCause} options={REMOVAL_CAUSES.map((entry) => ({ value: entry, label: entry }))} />
           <Text variant="caption" tone="secondary">
             The law lets you remove this official only for a reason, so pick one to put on the record. Picking a reason is your claim, not proof. It doesn't show they did anything wrong, or that the removal would hold up in court.
           </Text>
@@ -99,11 +99,11 @@ function MemberOutreach({ campaign, file, acts }: Props) {
   const validBroker = brokers.includes(broker as PersonId) ? (broker as PersonId) : undefined;
   const prepared = bill ? issueMemberOutreach(campaign, file.person.id, bill.id, validBroker) : undefined;
   const options: readonly PricedOption[] = [
-    { id: "request", label: validBroker ? "Send someone to make your case" : "Ask them yourself", ...(prepared?.ok ? { price: { cost: { standing: validBroker ? -0.02 : -0.01 }, risks: [] }, follows: [validBroker ? "This uses both of your outreach requests for today. You'll hear back in three days." : "This uses one of your two outreach requests for today. You'll hear back tomorrow.", "You won't know where they stand until they answer. Even if they agree to talk, that doesn't promise their vote."] } : { unavailable: prepared?.reason ?? "Pick a bill that's still moving through Congress first." }) },
+    { id: "request", label: validBroker ? "Send someone to make your case" : "Ask them yourself", ...(prepared?.ok ? { price: { cost: { standing: validBroker ? -0.02 : -0.01 }, risks: [] }, follows: [validBroker ? "This uses both of your outreach requests for today. You'll hear back in three days." : "This uses one of your two outreach requests for today. You'll hear back tomorrow.", "You won't know where they stand until they answer. Even if they agree to talk, that doesn't promise their vote."] } : { unavailable: prepared?.reason ?? "This needs a bill that's still moving through Congress." }) },
   ];
   return (
     <Column gap="sm">
-      <Select label="Proposal" placeholder="Choose a bill" value={billId || undefined} onChange={(next) => { setBillId(next); setBroker(""); }} options={bills.map((entry) => ({ value: entry.id, label: entry.title }))} />
+      <Select label="Proposal" placeholder="No bill chosen" value={billId || undefined} onChange={(next) => { setBillId(next); setBroker(""); }} options={bills.map((entry) => ({ value: entry.id, label: entry.title }))} />
       <Select label="Who asks" value={broker || "direct"} onChange={(next) => setBroker(next === "direct" ? "" : next)} options={[{ value: "direct", label: "You, directly" }, ...brokers.map((id) => ({ value: id as string, label: campaign.people[id]?.base.name ?? String(id) }))]} />
       <ActCompare campaign={campaign} title="Ask for their support" options={options} verbs={{ request: "Ask for their support" }} busy={acts.busy} law="outreach" onAuthorize={() => acts.run(`Asked ${file.person.name} for support`, () => issueMemberOutreach(campaign, file.person.id, billId, validBroker), { tier: "confirm", title: `Ask ${file.person.name} for support`, law: "outreach" }, [{ label: "Proposal", value: bill?.title ?? "" }])} />
     </Column>

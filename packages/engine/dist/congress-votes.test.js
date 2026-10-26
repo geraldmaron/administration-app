@@ -164,6 +164,10 @@ describe("POL-4: what an act says about the country", () => {
         expect(LEGISLATIVE_ACTS.filter((act) => act.domestic === undefined).map((act) => act.id)).toEqual([
             "act-military-facilities-appropriation",
             "act-war-powers-enforcement",
+            // Ending or extending a named declaration acts on the office's own
+            // authority, not on any part of the country.
+            "act-emergency-termination",
+            "act-emergency-renewal",
             "act-emergency-powers-limitation",
             "act-economic-stabilization",
             "act-intelligence-authorization",

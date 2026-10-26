@@ -10,6 +10,7 @@ import { foundedForBalance } from "./balance-harness.js";
 import { apply } from "./effects.js";
 import {
   FLASHPOINT_CATALOG,
+  INHERITED_PROGRAMS,
   OPENING_HELD_INTENSITY,
   OPENING_LINES,
   WORLD_2026_AS_OF,
@@ -23,6 +24,8 @@ import type { Campaign, Conflict } from "./state.js";
 import { HELD_FRONT_INTENSITY, OPENING_WAR_SUPPORT, conflictPhase } from "./war-tick.js";
 import { liftMeasure } from "./trade.js";
 import { bilateralGoods } from "./trade-volume.js";
+import { daysBetween } from "./clock.js";
+import { EVASION, evasionOn, externalMacroPressure } from "./external-pressure.js";
 
 const PROBE_SEEDS = Array.from({ length: 30 }, (_, index) => `probe-${index}`);
 const { campaign: sealed } = foundedForBalance("opening-world", "democrat", {}, { carriedWorld: false });
@@ -183,4 +186,60 @@ describe("the carried wars hold their first 26 weeks", () => {
       for (const id of carried) expect(state.conflicts[id]!.status, `seed carried-${index}, ${id}`).toBe("active");
     }
   }, 120_000);
+});
+
+describe("the inherited programs, as the texts scope them", () => {
+  const preset = foundedForBalance("opening-programs", "democrat", {}, { openingPreset: "world-2026" }).campaign;
+  const inherited = Object.values(preset.trade.measures).filter((measure) => measure.id.endsWith(":inherited"));
+  const on = (target: string) => inherited.filter((measure) => (measure.target as string) === target);
+
+  // Each program carries the source's own words for its effective day; the
+  // date filed must be the one those words name, in whichever form the
+  // source prints it.
+  const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const named = (words: string): readonly string[] => [
+    ...[...words.matchAll(/([A-Z][a-z]+) (\d{1,2}), (\d{4})/g)].flatMap((m) => (MONTHS.includes(m[1]!) ? [`${m[3]}-${MONTHS.indexOf(m[1]!) + 1}-${Number(m[2])}`] : [])),
+    ...[...words.matchAll(/(\d{1,2}) ([A-Z][a-z]{2}) (\d{4})/g)].flatMap((m) => {
+      const month = MONTHS.findIndex((name) => name.startsWith(m[2]!));
+      return month >= 0 ? [`${m[3]}-${month + 1}-${Number(m[1])}`] : [];
+    }),
+  ];
+
+  it("dates every program at the day its source says the authority took effect", () => {
+    for (const [target, programs] of Object.entries(INHERITED_PROGRAMS)) {
+      for (const program of programs) {
+        expect(program.source, target).toMatch(/https:\/\//);
+        const days = named(program.effective);
+        expect(days.length, `${target}: ${program.effective}`).toBeGreaterThan(0);
+        expect(days.at(-1), `${target}: ${program.effective}`).toBe(`${program.since.year}-${program.since.month}-${program.since.day}`);
+      }
+    }
+    for (const measure of inherited) expect(daysBetween(measure.imposedDate, preset.calendar)).toBeGreaterThan(300);
+  });
+
+  it("says a list-based program's designations are lifted, not that a sector moves again", () => {
+    const congo = on("COD")[0]!;
+    const lifted = liftMeasure(preset, congo.id);
+    if (!lifted.ok) throw new Error(lifted.reason);
+    expect(lifted.packet.narration.summary).toMatch(/designations under the .* program are lifted/);
+  });
+
+  it("carries the Iran program: the embargo and the oil and petrochemical designations", () => {
+    expect(on("IRN").map((m) => (m.kind === "embargo" ? "embargo" : m.sector)).sort()).toEqual(["chemicals", "embargo", "energy-crude"]);
+  });
+
+  it("files Russia under its oil companies and metals, Belarus as a list since Belaruskali's removal, and Congo as a list that cuts no trade", () => {
+    expect(on("RUS").map((m) => m.sector).sort()).toEqual(["aluminum", "bulk-mining", "energy-crude"]);
+    expect(on("RUS").find((m) => m.sector === "energy-crude")?.covered).toBeCloseTo(0.53, 9);
+    expect(on("RUS").filter((m) => m.sector !== "energy-crude").every((m) => m.direction === "imports")).toBe(true);
+    expect(on("BLR").map((m) => m.scope)).toEqual(["listed"]);
+    const congo = on("COD");
+    expect(congo.map((m) => m.scope)).toEqual(["listed"]);
+    const without: Campaign = { ...preset, trade: { ...preset.trade, measures: Object.fromEntries(Object.entries(preset.trade.measures).filter(([, m]) => (m.target as string) !== "COD")) } };
+    expect(externalMacroPressure(preset, "COD" as NationId).growth).toBeCloseTo(externalMacroPressure(without, "COD" as NationId).growth, 9);
+  });
+
+  it("reads the designations as mature, so evasion has already won back reach", () => {
+    expect(evasionOn(preset, "VEN" as NationId)).toBeGreaterThan(0.4 * EVASION.ceiling);
+  });
 });

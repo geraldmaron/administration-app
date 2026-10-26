@@ -1,25 +1,27 @@
 import type { ReactNode } from "react";
-import { Theme, View, useMedia } from "@tamagui/core";
+import { View, useMedia } from "@tamagui/core";
 import { Icon, type IconName } from "../icons/Icon";
 import { Surface } from "../primitives/Surface";
 import { Column, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
 import { useAnchor } from "./anchors";
 import { pageGutter } from "./gutter";
+import { Zone } from "./Zone";
 
 // How a long working page tells the reader where one area ends and the next
-// begins. Players could not tell when they had crossed into a new part of a
-// screen, because a section heading, a card heading and a table caption all
-// wore the same type on the same bordered box. So there are three levels, each
-// with a look no other level shares:
+// begins. A section heading, a card heading and a table caption once wore the
+// same type on the same bordered box, so there are three levels, each with a
+// look no other level shares:
 //
-//   Section  the area. A full-width rule with a gold lead, an icon chip, a
-//            level-two heading in the heading face, one plain helper sentence,
-//            and the same space above every one. It draws no box of its own.
+//   Section  the area. A level-two heading in the heading face with its icon
+//            beside it in tertiary ink, one plain helper sentence, and the same
+//            space above every one. It draws no box and no rule: space alone
+//            separates areas.
 //   Card     a unit of work inside a section, on a raised panel. Its title is a
-//            level-three heading, smaller, in the body face, with no chip.
+//            level-three heading in the title face, smaller than a section's.
 //   Stage    the one area that is a place rather than a list: a full-bleed
-//            dark band (a map, a board) that breaks the page's rhythm on purpose.
+//            band on the theater plane (a map, a board) that breaks the page's
+//            rhythm on purpose.
 //
 // SectionNav names the sections in order and lights the one on screen. A
 // screen adopts the pattern by giving each area a Section with a stable id,
@@ -28,25 +30,6 @@ import { pageGutter } from "./gutter";
 /** The id a section's heading carries, for links that land on it and for the region's name. */
 export function sectionTitleId(id: string): string {
   return `${id}-title`;
-}
-
-/** The rule every section opens on: a gold lead and a strong line across the full width. */
-function SectionRule() {
-  return (
-    <Row aria-hidden>
-      <View width={56} height={4} backgroundColor="goldRule" />
-      <View flex={1} height={1} backgroundColor="borderColorStrong" />
-    </Row>
-  );
-}
-
-/** The icon in its navy chip: the section's identity at a glance, the same shape in every theme. */
-function IconChip({ icon, size }: { readonly icon: IconName; readonly size: number }) {
-  return (
-    <View width={size} height={size} borderRadius="chip" backgroundColor="chromeBackground" borderWidth={1} borderColor="goldRule" alignItems="center" justifyContent="center" aria-hidden>
-      <Icon name={icon} size={Math.round(size * 0.55)} tone="gold" weight="fill" />
-    </View>
-  );
 }
 
 export type SectionHeaderProps = {
@@ -78,9 +61,9 @@ export function SectionHeader({ id, title, icon, helper, actions, waiting }: Sec
   return (
     <Row gap="md" top wrap>
       <Row gap="md" top flexGrow={1} flexShrink={1} flexBasis={320} minWidth={0}>
-        <IconChip icon={icon} size={media.phone ? 32 : 40} />
         <Column gap="2xs" flex={1} minWidth={0}>
           <Row gap="sm">
+            <Icon name={icon} size={18} tone="colorTertiary" />
             <Text variant="heading" role="heading" aria-level={2} id={sectionTitleId(id)} flexShrink={1}>
               {title}
             </Text>
@@ -121,8 +104,7 @@ export function Section({ children, id, ...rest }: Omit<SectionProps, "id"> & { 
   const header = { ...rest, id: id ?? sectionSlug(rest.title) };
   const anchor = useAnchor(header.id);
   return (
-    <View ref={anchor as never} id={header.id} role="region" aria-labelledby={sectionTitleId(header.id)} paddingTop="md" gap="lg">
-      <SectionRule />
+    <View ref={anchor as never} id={header.id} role="region" aria-labelledby={sectionTitleId(header.id)} paddingTop="2xl" gap="lg">
       <SectionHeader {...header} />
       {children}
     </View>
@@ -130,21 +112,21 @@ export function Section({ children, id, ...rest }: Omit<SectionProps, "id"> & { 
 }
 
 /**
- * The page's stage: a section drawn as a dark band from edge to edge of the
- * page, for the one area that is a place (the map) rather than a list. It
- * keeps the section's rule and heading so it still reads as a section.
+ * The page's stage: a section drawn as a band from edge to edge of the page on
+ * the theater plane, for the one area that is a place (the map) rather than a
+ * list. It keeps the section's heading so it still reads as a section.
  */
 export function Stage({ children, ...header }: SectionProps) {
   const media = useMedia();
   const gutter = pageGutter(media);
   const anchor = useAnchor(header.id);
   return (
-    <Theme name="dark">
-      <View ref={anchor as never} id={header.id} role="region" aria-labelledby={sectionTitleId(header.id)} marginHorizontal={-gutter} paddingHorizontal={gutter} paddingTop="lg" paddingBottom="xl" gap="lg" backgroundColor="chromeBackground" borderTopWidth={4} borderTopColor="goldRule">
+    <Zone zone="theater">
+      <View ref={anchor as never} id={header.id} role="region" aria-labelledby={sectionTitleId(header.id)} marginHorizontal={-gutter} paddingHorizontal={gutter} paddingTop="lg" paddingBottom="xl" gap="lg" backgroundColor="background">
         <SectionHeader {...header} />
         {children}
       </View>
-    </Theme>
+    </Zone>
   );
 }
 
@@ -165,7 +147,7 @@ export type CardProps = {
 
 /**
  * A unit of work inside a section, on a raised panel. Its title is a level-three
- * heading in the body face, so it never looks like the section it sits in.
+ * heading in the title face, so it never looks like the section it sits in.
  */
 export function Card({ title, icon, helper, actions, help, children, level = "raised", edge, id }: CardProps) {
   return (
@@ -174,7 +156,7 @@ export function Card({ title, icon, helper, actions, help, children, level = "ra
         <Row between gap="sm" wrap>
           <Row gap="xs" flex={1} minWidth={200}>
             {icon ? <Icon name={icon} size={18} tone="colorSecondary" /> : null}
-            <Text variant="body" weight="medium" role="heading" aria-level={3} flex={1}>
+            <Text variant="title" role="heading" aria-level={3} flex={1}>
               {title}
             </Text>
           </Row>

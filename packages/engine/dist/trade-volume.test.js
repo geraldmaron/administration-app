@@ -4,7 +4,7 @@ import { temporaryImportSuspension, expireTradeMeasures } from "./trade-effects.
 import { describe, expect, it } from "vitest";
 import { US_GOODS_TRADE } from "@admin/world";
 import { foundedForBalance } from "./balance-harness.js";
-import { bilateralGoods, volumeFall } from "./trade-volume.js";
+import { bilateralGoods, retaliationFall, sectorFlow, sectorImports, volumeFall } from "./trade-volume.js";
 import { suppliersOf, tradeEdge, tradeEdgesWith } from "./trade.js";
 import { tradeSector, TRADE_SECTOR_IDS } from "./trade-sectors.js";
 const { campaign } = foundedForBalance("trade-volume");
@@ -70,8 +70,16 @@ describe("the book moves after the opening", () => {
         const answered = withMeasure(campaign, { id: "retaliation:test", kind: "tariff", sector, target: id("CHN"), rate: 0.25, origin: "retaliation" });
         const before = tradeEdge(campaign, id("CHN"), sector);
         const after = tradeEdge(answered, id("CHN"), sector);
-        expect(after.exports / before.exports).toBeCloseTo(1 - volumeFall(tradeSector(sector), 0.25), 2);
+        // A foreign buyer turns from American goods at the export response, not the import one.
+        expect(after.exports / before.exports).toBeCloseTo(1 - retaliationFall(tradeSector(sector), 0.25), 2);
         expect(after.imports).toBe(before.imports);
+    });
+    it("loses about what China's 2018-19 answer took off American farm sales", () => {
+        // USDA ERS: China's retaliatory tariffs, 5 to 25 percent, reduced the value
+        // of US agricultural exports to China by 76 percent. A band, at the top rate.
+        const fall = retaliationFall(tradeSector("agriculture-row-crops"), 0.25);
+        expect(fall).toBeGreaterThan(0.65);
+        expect(fall).toBeLessThan(0.85);
     });
     it("ends for an embargo, the goods no sector covers included", () => {
         const embargoed = withMeasure(campaign, {
@@ -94,4 +102,64 @@ it("a timed import suspension closes imports, leaves exports, and expires once",
     const expired = expireTradeMeasures({ ...signed, calendar: addDays(signed.calendar, 60) });
     expect(bilateralGoods(expired, id("MEX"))).toEqual(before);
     expect(expireTradeMeasures(expired)).toBe(expired);
+});
+describe("trade a tariff turns away goes to other suppliers", () => {
+    const sector = "consumer-electronics";
+    const tariffed = withMeasure(campaign, { id: "tariff:CHN:divert", kind: "tariff", sector, target: id("CHN"), rate: 0.25, origin: "us" });
+    const weeksOn = (state, weeks) => ({ ...state, turn: state.turn + weeks, calendar: addDays(state.calendar, weeks * 7) });
+    const vietnam = (state) => sectorFlow(state, id("VNM"), sector)?.imports ?? 0;
+    const imports = (state) => sectorImports(state, sector);
+    it("leaves Vietnam's sales where they were the day the tariff lands, and raises them over the months after", () => {
+        expect(vietnam(tariffed)).toBeCloseTo(vietnam(campaign), 2);
+        expect(vietnam(weeksOn(tariffed, 26))).toBeGreaterThan(vietnam(campaign));
+        expect(vietnam(weeksOn(tariffed, 104))).toBeGreaterThan(vietnam(weeksOn(tariffed, 26)));
+        const share = (state) => vietnam(state) / imports(state);
+        expect(share(weeksOn(tariffed, 52))).toBeGreaterThan(share(campaign));
+    });
+    it("never diverts more than buyers can replace, so the country buys less in all", () => {
+        expect(imports(weeksOn(tariffed, 520))).toBeLessThan(imports(campaign));
+    });
+    it("stops diverting the week the tariff is lifted", () => {
+        const lifted = withMeasure(weeksOn(tariffed, 52), { id: "tariff:CHN:divert", kind: "tariff", sector, target: id("CHN"), rate: 0.25, origin: "us", liftedTurn: tariffed.turn + 52 });
+        expect(vietnam(lifted)).toBeCloseTo(vietnam(weeksOn(campaign, 52)), 2);
+    });
+});
+describe("an old token restriction cannot age a large new one", () => {
+    const sector = "consumer-electronics";
+    const vietnam = (state) => sectorFlow(state, id("VNM"), sector)?.imports ?? 0;
+    const tariff = (state, measureId, rate, daysAgo) => {
+        const measure = { id: measureId, kind: "tariff", sector, target: id("CHN"), rate, origin: "us", imposedTurn: state.turn, imposedDate: addDays(state.calendar, -daysAgo), authority: "INST-USTR" };
+        return { ...state, trade: { ...state.trade, measures: { ...state.trade.measures, [measure.id]: measure } } };
+    };
+    const token = tariff(campaign, "tariff:CHN:token", 0.001, 364);
+    const both = tariff(token, "tariff:CHN:large", 0.25, 0);
+    const freshLarge = tariff(campaign, "tariff:CHN:large", 0.25, 0);
+    it("matures only the token's own small cut on the day the large tariff lands", () => {
+        const gainedByToken = vietnam(token) - vietnam(campaign);
+        expect(vietnam(both) - vietnam(campaign)).toBeCloseTo(gainedByToken, 1);
+        // What the old token adds over a fresh large tariff is the token's own matured cut, no more.
+        expect(vietnam(both) - vietnam(freshLarge)).toBeLessThanOrEqual(gainedByToken + 0.01);
+        expect(vietnam(both) - vietnam(campaign)).toBeLessThan(10);
+    });
+    it("gives a staged sequence no more diversion than its pieces dated as they were made", () => {
+        const later = (state) => ({ ...state, turn: state.turn + 26, calendar: addDays(state.calendar, 182) });
+        const staged = vietnam(later(both)) - vietnam(later(campaign));
+        const pieces = (vietnam(later(token)) - vietnam(later(campaign))) + (vietnam(later(freshLarge)) - vietnam(later(campaign)));
+        expect(staged).toBeLessThanOrEqual(pieces + 1);
+    });
+});
+describe("diversion against the 2018-19 record", () => {
+    // Census goods trade (opened 2026-10-25): US imports from China fell $89.4
+    // billion from 2018 to 2019 while all US imports fell $44.4 billion, so
+    // about half the lost Chinese flow was bought elsewhere within the year.
+    // All goods, other causes mixed in: a band of a quarter either side.
+    it("replaces about half of a tariffed partner's lost sales within the year", () => {
+        const sector = "consumer-electronics";
+        const tariffed = withMeasure(campaign, { id: "tariff:CHN:record", kind: "tariff", sector, target: id("CHN"), rate: 0.25, origin: "us" });
+        const year = { ...tariffed, turn: tariffed.turn + 52, calendar: addDays(tariffed.calendar, 364) };
+        const lost = (sectorFlow(campaign, id("CHN"), sector)?.imports ?? 0) - (sectorFlow(year, id("CHN"), sector)?.imports ?? 0);
+        const replaced = lost - (sectorImports(campaign, sector) - sectorImports(year, sector));
+        const record = (89.4 - 44.4) / 89.4;
+        expect(Math.abs(replaced / lost - record)).toBeLessThanOrEqual(0.25 * record);
+    });
 });

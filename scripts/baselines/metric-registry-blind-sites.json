@@ -2,7 +2,6 @@
   "$comment": "Sites the typed walk cannot resolve to the fields they write, by declaration: `opaque` hands an effect a payload typed as the whole patch type, `computed` builds a patch with computed keys and no dotted path in scope. Written by `node scripts/verify-metric-registry.mjs --update-baseline`; it may only shrink. Type the payload by the keys it sends to take a site out.",
   "entries": {
     "opaque  packages/engine/src/appointments.ts#dismissMinister: MetricSet": 1,
-    "opaque  packages/engine/src/budget.ts#budgetPhase: MetricSet": 1,
     "opaque  packages/engine/src/cabinet-agenda-acts.ts#answerResignationOffer: MetricSet": 1,
     "opaque  packages/engine/src/cabinet-agenda-acts.ts#proposalEffects: MetricSet": 1,
     "opaque  packages/engine/src/cabinet-faction.ts#reconcileFaction: MetricSet": 1,

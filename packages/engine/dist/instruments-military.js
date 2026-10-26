@@ -117,7 +117,7 @@ export const militaryRungs = [
         rung: 4,
         id: "military-4",
         name: "Limited Strike",
-        gate: (ctx) => requireAll(outsideNuclearDeterrence(ctx), forceAvailable(ctx, 4), warPowers(ctx, 4), munitionsOnHand(ctx, 4), requireAny(requireAll(requireAtLeast(liveNation(ctx.campaign, ctx.actor).stats.military.branchStrength.air, 0.4, "the air branch strength a strike is flown from"), packageFormations(ctx, 4, "air", 200, "air.fighter", "two hundred uncommitted airframes — a strike package and the tankers behind it"), projectionAccess(ctx, PROJECTION_CAPS[4], "reach to strike at this distance (airlift/sealift or proximity)")), standoffReach(ctx))),
+        gate: (ctx) => requireAll(outsideNuclearDeterrence(ctx), forceAvailable(ctx, 4), warPowers(ctx, 4), munitionsOnHand(ctx, 4), requireAny(requireAll(requireAtLeast(liveNation(ctx.campaign, ctx.actor).stats.military.branchStrength.air, 0.4, "the air branch strength a strike is flown from"), packageFormations(ctx, 4, "air", 100, "air.fighter", "one hundred uncommitted airframes — a strike package and the tankers behind it"), projectionAccess(ctx, PROJECTION_CAPS[4], "reach to strike at this distance (airlift/sealift or proximity)")), standoffReach(ctx))),
         resolve: (ctx) => [
             ...spendsReadiness(ctx, 4),
             ...warPowersRecord(ctx, 4, `Air strikes against ${named(ctx, ctx.target)}, ordered without a vote.`),

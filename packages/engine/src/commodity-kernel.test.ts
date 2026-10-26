@@ -52,7 +52,8 @@ describe("the market kernel", () => {
     const path = run(12, { loss: 0.1, risk: 0.04 });
     expect(path[0]!.index).toBeGreaterThan(1);
     for (let week = 1; week < path.length; week += 1) {
-      expect(Math.abs(Math.log(path[week]!.index / path[week - 1]!.index))).toBeLessThanOrEqual(CRUDE.weeklyCap + 1e-9);
+      // The index is stored to six places, so a capped step can read a hair over the cap.
+      expect(Math.abs(Math.log(path[week]!.index / path[week - 1]!.index))).toBeLessThanOrEqual(CRUDE.weeklyCap + 1e-6);
     }
     expect(path.at(-1)!.index).toBeGreaterThan(path[0]!.index);
   });

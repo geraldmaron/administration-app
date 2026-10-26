@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { View, useMedia } from "@tamagui/core";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { CardLink } from "../primitives/CardLink";
 import { Column, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
@@ -28,8 +28,8 @@ export type ArticleSummary = {
 function Meta({ story }: { readonly story: ArticleSummary }) {
   return (
     <Row gap="sm" wrap>
-      {story.kind ? <Badge status="info">{story.kind}</Badge> : null}
-      {story.lean ? <Badge status={LEAN_STATUS[story.lean.tone]}>{story.lean.word}</Badge> : null}
+      {story.kind ? <Tag tone="info">{story.kind}</Tag> : null}
+      {story.lean ? <Tag tone={LEAN_STATUS[story.lean.tone]}>{story.lean.word}</Tag> : null}
       <Text variant="caption" tone="secondary">
         {story.topic}
       </Text>

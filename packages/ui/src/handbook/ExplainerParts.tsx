@@ -2,7 +2,7 @@ import { View } from "@tamagui/core";
 import Svg, { Line, Path } from "react-native-svg";
 import { Meter } from "../data/Meter";
 import { Icon, isIconName, useInk } from "../icons/Icon";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { Column, Row } from "../primitives/Stack";
 import { Surface } from "../primitives/Surface";
 import { Text } from "../primitives/Text";
@@ -52,7 +52,7 @@ function StepBody({ step }: { readonly step: StepView }) {
     <Column flex={1} gap="xs" paddingBottom="lg">
       <Row gap="sm" wrap>
         <Text variant="label">{step.label}</Text>
-        {step.duration ? <Badge status="outline">{step.duration}</Badge> : null}
+        {step.duration ? <Tag tone="outline">{step.duration}</Tag> : null}
       </Row>
       <Text variant="body">{step.detail}</Text>
       {step.exit ? (

@@ -12,10 +12,9 @@ const SHADING = swatchEntries([
 export function RankedMatrix({ title, metrics, rows, initialSort }: { readonly title: string; readonly metrics: readonly MatrixMetric[]; readonly rows: readonly MatrixRow[]; readonly initialSort?: string }) {
   return (
     <ReadingFrame
-      title="Where each number ranks"
+      title="Where each number ranks" pressHint="Press a row to open its file. Press a column's name to sort by it."
       unit="Each box: the figure and its rank in the column"
       legend={SHADING}
-      pressHint="Press a row to open its file. Press a column's name to sort by it."
       help={{ meaning: "Each box shows a number and where it ranks among the rows in its column. The shading shows where it falls, from the bottom fifth to the top fifth, and the rank is always printed too. Your own row stays in view when you sort." }}
     >
       <CompareMatrix title={title} metrics={metrics} rows={rows} {...(initialSort ? { initialSort } : {})} />

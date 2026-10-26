@@ -1,6 +1,6 @@
 import type { Campaign } from "./state.js";
 import type { OrderProjection } from "./orders.js";
-import { JUDICIAL_REVIEW_TURNS } from "./orders.js";
+import { COURT_TIMING_DAYS } from "./court-procedure.js";
 import type { PolicyStanceProjection } from "./policy-draft.js";
 import type { PeaceProjection } from "./peace.js";
 import type { AuthorizationProjection } from "./force-authorization.js";
@@ -173,13 +173,13 @@ export function bundleOrder(campaign: Campaign, projection: OrderProjection): Pr
     title: projection.order.name,
     impacts: [...metricImpacts(projection.cost, "next-turn", treasury, "modeled"), ...statImpacts],
     cost: projection.cost,
-    odds: { label: "Contested by your own institutions", chance: projection.challengeChance },
+    odds: { label: "Challenged in court", chance: projection.challengeChance },
     reversibility: "judicially-reversible",
     affected: projection.minister ? [projection.minister.base.id] : [],
     assumptions: [
       ...pledgesAtStake(campaign, { kind: "order", order: projection.order.id }).map(pledgeAtStakeLine),
       projection.reasoning,
-      `A challenged order stays in force until the bench rules, ${JUDICIAL_REVIEW_TURNS} weeks on.`,
+      `A challenged order stays in force unless a court grants interim relief, ${COURT_TIMING_DAYS.interim.min} to ${COURT_TIMING_DAYS.interim.max} days after the suit is filed; the merits take ${COURT_TIMING_DAYS.lowerMerits.min} to ${COURT_TIMING_DAYS.lowerMerits.max} days.`,
     ],
     notModeled: [
       "How other governments read a domestic order.",

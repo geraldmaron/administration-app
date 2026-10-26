@@ -35,7 +35,7 @@ export default function EmergencyMap({ campaign, selected, marks, onState, onFai
           if (key.startsWith("state:")) onState(key.slice(6));
         }}
         onFail={onFail}
-        hint="Pick a state with a problem to see what you can do about it."
+        hint="Each shaded state has a problem going on."
       />
       <Row gap="lg" wrap top>
         <MapKey legend={map.legend} />

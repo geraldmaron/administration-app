@@ -1,5 +1,7 @@
 import type { PersonId } from "@admin/world";
 import type { Campaign } from "./state.js";
+import type { TurnPhase } from "./turn-loop.js";
+import { type CongressMember } from "./congress-members.js";
 export type SuccessionMechanism = "removal" | "resignation" | "incapacity";
 export type Succession = {
     readonly successor: PersonId;
@@ -27,3 +29,13 @@ export declare function successionHandover(campaign: Campaign): string;
  * Nothing is written; the harness reads the answer.
  */
 export declare function section4Succession(campaign: Campaign): Succession | undefined;
+/** The chance this House seat's special election changes party, from the seat's lean and the national mood. */
+export declare function houseSpecialOdds(campaign: Campaign, member: CongressMember): number;
+/**
+ * The week's deaths in office and the seats that come due: each death and each
+ * filling its own record, in id order, the roster carried from one to the next
+ * so a second change in the same week reads the first. It reads the whole week
+ * to its close, so it sits on the last office day, where the close is today:
+ * nothing it applies is dated after the day it runs, under either layout.
+ */
+export declare const officeSuccessionPhase: TurnPhase;

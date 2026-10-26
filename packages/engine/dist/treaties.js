@@ -1,5 +1,5 @@
 import { selectNation, selectRelationship, selectTreaties, sharesCompact, } from "./state.js";
-import { supermajorityOf } from "./congress.js";
+import { seatedOf, supermajorityOf } from "./congress.js";
 import { voteOn } from "./congress-votes.js";
 import { headOfGovernmentTitle, nationName, sentenceCase } from "./naming.js";
 import { apply } from "./effects.js";
@@ -65,7 +65,6 @@ export function compactTreatyId(org) {
 }
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
 const round3 = (value) => Math.round(value * 1000) / 1000 + 0;
-const SENATE_SEATS = 100;
 function counterpartName(campaign, counterpart) {
     const nation = selectNation(campaign, counterpart);
     return nation ? nationName(nation.base.identity) : counterpart;
@@ -137,7 +136,7 @@ export function projectRatification(campaign, record) {
     const vote = voteOn(campaign, {
         chamber: "senate",
         appeal,
-        required: supermajorityOf(SENATE_SEATS),
+        required: supermajorityOf(seatedOf(campaign.congress, "senate")),
         // Nobody's measure: consent to an instrument with another government is
         // answered on the terms and the counterpart, which is what the appeal above
         // is made of, and both caucuses answer it the same way.

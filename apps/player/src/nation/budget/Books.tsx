@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import { selectDateOfTurn, selectFiscalStatement, type Campaign } from "@admin/engine";
 import { authorityFlow, fiscalBooks, fiscalOutlaySeries, fiscalPath, fiscalRevenueSeries, formatDate, formatMoney, formatRatio, type FiscalPathPoint } from "@admin/player-core";
-import { BenchmarkChart, Badge, Column, ReadingFrame, Row, Text } from "@admin/ui";
+import { Pane, BenchmarkChart, Tag, Column, ReadingFrame, Row, Text } from "@admin/ui";
 import { DataTable, Facts, Track, TrackRow, sortRows, type SortState } from "@admin/ui/nation";
-import { Panel } from "@admin/ui/world";
 import { toneKey } from "../keys";
 import { termDoor } from "../../handbook/term-door";
 import { MetricActs, MetricReading } from "../MetricReading";
@@ -49,7 +48,7 @@ function Ledger({ campaign }: { readonly campaign: Campaign }) {
   const payments = selectFiscalStatement(campaign).cleanPowerPaymentsRecorded;
   const unknownEarlier = purchases.some((purchase) => purchase.deliveredMwh > 0 && (purchase.paymentTrackingStartMwh === undefined || purchase.paymentTrackingStartMwh > 0));
   return (
-    <Panel title="Money in and money out" icon="domesticLedger">
+    <Pane title="Money in and money out" icon="domesticLedger">
       <Row gap="lg" wrap top>
         <Breakdown title="Money in (revenue)" points={fiscalRevenueSeries(campaign)} />
         <Breakdown title="Money out (spending)" points={fiscalOutlaySeries(campaign)} />
@@ -60,7 +59,7 @@ function Ledger({ campaign }: { readonly campaign: Campaign }) {
           {unknownEarlier ? " We don't know about payments made before tracking began." : ""}
         </Text>
       ) : null}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -73,7 +72,7 @@ export function Position({ campaign }: { readonly campaign: Campaign }) {
   const limitUse = limit.ceiling > 0 ? limit.subjectToLimit / limit.ceiling : 0;
   const rising = books.debtToGdpComingYear > 0;
   return (
-    <Panel id="books-position" title="Where the government's money stands" icon="departmentTreasury">
+    <Pane id="books-position" title="Where the government's money stands" icon="departmentTreasury">
       <Facts
         items={[
           { label: books.balance < 0 ? "This year's deficit" : "This year's surplus", value: <Text variant="label" tone={books.balance < 0 ? "warning" : "success"}>{formatMoney(Math.abs(books.balance))} a year</Text> },
@@ -94,12 +93,12 @@ export function Position({ campaign }: { readonly campaign: Campaign }) {
         <TrackRow name="Used" figure={`${formatMoney(limit.subjectToLimit)} of ${formatMoney(limit.ceiling)}`} value={limitUse} tone={limitUse >= 0.95 ? "bad" : limitUse >= 0.85 ? "watch" : "good"} />
       </ReadingFrame>
       <Row gap="xs" wrap>
-        {limit.binding ? <Badge status="danger">At the limit</Badge> : null}
+        {limit.binding ? <Tag tone="danger">At the limit</Tag> : null}
         <Text variant="caption" tone="secondary" flex={1}>
           {limit.binding ? `The Treasury has hit the debt limit${limit.prioritizing ? ` and is holding back payments. ${formatMoney(limit.arrears)} is owed once the limit goes up` : ""}.` : `At this year's pace of borrowing, about ${limit.headroomWeeks} weeks are left before the limit. That counts the special accounting steps the Treasury can use to buy time.`}
         </Text>
       </Row>
-    </Panel>
+    </Pane>
   );
 }
 

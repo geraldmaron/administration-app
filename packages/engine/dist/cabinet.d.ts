@@ -29,12 +29,13 @@ export declare function cabinetOutcomeOf(holder: PersonRuntime): CabinetOutcome;
 /**
  * How a chair was emptied of the person who held it.
  *
- * Both leave a living person with no seat, and the difference between them is
- * the whole of what a former officer is: one walked out on the President and
- * one was pushed. A press room, a committee summons and a scenario that wants a
- * hostile witness all need to know which.
+ * The first two leave a living person with no seat, and the difference between
+ * them is the whole of what a former officer is: one walked out on the
+ * President and one was pushed. A press room, a committee summons and a
+ * scenario that wants a hostile witness all need to know which. A death in
+ * office empties the chair by the same path, so content can gate on it too.
  */
-export type CabinetDeparture = "resigned" | "dismissed";
+export type CabinetDeparture = "resigned" | "dismissed" | "died";
 /** The flag authored content gates on: `cabinet-departure:<how>:<role>`. */
 export declare function departureFlag(departure: CabinetDeparture, role: RoleId): string;
 /** The same fact about one person, so a file can say what became of them: `cabinet-departure:<how>:<role>:<person>`. */

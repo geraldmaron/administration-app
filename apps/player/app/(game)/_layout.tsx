@@ -12,6 +12,7 @@ import { activeNavId, navGroups, navUtilities, phoneCounts, phoneItemFor, phoneI
 import { BarActions } from "../../src/shell/BarActions";
 import { ClassificationProvider, ShellClassificationBar } from "../../src/shell/classification";
 import { isDevelopmentBuild } from "../../src/shell/build-flavor";
+import { useAttention } from "../../src/shell/useAttention";
 import { cameFrom, useTrail } from "../../src/shell/navigate";
 
 const PRESIDENT_SEAL = sealFor(SEAL_PRESIDENT);
@@ -56,6 +57,7 @@ function GameFrame() {
   const shared = pathname.startsWith("/washington/person/");
   const place = (shared ? activeNavId(cameFrom(pathname) ?? pathname) : undefined) ?? activeNavId(pathname);
   const counts = useWaitingCounts(campaign);
+  const attention = useAttention(campaign);
   const groups = navGroups(counts);
   if (state.status === "empty" && OUTSIDE_A_TERM.test(pathname)) return <Slot />;
   return (
@@ -66,6 +68,7 @@ function GameFrame() {
       activeId={place}
       phoneActiveId={phoneItemFor(place as Parameters<typeof phoneItemFor>[0])}
       Link={RouterLink}
+      attention={attention.state}
       frameTop={<FrameTop />}
       frameBottom={<ShellClassificationBar edge="bottom" />}
       bar={<SituationBar campaign={campaign} actions={campaign ? <BarActions campaign={campaign} continueControl={<ContinueButton campaign={campaign} onSaid={say} />} /> : null} />}

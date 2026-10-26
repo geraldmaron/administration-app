@@ -1,7 +1,6 @@
 import { OFFSHORE_REVIEW_OBLIGATION_USD_MILLIONS, activeDefensePriorityContractId, activeExternalEmergency, availableOffshoreLeaseActions, buyFederalCleanPower, declareArmedForcesEmergency, declareExternalEmergency, declareStaffordDisaster, eligibleExternalThreats, executiveOrder, findingForThreat, isTradeMeasureEffective, leasePlanningArea, offshoreLeaseSaleAction, rescindOrder, selectActiveConflicts, selectOffshoreLeaseSale, staffordRequestsAwaitingDeclaration, type Campaign, type OrderSubject } from "@admin/engine";
 import { formatDate, formatRatio, orderSignatures } from "@admin/player-core";
-import { Button, Column, Text } from "@admin/ui";
-import { Panel } from "@admin/ui/world";
+import { Pane, Button, Column, Text } from "@admin/ui";
 import { ActDone, ActProblem } from "../ActDone";
 import { useNationAct, type NationAct } from "../act";
 import { Cites } from "../Law";
@@ -23,7 +22,7 @@ export function Rescind({ campaign, id }: { readonly campaign: Campaign; readonl
   if (active.length === 0 && !act.done) return null;
   const signatures = orderSignatures(campaign, id);
   return (
-    <Panel title="Cancel this order" icon="archive" lede="Canceling (rescinding) an order stops it from here on. Money already spent and any open court case stay on the record.">
+    <Pane title="Cancel this order" icon="archive" line="Canceling (rescinding) an order stops it from here on. Money already spent and any open court case stay on the record.">
       {active.map((record) => {
         const signature = signatures.find((entry) => entry.id === record.id);
         return (
@@ -37,7 +36,7 @@ export function Rescind({ campaign, id }: { readonly campaign: Campaign; readonl
         );
       })}
       <Outcome act={act} />
-    </Panel>
+    </Pane>
   );
 }
 
@@ -47,7 +46,7 @@ export function ReviewFindings({ campaign, id }: { readonly campaign: Campaign; 
   const findings = id === "order-regulatory-review" ? campaign.pendingRules.filter((rule) => rule.order === id && rule.reviewFinding) : [];
   if (findings.length === 0) return null;
   return (
-    <Panel title="What the review found" icon="review">
+    <Pane title="What the review found" icon="review">
       {findings.map((rule) => {
         const finding = rule.reviewFinding!;
         const target = campaign.orders.find((record) => record.id === finding.targetRuleId);
@@ -70,7 +69,7 @@ export function ReviewFindings({ campaign, id }: { readonly campaign: Campaign; 
         );
       })}
       <Outcome act={act} />
-    </Panel>
+    </Pane>
   );
 }
 
@@ -82,7 +81,7 @@ export function OffshoreSales({ campaign, id }: { readonly campaign: Campaign; r
   const areas = id === "order-energy-leasing" ? [...new Set(campaign.orders.flatMap((record) => (record.order === id && record.subject?.kind === "lease-planning" ? [record.subject.areaId] : [])))] : [];
   if (areas.length === 0) return null;
   return (
-    <Panel title="Lease sales and drilling permits" icon="sectorEnergyOil">
+    <Pane title="Lease sales and drilling permits" icon="sectorEnergyOil">
       <Cites cites={["43 U.S.C. §1344"]} />
       {areas.map((areaId) => {
         const sale = selectOffshoreLeaseSale(campaign, areaId);
@@ -114,7 +113,7 @@ export function OffshoreSales({ campaign, id }: { readonly campaign: Campaign; r
         );
       })}
       <Outcome act={act} />
-    </Panel>
+    </Pane>
   );
 }
 
@@ -122,7 +121,7 @@ export function OffshoreSales({ campaign, id }: { readonly campaign: Campaign; r
 export function BlockedAssets({ campaign, id }: { readonly campaign: Campaign; readonly id: string }) {
   if (id !== "order-asset-seizure" || (campaign.blockedAssets?.length ?? 0) === 0) return null;
   return (
-    <Panel title="Blocked property" icon="locked">
+    <Pane title="Blocked property" icon="locked">
       <Cites cites={["50 U.S.C. §§1701–1708"]} />
       {campaign.blockedAssets?.map((asset) => (
         <Text key={asset.id} variant="body">
@@ -130,7 +129,7 @@ export function BlockedAssets({ campaign, id }: { readonly campaign: Campaign; r
           {asset.status !== "blocked" ? " The ban on doing business with it has been lifted." : isTradeMeasureEffective(campaign, asset.tradeMeasureId) ? " Doing business with it is banned right now." : " The account is still listed as blocked, but the ban on doing business with it isn't in effect right now."}
         </Text>
       ))}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -139,7 +138,7 @@ export function DefenseContract({ campaign, id }: { readonly campaign: Campaign;
   if (id !== "order-defense-production" || !campaign.orders.some((record) => record.defenseContract)) return null;
   const today = campaign.calendar.year * 10000 + campaign.calendar.month * 100 + campaign.calendar.day;
   return (
-    <Panel title="Contract moved to the front of the line" icon="sectorDefenseIndustrial">
+    <Pane title="Contract moved to the front of the line" icon="sectorDefenseIndustrial">
       {campaign.orders.filter((record) => record.defenseContract).map((record) => {
         const contract = record.defenseContract!;
         const outstanding = campaign.munitions?.us[contract.munitionClass]?.onOrder.find((order) => order.priorityContractId === record.id)?.count ?? 0;
@@ -149,7 +148,7 @@ export function DefenseContract({ campaign, id }: { readonly campaign: Campaign;
         const priority = outstanding <= 0 ? "Everything ordered has been delivered." : record.rescindedTurn !== undefined || record.remedyApplied || record.review?.status === "struck-down" ? "The contract no longer goes first, but some of the order still hasn't arrived." : activeDefensePriorityContractId(campaign) === record.id ? "The contract goes first as long as the legal power holds and the factory has room." : "The contract isn't going first right now, and some of the order still hasn't arrived.";
         return <Text key={record.id} variant="body"><Text weight="strong">{contract.supplier}</Text>: {contract.munitionClass.replaceAll("-", " ")} moved to the front of an existing federal restocking order. {progress}{delayed ? ", and it's running late" : ""}. Due date: {formatDate(contract.due)}. {priority}</Text>;
       })}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -159,7 +158,7 @@ export function CleanPower({ campaign, id }: { readonly campaign: Campaign; read
   if (id !== "order-clean-energy" || !campaign.orders.some((record) => record.order === id)) return null;
   const purchases = campaign.cleanPowerPurchases ?? [];
   return (
-    <Panel title="Clean power for federal buildings" icon="sectorEnergyRenewables">
+    <Pane title="Clean power for federal buildings" icon="sectorEnergyRenewables">
       {purchases.map((purchase) => (
         <Text key={purchase.id} variant="body">Federal buildings: {purchase.status}, {purchase.deliveredMwh.toLocaleString("en-US")} of {purchase.quantityMwh.toLocaleString("en-US")} MWh delivered. ${purchase.amountUsdMillions} million set aside, and ${(purchase.paidUsdMillions ?? 0).toFixed(2)} million paid to suppliers so far from the regular yearly budget. {(purchase.paymentTrackingStartMwh === undefined && purchase.deliveredMwh > 0) || (purchase.paymentTrackingStartMwh ?? 0) > 0 ? "We don't know about payments made before tracking began. " : ""}The payments shown are a running total, kept separate from the yearly spending figure.</Text>
       ))}
@@ -177,7 +176,7 @@ export function CleanPower({ campaign, id }: { readonly campaign: Campaign; read
         </Column>
       ) : null}
       <Outcome act={act} />
-    </Panel>
+    </Pane>
   );
 }
 
@@ -190,7 +189,7 @@ export function Declarations({ campaign, id, subject }: { readonly campaign: Cam
   const armed = conflict && !Object.values(campaign.emergencies).some((record) => record.armedForcesConflictId === conflict.id && record.endedTurn === undefined) ? conflict : undefined;
   if (requests.length === 0 && !pursuit && !armed && !act.done) return null;
   return (
-    <Panel title="Declarations this order needs first" icon="order">
+    <Pane title="Declarations this order needs first" icon="order">
       {pursuit ? (
         <Column gap="xs">
           <Cites cites={["50 U.S.C. §§1601–1651", "50 U.S.C. §§1701–1708"]} />
@@ -236,6 +235,6 @@ export function Declarations({ campaign, id, subject }: { readonly campaign: Cam
         </Column>
       ) : null}
       <Outcome act={act} />
-    </Panel>
+    </Pane>
   );
 }

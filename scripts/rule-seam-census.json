@@ -668,6 +668,72 @@
       "site": "scenario-accounting.ts#settleScenarioAccounting",
       "disposition": "reader",
       "reason": "Computes a receipt delta through the existing bookUsDebt precision before emitting choiceBorrowing. It does not write the debt stock; applyChoiceBorrowing rebooks the obligation through that same seam."
+    },
+    {
+      "class": "congressional-decision",
+      "site": "confirmation-count.ts#houseConfirmationVote",
+      "disposition": "reader",
+      "reason": "The House's count on a Vice President nominee under the Twenty-fifth Amendment, through voteOn, over the House's seated members at a majority of them."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "officeholder-mortality.ts#homeOffices",
+      "disposition": "outside",
+      "reason": "Lists who holds each home office so mortality can draw on them. It builds office labels and writes no cabinet seat."
+    },
+    {
+      "class": "founding-edge",
+      "site": "relationship-graph.ts#deriveStructural",
+      "disposition": "reader",
+      "reason": "Overlays the sourced dyads on one derived edge to read a standing reading. It returns numbers and writes no relationship edge to the campaign."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "removal-court.ts#removalRemedy",
+      "disposition": "outside",
+      "reason": "Returns a removed agency officer to the seat when a court strikes the removal down. It seats an agency leader, not a cabinet chair, and no cabinet exit passes through it."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "succession.ts#hillStep",
+      "disposition": "outside",
+      "reason": "Rewrites the congressional roster after a member's death and moves each member's office on the record. It does not dismiss an executive cabinet member."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "succession.ts#memberDied",
+      "disposition": "outside",
+      "reason": "A member of Congress dies: the person's record loses the seat. A congressional vacancy, not a cabinet exit."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "succession.ts#governorDied",
+      "disposition": "outside",
+      "reason": "A governor dies and the state's successor takes the role. A state office, not a cabinet exit."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "succession.ts#secretaryDied",
+      "disposition": "reader",
+      "reason": "A Secretary dies in office. The chair leaves through vacates, and the person's record is marked dead in the same packet."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "succession.ts#leaderDied",
+      "disposition": "outside",
+      "reason": "A foreign leader dies. foreign-politics.ts seats the successor; no United States cabinet chair is touched."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "succession.ts#agencyHeadDied",
+      "disposition": "outside",
+      "reason": "An agency head dies: the institution's office empties and the record loses the role. An agency leader below the cabinet, not a cabinet chair."
+    },
+    {
+      "class": "cabinet-exit",
+      "site": "succession.ts#vicePresidentDied",
+      "disposition": "outside",
+      "reason": "The Vice President dies: the vice presidency institution is vacated and the record loses the role. Not a cabinet chair; the nomination to fill it is confirmed through the vote path."
     }
   ]
 }

@@ -67,7 +67,7 @@ function Add({ library, busy, importSave }: { readonly library: CampaignLibrary 
       ) : (
         <Column gap="xs">
           <Link href="/founding" asChild>
-            <Button kind="gold" icon="sign">
+            <Button kind="seal" icon="sign">
               Start a new presidency
             </Button>
           </Link>
@@ -101,7 +101,7 @@ export default function Administrations() {
       icon="archive"
       eyebrow="Saved on this device"
       title="Your administrations"
-      lede={`Each administration here is one presidency, saved from the day you took the oath.${library ? ` ${capacity.used} of ${capacity.limit} save slots are in use.` : ""}`}
+      {...(library ? { lede: `${capacity.used} of ${capacity.limit} save slots are in use.` } : {})}
       actions={<PageBack />}
       testID="administrations"
     >

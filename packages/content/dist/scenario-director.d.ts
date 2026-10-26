@@ -1,4 +1,5 @@
-import { type Campaign } from "@admin/engine";
+import { type Campaign, type GameDate } from "@admin/engine";
+import type { NationId } from "@admin/world";
 import { type ScenarioClass, type ScenarioDef } from "./scenario.js";
 import { type CastScenario, type LiveSelector, type ScenarioSelectorLike } from "./scenario-cast.js";
 /**
@@ -214,6 +215,25 @@ export type StagedCandidate<T extends ScenarioSelectorLike = ScenarioSelectorLik
     /** The severity damping applied, kept readable so the pacing probe can see it. */
     readonly severity: number;
 };
+/**
+ * Calendar days recurring business rests: thirteen weeks, a quarter. Counted in
+ * days from the later of the last raise and the last answer or explicit
+ * decline, so a President who answers everything is never asked the same
+ * routine question twice inside ninety days, however late the answer came. A
+ * deferral does not restart the rest (deferring would then buy quiet), and
+ * expiry or withdrawal leaves it keyed to the raise. Counted in dates, not
+ * turns, because a turn index groups dates into weeks and thirteen of them can
+ * span as few as eighty-five days.
+ */
+export declare const RECURRING_REST_DAYS: number;
+export type RecurrenceKind = "unique" | "arc" | "episode" | "recurring";
+export declare function recurrenceKind(selector: ScenarioSelectorLike): RecurrenceKind;
+/**
+ * Whether a template last raised on turn `prior` may be raised again this week.
+ * `rested` is the date its rest runs from; without it the rest runs from the
+ * raise week, which is all a case with no dated answer can offer.
+ */
+export declare function recurrenceAllows(campaign: Campaign, selector: ScenarioSelectorLike, counterpart: NationId, prior: number | undefined, rested?: GameDate): boolean;
 /**
  * Every live candidate, priced by the director, best first.
  *

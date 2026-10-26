@@ -8,7 +8,9 @@ import {
   type LawRevisionKind,
   type Campaign,
 } from "./state.js";
-import { hasLapsed, selectDeclaredEmergencies } from "./emergency.js";
+import { authorityDeadline, emergencyAuthorityClock, hasLapsed, selectDeclaredEmergencies } from "./emergency.js";
+import type { AuthorityClock } from "./state-emergency.js";
+import { daysBetween } from "./clock.js";
 import type { LegislativeTrack } from "./congress.js";
 import { playerGdp, type PolicyStatPath } from "./policy.js";
 import { type BudgetAccount } from "./budget.js";
@@ -35,6 +37,7 @@ export { CONTINUING_RESOLUTION_TURNS } from "./legislative-acts-fiscal.js";
 
 /** What an act does to the presidency once it is in force, either way. */
 export type LawConstraint = {
+  readonly authorityDays?: Partial<Readonly<Record<AuthorityClock["authority"], number>>>;
   /** Executive orders this act puts out of the president's reach entirely. */
   readonly blocksOrders?: readonly string[];
   /**
@@ -63,6 +66,13 @@ export type LawConstraint = {
   readonly bindsTheExecutive?: boolean;
 };
 
+export function mergedAuthorityLimits(laws: readonly LawConstraint[]): LawConstraint["authorityDays"] {
+  return Object.fromEntries((["s122", "emergency"] as const).flatMap((authority) => {
+    const days = laws.flatMap((law) => law.authorityDays?.[authority] ?? []);
+    return days.length ? [[authority, Math.min(...days)]] : [];
+  }));
+}
+
 /**
  * Which of the three grounds an order stands on, in the order they run from
  * strongest to weakest.
@@ -90,7 +100,7 @@ export type ConstitutionalGround = "authorized" | "silent" | "forbidden";
  */
 export function underRebellionOrInvasion(campaign: Campaign): boolean {
   const rebellion = selectDeclaredEmergencies(campaign).some(
-    (emergency) => !hasLapsed(emergency, campaign.turn) && emergency.cause === "unrest",
+    (emergency) => !hasLapsed(emergency, campaign.turn, campaign) && emergency.cause === "unrest",
   );
   return rebellion || selectActiveConflicts(campaign).some((conflict) => conflict.defender === campaign.founding.nation);
 }
@@ -249,6 +259,8 @@ export type LegislativeAct = {
    * rule in particular.
    */
   readonly targetsOrder?: (campaign: Campaign) => string | undefined;
+  readonly targetsEmergency?: (campaign: Campaign) => string | undefined;
+  readonly emergencyAction?: "terminate" | "renew";
   /**
    * Whether enacting it strikes the order it names.
    *
@@ -258,6 +270,18 @@ export type LegislativeAct = {
    */
   readonly disapproves?: boolean;
 };
+
+function emergencyTarget(campaign: Campaign, action: "terminate" | "renew"): string | undefined {
+  const pending = new Set(selectBills(campaign).filter((bill) => bill.status !== "dead" && bill.status !== "law"
+    && actOf(bill)?.emergencyAction === action).map((bill) => bill.target));
+  return selectDeclaredEmergencies(campaign).find((record) => {
+    if (pending.has(record.id) || record.scope.kind !== "nation") return false;
+    if (action === "terminate") return true;
+    const clock = emergencyAuthorityClock(campaign, record);
+    return daysBetween(campaign.calendar, authorityDeadline(campaign, clock)) <= 30
+      && selectBills(campaign).some((bill) => bill.status === "law" && actOf(bill)?.constrains?.authorityDays?.emergency !== undefined);
+  })?.id;
+}
 
 const always = () => true;
 
@@ -332,6 +356,24 @@ export const LEGISLATIVE_ACTS: readonly LegislativeAct[] = [
     arises: (campaign) => campaign.congress.unauthorized.length > 0,
   },
   {
+    id: "act-emergency-termination", committee: "CMTE-HOMELAND",
+    title: "A Joint Resolution Terminating a National Emergency",
+    summary: "Ends the named national emergency under 50 U.S.C. §1622(a) when enacted. The President may veto it; Congress may override the veto by two thirds in both chambers.",
+    sponsor: "opposition", track: "privileged", appeal: 0.1,
+    cost: {}, nationEffects: {}, alignment: {}, recurs: 0,
+    targetsEmergency: (campaign) => emergencyTarget(campaign, "terminate"), emergencyAction: "terminate",
+    arises: (campaign) => emergencyTarget(campaign, "terminate") !== undefined,
+  },
+  {
+    id: "act-emergency-renewal", committee: "CMTE-HOMELAND",
+    title: "A Joint Resolution Renewing a National Emergency",
+    summary: "Extends the named emergency's statutory authority for ninety days beyond its current deadline under the Emergency Powers Limitation Act.",
+    sponsor: "administration", appeal: 0.1,
+    cost: {}, nationEffects: {}, alignment: {}, recurs: 0,
+    targetsEmergency: (campaign) => emergencyTarget(campaign, "renew"), emergencyAction: "renew",
+    arises: (campaign) => emergencyTarget(campaign, "renew") !== undefined,
+  },
+  {
     id: "act-emergency-powers-limitation",
     committee: "CMTE-HOMELAND",
     title: "The Emergency Powers Limitation Act",
@@ -342,7 +384,7 @@ export const LEGISLATIVE_ACTS: readonly LegislativeAct[] = [
     cost: { stability: -0.02 },
     nationEffects: { "politics.legitimacy": 0.05, "politics.pressFreedom": 0.04 },
     alignment: { authLibertarian: -0.35 },
-    constrains: { blocksOrders: ["order-emergency-construction"] },
+    constrains: { blocksOrders: ["order-emergency-construction"], authorityDays: { emergency: 90 } },
     // Re-arms when a *new* order draws a contest, the same way the floor took
     // this up the first time: the order it names is already closed off,
     // so what brings Congress back is a fresh emergency the statute did not

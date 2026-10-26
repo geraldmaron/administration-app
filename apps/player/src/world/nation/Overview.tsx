@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { NationFile, NationVital, TemperamentReading } from "@admin/player-core";
-import { CardGrid, CardLink, Column, Icon, ReadingFrame, Row, Stat, StatGrid, Surface, Text, type IconName } from "@admin/ui";
+import { CardGrid, CardLink, Column, Icon, ReadingFrame, Row, Reading, ReadingGrid, Surface, Text, type IconName } from "@admin/ui";
 import { PairedBars, StepReading, Unread } from "@admin/ui/world";
 import { BandFrame, stanceValence } from "../parts";
 import { COUNTRY_VIEW_LABELS, type CountryView } from "../params";
@@ -79,10 +79,10 @@ function EconomyBrief({ file }: { readonly file: NationFile }) {
       <ReadingFrame title="Trade with the United States" unit="Dollars a year, both bars on one scale" legend={tradeKey(`We buy ${trade.importsText} a year`, `We sell ${trade.exportsText} a year`)} help={{ meaning: "The top bar is what the United States buys from this country in a year and the bottom bar is what it sells. The longer bar is the larger flow, and the exact amounts are printed in the key." }}>
         <PairedBars buy={barPercent(trade.imports, top)} sell={barPercent(trade.exports, top)} />
       </ReadingFrame>
-      <StatGrid max={2}>
-        <Stat icon="subjectTrade" label="Share of US trade" value={trade.usShareText ?? "None"} size="title" />
-        <Stat label="Trade we track" value={String(trade.sectors.length)} period={`kinds of goods, ${plural(trade.partners.length, "partner", "partners")}`} size="title" />
-      </StatGrid>
+      <ReadingGrid max={2}>
+        <Reading icon="subjectTrade" name="Share of US trade" value={trade.usShareText ?? "None"} size="title" />
+        <Reading name="Trade we track" value={String(trade.sectors.length)} period={`kinds of goods, ${plural(trade.partners.length, "partner", "partners")}`} size="title" />
+      </ReadingGrid>
     </>
   );
 }
@@ -96,11 +96,11 @@ function SecurityBrief({ file }: { readonly file: NationFile }) {
           <StepReading key={domain.domain} label={domain.label} lit={FORCE_STEPS[domain.band]} steps={5} word={domain.band} />
         ))}
       </BandFrame>
-      <StatGrid max={2}>
-        <Stat icon="shield" label="US forces here" value={String(presence.length)} period={presence.length === 1 ? "location" : "locations"} size="title" />
-        {forces.warfighting ? <Stat icon="unitGroundFormation" label="Military size" value={forces.warfighting.label} size="title" /> : null}
-        {forces.nuclear ? <Stat icon="escalate" label="Nuclear" value={forces.nuclear.band} size="title" /> : null}
-      </StatGrid>
+      <ReadingGrid max={2}>
+        <Reading icon="shield" name="US forces here" value={String(presence.length)} period={presence.length === 1 ? "location" : "locations"} size="title" />
+        {forces.warfighting ? <Reading icon="unitGroundFormation" name="Military size" value={forces.warfighting.label} basis="estimate" size="title" /> : null}
+        {forces.nuclear ? <Reading icon="escalate" name="Nuclear" value={forces.nuclear.band} size="title" /> : null}
+      </ReadingGrid>
     </>
   );
 }
@@ -110,11 +110,11 @@ function DiplomacyBrief({ file }: { readonly file: NationFile }) {
   return (
     <>
       {file.ties.length > 0 ? <TieFlags ties={file.ties} limit={4} /> : <Text variant="body" tone="secondary">No close friend or rival stands out.</Text>}
-      <StatGrid max={2}>
-        <Stat icon="sign" label="Promises" value={String(standing)} period="active" size="title" />
-        <Stat icon="subjectTrade" label="Trade penalties" value={String(file.trade.measures.length)} period="in place" size="title" />
-        <Stat icon="building" label="Organizations" value={String(file.organizations.length)} size="title" />
-      </StatGrid>
+      <ReadingGrid max={2}>
+        <Reading icon="sign" name="Promises" value={String(standing)} period="active" size="title" />
+        <Reading icon="subjectTrade" name="Trade penalties" value={String(file.trade.measures.length)} period="in place" size="title" />
+        <Reading icon="building" name="Organizations" value={String(file.organizations.length)} size="title" />
+      </ReadingGrid>
     </>
   );
 }
@@ -129,10 +129,10 @@ function IntelBrief({ file }: { readonly file: NationFile }) {
           <StepReading key={reading.axis} label={axisWords(reading.axis)} lit={reading.level} steps={5} word={TEMPERAMENT_WORD[reading.level]} caption={reading.text} />
         ))}
       </BandFrame>
-      <StatGrid max={2}>
-        <Stat icon="intel" label="Known goals" value={String(posture.aims.length)} size="title" />
-        {file.provenance ? <Stat label="Source" value="Rough estimate" period="not fully researched" size="title" /> : null}
-      </StatGrid>
+      <ReadingGrid max={2}>
+        <Reading icon="intel" name="Known goals" value={String(posture.aims.length)} size="title" />
+        {file.provenance ? <Reading name="Source" value="Rough estimate" period="not fully researched" size="title" /> : null}
+      </ReadingGrid>
     </>
   );
 }

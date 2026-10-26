@@ -4,7 +4,7 @@ VERDICT: Accepted with controls
 
 The isolated implementation worktree now extends the Executive approach into shared action comparisons, Press, World, Security, Nation, Congress, Oversight and linked dossiers. The owner's follow-up rejected individual metric cards: the final implementation uses compact reading strips and navigation counts. This is a verified presentation checkpoint, not full BL-136 closure or approval of every application state.
 
-Worktree: `~/.codex/worktrees/player-visual-overhaul/admin-app`. Existing audit and original checkout preserved. Server: `http://127.0.0.1:5188/`. No engine, world dataset or save-schema changes, new dependencies, scenario writing, logo replacement, commit, push or deployment.
+Worktree: `<local path>`. Existing audit and original checkout preserved. Server: `http://127.0.0.1:5188/`. No engine, world dataset or save-schema changes, new dependencies, scenario writing, logo replacement, commit, push or deployment.
 
 ## What changed and what to check
 

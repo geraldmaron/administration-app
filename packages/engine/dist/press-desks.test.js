@@ -8,6 +8,7 @@ import { FORMAT_PARTISANSHIP, PRESS_OUTLETS, corpsFrom, WEEK_SHARE_CAP, fileAtDe
 import { outletReading } from "./press-beliefs.js";
 import { usTicket } from "./party.js";
 import { createRngStreams } from "./rng.js";
+import { flagMarker } from "./marked-flags.js";
 // The partisan term as the acceptance criterion states it: the desk's reading of the President, at its format's partisanship.
 const partisanReading = (outlet, placement) => outletReading(outlet.beliefs, placement) * FORMAT_PARTISANSHIP[outlet.format];
 const outletById = (id) => PRESS_OUTLETS.find((outlet) => outlet.id === id);
@@ -229,7 +230,7 @@ describe("the press engagement as a story", () => {
         if (!result.ok)
             throw new Error(result.reason);
         expect(result.projection.subject.kind).toBe("record");
-        const flagged = { ...campaign, player: { ...campaign.player, flags: { ...campaign.player.flags, "scandal:the-pipeline-contract": true } } };
+        const flagged = { ...campaign, player: { ...campaign.player, flags: { ...campaign.player.flags, "scandal:the-pipeline-contract": true, [flagMarker("scandal:the-pipeline-contract", campaign.turn)]: true } } };
         const story = takePressAction(flagged, charter, "press-conference", createRngStreams(campaign.seed));
         if (!story.ok)
             throw new Error(story.reason);

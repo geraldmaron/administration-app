@@ -68,7 +68,67 @@ import { CHARTER_USA_CONSTITUTION } from "@admin/world";
 // when covert rungs 2 to 5 began to refuse the President's own government
 // without a standing finding: the reckless run lands fewer acts, so its
 // approval, and the readings the Hill reads from it, move. No code that counts
-// votes, reads chambers or prices removal changed.
+// votes, reads chambers or prices removal changed. It was re-taken a tenth
+// time for the world-dynamics program's first wave, captured merge by merge.
+// Attention on change, signed growth, dated scandals and the authority clocks
+// moved nothing here, the digest included. Sanctions came to reach by scope and
+// flow, receipts to follow delivered volume and inherited programs to be dated
+// from their texts: the digest moves from the first week, removal pressure from
+// the second by under five ten-thousandths in three runs, and in the reckless
+// run the same acts lifted crude to 1.23 of reference where they had lifted it
+// to 1.49, so prosperity, approval and every Hill reading move from week 11 and
+// one bill is introduced in place of another. Relationship memory came to age
+// by the calendar, with trust and tension settling toward each pair's standing
+// reading: the room, the chambers and the leaders' rapport move by at most
+// 0.007 from week 6 to 26 and a few bills' yeas by one to three. Standing Hill
+// ties and saturating routine contact moved only the digest. No code that
+// counts votes, reads chambers or prices removal changed. It was re-taken an
+// eleventh time for the program's second wave, again merge by merge. Trade
+// partners came to be listed by magnitude, relief to need a need and a lifted
+// tariff to unwind: the digest moves from the first week and removal pressure
+// and the room by at most 0.005, with a few bills' yeas by one to three.
+// Commission removal law moved only one run's digest. Salience came to speed
+// revision only the way a story pushes and serial wars to rally less: the
+// room by at most 0.007 from week 5 and removal by at most 0.0075. Third
+// parties came to react by their own ties: the digest. Members of Congress
+// came to die and be replaced: the probes move from the week of the first
+// death and the room by at most 0.006. The background docket's June rulings
+// were at first read as rulings against the President (fixed at integration,
+// so they move nothing here). Coerced governments came to answer: the room by
+// at most 0.052 in the passive run from week 17. At integration, an empty
+// seat stopped counting as a nay (a count reads the seated members), founding
+// actings came to run 300 days and a partner's answer to be read off the flow
+// it cuts: the digest from the first week, one run's removal pressure by under
+// seven ten-thousandths, and the recorded nays where a seat stood empty.
+// It was re-taken a twelfth time for the program's third wave, again merge by
+// merge, on a clean build of world and engine. The pin it replaced already sat
+// apart from the second wave's repairs (the room, chambers and rapport by at
+// most 0.006, removal pressure by at most 0.0041), so the attribution starts
+// from the repaired source's own capture. Acting clocks, the court case and
+// its screens, House specials and successors, the midterm swing and the
+// offshore navy moved nothing the Hill reads. Trade ties and ripple exposure
+// reading lane size moved removal pressure by at most 0.0046 from week 3 in
+// every run, and in the prudent republican run the room, chambers and rapport
+// by at most 0.007 from week 19. The Council's Article 27 vote moved that
+// run's room by at most 0.004 from week 19. Clashes in episodes and the
+// settling bloc pressure moved the room, chambers and rapport by at most 0.006
+// from week 5 in three runs, and a few bills' yeas by one to two from week 13.
+// Sourced home hazards and the third family of home events moved every reading
+// in every run: removal pressure from week 1 by up to 0.028, the room and
+// chambers from week 2 by up to 0.028, rapport by up to 0.089, and from week
+// 10 bills' yeas and recorded nays by up to 42, with different bills
+// introduced and one outcome flipped from week 13. No code that counts votes,
+// reads chambers or prices removal changed in the other merges.
+// It was re-taken a thirteenth time for the repairs the review of the third
+// wave asked for, attributed by applying each repair group alone to the
+// integrated tree. A foreign cyber crew came to lower the counterintelligence
+// of the country it breaks into, not its host's: that alone moved removal
+// pressure by at most 0.010 from week 8 in three runs, and in the two later
+// runs the room, chambers and rapport by at most 0.032 and a few probes' yeas
+// by one to two from week 19, with bills' yeas and recorded nays by at most 2
+// from week 23. The acting-officer clock moved only the digest, from week 6;
+// the double-successor guard, the Council's party abstention, the notice reset
+// and the onset split moved nothing.
 // Every week also carries a digest of the whole campaign with the ledger's
 // fields set aside, so a divergence anywhere else in the state shows up too.
 // The digest is pinned on the repository's Node 22 runtime (.nvmrc). Node 24

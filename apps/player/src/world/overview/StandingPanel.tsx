@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { METRIC_MEANINGS, METRIC_PROVENANCE, averageTrustSeries, formatDate, nowReadings, place, standingMoves, weekLabel, type WorldDesk } from "@admin/player-core";
-import { BenchmarkChart, Button, Column, DeltaText, Row, Stat, Text, useMedia } from "@admin/ui";
-import { Panel } from "@admin/ui/world";
+import { Pane, BenchmarkChart, Button, Column, DeltaText, Row, Reading, Text, useMedia } from "@admin/ui";
 import { CompareChart } from "../../compare/CompareChart";
 import { termDoor } from "../../handbook/term-door";
 import { RowTo } from "../parts";
@@ -65,15 +64,15 @@ export function StandingPanel({ campaign, desk }: { readonly campaign: Campaign;
   const trust = useMemo(() => averageTrustSeries(campaign, desk.governments), [campaign, desk.governments]);
   if (!reading) return null;
   return (
-    <Panel title="International Standing" icon="graph" lede={METRIC_MEANINGS.standing}>
+    <Pane title="International standing" icon="graph" line={METRIC_MEANINGS.standing}>
       <Row gap="xl" wrap top>
         <Column gap="md" flexBasis={260} flexGrow={1} maxWidth="100%">
           <Row>
-            <Stat label={`As of ${formatDate(campaign.calendar)}`} value={reading.figure} size="figure" source={`${METRIC_PROVENANCE.standing}.`} {...(reading.week ? { delta: { text: reading.week.text, direction: reading.week.direction, better: "up" as const }, period: "this week" } : { period: "Your first week isn't over yet" })} />
+            <Reading name={`As of ${formatDate(campaign.calendar)}`} value={reading.figure} size="figure" source={`${METRIC_PROVENANCE.standing}.`} {...(reading.week ? { delta: { text: reading.week.text, direction: reading.week.direction, better: "up" as const }, period: "this week" } : { period: "Your first week isn't over yet" })} />
           </Row>
           <Row gap="md" wrap>
-            <Stat label="What raised it" value={moves.lifted.text} period={`in ${moves.lifted.count}`} size="title" standing="good" />
-            <Stat label="What lowered it" value={moves.cost.text} period={`in ${moves.cost.count}`} size="title" standing="bad" />
+            <Reading name="What raised it" value={moves.lifted.text} period={`in ${moves.lifted.count}`} size="title" standing="good" />
+            <Reading name="What lowered it" value={moves.cost.text} period={`in ${moves.cost.count}`} size="title" standing="bad" />
           </Row>
         </Column>
         <Column gap="md" flexBasis={media.desktop ? 560 : 300} flexGrow={2} minWidth={0} maxWidth="100%">
@@ -99,6 +98,6 @@ export function StandingPanel({ campaign, desk }: { readonly campaign: Campaign;
         What changed it
       </Text>
       <WhatMovedIt campaign={campaign} />
-    </Panel>
+    </Pane>
   );
 }

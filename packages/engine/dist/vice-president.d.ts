@@ -41,3 +41,11 @@ export declare function runningMateCandidates(pool: readonly Person[], nation: N
  * trust costs the administration a little in the room they preside over.
  */
 export declare function vicePresidentLiaison(campaign: Campaign, person: PersonId): number;
+/**
+ * The vice presidency filled: the record of who holds it and the Senate's
+ * presiding officer move together, so a Vice President confirmed under the
+ * Twenty-fifth Amendment presides and breaks ties as an elected one does.
+ */
+export declare function withVicePresident(campaign: Campaign, person: PersonId): Campaign;
+/** The vice presidency emptied: nobody presides, nobody breaks a tie, and the Speaker stands next in line. */
+export declare function withoutVicePresident(campaign: Campaign): Campaign;

@@ -131,6 +131,7 @@ export type TermKey =
   | "salience"
   | "red-line"
   | "survival"
+  | "response"
   // unrest-onset
   | "driving-act"
   | "most-hurt-cohort"
@@ -245,6 +246,7 @@ export const QUESTION_TERMS: Readonly<Record<Question, readonly TermKey[]>> = {
     "salience",
     "red-line",
     "survival",
+    "response",
   ],
   "unrest-onset": ["most-hurt-cohort", "driving-act"],
   "join-war": [...WAR_TERMS],

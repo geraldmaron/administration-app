@@ -1,8 +1,7 @@
 import type { Campaign } from "@admin/engine";
 import { formatDate, formatRatio, place, type GovernorReading, type StateDossier } from "@admin/player-core";
-import { Badge, Column, EntityLink, ReadingFrame, Row, Surface, Text, View } from "@admin/ui";
+import { Pane, Tag, Column, EntityLink, ReadingFrame, Row, Surface, Text, View } from "@admin/ui";
 import { FigureBand, Track } from "@admin/ui/nation";
-import { Panel } from "@admin/ui/world";
 import { CompareChart } from "../../compare/CompareChart";
 import { go } from "../../shell/navigate";
 import { markEntry, toneKey } from "../keys";
@@ -63,17 +62,17 @@ export function StateHead({ campaign, dossier }: { readonly campaign: Campaign; 
   return (
     <Column gap="sm">
       <Row gap="sm" wrap>
-        <Badge status="outline" icon="layerLean">
+        <Tag tone="outline" icon="layerLean">
           {`Usual lean ${dossier.leanText}`}
-        </Badge>
+        </Tag>
         {dossier.governor ? (
-          <Badge status="info" icon="subjectCapitol">
+          <Tag tone="info" icon="subjectCapitol">
             {`${dossier.governor.partyWord} governor`}
-          </Badge>
+          </Tag>
         ) : null}
-        <Badge status="pending" icon="dossier">
+        <Tag tone="pending" icon="dossier">
           {`${dossier.id} · ${formatDate(campaign.calendar)}`}
-        </Badge>
+        </Tag>
         {dossier.capitol ? (
           <Text variant="caption" tone="secondary">
             Capital: {dossier.capitol.city}
@@ -103,7 +102,7 @@ export function Overview({ campaign, dossier }: { readonly campaign: Campaign; r
         ]}
       />
       {approval ? (
-        <Panel title={`Approval in ${dossier.name} compared with the country`} icon="favorable" lede={approval.historyNote}>
+        <Pane title={`Approval in ${dossier.name} compared with the country`} icon="favorable" line={approval.historyNote}>
           <ReadingFrame title="Approval here" unit="% of the state who approve" legend={[markEntry("half", "Half the state"), ...toneKey({ good: "Half or more approve", watch: "40% to 49%", bad: "Under 40%" })]} help={{ meaning: "The bar is the share of people in this state who approve of you. The line is half the state, where approval turns from a minority to a majority." }}>
             <Row gap="sm">
               <Text variant="figure" tone={approval.approval >= 0.5 ? "success" : approval.approval >= 0.4 ? "warning" : "danger"} tabular>
@@ -114,7 +113,7 @@ export function Overview({ campaign, dossier }: { readonly campaign: Campaign; r
           </ReadingFrame>
           {approval.divergence ? <Text variant="body">{approval.divergence}</Text> : null}
           <CompareChart campaign={campaign} metric="approval" subjects={[{ kind: "self" }, { kind: "state", id: dossier.id }]} window="term" title={`${dossier.name} and the country, week by week`} />
-        </Panel>
+        </Pane>
       ) : null}
       <PeopleStrip campaign={campaign} dossier={dossier} />
     </Column>

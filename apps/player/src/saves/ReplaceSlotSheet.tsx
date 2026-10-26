@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { candidateStanding, defaultReplacementId, replacementSentence, type ReplacementCandidate } from "@admin/player-core";
-import { Badge, Button, Column, Row, Sheet, Surface, Text } from "@admin/ui";
+import { Button, Column, Row, Sheet, Surface, Tag, Text } from "@admin/ui";
 import { ChoiceList, type ChoiceOption } from "@admin/ui/forms";
 import { SAVE_FILES_SUPPORTED } from "../library/save-file";
 
@@ -57,9 +57,9 @@ function Confirm({
       <Surface level="sunken" pad="md" accentEdge="danger" role="alert">
         <Column gap="sm">
           {candidate.inPlay ? (
-            <Badge status="danger" icon="caution">
+            <Tag tone="danger" icon="caution">
               The presidency you're playing now
-            </Badge>
+            </Tag>
           ) : null}
           <Text variant="body">{replacementSentence(candidate, { then, copyKept })}</Text>
         </Column>
@@ -126,7 +126,7 @@ export function ReplaceSlotSheet({ open, candidates, then, busy, error, onCancel
       open={open}
       onClose={busy ? () => undefined : close}
       eyebrow="All save slots are full"
-      title={confirming ? "Replace this presidency?" : "Choose one to replace"}
+      title={confirming ? "Replace this presidency?" : "Which presidency gives up its slot?"}
       footer={
         <Row gap="sm" wrap>
           {confirming && candidate ? (

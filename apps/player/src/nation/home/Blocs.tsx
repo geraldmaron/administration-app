@@ -1,6 +1,6 @@
 import type { Campaign } from "@admin/engine";
 import type { BlocHold, BlocMove, BlocReading, BlocTopline, OpinionTrends } from "@admin/player-core";
-import { Badge, CardGrid, Column, ReadingFrame, Row, Surface, Text, sparklineKey } from "@admin/ui";
+import { Tag, CardGrid, Column, ReadingFrame, Row, Surface, Text, sparklineKey } from "@admin/ui";
 import { StackedBar } from "@admin/ui/news";
 import { Diverging, Track } from "@admin/ui/nation";
 import { VALENCE_TEXT, VALENCE_TRACK, percent, signValence, signedTenths, tenths, valenceOf, type Valence } from "../format";
@@ -52,7 +52,7 @@ function Bloc({ bloc, campaign, trends }: { readonly bloc: BlocReading; readonly
           <Text variant="label" flex={1}>
             {bloc.name}
           </Text>
-          {bloc.base ? <Badge status="info">Your base</Badge> : null}
+          {bloc.base ? <Tag tone="info">Your base</Tag> : null}
         </Row>
         <Row gap="sm">
           <Text variant="caption" tone="secondary" width={110}>

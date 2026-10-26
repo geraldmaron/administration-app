@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { View } from "@tamagui/core";
 import { Icon } from "../icons/Icon";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { Pressable } from "../primitives/Button";
 import { CardGrid } from "../primitives/CardGrid";
 import { Column, Row } from "../primitives/Stack";
@@ -77,7 +77,7 @@ function Branch({ title, links, none, onOpen }: { readonly title: string; readon
         <Text variant="eyebrow" tone="secondary">
           {title}
         </Text>
-        {links.length > 0 ? <Badge status="outline">{String(links.length)}</Badge> : null}
+        {links.length > 0 ? <Tag tone="outline">{String(links.length)}</Tag> : null}
       </Row>
       {links.length === 0 ? (
         <Text variant="caption" tone="tertiary">

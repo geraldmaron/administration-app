@@ -1,6 +1,7 @@
 import { cyberImpactEvent } from "./impact-adapters.js";
 import { debtToGdp } from "@admin/world";
 import { selectActiveConflicts, selectNation } from "./state.js";
+import { selectRelationship } from "./state-selectors.js";
 import { createRngStreams } from "./rng.js";
 import { nationName, possessive } from "./naming.js";
 import { policyStatBounds } from "./policy-stats.js";
@@ -99,36 +100,75 @@ function hostCount(campaign, host) {
 }
 // Which operators take root this turn. The draw is per host, per kind, per
 // turn, so adding a nation never changes what happens anywhere else.
+//
+// Every (host, kind) whose draw fell under its pressure has taken root, and the
+// turn's few slots go to the lowest draw over pressure, which is an even draw
+// whatever the pressure was: a host prone to a kind still roots more of it,
+// because it fires more often. Walking the hosts in alphabetical order and the
+// kinds in table order and stopping at the cap handed every slot to the front
+// of both lists. Twelve operators filled from Afghanistan to Azerbaijan, every
+// one a cartel, insurgency or market bloc, and no intrusion crew rooted anywhere
+// in the world in any measured run.
 export function emergingOperators(campaign, streams) {
-    if (campaign.operators.length >= MAX_OPERATORS)
+    const room = Math.min(MAX_NEW_OPERATORS_PER_TURN, MAX_OPERATORS - campaign.operators.length);
+    if (room <= 0)
         return [];
-    const spawned = [];
     const existing = new Set(campaign.operators.map((op) => op.id));
+    const fired = [];
     for (const id of Object.keys(campaign.nations).sort()) {
         const nation = liveNation(campaign, id);
-        if (!nation)
+        if (!nation || hostCount(campaign, id) >= MAX_OPERATORS_PER_HOST)
             continue;
-        if (hostCount(campaign, id) + spawned.filter((op) => op.nationality === id).length >= MAX_OPERATORS_PER_HOST)
-            continue;
-        if (spawned.length >= MAX_NEW_OPERATORS_PER_TURN)
-            return spawned;
         for (const kind of OPERATOR_KINDS) {
-            if (campaign.operators.length + spawned.length >= MAX_OPERATORS)
-                return spawned;
             const pressure = OPERATOR_PROFILES[kind].pressure(nation);
             if (pressure < TAKE_ROOT_THRESHOLD)
                 continue;
             const draw = streams.stream("operator-emerge", id, kind, campaign.turn).next();
-            if (draw >= pressure)
+            if (draw >= pressure || existing.has(operatorId(kind, id, campaign.turn)))
                 continue;
-            const operatorKey = operatorId(kind, id, campaign.turn);
-            if (existing.has(operatorKey))
-                continue;
-            spawned.push({ id: operatorKey, kind, nationality: id });
-            break; // one new operator per host per turn: the world escalates, it does not erupt
+            fired.push({ host: id, kind, draw: draw / pressure });
         }
     }
+    const spawned = [];
+    for (const entry of [...fired].sort((a, b) => a.draw - b.draw || (a.host < b.host ? -1 : a.host > b.host ? 1 : 0))) {
+        if (spawned.length >= room)
+            break;
+        // One new operator per host per turn: the world escalates, it does not erupt.
+        if (spawned.some((op) => op.nationality === entry.host))
+            continue;
+        spawned.push({ id: operatorId(entry.kind, entry.host, campaign.turn), kind: entry.kind, nationality: entry.host });
+    }
     return spawned;
+}
+// --- Who an intrusion crew breaks into ---------------------------------------
+/** How much a government's hostility toward a victim multiplies the crew's interest in it, at full hostility. */
+const HOSTILE_TARGET_WEIGHT = 2;
+/**
+ * How strongly an intrusion crew draws each victim: the victim's share of the
+ * world's output (there is more to steal and more to ransom), raised where the
+ * crew's host government is hostile to it, and lowered by the victim's own
+ * counterintelligence. The host's own networks are one victim among the rest.
+ * A crew that could only break into its own country was a crew that never
+ * reached the United States from anywhere.
+ */
+export function cyberVictimWeights(campaign, host) {
+    return Object.keys(campaign.nations).sort().flatMap((id) => {
+        const stats = campaign.nations[id].stats;
+        const hostility = id === host ? 0 : Math.max(0, -(selectRelationship(campaign, host, id)?.trust ?? 0));
+        const weight = stats.economy.gdp * (1 + HOSTILE_TARGET_WEIGHT * hostility) * (1 - 0.5 * stats.security.counterIntel);
+        return weight > 0 ? [{ nation: id, weight }] : [];
+    });
+}
+export function cyberVictim(campaign, host, roll) {
+    const weights = cyberVictimWeights(campaign, host);
+    const total = weights.reduce((sum, entry) => sum + entry.weight, 0);
+    let cursor = Math.min(1, Math.max(0, roll)) * total;
+    for (const entry of weights) {
+        cursor -= entry.weight;
+        if (cursor <= 0)
+            return entry.nation;
+    }
+    return weights[weights.length - 1]?.nation ?? host;
 }
 // How hard one turn of an operator's work bites the host.
 const BITE = 0.01;
@@ -246,24 +286,27 @@ export const operatorPhase = (state) => {
         const crisis = crisisFor(state, operator);
         if (!crisis)
             continue;
+        // An intrusion crew strikes wherever it chooses; every other operator presses its host.
+        const victim = operator.kind === "cyber-crew" ? cyberVictim(state, crisis.host, streams.stream("operator-victim", operator.id, state.turn).next()) : crisis.host;
+        const headline = victim === crisis.host ? crisis.headline : intrusionHeadline(state, crisis.host, victim);
         packets.push({
             source: "operator",
             actor: "world",
             turn: state.turn,
-            provenance: { origin: "world", entities: [crisis.host], decision: operatorActStamp(operator, terms) },
-            narration: { summary: crisis.headline },
+            provenance: { origin: "world", entities: victim === crisis.host ? [crisis.host] : [crisis.host, victim], decision: operatorActStamp(operator, terms) },
+            narration: { summary: headline },
             effects: [
-                ...crisisEffects(state, crisis.host, operator.kind),
-                ...(operator.kind === "cyber-crew" ? cyberImpactEvent(state, crisis.host, operator.id) : []),
-                ...playerEffects(state, crisis.host),
-                {
-                    kind: "feed",
-                    items: [
-                        { turn: state.turn + 1, kind: "operator", visibility: "public", headline: crisis.headline, target: crisis.host },
-                    ],
-                },
+                ...crisisEffects(state, operator.kind === "cyber-crew" ? victim : crisis.host, operator.kind),
+                ...(operator.kind === "cyber-crew" ? cyberImpactEvent(state, victim, operator.id) : []),
+                ...playerEffects(state, victim),
+                { kind: "feed", items: [{ turn: state.turn + 1, kind: "operator", visibility: "public", headline, target: victim }] },
             ],
         });
     }
     return packets;
 };
+function intrusionHeadline(campaign, host, victim) {
+    const from = selectNation(campaign, host)?.base.identity;
+    const into = selectNation(campaign, victim)?.base.identity;
+    return `Hackers working out of ${from ? nationName(from) : host} have broken into computer systems in ${into ? nationName(into) : victim}.`;
+}

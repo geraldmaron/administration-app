@@ -84,6 +84,13 @@ export declare function actingDue(campaign: Campaign): SummonsDue | undefined;
 export declare function nextSeatMilestone(campaign: Campaign): ConstitutionalMilestone | undefined;
 export declare function milestoneDue(campaign: Campaign): SummonsDue | undefined;
 export declare function nextRung(pressure: number): number | undefined;
+/**
+ * Which approach the removal summons belongs to: the rung it is nearing, or
+ * nothing while pressure is out of reach. The summons is a level on the Desk;
+ * the world stops for it once per value of this, and again only after pressure
+ * has left reach and come back.
+ */
+export declare function removalEpisode(campaign: Campaign): string | undefined;
 export declare const REMOVAL_TITLE = "Pressure to remove you is nearing the next step";
 export declare function removalDue(campaign: Campaign): SummonsDue | undefined;
 export {};

@@ -13,10 +13,8 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 
 /** The headline in a sentence, from the same counts the tiles draw. */
 function lede({ kpis }: WorldDesk): string {
-  const { wars, standing, intelligence } = kpis;
-  const fighting = wars.count === 0 ? "There are no wars right now." : `${plural(wars.count, "war")} ${wars.count === 1 ? "is" : "are"} going on${wars.withUs > 0 ? `, and the United States is fighting in ${wars.withUs}` : ""}.`;
-  const view = standing.mean ? ` We know how ${intelligence.assessed} of ${intelligence.total} countries see you. Their average view of you: ${standing.mean.word.toLowerCase()}.` : ` We don't know yet how any of the ${intelligence.total} countries see you.`;
-  return `${fighting}${view}`;
+  const { wars, pending } = kpis;
+  return `${plural(wars.count, "war")} abroad, ${wars.withUs} involving the United States, and ${plural(pending.total, "matter")} in progress.`;
 }
 
 export type WorldScreenProps = {

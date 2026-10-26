@@ -139,9 +139,15 @@ describe("a directive the President gives", () => {
   });
 
   it("is still refused by statute whoever holds the chair", () => {
-    const barred = issueDirective(eager(capable, "role-attorney-general" as RoleId), { institution: "INST-FBI" as never, kind: "investigation", subject: "a rival" });
+    const barred = issueDirective(eager(capable, "role-treasury-minister" as RoleId), { institution: "INST-IRS" as never, kind: "targeting", subject: "a rival" });
     if (!barred.ok) throw new Error(barred.reason);
     expect(barred.packet.provenance?.decision).toBeUndefined();
+  });
+
+  it("goes through the Attorney General's own judgment at Justice, where no statute bars it", () => {
+    const judged = issueDirective(eager(capable, "role-attorney-general" as RoleId), { institution: "INST-FBI" as never, kind: "investigation", subject: "a rival" });
+    if (!judged.ok) throw new Error(judged.reason);
+    expect(judged.packet.provenance?.decision?.question).toBe("certify-order");
   });
 });
 

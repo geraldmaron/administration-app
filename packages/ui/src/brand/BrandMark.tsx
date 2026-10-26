@@ -1,15 +1,17 @@
-import { BRAND_DESK_PATH, BRAND_PORTAL_PATH, BRAND_VIEW_BOX } from "@admin/design";
+import { BRAND_MIN_SIZE, BRAND_VIEW_BOX, brandParts } from "@admin/design";
 import Svg, { Path } from "react-native-svg";
 import { useInk } from "../icons/Icon";
 
 /** Product identity, not an official government seal. Decorative beside a name. */
 export function BrandMark({ size = 24, tone = "chromeColor" }: { readonly size?: number; readonly tone?: "chromeColor" | "color" }) {
   const ink = useInk(tone);
-  const gold = useInk("gold");
+  const brass = useInk("gold");
+  const drawn = Math.max(size, BRAND_MIN_SIZE);
   return (
-    <Svg width={size} height={size} viewBox={BRAND_VIEW_BOX} aria-hidden>
-      <Path d={BRAND_PORTAL_PATH} fill={ink} />
-      <Path d={BRAND_DESK_PATH} fill={gold} />
+    <Svg width={drawn} height={drawn} viewBox={BRAND_VIEW_BOX} aria-hidden>
+      {brandParts(drawn).map((part) => (
+        <Path key={part.role} d={part.d} fillRule="evenodd" fill={part.role === "brass" ? brass : ink} />
+      ))}
     </Svg>
   );
 }

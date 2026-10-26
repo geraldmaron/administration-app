@@ -24,7 +24,8 @@ export function breakSenateTie(
   counted: "with" | "against" = "with",
 ): ChamberVote {
   if (vote.chamber !== "senate" || vote.yeas !== vote.nays) return vote;
-  if (vote.required !== simpleMajority(congress.chambers.senate.seats)) return vote;
+  const vacant = (congress.members ?? []).filter((member) => member.chamber === "senate" && member.vacancy !== undefined).length;
+  if (vote.required !== simpleMajority(congress.chambers.senate.seats - vacant)) return vote;
   const officer = congress.presidingOfficer;
   if (!officer) return { ...vote, passed: false };
   // The Vice President casts an additional vote; no senator's recorded ballot changes.

@@ -13,7 +13,8 @@ export declare const SCOTUS_SEAT_INSTITUTION_IDS: readonly string[];
 /**
  * The Office of the Vice President. It sits under the Presidency with no
  * cabinet role behind it: the Vice President is elected on the ticket, so the
- * office has no confirmation, no department and no seat at the break rolls.
+ * office has no department and no seat at the break rolls. A vacancy is filled
+ * by a nomination both houses confirm, never from the career bench.
  */
 export declare const VICE_PRESIDENCY_INSTITUTION_ID: InstitutionId;
 export declare const INSTITUTION_CATALOG: readonly InstitutionDef[];

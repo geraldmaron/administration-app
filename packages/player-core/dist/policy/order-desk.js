@@ -82,7 +82,7 @@ export function orderDesk(campaign, charter, orderId, subject) {
     if (!order)
         return undefined;
     const availability = orderAvailability(campaign, order, subject);
-    const projection = projectOrder(campaign, charter, order);
+    const projection = projectOrder(campaign, charter, order, subject);
     const parts = {
         order,
         available: availability.ok,

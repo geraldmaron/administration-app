@@ -44,7 +44,7 @@ export function SetupChoice({ founding }: { readonly founding: Founding }) {
       <Path
         icon="subjectPerson"
         title="Short setup"
-        body="Pick who you are, your party, your career, how you lead, and where you went to college. Then look over your running mate and Cabinet."
+        body="Who you are, your party, your career, how you lead and where you went to college, then a look over your running mate and Cabinet."
         note="This gets you to the oath faster. You can still set your promises, beliefs, and White House staff if you want to."
         verb="Choose Short setup"
         onChoose={() => choose("short")}

@@ -48,7 +48,7 @@ function Forward({ founding, oath, next }: { readonly founding: Founding; readon
   }
   const blocked = founding.routed.length > 0 || founding.draft.leader.name.trim() === "" || needsProfile;
   return (
-    <Button kind="gold" size="large" icon="sign" disabled={blocked || !founding.currentPreview?.ok || oath.phase === "sealing"} onPress={oath.review} testID="founding-take-oath">
+    <Button kind="seal" size="large" icon="sign" disabled={blocked || !founding.currentPreview?.ok || oath.phase === "sealing"} onPress={oath.review} testID="founding-take-oath">
       {oath.phase === "sealing" ? "Saving…" : "Take the oath"}
     </Button>
   );
@@ -106,7 +106,7 @@ export function OathReview({ oath }: { readonly oath: Oath }) {
         title="Take the oath of office"
         footer={
           <Row gap="sm" wrap>
-            <Button kind="gold" size="large" icon="sign" disabled={oath.phase === "sealing"} onPress={() => void oath.confirm()} testID="founding-confirm-oath">
+            <Button kind="seal" size="large" icon="sign" disabled={oath.phase === "sealing"} onPress={() => void oath.confirm()} testID="founding-confirm-oath">
               {oath.phase === "sealing" ? "Starting your presidency…" : "Confirm and take the oath"}
             </Button>
             <Button kind="quiet" disabled={oath.phase === "sealing"} onPress={oath.cancel}>

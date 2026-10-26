@@ -417,3 +417,47 @@ describe("a matter the President put off", () => {
         expect(result.campaign.deferrals).toEqual({});
     });
 });
+describe("a matter stops the world once per signature", () => {
+    const signed = (signature) => () => [matter("standing", { signature })];
+    it("does not stop again for a matter whose signature has not changed", () => {
+        const sources = [signed("rung:0.45")];
+        const first = advanceUntilAttention(buildCampaign(), { phases, matterSources: sources });
+        expect(first.stopReason).toBe("attention");
+        expect(first.campaign.noticed).toEqual({ standing: "rung:0.45" });
+        const second = advanceUntilAttention(first.campaign, { phases, matterSources: sources });
+        expect(second.stopReason).toBe("horizon");
+        expect(second.elapsedDays).toBe(DEFAULT_HORIZON_DAYS);
+    });
+    it("notes a notice through apply without a ledger entry, and an unchanged look writes nothing", () => {
+        const before = buildCampaign();
+        const first = advanceUntilAttention(before, { phases, matterSources: [signed("rung:0.45")] });
+        expect(first.campaign.ledger.length).toBe(before.ledger.length);
+        const again = advanceUntilAttention(first.campaign, { phases, matterSources: [signed("rung:0.45")], horizonDays: 1 });
+        expect(again.campaign.noticed).toBe(first.campaign.noticed);
+    });
+    it("stops again when the signature changes", () => {
+        const first = advanceUntilAttention(buildCampaign(), { phases, matterSources: [signed("rung:0.45")] });
+        const next = advanceUntilAttention(first.campaign, { phases, matterSources: [signed("rung:0.70")] });
+        expect(next.stopReason).toBe("attention");
+        expect(next.campaign.noticed).toEqual({ standing: "rung:0.70" });
+    });
+    it("re-arms after the matter has left and come back", () => {
+        const sources = [(state) => (state.turn === 2 ? [] : [matter("standing", { signature: "a" })])];
+        const first = advanceUntilAttention(buildCampaign(), { phases, matterSources: sources });
+        const quiet = advanceUntilAttention(first.campaign, { phases, matterSources: sources, horizonDays: 21 });
+        expect(quiet.stopReason).toBe("attention");
+        expect(quiet.campaign.turn).toBe(3);
+    });
+    it("still stops on every look for a matter that carries no signature", () => {
+        const first = advanceUntilAttention(buildCampaign(), { phases, matterSources: [() => [matter("plain")]] });
+        const second = advanceUntilAttention(first.campaign, { phases, matterSources: [() => [matter("plain")]] });
+        expect(second.stopReason).toBe("attention");
+        expect(second.elapsedDays).toBe(0);
+    });
+    it("does not record a noticed matter the composer held back for the cap", () => {
+        const many = () => ["a", "b", "c", "d"].map((id) => matter(id, { signature: "x" }));
+        const result = advanceUntilAttention(buildCampaign(), { phases, matterSources: [many] });
+        expect(Object.keys(result.campaign.noticed ?? {}).sort()).toEqual(["a", "b", "c"]);
+        expect(result.stop.deferred.map((m) => m.id)).toEqual(["d"]);
+    });
+});

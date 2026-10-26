@@ -100,7 +100,7 @@ export function CommissionPanel({ campaign, acts, onClose }: PanelProps) {
         packet: () => commissionOrder(campaign, selected as AssessmentQuestion, aimed),
       })}
     >
-      <Field label="About which government" help="Before you ask, you'll see how sure the answer will be and who will write it. You'll read the answer itself when it arrives.">
+      <Field label="About which government" help="The agencies report their confidence and authorship alongside the assessment.">
         {(control) => <Select {...control} label="About which government" value={aimed as string} onChange={(id) => setTarget(id as NationId)} options={nationOptions(targets)} />}
       </Field>
     </ActFrame>

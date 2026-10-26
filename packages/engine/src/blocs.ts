@@ -11,6 +11,7 @@ import {
   type FeedItem,
 } from "./state.js";
 import type { TurnPhase } from "./turn-loop.js";
+import { pressDown, pressedTrustLevel } from "./relationships.js";
 
 // What a compact is worth, and who ends up standing together because of who
 // they are all afraid of.
@@ -29,14 +30,19 @@ import type { TurnPhase } from "./turn-loop.js";
 // **Cohesion.** A compact one of whose signatories is currently coercing
 // another is not a compact, and the members who are doing nothing wrong are the
 // ones who learn that first. Every remaining member-to-member bond inside a
-// fracturing bloc loses a little trust each week the fracture runs.
+// fracturing bloc is pressed down toward a lower level each week the fracture
+// runs, and repairs slowly once it ends.
 //
 // **Coalition.** Nations that separately read the same state as a danger draw
 // toward each other. Nobody negotiates it and nothing announces it; it is the
 // arithmetic of a shared problem, which is how most of them actually form.
 
-/** How much trust a week inside a fracturing compact costs its bystanders. */
-const FRACTURE_TRUST = 0.02;
+/**
+ * Planning value: how far below where two bystanders stand a fracturing compact
+ * holds their trust in each other. At the shared build half-life the first week
+ * costs about 0.02, what the flat weekly step used to cost every week.
+ */
+const FRACTURE_TRUST_DROP = 0.12;
 
 /** Below this many members a bloc has no bystanders to disillusion. */
 const MIN_BLOC_FOR_FRACTURE = 3;
@@ -180,7 +186,13 @@ export function fracturesIn(campaign: Campaign, members: readonly NationId[]): r
   for (const conflict of selectActiveConflicts(campaign)) {
     if (inside.has(conflict.aggressor) && inside.has(conflict.defender)) pairs.push([conflict.aggressor, conflict.defender]);
   }
+  // A campaign is a breach once it has reached past the rungs partners use on
+  // each other in ordinary quarrels, and only where the others can see it. A
+  // tariff dispute or a démarche between two members read as a breach put every
+  // other member of a large body under pressure most weeks, and that alone took
+  // thirty pairs a run below the hostile line.
   for (const pursuit of selectActivePursuits(campaign)) {
+    if (!pursuit.overt || pursuit.rungReached <= ALARMING_RUNG) continue;
     if (inside.has(pursuit.actor) && inside.has(pursuit.target)) pairs.push([pursuit.actor, pursuit.target]);
   }
   return pairs;
@@ -200,8 +212,12 @@ function fractureEffects(campaign: Campaign, members: readonly NationId[], parti
   for (const from of bystanders) {
     for (const to of bystanders) {
       if (from === to) continue;
-      if (!selectRelationship(campaign, from, to)) continue;
-      effects.push({ kind: "relationship", from, to, deltas: { trust: -FRACTURE_TRUST } });
+      const relationship = selectRelationship(campaign, from, to);
+      if (!relationship) continue;
+      const level = pressedTrustLevel(campaign, relationship, FRACTURE_TRUST_DROP);
+      if (level === undefined) continue;
+      const trust = pressDown(relationship.trust, level);
+      if (trust !== relationship.trust) effects.push({ kind: "relationship", from, to, set: { trust } });
     }
   }
   return effects;

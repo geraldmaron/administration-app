@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Badge, Button, CardLink, Column, Icon, Row, Sticky, Text, useMedia, type IconName } from "@admin/ui";
+import { Tag, Button, CardLink, Column, Icon, Row, Sticky, Text, useMedia, type IconName } from "@admin/ui";
 
 import type { ViewTab } from "@admin/ui/nation";
 import { go } from "../shell/navigate";
@@ -57,9 +57,9 @@ export function Note({ children, tone = "secondary" }: { readonly children: Reac
 /** A staff projection, labeled as one, so it never reads as a recorded fact. */
 export function ProjectionBadge() {
   return (
-    <Badge status="outline" icon="pending">
+    <Tag tone="outline" icon="pending">
       Your staff's estimate
-    </Badge>
+    </Tag>
   );
 }
 

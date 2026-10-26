@@ -78,7 +78,7 @@ describe("presidential strike terms and assessed consequences", () => {
 it("ordinary live strike plans persist broad intelligence contexts, including rarer school/hospital cases, through reports", () => {
     const categories = new Set();
     const harmCategories = new Set();
-    for (let index = 0; index < 500; index++) {
+    for (let index = 0; index < 2000; index++) {
         const campaign = { ...capableCampaign(), seed: makeCampaignSeed(`ordinary-strike-producer-${index}`) };
         const assessment = assessStrikeSite(campaign, request);
         if (!assessment)

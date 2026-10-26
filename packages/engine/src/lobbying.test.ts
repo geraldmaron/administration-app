@@ -25,6 +25,8 @@ import { actCost, legislativeAct } from "./legislative-acts.js";
 import { projectPassage } from "./bill-stages.js";
 import { apply } from "./effects.js";
 import { likelihoodFromUnitInterval } from "./assessments.js";
+import { grievanceHalfLifeDays } from "./relationships.js";
+import { elapsedDays } from "./pace.js";
 import type { Bill, Campaign, HillPostId, LobbyApproach } from "./state.js";
 
 const seed = makeCampaignSeed("lobby-seed");
@@ -374,6 +376,27 @@ describe("lobbying the Hill", () => {
 });
 
 describe("POL-29: the member's own answer", () => {
+  it("charges an aged personal grudge once in private willingness, in both preview and answer", () => {
+    const campaign = friendlyAtHome(workable(foundedCampaign()));
+    const person = selectHillMember(campaign, SPEAKER)!.figure.person;
+    const hurt = apply(campaign, { source: "action", actor: "player", turn: campaign.turn, narration: { summary: "A remembered injury." },
+      effects: [{ kind: "tie", person, cause: "Publicly pressured at home.", grudge: { cause: "Publicly pressured at home.", weight: 0.5, turn: campaign.turn } }] });
+    const preview = projectLobbying(campaign, SPEAKER, "call")!;
+    const injured = projectLobbying(hurt, SPEAKER, "call")!;
+    expect(preview.successChance - injured.successChance).toBeCloseTo(0.1, 3);
+    expect(preview.counterpart.willingness.score - injured.counterpart.willingness.score).toBeCloseTo(0.1, 3);
+    const aged = { ...hurt, turn: hurt.turn + grievanceHalfLifeDays(0.5) / elapsedDays(1) };
+    expect(preview.successChance - projectLobbying(aged, SPEAKER, "call")!.successChance).toBeCloseTo(0.05, 3);
+    expect(projectLobbying(hurt, SPEAKER, "public")!.successChance).toBe(projectLobbying(campaign, SPEAKER, "public")!.successChance);
+    const issued = issueLobbying(hurt, SPEAKER, "call");
+    if (!issued.ok) throw new Error(issued.reason);
+    const due = { ...apply(hurt, issued.packet), calendar: issued.act.dueDate };
+    const answer = resolveDueLobbying(due).packets.at(-1)!.provenance!.decision!;
+    expect(answer.terms.filter((term) => term.key === "disposition")).toHaveLength(1);
+    expect(answer.terms.find((term) => term.key === "disposition")!.value).toBeCloseTo(-0.1, 3);
+    expect(issued.act.chance).toBe(injured.successChance);
+  });
+
   it("names the terms and the leading one before the call", () => {
     const campaign = workable(foundedCampaign());
     for (const approach of ["call", "trade", "public"] as const) {

@@ -19,6 +19,7 @@ import type {
   CommitmentEffect,
   ConditionEffect,
   EmergencyEffect,
+  AuthorityClockEffect,
   ExternalEmergencyEffect,
   FundingLapseEffect,
   OrderFramingEffect,
@@ -211,6 +212,10 @@ export type AttentionEffect = {
   readonly defer?: Readonly<Record<string, GameDate>>;
   /** Matter ids the President has taken back up before their date. */
   readonly resume?: readonly string[];
+  /** Matter id to the signature the world has just stopped for it as. */
+  readonly notice?: Readonly<Record<string, string>>;
+  /** Matter ids whose notice no longer stands: gone from the desk, or changed form. */
+  readonly forget?: readonly string[];
 };
 
 export type IssuedActEffect = {
@@ -497,6 +502,7 @@ export type Effect =
   | CommitmentEffect
   | ConditionEffect
   | EmergencyEffect
+  | AuthorityClockEffect
   | ExternalEmergencyEffect
   | MilitaryConstructionProjectEffect
   | OffshoreLeaseSaleEffect
@@ -583,4 +589,13 @@ export type EffectPacket = {
    * the Record can leave it out without changing any causal id.
    */
   readonly background?: boolean;
+  /**
+   * Presentation bookkeeping: what the President has been shown, not anything
+   * the administration did. It travels the same gate but leaves no ledger entry
+   * and takes no number from the causal sequence, because that sequence is
+   * part of the result and what was shown depends on the player's attention
+   * settings. Its provenance is its key: the matter ids in `provenance.entities`
+   * and the signatures in the effect.
+   */
+  readonly presentation?: boolean;
 };

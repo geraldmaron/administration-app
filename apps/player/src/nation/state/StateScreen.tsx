@@ -1,9 +1,8 @@
 import type { Campaign } from "@admin/engine";
 import { PARTY_WORDS, assembleDistrictDossier, formatRatio, leanWords, localeMatters, peopleWords, place, sealFor, stateDossier, type DistrictDossier, type LocaleMatter, type StateDossier } from "@admin/player-core";
 import type { CohortId, StateId } from "@admin/world";
-import { Button, Column, Empty, Page, ReadingFrame, Seal, Text } from "@admin/ui";
+import { Pane, Button, Column, Empty, Page, ReadingFrame, Seal, Text } from "@admin/ui";
 import { FigureBand, TrackRow, ViewTabs } from "@admin/ui/nation";
-import { Panel } from "@admin/ui/world";
 import { BackButton } from "../../shell/BackButton";
 import { go } from "../../shell/navigate";
 import { markEntry, toneKey } from "../keys";
@@ -24,7 +23,7 @@ export const isStateLens = (value: unknown): value is StateLensId => typeof valu
 
 function DistrictPanel({ district, dossier }: { readonly district: DistrictDossier; readonly dossier: StateDossier }) {
   return (
-    <Panel title={district.place ?? district.name} icon="mapPin" edge="accent" lede={`${district.code} · ${district.name}`} aside={<Button kind="quiet" size="compact" icon="close" onPress={() => go(place.stateView(dossier.id, "representation"))}>Close the district</Button>}>
+    <Pane title={district.place ?? district.name} icon="mapPin" band="accent" line={`${district.code} · ${district.name}`} actions={<Button kind="quiet" size="compact" icon="close" onPress={() => go(place.stateView(dossier.id, "representation"))}>Close the district</Button>}>
       <FigureBand
         label="The district"
         items={[
@@ -36,18 +35,18 @@ function DistrictPanel({ district, dossier }: { readonly district: DistrictDossi
       <Text variant="body" tone="secondary">
         We measure approval for the whole state, not for each district. In {dossier.name}, it's {dossier.approval ? formatRatio(dossier.approval.approval) : "unknown"}. The state has {district.claims} open {district.claims === 1 ? "request" : "requests"} and remembers {district.marks} {district.marks === 1 ? "thing" : "things"} you've done.
       </Text>
-    </Panel>
+    </Pane>
   );
 }
 
 /** The one federal matter that most needs an answer, said above the views so it is never found by hunting for a tab. */
 function UrgentMatter({ state, matter }: { readonly state: StateId; readonly matter: LocaleMatter }) {
   return (
-    <Panel title={`Waiting for your answer: ${matter.title}`} icon="caution" edge="warning" lede={matter.request ? `${matter.request.reason} ${weeks(matter.request.weeksLeft)} left to answer.` : "The state hasn't asked you for help with this."}>
+    <Pane title={`Waiting for your answer: ${matter.title}`} icon="caution" band="warning" line={matter.request ? `${matter.request.reason} ${weeks(matter.request.weeksLeft)} left to answer.` : "The state hasn't asked you for help with this."}>
       <Button kind="primary" icon="sign" onPress={() => go(actHref(state, matter.cause))}>
         {`Answer the ${matter.title.toLowerCase()}`}
       </Button>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -84,7 +83,7 @@ export function StateScreen({ campaign, id, district, lens, onLens, view, onView
       eyebrow={stateEyebrow(id, dossier.name)}
       icon="mapPin"
       title={dossier.name}
-      lede={dossier.approval ? `${formatRatio(dossier.approval.approval)} of people here approve of you. See what the state is dealing with, who lives here, and who represents it in Congress.` : "See what the state is dealing with, who lives here, and what it needs from you."}
+      lede={dossier.approval ? `${formatRatio(dossier.approval.approval)} of people here approve of you.` : `${dossier.name} has ${dossier.electoralVotes} electoral votes.`}
       emblem={<Seal spec={sealFor("INST-STATES")} size={64} />}
       actions={lead ? null : <Button kind="secondary" size="compact" icon="shield" onPress={() => go(powerHref(id))}>Send federal forces</Button>}
     >

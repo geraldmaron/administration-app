@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Campaign } from "@admin/engine";
 import { benchReading, courtDocket, courtSystem, judicialNominations, sealFor, vacancyBoard } from "@admin/player-core";
-import { Column, Page, Row, Seal, Stat, StatGrid, Surface, Text } from "@admin/ui";
+import { Column, Page, Row, Seal, Reading, ReadingGrid, Surface, Text } from "@admin/ui";
 import { ViewTabs, type ViewTab } from "@admin/ui/nation";
 import { useActCommit } from "../congress/commit";
 import { MainAndRail, quiet } from "../congress/parts";
@@ -28,26 +28,16 @@ export function CourtsScreen({ campaign, view, onView }: { readonly campaign: Ca
   const open = system.justices.filter((justice) => justice.vacant).length;
   const responses = system.cases.filter((entry) => entry.response).length;
   const figures = [
-    ...(system.cases.length > 0 ? [<Stat key="cases" label="Open cases" value={String(system.cases.length)} size="heading" minWidth={0} />] : []),
+    ...(system.cases.length > 0 ? [<Reading key="cases" name="Open cases" value={String(system.cases.length)} size="heading" minWidth={0} />] : []),
     // Shown at zero too: the card is a row of readings on one left edge, and a
     // centered empty-state block between them broke that edge.
-    <Stat key="you" label="Waiting on you" value={responses > 0 ? String(responses) : "None"} standing={responses > 0 ? "watch" : undefined} size="heading" minWidth={0} />,
-    <Stat key="seats" label="Seats filled" value={`${system.justices.length - open} / ${system.justices.length}`} standing={open > 0 ? "watch" : undefined} size="heading" minWidth={0} />,
-    <Stat key="next" label="Next court date" value={system.events[0]?.date ?? "Not scheduled"} size="heading" minWidth={0} />,
+    <Reading key="you" name="Waiting on you" value={responses > 0 ? String(responses) : "None"} standing={responses > 0 ? "watch" : undefined} size="heading" minWidth={0} />,
+    <Reading key="seats" name="Seats filled" value={`${system.justices.length - open} / ${system.justices.length}`} standing={open > 0 ? "watch" : undefined} size="heading" minWidth={0} />,
+    <Reading key="next" name="Next court date" value={system.events[0]?.date ?? "Not scheduled"} size="heading" minWidth={0} />,
   ];
+  const lede = system.cases.length === 0 ? "No case is open against your actions." : `${system.cases.length} ${system.cases.length === 1 ? "case is" : "cases are"} open${responses > 0 ? `, and ${responses} ${responses === 1 ? "waits" : "wait"} on your answer` : ""}.`;
   return (
-    <Page eyebrow="The federal judiciary" icon="court" title="Courts" lede="The federal courts, the judges who sit on them, and the rulings you need to answer." emblem={<Seal spec={sealFor("SEAL-SUPREME-COURT")} size={72} label="The Supreme Court of the United States" />}>
-      <Surface pad="lg" accentEdge="gold">
-        <Column gap="md">
-          <Row gap="md" wrap>
-            <Seal spec={sealFor("SEAL-COURT-OF-APPEALS")} size={40} label="The United States Courts of Appeals" />
-            <Text variant="title" flex={1}>Courts rule on their own. You decide how to respond.</Text>
-            <Authority cite={LAW.limits} compact />
-          </Row>
-          <StatGrid max={figures.length}>{figures}</StatGrid>
-          <Text variant="caption" tone="secondary">Judges decide each case on their own. Which party appointed them and how they've leaned before tell you about the judges, but neither one decides a ruling. Asking a higher court to review a ruling, or to pause it, doesn't stop the ruling by itself.</Text>
-        </Column>
-      </Surface>
+    <Page eyebrow="The federal judiciary" icon="court" title="Courts" lede={lede} emblem={<Seal spec={sealFor("SEAL-SUPREME-COURT")} size={72} label="The Supreme Court of the United States" />}>
       <NeedsYou system={system} />
       <ViewTabs label="Courts views" tabs={tabs.map(quiet)} selected={view} onSelect={onView} />
       {view === "nominations" ? <JudicialNominations campaign={campaign} acts={acts} /> : (
@@ -56,6 +46,17 @@ export function CourtsScreen({ campaign, view, onView }: { readonly campaign: Ca
           rail={<Column gap="xl" width="100%"><CourtAgenda campaign={campaign} system={system} /><Circuits system={system} /></Column>}
         />
       )}
+      <Surface pad="lg" accentEdge="gold">
+        <Column gap="md">
+          <Row gap="md" wrap>
+            <Seal spec={sealFor("SEAL-COURT-OF-APPEALS")} size={40} label="The United States Courts of Appeals" />
+            <Text variant="title" flex={1}>Courts rule on their own. You decide how to respond.</Text>
+            <Authority cite={LAW.limits} compact />
+          </Row>
+          <ReadingGrid max={figures.length}>{figures}</ReadingGrid>
+          <Text variant="caption" tone="secondary">Judges decide each case on their own. Which party appointed them and how they've leaned before tell you about the judges, but neither one decides a ruling. Asking a higher court to review a ruling, or to pause it, doesn't stop the ruling by itself.</Text>
+        </Column>
+      </Surface>
       {acts.reviewSheet}
     </Page>
   );

@@ -2,11 +2,12 @@ import type { CausalId } from "./causality.js";
 import type { CasualtyBand } from "./state-world.js";
 import type { ConsequenceCard, ConsequenceContext } from "./consequences.js";
 import type { ResolutionRequest } from "./resolution.js";
-import type { NationId, PersonId, StateId, TreatyId } from "@admin/world";
+import type { NationId, PersonId, StateId } from "@admin/world";
 import type { RungLevel } from "./instruments.js";
 // Type-only, and it has to stay that way: budget.ts reads campaign state at
 // runtime, so a value import here would close a cycle.
 import type { BudgetAccount } from "./budget.js";
+import type { ImpoundmentMessage } from "./impoundment.js";
 import type { GameDate } from "./state-campaign.js";
 import type { PressAction } from "./state-press.js";
 import type { SharedCredit } from "./state-ties.js";
@@ -156,6 +157,8 @@ export type Appropriation = {
   readonly throughTurn: number;
   readonly onPriorYear: boolean;
   readonly priorYear: readonly BudgetAccount[];
+  /** Special messages withholding budget authority under the Impoundment Control Act; absent until the first is sent. */
+  readonly impoundments?: readonly ImpoundmentMessage[];
 };
 
 /**
@@ -595,9 +598,9 @@ export type Bill = {
   /** Fixed recovery appropriation scored from GDP when this bill became law; absent on legacy laws is unknown. */
   readonly recoveryAuthority?: { readonly appropriated: number; readonly throughTurn: number };
   /**
-   * The executive order this bill is written against, for the one kind of act
+   * The executive order or declared emergency this bill is written against, for an act
    * that is about a particular thing the President already did rather than
-   * about the country generally: a joint resolution of disapproval.
+   * about the country generally: disapproval, emergency termination or renewal.
    *
    * Stored on the instance rather than on the catalogue entry because the
    * catalogue cannot know it — Congress picks the rule it is disapproving the
@@ -764,36 +767,6 @@ export type { PressAction, PressCorps, PressEngagement, ScandalResponse, Scandal
 
 // --- Treaties: what the president signs and the Senate decides about ---
 //
-// Congress arrived with confirmation and appropriation, both of them simple
-// majorities. Ratification is neither: two thirds of the Senate is a different
-// arithmetic and a genuinely different constraint, and it is the one that makes
-// the top of the diplomatic ladder a promise a president may not be able to
-// keep. A signed treaty that is never ratified is a real outcome of a real
-// presidency, so the record keeps both halves.
-//
-// Not every international commitment is an Article II treaty, and modeling
-// only that kind taught the inverse of how the office actually works: most of
-// what the United States concludes abroad is a congressional-executive or sole
-// executive agreement (Case-Zablocki Act, 1 U.S.C. section 112b) that binds
-// the moment it is signed and never goes near the Senate. `TreatyTerms.bindsOn`
-// in treaties.ts is what tells the two apart; the record shape here stays one
-// type either way, because both are the same kind of promise on paper, only
-// backed by a different branch of the government.
-
-export type TreatyKind = "alliance" | "trade" | "arms-control" | "executive-agreement";
-
-export type TreatyStatus = "signed" | "ratified" | "in-force-by-signature" | "rejected" | "withdrawn";
-
-export type TreatyRecord = {
-  readonly id: string; // "treaty:<kind>:<counterpart>:<signedTurn>"
-  /** The instrument as the relationship graph names it once it is in force. */
-  readonly treaty: TreatyId;
-  readonly title: string;
-  readonly kind: TreatyKind;
-  readonly counterpart: NationId;
-  readonly signedTurn: number;
-  readonly status: TreatyStatus;
-  /** The Senate's count, once it has taken one. Absent for an instrument that never goes up. */
-  readonly vote?: ChamberVote;
-  readonly resolvedTurn?: number;
-};
+// The shapes moved to state-treaties.ts and are re-exported here, so every
+// import path that named this file still resolves.
+export type { TreatyKind, TreatyRecord, TreatyStatus } from "./state-treaties.js";

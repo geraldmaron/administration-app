@@ -2,7 +2,7 @@
 
 Status: shared foundations and representative surfaces implemented locally; full application visual acceptance remains open. The owner subsequently requested a complete Material 3 inspired refresh and different visualization types. That direction supersedes the conservative chrome treatment below. The logo is explicitly deferred until the broader changes are visible.
 
-Implementation worktree: `~/.codex/worktrees/player-visual-overhaul/admin-app`.
+Implementation worktree: `<local path>`.
 Base: `011d0c042fbb2e4e1bbb52c7b5b7b3d17e165fbb`. Audit and original checkouts are preserved. Dev server: `http://127.0.0.1:5188/nation/economy?view=markets`.
 
 ## Delivered

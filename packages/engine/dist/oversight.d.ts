@@ -113,6 +113,8 @@ export type InspectorGeneral = {
     readonly noticeFiledTurn?: number;
     /** The reasons the President gave, on the record, in the order given. */
     readonly noticeReasons: readonly string[];
+    /** Where the notice failed to give the detailed, case-specific reasons the law requires; absent on a notice that did. */
+    readonly noticeDeficiencies?: readonly ("conclusory" | "no-such-record" | "outside-tenure" | "protected-audit")[];
     readonly removedTurn?: number;
 };
 export type OversightState = {

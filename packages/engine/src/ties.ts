@@ -1,6 +1,8 @@
 import type { PersonId } from "@admin/world";
 import type { Campaign, HillFigure, PersonRuntime } from "./state.js";
 import type { Favor, FavorStatus, Tie, TieGrudge } from "./state-ties.js";
+import { grievanceHalfLifeDays, retained } from "./relationships.js";
+import { elapsedDays } from "./pace.js";
 
 // The one place a tie is read and the one place it is written.
 //
@@ -50,6 +52,12 @@ export function tieOf(people: People, person: PersonId | string): Tie | undefine
 
 export function rapportOf(people: People, person: PersonId | string): number {
   return tieOf(people, person)?.rapport ?? NEUTRAL_RAPPORT;
+}
+
+/** People have no vengefulness trait; their dated injuries use the shared midpoint half-life. */
+export function personalGrudgeWeight(campaign: Pick<Campaign, "people" | "turn">, person: PersonId | string): number {
+  return (tieOf(campaign.people, person)?.grudges ?? []).reduce((sum, grudge) =>
+    sum + grudge.weight * retained(elapsedDays(campaign.turn - grudge.turn), grievanceHalfLifeDays(0.5)), 0);
 }
 
 /** How warm the member holding a Hill post is toward the administration. */

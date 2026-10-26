@@ -1,7 +1,7 @@
 {
   "worktrees": [
     {
-      "path": "~/.admin-app-wt/casting-pin-pilot",
+      "path": "<local path>",
       "head": "beb4e4b4dcf562398f511aaff8394de5e380df5d",
       "snapshot": "beb4e4b4dcf562398f511aaff8394de5e380df5d",
       "recoveryRef": "refs/safety/reconcile-20261014/01-casting-pin-pilot/head",
@@ -12,7 +12,7 @@
       "status": "removed after verified snapshot and ignored-file archive"
     },
     {
-      "path": "~/.admin-app-wt/coercion-followups",
+      "path": "<local path>",
       "head": "0837ea4eae02f3b43722c28c2d745985562e73f9",
       "snapshot": "0837ea4eae02f3b43722c28c2d745985562e73f9",
       "recoveryRef": "refs/safety/reconcile-20261014/02-coercion-followups/head",
@@ -23,7 +23,7 @@
       "status": "removed after verified snapshot and ignored-file archive"
     },
     {
-      "path": "~/.admin-app-wt/electorate-surfaces",
+      "path": "<local path>",
       "head": "14ce11a746892904e7a5f48ff2d312a5a147b9e6",
       "snapshot": "14ce11a746892904e7a5f48ff2d312a5a147b9e6",
       "recoveryRef": "refs/safety/reconcile-20261014/03-electorate-surfaces/head",
@@ -34,7 +34,7 @@
       "status": "removed after verified snapshot and ignored-file archive"
     },
     {
-      "path": "~/.admin-app-wt/regime-change",
+      "path": "<local path>",
       "head": "ccd9707577e7cd34c36ed1fdc0c7dfd347c4865b",
       "snapshot": "ccd9707577e7cd34c36ed1fdc0c7dfd347c4865b",
       "recoveryRef": "refs/safety/reconcile-20261014/04-regime-change/head",
@@ -45,7 +45,7 @@
       "status": "removed after verified snapshot and ignored-file archive"
     },
     {
-      "path": "~/.admin-app-wt/registry-r2",
+      "path": "<local path>",
       "head": "09abe6ccaca8aa980afd99b2f45d82b504edb288",
       "snapshot": "09abe6ccaca8aa980afd99b2f45d82b504edb288",
       "recoveryRef": "refs/safety/reconcile-20261014/05-registry-r2/head",
@@ -56,7 +56,7 @@
       "status": "removed after verified snapshot and ignored-file archive"
     },
     {
-      "path": "~/.admin-app-wt/scenario-cost-model",
+      "path": "<local path>",
       "head": "d53e2a776c3f2b4e3395ab27afe188a8663dff0c",
       "snapshot": "f2763efd82fea4ea0257c88d13b1e5ed51911040",
       "recoveryRef": "refs/safety/reconcile-20261014/06-scenario-cost-model/head",
@@ -67,7 +67,7 @@
       "status": "removed after verified snapshot and ignored-file archive"
     },
     {
-      "path": "~/.codex/worktrees/player-visual-audit/admin-app",
+      "path": "<local path>",
       "head": "011d0c042fbb2e4e1bbb52c7b5b7b3d17e165fbb",
       "snapshot": "a68a5216f537a264a895238290e6a224e1c77376",
       "recoveryRef": "refs/safety/reconcile-20261014/07-player-visual-audit/head",
@@ -78,7 +78,7 @@
       "status": "archived through Codex app; ignored-file archive separately verified"
     },
     {
-      "path": "~/.codex/worktrees/player-visual-overhaul/admin-app",
+      "path": "<local path>",
       "head": "011d0c042fbb2e4e1bbb52c7b5b7b3d17e165fbb",
       "snapshot": "b3b942ebe250eee6ee39f61bd41b5708db6b1b89",
       "recoveryRef": "refs/safety/reconcile-20261014/08-player-visual-overhaul/head",

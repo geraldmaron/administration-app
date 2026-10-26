@@ -23,6 +23,11 @@ export const CONDITION_GLYPH: Readonly<Record<ConditionKind, IconName>> = {
   "fiscal-crisis": "eventFiscalCrisis",
   "energy-shortage": "eventEnergyShortage",
   "housing-crunch": "eventHousingCrunch",
+  cyberattack: "sectorTelecomCyber",
+  "work-stoppage": "departmentLabor",
+  "bank-failure": "sectorFinance",
+  "mass-casualty-attack": "departmentHomelandSecurity",
+  "wrongful-detention": "departmentNationalSecurity",
 };
 
 export const COMMODITY_GLYPH: Readonly<Record<CommodityId, IconName>> = {

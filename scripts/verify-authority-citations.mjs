@@ -7,6 +7,11 @@
  *
  *   every executive order in the catalogue carries an authority, and its cite
  *     resolves to a registry record (orderAuthorityRecord)
+ *   every mission order a locale act signs (LOCALE_MISSION_ORDERS) does too
+ *   every locale act that sends force, collects, signs an order or waits on a
+ *     statutory predicate cites a law (localeActAuthority), and it resolves
+ *   every court order Justice can seek (COURT_ORDER_KINDS) cites a law that
+ *     resolves
  *   the emergency-declaration authority every emergency power waits on resolves
  *   every refusal memorandum a directive can draw, at every institution and
  *     for every directive kind, resolves (resolveAuthorityText) or matches one
@@ -69,6 +74,31 @@ function checkOrders() {
   if (declaration && !registry.orderAuthorityRecord(declaration)) failures.push(`the emergency declaration cites "${declaration.cite}", which resolves to no registry record`);
 }
 
+/** An export the gate reads; a missing one fails rather than passing on an empty list. */
+function required(name) {
+  const value = engine[name];
+  if (value === undefined) failures.push(`the engine exports no ${name}`);
+  return value;
+}
+
+function checkCited(label, authority) {
+  if (!authority) failures.push(`${label} cites no authority`);
+  else if (!registry.orderAuthorityRecord(authority)) failures.push(`${label} cites "${authority.cite}", which resolves to no registry record`);
+}
+
+/** Force, collection, a signed order or a statutory predicate is a power used, so it must name its law. */
+const usesPower = (act) => Boolean(act.coercion || act.boundary || act.orderId || act.predicate);
+
+function checkLocalePowers() {
+  for (const order of required("LOCALE_MISSION_ORDERS") ?? []) checkCited(`mission order ${order.id}`, order.authority);
+  const authorityOf = required("localeActAuthority");
+  for (const act of required("LOCALE_ACTS") ?? []) {
+    const authority = typeof authorityOf === "function" ? authorityOf(act) : act.authority;
+    if (authority || usesPower(act)) checkCited(`locale act ${act.id}`, authority);
+  }
+  for (const [kind, def] of Object.entries(required("COURT_ORDER_KINDS") ?? {})) checkCited(`court order ${kind}`, def.authority);
+}
+
 function checkDirectives() {
   const kinds = Object.keys(engine.DIRECTIVE_KIND_WEIGHT ?? {});
   const exemptions = registry.DIRECTIVE_AUTHORITY_EXEMPTIONS ?? [];
@@ -86,10 +116,11 @@ function checkDirectives() {
 
 checkRecords();
 checkOrders();
+checkLocalePowers();
 checkDirectives();
 
 if (failures.length > 0) {
   for (const failure of failures) console.error(`verify-authority-citations: ${failure}`);
   process.exit(1);
 }
-console.log(`verify-authority-citations: ${(registry.AUTHORITIES ?? []).length} authorities; every order and directive citation resolves.`);
+console.log(`verify-authority-citations: ${(registry.AUTHORITIES ?? []).length} authorities; every order, locale act, court order and directive citation resolves.`);

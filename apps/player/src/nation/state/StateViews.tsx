@@ -1,16 +1,17 @@
 import { CLAIM_WINDOW_MAX_TURNS, type Campaign } from "@admin/engine";
 import { PARTY_WORDS, formatRatio, leanWords, localeActOptions, peopleWords, place, type DistrictDossier, type LocaleMatter, type StateDossier, type StateVital } from "@admin/player-core";
 import type { StateId } from "@admin/world";
-import { Button, CardGrid, Column, EntityLink, Icon, ReadingFrame, Row, Surface, Text, View, type IconName } from "@admin/ui";
+import { Pane, Button, CardGrid, Column, EntityLink, Icon, ReadingFrame, Row, Surface, Text, View, type IconName } from "@admin/ui";
 import { Collection, TrackRow } from "@admin/ui/nation";
 import { StackedBar, segmentKeyEntries, type BarSegment } from "@admin/ui/news";
-import { Panel } from "@admin/ui/world";
 import { CompareChart } from "../../compare/CompareChart";
 import { go } from "../../shell/navigate";
 import { ConditionList } from "../Conditions";
 import { markEntry, toneKey } from "../keys";
 import { LawTopicHelp } from "../Law";
 import { VALENCE_TEXT, valenceOf, weeks } from "../format";
+import { CourtOrders } from "./CourtOrders";
+import { LiveMissions } from "./LiveMissions";
 
 const VITAL_MARK: Readonly<Record<StateVital["key"], IconName>> = { jobs: "economyUnemployment", prices: "economyInflation", crime: "shield" };
 const SECTOR_MARK: Readonly<Record<StateDossier["industry"][number]["axis"], IconName>> = {
@@ -50,7 +51,7 @@ export function StateEconomy({ campaign, dossier }: { readonly campaign: Campaig
   const largest = Math.max(1, ...dossier.metros.map((metro) => metro.population));
   return (
     <Column gap="lg">
-      <Panel title="Compared with the whole country" icon="economyGrowth">
+      <Pane title="Compared with the whole country" icon="economyGrowth">
         <ReadingFrame title="How the state is doing against the country" unit="Four steps, from worst to best" legend={[{ id: "worst", kind: "swatch", label: "One of the two worst steps", ink: "danger" }, { id: "even", kind: "swatch", label: "About the same as the country", ink: "colorTertiary" }, { id: "best", kind: "swatch", label: "Better than the country", ink: "successInk" }]} help={{ meaning: "Each row has four steps, from worst on the left to best on the right. The lit step is where the state stands against the whole country, and the word beside it says the same." }}>
           <Column gap="sm">
             {dossier.vitals.map((vital) => (
@@ -59,8 +60,8 @@ export function StateEconomy({ campaign, dossier }: { readonly campaign: Campaig
           </Column>
         </ReadingFrame>
         <CompareChart campaign={campaign} metric="unemployment" subjects={[{ kind: "self" }, { kind: "state", id: dossier.id }]} window="term" title={`Unemployment in ${dossier.name} and the whole country`} />
-      </Panel>
-      <Panel title="What the economy is made of" icon="building">
+      </Pane>
+      <Pane title="What the economy is made of" icon="building">
         <ReadingFrame title="The state's economy by part" unit="% of the state's economy, income or people" help={{ meaning: "Each bar is a share, from 0% to 100%. The first rows are the parts of the economy. The higher the share of income from federal money, the more the state is hurt if Congress doesn't pass the budget on time." }} legend={[{ id: "share", kind: "swatch", label: "Share of the whole, 0% to 100%", ink: "accent" }]}>
           <Column gap="sm">
             {dossier.industry.map((axis) => (
@@ -75,13 +76,13 @@ export function StateEconomy({ campaign, dossier }: { readonly campaign: Campaig
             <TrackRow name="Living in metro areas" figure={formatRatio(dossier.urbanization)} value={dossier.urbanization} />
           </Column>
         </ReadingFrame>
-      </Panel>
+      </Pane>
       {dossier.metros.length > 0 ? (
-        <Panel title="Biggest cities" icon="mapPin">
+        <Pane title="Biggest cities" icon="mapPin">
           <ReadingFrame title="Metro areas by population" unit="People, to scale with the biggest" legend={[{ id: "size", kind: "swatch", label: "Longest bar is the biggest metro area", ink: "colorTertiary" }]} help={{ meaning: "Each bar is a metro area's population, scaled so the biggest fills the bar." }}>
             <Collection items={dossier.metros} initial={5} noun="cities" render={(metro) => <TrackRow key={metro.id} name={metro.name} figure={metro.populationText} value={metro.population / largest} tone="neutral" />} />
           </ReadingFrame>
-        </Panel>
+        </Pane>
       ) : null}
     </Column>
   );
@@ -91,11 +92,11 @@ export function StateEconomy({ campaign, dossier }: { readonly campaign: Campaig
 export function StateConditions({ dossier }: { readonly dossier: StateDossier }) {
   return (
     <Column gap="lg">
-      <Panel id="state-conditions" title="Problems" icon="caution">
+      <Pane id="state-conditions" title="Problems" icon="caution">
         <ConditionList conditions={dossier.conditions} none={`${dossier.name} has no problems that need you this week.`} />
-      </Panel>
+      </Pane>
       {dossier.claims.length > 0 ? (
-        <Panel title="What the state has asked for" icon="pending">
+        <Pane title="What the state has asked for" icon="pending">
           <ReadingFrame title="Time left to answer each request" unit={`Weeks, out of ${CLAIM_WINDOW_MAX_TURNS}`} legend={toneKey({ reading: "Plenty of time", watch: "4 weeks or fewer", bad: "2 weeks or fewer" })} help={{ meaning: "A state's request stays open for a few weeks. The bar shrinks as time runs out, and turns amber and then red." }}>
             <Column gap="md">
               {dossier.claims.map((claim) => (
@@ -106,10 +107,10 @@ export function StateConditions({ dossier }: { readonly dossier: StateDossier })
               ))}
             </Column>
           </ReadingFrame>
-        </Panel>
+        </Pane>
       ) : null}
       {dossier.emergencies.length > 0 ? (
-        <Panel title="Emergencies that cover it" icon="order">
+        <Pane title="Emergencies that cover it" icon="order">
           {dossier.emergencies.map((emergency) => (
             <Surface key={emergency.id} level="raised" pad="md" accentEdge="gold">
               <Text variant="label">{emergency.title}</Text>
@@ -118,9 +119,9 @@ export function StateConditions({ dossier }: { readonly dossier: StateDossier })
               </Text>
             </Surface>
           ))}
-        </Panel>
+        </Pane>
       ) : null}
-      <Panel title="What the state remembers" icon="record">
+      <Pane title="What the state remembers" icon="record">
         {dossier.marks.length === 0 ? (
           <Text variant="body" tone="secondary">
             The state doesn't remember anything you've done yet, good or bad.
@@ -138,7 +139,7 @@ export function StateConditions({ dossier }: { readonly dossier: StateDossier })
             </Row>
           ))
         )}
-      </Panel>
+      </Pane>
     </Column>
   );
 }
@@ -184,7 +185,7 @@ export function Politics({ dossier, district }: { readonly dossier: StateDossier
     ...(house.unheld > 0 ? [{ key: "other", label: "Other or vacant", count: house.unheld, ink: "partyInd" as const, figure: String(house.unheld) }] : []),
   ];
   return (
-    <Panel title="Who represents it in Congress" icon="ballot" lede={`This state has ${dossier.electoralVotes} votes in the Electoral College, the group that picks the President. The number is set by the Constitution and doesn't predict who will win.`}>
+    <Pane title="Who represents it in Congress" icon="ballot" line={`This state has ${dossier.electoralVotes} votes in the Electoral College, the group that picks the President. The number is set by the Constitution and doesn't predict who will win.`}>
       {dossier.senate.length > 0 ? (
         <CardGrid columns={{ phone: 1, tablet: 2, desktop: 2, wide: 2 }}>
           {dossier.senate.map((seat, index) => (
@@ -219,7 +220,7 @@ export function Politics({ dossier, district }: { readonly dossier: StateDossier
           </ReadingFrame>
         </Column>
       ) : null}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -229,7 +230,7 @@ export const powerHref = (state: StateId): string => place.stateAct(state);
 /** The state's act desk for one matter. */
 export const actHref = (state: StateId, cause: string): string => place.stateAct(state, cause);
 
-function MatterCard({ campaign, state, matter }: { readonly campaign: Campaign; readonly state: StateId; readonly matter: LocaleMatter }) {
+function LocaleMatterCard({ campaign, state, matter }: { readonly campaign: Campaign; readonly state: StateId; readonly matter: LocaleMatter }) {
   const options = localeActOptions(campaign, state, matter.cause);
   return (
     <Surface level="raised" pad="md" accentEdge="warning">
@@ -265,23 +266,25 @@ function MatterCard({ campaign, state, matter }: { readonly campaign: Campaign; 
 export function Acts({ campaign, dossier, matters }: { readonly campaign: Campaign; readonly dossier: StateDossier; readonly matters: readonly LocaleMatter[] }) {
   return (
     <Column gap="lg">
-      <Panel title="What you can do" icon="sign" lede="Some actions only work when an emergency has been declared for the state. You declare emergencies on the Emergency screen." aside={<Button kind="quiet" size="compact" icon="caution" onPress={() => go(place.emergency())}>Open Emergency</Button>}>
+      <Pane title="What you can do" icon="sign" line="Some actions only work when an emergency has been declared for the state." actions={<Button kind="quiet" size="compact" icon="caution" onPress={() => go(place.emergency())}>Open Emergency</Button>}>
         <LawTopicHelp topic="domestic-force" compact />
         <Surface level="raised" pad="md" accentEdge="danger">
           <Column gap="xs">
             <EntityLink icon="shield" label={`See what federal forces you could send to ${dossier.name}`} href={powerHref(dossier.id)} onPress={() => go(powerHref(dossier.id))} />
             <Text variant="caption" tone="secondary">
-              You can't send in extra federal agents, take command of the state's Guard, or send troops into the state. Each would need a mission, legal findings, and steps the game doesn't track, and an emergency declaration or unrest doesn't supply them. An order to spy on residents will be refused.
+              Each kind of federal force moves only when its own law allows it. Federal officers and a task force answer unrest here, and an immigration operation can run in any state. The Guard can be taken into federal service only for an invasion, a rebellion, or troops that could not restore order. Troops need a proclamation issued at least a week before. An emergency declaration or a protest is not enough for any of them. You can't order surveillance of residents yourself. It runs only on a court's order, which you can ask Justice to seek.
             </Text>
           </Column>
         </Surface>
-      </Panel>
+      </Pane>
+      <LiveMissions campaign={campaign} state={dossier.id} />
+      <CourtOrders campaign={campaign} state={dossier.id} />
       {matters.length === 0 ? (
         <Text variant="body" tone="secondary">
           {dossier.name} has no problem or request for you this week. You act on a state to answer one of those, so there's nothing to do here right now.
         </Text>
       ) : (
-        matters.map((matter) => <MatterCard key={matter.cause} campaign={campaign} state={dossier.id} matter={matter} />)
+        matters.map((matter) => <LocaleMatterCard key={matter.cause} campaign={campaign} state={dossier.id} matter={matter} />)
       )}
     </Column>
   );

@@ -34,6 +34,13 @@ export declare function blockadeCut(ctx: InstrumentContext): number;
  * that hold it on station.
  */
 export declare function blockadeRecord(ctx: InstrumentContext, conflictId: string, siblings: readonly Effect[]): Effect;
+/**
+ * Whether the blockading navy can still hold its station: the naval branch
+ * strength and the reach the blockade rung gates on, read now rather than only
+ * the week it was ordered. A navy that can no longer reach the coast stops
+ * nothing there, nor at any strait the coast sits on.
+ */
+export declare function blockadeReaches(campaign: Campaign, blockade: Pick<Blockade, "imposer" | "target">): boolean;
 /** Every blockade still on station, oldest first. */
 export declare function blockadesInForce(campaign: Campaign): readonly Blockade[];
 /** The blockade this government already holds on that one, if it holds one. */

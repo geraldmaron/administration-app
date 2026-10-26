@@ -1,9 +1,8 @@
 import type { Campaign } from "@admin/engine";
 import { formatDate, orderPipeline, type OrderStage, type PipelineRow } from "@admin/player-core";
-import { CardLink, Column, Icon, ReadingFrame, Row, Segmented, Text, TextInput, type IconName } from "@admin/ui";
+import { Pane, CardLink, Column, Icon, ReadingFrame, Row, Segmented, Text, TextInput, type IconName } from "@admin/ui";
 import { Collection, ViewTabs } from "@admin/ui/nation";
 import { StackedBar, segmentKeyEntries, type BarSegment } from "@admin/ui/news";
-import { Panel } from "@admin/ui/world";
 import { go } from "../../shell/navigate";
 
 const STAGE_ICONS: Readonly<Record<OrderStage, IconName>> = { rulemaking: "pending", court: "court", desk: "sign", standing: "active", undone: "archive", shut: "locked" };
@@ -43,7 +42,7 @@ export function OrderPipeline({ campaign, search, onSearch }: { readonly campaig
   const byStage: readonly BarSegment[] = available.map((stage) => ({ key: stage.stage, label: stage.label, count: rows.filter((row) => row.stage === stage.stage).length, ink: STAGE_INK[stage.stage] }));
   const found = rows.filter((row) => (chosen === "all" || row.stage === chosen) && `${row.name} ${row.line}`.toLowerCase().includes(query.toLowerCase()));
   return (
-    <Panel title="Executive orders" icon="order" lede={`${signed.length} signed · ${catalogue.length} not signed yet. An unsigned order is a draft waiting for you. Open one to read it and see which law gives you the power to sign it.`}>
+    <Pane title="Executive orders" icon="order" line={`${signed.length} signed · ${catalogue.length} not signed yet. An unsigned order is a draft waiting for you.`}>
       <ViewTabs<"issued" | "catalogue"> label="Which orders" tabs={[{ id: "issued", label: "Signed", count: signed.length }, { id: "catalogue", label: "Not signed yet", count: catalogue.length }]} selected={scope} onSelect={(next) => onSearch({ ...search, orderScope: next, orderStatus: undefined })} />
       {rows.length > 0 ? (
         <ReadingFrame title={`${scope === "issued" ? "Signed orders" : "Unsigned orders"} by status`} unit="Number of orders" legend={segmentKeyEntries(byStage)} help={{ meaning: "The bar is every order in this list, split by where it stands. A wider part means more orders. The colored edge on each order below matches its part of the bar." }}>
@@ -60,6 +59,6 @@ export function OrderPipeline({ campaign, search, onSearch }: { readonly campaig
         {found.length} of {rows.length} {scope === "issued" ? "signed orders" : "unsigned orders"} shown.
       </Text>
       <Collection items={found} initial={12} noun={scope === "issued" ? "signed orders" : "unsigned orders"} resetKey={`${scope}:${chosen}:${query}`} empty={scope === "issued" ? "No signed order matches. Orders you haven't signed are under Not signed yet." : "No order matches these filters."} render={(row) => <OrderRow key={row.id} row={row} />} />
-    </Panel>
+    </Pane>
   );
 }

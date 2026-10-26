@@ -2,8 +2,29 @@ import { ACUTE_CONDITIONS } from "@admin/engine";
 import type { ScenarioDef } from "./scenario.js";
 import { passages, type ScenarioFinding } from "./scenario-audit-contract.js";
 
+/** The locale acts that answer disorder rather than a disaster; the engine opens them only on unrest. */
+const COERCIVE_LOCALE_ACTS: readonly string[] = ["property-surge", "task-force", "priority"];
+
+/**
+ * A court application's flag carries the filed odds and, until the ruling week,
+ * a pending marker only; the drawn answer is already fixed at filing. Content
+ * reads the ruling from `court-order-<outcome>:<kind>:<state>`, which the engine
+ * writes the week the court gives it, so a scenario can never fire on an answer
+ * the player has not been told. Hooked here because the scenario audit file is
+ * at its frozen size.
+ */
+function auditCourtFlagReads(def: ScenarioDef, findings: ScenarioFinding[]): void {
+  for (const condition of def.conditions) {
+    if (condition.kind === "flag" && condition.flag.startsWith("court-application:")) {
+      findings.push({ kind: "ungrounded-report", severity: "error", scenario: def.id,
+        message: `a court case is read from its ruling flag court-order-<outcome>:<kind>:<state>, never from "${condition.flag}", which exists before the court has ruled` });
+    }
+  }
+}
+
 /** A report decision may only claim what its selected issued product contains. */
 export function auditCollectionReport(def: ScenarioDef, findings: ScenarioFinding[]): void {
+  auditCourtFlagReads(def, findings);
   const gates = def.conditions.filter((condition) => condition.kind === "collectionReport");
   const reportTokens = passages(def).flatMap((passage) => [...passage.text.matchAll(/\{\{(report[A-Z][a-zA-Z]*)\}\}/g)].map((match) => match[1]!));
   const error = (kind: "ungrounded-report" | "classified-report-disclosure", message: string) =>
@@ -62,7 +83,14 @@ export function auditCollectionReport(def: ScenarioDef, findings: ScenarioFindin
       error("ungrounded-report", "closing the original collection tasking requires an activeTasking report gate");
     }
     if (reply.commitment.kind !== "position" || (!reply.commitment.relief && !reply.commitment.localeAct)) continue;
-    if (gate?.targetKind !== "domestic-state" || gate.basis !== "governor-request" ||
+    const { localeAct } = reply.commitment;
+    const coercive = localeAct !== undefined && COERCIVE_LOCALE_ACTS.some((act) => act === localeAct);
+    if (coercive) {
+      // The engine refuses these on any other cause; the audit refuses them first so the reply never ships as a dead button.
+      if (gate?.targetKind !== "domestic-state" || gate.condition !== "unrest") {
+        error("ungrounded-report", "a coercive state response (property surge, task force, investigative priority) needs a domestic report whose condition is unrest");
+      }
+    } else if (gate?.targetKind !== "domestic-state" || gate.basis !== "governor-request" ||
       !gate.condition || !ACUTE_CONDITIONS.some((kind) => kind === gate.condition)) {
       error("ungrounded-report", "a state response needs a governor request for a named acute state condition");
     }

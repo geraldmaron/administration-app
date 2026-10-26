@@ -84,10 +84,10 @@ export declare const ImpactMechanism: z.ZodDiscriminatedUnion<[z.ZodObject<{
     kind: z.ZodLiteral<"infrastructure">;
     service: z.ZodEnum<{
         healthcare: "healthcare";
-        communications: "communications";
         transport: "transport";
         power: "power";
         water: "water";
+        communications: "communications";
     }>;
     outageShare: z.ZodNumber;
     repairDays: z.ZodNumber;
@@ -111,9 +111,9 @@ export declare const ImpactSpec: z.ZodObject<{
             healthcare: "healthcare";
             utilities: "utilities";
             military: "military";
-            education: "education";
             industrial: "industrial";
             residential: "residential";
+            education: "education";
             transport: "transport";
         }>;
         assessmentRef: z.ZodString;
@@ -198,10 +198,10 @@ export declare const ImpactSpec: z.ZodObject<{
         kind: z.ZodLiteral<"infrastructure">;
         service: z.ZodEnum<{
             healthcare: "healthcare";
-            communications: "communications";
             transport: "transport";
             power: "power";
             water: "water";
+            communications: "communications";
         }>;
         outageShare: z.ZodNumber;
         repairDays: z.ZodNumber;
@@ -209,12 +209,12 @@ export declare const ImpactSpec: z.ZodObject<{
     }, z.core.$strict>], "kind">;
     accounting: z.ZodObject<{
         population: z.ZodEnum<{
-            parent: "parent";
             self: "self";
+            parent: "parent";
         }>;
         economy: z.ZodEnum<{
-            parent: "parent";
             self: "self";
+            parent: "parent";
         }>;
     }, z.core.$strict>;
     calibration: z.ZodObject<{

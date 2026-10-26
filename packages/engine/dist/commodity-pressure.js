@@ -1,7 +1,10 @@
+import { blockadeCutOn } from "./blockades.js";
 import { laggedIndex, marketQuote } from "./commodities.js";
-import { commoditiesIn, supplierShare } from "./commodity-registry.js";
+import { commoditiesIn, COMMODITY_DEFS, supplierShare } from "./commodity-registry.js";
+import { cargoDependence, chokepointDependence, contestedRoutes, originDependence, warLossFraction } from "./commodity-shocks.js";
+import { COERCION_BITE, newlyStoppedShare, worldExportShare } from "./external-pressure.js";
 import { CPI_WEIGHTS, GROCERY_GRAINS, GROCERY_LAG, HOME_ENERGY_LAG, PUMP_LAG, groceryIndex, homeEnergyIndex, pumpPrice, } from "./household-prices.js";
-import { selectNation } from "./state.js";
+import { selectActiveConflicts, selectNation } from "./state.js";
 const NONE = { growth: 0, inflation: 0 };
 /** Planning values: abroad, the share of the price level in motor fuel, and crude's share of what fuel costs at retail. */
 const ABROAD_FUEL_WEIGHT = 0.03;
@@ -48,30 +51,98 @@ function abroadInflation(campaign, runtime) {
     const home = ABROAD_HOME_ENERGY.weight * ABROAD_HOME_ENERGY.gasShare * meanChange(campaign, GAS, HOME_ENERGY_LAG);
     return fuel + food + home;
 }
+/** Planning value: growth lost per unit of an economy's energy supply that does not arrive, beyond the price it pays for the rest. */
+export const SHORTFALL_COST = 0.1;
+/** The two fuels an energy balance carries, each with the market that prices it and the one whose straits carry its cargo. */
+const FUELS = [
+    { sector: "energy-oil", price: ["crude"], cargo: "crude" },
+    { sector: "energy-gas", price: GAS, cargo: "lng" },
+];
 /**
- * Energy's terms of trade, on the founding energy balance (EIA's production
- * and consumption, as the dataset carries them): a net importer pays in
- * proportion to how much it buys in, a net exporter gains in proportion to how
- * much of its output it sells.
+ * The share of one exporter's sales of a fuel the national books already
+ * charge elsewhere this week: its wars' lost output, a blockade on station
+ * and the share of its sales the measures have stopped since its baseline vintage (`external-pressure.ts#newlyStoppedShare`).
  */
-function energyGrowth(campaign, runtime) {
+function billedLoss(campaign, nation, sector, good) {
+    const sanctioned = Math.max(0, newlyStoppedShare(campaign, nation, sector, good));
+    const kept = (1 - warLossFraction(nation, selectActiveConflicts(campaign))) * (1 - Math.min(1, blockadeCutOn(campaign, nation))) * (1 - sanctioned);
+    return 1 - Math.max(0, kept);
+}
+/**
+ * The share of one exporter's sales of a fuel stranded behind a contested
+ * strait this week: the share of what it sells abroad that loads there (the
+ * origin table over EIA's figures, or its authored dependence on the strait
+ * where the source names no origin), the part no pipeline
+ * carries, what the war closes and the share of the strait's cargo bound for
+ * flags the closing governments stop. A government closing the strait is
+ * not stranded by its own closure, and what the books already charge is not
+ * stranded again.
+ */
+function strandedShare(campaign, nation, cargo, billed) {
+    const stranded = contestedRoutes(campaign, cargo)
+        .filter((contested) => !contested.passage.deniers.includes(nation))
+        .reduce((sum, { route, passage, closure }) => {
+        const loads = originDependence(nation, route.chokepoint, cargo) ?? chokepointDependence(campaign, nation, route.chokepoint);
+        return sum + loads * (1 - route.bypass) * closure * passage.stoppedShare;
+    }, 0);
+    return Math.min(1, stranded) * (1 - billed);
+}
+/**
+ * The share of one importer's supply of a fuel that does not arrive: for each
+ * contested strait whose closing governments stop its flag, the share of its
+ * consumption the strait's cargo bound for it carries (the cargo table over
+ * EIA's consumption, or its authored dependence where the source names no
+ * cargo or no consumption), net of the pipelines and of what the producers behind it had
+ * already lost. A flag let through gets its cargo and pays only the price.
+ */
+function shortfallShare(campaign, nation, cargo) {
+    const short = contestedRoutes(campaign, cargo)
+        .filter((contested) => !contested.passage.passing.includes(nation) && !contested.passage.deniers.includes(nation))
+        .reduce((sum, { route, closure, upstreamLost }) => {
+        const bound = cargoDependence(nation, route.chokepoint, cargo) ?? chokepointDependence(campaign, nation, route.chokepoint);
+        return sum + bound * (1 - route.bypass) * closure * (1 - upstreamLost);
+    }, 0);
+    return Math.min(1, short);
+}
+function fuelChange(campaign, price) {
+    return price.length === 1 ? feltChange(campaign, price[0], PUMP_LAG) : meanChange(campaign, price, HOME_ENERGY_LAG);
+}
+/**
+ * Energy's terms of trade and its flows, on the founding energy balance (EIA's
+ * production and consumption, as the dataset carries them). A net importer
+ * pays in proportion to how much it buys in, and goes short where its cargo is
+ * stopped. A net exporter's receipts are what it delivers times the price: it
+ * gains on the price only for what it still sells, and loses what a strait
+ * strands at the price it would have fetched, at the growth cost every lost
+ * sale carries (`COERCION_BITE`).
+ */
+function energyGrowth(campaign, nation, runtime) {
     const { production, consumption, mix } = runtime.base.stats.energy;
-    const change = feltChange(campaign, "crude", PUMP_LAG) * (mix["energy-oil"] ?? 0) + meanChange(campaign, GAS, HOME_ENERGY_LAG) * (mix["energy-gas"] ?? 0);
     if (consumption >= production) {
         const imported = consumption > 0 ? (consumption - production) / consumption : 0;
-        return -ENERGY_TRADE.importBill * imported * change;
+        return FUELS.reduce((sum, fuel) => {
+            const share = mix[fuel.sector] ?? 0;
+            return sum - ENERGY_TRADE.importBill * imported * share * fuelChange(campaign, fuel.price) - SHORTFALL_COST * share * shortfallShare(campaign, nation, fuel.cargo);
+        }, 0);
     }
     const exported = production > 0 ? (production - consumption) / production : 0;
-    return ENERGY_TRADE.exportRent * exported * change;
+    return FUELS.reduce((sum, fuel) => {
+        const billed = billedLoss(campaign, nation, fuel.sector);
+        const stranded = strandedShare(campaign, nation, fuel.cargo, billed);
+        const rent = ENERGY_TRADE.exportRent * exported * (mix[fuel.sector] ?? 0) * fuelChange(campaign, fuel.price) * (1 - billed - stranded);
+        return sum + rent - COERCION_BITE * worldExportShare(campaign, nation, fuel.sector) * stranded;
+    }, 0);
 }
+/** A supplier gains on the price only for what it still delivers; what the books already charge as lost earns it nothing. */
 function familyGrowth(campaign, nation, tier, family) {
     const ids = commoditiesIn(family);
     return ids.reduce((sum, id) => {
         const change = feltChange(campaign, id, GROCERY_LAG);
         const share = supplierShare(id, nation);
+        const delivered = share > 0 ? 1 - billedLoss(campaign, nation, COMMODITY_DEFS[id].sector, COMMODITY_DEFS[id].good) : 1;
         if (family === "grains")
-            return sum + (share > 0 ? FOOD_TRADE.exportGain * share : -(FOOD_TRADE.importBill[tier] ?? 0.005) / ids.length) * change;
-        return sum + (share > 0 ? INPUT_TRADE.supplierGain * share : -INPUT_TRADE.userCost / ids.length) * change;
+            return sum + (share > 0 ? FOOD_TRADE.exportGain * share * delivered : -(FOOD_TRADE.importBill[tier] ?? 0.005) / ids.length) * change;
+        return sum + (share > 0 ? INPUT_TRADE.supplierGain * share * delivered : -INPUT_TRADE.userCost / ids.length) * change;
     }, 0);
 }
 const round6 = (value) => Math.round(value * 1_000_000) / 1_000_000 + 0;
@@ -84,7 +155,7 @@ export function commodityMacroPressure(campaign, nation) {
         return NONE;
     const tier = runtime.base.bands.wealthTier;
     const inflation = nation === campaign.founding.nation ? usInflation(campaign) : abroadInflation(campaign, runtime);
-    const growth = energyGrowth(campaign, runtime) +
+    const growth = energyGrowth(campaign, nation, runtime) +
         familyGrowth(campaign, nation, tier, "grains") +
         familyGrowth(campaign, nation, tier, "metals") +
         familyGrowth(campaign, nation, tier, "minerals");

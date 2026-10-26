@@ -37,7 +37,7 @@ describe("shared incident impact model", () => {
         const input = spec(CYBER_IMPACT_PROFILE);
         expect(ImpactSpec.safeParse({ ...input, exposure: { ...input.exposure, population: -1 } }).success).toBe(false);
         expect(ImpactSpec.safeParse({ ...input, mechanism: { ...OUTBREAK_IMPACT_PROFILE, initialInfected: 10001 } }).success).toBe(false);
-        expect(ImpactSpec.safeParse({ ...input, calibration: { ...IMPACT_CALIBRATION, status: "calibrated" } }).success).toBe(false);
+        expect(ImpactSpec.safeParse({ ...input, calibration: { ...IMPACT_CALIBRATION, status: "calibrated", sourceRefs: [] } }).success).toBe(false);
         expect(ImpactSpec.safeParse({ ...input, exposure: { ...input.exposure, assetsUSDm: Infinity } }).success).toBe(false);
     });
     it("conserves outbreak population while infections develop, and effective response reduces harm", () => {

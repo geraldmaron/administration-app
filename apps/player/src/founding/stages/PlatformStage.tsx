@@ -6,7 +6,7 @@ import { CheckCard, Toggle } from "@admin/ui/forms";
 import { termDoor } from "../../handbook/term-door";
 import { togglePlank, togglePriority, type FoundingDraft } from "../draft";
 import { PLANK_GLYPH } from "../glyphs";
-import { Commits, Reading, StageGrid } from "../parts";
+import { Commits, TitledReading, StageGrid } from "../parts";
 
 type Update = (change: (draft: FoundingDraft) => FoundingDraft) => void;
 
@@ -66,7 +66,7 @@ export function PlatformStage({ draft, update }: { readonly draft: FoundingDraft
         </>
       }
       side={
-        <Reading icon="domesticLedger" title="Your promises">
+        <TitledReading icon="domesticLedger" title="Your promises">
           <Column gap="md" aria-live="polite">
             <ReadingFrame
               title="How many promises you've made"
@@ -83,7 +83,7 @@ export function PlatformStage({ draft, update }: { readonly draft: FoundingDraft
               You don't have to make any promises. Each one you make is checked on the day it's due.
             </Text>
           </Row>
-        </Reading>
+        </TitledReading>
       }
     />
   );

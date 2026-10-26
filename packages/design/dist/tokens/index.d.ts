@@ -6,3 +6,4 @@ export * from "./contrast.js";
 export * from "./portrait.js";
 export * from "./classified.js";
 export * from "./brand.js";
+export * from "./desk.js";

@@ -1,15 +1,18 @@
 import { useState } from "react";
-import { underDeclaredEmergency, type Campaign, type ConditionKind } from "@admin/engine";
+import { liveProclamation, underDeclaredEmergency, type Campaign, type ConditionKind } from "@admin/engine";
 import { formatRatio, homeActOptions, localeActOptions, localeMatters, localeWaiting, place, stateApprovalReading, type LocaleActOption, type LocaleMatter, type LocaleWaiting } from "@admin/player-core";
 import type { StateId } from "@admin/world";
-import { Column, Page, ReadingFrame, Text } from "@admin/ui";
+import { Button, Column, Page, ReadingFrame, Text } from "@admin/ui";
 import { CompareChoices, TrackRow } from "@admin/ui/nation";
 import { BackButton } from "../../shell/BackButton";
-import { back } from "../../shell/navigate";
+import { back, go } from "../../shell/navigate";
 import { ActDone, ActProblem } from "../ActDone";
 import { useNationAct, type DoneAct } from "../act";
 import { stateEyebrow } from "../format";
-import { VERBS, optionsFor, receiptLines, rowsFor, take } from "./locale-acts";
+import { VERBS, isForceAct, offered, optionsFor, receiptLines, rowsFor, take } from "./locale-acts";
+import { LawDoors, RefusedByLaw } from "./act-terms";
+import { CourtOrders } from "./CourtOrders";
+import { LiveMissions } from "./LiveMissions";
 import { markEntry, toneKey } from "../keys";
 import { LawTopicHelp } from "../Law";
 import { MapPanelSlot } from "../MapPanelSlot";
@@ -20,7 +23,10 @@ function Desk({ campaign, state, title, options, matter, waiting, unprovoked }: 
   const [selected, setSelected] = useState<string | undefined>(undefined);
   const act = useNationAct(campaign);
   const name = campaign.states[state]?.base.name ?? state;
-  const chosen = options.find((option) => option.id === selected);
+  const choices = offered(options);
+  const refused = options.filter((option) => option.refusedByLaw);
+  const chosen = choices.find((option) => option.id === selected);
+  const unrestHere = unprovoked === true && localeMatters(campaign, state).some((entry) => entry.cause === "unrest");
   if (act.done) return <LocaleReceipt state={state} done={act.done} option={chosen} />;
   return (
     <Page eyebrow={stateEyebrow(state, name)} icon={unprovoked ? "shield" : "dispatch"} title={title}>
@@ -28,26 +34,42 @@ function Desk({ campaign, state, title, options, matter, waiting, unprovoked }: 
       <MapPanelSlot title={`${name} by approval`} lens="approval" camera={`state:${state}`} selection={`state:${state}`}>
         <Situation campaign={campaign} state={state} matter={matter} />
       </MapPanelSlot>
-      {unprovoked ? (
+      {unrestHere ? (
+        <Column gap="sm">
+          <Text variant="body" tone="secondary">
+            There is civil unrest in {name}. The choices that answer it, including the steps the law grants only against disorder, are on its own page.
+          </Text>
+          <Button kind="secondary" size="compact" iconAfter="chevron" onPress={() => go(place.stateAct(state, "unrest"))}>
+            Answer the civil unrest
+          </Button>
+        </Column>
+      ) : null}
+      {unprovoked && !unrestHere ? (
         <Text variant="body" tone="secondary">
-          These actions are here so you can compare them, but you can't take any of them. Unrest or an emergency declaration doesn't, by itself, let the federal government send in police or the military. That would take facts and legal steps the game doesn't track.
+          Nothing here is asking for an answer. Routine federal enforcement can still go in on your say-so, and people will read it as your choice rather than a response. Force aimed at disorder waits until there is disorder to answer, and each step after that waits on the law that grants it.
         </Text>
       ) : null}
       <LawTopicHelp topic="domestic-force" compact />
       <CompareChoices
         title={unprovoked ? "Compare sending federal forces" : "Compare your choices"}
-        options={optionsFor(options)}
-        rows={rowsFor(options, matter)}
+        options={optionsFor(choices)}
+        rows={rowsFor(choices, matter, liveProclamation(campaign, state) !== undefined)}
         selected={selected}
         onSelect={setSelected}
-        verb={chosen ? VERBS[chosen.id] : "Pick a choice"}
-        danger={unprovoked || chosen?.id === "federalize"}
+        verb={chosen ? VERBS[chosen.id] : "Nothing chosen yet"}
+        danger={unprovoked || (chosen ? isForceAct(chosen.id) : false)}
         onAuthorize={() => chosen && take(act, chosen, name)}
         {...(chosen ? { review: unprovoked ? `${chosen.name} for ${name}, without being asked. Cost now: ${chosen.costText}, and ${chosen.standingText} of international standing. It goes on your Record.` : `${chosen.name} for ${name}. Cost now: ${chosen.costText}. It goes on your Record.` } : {})}
         {...(waiting ? { waiting: waiting.line } : {})}
+        footnote={<LawDoors options={choices} />}
         busy={act.busy}
       />
+      {refused.map((option) => (
+        <RefusedByLaw key={option.id} option={option} />
+      ))}
       <ActProblem problem={act.problem} />
+      <LiveMissions campaign={campaign} state={state} />
+      <CourtOrders campaign={campaign} state={state} />
       <BackButton parent={place.state(state)} parentLabel={name} />
     </Page>
   );

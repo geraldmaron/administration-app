@@ -3,8 +3,9 @@ import { useRouter } from "expo-router";
 import type { Campaign } from "@admin/engine";
 import { formatRatio, personFile, place, type OverviewOffice } from "@admin/player-core";
 import { Button, Column, Icon, Meter, ReadingFrame, Row, Surface, Text, markKeyEntries } from "@admin/ui";
+import { PersonFace } from "../dossier/PersonFace";
 import { termDoor } from "../handbook/term-door";
-import { BandSteps, Monogram, StaffingBadge } from "@admin/ui/dossier";
+import { BandSteps, StaffingBadge } from "@admin/ui/dossier";
 import { DeliveryBar, deliveryKeyEntries } from "./DeliveryBar";
 import { CardLabel, CardTo, InstitutionSeal } from "./parts";
 import { QUALITY_METER, qualityOf, readingTone } from "./present";
@@ -57,10 +58,10 @@ function Matters({ office }: { readonly office: OverviewOffice }) {
 }
 
 /** Who holds the chair: their whole line opens their file. */
-function Holder({ name, holder, title }: { readonly name: string | undefined; readonly holder: string | undefined; readonly title: string }) {
+function Holder({ campaign, name, holder, title }: { readonly campaign: Campaign; readonly name: string | undefined; readonly holder: string | undefined; readonly title: string }) {
   const line = (
     <Row gap="sm">
-      <Monogram name={name ?? "Vacant"} muted={!holder} size={44} />
+      <PersonFace campaign={campaign} id={holder} name={name ?? "Vacant"} muted={!holder} size={44} />
       <Column flex={1}>
         <Text variant="label">{holder ? (name ?? "The leader") : "Nobody in the job"}</Text>
         <Text variant="caption" tone="secondary">
@@ -96,7 +97,7 @@ export function OfficeInspector({ campaign, office, branch }: { readonly campaig
             <StaffingBadge staffing={node.staffing} />
           </Column>
         </Row>
-        <Holder name={node.holderName} holder={node.holder} title={node.title} />
+        <Holder campaign={campaign} name={node.holderName} holder={node.holder} title={node.title} />
         <Delivery office={office} branch={branch} />
         {file ? (
           <Column gap="sm">

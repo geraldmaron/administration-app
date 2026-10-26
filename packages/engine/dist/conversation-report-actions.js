@@ -1,7 +1,8 @@
 import { worldDataset } from "@admin/world";
 import { closeTasking, taskCollection } from "./intelligence.js";
 import { executiveOrder, orderAvailability, projectOrder } from "./orders.js";
-import { localeAct, localeActCost, localeAvailability } from "./locale-acts.js";
+import { localeAct, localeAvailability } from "./locale-acts.js";
+import { localeActPrice } from "./locale-act-effects.js";
 import { realizePositionCost } from "./position-assessment.js";
 import { transmit } from "./legislation.js";
 import { proposeBillText, recommendBillConferenceText } from "./bill-text-actions.js";
@@ -10,7 +11,7 @@ import { liftMeasure } from "./trade.js";
 import { selectNation } from "./state.js";
 import { issueDirective } from "./directives.js";
 import { selectMatter } from "./oversight.js";
-import { fileInspectorRemovalNotice } from "./inspectors-general.js";
+import { conclusoryAccount, fileInspectorRemovalNotice } from "./inspectors-general.js";
 import { institutionDef } from "./institutions.js";
 import { openNomination } from "./nomination.js";
 import { campaignDay } from "./clock.js";
@@ -37,7 +38,10 @@ export function localeProjection(campaign, request) {
     const availability = localeAvailability(campaign, request.state, act, request.cause);
     if (!availability.ok)
         return { ok: false, reason: availability.missing };
-    return { ok: true, cost: { treasury: -localeActCost(campaign, act), ...(act.standingCost ? { standing: -act.standingCost } : {}) } };
+    // The act's own price, unrequested standing included, as the packet charges
+    // it. What a suit or an incident would add is drawn when the act is taken
+    // and is not quoted before.
+    return { ok: true, cost: localeActPrice(campaign, request.state, act) };
 }
 export function collectionAction(campaign, action) {
     if (!action)
@@ -120,7 +124,7 @@ export function directiveAction(campaign, request) {
         return { ok: false, reason: "The inspector general matter this answer addresses is no longer open." };
     }
     const result = request.kind === "inspector-removal-notice"
-        ? fileInspectorRemovalNotice(campaign, request.institution, request.reason)
+        ? fileInspectorRemovalNotice(campaign, request.institution, conclusoryAccount(request.reason, pinned.id, campaign.turn))
         : issueDirective(campaign, { institution: request.institution, kind: request.kind, subject: request.subject });
     return result.ok ? { ok: true, effects: result.packet.effects, summary: result.packet.narration.summary } : result;
 }

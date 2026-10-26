@@ -60,7 +60,7 @@ const DENYLIST = [
   ["archive path", /(?<!\w)_archive\b/],
   ["deleted docs folder", /\bdocs\/(?:RFCs|ADRs|PRDs|specs|grail)\b/],
   // The live audit records are listed here, the universal player program among them; any other audit path names a deleted one.
-  ["deleted audit record", /\bdocs\/audits\/(?!2026-10-10-map-first\b|2026-10-11-operations-redesign\b|2026-10-11-simulation-depth\b|2026-10-12-contested-issues\b|2026-10-12-approval-model\b|2026-10-12-coercion-geography\b|2026-10-12-grounded-casting\b|2026-10-12-data-model\b|2026-10-13-appointments\b|2026-10-13-player-visual-audit\b|2026-10-14-worktree-reconciliation\b|2026-10-16-universal-player\b|2026-10-16-control-plane\b|2026-10-16-presidential-authority\b|2026-10-16-act-workspace\b|2026-10-17-ui-uniformity\b|2026-10-17-scenario-harness\b)[\w.-]+/],
+  ["deleted audit record", /\bdocs\/audits\/(?!2026-10-10-map-first\b|2026-10-25-domestic-force\b|2026-10-11-operations-redesign\b|2026-10-11-simulation-depth\b|2026-10-12-contested-issues\b|2026-10-12-approval-model\b|2026-10-12-coercion-geography\b|2026-10-12-grounded-casting\b|2026-10-12-data-model\b|2026-10-13-appointments\b|2026-10-13-player-visual-audit\b|2026-10-14-worktree-reconciliation\b|2026-10-16-universal-player\b|2026-10-16-control-plane\b|2026-10-16-presidential-authority\b|2026-10-16-act-workspace\b|2026-10-17-ui-uniformity\b|2026-10-17-scenario-harness\b|2026-10-24-desk\b|2026-10-24-world-dynamics\b)[\w.-]+/],
   ["deleted client or backend", /\b(?:Kotlin|Firebase)\b/i],
   ["pre-rebuild", /\bpre-rebuild\b/i],
   ["tracker id", /\badmin-(?!app\b|auth\b|web\b|api\b)[a-z0-9]{3,4}(?:\.\d+)*\b/],

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Campaign } from "@admin/engine";
+import { VICE_PRESIDENCY_INSTITUTION_ID, type Campaign } from "@admin/engine";
 import { WHITE_HOUSE_ROLE_TITLES } from "@admin/world";
 import { openingCampaign } from "../__fixtures__/opening";
 import { cabinetSeats } from "../cabinet/seats";
@@ -23,6 +23,16 @@ describe("the White House around the President", () => {
       expect(seat.holder?.id).toBe(campaign.founding.staff?.[seat.role as keyof NonNullable<Campaign["founding"]["staff"]>]);
     }
     for (const seat of seats) expect(seat.title).toBe(WHITE_HOUSE_ROLE_TITLES[seat.role]);
+  });
+
+  it("reads a Vice President confirmed after a vacancy as confirmed, not elected", () => {
+    const id = campaign.vicePresident!;
+    const nomination = {
+      id: "OFF-VP:1", office: "OFF-VP", institution: VICE_PRESIDENCY_INSTITUTION_ID, nominee: id, stage: "sworn-in" as const,
+      stageEnteredDay: 1, openedDay: 1, controversies: [], history: [],
+    };
+    const seated: Campaign = { ...campaign, nominations: { ...campaign.nominations, [nomination.id]: nomination } };
+    expect(whiteHouseSeats(seated)[0]?.tenure).toBe("confirmed");
   });
 
   it("never names a cabinet chair as White House staff", () => {

@@ -3,7 +3,9 @@ import type { Campaign } from "@admin/engine";
 import { actOption, actWorkspace, buildAct, buildTariffPackage, formatMoney, pendingAbout, readTariffPackage, standingToward, type ActConfig, type ActGoal, type ActWorkspace as Workspace, type TariffGood } from "@admin/player-core";
 import type { NationId } from "@admin/world";
 import { Button, Column, Page, Row, Section, SectionNav, Text, View, scrollToSection, useMedia } from "@admin/ui";
+import { useDraftState, useDraftStore } from "../../device/hooks";
 import { BackButton } from "../../shell/BackButton";
+import { openDrafts } from "../../shell/Drafts";
 import { authorizationSummary } from "../act-summary";
 import { actAuthorities } from "../law";
 import { FlagOf, Problem } from "../parts";
@@ -34,14 +36,23 @@ type DockProps = { readonly campaign: Campaign; readonly nation: NationId; reado
 /** What is picked, the next step in words, and the one verb, pinned to the foot of the screen. */
 function Dock({ campaign, nation, view, config, act, onCompare, tariff }: DockProps) {
   const media = useMedia();
+  const drafts = useDraftStore();
+  const { drafts: inTray } = useDraftState();
+  const [drafting, setDrafting] = useState("");
+  const drafted = tariff !== undefined && inTray.some((entry) => entry.subject === `tariff:${nation}`);
   const chosen = view.chosen;
   const assessment = view.assessment;
   // A tariff order on several goods is signed as one package; on one good it is the ordinary act.
   const several = tariff && tariff.picked.length > 1 ? tariff : undefined;
   const ready = chosen?.preview.state === "open" && assessment && !assessment.locked && (!several || (several.reading?.ordered ?? 0) > 0);
-  const next = !chosen ? (view.compared.length > 1 ? "Compare them, then pick one to plan" : "Pick an option to plan it") : chosen.preview.state !== "open" ? "Locked. Its way in is in the plan" : assessment?.locked ? assessment.locked : "Ready to review";
+  const next = !chosen ? (view.compared.length > 1 ? "Options checked for comparison" : "No option in the plan") : chosen.preview.state !== "open" ? "Locked. Its way in is in the plan" : assessment?.locked ? assessment.locked : "Ready to review";
   const authorize = () => {
     if (!chosen || !assessment) return;
+    // An order already in the drafts is signed there, so it cannot also be signed here and left waiting to be signed again.
+    if (drafted) {
+      void draft(nation);
+      return;
+    }
     const law = actAuthorities(chosen.option, view.terms.tariff?.law.statute);
     // The weekly bill goes on the cost line, so the review never shows a recurring act at its first charge alone.
     const weekly = chosen.preview.money?.weekly ? ` Then ${formatMoney(chosen.preview.money.weekly)} a week while it lasts.` : "";
@@ -55,6 +66,17 @@ function Dock({ campaign, nation, view, config, act, onCompare, tariff }: DockPr
     }
     void act.take(() => buildAct(campaign, nation, chosen.option, config), { tier: "full", title: assessment.title, lines: [...lines, ...laws], verb: assessment.verb, danger: assessment.tone === "danger" });
   };
+  // A tariff order is an executive act that takes effect on signing, so it can wait in the drafts beside a budget before it is signed on its own.
+  const draft = async (signing?: string) => {
+    if (!tariff) return;
+    const outcome = await drafts.put({ kind: "tariff", nation, goods: tariff.picked, ...(config.statute ? { statute: config.statute } : {}) });
+    if (!outcome.ok) {
+      setDrafting(outcome.reason);
+      return;
+    }
+    setDrafting("");
+    openDrafts(signing ? `tariff:${signing}` : undefined);
+  };
   return (
     <View role="region" aria-label="Your plan" backgroundColor="chromeBackground" borderTopWidth={3} borderTopColor="goldRule" paddingHorizontal={media.phone ? "lg" : "xl"} paddingVertical="sm">
       <Row gap="md" between maxWidth={1680} width="100%" alignSelf="center">
@@ -62,10 +84,15 @@ function Dock({ campaign, nation, view, config, act, onCompare, tariff }: DockPr
           <Text variant="label" color="chromeColor" numberOfLines={1}>
             {chosen ? `${chosen.option.name}${several?.reading ? ` · ${several.picked.length} goods · +${formatMoney(several.reading.revenue)} a year` : chosen.preview.state === "open" ? ` · ${moneyText(chosen.preview.money)}` : ""}` : view.compared.length > 0 ? `${view.compared.length} checked to compare` : "Nothing picked yet"}
           </Text>
-          <Text variant="caption" color="chromeSecondary" numberOfLines={media.phone ? 2 : 1}>
-            {act.busy ? "Working…" : `Next: ${next}`}
+          <Text variant="caption" color={drafting ? "danger" : "chromeSecondary"} numberOfLines={media.phone ? 2 : 1}>
+            {act.busy ? "Working…" : drafting || `Next: ${next}`}
           </Text>
         </Column>
+        {ready && tariff ? (
+          <Button kind="secondary" size={media.phone ? "compact" : "large"} icon="sign" disabled={act.busy} label="Add this tariff order to your drafts, to sign later" onPress={() => void draft()}>
+            {media.phone ? "Draft" : "Add to drafts"}
+          </Button>
+        ) : null}
         {ready ? (
           <Button kind={assessment.tone === "danger" ? "danger" : "primary"} size={media.phone ? "compact" : "large"} icon="sign" disabled={act.busy} label={`${assessment.verb}. You'll see one last review, and nothing happens until you confirm.`} onPress={authorize}>
             {media.phone ? "Review" : `Review: ${assessment.verb}`}
@@ -146,7 +173,7 @@ export function ActWorkspace({ campaign, id, config, onConfig, origin }: ActWork
         <Section id="act-options" icon="dispatch" title="Your options" helper="Every option you have toward this country, from a phone call to force.">
           <OptionBrowser view={view} handlers={handlers} lens={{ goal: config.goal, checkedOnly }} onGoal={onGoal} onCheckedOnly={(on) => (on ? showChecked() : setCheckedOnly(false))} />
         </Section>
-        <Section id="act-plan" icon="sign" title={view.chosen ? `Plan: ${view.chosen.option.name}` : "Plan"} helper="Set it up, see what it changes, then review it from the bar below.">
+        <Section id="act-plan" icon="sign" title={view.chosen ? `Plan: ${view.chosen.option.name}` : "Plan"} helper={view.chosen ? `The terms and expected consequences of ${view.chosen.option.name.toLowerCase()}.` : "No option is in the plan yet."}>
           <PlanPanel campaign={campaign} nation={id} view={view} config={priced} onConfig={onConfig} {...(tariff ? { tariff } : {})} />
           <Problem problem={act.problem} />
         </Section>

@@ -35,7 +35,7 @@ import { DAYS_PER_TURN } from "./turn-clock.js";
 export type DocketStage = "proposed" | "omb-review" | "comment" | "final" | "litigated" | "vacated";
 
 // Every institution whose rulemaking this module tracks — the independent
-// commissions the removal mechanism cannot touch, plus the executive-branch
+// commissions, whose rules the President cannot direct or review, plus the executive-branch
 // regulators whose rules still run the APA's full public process even though
 // the President can direct their leadership. `institutionDef` (read off the
 // catalog, not duplicated here) is what tells the two apart at the OMB stage.
@@ -156,11 +156,19 @@ export type DocketItem = {
 
 const INDEPENDENT_CONSTRAINT =
   "An independent commission with for-cause removal. The President has no vote on this rulemaking and cannot direct it — only the seat that opens when a term ends.";
+const CONTESTED_CONSTRAINT =
+  "An independent commission whose statute protects its members from removal without cause. The President has no vote on this rulemaking and cannot direct it. Removing a member is possible on the reasoning of Trump v. Slaughter, but the removed member is likely to sue.";
+const AT_WILL_COMMISSION_CONSTRAINT =
+  "An independent commission whose members serve at the President's pleasure. The President can supervise its policy through the chair, but has no vote on this rulemaking, and the rule runs on the commission's own statutory clock.";
 const EXECUTIVE_CONSTRAINT =
   "An executive agency. The President can direct it through the confirmed officer in the chair, but the rule itself is written on the agency's own statutory clock, not the President's.";
 
 function docketConstraint(institution: InstitutionId): string {
-  return institutionDef(institution)?.independence === "independent" ? INDEPENDENT_CONSTRAINT : EXECUTIVE_CONSTRAINT;
+  const def = institutionDef(institution);
+  if (def?.independence !== "independent") return EXECUTIVE_CONSTRAINT;
+  const office = def.offices[0];
+  if (office?.removal === "at-will") return AT_WILL_COMMISSION_CONSTRAINT;
+  return office?.removalContested ? CONTESTED_CONSTRAINT : INDEPENDENT_CONSTRAINT;
 }
 
 /** The stage and its own start day for one item, read off nothing but the calendar. */

@@ -75,6 +75,7 @@ const PHRASES: Readonly<Record<TermKey, Phrase>> = {
   salience: { up: "how much the other side matters to it", down: "how little the other side matters to it" },
   "red-line": { up: "a line it promised to defend", down: "a line it never drew" },
   survival: { up: "a government fighting to keep power", down: "trouble at home" },
+  response: { up: "something done to it or a close partner that it means to answer", down: "nothing it needs to answer" },
   "driving-act": { up: "the action behind it", down: "no action behind it" },
   "most-hurt-cohort": { up: "a group that was hurt and remembers it", down: "no group carrying a grievance" },
   obligation: { up: "a promise it made to defend", down: "no promise binding it" },

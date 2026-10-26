@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Icon } from "../icons/Icon";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { Column, Divider, Row } from "../primitives/Stack";
 import { Surface } from "../primitives/Surface";
 import { Text } from "../primitives/Text";
@@ -32,7 +32,7 @@ export function Receipt({ title, date, lines, outcome = "done", record, unsaved,
         <Row gap="md" top>
           <Icon name={refused ? "reject" : "approve"} size={32} tone={refused ? "danger" : "successInk"} weight="fill" />
           <Column flex={1} gap="2xs">
-            {refused ? <Badge status="danger">Refused</Badge> : <Badge status="success">Done</Badge>}
+            {refused ? <Tag tone="danger">Refused</Tag> : <Tag tone="success">Done</Tag>}
             <Text variant="heading" role="heading" aria-level={2}>
               {title}
             </Text>

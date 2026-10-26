@@ -111,7 +111,7 @@
     ".worktrees/shadcn-justice",
     ".worktrees/shadcn-nation",
     ".worktrees/shadcn-world",
-    "~/.codex/worktrees/presidential-workspace-recovery/admin-app"
+    "<local path>"
   ],
   "prunedBranches": [
     "codex/fluent-2-migration",

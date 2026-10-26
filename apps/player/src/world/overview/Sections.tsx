@@ -1,6 +1,6 @@
 import { place, trustWord, type InFlight, type Mover, type WarDeskRow } from "@admin/player-core";
-import { Badge, Column, Icon, ReadingFrame, Row, Text, swatchEntries, type IconName } from "@admin/ui";
-import { Panel, ShareBar, StateChip } from "@admin/ui/world";
+import { Pane, Tag, Column, Icon, ReadingFrame, Row, Text, swatchEntries, type IconName } from "@admin/ui";
+import { ShareBar, StateChip } from "@admin/ui/world";
 import { CardTo, FlagOf, NationName, RowTo, stanceValence } from "../parts";
 
 const FLIGHT: Readonly<Record<InFlight["kind"], { readonly icon: IconName; readonly word: string }>> = {
@@ -23,7 +23,7 @@ function WarLine({ war }: { readonly war: WarDeskRow }) {
         <Text variant="label" flexShrink={1}>
           {title}
         </Text>
-        {war.youAreParty ? <Badge status="danger" icon="conflict">You're fighting</Badge> : null}
+        {war.youAreParty ? <Tag tone="danger" icon="conflict">You're fighting</Tag> : null}
         {war.joined > 0 ? (
           <Text variant="caption" tone="secondary">
             {war.joined} joined later
@@ -58,12 +58,11 @@ const HEAT_KEY = swatchEntries([
 export function Conflicts({ wars }: { readonly wars: readonly WarDeskRow[] }) {
   if (wars.length === 0) return null;
   return (
-    <Panel title="Wars" icon="conflict" count={wars.length} edge={wars.some((war) => war.youAreParty) ? "danger" : undefined}>
+    <Pane title="Wars" icon="conflict" count={wars.length} band={wars.some((war) => war.youAreParty) ? "danger" : undefined}>
       <ReadingFrame
-        title="How hot each war is"
+        title="How hot each war is" pressHint="Press a war to open it."
         unit="Staff estimate of how heavy the fighting is"
         legend={HEAT_KEY}
-        pressHint="Press a war to open it."
         help={{ meaning: "The bar fills as the fighting gets heavier. The word at the right is the reading. Held is under 15 of 100, Simmering is 15 to 39, Hot is 40 to 69 and Intense is 70 or more. The bar only places it." }}
       >
         <Column role="group" aria-label="Wars">
@@ -72,7 +71,7 @@ export function Conflicts({ wars }: { readonly wars: readonly WarDeskRow[] }) {
           ))}
         </Column>
       </ReadingFrame>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -80,7 +79,7 @@ export function Conflicts({ wars }: { readonly wars: readonly WarDeskRow[] }) {
 export function Pending({ flight }: { readonly flight: readonly InFlight[] }) {
   if (flight.length === 0) return null;
   return (
-    <Panel title="In progress abroad" icon="pending" count={flight.length}>
+    <Pane title="In progress abroad" icon="pending" count={flight.length}>
       <Column role="group" aria-label="In progress">
         {flight.map((item) => (
           <RowTo key={item.id} href={item.href} label={`Open ${item.title}`} flexDirection="row" alignItems="flex-start" gap="sm" paddingVertical="sm" paddingHorizontal="xs">
@@ -91,11 +90,11 @@ export function Pending({ flight }: { readonly flight: readonly InFlight[] }) {
                 {item.detail}
               </Text>
             </Column>
-            <Badge status="outline">{FLIGHT[item.kind].word}</Badge>
+            <Tag tone="outline">{FLIGHT[item.kind].word}</Tag>
           </RowTo>
         ))}
       </Column>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -103,7 +102,7 @@ export function Pending({ flight }: { readonly flight: readonly InFlight[] }) {
 export function Developments({ movers }: { readonly movers: readonly Mover[] }) {
   if (movers.length === 0) return null;
   return (
-    <Panel title="What's new" icon="press" count={movers.length}>
+    <Pane title="What's new" icon="press" count={movers.length}>
       <Column role="group" aria-label="Countries that did something new">
         {movers.map((mover) => (
           <RowTo key={mover.nation} href={place.country(mover.nation)} label={`Open ${mover.name}'s file. ${mover.headline}`} gap="2xs" paddingVertical="sm" paddingHorizontal="xs">
@@ -120,7 +119,7 @@ export function Developments({ movers }: { readonly movers: readonly Mover[] }) 
           </RowTo>
         ))}
       </Column>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -136,7 +135,7 @@ export function SecurityDoor() {
         <Icon name="chevron" size={18} tone="colorTertiary" />
       </Row>
       <Text variant="body" tone="secondary">
-        See what our intelligence agencies know, how ready the military is, and what powers you have.
+        Intelligence, military readiness, and your standing orders abroad.
       </Text>
     </CardTo>
   );

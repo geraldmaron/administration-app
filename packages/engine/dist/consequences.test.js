@@ -201,7 +201,7 @@ describe("the resolver dressed in authored aftermath", () => {
                 rungName: "Tariff Increase",
                 timing: { days: 2, label: "First operational report in about 2 days", basis: "A planning estimate for preparation, access and initial reporting. Conditions are checked again before execution; results and political reactions are not guaranteed." },
                 available: true,
-                cost: { treasury: -5.8500000000000005, standing: -0.0036000000000000003, stability: -0.0022500000000000003 },
+                cost: { treasury: -0.05, standing: -0.0036000000000000003, stability: -0.0022500000000000003 },
                 successChance: 0.34973543999999995,
                 risks: [
                     { id: "retaliation", chance: 0.32513228000000005, description: "Alpland answers with measures of its own." },
@@ -271,7 +271,7 @@ describe("the resolver dressed in authored aftermath", () => {
                             `flagset:deed-toward:${TARGET}:economic:low:failed:1`,
                         ],
                     },
-                    { kind: "metric", deltas: { treasury: -5.8500000000000005, standing: -0.0092, stability: -0.0022500000000000003 } },
+                    { kind: "metric", deltas: { treasury: -0.05, standing: -0.0092, stability: -0.0022500000000000003 } },
                 ],
             },
         });

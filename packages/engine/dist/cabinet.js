@@ -183,7 +183,7 @@ export function selectFormerService(campaign, person) {
         const [prefix, departure, role, subject] = flag.split(":");
         if (prefix !== DEPARTURE_PREFIX || subject !== person)
             continue;
-        if (departure !== "resigned" && departure !== "dismissed")
+        if (departure !== "resigned" && departure !== "dismissed" && departure !== "died")
             continue;
         return { person, role: role, departure };
     }

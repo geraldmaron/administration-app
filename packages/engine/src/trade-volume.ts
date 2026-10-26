@@ -1,10 +1,13 @@
 import { US_GOODS_TRADE, type NationId } from "@admin/world";
-import type { Campaign } from "./state.js";
+import type { Campaign, GameDate } from "./state.js";
 import { selectActiveConflicts, selectNation, selectRelationship } from "./state.js";
 import { selectSector } from "./sectors.js";
 import { TRADE_SECTORS, tradeSector, type TradeSectorDef, type TradeSectorId } from "./trade-sectors.js";
 import type { TradeMeasure, TradeMeasureKind } from "./trade.js";
 import { isTradeMeasureEffective } from "./order-authority.js";
+import { compareDates, daysBetween } from "./clock.js";
+import { retained } from "./relationships.js";
+import { worldExportShare } from "./external-pressure.js";
 
 // How much the United States buys from and sells to one partner, sector by
 // sector, in dollars a year.
@@ -46,6 +49,35 @@ const AT_WAR = 0.05;
 // The gravity fallback: goods trade runs a few percent of the smaller economy
 // in a typical bilateral pair, scaled by the recorded dependence.
 const BILATERAL_SHARE = 0.04;
+
+/**
+ * Export demand response: how sharply a foreign buyer turns away from American
+ * goods a tariff of its own makes dearer, when the same goods sell at the world
+ * price from other origins. Fitted, not a measured elasticity: USDA ERS (Amber
+ * Waves, 2022-03-07, opened 2026-10-25) reports that China's retaliatory
+ * tariffs, 5 to 25 percent, reduced the value of US agricultural exports to
+ * China by 76 percent from mid-2018 through 2019; a 25 percent answer on row
+ * crops falls by about that at this figure.
+ */
+export const RETALIATION_RESPONSE = 6.2;
+
+/**
+ * The half-life, in days, of a tariffed partner's lost sales turning toward
+ * other suppliers. Fitted, not measured: Census goods trade (opened
+ * 2026-10-25) has US imports from China falling $89.4 billion from 2018 to
+ * 2019 while all US imports fell $44.4 billion, so about half the lost Chinese
+ * flow was bought elsewhere within the year. With buyers replacing at most a
+ * sector's `substitutability`, 91 days brings the replaced share over the
+ * year after a tariff near that half. The record is all goods and mixes the
+ * tariffs with 2019's other causes, so the fit is a planning value.
+ */
+export const DIVERSION_HALF_LIFE_DAYS = 91;
+
+/** The share of an American export flow a partner's answering tariff removes. */
+export function retaliationFall(def: TradeSectorDef, rate: number): number {
+  const borderPriceRise = round3(rate * def.borderPassThrough);
+  return round3(Math.min(0.95, borderPriceRise * RETALIATION_RESPONSE * def.substitutability));
+}
 
 /** The share of a flow a rate removes: the border price rise, times how readily buyers switch. */
 export function volumeFall(def: TradeSectorDef, rate: number): number {
@@ -111,33 +143,152 @@ function atWar(campaign: Campaign, a: NationId, b: NationId): boolean {
   });
 }
 
-/** What the measures in force leave of each direction of one sector's flow, as fractions. */
+/**
+ * What the partner's standing answers leave of American sales in one sector:
+ * each retaliatory tariff takes its fall of what the others left, as rates on
+ * the same goods compound. The one figure both this book and the economy's
+ * export loss (`external-pressure.ts`) read.
+ */
+export function retaliationLeft(campaign: Campaign, partner: NationId, def: TradeSectorDef): number {
+  return Object.values(campaign.trade.measures)
+    .filter((measure) => measure.origin === "retaliation" && measure.liftedTurn === undefined && measure.target === partner && measure.sector === def.id)
+    .reduce((left, measure) => left * (1 - retaliationFall(def, measure.rate)), 1);
+}
+
+/**
+ * What the measures in force leave of each direction of one sector's flow, as
+ * fractions. Tariffs are rates and compound; restrictions are prohibitions on
+ * the same goods, so the heaviest stands for all of them and repeating one
+ * cuts nothing more. A list-based program or a blocked account names holders,
+ * not goods, and leaves the flow alone.
+ */
 function measuresLeave(campaign: Campaign, partner: NationId, def: TradeSectorDef): Totals {
-  let imports = 1;
-  let exports = 1;
   const live = Object.values(campaign.trade.measures).filter(
-    (measure: TradeMeasure) => measure.liftedTurn === undefined && measure.target === partner
+    (measure: TradeMeasure) => measure.liftedTurn === undefined && measure.target === partner && measure.origin === "us" && measure.scope !== "listed"
       && isTradeMeasureEffective(campaign, measure.id),
   );
-  for (const measure of live) {
-    if (measure.kind === "embargo") {
-      imports = 0;
-      if (measure.direction !== "imports") exports = 0;
-      continue;
-    }
-    if (measure.sector !== def.id) continue;
-    // A partner's answer is a tariff on what we sell them.
-    if (measure.origin === "retaliation") {
-      exports *= 1 - volumeFall(def, measure.rate);
-    } else if (measure.kind === "tariff") {
-      imports *= 1 - volumeFall(def, measure.rate);
-    } else if (measure.kind === "export-control") {
-      exports *= 1 - volumeFall(def, COERCION_AS_RATE[measure.kind]);
-    } else {
-      imports *= 1 - volumeFall(def, COERCION_AS_RATE[measure.kind]);
-    }
+  const here = live.filter((measure) => measure.sector === def.id);
+  const tariffs = here.filter((measure) => measure.kind === "tariff").reduce((left, measure) => left * (1 - volumeFall(def, measure.rate)), 1);
+  const heaviest = (kinds: readonly TradeMeasureKind[]) =>
+    Math.max(0, ...here.filter((measure) => kinds.includes(measure.kind)).map((measure) => volumeFall(def, COERCION_AS_RATE[measure.kind as Exclude<TradeMeasureKind, "tariff">])));
+  const embargoed = live.filter((measure) => measure.kind === "embargo");
+  return {
+    imports: embargoed.length > 0 ? 0 : tariffs * (1 - heaviest(["sanctions", "asset-restriction"])),
+    exports: embargoed.some((measure) => measure.direction !== "imports") ? 0 : retaliationLeft(campaign, partner, def) * (1 - heaviest(["export-control"])),
+  };
+}
+
+/**
+ * The trade sector a government's leading export to the world falls in: the
+ * first of its listed exports (`trade.topExports`, ranked by value) that a
+ * trade sector covers, and within it the one it sells the United States most,
+ * the taxonomy's own order breaking a tie.
+ */
+export function leadingExportOf(topExports: readonly string[], soldToUs: Readonly<Record<string, number>>): TradeSectorId | undefined {
+  return exportGoodsOf(topExports, soldToUs)[0];
+}
+
+/** Every trade sector a government's listed exports fall in, leading first, as `leadingExportOf` orders them. */
+export function exportGoodsOf(topExports: readonly string[], soldToUs: Readonly<Record<string, number>>): readonly TradeSectorId[] {
+  return topExports.flatMap((sector) => TRADE_SECTORS.filter((def) => def.rollup === sector).sort((a, b) => (soldToUs[b.id] ?? 0) - (soldToUs[a.id] ?? 0)).map((def) => def.id));
+}
+
+export function leadingExportSector(campaign: Campaign, nation: NationId): TradeSectorId | undefined {
+  return leadingExportOf(selectNation(campaign, nation)?.base.stats.trade.topExports ?? [], US_GOODS_TRADE[nation as string]?.imports ?? {});
+}
+
+/** The partners whose American sales in one sector a measure now cuts, each with those measures, earliest first. */
+function cutSuppliers(campaign: Campaign, def: TradeSectorDef): ReadonlyMap<NationId, readonly TradeMeasure[]> {
+  const cut = new Map<NationId, TradeMeasure[]>();
+  for (const measure of Object.values(campaign.trade.measures)) {
+    const cuts = measure.origin === "us" && measure.liftedTurn === undefined && measure.scope !== "listed" && measure.kind !== "export-control"
+      && (measure.sector === def.id || measure.kind === "embargo") && isTradeMeasureEffective(campaign, measure.id);
+    if (cuts) cut.set(measure.target, [...(cut.get(measure.target) ?? []), measure]);
   }
-  return { imports, exports };
+  for (const measures of cut.values()) measures.sort((a, b) => compareDates(a.imposedDate, b.imposedDate) || a.id.localeCompare(b.id));
+  return cut;
+}
+
+/**
+ * The share of one supplier's sales a sector's measures cut, increment by
+ * increment: what the measures in force by each one's date take, less what the
+ * earlier ones already took, each dated by the measure that added it. Buyers
+ * start turning to other suppliers when a cut is made, so an old small
+ * restriction cannot age a large new one.
+ */
+function lostIncrements(campaign: Campaign, supplier: NationId, def: TradeSectorDef, measures: readonly TradeMeasure[]): readonly { readonly since: GameDate; readonly share: number }[] {
+  let before = 0;
+  return measures.flatMap((measure, index) => {
+    const upTo = measures.slice(0, index + 1);
+    const later = measures[index + 1];
+    if (later && compareDates(later.imposedDate, measure.imposedDate) === 0) return [];
+    const others = Object.fromEntries(Object.entries(campaign.trade.measures).filter(([, m]) => m.target !== supplier || upTo.includes(m)));
+    const lost = 1 - measuresLeave({ ...campaign, trade: { ...campaign.trade, measures: others } }, supplier, def).imports;
+    const share = Math.max(0, lost - before);
+    before = Math.max(before, lost);
+    return share > 0 ? [{ since: measure.imposedDate, share }] : [];
+  });
+}
+
+/**
+ * The imports one untouched supplier gains in a sector from buyers turning
+ * away from the partners a measure cuts: each cut partner's lost sales, the
+ * share buyers can replace (`substitutability`), each increment built up since
+ * the measure that cut it took hold, shared among the untouched suppliers by what each sold the United
+ * States, and never more than the supplier exports of those goods to the world
+ * beyond what it already sells here.
+ */
+function divertedTo(campaign: Campaign, partner: NationId, def: TradeSectorDef): number {
+  const { cut, pool, eligible } = diversionPool(campaign, def);
+  const weight = recordedTrade(campaign, partner)?.imports[def.id] ?? 0;
+  if (pool <= 0 || cut.has(partner) || weight <= 0 || eligible <= 0) return 0;
+  return Math.min(pool * (weight / eligible), supplierHeadroom(campaign, partner, def));
+}
+
+type DiversionPool = { readonly cut: ReadonlyMap<NationId, readonly TradeMeasure[]>; readonly pool: number; readonly eligible: number };
+
+const poolsBySnapshot = new WeakMap<Campaign, Map<TradeSectorId, DiversionPool>>();
+
+/** One sector's diverted pool this week, and the recorded sales of the suppliers it can go to: read once per campaign state. */
+function diversionPool(campaign: Campaign, def: TradeSectorDef): DiversionPool {
+  let bySector = poolsBySnapshot.get(campaign);
+  if (!bySector) {
+    bySector = new Map();
+    poolsBySnapshot.set(campaign, bySector);
+  }
+  const known = bySector.get(def.id);
+  if (known) return known;
+  const cut = cutSuppliers(campaign, def);
+  const recorded = (id: string) => recordedTrade(campaign, id as NationId)?.imports[def.id] ?? 0;
+  const eligible = cut.size === 0 ? 0 : Object.keys(US_GOODS_TRADE).filter((id) => !cut.has(id as NationId)).reduce((sum, id) => sum + recorded(id), 0);
+  const pool = [...cut].reduce((sum, [supplier, measures]) => {
+    const base = sectorBase(campaign, supplier, def.id);
+    if (!base) return sum;
+    const built = lostIncrements(campaign, supplier, def, measures)
+      .reduce((total, { since, share }) => total + share * (1 - retained(daysBetween(since, campaign.calendar), DIVERSION_HALF_LIFE_DAYS)), 0);
+    return sum + base.imports * def.substitutability * built;
+  }, 0);
+  const result = { cut, pool, eligible };
+  bySector.set(def.id, result);
+  return result;
+}
+
+/**
+ * What a supplier exports of a sector's goods to the world beyond what it
+ * already sells the United States, USD millions a year, from the founding
+ * figures: its listed exports in the sector where the dataset lists them, and
+ * otherwise its sales to everyone else split the way its sales here are.
+ */
+function supplierHeadroom(campaign: Campaign, partner: NationId, def: TradeSectorDef): number {
+  const base = selectNation(campaign, partner)?.base.stats;
+  const recorded = recordedTrade(campaign, partner)?.imports ?? {};
+  if (!base) return 0;
+  const here = (filter: (id: string) => boolean) => Object.entries(recorded).reduce((sum, [id, value]) => (filter(id) ? sum + value : sum), 0);
+  const inSector = here((id) => tradeSector(id)?.rollup === def.rollup);
+  const listed = worldExportShare(campaign, partner, def.rollup) * base.economy.gdp;
+  if (listed > 0) return Math.max(0, listed - inSector);
+  const total = here(() => true);
+  return total > 0 ? Math.max(0, base.trade.exports - total) * ((recorded[def.id] ?? 0) / total) : 0;
 }
 
 /** One partner's flow in one sector, USD millions a year, before the reliance reading. */
@@ -149,7 +300,7 @@ export function sectorFlow(campaign: Campaign, partner: NationId, sectorId: Trad
   const left = measuresLeave(campaign, partner, def);
   const war = atWar(campaign, campaign.founding.nation, partner) ? AT_WAR : 1;
   return {
-    imports: round2(base.imports * left.imports * war),
+    imports: round2((base.imports * left.imports + divertedTo(campaign, partner, def)) * war),
     exports: round2(base.exports * left.exports * war),
   };
 }

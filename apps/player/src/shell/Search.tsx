@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Campaign } from "@admin/engine";
-import { GLOSSARY, PLACES, chapterEntries, entityEntries, groupResults, placeEntries, search, termEntries, type PlaceKey, type SearchEntry } from "@admin/player-core";
+import { GLOSSARY, PLACES, chapterEntries, entityEntries, groupResults, placeEntries, search, termEntries, verbEntries, type PlaceKey, type SearchEntry } from "@admin/player-core";
 import { Button, Column, Empty, Icon, PressRow, Row, Sheet, Text, TextInput, isIconName, useMedia } from "@admin/ui";
 import { Monogram } from "@admin/ui/dossier";
 import { FlagOf } from "../world/parts";
 import { go } from "./navigate";
+import { matchParts } from "./match-parts";
 import { SHORTCUT_HINT, useSearchKeys } from "./search-keys";
 
 /** The places a search can open: the working screens, not the title, the founding or an ending. */
@@ -21,7 +22,7 @@ const PLAYER_HREFS: ReadonlySet<string> = new Set(PLAYER_PLACES.map((key) => PLA
 const routeExists = (href: string): boolean => PLAYER_HREFS.has(href);
 
 function buildEntries(campaign: Campaign): readonly SearchEntry[] {
-  return [...placeEntries(routeExists), ...EXTRA_PLACES, ...chapterEntries(routeExists), ...entityEntries(campaign), ...termEntries(GLOSSARY)];
+  return [...placeEntries(routeExists), ...EXTRA_PLACES, ...verbEntries(routeExists), ...chapterEntries(routeExists), ...entityEntries(campaign), ...termEntries(GLOSSARY)];
 }
 
 function openEntry(entry: SearchEntry): void {
@@ -36,7 +37,24 @@ function Lead({ entry }: { readonly entry: SearchEntry }) {
   return <Icon name={isIconName(icon) ? icon : "open"} size={24} tone="colorSecondary" />;
 }
 
-function SearchHit({ entry, active, onChoose }: { readonly entry: SearchEntry; readonly active: boolean; readonly onChoose: () => void }) {
+/** The text with the part the query matched in the accent ink, so a result shows why it was found. */
+function Marked({ text, query }: { readonly text: string; readonly query: string }) {
+  return (
+    <>
+      {matchParts(text, query).map((part, i) =>
+        part.match ? (
+          <Text key={i} variant="label" tone="accent" weight="strong">
+            {part.text}
+          </Text>
+        ) : (
+          part.text
+        ),
+      )}
+    </>
+  );
+}
+
+function SearchHit({ entry, query, active, onChoose }: { readonly entry: SearchEntry; readonly query: string; readonly active: boolean; readonly onChoose: () => void }) {
   const node = useRef<unknown>(null);
   useEffect(() => {
     if (active) (node.current as { scrollIntoView?: (options: { block: string }) => void } | null)?.scrollIntoView?.({ block: "nearest" });
@@ -48,7 +66,7 @@ function SearchHit({ entry, active, onChoose }: { readonly entry: SearchEntry; r
       </Row>
       <Column flex={1} minWidth={0} gap="2xs">
         <Text variant="label" numberOfLines={1}>
-          {entry.title}
+          <Marked text={entry.title} query={query} />
         </Text>
         <Text variant="caption" tone="secondary" numberOfLines={2}>
           {entry.detail}
@@ -59,8 +77,7 @@ function SearchHit({ entry, active, onChoose }: { readonly entry: SearchEntry; r
   );
 }
 
-function Results({ results, active, onChoose }: { readonly results: readonly SearchEntry[]; readonly active: number; readonly onChoose: (entry: SearchEntry) => void }) {
-  const groups = groupResults(results);
+function Results({ groups, query, active, onChoose }: { readonly groups: ReturnType<typeof groupResults>; readonly query: string; readonly active: SearchEntry | undefined; readonly onChoose: (entry: SearchEntry) => void }) {
   return (
     <Column gap="md">
       {groups.map((group) => (
@@ -69,7 +86,7 @@ function Results({ results, active, onChoose }: { readonly results: readonly Sea
             {group.label}
           </Text>
           {group.entries.map((entry) => (
-            <SearchHit key={entry.id} entry={entry} active={results[active]?.id === entry.id} onChoose={() => onChoose(entry)} />
+            <SearchHit key={entry.id} entry={entry} query={query} active={active?.id === entry.id} onChoose={() => onChoose(entry)} />
           ))}
         </Column>
       ))}
@@ -78,9 +95,11 @@ function Results({ results, active, onChoose }: { readonly results: readonly Sea
 }
 
 /**
- * Search from anywhere: people, offices, members, judges, states, countries,
+ * Search and commands from anywhere: people, offices, members, judges, states, countries,
  * bills, cases, wars, treaties, organizations, commands, screens and the
- * Handbook's words. Each result is a door. Cmd or Ctrl K and "/" open it, the
+ * Handbook's words, plus the things the President can start. Each result is a
+ * door, and a verb opens the screen where its act is reviewed: nothing is
+ * committed from here. Cmd or Ctrl K and "/" open it, the
  * arrows move, Enter opens the chosen result and Escape closes it.
  */
 export function SearchButton({ campaign }: { readonly campaign: Campaign }) {
@@ -89,7 +108,9 @@ export function SearchButton({ campaign }: { readonly campaign: Campaign }) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const entries = useMemo(() => (open ? buildEntries(campaign) : []), [open, campaign]);
-  const results = useMemo(() => (open ? search(entries, query) : []), [open, entries, query]);
+  const groups = useMemo(() => (open ? groupResults(search(entries, query)) : []), [open, entries, query]);
+  // Arrow keys walk the list in the order it is drawn, which is grouped, not in rank order.
+  const results = useMemo(() => groups.flatMap((group) => group.entries), [groups]);
   const close = () => {
     setOpen(false);
     setQuery("");
@@ -108,13 +129,13 @@ export function SearchButton({ campaign }: { readonly campaign: Campaign }) {
         {media.phone ? undefined : hint ? `Search  ${hint}` : "Search"}
       </Button>
       <Sheet open={open} onClose={close} title="Search" eyebrow="Find anything in the game">
-        <TextInput kind="search" icon="search" autoFocus label="Search people, places, laws and words" placeholder="A person, a state, a country, a bill, a word" value={query} onChangeText={(text) => { setQuery(text); setActive(0); }} onSubmit={() => choose(results[active])} />
+        <TextInput kind="search" icon="search" autoFocus label="Search people, places, laws and words" placeholder="A person, a place, a bill, a word, or something to do" value={query} onChangeText={(text) => { setQuery(text); setActive(0); }} onSubmit={() => choose(results[active])} />
         {results.length === 0 && query.trim() ? (
           <Empty title="Nothing matches that" detail="Try a person's name, a state, a country, an office, a bill or a word from the Handbook." />
         ) : (
           <>
             {query.trim() ? null : <Text variant="caption" tone="secondary">Places you can go. Type to search everything else.</Text>}
-            <Results results={results} active={active} onChoose={choose} />
+            <Results groups={groups} query={query.trim()} active={results[active]} onChoose={choose} />
           </>
         )}
         {media.phone ? null : <Text variant="caption" tone="tertiary">Up and down arrows move, Enter opens, Escape closes.</Text>}

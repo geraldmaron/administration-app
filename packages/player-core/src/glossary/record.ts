@@ -46,8 +46,9 @@ export const RECORD_GLOSSARY: readonly GlossaryEntry[] = [
     related: ["pledge", "midterm-election"],
   },
   // engine pledges.ts pledgeDueDate (a term pledge falls due at the first
-  // midterm); election-seating.ts MIDTERM_PENALTY (.04). Real: Constitution,
-  // Article I (two-year House terms).
+  // midterm); election-seating.ts HOUSE_MIDTERM.neutralShare (.61, the share at
+  // which the President's party holds its House seats) and MIDTERM_PENALTY (.04,
+  // the Senate's drag). Real: Constitution, Article I (two-year House terms).
   {
     id: "midterm-election",
     term: "Midterm election",

@@ -68,6 +68,49 @@ describe("a tariff's price step", () => {
         if (!lifted.ok)
             return;
         const gone = apply(after, lifted.packet);
-        expect(projectTariffPrices(gone)).toEqual({ step: 0, thisWeek: 0, measures: [] });
+        // Lifted the week it was signed, it had passed nothing through, so nothing comes back out.
+        expect(projectTariffPrices(gone)).toEqual({ step: 0, thisWeek: 0, measures: [], unwinding: 0 });
+    });
+});
+describe("a lifted tariff's wedge comes back out", () => {
+    const measureId = (campaign) => Object.keys(campaign.trade.measures).find((id) => !(id in FOUNDED.trade.measures));
+    /** The price level the projection's weekly shift adds up to, from the turn the tariff is signed. */
+    const levelAfter = (weeks, liftAt) => {
+        const after = signed(0.25);
+        const id = measureId(after);
+        let level = 0;
+        for (let week = 0; week < weeks; week += 1) {
+            const turn = after.turn + week;
+            const measure = after.trade.measures[id];
+            const state = { ...after, turn, trade: { ...after.trade, measures: { ...after.trade.measures, [id]: liftAt !== undefined && week >= liftAt ? { ...measure, liftedTurn: after.turn + liftAt } : measure } } };
+            level += projectTariffPrices(state).thisWeek / 52;
+        }
+        return level;
+    };
+    it("phases back out, over the same half year, the share that had passed through", () => {
+        const step = tariffPriceStep(CHINA, SECTOR, 0.25);
+        expect(levelAfter(TARIFF_PHASE_WEEKS)).toBeCloseTo(step, 9);
+        expect(levelAfter(2 * TARIFF_PHASE_WEEKS, TARIFF_PHASE_WEEKS)).toBeCloseTo(0, 9);
+        expect(levelAfter(TARIFF_PHASE_WEEKS + 13, 13)).toBeCloseTo(0, 9);
+        expect(levelAfter(13 + 6, 13)).toBeGreaterThan(0);
+    });
+    it("leaves a held tariff its wedge, so held and lifted do not end level", () => {
+        expect(levelAfter(3 * TARIFF_PHASE_WEEKS)).toBeGreaterThan(levelAfter(3 * TARIFF_PHASE_WEEKS, TARIFF_PHASE_WEEKS) + 1e-6);
+    });
+    it("gains nothing on the price level by imposing, lifting and imposing again", () => {
+        const after = signed(0.25);
+        const base = Object.values(after.trade.measures).find((m) => !(m.id in FOUNDED.trade.measures));
+        const cycles = [0, 1, 2, 3].map((k) => ({ ...base, id: `cycle:${k}`, imposedTurn: after.turn + k * 26, liftedTurn: after.turn + k * 26 + 26 }));
+        let level = 0;
+        let peak = 0;
+        for (let week = 0; week < 156; week += 1) {
+            const turn = after.turn + week;
+            const standing = cycles.filter((m) => m.imposedTurn <= turn).map((m) => (turn >= m.liftedTurn ? m : { ...m, liftedTurn: undefined }));
+            const state = { ...after, turn, trade: { ...after.trade, measures: Object.fromEntries(standing.map((m) => [m.id, m])) } };
+            level += projectTariffPrices(state).thisWeek / 52;
+            peak = Math.max(peak, level);
+        }
+        expect(level).toBeCloseTo(0, 9);
+        expect(peak).toBeLessThanOrEqual(tariffPriceStep(CHINA, SECTOR, 0.25) + 1e-9);
     });
 });

@@ -41,10 +41,6 @@ describe("a scandal on the Desk", () => {
         const [row] = scandalDeskItems(later, [story({ id: "story-2", stage: "developing" })]);
         expect(row?.urgency).toBe("ambient");
     });
-    it("is never soft for a story with no week of its own, however young the campaign", () => {
-        const [row] = scandalDeskItems({ ...opening, turn: 0 }, [story({ id: "undated", brokeTurn: -1, stage: "developing" })]);
-        expect(row?.urgency).toBe("ambient");
-    });
     it("stops asking once the President has answered, and says so", () => {
         const answered = withFlags(opening, { [scandalResponseFlag("story-3", "fight-it")]: true });
         const [row] = scandalDeskItems(answered, [story({ id: "story-3" })]);

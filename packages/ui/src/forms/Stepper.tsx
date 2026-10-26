@@ -3,13 +3,14 @@ import { View, styled, useMedia } from "@tamagui/core";
 import { Icon } from "../icons/Icon";
 import { Column, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
+import { withButtonKeys } from "../primitives/PressableFrame";
 
 /** Where a stage stands: done, the one in hand, one that needs attention, or ahead. */
 export type StepStanding = "settled" | "current" | "blocked" | "ahead";
 
 export type Step = { readonly id: string; readonly title: string; readonly standing: StepStanding };
 
-const Door = styled(View, {
+const Door = withButtonKeys(styled(View, {
   name: "StepperDoor",
   role: "button",
   tabIndex: 0,
@@ -25,7 +26,7 @@ const Door = styled(View, {
   outlineOffset: 2,
   outlineWidth: { default: 0, "focus-visible": 2 },
   backgroundColor: { default: "transparent", hover: "surfaceHover", press: "backgroundPress" },
-});
+}));
 
 const DOT_FILL = { settled: "goldFill", current: "accentFill", blocked: "dangerFill", ahead: "transparent" } as const;
 const DOT_EDGE = { settled: "goldRule", current: "accentFill", blocked: "dangerFill", ahead: "borderColorStrong" } as const;

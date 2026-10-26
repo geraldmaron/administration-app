@@ -191,6 +191,23 @@ export function caseFile(campaign: Campaign, id: string): CaseFile | undefined {
       timeline: (proceeding?.history ?? ruled?.procedure?.history ?? []).map((moment) => ({ date: dateOf(campaign, moment.turn), text: moment.account })),
       votes: votesOf(campaign, ruled), ...(ruled ? { opinion: ruled.opinion } : {}), paths: [] };
   }
+  if (row?.subject?.kind === "commission-removal" && row.matter) {
+    const subject = row.subject;
+    const proceeding = campaign.judiciary.proceedings?.find((entry) => entry.id === id);
+    const ruled = campaign.judiciary.cases.find((entry) => entry.id === id);
+    const member = nameOf(campaign, subject.person as string) ?? "The removed member";
+    const back = campaign.institutions[subject.institution]?.leader === subject.person;
+    return { ...row, summary: row.matter.injury, reversed: [],
+      unreversed: !ruled
+        ? `The removal stands while the case goes on. ${member} stays out of the seat unless a final judgment says otherwise.`
+        : ruled.holding === "upheld"
+          ? `The court let the removal stand. ${member} doesn't get the seat back and is owed nothing.`
+          : back
+            ? `The court ruled the removal unlawful. ${member} is back in the seat and is owed back pay from the day of the removal.`
+            : `The court ruled the removal unlawful, but the seat couldn't be returned. ${member} is owed back pay from the day of the removal.`,
+      timeline: (proceeding?.history ?? ruled?.procedure?.history ?? []).map((moment) => ({ date: dateOf(campaign, moment.turn), text: moment.account })),
+      votes: votesOf(campaign, ruled), ...(ruled ? { opinion: ruled.opinion } : {}), paths: [] };
+  }
   if (row?.subject?.kind === "unlawful-surveillance" && row.matter) {
     const proceeding = campaign.judiciary.proceedings?.find((entry) => entry.id === id);
     const ruled = campaign.judiciary.cases.find((entry) => entry.id === id);

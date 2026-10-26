@@ -174,7 +174,7 @@ export function FoundingFlow() {
   if (!founding.draft.setupMode) {
     return (
       <FoundingFrame>
-        <StageHero stage="oath" eyebrow="Before you take office" title="Taking office" question="Pick how much you'd like to set up yourself before you take office." />
+        <StageHero stage="oath" eyebrow="Before you take office" title="Taking office" question="How much of your setup is yours to make before the oath?" />
         {full ? (
           <Column paddingBottom="md">
             <Notice tone="info">All {MAX_ACTIVE_CAMPAIGNS} save slots on this device are full. When you take the oath, you'll pick one saved presidency to replace, and you can save a copy of it first.</Notice>

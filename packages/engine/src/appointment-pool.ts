@@ -128,7 +128,7 @@ function eligibleBench(campaign: Campaign, office: OfficeId, kind: SeatKind): re
       !pending.has(runtime.base.id as string) &&
       !acting.has(runtime.base.id as string) &&
       (role === undefined || runtime.base.eligibleRoles.some((eligible) => (eligible as string) === role)) &&
-      seatRuleRefusal(office, runtime.base) === undefined,
+      seatRuleRefusal(campaign, office, runtime.base) === undefined,
   );
 }
 

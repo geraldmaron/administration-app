@@ -115,7 +115,7 @@ export function runningStories(campaign) {
         stage: reading.scandal.stage,
         stageWord: STAGE_WORD[reading.scandal.stage],
         weeks: reading.weeksRunning,
-        age: reading.weeksRunning === undefined ? "Date not recorded" : reading.weeksRunning === 0 ? "Broke this week" : `Running ${reading.weeksRunning} ${reading.weeksRunning === 1 ? "week" : "weeks"}`,
+        age: reading.weeksRunning === 0 ? "Broke this week" : `Running ${reading.weeksRunning} ${reading.weeksRunning === 1 ? "week" : "weeks"}`,
         heat: reading.scandal.intensity,
         keptAliveBy: { id: reading.keptAliveBy.id, name: reading.keptAliveBy.name },
         href: place.scandal(reading.scandal.id),

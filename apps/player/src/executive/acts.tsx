@@ -1,7 +1,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import type { Campaign, EffectPacket } from "@admin/engine";
 import { formatDate } from "@admin/player-core";
-import { Badge, Button, Column, LegalCitation, Row, Sheet, Surface, Text } from "@admin/ui";
+import { Tag, Button, Column, LegalCitation, Row, Sheet, Surface, Text } from "@admin/ui";
 import { Toggle } from "@admin/ui/forms";
 import { useCampaignStore } from "../device/hooks";
 import { useOpenAuthority } from "../law/AuthorityProvider";
@@ -38,10 +38,10 @@ function ReviewBody({ pending, read, onRead }: { readonly pending: Pending; read
   const law = pending.review.law ? actCitation(pending.review.law) : undefined;
   return (
     <Column gap="md">
-      <Badge status={pending.review.danger ? "danger" : "info"} icon="review">
+      <Tag tone={pending.review.danger ? "danger" : "info"} icon="review">
         {pending.review.tier === "full" ? "Full review" : "Confirmation"}
-      </Badge>
-      <Text variant="body">Read the details before you confirm. What you do and what it costs will go on your Record.</Text>
+      </Tag>
+      <Text variant="body">What you do and what it costs go on your Record.</Text>
       {pending.lines.length ? (
         <Surface level="raised" pad="md">
           <Column gap="xs">

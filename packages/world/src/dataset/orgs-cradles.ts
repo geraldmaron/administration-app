@@ -1,7 +1,7 @@
 import type { NationId, RegionId } from "../schemas/ids.js";
 import type { Nation } from "../schemas/nation.js";
 import { Cradle, Organization } from "../schemas/org-cradle-charter.js";
-import { ALGERIA_ID, ARGENTINA_ID, AUSTRALIA_ID, BELARUS_ID, BELGIUM_ID, BRAZIL_ID, CANADA_ID, CHILE_ID, CHINA_ID, CUBA_ID, DENMARK_ID, DR_CONGO_ID, EGYPT_ID, ETHIOPIA_ID, FRANCE_ID, GERMANY_ID, HUNGARY_ID, ICELAND_ID, INDIA_ID, INDONESIA_ID, IRAN_ID, IRAQ_ID, IRELAND_ID, ITALY_ID, JAPAN_ID, KAZAKHSTAN_ID, MALAYSIA_ID, MEXICO_ID, MOROCCO_ID, NETHERLANDS_ID, NIGERIA_ID, NORWAY_ID, PHILIPPINES_ID, POLAND_ID, QATAR_ID, RUSSIA_ID, SAUDI_ID, SINGAPORE_ID, SOUTH_AFRICA_ID, SOUTH_KOREA_ID, SPAIN_ID, SWEDEN_ID, THAILAND_ID, TURKEY_ID, UAE_ID, UK_ID, US_ID, VENEZUELA_ID, VIETNAM_ID } from "./nations.js";
+import { ALGERIA_ID, ARGENTINA_ID, AUSTRALIA_ID, BELARUS_ID, BELGIUM_ID, BRAZIL_ID, CANADA_ID, CHILE_ID, CHINA_ID, CUBA_ID, DENMARK_ID, DR_CONGO_ID, EGYPT_ID, ETHIOPIA_ID, FRANCE_ID, GERMANY_ID, HUNGARY_ID, ICELAND_ID, INDIA_ID, INDONESIA_ID, IRAN_ID, IRAQ_ID, IRELAND_ID, ITALY_ID, JAPAN_ID, KAZAKHSTAN_ID, MALAYSIA_ID, MEXICO_ID, MOROCCO_ID, NETHERLANDS_ID, NIGERIA_ID, NORWAY_ID, PAKISTAN_ID, PHILIPPINES_ID, POLAND_ID, QATAR_ID, RUSSIA_ID, SAUDI_ID, SINGAPORE_ID, SOUTH_AFRICA_ID, SOUTH_KOREA_ID, SPAIN_ID, SWEDEN_ID, THAILAND_ID, TURKEY_ID, UAE_ID, UK_ID, US_ID, VENEZUELA_ID, VIETNAM_ID } from "./nations.js";
 
 // The single homeland cradle. Founding is taking office, not placing an
 // island, but the founding contract still takes a cradle — so the one cradle
@@ -24,6 +24,8 @@ export const ORG_US_JAPAN = "ORG-US-JAPAN" as Organization["id"];
 export const ORG_US_KOREA = "ORG-US-KOREA" as Organization["id"];
 export const ORG_US_PHILIPPINES = "ORG-US-PHILIPPINES" as Organization["id"];
 export const ORG_ANZUS = "ORG-ANZUS" as Organization["id"];
+export const ORG_SCO = "ORG-SCO" as Organization["id"];
+export const ORG_UNSC = "ORG-UNSC" as Organization["id"];
 
 // Where each body's roster was read, and the day. A membership list is a
 // dated fact: bodies admit and suspend members, and a list with no date says
@@ -35,6 +37,7 @@ const JAPAN_TREATY = "https://treaties.un.org/doc/Publication/UNTS/Volume%20373/
 const KOREA_TREATY = "https://avalon.law.yale.edu/20th_century/kor001.asp";
 const PHILIPPINES_TREATY = "https://avalon.law.yale.edu/20th_century/phil001.asp";
 const ANZUS_TREATY = "https://avalon.law.yale.edu/20th_century/usmu002.asp";
+const UN_CHARTER_VOTING = "https://www.un.org/en/about-us/un-charter/chapter-5";
 const NORTH_ATLANTIC_TREATY = "https://www.nato.int/cps/en/natolive/official_texts_17120.htm";
 
 export const ORGANIZATION_SOURCES: Readonly<Record<string, OrganizationSource>> = {
@@ -53,6 +56,8 @@ export const ORGANIZATION_SOURCES: Readonly<Record<string, OrganizationSource>> 
   [ORG_US_KOREA]: { source: KOREA_TREATY, asOf: "2026-09-24" },
   [ORG_US_PHILIPPINES]: { source: PHILIPPINES_TREATY, asOf: "2026-09-24" },
   [ORG_ANZUS]: { source: ANZUS_TREATY, asOf: "2026-09-24" },
+  [ORG_SCO]: { source: "https://eng.sectsco.org/20170109/192193.html", asOf: "2026-10-25" },
+  [ORG_UNSC]: { source: "https://main.un.org/securitycouncil/en/content/current-members", asOf: "2026-10-25" },
 };
 
 /** Roster governments the dataset names by code rather than by a constant of their own. */
@@ -280,6 +285,30 @@ export const organizations: Organization[] = [
     requiresCradle: [CRADLE_POTOMAC],
     defenseScope: { kind: "area", area: [...PACIFIC_AREA, "region-north-america"].map((id) => id as RegionId), source: ANZUS_TREATY },
   }),
+  Organization.parse({
+    id: ORG_SCO,
+    kind: "political",
+    name: "Shanghai Cooperation Organisation",
+    history:
+      "The Shanghai Cooperation Organisation grew from the 1996 Shanghai Five border agreements and was founded in 2001; its charter took effect in 2003. It runs summits, a regional anti-terrorist structure and security, trade and cultural meetings. It says it is not an alliance directed against others, and it has no mutual-defense clause. The United States is not a member and cannot join from home.",
+    members: [CHINA_ID, RUSSIA_ID, INDIA_ID, PAKISTAN_ID, IRAN_ID, BELARUS_ID, KAZAKHSTAN_ID, ...roster("KGZ TJK UZB")],
+    conflictsWith: [],
+    requiresCradle: [],
+  }),
+  Organization.parse({
+    id: ORG_UNSC,
+    kind: "political",
+    name: "United Nations Security Council",
+    history:
+      "The Security Council is the United Nations organ with primary responsibility for peace and security. Five permanent members, China, France, Russia, the United Kingdom and the United States, each hold a veto; ten members are elected for two-year terms. Substantive decisions need nine votes with no permanent member voting no. An abstention is not a veto. Its decisions carry no authority inside the United States, which needs Congress.",
+    members: [
+      CHINA_ID, FRANCE_ID, RUSSIA_ID, UK_ID, US_ID,
+      ...roster("BHR COL COD DNK GRC LVA LBR PAK PAN SOM"),
+    ],
+    conflictsWith: [],
+    requiresCradle: [],
+    council: { permanent: [CHINA_ID, FRANCE_ID, RUSSIA_ID, UK_ID, US_ID], threshold: 9, source: UN_CHARTER_VOTING },
+  }),
 ];
 
 // The one cradle: home. Its `geo` equals the US nation record's own anchor and
@@ -306,6 +335,7 @@ export function applyMemberships<T extends Pick<Nation, "id">>(
 ): (T & { memberships: Organization["id"][] })[] {
   const joined = new Map<string, Organization["id"][]>();
   for (const org of organizations) {
+    if (org.council) continue;
     for (const member of org.members) {
       const key = member as string;
       if (!joined.has(key)) joined.set(key, []);

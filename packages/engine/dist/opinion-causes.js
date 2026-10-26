@@ -203,6 +203,11 @@ export function priceLevelScar(campaign) {
         return 0;
     return Math.max(0, runtime.stats.economy.costOfLiving / normalPriceLevel(runtime, weeksInOffice(campaign)) - 1);
 }
+/** What a point of growth is worth to the prosperity judgment, the same weight in a boom and in a slump. */
+const GROWTH_WEIGHT = 2;
+/** Growth past this either way reads as the same boom or the same collapse; the strain bound handles the rest. */
+const GROWTH_READING_LIMIT = 0.1;
+const boundedGrowth = (growth) => Math.max(-GROWTH_READING_LIMIT, Math.min(GROWTH_READING_LIMIT, growth));
 /**
  * What the economy is doing to the public's sense of being better off.
  *
@@ -244,10 +249,12 @@ function economyTerms(campaign) {
         },
         {
             key: "growth",
-            contribution: Math.max(0, economy.growth) * 2,
+            contribution: boundedGrowth(economy.growth) * GROWTH_WEIGHT,
             detail: economy.growth > 0
                 ? `The economy is growing ${percent(economy.growth)} a year, which offsets some of the rest.`
-                : "The economy is not growing, so there is nothing offsetting the rest.",
+                : economy.growth < 0
+                    ? `The economy is shrinking ${percent(-economy.growth)} a year, which adds to the rest.`
+                    : "The economy is not growing, so there is nothing offsetting the rest.",
         },
         pricesCause(priceLevelScar(campaign)),
     ];

@@ -1,8 +1,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import type { Campaign } from "@admin/engine";
 import { URGENCY_WORDS, collectionElements, collectionReports, formatDate, type CollectionReading, type CollectionReportRow, type PdbReading, type SecurityAssessmentRow, type TaskingRow } from "@admin/player-core";
-import { Badge, BriefPaper, Button, Column, Empty, Icon, Meter, PressRow, ReadingFrame, Row, Text, View, classificationKey, type KeyEntry } from "@admin/ui";
-import { Panel, Pips, SortTable, type RowPress, type TableColumn } from "@admin/ui/world";
+import { Pane, Tag, BriefPaper, Button, Column, Empty, Icon, Meter, PressRow, ReadingFrame, Row, Text, View, classificationKey, type KeyEntry } from "@admin/ui";
+import { Pips, SortTable, type RowPress, type TableColumn } from "@admin/ui/world";
 import { useMarking } from "../shell/classification";
 import { SealOf, TopicLaw, go } from "../world/parts";
 import type { SecurityAct } from "./params";
@@ -53,7 +53,7 @@ export function Daily({ campaign, pdb }: { readonly campaign: Campaign; readonly
           {pdb.items.map((item, index) => (
             <Row key={item.id} gap="xs" role="listitem">
               <Text variant="caption" weight="strong">{`${index + 1}.`}</Text>
-              <Badge status={URGENCY_STATUS[item.urgency]} icon={URGENCY_GLYPH[item.urgency]}>{URGENCY_WORDS[item.urgency]}</Badge>
+              <Tag tone={URGENCY_STATUS[item.urgency]} icon={URGENCY_GLYPH[item.urgency]}>{URGENCY_WORDS[item.urgency]}</Tag>
             </Row>
           ))}
         </Row>
@@ -93,11 +93,11 @@ const OPEN_TARGET: RowPress<TaskingRow> = {
 export function CollectionLedger({ reading, onOpen }: { readonly reading: CollectionReading; readonly onOpen: Open }) {
   const seals = useMemo(() => new Map(collectionElements().map((element) => [element.abbr, element.id] as const)), []);
   return (
-    <Panel title="Intelligence gathering" icon="instrumentCovert" count={reading.taskings.length} aside={<TopicLaw topic="intelligence-collection" />}>
+    <Pane title="Intelligence gathering" icon="instrumentCovert" count={reading.taskings.length} actions={<TopicLaw topic="intelligence-collection" />}>
       <SortTable caption="Open requests" columns={taskingColumns(onOpen, seals)} rows={reading.taskings} rowKey={(row) => row.id} initialSort={{ key: "weeks", direction: "descending" }} rowPress={OPEN_TARGET} empty="You haven't asked any agency to gather anything yet." />
       {reading.declined > 0 ? <Text variant="caption" tone="secondary">Agency lawyers turned down {reading.declined} {reading.declined === 1 ? "request" : "requests"}{reading.referred > 0 ? `, and ${reading.referred} ${reading.referred === 1 ? "has" : "have"} gone to an inspector general, the official who looks into wrongdoing inside an agency` : ""}. They stay on the record.</Text> : null}
       <Row><Button kind="secondary" size="compact" icon="intel" onPress={() => onOpen({ kind: "task" })}>Ask an agency</Button></Row>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -130,7 +130,7 @@ function Report({ row, onOpen }: { readonly row: CollectionReportRow; readonly o
         <Text variant="label">{row.target}</Text>
         <Text variant="label" tone="secondary">{row.status}</Text>
         <Confidence confidence={row.confidence === "Not recorded" ? undefined : row.confidence} />
-        {row.stale ? <Badge status="warning">Out of date</Badge> : null}
+        {row.stale ? <Tag tone="warning">Out of date</Tag> : null}
         <Button kind="secondary" size="compact" onPress={() => onOpen({ kind: "share-report", id: row.id })}>Share it</Button>
         {row.href ? <Opens /> : null}
       </Row>
@@ -155,11 +155,11 @@ export function CollectionReports({ campaign, onOpen }: { readonly campaign: Cam
   const rows = useMemo(() => collectionReports(campaign), [campaign]);
   const [shown, setShown] = useState(6);
   return (
-    <Panel title="Intelligence reports" icon="intel" count={rows.length} lede="What the agencies actually found. Each report keeps the judgment it had when it was filed, even after you stop the request.">
-      {rows.length === 0 ? <Empty title="No reports yet" detail="You can ask an agency a question here, or look at surveillance from a country's or state's page." /> : null}
+    <Pane title="Intelligence reports" icon="intel" count={rows.length} line="What the agencies actually found. Each report keeps the judgment it had when it was filed, even after you stop the request.">
+      {rows.length === 0 ? <Empty title="No reports yet" detail="No agency has filed a collection report." /> : null}
       {rows.slice(0, shown).map((row) => <Report key={row.id} row={row} onOpen={onOpen} />)}
       {rows.length > shown ? <Button kind="quiet" size="compact" onPress={() => setShown(rows.length)}>{`Show all ${rows.length} reports`}</Button> : null}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -173,7 +173,7 @@ function Judgment({ row, onOpen }: { readonly row: SecurityAssessmentRow; readon
         <Button kind="secondary" size="compact" onPress={() => onOpen({ kind: "press", id: row.id })}>Ask for new wording</Button>
         <Opens />
       </Row>
-      <Text variant="document">{row.judgment}</Text>
+      <Text variant="voice">{row.judgment}</Text>
       <ReadingFrame title="How likely, in the analysts' words" unit="Five steps, from remote to almost certain" legend={EVEN_KEY} help={{ meaning: "The analysts answer with one of five phrases: remote, unlikely, even chance, likely or almost certain. The bar places the phrase on that ladder and the gold tick marks the middle, an even chance. The phrase is the reading, not a percent chance." }}>
         <Meter label="Analysts' words" value={row.rung} figure={row.likelihood} marks={[{ id: "even", label: "even chance", at: 0.5, kind: "historical" }]} />
       </ReadingFrame>
@@ -190,10 +190,10 @@ function Judgment({ row, onOpen }: { readonly row: SecurityAssessmentRow; readon
 /** The community's judgments, newest first, and the way to ask for another. */
 export function Assessments({ rows, onOpen }: { readonly rows: readonly SecurityAssessmentRow[]; readonly onOpen: Open }) {
   return (
-    <Panel title="Assessments" icon="intel" count={rows.length} emblem={<SealOf id="INST-ODNI" size={32} />}>
-      {rows.length === 0 ? <Text variant="body" tone="secondary">The intelligence agencies haven't written you an assessment yet. You can ask what a government plans to do, what it's able to do, or how stable it is.</Text> : null}
+    <Pane title="Assessments" icon="intel" count={rows.length} emblem={<SealOf id="INST-ODNI" size={32} />}>
+      {rows.length === 0 ? <Text variant="body" tone="secondary">The intelligence agencies have not filed an assessment of another government's intentions, capabilities, or stability.</Text> : null}
       {rows.map((row) => <Judgment key={row.id} row={row} onOpen={onOpen} />)}
       <Row><Button kind="secondary" size="compact" icon="review" onPress={() => onOpen({ kind: "commission" })}>Ask for an assessment</Button></Row>
-    </Panel>
+    </Pane>
   );
 }

@@ -120,7 +120,7 @@ function NationCard({ rows, overview, onFocus, onMany }: { readonly rows: readon
           </Button>
         ) : null}
         <Text variant="label" weight="regular" tone="secondary">
-          Pick a state on the map or in the list to see how it feels about you and what you can do there. Hold Shift, or turn on Select several, to pick more than one.
+          No state selected. A state selected on the map or in the list shows here with how it feels about you and what you can do there. Shift, or Select several, holds more than one.
         </Text>
       </Column>
     </Surface>

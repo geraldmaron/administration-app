@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { View, styled } from "@tamagui/core";
+import { View, styled, useMedia } from "@tamagui/core";
 import { Icon, type IconName, type InkRole } from "../icons/Icon";
 import { Text } from "./Text";
+import { withButtonKeys } from "./PressableFrame";
 
-const Frame = styled(View, {
+const Frame = withButtonKeys(styled(View, {
   name: "Button",
   role: "button",
   tabIndex: 0,
@@ -23,10 +24,11 @@ const Frame = styled(View, {
   variants: {
     kind: {
       primary: { backgroundColor: { default: "accentFill", hover: "accentFillHover", press: "accentFillHover" }, borderColor: "accentFill" },
-      secondary: { backgroundColor: { default: "surface", hover: "surfaceHover", press: "backgroundPress" }, borderColor: "borderColorStrong" },
+      secondary: { backgroundColor: { default: "surfaceRaised", hover: "surfaceHover", press: "backgroundPress" }, borderColor: "borderColorStrong" },
       quiet: { backgroundColor: { default: "transparent", hover: "surfaceHover", press: "backgroundPress" }, borderColor: "transparent" },
       danger: { backgroundColor: { default: "dangerFill", hover: "dangerFillHover", press: "dangerFillHover" }, borderColor: "dangerFill" },
-      gold: { backgroundColor: { default: "goldFill", hover: "goldRule", press: "goldRule" }, borderColor: "goldRule" },
+      // Presidential authority: the one control that signs.
+      seal: { backgroundColor: { default: "goldFill", hover: "goldFill", press: "goldFill" }, borderColor: "goldFill", opacity: { default: 1, hover: 0.92, press: 0.85 } },
     },
     size: {
       compact: { minHeight: "compact", paddingHorizontal: "md" },
@@ -37,12 +39,12 @@ const Frame = styled(View, {
     disabled: { true: { opacity: 0.5, cursor: "not-allowed" } },
   } as const,
   defaultVariants: { kind: "secondary", size: "regular" },
-});
+}));
 
-type Kind = "primary" | "secondary" | "quiet" | "danger" | "gold";
+type Kind = "primary" | "secondary" | "quiet" | "danger" | "seal";
 
-const INK: Record<Kind, InkRole> = { primary: "accentInk", secondary: "color", quiet: "color", danger: "accentInk", gold: "goldInk" };
-const TEXT_TONE = { primary: "inverse", secondary: "primary", quiet: "primary", danger: "inverse", gold: "goldInk" } as const;
+const INK: Record<Kind, InkRole> = { primary: "accentInk", secondary: "color", quiet: "accent", danger: "dangerInk", seal: "goldInk" };
+const TEXT_TONE = { primary: "inverse", secondary: "primary", quiet: "accent", danger: "onDanger", seal: "goldInk" } as const;
 
 export type ButtonProps = {
   readonly children?: ReactNode;
@@ -60,10 +62,12 @@ export type ButtonProps = {
 
 /** Every press in the player. An icon-only button must carry `label`. */
 export function Button({ children, kind = "secondary", size = "regular", icon, iconAfter, block, disabled, label, onPress, testID }: ButtonProps) {
+  const media = useMedia();
   return (
     <Frame
       kind={kind}
       size={size}
+      {...(size === "compact" && media.phone ? { minHeight: "control" as const } : {})}
       block={block}
       disabled={disabled}
       aria-disabled={disabled}

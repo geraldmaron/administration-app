@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { IconName } from "../icons/Icon";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { Surface } from "../primitives/Surface";
 import { Column, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
@@ -34,9 +34,9 @@ export function ResultView({ title, verdict, summary, readings, record, next, se
     <Surface level="base" pad="lg" accentEdge={verdict.tone === "danger" ? "danger" : verdict.tone === "warning" ? "warning" : verdict.tone === "success" ? "success" : "accent"} role="region" aria-label={`${title}: ${verdict.word}`}>
       <Column gap="md">
         <Column gap="xs">
-          <Badge status={verdict.tone} {...(verdict.icon ? { icon: verdict.icon } : {})}>
+          <Tag tone={verdict.tone} {...(verdict.icon ? { icon: verdict.icon } : {})}>
             {verdict.word}
-          </Badge>
+          </Tag>
           <Text variant="title" role="heading" aria-level={2}>
             {title}
           </Text>

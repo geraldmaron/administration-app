@@ -1,8 +1,8 @@
-import { AGENCY_HEAD_ROLE, type PersonId, type RoleId } from "@admin/world";
+import { AGENCY_HEAD_ROLE, VICE_PRESIDENT_ROLE_ID, type PersonId, type RoleId } from "@admin/world";
 import type { Campaign, PersonRuntime } from "./state.js";
 import type { DirectiveId } from "./directives.js";
 import type { TurnPhase } from "./turn-loop.js";
-import { INSTITUTION_CATALOG } from "./institution-catalog.js";
+import { INSTITUTION_CATALOG, VICE_PRESIDENCY_INSTITUTION_ID } from "./institution-catalog.js";
 import { campaignFoundingDate, daysBetween } from "./clock.js";
 import { weekOpenDate } from "./feed-cap.js";
 import { FUNDED_BUDGET_ADEQUACY, inShutdown, lapsedBudgetAdequacy, settledBudgetAdequacy } from "./funding.js";
@@ -77,6 +77,8 @@ export type OfficeDef = {
   readonly title: string;
   readonly appointmentClass: AppointmentClass;
   readonly confirmingChamber?: "senate";
+  /** The House votes on the nominee too: the Vice President under the Twenty-fifth Amendment, section 2. */
+  readonly confirmedByBothHouses?: true;
   readonly committee?: string;
   /** Fixed statutory term, where the office has one. Absent means serves at pleasure. */
   readonly termYears?: number;
@@ -86,6 +88,12 @@ export type OfficeDef = {
   /** How long an acting officer may serve before the authority lapses. */
   readonly actingLimitDays?: number;
   readonly removal: RemovalConstraint;
+  /**
+   * A for-cause office whose protection no holding has struck but the
+   * reasoning of Trump v. Slaughter reaches: the President may remove without
+   * a stated cause, and each removal is a legal exposure (legal-exposure.ts).
+   */
+  readonly removalContested?: true;
   /** Order in the presidential line of succession, where the office is in it. */
   readonly successionRank?: number;
   readonly cabinetRank?: number;
@@ -177,6 +185,14 @@ export type InstitutionRuntime = {
   /** What actually comes out, 0..1. Derived each turn, never written directly. */
   readonly implementationQuality: number;
   readonly oversightPressure: number;
+  /** Removals from an office whose protection is contested, each the origin of one legal exposure. */
+  readonly contestedRemovals?: readonly ContestedRemoval[];
+};
+
+export type ContestedRemoval = {
+  readonly person: PersonId;
+  readonly turn: number;
+  readonly cause?: string;
 };
 
 // --- Catalog access --------------------------------------------------------
@@ -633,12 +649,14 @@ export function institutionForRole(role: RoleId): InstitutionDef | undefined {
 
 /**
  * The role on the record of whoever leads this body: its cabinet seat for a
- * department, a seat on the bench for a court, and the agency head's for every
- * other body. These are the roles the founding seats each kind under, so an
- * officer the Senate confirms reads the same as one the transition inherited.
+ * department, a seat on the bench for a court, the Vice President's for the
+ * vice presidency, and the agency head's for every other body. These are the
+ * roles the founding seats each kind under, so an officer the Senate confirms
+ * reads the same as one the transition inherited.
  */
 export function leaderRoleOf(def: InstitutionDef): RoleId {
   if (def.cabinetRole) return def.cabinetRole;
+  if (def.id === VICE_PRESIDENCY_INSTITUTION_ID) return VICE_PRESIDENT_ROLE_ID as RoleId;
   return def.kind === "judiciary" ? JUDICIARY_SEAT_ROLE : (AGENCY_HEAD_ROLE as RoleId);
 }
 

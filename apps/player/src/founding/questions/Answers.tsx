@@ -18,7 +18,7 @@ export type AnswerProps = {
 export function ChoiceAnswer({ question, value, onAnswer }: AnswerProps) {
   return (
     <ChoiceList
-      label="Pick the one you'd choose"
+      label="Your answer"
       minCardWidth={240}
       value={value === undefined ? undefined : String(value)}
       options={question.options.map((label, at) => ({ value: String(at - 1), label }))}

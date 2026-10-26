@@ -15,6 +15,7 @@ import { leaderPersonalityOn } from "./leader-index.js";
 import { engagementAffinity, engagementCandidates, projectReceive } from "./engagement.js";
 import { coercionClaims } from "./coercion-tempo.js";
 import { firstTempoRefusal } from "./npc-tempo.js";
+import { responseBook, responsePull } from "./npc-response.js";
 // --- Preference tables ---
 // How much each instrument serves each kind of aim. A nation whose campaign
 // agendas are about revenue reaches for trade before it reaches for troops,
@@ -44,6 +45,7 @@ const WEIGHTS = {
     salience: 0.7,
     redLine: 1.2,
     survival: 0.5,
+    response: 1.5,
 };
 // Below this, doing nothing is the better move. Set so that a nation with no
 // aim served, poor odds and real costs holds rather than acting for the sake
@@ -112,10 +114,18 @@ function intentMatch(instrument, actor, relationship, campaign) {
 function escalationFit(rung, actor) {
     return 1 - Math.abs(rung / 5 - appetite(actor.traits));
 }
+// How hard alignment brakes coercing a partner, at full alignment and for the
+// most coercive instrument. Planning value, set so military pressure on a
+// partner aligned at two thirds loses about half a point of score and a
+// protest about a tenth: partners still quarrel, over trade far more than
+// with troops. Scaled by reliability, because a government that keeps its
+// word keeps faith with the side it has chosen.
+const ALIGNMENT_BRAKE = 1;
 // The things that stop a nation short of what it would otherwise like to do:
 // a legalistic state balks at covert work and at the top of the ladder, an
-// isolationist one balks at acting abroad at all, and a reliable one does not
-// casually turn on a nation it has signed something with.
+// isolationist one balks at acting abroad at all, a reliable one does not
+// casually turn on a nation it has signed something with, and none of them
+// readily turns its pressure on a partner it is aligned with.
 function restraint(request, actor, relationship, ratification) {
     // Legalism and transparency both brake covert work, for different reasons
     // and so they compound: a legalistic state balks because the thing is
@@ -139,7 +149,8 @@ function restraint(request, actor, relationship, ratification) {
     // has to persuade in advance. It bites only at the top of the ladder, which
     // is where ratification is actually the question.
     const assemblyDrag = height >= 4 ? ratification * RATIFICATION_STEP * (height - 3) : 0;
-    return -(covertScruple + ladderScruple + inward + treatyScruple + assemblyDrag);
+    const partnerScruple = Math.max(0, relationship.alignment) * ALIGNMENT_BRAKE * (0.5 + 0.5 * temper.reliability) * INSTRUMENT_COERCION[request.instrument];
+    return -(covertScruple + ladderScruple + inward + treatyScruple + assemblyDrag + partnerScruple);
 }
 /**
  * How much of this government's foreign policy is about this country.
@@ -204,6 +215,7 @@ function scoreTerms(campaign, request, projection, actor, targetNation, relation
         salience: salience(actor, targetNation, relationship),
         redLine: redLinePull(answering, request.rung),
         survival: survival(standing.runtime, request.instrument),
+        response: responsePull(standing.intents.get(request.target), request.instrument, request.rung),
         jitter: (draw - 0.5) * JITTER_SPREAD,
     };
 }
@@ -219,6 +231,7 @@ export function scoreOf(terms) {
         terms.salience * WEIGHTS.salience +
         terms.redLine * WEIGHTS.redLine +
         terms.survival * WEIGHTS.survival +
+        terms.response * WEIGHTS.response +
         terms.jitter;
     return Math.round(weighted * 10000) / 10000;
 }
@@ -277,6 +290,7 @@ function weigh(campaign, request, actorNation, outward, standing, measure, strea
             score: scoreOf(terms) * (request.target === campaign.founding.nation ? measure : 1),
             terms,
             ...(answering ? { answering } : {}),
+            ...(terms.response > 0 ? { responding: standing.intents.get(request.target) } : {}),
         },
     };
 }
@@ -331,6 +345,7 @@ function engagementTerms(campaign, request, actor, relationship, streams) {
         salience: salience(actor, liveNation(campaign, request.target), relationship),
         redLine: 0,
         survival: 0,
+        response: 0,
         jitter: (draw - 0.5) * JITTER_SPREAD,
     };
 }
@@ -357,6 +372,7 @@ function decisionContext(campaign, actor, options) {
         ratification: ratificationDrag(actorRuntime),
         crossings: crossingsAgainst(campaign, actor),
         runtime: actorRuntime,
+        intents: responseBook(campaign).get(actor) ?? new Map(),
     };
     // What the President's record and position say about pressing them. Hoisted:
     // the profile reads the whole ledger, so recomputing it per candidate would
@@ -364,20 +380,34 @@ function decisionContext(campaign, actor, options) {
     const measure = playerTargetMeasure(campaign, actorNation.traits);
     return { actorNation, outward, targets, standing, measure };
 }
+/**
+ * Who this government has a cause to coerce: a quarrel the record names, or an
+ * act it has yet to answer. `answerOnly` holds the targets whose only cause is
+ * the act to answer.
+ */
+function causesAgainst(campaign, context) {
+    const { actorNation, outward, targets, standing } = context;
+    const quarrel = new Set(targets
+        .filter((target) => coercionCause(campaign, actorNation, target, outward.get(target), standing.crossings) !== undefined)
+        .map((target) => target));
+    const answerOnly = new Set(targets.map((t) => t).filter((t) => standing.intents.has(t) && !quarrel.has(t)));
+    return { coercible: new Set([...quarrel, ...answerOnly]), answerOnly };
+}
 export function decideNpcAction(campaign, actor, streams, options = {}) {
     const context = decisionContext(campaign, actor, options);
     const { actorNation, outward, targets, standing, measure } = context;
-    const coercible = new Set(targets
-        .filter((target) => coercionCause(campaign, actorNation, target, outward.get(target), standing.crossings) !== undefined)
-        .map((target) => target));
+    const { coercible, answerOnly } = causesAgainst(campaign, context);
     const ranked = [];
     const rejected = [];
     for (const request of everyRequest(actor, targets, coercible)) {
         const weighed = weigh(campaign, request, actorNation, outward, standing, measure, streams);
         if ("rejection" in weighed)
             rejected.push(weighed.rejection);
-        else
+        // Where the act to answer is the only cause, only an answer is a candidate:
+        // being sanctioned is a reason to answer the sanction, not to blockade.
+        else if (!answerOnly.has(request.target) || request.instrument === "assistance" || weighed.candidate.terms.response > 0) {
             ranked.push(weighed.candidate);
+        }
     }
     ranked.sort(candidateOrder);
     const best = ranked[0];
@@ -411,6 +441,7 @@ const STAMPED_TERMS = {
     salience: { key: "salience", source: "interest" },
     redLine: { key: "red-line", source: "obligation" },
     survival: { key: "survival", source: "situation" },
+    response: { key: "response", source: "situation" },
 };
 const round4 = (v) => Math.round(v * 10000) / 10000 || 0;
 /**

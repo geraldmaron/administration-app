@@ -1,4 +1,4 @@
-import type { NationId, PartyBeliefs, Person, RoleId, StateId } from "@admin/world";
+import type { NationId, PartyBeliefs, Person, PersonId, RoleId, StateId } from "@admin/world";
 import type { DomesticSignature } from "./domestic-signature.js";
 import { type AdministrationStanding } from "./party.js";
 import { type TieEffect } from "./ties.js";
@@ -168,6 +168,13 @@ export type SeatedLeadership = {
  * rather than a failure — it is what a campaign saved before these seats existed
  * genuinely contains, and every count still carries without them.
  */
+/**
+ * Whether a post's holder still sits in its chamber. A senator unseated at a
+ * special election keeps no gavel and no leadership post; with no roster on
+ * file (an old save, or the founding before members are seated) the post is
+ * read as held.
+ */
+export declare function holdsSeat(congress: Congress, person: PersonId, chamber: Chamber): boolean;
 export declare function seatLeadership(congress: Congress, people: Readonly<Record<string, PersonRuntime>>, nation: NationId, turn: number, signature?: DomesticSignature): SeatedLeadership;
 /** The same, as the Congress it produces and the people whose ties it opened, for callers that hold both. */
 export declare function withLeadership(congress: Congress, people: Readonly<Record<string, PersonRuntime>>, nation: NationId, turn: number): {

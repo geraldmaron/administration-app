@@ -26,8 +26,8 @@ export const FORCE_PACKAGE_SPECS = [
         rung: 4,
         branch: "air",
         unitType: "air.fighter",
-        min: 48,
-        preferred: 200,
+        min: 36,
+        preferred: 100,
     },
     {
         id: "expeditionary-corps",
@@ -41,7 +41,7 @@ export const FORCE_PACKAGE_SPECS = [
 ];
 const SIZED_AGAINST = {
     "surface-blockade": { arm: "naval", floor: 4 },
-    "limited-strike": { arm: "air", floor: 24 },
+    "limited-strike": { arm: "air", floor: 30 },
     "expeditionary-corps": { arm: "land", floor: 2 },
 };
 const SIZING_CURVE = 1.5;

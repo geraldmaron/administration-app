@@ -120,8 +120,10 @@ describe("the boundaries the game must not collapse", () => {
     expect(rateHolders.map((def) => def.id)).toEqual(["INST-FED"]);
   });
 
-  it("gives independent regulators fixed terms, and never a seat held at pleasure", () => {
-    for (const def of INSTITUTION_CATALOG.filter((entry) => entry.independence === "independent")) {
+  it("takes removal protection only where a holding took it: the FTC and the CFPB", () => {
+    const commissions = ["INST-FTC", "INST-CFPB"];
+    for (const id of commissions) expect(institutionDef(id)!.offices[0]!.removal, id).toBe("at-will");
+    for (const def of INSTITUTION_CATALOG.filter((entry) => entry.independence === "independent" && !commissions.includes(entry.id))) {
       for (const office of def.offices) {
         expect(office.removal, `${office.id} should not serve at pleasure`).not.toBe("at-will");
       }

@@ -5,56 +5,56 @@
     "canonical_integration": true
   },
   {
-    "path": "~/.admin-app-wt/casting-pin-pilot",
+    "path": "<local path>",
     "head_preserved": true,
     "changed_path_set_preserved": true,
     "working_blobs_verified": 0,
     "snapshot": "beb4e4b4dcf562398f511aaff8394de5e380df5d"
   },
   {
-    "path": "~/.admin-app-wt/coercion-followups",
+    "path": "<local path>",
     "head_preserved": true,
     "changed_path_set_preserved": true,
     "working_blobs_verified": 0,
     "snapshot": "0837ea4eae02f3b43722c28c2d745985562e73f9"
   },
   {
-    "path": "~/.admin-app-wt/electorate-surfaces",
+    "path": "<local path>",
     "head_preserved": true,
     "changed_path_set_preserved": true,
     "working_blobs_verified": 0,
     "snapshot": "14ce11a746892904e7a5f48ff2d312a5a147b9e6"
   },
   {
-    "path": "~/.admin-app-wt/regime-change",
+    "path": "<local path>",
     "head_preserved": true,
     "changed_path_set_preserved": true,
     "working_blobs_verified": 0,
     "snapshot": "ccd9707577e7cd34c36ed1fdc0c7dfd347c4865b"
   },
   {
-    "path": "~/.admin-app-wt/registry-r2",
+    "path": "<local path>",
     "head_preserved": true,
     "changed_path_set_preserved": true,
     "working_blobs_verified": 0,
     "snapshot": "09abe6ccaca8aa980afd99b2f45d82b504edb288"
   },
   {
-    "path": "~/.admin-app-wt/scenario-cost-model",
+    "path": "<local path>",
     "head_preserved": true,
     "changed_path_set_preserved": true,
     "working_blobs_verified": 92,
     "snapshot": "f2763efd82fea4ea0257c88d13b1e5ed51911040"
   },
   {
-    "path": "~/.codex/worktrees/player-visual-audit/admin-app",
+    "path": "<local path>",
     "head_preserved": true,
     "changed_path_set_preserved": true,
     "working_blobs_verified": 1551,
     "snapshot": "a68a5216f537a264a895238290e6a224e1c77376"
   },
   {
-    "path": "~/.codex/worktrees/player-visual-overhaul/admin-app",
+    "path": "<local path>",
     "head_preserved": true,
     "changed_path_set_preserved": true,
     "working_blobs_verified": 560,

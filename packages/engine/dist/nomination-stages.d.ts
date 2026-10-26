@@ -1,6 +1,6 @@
 import type { Campaign } from "./state.js";
 import type { Nomination } from "./nomination.js";
-import type { OfficeId } from "./institutions.js";
+import { type OfficeId } from "./institutions.js";
 export type NominationStage = "shortlist" | "vetting" | "prepared" | "nominated" | "referred" | "disclosures" | "hearing-scheduled" | "hearing" | "committee-action" | "executive-calendar" | "floor-pending" | "cloture" | "vote" | "confirmed" | "rejected" | "withdrawn" | "returned" | "sworn-in";
 /** The stages a nomination is still moving through. */
 export declare const ACTIVE_STAGES: readonly NominationStage[];

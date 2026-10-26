@@ -18,8 +18,8 @@ import {
   type WarAuthorization,
   type WarPaper,
 } from "@admin/player-core";
-import { ChoiceList, Column, ReadingFrame, Row, Surface, Text } from "@admin/ui";
-import { Panel, StatuteClock } from "@admin/ui/world";
+import { Pane, ChoiceList, Column, ReadingFrame, Row, Surface, Text } from "@admin/ui";
+import { StatuteClock } from "@admin/ui/world";
 import { SetAct, type WorldActs } from "../acts";
 import { CLOCK_KEY, CiteById, LawChips, TopicLaw } from "../parts";
 import { reportAuthority, topicAuthorities } from "../law";
@@ -109,7 +109,7 @@ function WarReport({ campaign, paper, notice, asksCongress, acts }: { readonly c
   return (
     <Surface level="raised" pad="md" accentEdge={clock && clock.daysRemaining <= 14 ? "danger" : "gold"}>
       <Column gap="md">
-        <Text variant="title">{paper.description}</Text>
+        <Text variant="headline" role="heading" aria-level={3}>{paper.description}</Text>
         <Row gap="sm" wrap>
           <Text variant="label" weight="regular">
             Report to Congress: <Text variant="label" weight="strong">{paper.report}</Text>
@@ -141,10 +141,10 @@ export function WarPowersSection({ campaign, papers, acts }: { readonly campaign
   }, [papers]);
   if (papers.length === 0) return null;
   return (
-    <Panel id={WAR_POWERS_ANCHOR} title="War Powers deadlines" icon="gavel" count={papers.length} aside={<TopicLaw topic="war-powers" />}>
+    <Pane id={WAR_POWERS_ANCHOR} title="War Powers deadlines" icon="gavel" count={papers.length} actions={<TopicLaw topic="war-powers" />}>
       {papers.map((paper) => (
         <WarReport key={paper.id} campaign={campaign} paper={paper} notice={notices.get(paper.id)} asksCongress={asking.has(paper.id)} acts={acts} />
       ))}
-    </Panel>
+    </Pane>
   );
 }

@@ -9,6 +9,8 @@ import {
   applyMoodDeltas,
   heaviestCause,
   OPINION_DRIFT,
+  SALIENT_OPINION_DRIFT,
+  driftOpinion,
   OPINION_DRIVERS,
   OPINION_HALF_LIFE_TURNS,
   OPINION_WEIGHTS,
@@ -30,6 +32,7 @@ import { approvalMovement } from "./opinion-movement.js";
 import { OPINION_CAUSE_LABELS, PRESS_COVERAGE_CAP, PRESS_COVERAGE_WEIGHT, opinionTargets, priceLevelScar, PRICE_LEVEL_WEIGHT } from "./opinion-causes.js";
 import { foundedForBalance } from "./balance-harness.js";
 import type { NationId } from "@admin/world";
+import { flagMarker } from "./marked-flags.js";
 import type { ActionRecord, Campaign, NationCondition, PublicMood } from "./state.js";
 
 const evenMood: PublicMood = {
@@ -354,7 +357,7 @@ describe("why a judgment is where it is", () => {
     expect(selectSalience(quiet)).not.toContain("scandalLive");
     const scandal = {
       ...quiet,
-      player: { ...quiet.player, flags: { ...quiet.player.flags, "scandal:the-donors": true } },
+      player: { ...quiet.player, flags: { ...quiet.player.flags, "scandal:the-donors": true, [flagMarker("scandal:the-donors", quiet.turn)]: true } },
     };
     expect(selectSalience(scandal)).toContain("scandalLive");
     expect(causesFor(scandal, "integrity").salience).toEqual(["scandalLive"]);
@@ -412,6 +415,30 @@ describe("the public judges the economy it is living in", () => {
       },
     };
   };
+
+  it("revises a loud judgment quickly only in the direction its story pushes", () => {
+    const loud = withEconomy(FOUNDED, { inflation: us.stats.economy.inflation + ECONOMIC_PAIN.inflation + 0.02 });
+    expect(selectSalience(loud)).toContain("economicPain");
+    const target = opinionTargets(loud).prosperity;
+    const below = (level: number): Campaign => ({ ...loud, player: { ...loud.player, opinion: { ...loud.player.opinion, prosperity: level } } });
+    const down = driftOpinion(below(target + 0.2)).prosperity - (target + 0.2);
+    const up = driftOpinion(below(target - 0.2)).prosperity - (target - 0.2);
+    expect(down).toBeCloseTo(-0.2 * SALIENT_OPINION_DRIFT, 9);
+    expect(up).toBeCloseTo(0.2 * OPINION_DRIFT, 9);
+  });
+
+  it("reads a contraction as a cost and a boom as a benefit, by the same weight", () => {
+    const prosperity = (growth: number) => opinionTargets(withEconomy(FOUNDED, { growth })).prosperity;
+    const flat = prosperity(0);
+    expect(flat - prosperity(-0.05)).toBeGreaterThan(0.02);
+    expect(prosperity(0.03) - flat).toBeCloseTo(flat - prosperity(-0.03), 6);
+    expect(prosperity(-0.05)).toBeLessThan(prosperity(-0.02));
+  });
+
+  it("stops reading a collapse as worse past the growth reading limit", () => {
+    const prosperity = (growth: number) => opinionTargets(withEconomy(FOUNDED, { growth })).prosperity;
+    expect(prosperity(-0.3)).toBe(prosperity(-0.1));
+  });
 
   /** A price shock, injected the way a crisis arrives: a condition opens and prices jump with it. */
   function shocked(points: number): Campaign {

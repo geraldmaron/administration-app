@@ -3,7 +3,7 @@ import { temporaryImportSuspension } from "./trade-effects.js";
 import { issueAction } from "./instrument-issued.js";
 import { worldDataset } from "@admin/world";
 import { signOrder } from "./orders.js";
-import { takeLocaleAct } from "./locale-acts.js";
+import { takeLocaleAct } from "./locale-act-effects.js";
 import { billTextAction, collectionAction, directiveAction, judicialNominationAction, localeProjection, orderRescissionAction, orderReviewAction, quotedPositionCost, reliefProjection, tariffAction, tariffLiftAction, transmissionAction } from "./conversation-report-actions.js";
 import { selectRelationship, } from "./state.js";
 import { resolveSpeaker } from "./conversation-speaker.js";

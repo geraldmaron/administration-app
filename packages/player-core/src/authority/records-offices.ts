@@ -1,4 +1,4 @@
-import { uscode } from "./records-security.js";
+import { govinfoCode, uscode } from "./records-security.js";
 import type { Authority } from "./types.js";
 
 // Appointments and removal, succession, and the statutes that keep law
@@ -86,8 +86,23 @@ const LAW_ENFORCEMENT: readonly Authority[] = [
       "Department policy confines White House contact about a pending case to the Attorney General and the Deputy Attorney General",
     ],
     sourceUrl: uscode(28, "509"),
-    glossaryTerms: ["attorney-general"],
+    glossaryTerms: ["attorney-general", "investigative-priority"],
     covers: [{ code: "usc", title: 28, from: "509" }],
+  },
+  {
+    id: "doj-investigative-officials",
+    cite: "28 U.S.C. §533",
+    title: "Investigative officials of the Department of Justice",
+    kind: "statute",
+    summary:
+      "The Attorney General appoints the officials who detect and prosecute crimes against the United States. It is the law the FBI's agents work under, and it leaves other agencies' own investigative powers alone.",
+    enables: ["Assign Justice Department agents and prosecutors to work federal crimes in a state"],
+    limits: [
+      "It reaches crimes against the United States. Crimes under a state's own laws stay with the state's police",
+      "The Attorney General makes the appointments and directs the investigations, not the President",
+    ],
+    sourceUrl: govinfoCode(28, "533"),
+    covers: [{ code: "usc", title: 28, from: "533" }],
   },
   {
     id: "irs-audit-prohibition",

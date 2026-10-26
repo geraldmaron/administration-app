@@ -2,7 +2,7 @@ import { FIDELITY_WEIGHT, liveTemperament } from "./temperament.js";
 import { hasIntelOnNation, selectActivePursuits, selectNation, selectPursuitAgainst, } from "./state.js";
 import { omniscientRead } from "./rules.js";
 import { nationName, sentenceCase } from "./naming.js";
-import { wireLine, wireStake } from "./wire.js";
+import { answerLine, wireLine, wireStake } from "./wire.js";
 import { createRngStreams } from "./rng.js";
 import { apply } from "./effects.js";
 import { advancePursuit, closingHeadline, leadingAim, openPursuit, opensPursuit } from "./pursuits.js";
@@ -11,6 +11,7 @@ import { engagementPacket } from "./engagement.js";
 import { resolveAction } from "./resolution.js";
 import { forceClaim, isActOfForce, isRegimeOperation, regimeClaim, straitClaims } from "./coercion-tempo.js";
 import { tempoEffect } from "./npc-tempo.js";
+import { responseBook, strongestIntent } from "./npc-response.js";
 // The world acting on itself. Each turn a bounded set of nations takes the
 // move its own agent chose, resolved by the same resolveAction() the player
 // commits through — there is no NPC-only action path, so an NPC cannot do
@@ -40,10 +41,25 @@ export function initiativeRate(campaign, actor) {
     const temperament = Math.max(0, Math.min(0.9, temper.opportunism * 0.5 + temper.aggression * 0.35 - temper.isolationism * 0.3));
     return temperament * FIDELITY_INITIATIVE[runtime.base.fidelity ?? "full"];
 }
+/**
+ * How much more often a government acts in a week while it has something to
+ * answer, at a full intent, and how far ahead of the draw that puts it.
+ *
+ * A capital just sanctioned has the most pressing reason on the board to act,
+ * and under the temperament's rate alone China cleared the draw about one week
+ * in three and then lost the week to a dozen others: one slot in eight weeks.
+ * Both stay below the spread of the draw itself, as the campaign head start
+ * does, so a government with an answer to give is likelier to be heard and is
+ * never entitled to the week.
+ */
+const RESPONSE_INITIATIVE = 0.5;
+const RESPONSE_PRIORITY = 0.5;
+const MAX_INITIATIVE = 0.9;
 // Whether a nation bothers this turn at all. The draw is per nation per turn,
 // so adding a nation never changes when the others move.
-function takesInitiative(campaign, actor, streams) {
-    return streams.stream("npc-initiative", actor, campaign.turn).next() < initiativeRate(campaign, actor);
+function takesInitiative(campaign, actor, streams, intent) {
+    const rate = Math.min(MAX_INITIATIVE, initiativeRate(campaign, actor) + RESPONSE_INITIATIVE * intent);
+    return streams.stream("npc-initiative", actor, campaign.turn).next() < rate;
 }
 /**
  * How much of a head start a campaign already running buys its author in the
@@ -81,13 +97,15 @@ function campaignPull(campaign) {
 // in advance whose foreign policy the world is allowed to have.
 export function npcActorsThisTurn(campaign, streams) {
     const player = campaign.founding.nation;
+    const book = responseBook(campaign);
     const pull = campaignPull(campaign);
     return Object.keys(campaign.nations)
-        .filter((id) => id !== player && takesInitiative(campaign, id, streams))
+        .filter((id) => id !== player && takesInitiative(campaign, id, streams, strongestIntent(book, id)))
         .map((id) => ({
         id,
         order: streams.stream("npc-initiative-order", id, campaign.turn).next() -
-            CAMPAIGN_PRIORITY * (pull.get(id) ?? 0),
+            CAMPAIGN_PRIORITY * (pull.get(id) ?? 0) -
+            RESPONSE_PRIORITY * strongestIntent(book, id),
     }))
         // The id is the tie-break rather than the sort: two identical draws still
         // have to order the same way on every replay.
@@ -149,6 +167,22 @@ function keptPromiseLine(campaign, chosen, act) {
     const name = identity ? nationName(identity) : chosen.answering.holder;
     return `${name} answers what it said it would answer: ${chosen.answering.redLine.description} ${wireLine(act)}`;
 }
+/** The bulletin for a move made as an answer, naming what it answers. */
+function answeringLine(campaign, chosen, act) {
+    const intent = chosen.responding;
+    if (!intent)
+        return undefined;
+    const name = (id) => {
+        const identity = selectNation(campaign, id)?.base.identity;
+        return identity ? nationName(identity) : id;
+    };
+    return answerLine({
+        coercer: name(intent.toward),
+        instrument: intent.answered.instrument,
+        rung: intent.answered.rung,
+        ...(intent.onBehalfOf ? { onBehalfOf: name(intent.onBehalfOf) } : {}),
+    }, act);
+}
 function feedItemFor(campaign, result, chosen) {
     const { request } = result.projection;
     const covert = request.instrument === "covert";
@@ -168,7 +202,7 @@ function feedItemFor(campaign, result, chosen) {
         // catalogue — "United Arab Emirates attempts Tariff Increase against United
         // States" — and the feed is the one surface a player reads without asking
         // for it, so it has to read like a bulletin rather than like a row.
-        headline: keptPromiseLine(campaign, chosen, act) ?? wireLine(act),
+        headline: keptPromiseLine(campaign, chosen, act) ?? answeringLine(campaign, chosen, act) ?? wireLine(act),
         actor: request.actor,
         target: request.target,
         facts: actionFacts(result, act),

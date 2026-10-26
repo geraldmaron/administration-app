@@ -1,9 +1,9 @@
 const fs=require('node:fs'),{createRequire}=require('node:module');
-const req=createRequire('~/.codex/worktrees/player-visual-overhaul/admin-app/apps/web/package.json'),{chromium}=req('@playwright/test');
+const req=createRequire('<local path>'),{chromium}=req('@playwright/test');
 (async()=>{
  const b=await chromium.launch(),c=await b.newContext(),p=await c.newPage(),records=[];
  await p.goto('http://127.0.0.1:5188/administrations');
- await p.getByLabel('Import a save exported from this game').setInputFiles('~/.codex/worktrees/player-visual-overhaul/admin-app/apps/web/tests/.fixtures/washington-chairs.json');
+ await p.getByLabel('Import a save exported from this game').setInputFiles('<local path>');
  await p.waitForURL('**/brief');
  for(const width of [320,390,768,845,1280,1440,1920])for(const theme of ['dark','light'])for(const view of ['offices','delivery','services','roster']){
   await p.setViewportSize({width,height:width<500?844:1000});await p.emulateMedia({colorScheme:theme,reducedMotion:'reduce'});

@@ -38,3 +38,16 @@ describe("where a strait's cargo is bound", () => {
     }
   });
 });
+
+describe("a strait's bypass is spare or observed, in the strait's own units", () => {
+  // Installed pipeline capacity is not spare capacity: a row's bypass must be
+  // the capacity a source says is available, or a rerouting it observed, and a
+  // share of the strait's own flow of the same commodity.
+  it("states each bypass as spare, observed or none, as a share of the strait's own flow", () => {
+    for (const row of CHOKEPOINT_FLOWS) {
+      expect(row.bypass, `${row.chokepoint} ${row.commodity}`).toBeGreaterThanOrEqual(0);
+      expect(row.bypass, `${row.chokepoint} ${row.commodity}`).toBeLessThanOrEqual(1);
+      expect(row.basis, `${row.chokepoint} ${row.commodity}`).toMatch(/spare|gained|none carries|no pipeline|no bypass/);
+    }
+  });
+});

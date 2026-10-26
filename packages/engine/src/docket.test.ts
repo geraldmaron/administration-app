@@ -43,6 +43,13 @@ describe("selectActiveDocket", () => {
     expect(institutionDef("INST-SEC")?.independence).toBe("independent");
     expect(institutionDef("INST-EPA")?.independence).not.toBe("independent");
   });
+
+  it("says which commissions serve at pleasure, which are protected and which removals are contested", () => {
+    const campaign = buildCampaign();
+    expect(selectDocketItem(campaign, "INST-FTC")!.constraint).toMatch(/serve at the President's pleasure/);
+    expect(selectDocketItem(campaign, "INST-SEC")!.constraint).toMatch(/likely to sue/);
+    expect(selectDocketItem(campaign, "INST-NLRB")!.constraint).toMatch(/for-cause removal/);
+  });
 });
 
 describe("the OMB review carve-out", () => {

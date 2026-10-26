@@ -51,6 +51,11 @@ export declare const WeightBoost: z.ZodObject<{
         "fiscal-crisis": "fiscal-crisis";
         "energy-shortage": "energy-shortage";
         "housing-crunch": "housing-crunch";
+        cyberattack: "cyberattack";
+        "work-stoppage": "work-stoppage";
+        "bank-failure": "bank-failure";
+        "mass-casualty-attack": "mass-casualty-attack";
+        "wrongful-detention": "wrongful-detention";
     }>>;
 }, z.core.$strip>;
 export type WeightBoost = z.infer<typeof WeightBoost>;
@@ -555,6 +560,9 @@ export declare const ScenarioReply: z.ZodObject<{
         localeAct: z.ZodOptional<z.ZodEnum<{
             relief: "relief";
             review: "review";
+            "property-surge": "property-surge";
+            "task-force": "task-force";
+            priority: "priority";
         }>>;
         tariff: z.ZodOptional<z.ZodObject<{
             sector: z.ZodString;
@@ -1079,6 +1087,11 @@ export declare const ScenarioDef: z.ZodObject<{
             "fiscal-crisis": "fiscal-crisis";
             "energy-shortage": "energy-shortage";
             "housing-crunch": "housing-crunch";
+            cyberattack: "cyberattack";
+            "work-stoppage": "work-stoppage";
+            "bank-failure": "bank-failure";
+            "mass-casualty-attack": "mass-casualty-attack";
+            "wrongful-detention": "wrongful-detention";
         }>>;
     }, z.core.$strip>, z.ZodObject<{
         kind: z.ZodLiteral<"coalition">;
@@ -1294,6 +1307,11 @@ export declare const ScenarioDef: z.ZodObject<{
             "fiscal-crisis": "fiscal-crisis";
             "energy-shortage": "energy-shortage";
             "housing-crunch": "housing-crunch";
+            cyberattack: "cyberattack";
+            "work-stoppage": "work-stoppage";
+            "bank-failure": "bank-failure";
+            "mass-casualty-attack": "mass-casualty-attack";
+            "wrongful-detention": "wrongful-detention";
         }>>;
         confidence: z.ZodOptional<z.ZodEnum<{
             low: "low";
@@ -1442,6 +1460,11 @@ export declare const ScenarioDef: z.ZodObject<{
             "fiscal-crisis": "fiscal-crisis";
             "energy-shortage": "energy-shortage";
             "housing-crunch": "housing-crunch";
+            cyberattack: "cyberattack";
+            "work-stoppage": "work-stoppage";
+            "bank-failure": "bank-failure";
+            "mass-casualty-attack": "mass-casualty-attack";
+            "wrongful-detention": "wrongful-detention";
         }>>;
     }, z.core.$strip>>>;
     once: z.ZodOptional<z.ZodBoolean>;
@@ -1875,6 +1898,9 @@ export declare const ScenarioDef: z.ZodObject<{
             localeAct: z.ZodOptional<z.ZodEnum<{
                 relief: "relief";
                 review: "review";
+                "property-surge": "property-surge";
+                "task-force": "task-force";
+                priority: "priority";
             }>>;
             tariff: z.ZodOptional<z.ZodObject<{
                 sector: z.ZodString;
@@ -2403,6 +2429,11 @@ export declare const ScenarioPack: z.ZodObject<{
                 "fiscal-crisis": "fiscal-crisis";
                 "energy-shortage": "energy-shortage";
                 "housing-crunch": "housing-crunch";
+                cyberattack: "cyberattack";
+                "work-stoppage": "work-stoppage";
+                "bank-failure": "bank-failure";
+                "mass-casualty-attack": "mass-casualty-attack";
+                "wrongful-detention": "wrongful-detention";
             }>>;
         }, z.core.$strip>, z.ZodObject<{
             kind: z.ZodLiteral<"coalition">;
@@ -2618,6 +2649,11 @@ export declare const ScenarioPack: z.ZodObject<{
                 "fiscal-crisis": "fiscal-crisis";
                 "energy-shortage": "energy-shortage";
                 "housing-crunch": "housing-crunch";
+                cyberattack: "cyberattack";
+                "work-stoppage": "work-stoppage";
+                "bank-failure": "bank-failure";
+                "mass-casualty-attack": "mass-casualty-attack";
+                "wrongful-detention": "wrongful-detention";
             }>>;
             confidence: z.ZodOptional<z.ZodEnum<{
                 low: "low";
@@ -2766,6 +2802,11 @@ export declare const ScenarioPack: z.ZodObject<{
                 "fiscal-crisis": "fiscal-crisis";
                 "energy-shortage": "energy-shortage";
                 "housing-crunch": "housing-crunch";
+                cyberattack: "cyberattack";
+                "work-stoppage": "work-stoppage";
+                "bank-failure": "bank-failure";
+                "mass-casualty-attack": "mass-casualty-attack";
+                "wrongful-detention": "wrongful-detention";
             }>>;
         }, z.core.$strip>>>;
         once: z.ZodOptional<z.ZodBoolean>;
@@ -3199,6 +3240,9 @@ export declare const ScenarioPack: z.ZodObject<{
                 localeAct: z.ZodOptional<z.ZodEnum<{
                     relief: "relief";
                     review: "review";
+                    "property-surge": "property-surge";
+                    "task-force": "task-force";
+                    priority: "priority";
                 }>>;
                 tariff: z.ZodOptional<z.ZodObject<{
                     sector: z.ZodString;

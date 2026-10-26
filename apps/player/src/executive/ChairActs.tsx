@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { appointActing, appointmentPool, dismissMinister, institutionDef, projectDismissal, selectNominationForOffice, selectPerson, type Campaign } from "@admin/engine";
 import { actingShortlist, appointmentDesk, costLines, deskPlan, type OfficeFile, type ShortlistOption } from "@admin/player-core";
 import type { PersonId, RoleId } from "@admin/world";
-import { Badge, Button, Column, LegalCitation, Row, Surface, Text } from "@admin/ui";
+import { Tag, Button, Column, LegalCitation, Row, Surface, Text } from "@admin/ui";
 import { ChoiceList } from "@admin/ui/forms";
 import { ResultRow, ResultsList, Waiting } from "@admin/ui/review";
 import { BandSteps } from "@admin/ui/dossier";
@@ -114,14 +114,14 @@ function Acting({ campaign, file, acts }: { readonly campaign: Campaign; readonl
             icon="subjectPerson"
             selected={option.id === selected}
             onPress={() => setSelected(option.id)}
-            pressLabel={`Pick ${option.label}`}
+            pressLabel={option.label}
             {...(option.unavailable ? { locked: { word: "Locked" }, below: <Text variant="caption" tone="warning">{`Not available right now. ${option.unavailable}`}</Text> } : option.id === selected ? { below: <ActingTerms shortlist={shortlist} picked={option} /> } : {})}
           />
         ))}
       </ResultsList>
       <Surface level="raised" pad="md" role="status" aria-live="polite">
         <Column gap="sm">
-          <Text variant="caption" tone="secondary">{!picked ? "Pick a name to see how they would fill in, then name them." : picked.unavailable ? `Not available right now. ${picked.unavailable}` : `${picked.label} starts filling in today. An acting head can sign for the office but doesn't have the full authority of a confirmed one.`}</Text>
+          <Text variant="caption" tone="secondary">{!picked ? "No one is named yet." : picked.unavailable ? `Not available right now. ${picked.unavailable}` : `${picked.label} starts filling in today. An acting head can sign for the office but doesn't have the full authority of a confirmed one.`}</Text>
           <Row>
             <Button kind="primary" icon="review" disabled={closed || acts.busy} onPress={() => picked?.person && authorize(picked.person, picked.label)}>
               Name them acting head
@@ -137,9 +137,9 @@ function Candidate({ candidate }: { readonly candidate: ReturnType<typeof appoin
   return (
     <Column gap="xs">
       <Row gap="xs" wrap>
-        <Badge status="outline">{`Fit: ${candidate.fit}`}</Badge>
-        <Badge status={candidate.vote.yeas > candidate.vote.nays ? "success" : "warning"}>{`Likely Senate vote ${candidate.vote.yeas}–${candidate.vote.nays}`}</Badge>
-        {candidate.crossesAisle ? <Badge status="info">From the other party</Badge> : null}
+        <Tag tone="outline">{`Fit: ${candidate.fit}`}</Tag>
+        <Tag tone={candidate.vote.yeas > candidate.vote.nays ? "success" : "warning"}>{`Likely Senate vote ${candidate.vote.yeas}–${candidate.vote.nays}`}</Tag>
+        {candidate.crossesAisle ? <Tag tone="info">From the other party</Tag> : null}
       </Row>
       {candidate.readings.map((reading) => (
         <BandSteps key={reading.attribute} label={reading.label} lit={reading.band + 1} word={reading.word} tone={stanceTone(reading.stance)} />

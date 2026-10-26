@@ -1,6 +1,6 @@
 import type { Campaign } from "@admin/engine";
 import { digestView, digestWeeks, formatDate, formatSignedPoints, place, spanWords, stopWords, type DigestKpi, type DigestView, type StateMove } from "@admin/player-core";
-import { CardGrid, Column, Empty, Icon, Meter, Page, Pressable, ReadingFrame, Row, Section, Text } from "@admin/ui";
+import { CardGrid, Column, Empty, Icon, Meter, Page, Pressable, Reading, ReadingFrame, Row, Section, Text } from "@admin/ui";
 import { useCampaignState } from "../../device/hooks";
 import { BackButton } from "../../shell/BackButton";
 import { go } from "../../shell/navigate";
@@ -8,9 +8,6 @@ import { beforeKey } from "../before-key";
 import { WhileTimeRan } from "../Clocks";
 import { ActGroups, WireGroups } from "./Groups";
 import { WeekBars } from "./WeekBars";
-
-const TONE = { up: "success", down: "danger", flat: "secondary" } as const;
-const ARROW = { up: "▲", down: "▼", flat: "▬" } as const;
 
 /** One reading across the week: where it closed on its own scale, a tick where the week opened, and the words for the move. */
 function KpiMeter({ kpi }: { readonly kpi: DigestKpi }) {
@@ -23,12 +20,10 @@ function KpiMeter({ kpi }: { readonly kpi: DigestKpi }) {
     );
   }
   return (
-    <Pressable role="link" aria-label={`${kpi.label}, ${kpi.text}. Open its history`} href={kpi.href} onPress={() => go(kpi.href)} borderRadius="card" padding="xs">
-      <Column gap="2xs" flexGrow={1}>
-        <Meter label={kpi.label} value={kpi.afterFraction} figure={kpi.afterText} tone={kpi.direction === "down" ? "danger" : "accent"} marks={[{ id: "open", label: `Week opened at ${kpi.beforeText}`, at: kpi.beforeFraction, kind: "historical" }]} />
-        <Text variant="caption" weight="strong" tone={TONE[kpi.direction]}>{`${ARROW[kpi.direction]} ${kpi.text}, from ${kpi.beforeText}`}</Text>
-      </Column>
-    </Pressable>
+    <Column gap="xs" flexGrow={1}>
+      <Reading name={kpi.label} value={kpi.afterText} delta={{ text: kpi.text, direction: kpi.direction, better: "up" }} period={`from ${kpi.beforeText}`} href={kpi.href} onPress={() => go(kpi.href)} />
+      <Meter label={kpi.label} value={kpi.afterFraction} figure={kpi.afterText} tone={kpi.direction === "down" ? "danger" : "accent"} marks={[{ id: "open", label: `Week opened at ${kpi.beforeText}`, at: kpi.beforeFraction, kind: "historical" }]} />
+    </Column>
   );
 }
 
@@ -82,10 +77,10 @@ function Report({ view }: { readonly view: DigestView }) {
       <Section id="readings" icon="graph" title="Readings at the week's close" helper={digest.scrolledOut ? "This week's figures are older than the weekly record. Its entries and the wire are below." : "Where each reading closed, and where the week opened."}>
         {digest.scrolledOut ? null : <Readings view={view} />}
       </Section>
-      <Section id="states" icon="flag" title="Where approval moved" helper="The states that rose and fell most, in points of approval. Press a state to see why.">
+      <Section id="states" icon="flag" title="Where approval moved" helper="The states that rose and fell most, in points of approval.">
         <States view={view} />
       </Section>
-      <Section id="acts" icon="decision" title="What you did" helper={`${digest.acts.length} recorded ${digest.acts.length === 1 ? "act" : "acts"}. Press one to open its Record entry.`}>
+      <Section id="acts" icon="decision" title="What you did" helper={`${digest.acts.length} recorded ${digest.acts.length === 1 ? "act" : "acts"}.`}>
         <ActGroups groups={view.acts} empty="You took no recorded act this week." />
       </Section>
       <Section id="world" icon="world" title="What the world did" helper={`${digest.world.length} recorded ${digest.world.length === 1 ? "entry" : "entries"}.`}>
@@ -108,12 +103,12 @@ export function DigestScreen({ campaign, week, onWeek }: { readonly campaign: Ca
   const sentence = brief ? `Time moved ${spanWords(brief)}. ${stopWords(brief)}` : "";
   const eyebrow = view ? `Week ${view.digest.week} · ${formatDate(view.digest.from)} to ${formatDate(view.digest.to)}` : "Briefing history";
   return (
-    <Page icon="notificationStack" eyebrow={eyebrow} title="Briefing history" lede="Each week that has closed, with what moved, what you did and what the world did.">
+    <Page icon="notificationStack" eyebrow={eyebrow} title="Briefing history" lede={weeks.length === 0 ? "No week has closed yet." : `${weeks.length} ${weeks.length === 1 ? "week has" : "weeks have"} closed.`}>
       <Row><BackButton parent={place.brief()} parentLabel="Brief" /></Row>
       {view?.latest || !view ? <WhileTimeRan campaign={campaign} brief={brief} sentence={sentence} /> : null}
       {view ? (
         <>
-          <Section id="weeks" icon="schedule" title="Pick a week" helper="Weeks are numbered from the start of your term.">
+          <Section id="weeks" icon="schedule" title="Closed weeks" helper="Weeks are numbered from the start of your term.">
             <WeekBars view={view} onPick={onWeek} />
           </Section>
           <Report view={view} />
@@ -122,7 +117,7 @@ export function DigestScreen({ campaign, week, onWeek }: { readonly campaign: Ca
         <Empty
           icon="emptyRecord"
           title={weeks.length === 0 ? (brief ? "This week is still open" : "No week has closed yet") : "That week is not in the record"}
-          detail={weeks.length === 0 ? (brief ? "A weekly briefing is recorded when a week closes. Until then, this page shows the run you just made." : "A weekly briefing is recorded as each week closes. Press Continue in the top bar, and the first week will be here.") : "Pick one of the weeks that has closed."}
+          detail={weeks.length === 0 ? (brief ? "A weekly briefing is recorded when a week closes. Until then, this page shows the run you just made." : "A weekly briefing is recorded as each week closes. No week has closed yet.") : "Every week that has closed, by its number."}
           {...(weeks.length > 0 ? { action: { label: "Open the latest week", icon: "return" as const, onPress: () => onWeek(weeks[0]!.week) } } : {})}
         />
       )}

@@ -107,10 +107,11 @@ describe("authored-field consumers", () => {
     // Pinned rather than bounded: a field may only join these lists by a
     // deliberate edit here, which is the point — the debt cannot grow quietly.
     // `medianAge` and `literacy` were credited to two rate laws that never
-    // existed, so they are owed again, honestly.
+    // existed, so they are owed again, honestly. `topPartners` lost its last
+    // engine reader when ties and observer exposure moved to the lane's size.
     it("owes a consumer for exactly the NationStats fields recorded as owed", () => {
         const owed = STAT_CONSUMERS.filter((c) => "owedBy" in c).map((c) => c.path).sort();
-        expect(owed).toEqual(["demography.literacy", "demography.medianAge"]);
+        expect(owed).toEqual(["demography.literacy", "demography.medianAge", "trade.topPartners"]);
     });
     // Outside NationStats: the stored industrial-mobilization band nothing reads;
     // the authored affiliation badge no generated person carries; and every

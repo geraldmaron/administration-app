@@ -1,5 +1,5 @@
 import { View } from "@tamagui/core";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { Column, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
 import { initialsVariant } from "../review/Voice";
@@ -101,14 +101,14 @@ const STAFFING = {
 export function StaffingBadge({ staffing }: { readonly staffing: Staffing }) {
   const look = STAFFING[staffing];
   return (
-    <Badge status={look.status} icon={look.icon}>
+    <Tag tone={look.status} icon={look.icon}>
       {look.label}
-    </Badge>
+    </Tag>
   );
 }
 
-/** Initials in a disc: the stand-in for a face until the portrait renderer is ported. */
-export function Monogram({ name, size = 48, muted }: { readonly name: string; readonly size?: number; readonly muted?: boolean }) {
+/** Initials in a disc or rounded square: the stand-in for a face where a person has no drawn face. */
+export function Monogram({ name, size = 48, muted, square }: { readonly name: string; readonly size?: number; readonly muted?: boolean; readonly square?: boolean }) {
   const initials = name
     .split(/\s+/)
     .filter(Boolean)
@@ -116,7 +116,7 @@ export function Monogram({ name, size = 48, muted }: { readonly name: string; re
     .filter((char) => /[A-Z]/.test(char));
   const mark = initials.length > 1 ? `${initials[0]}${initials.at(-1)}` : (initials[0] ?? "?");
   return (
-    <View width={size} height={size} borderRadius="pill" backgroundColor={muted ? "backgroundStrong" : "infoFill"} borderWidth={1} borderColor={muted ? "borderColor" : "goldRule"} alignItems="center" justifyContent="center" aria-hidden>
+    <View width={size} height={size} borderRadius={square ? "control" : "pill"} backgroundColor={muted ? "backgroundStrong" : "infoFill"} borderWidth={1} borderColor={muted ? "borderColor" : "goldRule"} alignItems="center" justifyContent="center" aria-hidden>
       <Text variant={initialsVariant(size)} tone={muted ? "tertiary" : "info"}>
         {mark}
       </Text>

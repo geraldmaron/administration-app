@@ -32,6 +32,7 @@ import { markedFlags } from "./marked-flags.js";
 import type { DecisionStamp } from "./willingness.js";
 import { INCIDENT_TAG } from "./article-incidents.js";
 import { stateAnswered } from "./obligations.js";
+import { missionAttention } from "./locale-missions.js";
 import { responseLoadPacket, responseMitigation } from "./response.js";
 import {
   claimOnsetSlots,
@@ -108,6 +109,16 @@ const ANSWERED_BY: Readonly<Record<ConditionKind, readonly PolicyDomain[]>> = {
   "fiscal-crisis": ["fiscal"],
   "energy-shortage": ["industry", "fiscal"],
   "housing-crunch": ["fiscal", "civil"],
+  // The home events: an intrusion is the security services and the industrial
+  // regulators who hold the networks; a strike is labor policy; a failed bank is
+  // the purse and its regulators; a mass killing is the police power and the
+  // services that care for the wounded; an American held abroad is worked by
+  // the national-security side of the government.
+  cyberattack: ["security", "industry"],
+  "work-stoppage": ["industry"],
+  "bank-failure": ["fiscal"],
+  "mass-casualty-attack": ["security", "civil"],
+  "wrongful-detention": ["security"],
 };
 
 // How long a signed order still reads as the government working this
@@ -215,7 +226,8 @@ export function conditionAttention(campaign: Campaign, condition: NationConditio
   const since = attentionWindowStart(campaign.turn);
   const ordered = campaign.orders.some((record) => record.turn < campaign.turn && record.turn >= since);
   const program = programAttention(campaign, condition.kind);
-  return ordered ? Math.max(UNTARGETED_ORDER_ATTENTION, program) : program;
+  // A federal mission in the state is worked on this file too, as far as it reaches.
+  return Math.max(missionAttention(campaign, condition), ordered ? Math.max(UNTARGETED_ORDER_ATTENTION, program) : program);
 }
 
 export function conditionRecoveryRate(attention: number): number {

@@ -5,8 +5,10 @@
  */
 import { describe, expect, it } from "vitest";
 import { foundedForBalance } from "./balance-harness.js";
-import { commodityShocks, RESERVE_RELEASE_SHARE } from "./commodity-shocks.js";
-import { issueFuelWaiver, projectFuelWaiver, projectReserveRelease, releaseStrategicReserve, RELEASE_DRAW } from "./commodity-levers.js";
+import { commodityShocks, RESERVE_RELEASE_SHARE, reserveReleasing } from "./commodity-shocks.js";
+import { issueFuelWaiver, LIMITED_DRAWDOWN, LIMITED_RELEASE_SHARE, projectFuelWaiver, projectLimitedRelease, projectReserveRelease, releaseLimitedReserve, releaseStrategicReserve, RELEASE_DRAW, SPR_OPENING_BARRELS } from "./commodity-levers.js";
+import { emptyMarkets } from "./markets.js";
+import { withWeeksElapsed } from "./__fixtures__/campaign.js";
 import { openConflict } from "./conflicts.js";
 import { apply } from "./effects.js";
 import { selectPumpPrice } from "./household-prices.js";
@@ -42,5 +44,46 @@ describe("the emergency fuel waiver", () => {
         const waived = apply(SHOCKED, result.packet);
         expect(selectPumpPrice(waived)).toBeLessThan(selectPumpPrice(SHOCKED));
         expect(projectFuelWaiver(waived).ok).toBe(false);
+    });
+});
+describe("the limited drawdown (42 U.S.C. §6241(h))", () => {
+    const withFill = (campaign, fill) => ({ ...campaign, markets: { ...campaign.markets, reserve: { fill } } });
+    const marketsOn = (campaign) => ({ ...campaign, markets: campaign.markets ?? emptyMarkets() });
+    const shocked = marketsOn(SHOCKED);
+    it("is refused where no supply is being lost", () => {
+        expect(projectLimitedRelease(marketsOn(CALM)).ok).toBe(false);
+    });
+    it("adds 30 million barrels over 60 days as a smaller release than a full drawdown", () => {
+        const result = releaseLimitedReserve(shocked);
+        if (!result.ok)
+            throw new Error(result.reason);
+        const released = apply(shocked, result.packet);
+        const release = commodityShocks(released, "crude").find((shock) => shock.kind === "release");
+        expect(release?.loss).toBeCloseTo(-LIMITED_RELEASE_SHARE, 12);
+        expect(LIMITED_RELEASE_SHARE).toBeLessThan(RESERVE_RELEASE_SHARE);
+        expect(released.markets.reserve.fill * SPR_OPENING_BARRELS).toBeCloseTo(SPR_OPENING_BARRELS - LIMITED_DRAWDOWN.barrels, -6);
+        expect(projectLimitedRelease(released).ok).toBe(false);
+    });
+    it("allows one limited drawdown for each shortage, however the weeks pass", () => {
+        const result = releaseLimitedReserve(shocked);
+        if (!result.ok)
+            throw new Error(result.reason);
+        const later = withWeeksElapsed(apply(shocked, result.packet), 10);
+        expect(reserveReleasing(later)).toBe(false);
+        expect(projectLimitedRelease(later).ok).toBe(false);
+    });
+    it("never takes the reserve below 252.4 million barrels", () => {
+        const low = withFill(shocked, (LIMITED_DRAWDOWN.floor + LIMITED_DRAWDOWN.barrels - 1) / SPR_OPENING_BARRELS);
+        expect(projectLimitedRelease(low).ok).toBe(false);
+    });
+    it("earns nothing on a war, a drawdown and a peace: no receipts, and the reserve stays drawn", () => {
+        const result = releaseLimitedReserve(shocked);
+        if (!result.ok)
+            throw new Error(result.reason);
+        expect(result.packet.effects.some((effect) => effect.kind === "metric")).toBe(false);
+        const peace = withWeeksElapsed({ ...apply(shocked, result.packet), conflicts: {} }, 10);
+        expect(peace.player.metrics.treasury).toBe(shocked.player.metrics.treasury);
+        expect(peace.markets.reserve.fill).toBeLessThan(1);
+        expect(projectLimitedRelease(peace).ok).toBe(false);
     });
 });

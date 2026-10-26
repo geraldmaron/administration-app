@@ -5,7 +5,7 @@ import { Column, Meter, ReadingFrame, Row, Text } from "@admin/ui";
 import { ChoiceList, Field, Slider } from "@admin/ui/forms";
 import { withLeader, type FoundingDraft } from "../draft";
 import { PartyMark } from "../glyphs";
-import { Commits, Reading, StageGrid } from "../parts";
+import { Commits, TitledReading, StageGrid } from "../parts";
 
 type Update = (change: (draft: FoundingDraft) => FoundingDraft) => void;
 
@@ -88,14 +88,14 @@ export function PoliticsStage({ draft, update }: { readonly draft: FoundingDraft
         </>
       }
       side={
-        <Reading icon="graph" title="How firm your views are">
+        <TitledReading icon="graph" title="How firm your views are">
           <ReadingFrame title="How far your beliefs are from the middle" unit="From the middle, 0, to the far end, 100%" legend={[{ id: "conviction", kind: "swatch", label: "How far from the middle", ink: "accent", figure: convictionWord(conviction) }]} help={{ meaning: "The filled part of the bar is how far your three beliefs, put together, are from the middle of the political spectrum. The word is Flexible under 20%, Committed to 45%, Strong beliefs to 70%, and Hard-liner above that." }}>
             <Meter label="Distance from the middle" value={conviction} figure={convictionWord(conviction)} />
           </ReadingFrame>
           <Text variant="caption" tone="secondary">
             This puts your three beliefs together and shows how far they are from the middle.
           </Text>
-        </Reading>
+        </TitledReading>
       }
     />
   );

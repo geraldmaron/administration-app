@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import { CARRIED_CONFLICTS } from "./carried-conflicts.js";
 import { CHOKEPOINT_FLOWS } from "./chokepoint-flows.js";
 import { CHOKEPOINT_CARGO } from "./chokepoint-cargo.js";
+import { CHOKEPOINT_ORIGINS } from "./chokepoint-origins.js";
+import { NATION_OIL_GAS } from "./nation-oil-gas.js";
 import { COMMODITY_PRODUCERS } from "./commodity-producers.js";
 import { DEBT_REBASE, applyDebtRebase } from "./debt-rebase.js";
 import { PRICE_ANCHORS } from "./price-anchors.js";
@@ -47,6 +49,8 @@ const TABLES = [
   { file: "commodity-producers", rows: COMMODITY_PRODUCERS, header: ["commodity", "metric", "nation", "share", "source", "opened"] },
   { file: "chokepoint-flows", rows: CHOKEPOINT_FLOWS, header: ["chokepoint", "commodity", "littoral", "share", "bypass", "basis", "source", "opened"] },
   { file: "chokepoint-cargo", rows: CHOKEPOINT_CARGO, header: ["chokepoint", "commodity", "destination", "mbd", "period", "source", "opened"] },
+  { file: "chokepoint-origins", rows: CHOKEPOINT_ORIGINS, header: ["chokepoint", "commodity", "origin", "mbd", "period", "source", "opened"] },
+  { file: "nation-oil-gas", rows: NATION_OIL_GAS, header: ["nation", "oil_kbd", "oil_year", "gas_bcm", "gas_year", "crude_kbd", "crude_year", "source", "opened"] },
   { file: "us-hulls", rows: US_HULLS, header: ["unit_type", "hull", "name", "class", "source", "opened"] },
   { file: "price-anchors", rows: PRICE_ANCHORS, header: ["commodity", "series", "period", "value", "unit", "kind", "source", "opened"] },
   { file: "price-shares", rows: PRICE_SHARES, header: ["reading", "component", "share", "series", "period", "source", "opened"] },

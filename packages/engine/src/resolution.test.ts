@@ -8,6 +8,7 @@ import { apply } from "./effects.js";
 import { foreignSurveillanceExposed, INSTRUMENT_IDS, RUNG_LEVELS } from "./instruments.js";
 import { projectAction, resolveAction, type ResolutionRequest } from "./resolution.js";
 import { projectRipples, rippleContribution } from "./resolution-ripples.js";
+import { relationshipAnchor } from "./relationships.js";
 import type { EffectPacket } from "./effects.js";
 import type { RngStreams } from "./rng.js";
 import { buildCampaign, nationA, nationB } from "./__fixtures__/campaign.js";
@@ -400,10 +401,26 @@ describe("risk", () => {
   });
 });
 
+/** The pair stood at its standing reading, where one act's objection is charged at its full magnitude. */
+function atStanding(campaign: Campaign, from: NationId, to: NationId): Campaign {
+  const key = relationshipKey(from, to);
+  const edge = campaign.relationships[key]!;
+  return { ...campaign, relationships: { ...campaign.relationships, [key]: { ...edge, trust: relationshipAnchor(campaign, edge)!.trust } } };
+}
+
 describe("ripples", () => {
   it("moves the recipient and its neighbors in opposite directions for a strike and relief", () => {
     const base = boardWithThirdParties();
-    const campaign: Campaign = { ...base, relationships: { ...base.relationships,
+    // Relief answers a need, so the recipient is living through a flood.
+    const flood = { id: `condition:flood:${TARGET}:0`, nation: nid(TARGET), kind: "flood" as const, scope: "region" as const, severity: 0.5, startedTurn: 0, status: "active" as const, beats: [] };
+    // Each neighbor starts where it stands with the actor: approval only closes
+    // the distance to a ceiling above that, so a neighbor already well above it
+    // has no further warmth to give for somebody else's shipment.
+    const settled = Object.fromEntries([nid("ALY"), nid("BLC"), nid("PTR")].map((third) => {
+      const edge = base.relationships[relationshipKey(third, ACTOR)]!;
+      return [relationshipKey(third, ACTOR), { ...edge, trust: relationshipAnchor(base, edge)!.trust }];
+    }));
+    const campaign: Campaign = { ...base, conditions: { ...base.conditions, [flood.id]: flood }, relationships: { ...base.relationships, ...settled,
       [relationshipKey(TARGET, ACTOR)]: rel(TARGET, ACTOR, { trust: 0.5 }),
     } };
     const strike = landRung(campaign, nid(ACTOR), nid(TARGET), "military", 4, streamsFor("trust-strike"));
@@ -435,7 +452,9 @@ describe("ripples", () => {
     });
     const action: ResolutionRequest = { actor: nid("ALY"), target: TARGET, instrument: "military", rung: 4 };
     const target = base.nations[TARGET]!.base;
-    expect(projectRipples(forKind("trade"), action, target, 1, "Allyland").find((ripple) => ripple.nation === ACTOR)).toBeUndefined();
+    // Under a trade treaty the actor still minds a strike on a partner it
+    // trades with, but as a trading partner, never as an ally.
+    expect(projectRipples(forKind("trade"), action, target, 1, "Allyland").find((ripple) => ripple.nation === ACTOR)?.relation).not.toBe("ally");
     expect(projectRipples(forKind("alliance"), action, target, 1, "Allyland").find((ripple) => ripple.nation === ACTOR)?.relation).toBe("ally");
   });
   it("reaches the target's ally, bloc peer, and trade partner", () => {
@@ -469,9 +488,9 @@ describe("ripples", () => {
     const partner = byNation.get(nid("BLC"));
     expect(partner?.relation).toBe("bloc-partner");
     expect(partner!.magnitude).toBeGreaterThan(byNation.get(nid("ALY"))!.magnitude);
-    const effect = rippleContribution(campaign, request("military", 5), projected.projection.ripples).effects
+    const effect = rippleContribution(atStanding(campaign, nid("BLC"), ACTOR), request("military", 5), projected.projection.ripples).effects
       .find((entry) => entry.kind === "relationship" && entry.from === nid("BLC") && entry.to === ACTOR);
-    expect(effect?.kind === "relationship" ? effect.deltas?.trust : undefined).toBe(-partner!.magnitude);
+    expect(effect?.kind === "relationship" ? effect.deltas?.trust : undefined).toBeCloseTo(-partner!.magnitude, 12);
   });
 
   it("does not call separate or economic memberships one defense compact", () => {
@@ -488,9 +507,9 @@ describe("ripples", () => {
     const third = projected.projection.ripples.find((r) => r.nation === nid("BLC"));
     expect(third?.relation).toBe("bloc-peer");
     expect(third?.reason).toContain("European Union");
-    const effect = rippleContribution(campaign, request("military", 5), projected.projection.ripples).effects
+    const effect = rippleContribution(atStanding(campaign, nid("BLC"), ACTOR), request("military", 5), projected.projection.ripples).effects
       .find((entry) => entry.kind === "relationship" && entry.from === nid("BLC") && entry.to === ACTOR);
-    expect(effect?.kind === "relationship" ? effect.deltas?.trust : undefined).toBe(-third!.magnitude);
+    expect(effect?.kind === "relationship" ? effect.deltas?.trust : undefined).toBeCloseTo(-third!.magnitude, 12);
   });
 
   it("reaches the actor's own institutions once the move is coercive enough", () => {

@@ -79,7 +79,14 @@ export declare function selectInstitutionLedBy(campaign: Campaign, person: Perso
 export declare const FOR_CAUSE_POLITICIZATION = 0.15;
 /** A stated cause is not one act. Malfeasance bends the office harder than inefficiency. */
 export declare const REMOVAL_POLITICIZATION: Readonly<Record<string, number>>;
-/** What this removal writes onto politicization. An at-will departure writes nothing. */
+/**
+ * Removing the head of a commission built to sit apart from the President is
+ * lawful at will after Trump v. Slaughter, and still reads as bending the
+ * body: the price is the political one, smaller than a removal a statute
+ * protected against.
+ */
+export declare const INDEPENDENT_AT_WILL_POLITICIZATION = 0.1;
+/** What this removal writes onto politicization. An ordinary at-will departure writes nothing. */
 export declare function removalPoliticization(forCause: boolean, cause?: string): number;
 export type OfficerResult = {
     readonly ok: true;
@@ -100,7 +107,9 @@ export type OfficerResult = {
  *
  * What the office may be removed *for* is the catalog's, not this function's:
  * an at-will office goes on the president's word, a for-cause office needs a
- * stated cause, and a term-protected one cannot be emptied at all. That is why
+ * stated cause unless its protection is contested (then the removal goes
+ * through and is recorded as a legal exposure), and a term-protected one
+ * cannot be emptied at all. That is why
  * relieving a Chair of the Federal Reserve is a different kind of act from
  * replacing the Administrator of FEMA, and the difference is read off the same
  * table the confirmation path reads.

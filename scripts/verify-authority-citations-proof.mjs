@@ -33,8 +33,12 @@ export const resolveAuthorityText = (text) => known(text);
 `;
 }
 
-function engineSource({ orders, refusal }) {
+function engineSource({ orders, refusal, missions, acts, courtOrders }) {
+  const exported = (name, value) => (value === undefined ? "" : `export const ${name} = ${JSON.stringify(value)};\n`);
   return `export const EXECUTIVE_ORDERS = ${JSON.stringify(orders)};
+${exported("LOCALE_MISSION_ORDERS", missions)}${exported("LOCALE_ACTS", acts)}${exported("COURT_ORDER_KINDS", courtOrders)}
+const MISSIONS = ${JSON.stringify(missions ?? [])};
+export const localeActAuthority = (act) => act.authority ?? MISSIONS.find((order) => order.id === act.orderId)?.authority;
 export const DIRECTIVE_KIND_WEIGHT = { investigation: 1 };
 export const INSTITUTION_IDS = ["INST-A", "INST-B"];
 export const institutionDef = (id) => ({ id });
@@ -43,7 +47,18 @@ export const directiveRefusal = (def) => (def.id === "INST-A" ? { authority: ${J
 }
 
 const GOOD_ORDER = { id: "order-asset-seizure", authority: { cite: "50 U.S.C. §1702(a)(1)(B)", name: "IEEPA" } };
-const CLEAN = { records: [GOOD_RECORD], orders: [GOOD_ORDER], refusal: "50 U.S.C. §1702" };
+const GOOD_MISSION = { id: "order-mission", authority: { cite: "50 U.S.C. §1702", name: "IEEPA" } };
+const GOOD_ACTS = [
+  { id: "act-signs", orderId: "order-mission", coercion: { kind: "agents" } },
+  { id: "act-cites", predicate: "request", authority: { cite: "50 U.S.C. §1702(a)", name: "IEEPA" } },
+  { id: "act-plain" },
+];
+const GOOD_COURT_ORDERS = { "search-warrant": { kind: "search-warrant", authority: { cite: "50 U.S.C. §1702", name: "IEEPA" } } };
+const CLEAN = {
+  records: [GOOD_RECORD], orders: [GOOD_ORDER], refusal: "50 U.S.C. §1702",
+  missions: [GOOD_MISSION], acts: GOOD_ACTS, courtOrders: GOOD_COURT_ORDERS,
+};
+const UNKNOWN_LAW = { cite: "99 U.S.C. §1", name: "Nothing" };
 
 const PLANTS = [
   ["an order citing a law the registry lacks", { ...CLEAN, orders: [{ id: "order-x", authority: { cite: "99 U.S.C. §1", name: "Nothing" } }] }],
@@ -54,6 +69,15 @@ const PLANTS = [
   ["a record linking to an unlisted host", { ...CLEAN, records: [{ ...GOOD_RECORD, sourceUrl: "https://example.com/ieepa" }] }],
   ["two records with one id", { ...CLEAN, records: [GOOD_RECORD, GOOD_RECORD] }],
   ["a record stating no limit", { ...CLEAN, records: [{ ...GOOD_RECORD, limits: [] }] }],
+  ["a mission order citing a law the registry lacks", { ...CLEAN, missions: [{ id: "order-mission", authority: UNKNOWN_LAW }] }],
+  ["a mission order with no authority", { ...CLEAN, missions: [GOOD_MISSION, { id: "order-bare-mission" }] }],
+  ["an act of force citing no law", { ...CLEAN, acts: [...GOOD_ACTS, { id: "act-force", coercion: { kind: "troops" } }] }],
+  ["an act waiting on a predicate citing no law", { ...CLEAN, acts: [...GOOD_ACTS, { id: "act-gated", predicate: "proclaimed" }] }],
+  ["a locale act citing a law the registry lacks", { ...CLEAN, acts: [...GOOD_ACTS, { id: "act-unknown", authority: UNKNOWN_LAW }] }],
+  ["a court order citing a law the registry lacks", { ...CLEAN, courtOrders: { "title-iii-order": { kind: "title-iii-order", authority: UNKNOWN_LAW } } }],
+  ["a court order citing no law", { ...CLEAN, courtOrders: { "fisa-order": { kind: "fisa-order" } } }],
+  ["an engine that no longer exports its mission orders", { ...CLEAN, missions: undefined }],
+  ["an engine that no longer exports its court orders", { ...CLEAN, courtOrders: undefined }],
 ];
 
 function passes(args) {

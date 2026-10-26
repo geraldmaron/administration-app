@@ -43,7 +43,7 @@ export function applyTrade(state, effect) {
     if (effect.lift) {
         const existing = measures[effect.lift];
         if (existing && existing.liftedTurn === undefined) {
-            measures = { ...measures, [effect.lift]: { ...existing, liftedTurn: state.turn } };
+            measures = { ...measures, [effect.lift]: { ...existing, liftedTurn: state.turn, liftedDate: state.calendar } };
         }
     }
     if (effect.expect && effect.chance !== undefined && willRetaliate(effect.expect, effect.chance)) {

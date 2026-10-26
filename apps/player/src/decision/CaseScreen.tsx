@@ -1,10 +1,10 @@
 import type { Campaign, CaseDefault } from "@admin/engine";
 import { CASE_TRAY_DISPOSITIONS, caseDetail, commitCaseDisposition, formatDate, place, type CaseDetailViewModel, type FamilyEntry } from "@admin/player-core";
-import { Badge, Button, Column, EntityLink, Page, Row, Section, Text } from "@admin/ui";
+import { Button, Column, EntityLink, Page, Row, Section, Tag, Text } from "@admin/ui";
 import { BackButton } from "../shell/BackButton";
 import { useAuthorize } from "../review/use-authorize";
 import { FactGrid } from "@admin/ui/record";
-import { Deadline, History, OpenEnded, Problem, go } from "./parts";
+import { ClockReading, History, OpenEnded, Problem, go } from "./parts";
 import { ResultPage } from "./ResultPage";
 
 const LAPSE_WORDS: Readonly<Record<CaseDefault["kind"], string>> = {
@@ -16,7 +16,7 @@ const LAPSE_WORDS: Readonly<Record<CaseDefault["kind"], string>> = {
   escalated: "It comes back later as a bigger problem.",
 };
 
-const STANCE_BADGE = { adverse: "danger", caution: "warning" } as const;
+const STANCE_TONE = { adverse: "danger", caution: "warning" } as const;
 
 export type CaseDone = { readonly title: string; readonly date: string; readonly eventId?: string; readonly saveError?: string };
 
@@ -55,7 +55,7 @@ export function CaseReceipt({ campaign, done, here }: { readonly campaign: Campa
 
 function timeLeft(detail: CaseDetailViewModel) {
   const clock = detail.clock;
-  if (clock?.windowDays !== undefined && clock.daysRemaining !== undefined) return <Deadline clock={{ label: clock.dueLabel, window: clock.windowDays, left: clock.daysRemaining, unit: "day", ...(detail.dueDate ? { due: detail.dueDate } : {}) }} />;
+  if (clock?.windowDays !== undefined && clock.daysRemaining !== undefined) return <ClockReading clock={{ label: clock.dueLabel, window: clock.windowDays, left: clock.daysRemaining, unit: "day", ...(detail.dueDate ? { due: detail.dueDate } : {}) }} />;
   return <OpenEnded holds={false} note={`There's no deadline. It has waited ${detail.ageDays} ${detail.ageDays === 1 ? "day" : "days"}`} />;
 }
 
@@ -66,7 +66,7 @@ export function CaseScreen({ campaign, entry, onDone }: { readonly campaign: Cam
   return (
     <Page icon="pending" eyebrow={`Something you owe · ${detail.kindLabel} · ${detail.subject}`} title={detail.title}>
       <Row><BackButton parent={place.brief()} parentLabel="Brief" /></Row>
-      <Section icon="pending" title="What you owe" actions={<Badge status={detail.stance === "adverse" || detail.stance === "caution" ? STANCE_BADGE[detail.stance] : "outline"}>{detail.statusLabel}</Badge>}>
+      <Section icon="pending" title="What you owe" actions={<Tag tone={detail.stance === "adverse" || detail.stance === "caution" ? STANCE_TONE[detail.stance] : "outline"}>{detail.statusLabel}</Tag>}>
         <Text variant="body">{detail.reason}</Text>
         <FactGrid
           items={[
@@ -98,7 +98,7 @@ export function CaseScreen({ campaign, entry, onDone }: { readonly campaign: Cam
               </Button>
             </Row>
           ) : null}
-          <Text variant="caption" tone="secondary">Or you can answer without taking action:</Text>
+          <Text variant="caption" tone="secondary">Answers that take no action:</Text>
           <Tray campaign={campaign} detail={detail} onDone={onDone} />
         </Section>
       ) : null}

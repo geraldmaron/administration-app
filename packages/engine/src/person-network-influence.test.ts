@@ -12,8 +12,10 @@ import { issueLobbying } from "./lobbying.js";
 import { resolveDueLobbying } from "./lobbying-due.js";
 import { voteOn } from "./congress-votes.js";
 import { createSave, loadSave } from "./save.js";
+import { advanceUntilAttention } from "./advance.js";
+import { campaignTurnPhases } from "./turn-phases.js";
 
-const founded = foundedForBalance("observed-issue-coalition").campaign;
+const { campaign: founded, charter } = foundedForBalance("observed-issue-coalition");
 const bill: Bill = { id: "bill:outreach-test", act: "act-equal-protection", title: "Equal Protection Enforcement Act", status: "in-progress", sponsor: "administration", introducedTurn: 0, stage: "floor", passage: [] };
 const act = actOf(bill)!;
 const stance = signatureStance(act.domestic!);
@@ -76,43 +78,102 @@ describe("observed issue influence", () => {
   });
 
   it("uses directed recorded issue links, bounds cycles and duplicate paths, and stops at two hops", () => {
-    const base = withContacts([[source, a], [source, b], [a, b], [a, c], [b, c], [c, d], [d, e]]);
+    const base = withContacts([[source, a], [source, b], [a, b], [a, c], [b, c], [c, d], [d, e]], { ...campaign, congress: { ...campaign.congress, members: [] } });
     const result = propagateIssue(base, source, bill, "one-effort", 1);
     expect(result.every((response) => response.accepted)).toBe(true);
     expect(result.map((response) => response.to)).toEqual([a, b, c]);
     expect(new Set(result.map((response) => response.to)).size).toBe(result.length);
     expect(result.every((response) => response.depth <= 2)).toBe(true);
+    expect(result.find((response) => response.to === a)?.depth).toBe(1);
+    expect(result.find((response) => response.to === c)?.depth).toBe(2);
+    expect(result.find((response) => response.to === c)?.delta).toBeLessThan(result.find((response) => response.to === a)!.delta);
     expect(propagateIssue(base, e, bill, "reverse", 1)).toEqual([]);
     const unrelated = { ...base, congress: { ...base.congress, lobbying: base.congress.lobbying.map((record) => ({ ...record, cooperation: record.cooperation!.map((edge) => ({ ...edge, actId: "another-act" })) })) } };
     expect(propagateIssue(unrelated, source, bill, "wrong-issue", 1)).toEqual([]);
   });
 
   it("preserves independent principled refusal and does not spread through a refusal", () => {
-    const base = withContacts([[source, a], [a, b]]);
+    const base = withContacts([[source, a], [a, b]], { ...campaign, congress: { ...campaign.congress, members: [] } });
     const against: Campaign = { ...base, people: { ...base.people, [a]: { ...base.people[a]!, base: { ...base.people[a]!.base, ideology: { economicLeftRight: -ideology.economicLeftRight, authLibertarian: -ideology.authLibertarian, nationalistGlobalist: -ideology.nationalistGlobalist } } } } };
     const result = propagateIssue(against, source, bill, "principled-opposition", 1);
     expect(result).toHaveLength(1);
     expect(result[0]?.accepted).toBe(false);
     expect(result[0]?.delta).toBe(0);
-    const refused = answer(against, a);
+    const refused = answer({ ...against, congress: { ...against.congress, members: campaign.congress.members } }, a);
     expect(refused.resolved.packet.provenance?.decision?.question).toBe("issue-cooperation");
     expect(refused.resolved.packet.provenance?.decision?.acts).toBe(false);
     expect(refused.resolved.record.landed).toBe(false);
   });
 
-  it("separates formal reach from biography display caps, charisma and retained personal contacts", () => {
+  it("bounds connected reach independently of biography caps and charisma, and retains contacts after office", () => {
     const edges = members.slice(0, 10).map((target) => [source, target] as const);
     const base = withContacts(edges);
     expect(propagateIssue(base, source, bill, "leader", 1)).toHaveLength(8);
     const junior = withContacts(members.slice(1, 10).map((target) => [a, target] as const));
-    expect(propagateIssue(junior, a, bill, "junior", 1)).toHaveLength(2);
+    expect(propagateIssue(junior, a, bill, "junior", 1)).toHaveLength(issueReach(junior, a, bill));
+    expect(issueReach(junior, a, bill)).toBeGreaterThan(2);
     const former: Campaign = { ...base, congress: { ...base.congress, leadership: base.congress.leadership.filter((figure) => figure.person !== source), members: base.congress.members!.filter((member) => member.person !== source) } };
-    expect(issueReach(former, source, bill)).toBe(1);
+    expect(issueReach(former, source, bill)).toBeGreaterThan(0);
+    expect(issueReach(former, source, bill)).toBeLessThan(issueReach(base, source, bill));
     expect(knownPersonContacts(former)).toHaveLength(10);
     const deceased = { ...former, people: { ...former.people, [source]: { ...former.people[source]!, alive: false } } };
     expect(issueReach(deceased, source, bill)).toBe(0);
     const charismatic = { ...base, people: { ...base.people, [source]: { ...base.people[source]!, base: { ...base.people[source]!.base, traits: ["charismatic" as const] } } } };
     expect(propagateIssue(charismatic, source, bill, "leader", 1)).toEqual(propagateIssue(base, source, bill, "leader", 1));
+  });
+
+  it("reaches more colleagues with more standing ties under equal willingness", () => {
+    const seats = campaign.congress.members!.filter((member) => members.includes(member.person));
+    const home = seats[0]!.state;
+    const away = campaign.congress.members!.find((member) => member.state !== home)!.state;
+    const network = (sharedState: boolean): Campaign => ({ ...campaign, congress: { ...campaign.congress,
+      members: seats.map((member) => ({ ...member, party: "democrat", chamber: "house", state: sharedState || member.person === a ? home : away })), lobbying: [],
+    } });
+    const sparse = network(false);
+    const connected = network(true);
+    const low = propagateIssue(sparse, a, bill, "matched-willingness", 1);
+    const high = propagateIssue(connected, a, bill, "matched-willingness", 1);
+    expect(high.every((response) => response.accepted)).toBe(true);
+    expect(low.every((response) => response.accepted)).toBe(true);
+    expect(high.length).toBeGreaterThan(low.length);
+    expect(knownPersonContacts(connected)).toEqual([]);
+    console.log(`[hill-connectivity] sparse=${low.length}; connected=${high.length}; recorded=0`);
+    const reordered = { ...connected, congress: { ...connected.congress, members: [...connected.congress.members!].reverse() } };
+    expect(propagateIssue(reordered, a, bill, "matched-willingness", 1)).toEqual(high);
+  });
+
+  it("merges standing and recorded links once and excludes deceased recipients", () => {
+    const base = withContacts([[source, a], [source, b], [source, a]]);
+    const deceased = { ...base, people: { ...base.people, [b]: { ...base.people[b]!, alive: false } } };
+    const responses = propagateIssue(deceased, source, bill, "deduplicated", 1, [c]);
+    expect(responses.filter((response) => response.to === a)).toHaveLength(1);
+    expect(responses.some((response) => response.to === b || response.to === c)).toBe(false);
+    expect(new Set(responses.map((response) => response.to)).size).toBe(responses.length);
+  });
+
+  it("lets every standing recipient refuse without transmitting pressure", () => {
+    const opposed = { ...campaign, people: Object.fromEntries(Object.entries(campaign.people).map(([id, runtime]) => [id, {
+      ...runtime, base: { ...runtime.base, ideology: { economicLeftRight: -ideology.economicLeftRight, authLibertarian: -ideology.authLibertarian, nationalistGlobalist: -ideology.nationalistGlobalist } },
+    }])) };
+    const responses = propagateIssue(opposed, source, bill, "standing-refusal", 1);
+    expect(responses.length).toBeGreaterThan(0);
+    expect(responses.every((response) => !response.accepted && response.delta === 0 && response.depth === 1)).toBe(true);
+  });
+
+  it("brokers founding ties through the production day scheduler with identical save continuation", () => {
+    const { pending } = issue(campaign, a, source);
+    expect(knownPersonContacts(pending)).toEqual([]);
+    const options = { phases: campaignTurnPhases(charter, true), horizonDays: 3, matterSources: [] };
+    const advanced = advanceUntilAttention(pending, options);
+    const restored = advanceUntilAttention(loadSave(createSave(pending)), options);
+    expect(restored.campaign).toEqual(advanced.campaign);
+    const touched = Object.values(advanced.campaign.people).filter((person) => (person.issuePressure?.length ?? 0) > 0);
+    const direct = advanceUntilAttention(issue(campaign).pending, options);
+    const directlyTouched = Object.values(direct.campaign.people).filter((person) => (person.issuePressure?.length ?? 0) > 0);
+    expect(touched.length).toBeGreaterThan(directlyTouched.length);
+    const recipients = advanced.campaign.congress.lobbying.at(-1)!.cooperation!.map((edge) => edge.to);
+    expect(new Set(recipients).size).toBe(recipients.length);
+    console.log(`[hill-scheduler] direct=${directlyTouched.length}; founding brokerage=${touched.length}; save continuation identical`);
   });
 
   it("charges equivalent outreach budgets, rejects repeats, and waits for actual response dates", () => {

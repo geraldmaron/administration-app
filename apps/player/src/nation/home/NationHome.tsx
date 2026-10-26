@@ -93,13 +93,13 @@ export function NationHome({ campaign, search, onSearch }: Props) {
   };
   const readingLabel = STAGE_LENS_NAMES[tableLens(lens)];
   return (
-    <Page wide eyebrow="The country" icon="flag" title="Nation" lede={`${formatRatio(campaign.player.metrics.approval)} of Americans approve of you. Pick a state on the map to see how it feels about you and to act there.`} emblem={<Seal spec={sealFor("INST-STATES")} size={72} />}>
+    <Page wide eyebrow="The country" icon="flag" title="Nation" lede={`${formatRatio(campaign.player.metrics.approval)} of Americans approve of you.`} emblem={<Seal spec={sealFor("INST-STATES")} size={72} />}>
       <SectionNav label="Parts of the Nation page" items={sections(attentionCount(rows, overview))} {...(search.view ? { initial: VIEW_SECTION[search.view] } : {})} />
       <NationStage campaign={campaign} overview={overview} rows={rows} lens={lens} onLens={(next) => onSearch({ lens: next === "approval" ? undefined : next })} chosen={selection.members} {...(search.cause ? { cause: search.cause } : {})} onChoose={(state, additive) => commit(choose(selection, state, additive))} onMany={(ids) => commit(selectAll(selection, ids))} onCause={(cause) => commit(selection, cause)} onClear={() => commit(EMPTY_SELECTION)} onFocus={(focus) => { onSearch({ focus }); scrollToSection("nation-states"); }} marks={marks} />
       <Section id="nation-condition" icon="flag" title="How the country is doing" helper="The four numbers that sum up the country this week. Each change is since last week.">
         <ConditionStrip campaign={campaign} overview={overview} topline={book.topline} trends={book.trends} onCall={() => onSearch({ lens: "call" })} />
       </Section>
-      <Section id="nation-states" icon="graph" title="All states" helper="Every state from the map in one list you can sort and filter. Check one or more states to manage them in the panel beside the map.">
+      <Section id="nation-states" icon="graph" title="All states" helper="Every state on the map, one row each.">
         <StatesTable
           rows={rows}
           readingLabel={readingLabel}
@@ -117,7 +117,7 @@ export function NationHome({ campaign, search, onSearch }: Props) {
           onSort={(sort) => onSearch({ sort: sort.key === "name" ? undefined : sort.key, direction: sort.direction === "ascending" ? undefined : sort.direction })}
         />
       </Section>
-      <Section id="nation-conditions" icon="caution" title="Needs your attention" helper="Everything at home that is waiting on you. Pick a state's problem to see what you can do about it on the map above.">
+      <Section id="nation-conditions" icon="caution" title="Needs your attention" helper="Everything at home that is waiting on you.">
         <Attention campaign={campaign} overview={overview} rows={rows} onAct={actOn} />
       </Section>
       <Section id="nation-opinion" icon="ballot" title="Public opinion and groups" helper="What Americans think of you, why, and how different groups see you.">

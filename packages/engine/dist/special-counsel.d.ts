@@ -1,6 +1,6 @@
 import type { RoleId } from "@admin/world";
 import type { Campaign } from "./state.js";
-import type { Effect } from "./effects.js";
+import type { Effect, EffectPacket } from "./effects.js";
 import type { TurnPhase } from "./turn-loop.js";
 import type { OversightMatter } from "./oversight.js";
 /**
@@ -46,3 +46,31 @@ export type CounselPrice = {
     readonly reasoning: string;
 };
 export declare function projectCounselObstruction(campaign: Campaign, role: RoleId): CounselPrice | undefined;
+/** The causes 28 C.F.R. 600.7(d) lists for removing a special counsel. */
+export type CounselRemovalGround = "misconduct" | "dereliction-of-duty" | "incapacity" | "conflict-of-interest" | "policy-violation";
+export type CounselSupervision = {
+    readonly kind: "countermand";
+    readonly matterId: string;
+} | {
+    readonly kind: "remove";
+    readonly matterId: string;
+    readonly ground: CounselRemovalGround;
+};
+export type CounselSupervisionResult = {
+    readonly ok: true;
+    readonly packet: EffectPacket;
+} | {
+    readonly ok: false;
+    readonly reason: string;
+};
+/**
+ * Ask the Attorney General to supervise a sitting special counsel.
+ *
+ * Under 28 C.F.R. 600.7(b) the Attorney General may conclude a step should not
+ * be pursued, and under 600.7(d) alone may remove a counsel, for a listed
+ * cause. The President has neither power. What the President can do is ask, and
+ * the answer is the Attorney General's: the same legality weighing an order
+ * gets, without a draw. A request the Attorney General declines is recorded on
+ * the matter and costs nothing else, which is the protection's whole purpose.
+ */
+export declare function superviseSpecialCounsel(campaign: Campaign, request: CounselSupervision): CounselSupervisionResult;

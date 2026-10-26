@@ -41,3 +41,17 @@ describe("crude against the 2026 Hormuz closure", () => {
         expect(Math.abs(brent - APRIL) / APRIL).toBeLessThan(0.1);
     });
 });
+// EIA weekly Brent spot (RBRTE, weekly, release of 2026-10-21, opened
+// 2026-10-25): $71.36 the week of February 27, the week before the closure,
+// peaking at $124.61 the week of April 10. A weekly peak is compared with a
+// weekly peak, never with a monthly or annual average; the band is a quarter
+// of the causal change either side (METHODOLOGY).
+const WEEK_BEFORE = 71.36;
+const WEEKLY_PEAK = 124.61;
+describe("crude against the 2026 closure, week by week", () => {
+    it("peaks within a quarter of the weekly peak's rise when fed the sourced shut-ins", () => {
+        const peak = Math.max(...path(8));
+        const causal = WEEKLY_PEAK / WEEK_BEFORE - 1;
+        expect(Math.abs(peak - 1 - causal)).toBeLessThanOrEqual(0.25 * causal);
+    });
+});

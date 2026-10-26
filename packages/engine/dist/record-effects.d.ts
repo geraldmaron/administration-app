@@ -1,7 +1,7 @@
 import type { CourtCase, CourtProceeding, SolicitorGeneralEvent } from "./state-judiciary.js";
 import { type CausalId } from "./causality.js";
 import type { AccountCapRaise, Campaign, Commitment, FeedItem, FundingLapse, NationCondition, PendingRule, Pursuit } from "./state.js";
-import type { DeclaredEmergency, ExternalThreatEmergency } from "./state-emergency.js";
+import type { AuthorityClock, DeclaredEmergency, ExternalThreatEmergency } from "./state-emergency.js";
 import type { DecisionFraming } from "./press-framing.js";
 /**
  * What every one of these records carries so the causal graph can reach it.
@@ -33,6 +33,10 @@ export type EmergencyEffect = {
     readonly kind: "emergency";
     readonly set: DeclaredEmergency;
 };
+export type AuthorityClockEffect = {
+    readonly kind: "authorityClock";
+    readonly set: AuthorityClock;
+};
 export type ExternalEmergencyEffect = {
     readonly kind: "externalEmergency";
     readonly set: ExternalThreatEmergency;
@@ -41,6 +45,7 @@ export declare function applyCommitment(state: Campaign, effect: CommitmentEffec
 export declare function applyCondition(state: Campaign, effect: ConditionEffect): Campaign;
 export declare function applyPursuit(state: Campaign, effect: PursuitEffect): Campaign;
 export declare function applyEmergency(state: Campaign, effect: EmergencyEffect): Campaign;
+export declare function applyAuthorityClock(state: Campaign, effect: AuthorityClockEffect): Campaign;
 export declare function applyExternalEmergency(state: Campaign, effect: ExternalEmergencyEffect): Campaign;
 export type PendingRuleEffect = {
     readonly kind: "pendingRule";

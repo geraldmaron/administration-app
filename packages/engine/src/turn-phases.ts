@@ -12,7 +12,8 @@ import { intelligencePhase } from "./intelligence.js";
 import { warPowersReportPhase } from "./war-powers-report.js";
 import { nominationPhase } from "./nomination.js";
 import { judicialVacancyPhase } from "./judicial-vacancies.js";
-import { tradePhase } from "./trade.js";
+import { officeSuccessionPhase } from "./succession.js";
+import { tradePhase } from "./trade-phase.js";
 import { tariffFindingPhase } from "./tariff-orders.js";
 import { cabinetLoyaltyPhase } from "./loyalty.js";
 import { conditionPhase } from "./conditions.js";
@@ -277,6 +278,11 @@ export function campaignPhaseSequence(charter: Charter): readonly NamedTurnPhase
     // impeachment arc reads.
     { id: "electionPhase", run: electionPhase(charter) },
     { id: "governancePhase", run: governancePhase },
+    // On the week's last office day, because every death and seat change it
+    // applies is dated inside the week: run on any earlier day it would apply a
+    // death drawn for Saturday on Thursday. Before the foreign week, which
+    // seats a successor to any leader who died in office this week.
+    { id: "officeSuccessionPhase", run: officeSuccessionPhase },
     // A seat changes hands after its government has set this week's program,
     // so the new leader's offset first reaches the following week's decisions.
     { id: "foreignPoliticsPhase", run: foreignPoliticsPhase },

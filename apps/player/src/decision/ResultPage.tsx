@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Campaign } from "@admin/engine";
 import { metricFraction, place, type ReadingMove } from "@admin/player-core";
-import { Button, CardGrid, Column, Meter, Page, Pressable, ReadingFrame, Row, Text, type IconName } from "@admin/ui";
+import { Button, CardGrid, Column, Meter, Page, Reading, ReadingFrame, Row, Text, type IconName } from "@admin/ui";
 import { ResultView } from "@admin/ui/review";
 import { beforeKey } from "../brief/before-key";
 import { usePreferences } from "../device/hooks";
@@ -13,12 +13,10 @@ import { termDoor } from "../handbook/term-door";
 /** One reading's move on its own scale: the meter stands where it is now, with a tick where it stood before; the whole reading opens its history. */
 function MoveMeter({ move }: { readonly move: ReadingMove }) {
   return (
-    <Pressable role="link" aria-label={`${move.label}, ${move.text}. Open its history`} href={place.metric(move.key)} onPress={() => go(place.metric(move.key))} borderRadius="card" padding="xs">
-      <Column gap="2xs" flexGrow={1}>
-        <Meter label={move.label} value={metricFraction(move.key, move.after)} figure={move.afterText} tone={move.delta < 0 ? "danger" : "accent"} marks={[{ id: "before", label: `Before, ${move.beforeText}`, at: metricFraction(move.key, move.before), kind: "historical" }]} />
-        <Text variant="caption" weight="strong" tone={move.delta < 0 ? "danger" : "success"}>{`${move.text}, from ${move.beforeText}`}</Text>
-      </Column>
-    </Pressable>
+    <Column gap="xs" flexGrow={1}>
+      <Reading name={move.label} value={move.afterText} delta={{ text: move.text, direction: move.delta < 0 ? "down" : move.delta > 0 ? "up" : "flat", better: "up" }} period={`from ${move.beforeText}`} href={place.metric(move.key)} onPress={() => go(place.metric(move.key))} />
+      <Meter label={move.label} value={metricFraction(move.key, move.after)} figure={move.afterText} tone={move.delta < 0 ? "danger" : "accent"} marks={[{ id: "before", label: `Before, ${move.beforeText}`, at: metricFraction(move.key, move.before), kind: "historical" }]} />
+    </Column>
   );
 }
 

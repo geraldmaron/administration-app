@@ -1,4 +1,4 @@
-import type { NationId, PartyBeliefs, Person, RoleId, StateId } from "@admin/world";
+import type { NationId, PartyBeliefs, Person, PersonId, RoleId, StateId } from "@admin/world";
 import { STATE_IDS } from "@admin/world";
 import type { DomesticSignature } from "./domestic-signature.js";
 import { BELIEF_WEIGHT, partyReading } from "./party-beliefs.js";
@@ -472,6 +472,16 @@ export type SeatedLeadership = {
  * rather than a failure — it is what a campaign saved before these seats existed
  * genuinely contains, and every count still carries without them.
  */
+/**
+ * Whether a post's holder still sits in its chamber. A senator unseated at a
+ * special election keeps no gavel and no leadership post; with no roster on
+ * file (an old save, or the founding before members are seated) the post is
+ * read as held.
+ */
+export function holdsSeat(congress: Congress, person: PersonId, chamber: Chamber): boolean {
+  return !congress.members || congress.members.some((member) => member.person === person && member.chamber === chamber && !member.vacancy);
+}
+
 export function seatLeadership(
   congress: Congress,
   people: Readonly<Record<string, PersonRuntime>>,
@@ -494,7 +504,7 @@ export function seatLeadership(
   for (const post of HILL_POSTS) {
     const caucus = caucusFor(congress, post.chamber, post.side);
     const incumbent = congress.leadership.find((figure) => figure.post === post.id);
-    if (incumbent && incumbent.caucus === caucus && people[incumbent.person as string]?.alive === true) {
+    if (incumbent && incumbent.caucus === caucus && people[incumbent.person as string]?.alive === true && holdsSeat(congress, incumbent.person, post.chamber)) {
       held.add(incumbent.person as string);
       seated.push({ ...incumbent, caucus, influence: post.influence });
       continue;

@@ -1,6 +1,6 @@
 # Adversarial verification of AUDIT.md (approval model), 2026-10-12
 
-Read-only. Engine `dist/` at `d56b9a97a`, no engine/world/content source modified in the tree. One probe process at a time; no build, workspace tests, verify sweep or Playwright. The verifier's own probes are in the session scratchpad (`$V = /private/tmp/claude-501/-Users-geralddagher-Developer-Projects-admin-app/de978b3c-7bf2-4843-8068-0f815599efba/scratchpad/verify/`): `vprobe.mjs` (actual election `voteShare`, vote drivers, decisionHistory, fiscalSpace, standing/readiness clamps, polarization-zero week), `strain.mjs`, `turnout-max.mjs`, `fiscal.mjs`. All cited web sources were fetched and read in this session (`$V/web/`).
+Read-only. Engine `dist/` at `d56b9a97a`, no engine/world/content source modified in the tree. One probe process at a time; no build, workspace tests, verify sweep or Playwright. The verifier's own probes are in the session scratchpad (`$V = <scratch path>`): `vprobe.mjs` (actual election `voteShare`, vote drivers, decisionHistory, fiscalSpace, standing/readiness clamps, polarization-zero week), `strain.mjs`, `turnout-max.mjs`, `fiscal.mjs`. All cited web sources were fetched and read in this session (`$V/web/`).
 
 ## Bottom line
 

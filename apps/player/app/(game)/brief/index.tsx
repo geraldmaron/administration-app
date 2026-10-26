@@ -3,6 +3,7 @@ import { briefMatters, place, selectPending, spanWords, stopWords } from "@admin
 import { Button, Column, Page, Row, Section, useMedia } from "@admin/ui";
 import { useCampaignState, usePreferences } from "../../../src/device/hooks";
 import { RunningClocks, WhileTimeRan } from "../../../src/brief/Clocks";
+import { Dispatches } from "../../../src/brief/Dispatches";
 import { MatterQueue, PriorityCard, QuietDay } from "../../../src/brief/Matters";
 import { NationalCondition } from "../../../src/brief/NationalCondition";
 import { InTerm } from "../../../src/shell/InTerm";
@@ -21,7 +22,8 @@ function BriefScreen({ campaign }: { readonly campaign: Campaign }) {
   const holding = matters.filter((matter) => matter.holds).length;
   const brief = state.status === "ready" && state.brief && !state.briefAcknowledged ? state.brief : undefined;
   const sentence = said || (brief ? `Time moved ${spanWords(brief)}. ${stopWords(brief)}` : "");
-  const lede = matters.length === 0 ? "Nothing needs you right now." : `${matters.length} ${matters.length === 1 ? "thing needs" : "things need"} you${holding > 0 ? `, and ${holding} ${holding === 1 ? "stops" : "stop"} the clock until you act` : ""}.`;
+  const waiting = matters.length - holding;
+  const lede = matters.length === 0 ? "Nothing needs you right now." : holding === 0 ? `${matters.length} ${matters.length === 1 ? "matter waits" : "matters wait"}; none holds time.` : `${holding} ${holding === 1 ? "matter holds" : "matters hold"} time${waiting > 0 ? `; ${waiting} ${waiting === 1 ? "waits" : "wait"}` : ""}.`;
   const othersWaiting = selectPending(campaign).some((item) => item.waitingOn !== undefined);
   const side = (
     <Column gap="lg" width={media.desktop ? 360 : "100%"}>
@@ -34,7 +36,7 @@ function BriefScreen({ campaign }: { readonly campaign: Campaign }) {
       <WhileTimeRan campaign={campaign} brief={brief} sentence={sentence} />
       <Row gap="xl" top wrap={!media.desktop}>
         <Column gap="lg" flex={1} minWidth={0}>
-          <Section id="desk" icon="brief" title="On your desk" helper="The most pressing matter first. Press a matter to answer it.">
+          <Section id="desk" icon="brief" title="On your desk" helper="The most pressing matter first, then the rest in the order they need you.">
             {lead ? <PriorityCard campaign={campaign} matter={lead} /> : <QuietDay campaign={campaign} />}
             <MatterQueue campaign={campaign} matters={rest} />
           </Section>
@@ -42,6 +44,7 @@ function BriefScreen({ campaign }: { readonly campaign: Campaign }) {
         {media.desktop ? side : null}
       </Row>
       <NationalCondition campaign={campaign} />
+      <Dispatches campaign={campaign} />
       {media.desktop ? null : side}
     </Page>
   );

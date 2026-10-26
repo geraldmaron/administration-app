@@ -3,9 +3,10 @@ import { buildCampaign } from "./__fixtures__/campaign.js";
 import { NATIONAL_OUTLETS, PRESS_OUTLETS } from "./press.js";
 import { salientWeights } from "./opinion.js";
 import { opinionTargets } from "./opinion-causes.js";
-import { SCANDAL_BREAK_INTENSITY, SCANDAL_DEVELOP_TURNS, SCANDAL_GRAVITY, SCANDAL_INTEGRITY_WEIGHT, SCANDAL_LEGS_BAR, pressClimate, scandalFeedItems, scandalPhase, selectLiveScandals, selectScandalBoard, selectScandalForInquiry, selectScandalIntegrityCharge, selectScandals, } from "./press-scandal.js";
+import { SCANDAL_BREAK_INTENSITY, SCANDAL_DEVELOP_TURNS, SCANDAL_GRAVITY, SCANDAL_INTEGRITY_WEIGHT, SCANDAL_LEGS_BAR, SCANDAL_LIVE_FLAG, pressClimate, scandalLegsFlag, scandalFeedItems, scandalPhase, selectLiveScandals, selectScandalBoard, selectScandalForInquiry, selectScandalIntegrityCharge, selectScandals, } from "./press-scandal.js";
 import { flagMarker } from "./marked-flags.js";
 import { apply } from "./effects.js";
+import { runPhase } from "./turn-loop.js";
 // All four outlet ids, driven to one uniform disposition so a test can put
 // the whole corps on one side of the story rather than reasoning about each
 // masthead's authored lean.
@@ -22,10 +23,13 @@ const withFlags = (campaign, flags) => ({
     ...campaign,
     player: { ...campaign.player, flags: { ...campaign.player.flags, ...flags } },
 });
+/** A scandal flag as a writer that stamps leaves it: set, with the week it was set. */
+const withStampedFlags = (campaign, flags) => withFlags(campaign, Object.fromEntries(flags.flatMap((flag) => [[flag, true], [flagMarker(flag, campaign.turn), true]])));
+const BROKEN_FLAG_CHARGE = round3(SCANDAL_BREAK_INTENSITY * SCANDAL_GRAVITY.flagged * SCANDAL_INTEGRITY_WEIGHT);
 describe("legacy flagged scandals", () => {
     it("charges exactly what the old bare-count formula charged", () => {
-        const campaign = withFlags(buildCampaign(), { "scandal:missing-funds": true, "scandal:bribery": true });
-        expect(selectScandalIntegrityCharge(campaign)).toBe(2 * SCANDAL_INTEGRITY_WEIGHT);
+        const campaign = withStampedFlags(buildCampaign(), ["scandal:missing-funds", "scandal:bribery"]);
+        expect(selectScandalIntegrityCharge(campaign)).toBe(2 * BROKEN_FLAG_CHARGE);
         expect(SCANDAL_INTEGRITY_WEIGHT).toBe(0.25);
     });
     it("charges nothing once the flag clears", () => {
@@ -34,14 +38,15 @@ describe("legacy flagged scandals", () => {
         expect(selectLiveScandals(campaign)).toHaveLength(0);
     });
     it("preserves opinionTargets().integrity exactly against the pre-lifecycle formula", () => {
-        const withOne = withFlags(buildCampaign(), { "scandal:leaked-memo": true });
+        const withOne = withStampedFlags(buildCampaign(), ["scandal:leaked-memo"]);
         const withNone = buildCampaign();
         const one = opinionTargets(withOne).integrity;
         const none = opinionTargets(withNone).integrity;
         // The old formula was `0.75 − scandals × 0.25 + coverage`; coverage is
         // identical between the two campaigns (nothing else differs), so the gap
-        // between zero and one live scandal must be exactly one weight.
-        expect(round3(none - one)).toBe(0.25);
+        // between zero and one live scandal must be exactly one story's charge on
+        // the week it breaks.
+        expect(round3(none - one)).toBe(BROKEN_FLAG_CHARGE);
     });
 });
 describe("a leak that comes back with the administration's name on it", () => {
@@ -97,7 +102,7 @@ describe("a leak that comes back with the administration's name on it", () => {
 describe("the integrity charge, combined", () => {
     it("caps each scandal's contribution at the old flat weight, never above it", () => {
         let campaign = withLeak(buildCampaign(), 1, false);
-        campaign = withFlags(campaign, { "scandal:unrelated-matter": true });
+        campaign = withStampedFlags(campaign, ["scandal:unrelated-matter"]);
         campaign = { ...campaign, press: hostileCorps(campaign) };
         const atPeak = { ...campaign, turn: 1 + SCANDAL_DEVELOP_TURNS };
         const scandals = selectLiveScandals(atPeak);
@@ -248,12 +253,40 @@ describe("an authored scandal flag that carries its own week", () => {
         expect(selectScandals({ ...base, turn: 5 })[0].stage).toBe("developing");
         expect(selectScandals({ ...base, turn: 40 })[0].stage).toBe("resolved");
     });
-    it("still stands at full weight when nothing recorded when it was set", () => {
+    it("is not a story until the engine has dated it", () => {
         const undated = withFlags(buildCampaign(), { "scandal:the-donors": true });
-        const scandal = selectScandals(undated)[0];
-        expect(scandal.brokeTurn).toBe(-1);
-        expect(scandal.intensity).toBe(1);
-        expect(selectScandalIntegrityCharge(undated)).toBe(SCANDAL_INTEGRITY_WEIGHT);
+        expect(selectScandals(undated)).toHaveLength(0);
+        expect(selectScandalIntegrityCharge(undated)).toBe(0);
+    });
+    it("is dated once, the first week the engine sees it, keeping its identity", () => {
+        const undated = withFlags({ ...buildCampaign(), turn: 12 }, { "scandal:the-donors": true });
+        const stamped = runPhase(undated, scandalPhase, undated.turn);
+        expect(stamped.player.flags[flagMarker("scandal:the-donors", 12)]).toBe(true);
+        expect(selectScandals(stamped)[0]).toMatchObject({ id: "scandal:flag:scandal:the-donors", brokeTurn: 12, stage: "breaking" });
+        const later = runPhase({ ...stamped, turn: 20 }, scandalPhase, 20);
+        expect(Object.keys(later.player.flags).filter((key) => key.startsWith("flagset:scandal:the-donors:"))).toEqual([
+            flagMarker("scandal:the-donors", 12),
+        ]);
+    });
+    it("raises the live flag the same week it dates a story", () => {
+        const undated = withFlags({ ...buildCampaign(), turn: 12 }, { "scandal:the-donors": true });
+        const stamped = runPhase(undated, scandalPhase, 12);
+        expect(selectLiveScandals(stamped)).toHaveLength(1);
+        expect(stamped.player.flags[SCANDAL_LIVE_FLAG]).toBe(true);
+    });
+    it("stops costing integrity once its dated story has run its course", () => {
+        const undated = withFlags({ ...buildCampaign(), turn: 12 }, { "scandal:the-donors": true });
+        let campaign = runPhase(undated, scandalPhase, 12);
+        campaign = { ...campaign, turn: 12 + 104 };
+        expect(selectLiveScandals(campaign)).toHaveLength(0);
+        expect(selectScandalIntegrityCharge(campaign)).toBe(0);
+    });
+    it("carries an answer or a closing filed against the story across the dating", () => {
+        const id = "scandal:flag:scandal:the-donors";
+        const undated = withFlags({ ...buildCampaign(), turn: 12 }, { "scandal:the-donors": true, [scandalLegsFlag(id)]: true });
+        const stamped = runPhase(undated, scandalPhase, undated.turn);
+        expect(selectScandals(stamped)[0].id).toBe(id);
+        expect(selectScandals({ ...stamped, turn: 14 })[0].stage).toBe("developing");
     });
 });
 describe("the board a room draws", () => {
@@ -268,10 +301,6 @@ describe("the board a room draws", () => {
         expect(row.keptAliveBy.hostility).toBeGreaterThan(0);
         expect(row.integrityCharge).toBe(round3(row.scandal.intensity * SCANDAL_INTEGRITY_WEIGHT));
     });
-    it("claims no age for a story with no date on it", () => {
-        const undated = withFlags(buildCampaign(), { "scandal:the-donors": true });
-        expect(selectScandalBoard(undated)[0].weeksRunning).toBeUndefined();
-    });
     it("empties once the story is closed for good", () => {
         const dead = running(40);
         const packets = scandalPhase(dead);
@@ -285,7 +314,7 @@ function round3(value) {
 }
 describe("the desk that keeps a story alive", () => {
     it("is a national desk, however hostile a regional paper turns", () => {
-        const base = withFlags(buildCampaign(), { "scandal:missing-funds": true });
+        const base = withStampedFlags(buildCampaign(), ["scandal:missing-funds"]);
         const regional = PRESS_OUTLETS.find((outlet) => outlet.region !== undefined);
         const dispositions = { ...dispositionsAt(0.45), [regional.id]: 0 };
         const campaign = { ...base, press: { ...base.press, standing: 0.4, dispositions } };

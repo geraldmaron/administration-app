@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { sealFor, type InquiryPipeline, type InquiryRow } from "@admin/player-core";
-import { Badge, Button, Card, CardGrid, CardLink, Column, Meter, ReadingFrame, Row, Seal, Sheet, Surface, Text, useMedia, View } from "@admin/ui";
+import { Tag, Button, Card, CardGrid, CardLink, Column, Meter, ReadingFrame, Row, Seal, Sheet, Surface, Text, useMedia, View } from "@admin/ui";
 import { termDoor } from "../handbook/term-door";
 import { Note } from "../congress/parts";
 import { CitedLawHelp } from "../law/LawHelp";
@@ -22,14 +22,14 @@ function Source({ row }: { readonly row: InquiryRow }) {
   );
 }
 
-function MatterCard({ row, onOpen }: { readonly row: InquiryRow; readonly onOpen: () => void }) {
+function InquiryCard({ row, onOpen }: { readonly row: InquiryRow; readonly onOpen: () => void }) {
   return (
     <CardLink role="button" onPress={onOpen} label={`Open the record: ${row.subject}`} pad="sm" radius="chip" gap="xs" {...(row.obstructed ? { accentEdge: "danger" as const } : {})}>
       <Source row={row} />
       <Text variant="label">{row.subject}</Text>
       <Row gap="xs" wrap>
-        <Badge status={row.public ? "warning" : "outline"} icon={row.public ? "press" : "hidden"}>{row.public ? "Public" : "Not yet public"}</Badge>
-        {row.obstructed ? <Badge status="danger" icon="caution">Someone interfered with the inspector</Badge> : null}
+        <Tag tone={row.public ? "warning" : "outline"} icon={row.public ? "press" : "hidden"}>{row.public ? "Public" : "Not yet public"}</Tag>
+        {row.obstructed ? <Tag tone="danger" icon="caution">Someone interfered with the inspector</Tag> : null}
       </Row>
       <Text variant="caption" tone="tertiary">{row.nextMove ? `Next step · ${row.nextMove}` : `Opened · ${row.opened}`}</Text>
     </CardLink>
@@ -71,7 +71,7 @@ export function Inquiries({ pipeline, direction }: { readonly pipeline: InquiryP
             <Surface key={stage.stage} level="sunken" pad="sm" flex={1} minWidth={media.desktop ? 0 : 220}>
               <Column gap="xs">
                 <Row between><Text variant="eyebrow" tone="secondary">{stage.label}</Text><Text variant="label" tabular>{stage.matters.length}</Text></Row>
-                {stage.matters.map((row) => <MatterCard key={row.id} row={row} onOpen={() => setSelected(row)} />)}
+                {stage.matters.map((row) => <InquiryCard key={row.id} row={row} onOpen={() => setSelected(row)} />)}
               </Column>
             </Surface>
           ))}
@@ -81,7 +81,7 @@ export function Inquiries({ pipeline, direction }: { readonly pipeline: InquiryP
         {selected ? (
           <Column gap="sm">
             <Source row={selected} />
-            <Badge status="info" icon="review">{selected.stageWord}</Badge>
+            <Tag tone="info" icon="review">{selected.stageWord}</Tag>
             <Text variant="caption">Opened {selected.opened} · Next step {selected.nextMove ?? "not known"} · {selected.public ? "Public" : "Not yet public"}</Text>
             <Text variant="eyebrow" tone="secondary">Latest evidence</Text>
             <Text variant="body">{selected.latest}</Text>
@@ -93,7 +93,7 @@ export function Inquiries({ pipeline, direction }: { readonly pipeline: InquiryP
       <Sheet open={archive} onClose={() => setArchive(false)} title={`Closed ${words.noun}`} eyebrow="Archive" wide>
         {closed.map((row) => (
           <Column key={row.id} gap="2xs" paddingVertical="xs" borderBottomWidth={1} borderColor="borderColor">
-            <Row between gap="sm"><Text variant="label" flex={1}>{row.subject}</Text><Badge status="outline">{row.stageWord}</Badge></Row>
+            <Row between gap="sm"><Text variant="label" flex={1}>{row.subject}</Text><Tag tone="outline">{row.stageWord}</Tag></Row>
             <Text variant="caption" tone="secondary">{row.source} · Opened {row.opened}</Text>
             <Text variant="caption">{row.latest}</Text>
           </Column>

@@ -1,4 +1,5 @@
 import { addDays, compareDates, formatGameDate } from "./clock.js";
+import { authorityDeadline, authorityHasExpired } from "./emergency.js";
 import { elapsedDays } from "./pace.js";
 import { selectNation, selectRelationship } from "./state.js";
 import { TARIFF_STATUTES, } from "./tariff-statutes.js";
@@ -75,8 +76,13 @@ export function tariffStatuteStanding(campaign, statute, partner, sector) {
     const base = { statute, room, investigation: "not-needed" };
     const full = "These goods are already at the most this law allows.";
     if (statute === "s122") {
-        const holds = partnerRunsSurplus(campaign, partner);
-        return { ...base, available: holds && room > 0, reason: !holds ? `${nationName(campaign, partner)} buys more from us than it sells, so this law can't single it out.` : room > 0 ? `${nationName(campaign, partner)} sells us more than it buys, and the country runs a deficit.` : full };
+        const clock = section122Clock(campaign);
+        const expired = clock && authorityHasExpired(campaign, clock);
+        const holds = nationalPaymentsDeficit(campaign) && partnerRunsSurplus(campaign, partner);
+        return { ...base, available: holds && !expired && room > 0, reason: expired
+                ? "Section 122's 150 days for this payments episode have run out. Only Congress can extend it; changing countries, goods or proclamations does not restart the clock."
+                : !holds ? `${nationName(campaign, partner)} cannot be singled out without both a national deficit and a surplus in its trade with us.`
+                    : room > 0 ? `The national deficit predicate supports this measure through ${formatGameDate(clock ? authorityDeadline(campaign, clock) : addDays(campaign.calendar, TARIFF_STATUTES.s122.clockDays))}.` : full };
     }
     const holds = partnerDiscriminates(campaign, partner);
     return { ...base, available: holds && room > 0, reason: !holds ? `${nationName(campaign, partner)} has no tariff of its own on American goods to answer.` : room > 0 ? `${nationName(campaign, partner)} has its own tariff on American goods.` : full };
@@ -102,8 +108,11 @@ export function imposeTariff(campaign, statute, target, sectorId, rate) {
         return { ok: false, reason: standing.reason };
     if (rate > standing.room + 1e-9)
         return { ok: false, reason: `${law.name} allows at most ${Math.round(standing.room * 100)}% more on these goods.` };
-    const expires = law.clockDays === null ? undefined : addDays(campaign.calendar, law.clockDays);
-    const first = tariffPacket(campaign, target, sectorId, rate, statute, expires);
+    const clock = statute === "s122" ? section122Clock(campaign) ?? newSection122Clock(campaign) : undefined;
+    const expires = clock ? authorityDeadline(campaign, clock) : law.clockDays === null ? undefined : addDays(campaign.calendar, law.clockDays);
+    const priced = tariffPacket(campaign, target, sectorId, rate, statute, expires);
+    const first = priced.ok && clock ? { ...priced, packet: { ...priced.packet,
+            effects: [{ kind: "authorityClock", set: clock }, ...priced.packet.effects] } } : priced;
     if (!first.ok || law.reach === "one-country")
         return first;
     const others = suppliersOf(campaign, sectorId).map((edge) => edge.partner).filter((partner) => partner !== target);
@@ -205,21 +214,85 @@ function rulingHeadline(campaign, finding, found) {
     return found ? `${by} finds a surge of ${goods} imports is hurting American producers.` : `${by} finds imports of ${goods} aren't the main cause of the industry's harm.`;
 }
 /** Rule on every investigation whose finding is due. */
-export const tariffFindingPhase = (state) => Object.values(state.trade.findings ?? {})
-    .filter((finding) => !finding.outcome && compareDates(state.calendar, finding.dueDate) >= 0)
-    .sort((a, b) => a.id.localeCompare(b.id))
-    .map((finding) => {
-    const found = affirmative(state, finding);
-    const headline = rulingHeadline(state, finding, found);
-    return {
-        source: "simulate",
-        actor: "world",
-        turn: state.turn,
-        provenance: { origin: "scheduled", causeIds: finding.causedBy ? [finding.causedBy] : [], entities: finding.partner ? [finding.partner] : [], systems: ["trade"], effectiveDate: state.calendar },
-        narration: { summary: headline },
-        effects: [
-            { kind: "trade", finding: { ...finding, outcome: found ? "affirmative" : "negative", decidedDate: state.calendar } },
-            { kind: "feed", items: [{ turn: state.turn, kind: "press", visibility: "public", headline, date: state.calendar }] },
-        ],
-    };
-});
+export const tariffFindingPhase = (state) => [
+    ...paymentsRecoveryPackets(state),
+    ...Object.values(state.trade.findings ?? {})
+        .filter((finding) => !finding.outcome && compareDates(state.calendar, finding.dueDate) >= 0)
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map((finding) => {
+        const found = affirmative(state, finding);
+        const headline = rulingHeadline(state, finding, found);
+        return {
+            source: "simulate",
+            actor: "world",
+            turn: state.turn,
+            provenance: { origin: "scheduled", causeIds: finding.causedBy ? [finding.causedBy] : [], entities: finding.partner ? [finding.partner] : [], systems: ["trade"], effectiveDate: state.calendar },
+            narration: { summary: headline },
+            effects: [
+                { kind: "trade", finding: { ...finding, outcome: found ? "affirmative" : "negative", decidedDate: state.calendar } },
+                { kind: "feed", items: [{ turn: state.turn, kind: "press", visibility: "public", headline, date: state.calendar }] },
+            ],
+        };
+    }),
+];
+// Goods trade is the existing proxy; fiscal distress and bilateral tariff effects
+// are not evidence that the national payments predicate has ended.
+function nationalPaymentsDeficit(campaign) {
+    const trade = selectNation(campaign, campaign.founding.nation)?.stats.trade;
+    return trade !== undefined && trade.imports > trade.exports;
+}
+function section122Clock(campaign) {
+    const stored = Object.values(campaign.authorityClocks ?? {}).filter((clock) => clock.authority === "s122")
+        .sort((a, b) => compareDates(b.openedDate, a.openedDate) || b.id.localeCompare(a.id))[0];
+    if (stored)
+        return stored.recoveredDate ? undefined : stored;
+    // Legacy measures cannot prove an intervening recovery. Preserve the earliest
+    // recorded episode, including lifted measures, rather than inventing a reset.
+    const first = Object.values(campaign.trade.measures).filter((measure) => measure.origin === "us" && measure.statute === "s122")
+        .sort((a, b) => compareDates(a.imposedDate, b.imposedDate) || a.id.localeCompare(b.id))[0];
+    return first ? { id: `authority:s122:legacy:${first.id}`, authority: "s122", predicate: "national-payments-deficit",
+        openedDate: first.imposedDate, expiresDate: addDays(first.imposedDate, TARIFF_STATUTES.s122.clockDays),
+        ...(first.causedBy ? { causedBy: first.causedBy } : {}) } : undefined;
+}
+function newSection122Clock(campaign) {
+    const date = campaign.calendar;
+    const base = `authority:s122:${date.year}-${date.month}-${date.day}`;
+    let id = base;
+    let ordinal = 2;
+    while (campaign.authorityClocks?.[id])
+        id = `${base}:${ordinal++}`;
+    return { id, authority: "s122", predicate: "national-payments-deficit",
+        openedDate: date, expiresDate: addDays(date, TARIFF_STATUTES.s122.clockDays) };
+}
+function paymentsRecoveryPackets(campaign) {
+    const clock = section122Clock(campaign);
+    if (!clock || nationalPaymentsDeficit(campaign))
+        return [];
+    return [{ source: "simulate", actor: "world", turn: campaign.turn,
+            provenance: { origin: "scheduled", causeIds: clock.causedBy ? [clock.causedBy] : [], systems: ["trade"], effectiveDate: campaign.calendar },
+            narration: { summary: "The national deficit predicate for the Section 122 episode has ended." },
+            effects: [{ kind: "authorityClock", set: { ...clock, recoveredDate: campaign.calendar } }],
+        }];
+}
+export const tariffAuthorityPhase = (campaign) => {
+    const clocks = Object.values(campaign.authorityClocks ?? {}).filter((clock) => clock.authority === "s122")
+        .sort((a, b) => compareDates(b.openedDate, a.openedDate) || b.id.localeCompare(a.id));
+    const legacy = clocks.length === 0 ? section122Clock(campaign) : undefined;
+    const effects = Object.values(campaign.trade.measures).filter((measure) => measure.origin === "us" && measure.statute === "s122" && measure.liftedTurn === undefined)
+        .sort((a, b) => a.id.localeCompare(b.id)).flatMap((measure) => {
+        const clock = clocks.find((entry) => compareDates(entry.openedDate, measure.imposedDate) <= 0) ?? legacy;
+        if (!clock)
+            return [];
+        const expiresDate = authorityDeadline(campaign, clock);
+        if (measure.expiresDate && compareDates(measure.expiresDate, expiresDate) <= 0)
+            return [];
+        return [{ kind: "trade", measure: { ...measure, expiresDate } }];
+    });
+    if (effects.length === 0)
+        return [];
+    return [{ source: "simulate", actor: "world", turn: campaign.turn,
+            provenance: { origin: "scheduled", causeIds: [...new Set(Object.values(campaign.trade.measures)
+                        .filter((measure) => measure.statute === "s122").flatMap((measure) => measure.causedBy ? [measure.causedBy] : []))].sort(),
+                systems: ["trade"], effectiveDate: campaign.calendar },
+            narration: { summary: "Section 122 measures retain the deadline of their original payments episode." }, effects }];
+};

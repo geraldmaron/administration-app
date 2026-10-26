@@ -42,6 +42,20 @@ const AUTHORITY_MATRIX: readonly { readonly id: string; readonly subject?: Order
   { id: "order-relief-program", missing: /live disaster, documented governor request/ },
 ];
 
+
+// The fixture's nation is smaller than Michigan alone, and a governor's damage
+// estimate reads the nation's own scale (obligations.ts), so the relief chain
+// estimates on a country the size of the states it is made of; the packets it
+// files are then applied to the campaign under test unchanged.
+function atStateScale(campaign: Campaign): Campaign {
+  const states = Object.values(campaign.states);
+  const population = states.reduce((sum, state) => sum + state.population, 0);
+  const gdp = states.reduce((sum, state) => sum + state.base.grp, 0);
+  const home = campaign.nations[campaign.founding.nation]!;
+  const stats = { ...home.stats, demography: { ...home.stats.demography, population }, economy: { ...home.stats.economy, gdp, gdpPerCapita: gdp * 1_000_000 / population } };
+  return { ...campaign, nations: { ...campaign.nations, [campaign.founding.nation]: { ...home, stats } } };
+}
+
 describe("catalog authority matrix", () => {
   it("covers every order and refuses each family's missing or wrong predicate at the resolver", () => {
     const base = buildCampaign();
@@ -133,7 +147,7 @@ describe("disaster relief authority", () => {
       beats: [], state };
     const running = { ...base, conditions: { [condition.id]: condition } };
     expect(reliefOrderSubjects(running)).toHaveLength(0);
-    const requested = obligationPhase(running).reduce(apply, running);
+    const requested = obligationPhase(atStateScale(running)).reduce(apply, running);
     expect(reliefOrderSubjects(requested)).toHaveLength(0);
     const declaration = declareStaffordDisaster(requested, state);
     if (!declaration.ok) throw new Error(declaration.reason);

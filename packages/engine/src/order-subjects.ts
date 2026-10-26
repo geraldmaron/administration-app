@@ -4,12 +4,14 @@ import { selectActiveConflicts, selectCurrentLaws } from "./state.js";
 import { activeExternalEmergency, eligibleExternalThreats } from "./external-emergency.js";
 import { conditionFamily, type AcuteCondition } from "./condition-kinds.js";
 import { reliefSignature } from "./obligations.js";
-import { underDeclaredEmergency } from "./emergency.js";
+import { selectDeclaredEmergencies, underDeclaredEmergency } from "./emergency.js";
 import { campaignDay } from "./clock.js";
 import type { ExecutiveOrderRecord } from "./state-orders.js";
 import { energyLeasingOrderSubjects, regulatoryReviewOrderSubjects } from "./order-authority-subjects.js";
 import { blockableAccount } from "./blocked-assets.js";
 import { prospectiveOrderAuthority } from "./order-authority.js";
+import { isMissionOrder, missionOrderRefusal, type InsurrectionGround } from "./locale-missions.js";
+import type { LocaleActId } from "./locale-acts.js";
 export { energyLeasingOrderSubjects, regulatoryReviewOrderSubjects, leasePlanningArea, LEASE_PLANNING_AREAS } from "./order-authority-subjects.js";
 
 /** §2808(c)(2): this catalogue offers domestic emergency projects only (USD millions). */
@@ -48,7 +50,20 @@ export type OrderSubject =
   | { readonly kind: "state"; readonly state: StateId; readonly cause: AcuteCondition;
     readonly declarationId: string; readonly billId: string }
   | { readonly kind: "grant"; readonly billId: string }
-  | { readonly kind: "construction"; readonly sourceId: string; readonly declarationId: string };
+  | { readonly kind: "construction"; readonly sourceId: string; readonly declarationId: string }
+  /** A federal mission in one state; `mission` is the troop order's stated purpose, past which §1385 bars it. */
+  | { readonly kind: "locale-mission"; readonly state: StateId; readonly act: LocaleActId;
+    readonly ground?: InsurrectionGround; readonly mission?: string };
+
+/** One record per order, subject and week, so a re-signing the same week is refused rather than overwritten. */
+export function orderRecordId(orderId: string, turn: number, subject?: OrderSubject): string {
+  const target = subject?.kind === "foreign" || subject?.kind === "entry-class" ? subject.nation
+    : subject?.kind === "state" || subject?.kind === "locale-mission" ? subject.state
+    : subject?.kind === "grant" ? subject.billId : subject?.kind === "construction" ? subject.sourceId
+      : subject?.kind === "rule-review" ? subject.ruleId : subject?.kind === "lease-planning" ? subject.areaId : undefined;
+  const key = subject?.kind === "federal-site" ? subject.institutionId : target;
+  return key ? `${orderId}:${key}:${turn}` : `${orderId}:${turn}`;
+}
 
 /** A grant condition administers the program terms Congress enacted. */
 export function grantOrderSubjects(campaign: Campaign): readonly Extract<OrderSubject, { kind: "grant" }>[] {
@@ -62,9 +77,9 @@ export function grantOrderSubjects(campaign: Campaign): readonly Extract<OrderSu
 export function constructionOrderSubjects(campaign: Campaign): readonly Extract<OrderSubject, { kind: "construction" }>[] {
   const conflicts = new Set(selectActiveConflicts(campaign).filter((conflict) =>
     conflict.aggressor === campaign.founding.nation || conflict.defender === campaign.founding.nation).map((conflict) => conflict.id));
-  const declarations = Object.values(campaign.emergencies).filter((record) =>
-    record.scope.kind === "nation" && record.cause === "armed-conflict" && record.endedTurn === undefined && record.armedForcesConflictId &&
-    conflicts.has(record.armedForcesConflictId) && campaign.turn - record.renewedTurn < 52);
+  const declarations = selectDeclaredEmergencies(campaign).filter((record) =>
+    record.scope.kind === "nation" && record.cause === "armed-conflict" && record.armedForcesConflictId &&
+    conflicts.has(record.armedForcesConflictId));
   return (campaign.militaryConstructionProjects ?? []).filter((project) =>
     project.status === "active" && project.hostState).flatMap((project) =>
     declarations.filter((declaration) => constructionTransferAmount(campaign, project.id, declaration.id) > 0)
@@ -142,6 +157,7 @@ export function firstOrderSubject(campaign: Campaign, orderId: string): OrderSub
 
 /** The direct resolver and the desk use the same target-specific refusals. */
 export function orderSubjectRefusal(campaign: Campaign, orderId: string, subject?: OrderSubject): string | undefined {
+  if (isMissionOrder(orderId)) return missionOrderRefusal(campaign, orderId, subject);
   if (subject && ["order-price-controls", "order-clean-energy", "order-defense-production"].includes(orderId))
     return "an order that takes no separate target";
   if (orderId === "order-border-controls" && subject !== undefined && (subject.kind !== "ports-of-entry" || subject.scope !== "all-federal-ports"))

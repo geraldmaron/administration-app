@@ -5,6 +5,7 @@ import { type ActionProjection, type ResolutionRequest } from "./resolution.js";
 import { type RedLineCrossing } from "./red-lines.js";
 import { type DecisionStamp, type Term } from "./willingness.js";
 import { type EngagementRequest } from "./engagement.js";
+import { type ResponseIntent } from "./npc-response.js";
 export type NpcScoreTerms = {
     readonly agendaFit: number;
     readonly intentMatch: number;
@@ -17,6 +18,7 @@ export type NpcScoreTerms = {
     readonly salience: number;
     readonly redLine: number;
     readonly survival: number;
+    readonly response: number;
     readonly jitter: number;
 };
 export type NpcCandidate = {
@@ -31,6 +33,8 @@ export type NpcCandidate = {
      * sentence the world reads names the same promise the score was raised by.
      */
     readonly answering?: RedLineCrossing;
+    /** The act this move answers, where its score was raised by one: what the bulletin names it as answering. */
+    readonly responding?: ResponseIntent;
 };
 export type NpcRejection = {
     readonly request: ResolutionRequest;

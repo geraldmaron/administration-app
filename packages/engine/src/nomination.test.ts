@@ -4,6 +4,7 @@ import {
   campaignDay,
   nominationAge,
   nominationPhase,
+  outcomeHeadline,
   openNomination,
   selectNomination,
   selectPendingOnFloor,
@@ -15,8 +16,8 @@ import {
 } from "./nomination.js";
 import { selectActiveNominations, stageDuration, type NominationStage } from "./nomination-stages.js";
 import { selectPipelineReading } from "./nomination-reading.js";
-import { hasLegalCareer } from "./appointment-eligibility.js";
-import { selectCampaignClock } from "./clock.js";
+import { hasLegalCareer, seatRuleRefusal } from "./appointment-eligibility.js";
+import { campaignFoundingDate, selectCampaignClock } from "./clock.js";
 import { apply } from "./effects.js";
 import { INSTITUTION_CATALOG, officeInstitution } from "./institutions.js";
 import { removeOfficer } from "./career-incumbents.js";
@@ -81,6 +82,39 @@ function stageOf(campaign: Campaign): NominationStage {
   if (!nomination) throw new Error("no nomination");
   return nomination.stage;
 }
+
+describe("which chamber the wire names", () => {
+  const { campaign: founded } = foundedForBalance("succession-line", "democrat");
+  const nomination: Nomination = {
+    id: "OFF-VP:1",
+    office: "OFF-VP",
+    institution: "INST-OVP",
+    nominee: founded.vicePresident!,
+    stage: "vote",
+    stageEnteredDay: 1,
+    openedDay: 1,
+    controversies: [],
+    history: [],
+  };
+
+  it("counts a nominee's age from the founding, not from the age on their file", () => {
+    const young = { ...person, age: 34 };
+    const pinned = { ...founded, foundingDate: campaignFoundingDate(founded) };
+    expect(seatRuleRefusal(pinned, "OFF-VP", young)).toContain("is 34");
+    const later = { ...pinned, calendar: { ...founded.calendar, year: founded.calendar.year + 2 } };
+    expect(seatRuleRefusal(later, "OFF-VP", young)).toBeUndefined();
+  });
+
+  it("names the House when the House is the chamber that said no to a Vice President", () => {
+    const line = outcomeHeadline(founded, nomination, "rejected", "rejected in the House");
+    expect(line?.headline).toMatch(/^The House rejects .* for Vice President\.$/);
+  });
+
+  it("names the Senate for a floor defeat and Congress for a two-house confirmation", () => {
+    expect(outcomeHeadline(founded, nomination, "rejected", "rejected on the floor")?.headline).toMatch(/^The Senate rejects/);
+    expect(outcomeHeadline(founded, nomination, "confirmed")?.headline).toMatch(/^Congress confirms .* as Vice President\.$/);
+  });
+});
 
 describe("sending a name up", () => {
   it("opens a nomination in vetting, not in a vote", () => {

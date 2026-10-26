@@ -8,9 +8,10 @@ import { createSave, loadSave } from "./save.js";
 import { dispositionTarget } from "./congress.js";
 import { INSTITUTION_CATALOG } from "./institution-catalog.js";
 import { igRemovalNoticeTurns, INSPECTED_INSTITUTIONS, foundingOversight, isMatterOpen, matterRipensTurn, matterSource, oversightRipeningPhase, selectInspector, selectMatter, selectMattersFor, selectOpenMatters, selectOversightPressure, } from "./oversight.js";
-import { auditWarrant, fileInspectorRemovalNotice, inspectorGeneralPhase, projectInspectorRemoval, selectRemovableInspectors, } from "./inspectors-general.js";
+import { accountDefects, auditWarrant, conclusoryAccount, fileInspectorRemovalNotice, inspectorNoticeCost, inspectorGeneralPhase, projectInspectorRemoval, selectRemovableInspectors, } from "./inspectors-general.js";
 import { committeeForInstitution, committeeForOrderDomain, committeeInquiryPhase, committeeIsInvestigating, selectInquiriesFor, } from "./committee-inquiry.js";
 import { selectLiveScandals } from "./press-scandal.js";
+import { flagMarker } from "./marked-flags.js";
 import { COMMITTEE_IDS } from "./committees.js";
 const seed = makeCampaignSeed("oversight-seed");
 function foundedCampaign() {
@@ -143,7 +144,7 @@ describe("an audit the President cannot stop", () => {
 });
 describe("removing one", () => {
     it("takes thirty days in writing, and the office stays occupied until they run out", () => {
-        const filed = fileInspectorRemovalNotice(campaign, "INST-DOJ", "loss of confidence");
+        const filed = fileInspectorRemovalNotice(campaign, "INST-DOJ", conclusoryAccount("loss of confidence", "", campaign.turn));
         expect(filed.ok).toBe(true);
         if (!filed.ok)
             return;
@@ -160,12 +161,44 @@ describe("removing one", () => {
         expect(selectRemovableInspectors(emptied).map((one) => one.institution)).not.toContain("INST-DOJ");
     });
     it("refuses a notice with no reasons, and a second notice on the same office", () => {
-        expect(fileInspectorRemovalNotice(campaign, "INST-DOJ", "   ").ok).toBe(false);
-        const first = fileInspectorRemovalNotice(campaign, "INST-DOJ", "loss of confidence");
+        expect(fileInspectorRemovalNotice(campaign, "INST-DOJ", conclusoryAccount("   ", "", campaign.turn)).ok).toBe(false);
+        const first = fileInspectorRemovalNotice(campaign, "INST-DOJ", conclusoryAccount("loss of confidence", "", campaign.turn));
         if (!first.ok)
             throw new Error("the first notice should have been accepted");
         const noticed = apply(campaign, first.packet);
-        expect(fileInspectorRemovalNotice(noticed, "INST-DOJ", "again").ok).toBe(false);
+        expect(fileInspectorRemovalNotice(noticed, "INST-DOJ", conclusoryAccount("again", "", noticed.turn)).ok).toBe(false);
+    });
+    it("refuses a bare sentence, because a notice has to carry a ground and particulars", () => {
+        const bare = fileInspectorRemovalNotice(campaign, "INST-DOJ", "changing priorities");
+        expect(bare.ok).toBe(false);
+        if (!bare.ok)
+            expect(bare.reason).toContain("reasons");
+        expect(fileInspectorRemovalNotice(campaign, "INST-DOJ", { ground: "misconduct", particulars: [] }).ok).toBe(false);
+    });
+    it("files a notice whose cited record is the audit itself as deficient, and charges the Hill for it", () => {
+        const opened = runPhase(politicized(campaign, "INST-DOJ"), inspectorGeneralPhase);
+        const audit = selectMattersFor(opened, "INST-DOJ")[0];
+        const inspector = selectInspector(opened, "INST-DOJ");
+        const account = { ground: "misconduct", particulars: [{ matterId: audit.id, turn: opened.turn, statement: "The audit exceeded its scope." }] };
+        expect(accountDefects(opened, inspector, account)).toEqual(["protected-audit"]);
+        const filed = fileInspectorRemovalNotice(opened, "INST-DOJ", account);
+        if (!filed.ok)
+            throw new Error("a deficient notice is filed, not refused");
+        const after = apply(opened, filed.packet);
+        expect(selectInspector(after, "INST-DOJ").noticeDeficiencies).toEqual(["protected-audit"]);
+        expect(opened.congress.disposition - after.congress.disposition).toBeCloseTo(inspectorNoticeCost(true, true), 3);
+    });
+    it("treats a particular citing a record that exists, dated inside the tenure, under a specific ground as case-specific", () => {
+        const opened = runPhase(politicized(campaign, "INST-DOJ"), inspectorGeneralPhase);
+        const inspector = selectInspector(opened, "INST-DOJ");
+        const other = { ...selectMattersFor(opened, "INST-DOJ")[0], id: "matter:committee:CMTE-JUDICIARY:conduct", origin: { kind: "committee", committee: "CMTE-JUDICIARY" } };
+        const withRecord = { ...opened, oversight: { ...opened.oversight, matters: [...opened.oversight.matters, other] } };
+        const account = { ground: "misconduct", particulars: [{ matterId: other.id, turn: opened.turn, statement: "The record shows it." }] };
+        expect(accountDefects(withRecord, inspector, account)).toEqual([]);
+        const filed = fileInspectorRemovalNotice(withRecord, "INST-DOJ", account);
+        if (!filed.ok)
+            throw new Error("the notice should have been accepted");
+        expect(selectInspector(apply(withRecord, filed.packet), "INST-DOJ").noticeDeficiencies).toBeUndefined();
     });
     it("does not stop an audit that is running — it makes it public and permanent", () => {
         const bent = politicized(campaign, "INST-DOJ");
@@ -176,7 +209,7 @@ describe("removing one", () => {
         const projection = projectInspectorRemoval(opened, "INST-DOJ");
         expect(projection.obstructs).toBe(true);
         expect(projection.openMatters).toHaveLength(1);
-        const filed = fileInspectorRemovalNotice(opened, "INST-DOJ", "loss of confidence");
+        const filed = fileInspectorRemovalNotice(opened, "INST-DOJ", conclusoryAccount("loss of confidence", "", opened.turn));
         if (!filed.ok)
             throw new Error("the notice should have been accepted");
         const after = apply(opened, filed.packet);
@@ -187,10 +220,10 @@ describe("removing one", () => {
         expect(selectOversightPressure(after)).toBeGreaterThan(selectOversightPressure(opened));
     });
     it("charges the Hill more for a notice filed mid-audit than for one filed into a quiet office", () => {
-        const quiet = fileInspectorRemovalNotice(campaign, "INST-DOJ", "loss of confidence");
+        const quiet = fileInspectorRemovalNotice(campaign, "INST-DOJ", conclusoryAccount("loss of confidence", "", campaign.turn));
         const bent = politicized(campaign, "INST-DOJ");
         const opened = runPhase(bent, inspectorGeneralPhase);
-        const midAudit = fileInspectorRemovalNotice(opened, "INST-DOJ", "loss of confidence");
+        const midAudit = fileInspectorRemovalNotice(opened, "INST-DOJ", conclusoryAccount("loss of confidence", "", opened.turn));
         if (!quiet.ok || !midAudit.ok)
             throw new Error("both notices should have been accepted");
         expect(apply(opened, midAudit.packet).congress.disposition).toBeLessThan(apply(campaign, quiet.packet).congress.disposition);
@@ -229,7 +262,11 @@ describe("Congress investigating", () => {
             congress: { ...campaign.congress, disposition: 0.15, committees: {} },
             player: {
                 ...campaign.player,
-                flags: { ...campaign.player.flags, "scandal:the-unminuted-meeting": true },
+                flags: {
+                    ...campaign.player.flags,
+                    "scandal:the-unminuted-meeting": true,
+                    [flagMarker("scandal:the-unminuted-meeting", campaign.turn)]: true,
+                },
             },
         };
         const live = selectLiveScandals(scandalous);
@@ -249,7 +286,7 @@ describe("Congress investigating", () => {
     it("opens a file on a president who removed the auditor mid-audit", () => {
         const bent = politicized(campaign, "INST-DOJ");
         const opened = runPhase(bent, inspectorGeneralPhase);
-        const filed = fileInspectorRemovalNotice(opened, "INST-DOJ", "loss of confidence");
+        const filed = fileInspectorRemovalNotice(opened, "INST-DOJ", conclusoryAccount("loss of confidence", "", opened.turn));
         if (!filed.ok)
             throw new Error("the notice should have been accepted");
         // A panel that is with the administration does not investigate it, whatever
@@ -273,7 +310,7 @@ describe("Congress investigating", () => {
     it("does not open a file when the panel is with the administration", () => {
         const bent = politicized(campaign, "INST-DOJ");
         const opened = runPhase(bent, inspectorGeneralPhase);
-        const filed = fileInspectorRemovalNotice(opened, "INST-DOJ", "loss of confidence");
+        const filed = fileInspectorRemovalNotice(opened, "INST-DOJ", conclusoryAccount("loss of confidence", "", opened.turn));
         if (!filed.ok)
             throw new Error("the notice should have been accepted");
         const obstructed = apply(opened, filed.packet);

@@ -1,7 +1,8 @@
 import { worldDataset } from "@admin/world";
 import { closeTasking, taskCollection } from "./intelligence.js";
 import { executiveOrder, orderAvailability, projectOrder } from "./orders.js";
-import { localeAct, localeActCost, localeAvailability } from "./locale-acts.js";
+import { localeAct, localeAvailability } from "./locale-acts.js";
+import { localeActPrice } from "./locale-act-effects.js";
 import type { Campaign } from "./state.js";
 import type { DeltaMetricKey, Effect, MetricDeltas } from "./effects.js";
 import type { MetricCost } from "./resolution.js";
@@ -14,7 +15,7 @@ import { liftMeasure, type TradeMeasure, type TradeMeasureId } from "./trade.js"
 import { selectNation } from "./state.js";
 import { issueDirective } from "./directives.js";
 import { selectMatter } from "./oversight.js";
-import { fileInspectorRemovalNotice } from "./inspectors-general.js";
+import { conclusoryAccount, fileInspectorRemovalNotice } from "./inspectors-general.js";
 import { institutionDef } from "./institutions.js";
 import { openNomination } from "./nomination.js";
 import { campaignDay } from "./clock.js";
@@ -39,7 +40,10 @@ export function localeProjection(campaign: Campaign, request: Extract<ReplyCommi
   if (!act) return { ok: false, reason: "No such state response." };
   const availability = localeAvailability(campaign, request.state, act, request.cause);
   if (!availability.ok) return { ok: false, reason: availability.missing };
-  return { ok: true, cost: { treasury: -localeActCost(campaign, act), ...(act.standingCost ? { standing: -act.standingCost } : {}) } };
+  // The act's own price, unrequested standing included, as the packet charges
+  // it. What a suit or an incident would add is drawn when the act is taken
+  // and is not quoted before.
+  return { ok: true, cost: localeActPrice(campaign, request.state, act) };
 }
 
 export function collectionAction(campaign: Campaign, action: Extract<ReplyCommitment, { kind: "position" }>["collection"]):
@@ -123,7 +127,7 @@ export function directiveAction(campaign: Campaign, request: Extract<ReplyCommit
     return { ok: false, reason: "The inspector general matter this answer addresses is no longer open." };
   }
   const result = request.kind === "inspector-removal-notice"
-    ? fileInspectorRemovalNotice(campaign, request.institution, request.reason)
+    ? fileInspectorRemovalNotice(campaign, request.institution, conclusoryAccount(request.reason, pinned.id, campaign.turn))
     : issueDirective(campaign, { institution: request.institution, kind: request.kind, subject: request.subject });
   return result.ok ? { ok: true, effects: result.packet.effects, summary: result.packet.narration.summary } : result;
 }

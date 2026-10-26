@@ -2,17 +2,21 @@ import { useMemo, useState } from "react";
 import type { Campaign, ConditionKind, EffectPacket, LocaleActId } from "@admin/engine";
 import { homeActOptions, localeActOptions, localeMatters, type LocaleActOption } from "@admin/player-core";
 import type { StateId } from "@admin/world";
-import { Badge, Button, Column, Icon, Pressable, ReadingFrame, Row, Text, View } from "@admin/ui";
+import { Tag, Button, Column, Icon, Pressable, ReadingFrame, Row, Text, View } from "@admin/ui";
 import { Track } from "@admin/ui/nation";
 import { BatchLines, type BatchLineView } from "../../batch/BatchLines";
 import { buildSequential, type PackageLine } from "../../batch/package";
 import { ActDone, ActProblem } from "../ActDone";
 import { useNationAct, type NationAct } from "../act";
 import { toneKey } from "../keys";
-import { COERCION_ICON, DONE_WORDS, VERBS, requestCell } from "../state/locale-acts";
+import { COERCION_ICON, DONE_WORDS, VERBS, isForceAct, requestCell } from "../state/locale-acts";
 
-/** The acts that mean the same thing in every state they are taken in; troops and surveillance stay one state at a time. */
-const BATCHABLE: readonly LocaleActId[] = ["relief", "request-deployment", "federalize", "agents", "waiver", "review"];
+/**
+ * The acts that mean the same thing in every state they are taken in. Troops,
+ * the federalized Guard, the proclamation, immigration sweeps and surveillance
+ * each rest on findings about one state, so they stay one state at a time.
+ */
+const BATCHABLE: readonly LocaleActId[] = ["relief", "request-deployment", "property-surge", "task-force", "waiver", "review"];
 const SKIP = "skip";
 
 type StateLine = { readonly id: StateId; readonly name: string; readonly cause?: ConditionKind; readonly options: readonly LocaleActOption[] };
@@ -35,15 +39,15 @@ function Readings({ option, campaign, line }: { readonly option: LocaleActOption
   return (
     <Column gap="2xs">
       <Row gap="xs" wrap>
-        <Badge status="outline" icon="budget">
+        <Tag tone="outline" icon="budget">
           {option.costText}
-        </Badge>
+        </Tag>
         {option.assent ? (
-          <Badge status="outline" icon="subjectPerson">
+          <Tag tone="outline" icon="subjectPerson">
             {option.assent}
-          </Badge>
+          </Tag>
         ) : null}
-        {matter?.request ? <Badge status={option.answers ? "success" : "outline"}>{requestCell(option, matter)}</Badge> : null}
+        {matter?.request ? <Tag tone={option.answers ? "success" : "outline"}>{requestCell(option, matter)}</Tag> : null}
       </Row>
       {option.risk ? (
         <Row gap="sm">
@@ -74,7 +78,7 @@ function KindChooser({ lines, kind, onKind }: { readonly lines: readonly StateLi
         const on = id === kind;
         return (
           <Pressable key={id} role="radio" aria-checked={on} aria-label={`${name}. Open in ${open} of ${lines.length} states`} onPress={() => onKind(id)} flexDirection="row" alignItems="center" gap="sm" padding="sm" borderRadius="card" borderWidth={on ? 2 : 1} borderColor={on ? "accent" : "borderColor"} backgroundColor={{ default: on ? "infoFill" : "surface", hover: "surfaceHover" }}>
-            <Icon name={COERCION_ICON[id] ?? "sign"} size={18} tone="gold" />
+            <Icon name={COERCION_ICON[id]} size={18} tone="gold" />
             <Text variant="label" flex={1}>
               {name}
             </Text>
@@ -128,9 +132,9 @@ function authorizePackage(act: NationAct, campaign: Campaign, chosen: readonly E
     {
       tier: "full",
       title: `${count} ${count === 1 ? "state" : "states"}, one package`,
-      lines: priced.map(({ entry, option }) => ({ label: entry.label, value: `${option.name}. ${option.costText}.${option.assent ? ` ${option.assent}` : ""}${option.risk ? ` Chance of an incident ${Math.round(option.risk.odds * 100)}%.` : ""}` })),
+      lines: priced.map(({ entry, option }) => ({ label: entry.label, value: `${option.name}. ${option.costText}.${option.authority ? ` Under ${option.authority.cite}.` : ""}${option.assent ? ` ${option.assent}` : ""}${option.risk ? ` Chance of an incident ${Math.round(option.risk.odds * 100)}%.` : ""}${option.litigation ? ` Chance someone sues ${Math.round(option.litigation.filingChance * 100)}%.` : ""}` })),
       verb: `Authorize all ${count}`,
-      danger: priced.some(({ option }) => COERCION_ICON[option.id] !== undefined),
+      danger: priced.some(({ option }) => isForceAct(option.id) || option.risk !== undefined),
     },
   );
 }

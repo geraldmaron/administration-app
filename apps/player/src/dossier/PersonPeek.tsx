@@ -1,7 +1,8 @@
 import { personFile, place, type PersonFile } from "@admin/player-core";
 import type { Campaign } from "@admin/engine";
 import { Column, Peek, Text } from "@admin/ui";
-import { BandSteps, Monogram } from "@admin/ui/dossier";
+import { BandSteps } from "@admin/ui/dossier";
+import { PersonFace } from "./PersonFace";
 import { readingTone } from "../executive/present";
 import { go } from "../shell/navigate";
 
@@ -26,7 +27,7 @@ function StandingReadings({ campaign, id }: { readonly campaign: Campaign; reado
  */
 export function PersonPeek({ campaign, id, name, role }: { readonly campaign: Campaign; readonly id: string; readonly name: string; readonly role?: string }) {
   const line = role ?? personFile(campaign, id)?.role;
-  return <Peek name={name} identity={<Monogram name={name} size={44} />} {...(line ? { role: line } : {})} readings={<StandingReadings campaign={campaign} id={id} />} onOpen={() => go(place.person(id))} />;
+  return <Peek name={name} identity={<PersonFace campaign={campaign} id={id} name={name} size={44} />} {...(line ? { role: line } : {})} readings={<StandingReadings campaign={campaign} id={id} />} onOpen={() => go(place.person(id))} />;
 }
 
 /** A name with a person behind it opens their quick look; a name with none stays words. */

@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import { createRngStreams, likelihoodFromUnitInterval, signOrder, type Campaign, type OrderSubject } from "@admin/engine";
 import { ORDER_SIGN, charterOf, formatDate, formatRatio, orderDesk, orderReview, orderSignatures, place, type OrderDesk, type PipelineRow } from "@admin/player-core";
-import { Badge, CardLink, Column, Icon, Page, ReadingFrame, Row, Text, useMedia } from "@admin/ui";
+import { Pane, Tag, CardLink, Column, Icon, Page, ReadingFrame, Row, Text, useMedia } from "@admin/ui";
 import { Collection, CompareChoices, Facts, TrackRow } from "@admin/ui/nation";
-import { Panel } from "@admin/ui/world";
 import { BackButton } from "../../shell/BackButton";
 import { ActDone, ActProblem } from "../ActDone";
 import { useNationAct, type NationAct } from "../act";
@@ -37,7 +36,7 @@ function TermsList({ terms }: { readonly terms: OrderTerms }) {
 function PriorSignatures({ rows, onOpen }: { readonly rows: readonly PipelineRow[]; readonly onOpen: (id: string) => void }) {
   if (rows.length === 0) return null;
   return (
-    <Panel title="Times you signed it before" icon="record">
+    <Pane title="Times you signed it before" icon="record">
       <Collection items={rows} initial={3} noun="signings" render={(row) => (
         <CardLink key={row.id} role="button" pad="sm" radius="chip" label={`Open the order you signed${row.signed ? ` on ${formatDate(row.signed)}` : ""}`} onPress={() => onOpen(row.id)}>
           <Row gap="sm" top>
@@ -50,7 +49,7 @@ function PriorSignatures({ rows, onOpen }: { readonly rows: readonly PipelineRow
           </Row>
         </CardLink>
       )} />
-    </Panel>
+    </Pane>
   );
 }
 
@@ -77,9 +76,9 @@ function Authorization({ campaign, desk, subject, act, onSign }: { readonly camp
 function Status({ desk, done, latest }: { readonly desk: OrderDesk; readonly done: boolean; readonly latest: PipelineRow | undefined }) {
   const chance = desk.projection.challengeChance;
   return (
-    <Panel id="order-status" title="Status" icon="pending">
+    <Pane id="order-status" title="Status" icon="pending">
       <Row gap="sm" wrap>
-        <Badge status={done ? "success" : "warning"}>{done ? "Signed" : "Draft"}</Badge>
+        <Tag tone={done ? "success" : "warning"}>{done ? "Signed" : "Draft"}</Tag>
         <Text variant="body" flex={1}>
           {done ? (latest ? latest.line : "It's in your Record.") : desk.available ? "Ready for your signature." : `Can't be signed yet. It needs ${desk.missing ?? "a legal power it doesn't have yet"}.`}
         </Text>
@@ -94,7 +93,7 @@ function Status({ desk, done, latest }: { readonly desk: OrderDesk; readonly don
           </Text>
         </Column>
       )}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -125,20 +124,20 @@ export function OrderScreen({ campaign, id, recordId, onRecord }: { readonly cam
   const rail = (
     <Column gap="lg" flex={2} minWidth={300} {...(media.desktop ? {} : { flexBasis: "100%" as const })}>
       <Status desk={desk} done={done !== undefined} latest={latest} />
-      <Panel title={done ? "What you signed" : "Key terms"} icon="law">
+      <Pane title={done ? "What you signed" : "Key terms"} icon="law">
         <TermsList terms={shown} />
-      </Panel>
+      </Pane>
       <Rescind campaign={campaign} id={id} />
       <ReviewFindings campaign={campaign} id={id} />
       <OffshoreSales campaign={campaign} id={id} />
       <BlockedAssets campaign={campaign} id={id} />
       <DefenseContract campaign={campaign} id={id} />
       <CleanPower campaign={campaign} id={id} />
-      {id === "order-border-controls" && !done ? <Panel title="Where it applies" icon="mapPin" lede="It covers the checks on who may enter the country at federal border crossings, airports, and seaports. It doesn't allow enforcement against people already inside the country, and it doesn't promise the same staffing at every crossing." /> : null}
+      {id === "order-border-controls" && !done ? <Pane title="Where it applies" icon="mapPin" line="It covers the checks on who may enter the country at federal border crossings, airports, and seaports. It doesn't allow enforcement against people already inside the country, and it doesn't promise the same staffing at every crossing." /> : null}
       {desk.reachLines.length > 0 ? (
-        <Panel title="Who it affects" icon="layerBlocs">
+        <Pane title="Who it affects" icon="layerBlocs">
           <ReachBars lines={desk.reachLines} />
-        </Panel>
+        </Pane>
       ) : null}
     </Column>
   );

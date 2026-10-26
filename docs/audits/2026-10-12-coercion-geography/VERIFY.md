@@ -1,6 +1,6 @@
 # Adversarial verification of AUDIT.md (coercion at sea), 2026-10-12
 
-Read-only against committed `dist/` (engine `instruments-military.js` last committed 2026-10-10, no engine/world source modified). One probe process at a time; no build, workspace tests, verify sweep or Playwright. The verifier's own probes are in the session scratchpad (`$V = /private/tmp/claude-501/-Users-geralddagher-Developer-Projects-admin-app/de978b3c-7bf2-4843-8068-0f815599efba/scratchpad/cverify/`): `draft.mjs` (menu priced on the player's sized package), `basis.mjs` (cost basis per rung), `tre.mjs` (budget-authority ceiling), `ripples.mjs` (ripples, contest, risks), `preset.mjs` (founding conflicts and Hormuz shock), `npc.mjs` (NPC blockades over a term), `twice.mjs` (two blockades of Iran). Web pages fetched this session are in `$V/web/`.
+Read-only against committed `dist/` (engine `instruments-military.js` last committed 2026-10-10, no engine/world source modified). One probe process at a time; no build, workspace tests, verify sweep or Playwright. The verifier's own probes are in the session scratchpad (`$V = <scratch path>`): `draft.mjs` (menu priced on the player's sized package), `basis.mjs` (cost basis per rung), `tre.mjs` (budget-authority ceiling), `ripples.mjs` (ripples, contest, risks), `preset.mjs` (founding conflicts and Hormuz shock), `npc.mjs` (NPC blockades over a term), `twice.mjs` (two blockades of Iran). Web pages fetched this session are in `$V/web/`.
 
 ## Bottom line
 

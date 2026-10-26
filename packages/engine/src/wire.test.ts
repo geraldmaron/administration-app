@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { INSTRUMENT_IDS, INSTRUMENT_RUNGS, RUNG_LEVELS } from "./instruments.js";
 import { RISK_IDS } from "./resolution.js";
-import { movePhrase, movePhraseNamed, wireLine, wireRisk, wireStake, type WireAct } from "./wire.js";
+import { answerLine, movePhrase, movePhraseNamed, wireLine, wireRisk, wireStake, type WireAct } from "./wire.js";
 import { nationName, takesDefiniteArticle } from "./naming.js";
 
 function act(overrides: Partial<WireAct> = {}): WireAct {
@@ -131,5 +131,20 @@ describe("the risk a player reads before committing", () => {
 
   it("falls back rather than inventing a failure nobody wrote", () => {
     expect(wireRisk({ ...act({ landed: false }), riskId: "a-branch-nobody-wrote" })).toBe("nothing comes of it");
+  });
+});
+
+describe("an act made as an answer", () => {
+  const act: WireAct = { actor: "China", target: "the United States", instrument: "economic", rung: 2, landed: true, turn: 9 };
+
+  it("names what it answers before what it did", () => {
+    const line = answerLine({ coercer: "the United States", instrument: "economic", rung: 3 }, act);
+    expect(line.startsWith(`China answers the United States' ${movePhrase("economic", 3)}.`)).toBe(true);
+    expect(line).toContain(wireLine(act));
+  });
+
+  it("says whose side a partner is taking", () => {
+    const line = answerLine({ coercer: "the United States", instrument: "economic", rung: 3, onBehalfOf: "Russia" }, act);
+    expect(line.startsWith("China takes Russia's side against the United States'")).toBe(true);
   });
 });

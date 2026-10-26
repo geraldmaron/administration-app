@@ -20,6 +20,7 @@ import { conflictId } from "./conflicts.js";
 import { daysBetween, isSameDate } from "./clock.js";
 import { MAX_OPERATORS, operatorId } from "./operators.js";
 import { tradeSector } from "./trade-sectors.js";
+import { leadingExportOf } from "./trade-volume.js";
 import { openingBaseCommitments } from "./basing.js";
 import { HELD_FRONT_INTENSITY, OPENING_WAR_SUPPORT } from "./war-tick.js";
 /** A held front opens under the held line, so the tick reads it as held from its first week. */
@@ -233,46 +234,101 @@ function largestSector(flow) {
         .filter(([sector, value]) => sector !== "other" && value > 0 && tradeSector(sector) !== undefined)
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0];
 }
+const FR = "https://www.federalregister.gov/documents";
+const listed = (since, effective, source) => ({ kind: "sanctions", listed: true, since, effective, source });
+const NO_CLAUSE = "no effective-date clause; effective on signature, THE WHITE HOUSE,";
 /**
- * Where a program bites: the largest thing the target sells the United States,
- * the rule the register's own denial uses. An embargo ends the whole flow
- * whatever sector it is filed under, and a long-standing one leaves almost no
- * sector imports to file it by (Cuba's are all "other"), so it falls back to
- * the largest sector the United States still sells there.
+ * What each carried program actually reaches, read 2026-10-25, dated at the
+ * day its authority took effect. A comprehensive embargo stops what the target
+ * sells the United States; a sectoral designation reaches the sector's sales
+ * (or the designated companies' share of them) to everyone the dollar
+ * touches; an import ban stops only what crosses our border; a list-based
+ * program designates people and cuts no trade.
  */
-function measureSector(target, kind) {
+export const INHERITED_PROGRAMS = {
+    CUB: [{ kind: "embargo", since: { year: 1963, month: 7, day: 9 }, effective: "28 FR 6974, July 9, 1963", source: "Cuban Assets Control Regulations, 31 CFR part 515, source note, https://www.ecfr.gov/current/title-31/part-515" }],
+    IRN: [
+        { kind: "embargo", since: { year: 1995, month: 5, day: 7 }, effective: "Sec. 8. (a) This order is effective at 12:01 a.m., eastern daylight time, on May 7, 1995", source: `E.O. 12959, ${FR}/1995/05/09/95-11694` },
+        { kind: "sanctions", sector: "energy-crude", since: { year: 2018, month: 11, day: 5 }, effective: "sec. 2(a)(iv): on or after November 5, 2018, for the purchase, acquisition, sale, transport, or marketing of petroleum or petroleum products from Iran", source: `E.O. 13846, ${FR}/2018/08/07/2018-17068` },
+        { kind: "sanctions", sector: "chemicals", since: { year: 2018, month: 11, day: 5 }, effective: "sec. 2(a)(v): on or after November 5, 2018, for the purchase, acquisition, sale, transport, or marketing of petrochemical products from Iran", source: `E.O. 13846, ${FR}/2018/08/07/2018-17068` },
+    ],
+    PRK: [
+        { kind: "embargo", since: { year: 2011, month: 4, day: 19 }, effective: "Sec. 7. This order is effective at 12:01 a.m. eastern daylight time on April 19, 2011", source: `E.O. 13570, prohibiting the importation of any goods from North Korea, ${FR}/2011/04/20/2011-9739` },
+        { kind: "asset-restriction", since: { year: 2016, month: 3, day: 16 }, effective: "Sec. 13. This order is effective at 12:01 a.m. eastern daylight time on March 16, 2016", source: `E.O. 13722, blocking the property of the Government of North Korea, ${FR}/2016/03/18/2016-06355` },
+    ],
+    SYR: [listed({ year: 2025, month: 7, day: 1 }, "Sec. 3. (a) Effective July 1, 2025, I hereby terminate the national emergency declared in Executive Order 13338", `E.O. 14312, revoking the Syria program and keeping designations of the former regime and of terrorist, chemical-weapons and human-rights targets, ${FR}/2025/07/03/2025-12506`)],
+    RUS: [
+        // Rosneft reports "~35% share in Russian oil production" (rosneft.com, Rosneft at a glance); Lukoil "over 2% of crude production" in the world
+        // (lukoil.com, Upstream), about 0.18 of Russia's at the dataset's 0.11 world share. Both opened 2026-10-25.
+        { kind: "sanctions", sector: "energy-crude", covered: 0.53, since: { year: 2025, month: 10, day: 22 }, effective: "Treasury Sanctions Major Russian Oil Companies ... October 22, 2025", source: "OFAC designation of Rosneft and Lukoil under E.O. 14024, with secondary-sanctions risk to foreign financial institutions, https://home.treasury.gov/news/press-releases/sb0290" },
+        // An import ban and a ban on exchange services (OFAC FAQ 1168); the exchange part reaches further than our border, which the record cannot yet hold.
+        { kind: "sanctions", sector: "bulk-mining", direction: "imports", since: { year: 2024, month: 4, day: 13 }, effective: "Covered metals acquisition services April 12, 2024 April 13, 2024", source: "OFAC FAQ 1128 (issued and effective dates) and FAQ 1168, https://ofac.treasury.gov/faqs/1128" },
+        { kind: "sanctions", sector: "aluminum", direction: "imports", since: { year: 2024, month: 4, day: 13 }, effective: "Covered metals acquisition services April 12, 2024 April 13, 2024", source: "OFAC FAQ 1128 and FAQ 1168, https://ofac.treasury.gov/faqs/1168" },
+    ],
+    VEN: [{ kind: "sanctions", sector: "energy-crude", since: { year: 2019, month: 1, day: 28 }, effective: "Treasury Sanctions Venezuela's State-Owned Oil Company ... January 28, 2019", source: "OFAC designation of Petroleos de Venezuela, S.A. under E.O. 13850, https://home.treasury.gov/news/press-releases/sm594" }],
+    // Belaruskali, the potash designation, was removed from the SDN List on 03/26/2026 (https://ofac.treasury.gov/recent-actions/20260326), before the preset's date.
+    BLR: [listed({ year: 2006, month: 6, day: 19 }, "This order is effective at 12:01 a.m. eastern daylight time on June 19, 2006", `E.O. 13405, ${FR}/2006/06/20/06-5592`)],
+    SDN: [listed({ year: 2023, month: 5, day: 4 }, `${NO_CLAUSE} May 4, 2023`, `E.O. 14098, ${FR}/2023/05/05/2023-09826`)],
+    MLI: [listed({ year: 2019, month: 7, day: 26 }, `${NO_CLAUSE} July 26, 2019`, `E.O. 13882, ${FR}/2019/07/30/2019-16383`)],
+    MMR: [
+        listed({ year: 2021, month: 2, day: 10 }, `${NO_CLAUSE} February 10, 2021`, `E.O. 14014, ${FR}/2021/02/12/2021-03139`),
+        // MOGE's share of the gas projects' sales was not opened, so the whole sector is read as covered: an overstatement.
+        { kind: "sanctions", sector: "energy-gas-lng", since: { year: 2023, month: 12, day: 15 }, effective: "Effective Date (EO 14014 Directive 1): 15 Dec 2023", source: "OFAC Directive 1 under E.O. 14014, prohibiting financial services to Myanma Oil and Gas Enterprise, https://ofac.treasury.gov/recent-actions/20231031" },
+    ],
+    COD: [listed({ year: 2006, month: 10, day: 30 }, "Sec. 9. This order is effective at 12:01 a.m. eastern standard time on October 30, 2006", `E.O. 13413, ${FR}/2006/10/31/06-9020`)],
+    YEM: [listed({ year: 2012, month: 5, day: 16 }, `${NO_CLAUSE} May 16, 2012`, `E.O. 13611, ${FR}/2012/05/18/2012-12225`)],
+    NIC: [listed({ year: 2018, month: 11, day: 27 }, `${NO_CLAUSE} November 27, 2018`, `E.O. 13851, ${FR}/2018/11/29/2018-26156`)],
+    LBN: [listed({ year: 2007, month: 8, day: 1 }, `${NO_CLAUSE} August 1, 2007`, `E.O. 13441, ${FR}/2007/08/03/07-3835`)],
+};
+/**
+ * Where a program is filed. A sectoral program names its sector. Otherwise
+ * the largest thing the target sells the United States, the register's own
+ * rule; an embargo, which ends the whole flow whatever it is filed under,
+ * falls back to the largest thing the United States still sells there (Cuba's
+ * imports are all "other"), and then to the target's leading export to the
+ * world (Iran's recorded trade has no sector at all).
+ */
+function programSector(target, program, nations) {
+    if (program.sector)
+        return program.sector;
     const recorded = US_GOODS_TRADE[target];
     const imports = largestSector(recorded?.imports);
-    return kind === "embargo" ? (imports ?? largestSector(recorded?.exports)) : imports;
+    if (program.kind === "sanctions" && !program.listed)
+        return imports;
+    return imports ?? largestSector(recorded?.exports) ?? leadingExportOf(nations[target]?.base.stats.trade.topExports ?? [], recorded?.imports ?? {});
 }
-const measureKind = (row) => (/embargo/.test(row.mappedState) ? "embargo" : "sanctions");
-function inheritedMeasure(row, asOf) {
+function programId(target, program) {
+    return program.sector ? `${program.kind}:${target}:${program.sector}:inherited` : `${program.kind}:${target}:inherited`;
+}
+function inheritedMeasures(row, nations) {
     const target = row.parties[0];
-    const kind = measureKind(row);
-    const sector = measureSector(target, kind);
-    if (!sector)
-        return undefined;
-    return {
-        id: `${kind}:${target}:inherited`,
-        kind,
-        sector,
-        target: target,
-        rate: 0,
-        imposedTurn: OATH_TURN,
-        imposedDate: asOf,
-        authority: "INST-OFAC",
-        origin: "us",
-        actor: US_ID,
-        // The recorded opening already carries what the embargo leaves: no
-        // imports, and the farm and medical exports the law licenses. Imports are
-        // what it stops, so the book opens on the record rather than at zero.
-        ...(kind === "embargo" ? { direction: "imports" } : {}),
-    };
+    return (INHERITED_PROGRAMS[target] ?? []).flatMap((program) => {
+        const sector = programSector(target, program, nations);
+        if (!sector)
+            return [];
+        return [{
+                id: programId(target, program),
+                kind: program.kind,
+                sector,
+                target: target,
+                rate: 0,
+                imposedTurn: OATH_TURN,
+                imposedDate: program.since,
+                authority: "INST-OFAC",
+                origin: "us",
+                actor: US_ID,
+                // The recorded opening already carries what an embargo leaves: no
+                // imports, and the farm and medical exports the law licenses. Imports are
+                // what it stops, so the book opens on the record rather than at zero.
+                ...(program.kind === "embargo" || program.direction === "imports" ? { direction: "imports" } : {}),
+                ...(program.listed ? { scope: "listed" } : {}),
+                ...(program.covered !== undefined ? { covered: program.covered } : {}),
+            }];
+    });
 }
-function boardMeasures(nations, asOf, seed, preset) {
+function boardMeasures(nations, seed, preset) {
     return CARRIED_CONFLICTS.filter((row) => row.kind === "sanctions" && nations[row.parties[0]] !== undefined && kept(row, seed, preset))
-        .map((row) => inheritedMeasure(row, asOf))
-        .filter((measure) => measure !== undefined);
+        .flatMap((row) => inheritedMeasures(row, nations));
 }
 function carriesGulfFront(conflicts) {
     return conflicts.some((war) => war.aggressor === "ISR" && war.defender === "IRN");
@@ -288,7 +344,7 @@ export function openingWorld(nations, asOf, seed, preset = "seeded") {
         conflicts,
         operators: boardOperators(nations, asOf, seed, preset),
         commitments: openingBaseCommitments(nations, carriesGulfFront(conflicts)),
-        measures: boardMeasures(nations, asOf, seed, preset),
+        measures: boardMeasures(nations, seed, preset),
     };
 }
 /** The carried rows a board left out, and why, for the board's report. */
@@ -297,7 +353,9 @@ export function openingBoardOmissions(nations) {
         const host = row.parties[0];
         if (row.parties.some((party) => nations[party] === undefined))
             return [`${rowKey(row)}: a party is not on the roster`];
-        if (row.kind === "sanctions" && !measureSector(host, measureKind(row)))
+        if (row.kind === "sanctions" && !INHERITED_PROGRAMS[host])
+            return [`${rowKey(row)}: no program scope on file`];
+        if (row.kind === "sanctions" && inheritedMeasures(row, nations).length === 0)
             return [`${rowKey(row)}: no recorded trade for the program to bite on`];
         return [];
     });

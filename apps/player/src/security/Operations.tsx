@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { OPERATION_KIND_LABELS, place, serviceHoldings, type CovertReading, type OperationKind, type OperationRow, type OperationsTally, type ServiceReadiness } from "@admin/player-core";
-import { Button, Column, Empty, Peek, ReadingFrame, Row, Text } from "@admin/ui";
-import { Panel, Segments, SortTable, StateChip, type RowPress, type TableColumn } from "@admin/ui/world";
+import { Pane, Button, Column, Empty, Peek, ReadingFrame, Row, Text } from "@admin/ui";
+import { Segments, SortTable, StateChip, type RowPress, type TableColumn } from "@admin/ui/world";
 import { HoldingsTable } from "../world/forces";
 import { serviceSeal } from "../world/law";
 import { RowLink } from "../decision/parts";
@@ -66,13 +66,13 @@ export function Operations({ rows, tally, covert, onOpen, signer }: { readonly r
   const owed = rows.filter((row) => row.kind === "covert" && row.flag).length;
   const shown = kind === "all" ? rows : rows.filter((row) => row.kind === kind);
   return (
-    <Panel title="Operations" icon="summit" count={tally.total} aside={<TopicLaw topic="intelligence-findings" />} lede={`${tally.total === 0 ? "You have no operations running." : `${tally.total} running. ${tally.weeklyBill === "No weekly payments" ? "None of them costs money." : `The ones that cost money add up to ${tally.weeklyBill}.`}`}${owed > 0 ? ` You still owe Congress's intelligence committees your reasons for ${owed} ${owed === 1 ? "finding" : "findings"}. You can give them on the Oversight screen.` : ""}`}>
+    <Pane title="Operations" icon="summit" count={tally.total} actions={<TopicLaw topic="intelligence-findings" />} line={`${tally.total === 0 ? "You have no operations running." : `${tally.total} running. ${tally.weeklyBill === "No weekly payments" ? "None of them costs money." : `The ones that cost money add up to ${tally.weeklyBill}.`}`}${owed > 0 ? ` You still owe Congress's intelligence committees your reasons for ${owed} ${owed === 1 ? "finding" : "findings"}. That notice remains outstanding.` : ""}`}>
       {kinds.length > 1 ? <ChooseOne label="Type" value={kind} onChange={setKind} options={[{ value: "all", label: `All ${rows.length}` }, ...kinds.map((entry) => ({ value: entry, label: `${OPERATION_KIND_LABELS[entry]} ${rows.filter((row) => row.kind === entry).length}` }))]} /> : null}
       <SortTable caption="Running operations" columns={columns(onOpen)} rows={shown} rowKey={(row) => row.id} initialSort={{ key: "stage", direction: "ascending" }} highlight={(row) => row.flag !== undefined} rowPress={OPEN_SUBJECT} empty="You have no operations running." page={10} />
       <Row><Button kind="secondary" size="compact" icon="instrumentCovert" onPress={() => onOpen({ kind: "sign-finding" })}>Sign a finding</Button></Row>
       <FindingFile findings={covert.open} signer={signer} />
       <CovertRecord covert={covert} />
-    </Panel>
+    </Pane>
   );
 }
 
@@ -89,14 +89,14 @@ export function ForcesView({ campaign, services, service, onService }: { readonl
     <Column gap="lg">
       <ChooseOne label="Service" value={known && service ? service : "all"} onChange={(next) => onService(next === "all" ? undefined : next)} options={[{ value: "all", label: "All services" }, ...services.map((entry) => ({ value: entry.id, label: entry.name }))]} />
       {!known ? <Text variant="body" tone="warning">We couldn't find a service by that name, so every service is shown.</Text> : null}
-      {services.length === 0 ? <Empty title="No service has reported its numbers yet" detail="Each service's forces will show up here once it has a count on file." /> : null}
+      {services.length === 0 ? <Empty title="No service has reported its numbers yet" detail="There is no service inventory on file." /> : null}
       {shown.map((entry) => (
-        <Panel key={entry.id} title={entry.name} emblem={<SealOf id={serviceSeal(entry.id)} name={entry.name} size={44} />} aside={<Button kind="quiet" size="compact" icon="building" onPress={() => go(place.office(entry.id))}>The service's office</Button>}>
+        <Pane key={entry.id} title={entry.name} emblem={<SealOf id={serviceSeal(entry.id)} name={entry.name} size={44} />} actions={<Button kind="quiet" size="compact" icon="building" onPress={() => go(place.office(entry.id))}>The service's office</Button>}>
           <ReadingFrame title={`${entry.name}: free, abroad and not ready`} unit="Average across its units, share of the force this week" help={{ meaning: "The bar splits the service's forces three ways. Free means ready to go this week, committed abroad means tied up in ongoing commitments overseas, and not ready means the forces exist but can't go this week. The three add up to the whole." }}>
             <Segments label={`${entry.name}, average across its units`} keyed parts={[{ key: "f", count: Math.round(entry.ready * 1000), word: "", text: `${pct(entry.ready)} free this week`, valence: "good" }, { key: "a", count: Math.round(entry.abroad * 1000), word: "", text: `${pct(entry.abroad)} committed abroad`, valence: "abroad" }, { key: "n", count: Math.round(entry.resting * 1000), word: "", text: `${pct(entry.resting)} not ready`, valence: "bad" }]} />
           </ReadingFrame>
           <HoldingsTable holdings={holdings.get(entry.id) ?? []} caption={`What the ${entry.name} has, by type`} drawn />
-        </Panel>
+        </Pane>
       ))}
       <Text variant="caption" tone="secondary">Committed abroad means tied up in ongoing commitments overseas. Not ready means the forces exist and aren't committed, but they can't go this week.</Text>
     </Column>

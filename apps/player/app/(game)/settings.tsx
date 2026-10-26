@@ -10,7 +10,7 @@ import { isDevelopmentBuild } from "../../src/shell/build-flavor";
 /** The device's settings, grouped by what they change: appearance, the map, guidance, what pauses time, saves, and God Mode where it is held. */
 export default function Settings() {
   return (
-    <Page icon="utilitySettings" eyebrow="This device" title="Settings" lede="These settings stay on this device and apply to every presidency you play here. Each change is saved as soon as you make it." actions={<PageBack />} testID="settings">
+    <Page icon="utilitySettings" eyebrow="This device" title="Settings" lede="These apply to every presidency on this device, and each change is already saved." actions={<PageBack />} testID="settings">
       <Appearance />
       <MapSettings />
       <Guidance />

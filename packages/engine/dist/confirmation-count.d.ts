@@ -23,6 +23,13 @@ export declare function nomineeReadings(campaign: Campaign, nominee: PersonId): 
 export declare function confirmationQuestion(campaign: Campaign, nominee: PersonId): VoteQuestion;
 /** The Senate's count on this nominee today, tallied by caucus. */
 export declare function confirmationVote(campaign: Campaign, nominee: PersonId): CaucusVote;
+/**
+ * The House's count on a nominee it must also confirm: the Vice President
+ * under the Twenty-fifth Amendment, section 2, "by a majority vote of both
+ * Houses". The same question as the Senate's, put to the House and counted
+ * over its seated members.
+ */
+export declare function houseConfirmationVote(campaign: Campaign, nominee: PersonId): CaucusVote;
 /** Whether a count clears the majority comfortably enough to need no fight. */
 export declare function isConsensus(vote: Pick<CaucusVote, "yeas" | "required">): boolean;
 /**

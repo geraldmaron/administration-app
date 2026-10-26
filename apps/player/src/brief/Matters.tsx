@@ -1,14 +1,19 @@
 import type { ReactNode } from "react";
 import type { Campaign } from "@admin/engine";
 import { deferMatterPacket, formatDate, type BriefMatter } from "@admin/player-core";
-import { Badge, Button, CardLink, Column, Icon, PressRow, Row, Surface, Text, Theme, isIconName, useMedia } from "@admin/ui";
+import { Button, Column, Icon, MatterCard, PressRow, Row, Surface, Tag, Text, Theme, isIconName, useMedia, type DeadlineProps } from "@admin/ui";
 import { useAuthorize } from "../review/use-authorize";
 import { go } from "../shell/navigate";
 
-const URGENCY = { hard: { status: "danger", word: "Due" }, soft: { status: "warning", word: "Soon" }, ambient: { status: "pending", word: "Ongoing" } } as const;
-
+/** The deadline in the order a President weighs it: the game date, the days left, and how much of the window is gone. */
 function clockWords(matter: BriefMatter): string | undefined {
-  if (matter.clock) return `${matter.clock.left} of ${matter.clock.window} ${matter.clock.unit}${matter.clock.window === 1 ? "" : "s"} left · ${matter.clock.label}`;
+  const { clock } = matter;
+  if (clock) {
+    const unit = `${clock.unit}${clock.left === 1 ? "" : "s"}`;
+    const used = clock.window > 0 ? ` · ${Math.round(((clock.window - clock.left) / clock.window) * 100)}% of ${clock.window} ${clock.unit}${clock.window === 1 ? "" : "s"} used` : "";
+    const due = clock.due ?? matter.due;
+    return `${due ? `Due ${formatDate(due)} · ` : ""}${clock.left} ${unit} left${used} · ${clock.label}`;
+  }
   if (matter.due) return `Due ${formatDate(matter.due)}`;
   return matter.age;
 }
@@ -39,77 +44,48 @@ function PutOff({ campaign, matter, compact }: { readonly campaign: Campaign; re
   );
 }
 
-/** The lead matter's box: the whole card opens it when it has a place to be answered. */
-function Lead({ href, label, pad, children }: { readonly href: string | undefined; readonly label: string; readonly pad: "lg" | "xl"; readonly children: ReactNode }) {
-  if (!href) {
-    return (
-      <Surface level="base" pad={pad} radius="sheet" elevated>
-        {children}
-      </Surface>
-    );
-  }
-  return (
-    <CardLink label={label} href={href} onPress={() => go(href)} level="base" pad={pad} radius="sheet" elevated>
-      {children}
-    </CardLink>
-  );
+const PRIORITY = { hard: "due", soft: "soon", ambient: "ongoing" } as const;
+
+/** The matter's clock as a Deadline: the date and days left with the window used, or the date or age alone when there is no window. */
+function deadlineOf(matter: BriefMatter): DeadlineProps | undefined {
+  const { clock } = matter;
+  const due = clock?.due ?? matter.due;
+  if (clock) return { label: clock.label, ...(due ? { date: formatDate(due) } : {}), left: clock.left, unit: clock.unit, ...(clock.window > 0 ? { total: clock.window } : {}) };
+  if (due) return { label: "Due", date: formatDate(due) };
+  return matter.age ? { label: matter.age } : undefined;
 }
 
 /** The lead matter, set on the watch-floor surface so the most urgent thing on the desk reads as such. */
 export function PriorityCard({ campaign, matter }: { readonly campaign: Campaign; readonly matter: BriefMatter }) {
   const media = useMedia();
-  const urgency = URGENCY[matter.urgency];
-  const clock = clockWords(matter);
+  const deadline = deadlineOf(matter);
+  const href = matter.href;
   return (
     <Theme name="situation">
-      <Lead href={matter.href} label={`Take up ${matter.title}`} pad={media.phone ? "lg" : "xl"}>
-        <Column gap="md">
-          <Row gap="sm" wrap>
-            <Badge status={urgency.status} icon="escalate">
-              {`Priority · ${urgency.word}`}
-            </Badge>
-            <Text variant="eyebrow" tone="secondary">
-              {matter.kindLabel}
-            </Text>
-            {matter.holds ? (
-              <Badge status="outline" icon="paused">
-                Stops time
-              </Badge>
-            ) : null}
-          </Row>
-          <Row gap="md" top>
-            <Icon name={isIconName(matter.kindIcon) ? matter.kindIcon : "decision"} size={32} tone="gold" weight="fill" />
-            <Column gap="xs" flex={1}>
-              <Text variant={media.phone ? "heading" : "display"} role="heading" aria-level={3}>
-                {matter.title}
-              </Text>
-              <Text variant="body" tone="secondary">
-                {matter.reason}
-              </Text>
-              {matter.holds ? (
-                <Text variant="caption" tone="secondary">
-                  Stops time: Continue stays off until you answer this or put it off.
-                </Text>
-              ) : null}
-              {clock ? (
-                <Text variant="label" tone="gold">
-                  {clock}
-                </Text>
-              ) : null}
-            </Column>
-          </Row>
-          {matter.href || matter.putOff ? (
-            <Row gap="sm" wrap>
-              {matter.href ? (
-                <Button kind="primary" icon="review" onPress={() => go(matter.href!)}>
+      <MatterCard
+        priority={PRIORITY[matter.urgency]}
+        kind={matter.kindLabel}
+        kindIcon={isIconName(matter.kindIcon) ? matter.kindIcon : "decision"}
+        title={matter.title}
+        summary={matter.reason}
+        holdsTime={matter.holds}
+        holdsNote="Stops time: Continue stays off until you answer this or put it off."
+        {...(deadline ? { deadline } : {})}
+        {...(href ? { href, onOpen: () => go(href), label: `Take up ${matter.title}` } : {})}
+        pad={media.phone ? "lg" : "xl"}
+        actions={
+          href || matter.putOff ? (
+            <>
+              {href ? (
+                <Button kind="primary" icon="review" onPress={() => go(href)}>
                   Take it up
                 </Button>
               ) : null}
               <PutOff campaign={campaign} matter={matter} compact={false} />
-            </Row>
-          ) : null}
-        </Column>
-      </Lead>
+            </>
+          ) : undefined
+        }
+      />
     </Theme>
   );
 }
@@ -163,7 +139,7 @@ export function MatterQueue({ campaign, matters }: { readonly campaign: Campaign
                         {matter.kindLabel}
                         {clock ? ` · ${clock}` : ""}
                       </Text>
-                      {matter.holds ? <Badge status="warning" icon="paused">Stops time</Badge> : null}
+                      {matter.holds ? <Tag tone="warning" icon="paused">Stops time</Tag> : null}
                     </Row>
                   </Column>
                   {matter.href ? <Icon name="chevron" size={16} tone="colorTertiary" /> : null}
@@ -188,7 +164,7 @@ export function QuietDay({ campaign }: { readonly campaign: Campaign }) {
           <Text variant="heading">Nothing waiting</Text>
         </Row>
         <Text variant="body" tone="secondary">
-          Nothing needs you on {formatDate(campaign.calendar)}, and no deadline is close. Press Continue and time will move forward until something needs you.
+          Nothing needs you on {formatDate(campaign.calendar)}, and no deadline is close. Time moves forward from here until something does.
         </Text>
       </Column>
     </Surface>

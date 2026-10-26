@@ -1,7 +1,6 @@
 import { formatMoney, formatRatio, type AuthorityFlow, type BudgetDraftReading } from "@admin/player-core";
-import { Badge, Column, Icon, ReadingFrame, Row, Surface, Text, type IconName } from "@admin/ui";
+import { Pane, Tag, Column, Icon, ReadingFrame, Row, Surface, Text, type IconName } from "@admin/ui";
 import { TrackRow, type TrackTone } from "@admin/ui/nation";
-import { Panel } from "@admin/ui/world";
 import { markEntry, toneKey } from "../keys";
 import { pointChange } from "./Allocation";
 
@@ -41,7 +40,7 @@ function claimWords(flow: AuthorityFlow): string {
 export function Tradeoffs({ reading }: { readonly reading: Drafted }) {
   const { inForce, draft } = reading.flow;
   return (
-    <Panel title="What you give up and what you get" icon="graph" lede="The current budget next to yours, on the same scales.">
+    <Pane title="What you give up and what you get" icon="graph" line="The current budget next to yours, on the same scales.">
       <ReadingFrame title="Spent each week, compared with what comes in" unit="% of the money added each week" legend={[markEntry("in", "All the money that comes in each week"), ...toneKey({ good: "Spending stays under it", watch: "Close to using all of it", bad: "Spending more than comes in" })]} help={{ meaning: "Each bar is what the budget draws each week beyond upkeep, compared with the money that comes in. Past the line, the budget uses more than it gets." }}>
         <Draw flow={inForce} label="Current budget" />
         <Draw flow={draft} label="Your proposal" />
@@ -54,7 +53,7 @@ export function Tradeoffs({ reading }: { readonly reading: Drafted }) {
       <Text variant="body">Current budget: {claimWords(inForce)}.</Text>
       <Text variant="body">Your proposal: {claimWords(draft)}.</Text>
       {reading.horizons.length > 0 ? <Horizons rows={reading.horizons} /> : null}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -101,7 +100,7 @@ export function CongressionalResponse({ reading }: { readonly reading: Drafted }
     senate: entry.votes.find((vote) => vote.chamber === "senate"),
   }));
   return (
-    <Panel title="Votes needed in Congress" icon="subjectChamber" lede="This shows how many votes each changed line needs. It doesn't tell you how members will vote." aside={<Badge status="outline">Requirements</Badge>}>
+    <Pane title="Votes needed in Congress" icon="subjectChamber" line="This shows how many votes each changed line needs. It doesn't tell you how members will vote." actions={<Tag tone="outline">Requirements</Tag>}>
       {lines.length === 0 ? (
         <Text variant="body" tone="secondary">
           Your budget matches the current one, so there's nothing for Congress to vote on.
@@ -137,7 +136,7 @@ export function CongressionalResponse({ reading }: { readonly reading: Drafted }
           </Row>
         ))
       )}
-    </Panel>
+    </Pane>
   );
 }
 

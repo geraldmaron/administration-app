@@ -1,5 +1,5 @@
 import { selectCurrentLaws } from "./state.js";
-import { hasLapsed } from "./emergency.js";
+import { selectDeclaredEmergencies } from "./emergency.js";
 import { campaignDay } from "./clock.js";
 import { hasProspectiveOrderAuthority } from "./order-authority.js";
 /** Congress names the project and its money when an appropriation becomes law. */
@@ -18,9 +18,9 @@ export function constructionAuthorityAvailable(campaign, order) {
     if (order.subject?.kind !== "construction" || !order.constructionNotice || order.review?.status === "struck-down"
         || order.rescindedTurn !== undefined)
         return false;
-    const emergency = campaign.emergencies[order.subject.declarationId];
+    const declarationId = order.subject.declarationId;
     return hasProspectiveOrderAuthority(campaign, order.id)
-        && Boolean(emergency && emergency.endedTurn === undefined && !hasLapsed(emergency, campaign.turn));
+        && selectDeclaredEmergencies(campaign).some((emergency) => emergency.id === declarationId);
 }
 /** Commit enacted balances, then pay only commitments actually made. */
 export const militaryConstructionPhase = (campaign) => (campaign.militaryConstructionProjects ?? []).flatMap((project) => {

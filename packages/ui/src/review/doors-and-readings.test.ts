@@ -13,7 +13,7 @@ vi.mock("../primitives/Button", async () => ({ Pressable: (await import("../prim
 vi.mock("../primitives/Surface", () => ({ Surface: ({ render, href, children, ...props }: { render?: string; href?: string; children?: ReactNode; "aria-label"?: string }) => createElement(render ?? "div", { href, "aria-label": props["aria-label"] }, children) }));
 vi.mock("../primitives/Stack", () => ({ Column: ({ children }: { children?: ReactNode }) => createElement("div", {}, children), Row: ({ children }: { children?: ReactNode }) => createElement("div", {}, children) }));
 vi.mock("../primitives/Text", () => ({ Text: ({ children }: { children?: ReactNode }) => createElement("span", {}, children) }));
-vi.mock("../primitives/Badge", () => ({ CountDot: () => null }));
+vi.mock("../primitives/CountDot", () => ({ CountDot: () => null }));
 vi.mock("../icons/Icon", () => ({ Icon: () => null }));
 
 import { Pressable } from "../primitives/Pressable.web";

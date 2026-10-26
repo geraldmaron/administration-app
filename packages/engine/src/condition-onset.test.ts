@@ -7,6 +7,7 @@ import {
   STANDING_PRESSURE,
   claimOnsetSlots,
   onsetCandidates,
+  onsetSeverity,
   standingHold,
   standingPressure,
   type OnsetCandidate,
@@ -288,5 +289,21 @@ describe("the week's open slots", () => {
     const chances = [...Array.from({ length: 50 }, () => 0.02), ...Array.from({ length: 50 }, () => 0.2)];
     const taken = slotsTaken(roster(chances), 2, 2_000);
     expect(sum(taken.slice(50))).toBeGreaterThan(sum(taken.slice(0, 50)) * 5);
+  });
+});
+
+describe("how bad an onset is", () => {
+  const draws = Array.from({ length: 10_000 }, (_, i) => onsetSeverity((i + 0.5) / 10_000));
+  const at = (share: number) => [...draws].sort((a, b) => a - b)[Math.floor(share * draws.length)]!;
+
+  it("keeps the mean of the even draw it replaced", () => {
+    expect(draws.reduce((sum, value) => sum + value, 0) / draws.length).toBeCloseTo(0.5, 2);
+  });
+
+  it("carries a tail: half under 0.46, one in ten over 0.85, and the worst reach 1", () => {
+    expect(at(0.5)).toBeLessThan(0.46);
+    expect(at(0.9)).toBeGreaterThan(0.85);
+    expect(Math.max(...draws)).toBeGreaterThan(0.99);
+    expect(Math.min(...draws)).toBeGreaterThanOrEqual(0.2);
   });
 });

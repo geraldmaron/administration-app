@@ -70,7 +70,7 @@ function Toward({ view }: { readonly view: ActWorkspace }) {
   const then = view.then;
   if (!then || !view.chosen || then.option.id === view.chosen.option.id) return null;
   return (
-    <Card title={`This builds toward ${then.option.name}`} icon="locked" level="sunken" helper="When it's done, the receipt takes you back to it.">
+    <Card title={`This builds toward ${then.option.name}`} icon="locked" level="sunken" helper="This option remains the goal of the current plan.">
       {then.preview.state === "open" ? <Text variant="body">{`${then.option.name} is open now.`}</Text> : <LockedPath {...(then.prerequisite ? { prerequisite: then.prerequisite } : {})} {...(then.preview.reason ? { reason: then.preview.reason } : {})} />}
     </Card>
   );
@@ -83,7 +83,7 @@ export function PlanPanel({ campaign, nation, view, config, onConfig, tariff }: 
   if (!chosen || !view.assessment) {
     return (
       <Text variant="body" tone="secondary">
-        Pick an option above to plan it. Its settings and what it changes appear here.
+        No option is in the plan yet.
       </Text>
     );
   }

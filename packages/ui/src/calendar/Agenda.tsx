@@ -1,7 +1,7 @@
 import { View } from "@tamagui/core";
 import { Icon } from "../icons/Icon";
 import { LegalCitation } from "../context/LegalCitation";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { PressRow } from "../primitives/PressRow";
 import { Column, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
@@ -23,7 +23,7 @@ function AgendaBody({ row }: { readonly row: DatedRow }) {
             <Text variant="eyebrow" tone="secondary">
               {row.kindLabel}
             </Text>
-            <Badge status={URGENCY[row.urgency].status}>{URGENCY[row.urgency].word}</Badge>
+            <Tag tone={URGENCY[row.urgency].status}>{URGENCY[row.urgency].word}</Tag>
           </Row>
           <Text variant="label">{row.title}</Text>
           {row.detail ? (

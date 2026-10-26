@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createRngStreams, openConversation, type Campaign } from "@admin/engine";
 import { scenarioOccurrenceKey, type CastScenario } from "@admin/content";
-import { beatsWithoutParticularRestatement, briefMatters, decisionCamera, decisionComparison, pendingConversations, place, scenarioDispositions, scenarioMatterId, silenceLine, type ScenarioDispositionKind } from "@admin/player-core";
+import { beatsWithoutParticularRestatement, briefMatters, decisionCamera, decisionComparison, pendingConversations, place, scenarioDispositions, scenarioMatterId, silenceLine, type MatterClock, type ScenarioDispositionKind } from "@admin/player-core";
 import { Button, Column, HelpButton, Icon, Loading, Page, Row, Section, Segmented, Sticky, Surface, Text, useMedia } from "@admin/ui";
 import { CompareAuthorize } from "@admin/ui/review";
 import { useOpenAuthority } from "../law/AuthorityProvider";
@@ -62,6 +62,11 @@ function useDesk(campaign: Campaign, cast: CastScenario) {
   return { thread, comparison, beats, head, clock };
 }
 
+function deskLede(clock: MatterClock | undefined): string {
+  if (!clock) return "No deadline, and time stays held until you answer.";
+  return `${clock.left} ${clock.unit}${clock.left === 1 ? "" : "s"} left to answer, and time stays held until you do.`;
+}
+
 function DecisionDesk({ campaign, cast, view, onView, onDone }: { readonly campaign: Campaign; readonly cast: CastScenario; readonly view: DecisionView; readonly onView: (view: DecisionView) => void; readonly onDone: (decided: Decided) => void }) {
   const media = useMedia();
   const openLaw = useOpenAuthority();
@@ -78,7 +83,7 @@ function DecisionDesk({ campaign, cast, view, onView, onDone }: { readonly campa
   const sideBody = <Column gap="lg"><Status cast={cast} {...(clock ? { clock } : {})} /><DecisionRelated campaign={campaign} cast={cast} head={head} selection={decisionCamera(cast).selection} /></Column>;
   const side = media.desktop ? <Sticky width={360}>{sideBody}</Sticky> : <Column width="100%">{sideBody}</Column>;
   return (
-    <Page icon={kindIcon(cast)} eyebrow={`Decision · ${head.issuer}`} title={cast.script.subject} actions={<HelpButton content={{ ...HOW_IT_WORKS, related: termRelated("put-off", "put off") }} label="How decisions work" />}>
+    <Page icon={kindIcon(cast)} eyebrow={`Decision · ${head.issuer}`} title={cast.script.subject} lede={deskLede(clock)} actions={<HelpButton content={{ ...HOW_IT_WORKS, related: termRelated("put-off", "put off") }} label="How decisions work" />}>
       <Row><BackButton parent={place.brief()} parentLabel="Brief" /></Row>
       <Row gap="xl" top wrap={!media.desktop}>
         <Column flex={1} minWidth={0} gap="lg">
@@ -90,7 +95,7 @@ function DecisionDesk({ campaign, cast, view, onView, onDone }: { readonly campa
         <Row gap="xs" top>
           <Icon name="info" size={16} tone="colorSecondary" />
           <Text variant="caption" tone="secondary" flex={1}>
-            These numbers are your staff's best guesses, not results. Any borrowing for a program is a guess too, and the Record shows what was actually borrowed. Picking an answer doesn't commit you until you press its button.
+            These numbers are your staff's best guesses, not results. Any borrowing for a program is a guess too, and the Record shows what was actually borrowed.
           </Text>
         </Row>
       </Surface>
@@ -99,7 +104,7 @@ function DecisionDesk({ campaign, cast, view, onView, onDone }: { readonly campa
       <Dispositions campaign={campaign} cast={cast} busy={acts.busy} onDispose={(kind) => void acts.dispose(kind)} />
       <Section icon={view === "background" ? "archive" : "microphone"} title="Advice and background">
         <Segmented label="Show" options={[{ value: "advisers", label: "Advisers", icon: "microphone" }, { value: "background", label: "Background and history", icon: "archive" }]} value={view} onChange={onView} />
-        {view === "background" ? <Background cast={cast} beats={beats} /> : reply ? <Counsel campaign={campaign} script={cast.script} reply={reply} /> : <Text variant="body" tone="secondary">Pick an answer above to see what your advisers think of it.</Text>}
+        {view === "background" ? <Background campaign={campaign} cast={cast} beats={beats} /> : reply ? <Counsel campaign={campaign} script={cast.script} reply={reply} /> : <Text variant="body" tone="secondary">Your advisers weigh in on the answer you pick.</Text>}
       </Section>
     </Page>
   );

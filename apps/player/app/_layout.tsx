@@ -5,8 +5,9 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { SourceSans3_400Regular, SourceSans3_600SemiBold, SourceSans3_700Bold } from "@expo-google-fonts/source-sans-3";
-import { SourceSerif4_400Regular, SourceSerif4_600SemiBold, SourceSerif4_700Bold } from "@expo-google-fonts/source-serif-4";
+import { Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold } from "@expo-google-fonts/geist";
+import { GeistMono_400Regular, GeistMono_500Medium } from "@expo-google-fonts/geist-mono";
+import { Newsreader_400Regular, Newsreader_400Regular_Italic, Newsreader_500Medium, Newsreader_600SemiBold } from "@expo-google-fonts/newsreader";
 import { configureLinkBase, View } from "@admin/ui";
 import { configureMapWorker } from "@admin/ui/map";
 import { DeviceProviders } from "../src/device/DeviceProviders";
@@ -23,16 +24,20 @@ SplashScreen.preventAutoHideAsync().catch((cause: unknown) => console.warn("The 
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    SourceSans3_400Regular,
-    SourceSans3_600SemiBold,
-    SourceSans3_700Bold,
-    SourceSerif4_400Regular,
-    SourceSerif4_600SemiBold,
-    SourceSerif4_700Bold,
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+    Geist_700Bold,
+    GeistMono_400Regular,
+    GeistMono_500Medium,
+    Newsreader_400Regular,
+    Newsreader_400Regular_Italic,
+    Newsreader_500Medium,
+    Newsreader_600SemiBold,
   });
   const ready = fontsLoaded || fontError !== null;
   useEffect(() => {
-    if (fontError) console.warn("The Source faces could not load; the system face stands in.", fontError);
+    if (fontError) console.warn("The Geist and Newsreader faces could not load; the system face stands in.", fontError);
     if (ready) SplashScreen.hideAsync().catch((cause: unknown) => console.warn("The splash screen could not be released.", cause));
   }, [ready, fontError]);
   if (!ready) return null;

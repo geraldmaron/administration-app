@@ -35,7 +35,7 @@ function Framed({ campaign, lens, title, selected, onFail, bounds }: Omit<StateM
   const open = useRegionDoor();
   return (
     <Column gap="md">
-      <MapFrame title={title} {...map} height={460} minHeight={300} selected={selected} onSelect={(key) => key !== selected && open(key)} onFail={onFail} hint="Pick a district or a neighboring state to open it." />
+      <MapFrame title={title} {...map} height={460} minHeight={300} selected={selected} onSelect={(key) => key !== selected && open(key)} onFail={onFail} hint="Districts and neighboring states open their own pages." />
       <MapKey legend={map.legend} />
     </Column>
   );

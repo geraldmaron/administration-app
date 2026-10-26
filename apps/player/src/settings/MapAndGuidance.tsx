@@ -18,7 +18,7 @@ const FIRST_RUN = "first-decision";
 export function MapSettings() {
   const { preferences, update } = usePreferences();
   return (
-    <SettingsGroup icon="mapPin" title="Map" description="Choose how the map moves and how much detail it shows. If your device is set to reduce motion, the map always uses Cut.">
+    <SettingsGroup icon="mapPin" title="Map" description="How the map moves between places and how much detail it draws. A device set to reduce motion always gets Cut.">
       <ChoiceList
         label="Camera"
         help={preferences.camera ? undefined : "You haven't picked one yet. The map uses Fly until you start your first presidency, then Quick after that."}
@@ -38,7 +38,7 @@ export function Guidance() {
   const dismissed = preferences.dismissedBriefs ?? [];
   const shown = preferences.hideGuidance !== true && !dismissed.includes(FIRST_RUN);
   return (
-    <SettingsGroup icon="review" title="Guidance" description="Tips for your first time playing. You can always look up a word with search.">
+    <SettingsGroup icon="review" title="Guidance" description="Tips for a first presidency.">
       <Toggle
         label="Show the first-time walkthrough"
         hint="Four short tips about the briefing, comparing choices, finding your way around, and maps. You'll see them the next time you open a decision."

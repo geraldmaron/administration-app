@@ -60,8 +60,8 @@ export const FORCE_PACKAGE_SPECS: readonly ForcePackageSpec[] = [
     rung: 4,
     branch: "air",
     unitType: "air.fighter",
-    min: 48,
-    preferred: 200,
+    min: 36,
+    preferred: 100,
   },
   {
     id: "expeditionary-corps",
@@ -79,18 +79,18 @@ export const FORCE_PACKAGE_SPECS: readonly ForcePackageSpec[] = [
  * the package has to face. Every nation carries a strength for each branch,
  * where only a few carry a full order of battle, so the size reads that.
  *
- * The proposal runs from a floor to the package's old fixed size along the
- * target's strength raised to 1.5: a weak air arm draws a strike the size of
- * the 1986 raid on Libya (about 45 aircraft against a strength near 0.25),
- * a peer's draws the full 200. The cap never rises above the old size, so an
- * order against the strongest target is priced and resolved exactly as it
- * always was; only a weaker target stops drawing a force built for a peer.
+ * The proposal runs from a floor to the package's own size along the target's
+ * strength raised to 1.5: a weak air arm draws a few dozen airframes, a peer's
+ * draws the full hundred. Both ends sit inside the record: the 1986 raid on
+ * Libya launched about 100 aircraft with its tankers and escorts, and the 2025
+ * strike on Iran's nuclear sites over 125. The cap never rises above the
+ * package's size, so a weaker target stops drawing a force built for a peer.
  */
 type Sizing = { readonly arm: "air" | "naval" | "land"; readonly floor: number };
 
 const SIZED_AGAINST: Readonly<Record<string, Sizing>> = {
   "surface-blockade": { arm: "naval", floor: 4 },
-  "limited-strike": { arm: "air", floor: 24 },
+  "limited-strike": { arm: "air", floor: 30 },
   "expeditionary-corps": { arm: "land", floor: 2 },
 };
 

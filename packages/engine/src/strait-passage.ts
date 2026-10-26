@@ -1,7 +1,8 @@
 import { CARGO_BUCKETS, CHOKEPOINT_CARGO, type NationId } from "@admin/world";
+import { blockadesInForce, type Blockade } from "./blockades.js";
 import { sideOf } from "./conflicts.js";
 import { disposition } from "./relationships.js";
-import { selectNation, selectRelationship, type Campaign, type Conflict } from "./state.js";
+import { selectActiveConflicts, selectNation, selectRelationship, type Campaign, type Conflict } from "./state.js";
 
 // Passage through a strait a war has closed, decided flag by flag.
 //
@@ -25,6 +26,8 @@ export type StraitPassage = {
   readonly chokepoint: string;
   /** The governments on the strait's shores fighting in the war that closed it. */
   readonly deniers: readonly NationId[];
+  /** Governments off the shore blockading one on it, whose navies stop only that government's cargo and their enemies'. */
+  readonly blockaders: readonly NationId[];
   /** Named flags let through. */
   readonly passing: readonly NationId[];
   /** Named flags and unsplit cargo stopped. */
@@ -52,6 +55,31 @@ export function letsThrough(campaign: Campaign, conflict: Conflict, denier: Nati
   return relationship !== undefined && disposition(relationship, campaign) >= PASSAGE_DISPOSITION;
 }
 
+/** Whether two governments are on opposite sides of any war now being fought. */
+function atWarWith(campaign: Campaign, a: NationId, b: NationId): boolean {
+  return selectActiveConflicts(campaign).some((conflict) => {
+    const sa = sideOf(conflict, a);
+    const sb = sideOf(conflict, b);
+    return sa !== undefined && sb !== undefined && sa !== sb;
+  });
+}
+
+/**
+ * Whether a navy blockading a government on the strait's shores, from off the
+ * shore, lets a cargo through. It stops cargo bound for the government it
+ * blockades and for governments it is at war with, and no one else's: a navy
+ * that does not hold the shore cannot close the strait as a whole.
+ */
+export function blockaderLetsThrough(campaign: Campaign, blockade: Pick<Blockade, "imposer" | "target">, destination: NationId): boolean {
+  if (destination === blockade.target) return false;
+  return destination === blockade.imposer || !atWarWith(campaign, blockade.imposer, destination);
+}
+
+/** The blockades standing against governments on the strait's shores, held from off the shore and within reach (`blockadesInForce`). */
+function offshoreBlockades(campaign: Campaign, littoral: readonly NationId[]): readonly Blockade[] {
+  return blockadesInForce(campaign).filter((blockade) => littoral.includes(blockade.target) && !littoral.includes(blockade.imposer));
+}
+
 /** Who passes a strait this war closes, for one commodity's cargo. */
 export function straitPassage(
   campaign: Campaign,
@@ -61,15 +89,20 @@ export function straitPassage(
   littoral: readonly NationId[],
 ): StraitPassage {
   const deniers = littoral.filter((shore) => sideOf(conflict, shore) !== undefined);
+  const navies = offshoreBlockades(campaign, littoral);
+  const blockaders = [...new Set(navies.map((blockade) => blockade.imposer))];
   const rows = CHOKEPOINT_CARGO.filter((row) => row.chokepoint === chokepoint && row.commodity === commodity);
-  if (rows.length === 0) return { chokepoint, deniers, passing: [], stopped: [], stoppedShare: 1 };
+  if (rows.length === 0) return { chokepoint, deniers, blockaders, passing: [], stopped: [], stoppedShare: 1 };
   const passes = (destination: string) =>
-    !CARGO_BUCKETS.includes(destination) && deniers.every((denier) => letsThrough(campaign, conflict, denier, destination as NationId));
+    !CARGO_BUCKETS.includes(destination)
+    && deniers.every((denier) => letsThrough(campaign, conflict, denier, destination as NationId))
+    && navies.every((blockade) => blockaderLetsThrough(campaign, blockade, destination as NationId));
   const total = rows.reduce((sum, row) => sum + row.mbd, 0);
   const stoppedRows = rows.filter((row) => !passes(row.destination));
   return {
     chokepoint,
     deniers,
+    blockaders,
     passing: rows.filter((row) => passes(row.destination)).map((row) => row.destination as NationId),
     stopped: stoppedRows.map((row) => row.destination),
     stoppedShare: total > 0 ? stoppedRows.reduce((sum, row) => sum + row.mbd, 0) / total : 1,

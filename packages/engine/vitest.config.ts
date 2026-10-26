@@ -20,9 +20,12 @@ import { configDefaults, defineConfig } from "vitest/config";
 // it rides along here rather than gaining its own package and test script.
 // `scripts/report-metric-registry.test.ts` rides along for the same reason: it
 // reads the built world and engine registries, which this package depends on.
+// `src/__probes__` holds realism probes whose assertions state the real-world
+// expectation, so a probe for a break that has not been fixed fails by design.
+// They run on demand through `pnpm run test:probes` (vitest.probes.config.ts).
 export default defineConfig({
   test: {
     include: [...configDefaults.include, "../../scripts/measure-performance.test.ts", "../../scripts/report-metric-registry.test.ts"],
-    exclude: [...configDefaults.exclude, "**/*balance*.test.ts"],
+    exclude: [...configDefaults.exclude, "**/*balance*.test.ts", "src/__probes__/**"],
   },
 });

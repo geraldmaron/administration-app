@@ -7,6 +7,40 @@ export declare function coverage(summary: string, turn: number): FeedItem;
 /** A packet the world produced rather than the President. */
 export declare function simulated(turn: number, summary: string, effects: readonly Effect[]): EffectPacket;
 /**
+ * How a midterm moves the House, fitted to the post-1946 record.
+ *
+ * Gallup's table of eighteen midterms (Jones, Gallup, September 12, 2018) puts
+ * the president's party's net House seats against the president's job approval
+ * at -97.7 + 1.41 per point of approval, correlation .66, residual standard
+ * deviation about 17 seats (the least-squares fit and its residual are computed
+ * from that table, an observation of the record and not a causal estimate). A
+ * 40% president loses about 41 on that line, a 60% one about 13, and a 69% one
+ * breaks even; the historical means are 37 below 50% and 14 above.
+ *
+ * A seat is lost where it is held and contestable, so the swing is a share of
+ * the seats the president's party holds in competitive states (and, in a good
+ * year, of the opposition's), not a flat count. That is what makes 2010
+ * (255 seats held, -63) and 2014 (201 held, -13) different elections at the
+ * same approval. The residual the line leaves, candidate quality and the year's
+ * issues, is not modeled, so a given approval returns a seat-count band across
+ * starting seats and geography rather than the line's scatter.
+ *
+ * `sensitivity` is the fraction of at-risk seats moved per point of ballot
+ * share (1.4 puts about 300 seats per unit of share on a typical House);
+ * `neutralShare` is the ballot share at which the president's party holds its
+ * seats; `ceiling` is the most of its at-risk seats a party loses (the postwar
+ * worst, 63 of 255 held in 2010, is a quarter of the seats and about 0.3 of
+ * those at risk). Planning values: the slope and neutral point put the
+ * ballot share of a term with six laws on the line at 40% and 60% approval
+ * (shares near .48 and .57), the ceiling the worst postwar loss. A term with
+ * fewer laws reads a lower share at the same approval and so loses more.
+ */
+export declare const HOUSE_MIDTERM: {
+    readonly sensitivity: 1.4;
+    readonly neutralShare: 0.61;
+    readonly ceiling: 0.31;
+};
+/**
  * How close a state has to be for its senate seat to be in play at all.
  *
  * A national swing does not take Wyoming's seat, and a model that let it would

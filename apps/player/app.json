@@ -15,7 +15,7 @@
       "package": "com.theadministration.player",
       "adaptiveIcon": {
         "foregroundImage": "../../assets/player/brand/adaptive-foreground.png",
-        "backgroundColor": "#0B1424"
+        "backgroundColor": "#0E1218"
       }
     },
     "web": {
@@ -31,14 +31,14 @@
         "expo-splash-screen",
         {
           "image": "../../assets/player/brand/splash-icon.png",
-          "backgroundColor": "#0B1424",
+          "backgroundColor": "#07090D",
           "imageWidth": 160
         }
       ],
       [
         "expo-notifications",
         {
-          "color": "#0B1424"
+          "color": "#E2B562"
         }
       ],
       "@maplibre/maplibre-react-native"

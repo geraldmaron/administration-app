@@ -12,7 +12,7 @@ import { CAMPAIGN_TRUST, NO_CREDIT_TO_SHARE, NO_HOME_STATE, PUBLIC_MISS_GRUDGE, 
 import { SHARED_CREDIT_FRACTION } from "./credit-share.js";
 import { noiseFrom, projectWillingness, stampOf, weigh, } from "./willingness.js";
 import { draftLobbyFavor, eligibleFiscalMatter, fiscalMatterForBill, lobbyFavorAvailability, } from "./lobbying-favors.js";
-import { NEUTRAL_TRUST, figureRapport, tieOf, withRapportRead } from "./ties.js";
+import { NEUTRAL_TRUST, figureRapport, personalGrudgeWeight, tieOf, withRapportRead } from "./ties.js";
 export const LOBBY_PLAYS = {
     call: {
         approach: "call",
@@ -127,8 +127,8 @@ function memberTerms(campaign, member, approach, creditBill) {
     }
     const person = member.person;
     return [
-        // A member who already leans toward this administration is the easy one.
-        { key: "disposition", source: "situation", value: (figureRapport(campaign.people, member.figure) - 0.5) * 0.4 },
+        // Remembered injuries belong in this term so preview and resolution charge them once.
+        { key: "disposition", source: "situation", value: (figureRapport(campaign.people, member.figure) - 0.5) * 0.4 - 0.2 * clamp01(personalGrudgeWeight(campaign, member.figure.person)) },
         // An ambitious member with a career of their own is the hard one.
         { key: "ambition", source: "trait", value: person ? (0.5 - person.ambition) * 0.2 : 0 },
         { key: "integrity", source: "trait", value: person ? (person.integrity - 0.5) * -0.1 : 0 },

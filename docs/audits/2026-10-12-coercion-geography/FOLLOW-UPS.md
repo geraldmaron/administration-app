@@ -103,7 +103,7 @@ By instruction: no workspace build, typecheck, lint, full suite, verify sweep, P
 
 ## Commands
 
-From the worktree root (`~/.admin-app-wt/coercion-followups`), with no build:
+From the worktree root (`<local path>`), with no build:
 
 ```bash
 # The measurement (one process, both engines; "before" is the committed dist at 011d0c042):

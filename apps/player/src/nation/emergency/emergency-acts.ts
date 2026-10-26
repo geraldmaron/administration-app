@@ -48,7 +48,7 @@ function declareSpec(campaign: Campaign, conditionId: string): ActSpec | undefin
       return `You'll declare a state of emergency ${where}. It lowers your International Standing every week it lasts, and it ends after a year unless you continue it.`;
     },
     build: (selected) => {
-      const scope = scopeOfChoice(selected) ?? refused("Choose where it applies");
+      const scope = scopeOfChoice(selected) ?? refused("No place chosen for it to apply");
       const result = declareEmergency(campaign, scope, condition.kind);
       if (!result.ok) refused(result.reason);
       const where = scope.kind === "nation" ? "nationwide" : `in ${scopeWords(scope)}`;

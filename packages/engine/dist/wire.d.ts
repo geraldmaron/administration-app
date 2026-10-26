@@ -66,3 +66,17 @@ export type EngagementAct = {
 };
 /** The readout of an engagement, in the week it was made. Deterministic for a given act and week. */
 export declare function engagementLine(act: EngagementAct): string;
+/** What an act answers: the move it is measured against, who made it, and the partner it was aimed at where the answer is on a partner's behalf. */
+export type AnsweredMove = {
+    readonly coercer: string;
+    readonly instrument: InstrumentId;
+    readonly rung: RungLevel;
+    readonly onBehalfOf?: string;
+};
+/**
+ * The bulletin for an act a government made as an answer. The line names what
+ * it answers before what it did, as the line for a kept red line does, so a
+ * President told that China raised tariffs is also told it was answering their
+ * own.
+ */
+export declare function answerLine(answered: AnsweredMove, act: WireAct): string;

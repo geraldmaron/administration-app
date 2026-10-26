@@ -6,7 +6,8 @@ import { Distribution } from "@admin/ui/dossier";
 import { ChairReadBadge, ChairReadKey, ChairTraits } from "../../executive/parts";
 import { cabinetGroups, type CabinetGroup } from "../cabinet-groups";
 import { withSeat, type ResolvedFounding, type FoundingDraft } from "../draft";
-import { CandidateList, Commits, PersonFace, StageGrid } from "../parts";
+import { PersonFace } from "../../dossier/PersonFace";
+import { CandidateList, Commits, StageGrid } from "../parts";
 
 type Update = (change: (draft: FoundingDraft) => FoundingDraft) => void;
 

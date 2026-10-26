@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { COVERAGE_TONES, COVERAGE_TONE_WORD, formatRatio, place, sealFor, type DeskRow, type WeekCoverage } from "@admin/player-core";
-import { Badge, CardGrid, CardLink, Column, Empty, EntityLink, Masthead, Meter, ReadingFrame, Row, Surface, Text, View, type KeyEntry } from "@admin/ui";
+import { CardGrid, CardLink, Column, Empty, EntityLink, Masthead, Meter, ReadingFrame, Row, Surface, Tag, Text, View, type KeyEntry } from "@admin/ui";
 import { Segmented } from "@admin/ui/forms";
 import { WeekColumns, segmentKeyEntries, type BarSegment, type WeekColumn } from "@admin/ui/news";
 import { termDoor } from "../handbook/term-door";
@@ -8,7 +8,7 @@ import { feedHref } from "./press-params";
 import { TONE_SEGMENTS } from "./PressKpis";
 import { go, outletLean } from "./story-parts";
 
-const HEADING = { warming: { word: "Warming to you", status: "success" }, cooling: { word: "Cooling on you", status: "danger" }, settled: { word: "Steady", status: "outline" } } as const;
+const HEADING = { warming: { word: "Warming to you", tone: "success" }, cooling: { word: "Cooling on you", tone: "danger" }, settled: { word: "Steady", tone: "outline" } } as const;
 const STANCE_INK = { hostile: "danger", skeptical: "warningInk", neutral: "accent", friendly: "successInk" } as const;
 
 const STANCE_KEY: readonly KeyEntry[] = [
@@ -101,7 +101,7 @@ function DeskBody({ desk }: { readonly desk: DeskRow }) {
       </Text>
       <Meter label="How it feels about you" value={desk.disposition} figure={desk.stanceWord} tone={STANCE_INK[desk.stance]} />
       <Row gap="sm" wrap>
-        <Badge status={heading.status}>{heading.word}</Badge>
+        <Tag tone={heading.tone}>{heading.word}</Tag>
         <Text variant="caption" tone="secondary" flex={1} minWidth={160}>
           {desk.why}
         </Text>
@@ -147,7 +147,7 @@ export function DesksView({ desks, weeks, selectedWeek }: { readonly desks: read
               News outlets that cover you
             </Text>
             <Text variant="caption" tone="secondary">
-              {desks.length} news outlets. The first bar shows how each one feels about you. The colored tag shows whether that feeling is getting warmer or cooler.
+              {`${desks.length} news outlets: ${desks.filter((desk) => desk.heading === "warming").length} warming to you, ${desks.filter((desk) => desk.heading === "cooling").length} cooling.`}
             </Text>
           </Column>
           <Segmented label="Sort outlets" options={SORTS} value={sort} onChange={setSort} />

@@ -1,11 +1,12 @@
 import type { Campaign, ConversationBeat } from "@admin/engine";
 import type { CastScenario } from "@admin/content";
 import { monogramFor, place, pressureSourceLabel, roleTitle, type MatterClock } from "@admin/player-core";
-import { CardGrid, classificationKey, Column, DocParagraph, EntityLink, Icon, MemoPaper, Row, Seal, Section, Text, type IconName } from "@admin/ui";
+import { CardGrid, classificationKey, Column, DocParagraph, EntityLink, Icon, MemoPaper, Reading, Row, Seal, Section, Text, type IconName } from "@admin/ui";
 import { Voice } from "@admin/ui/review";
+import { PersonFace } from "../dossier/PersonFace";
 import { useMarking } from "../shell/classification";
 import { officeHrefOfRole, type Letterhead } from "./letterhead";
-import { Deadline, OpenEnded, RowLink, go } from "./parts";
+import { ClockReading, OpenEnded, RowLink, go } from "./parts";
 import { ScenarioTags } from "./ScenarioTags";
 
 type PressureSource = NonNullable<CastScenario["def"]["context"]>["pressures"][number]["source"];
@@ -40,13 +41,8 @@ function Particulars({ cast }: { readonly cast: CastScenario }) {
   return (
     <CardGrid columns={{ phone: 1, tablet: 2, desktop: 3, wide: 4 }} role="list" aria-label="Key numbers">
       {particulars.map((particular) => (
-        <Column key={particular.label} role="listitem" gap="2xs" flexGrow={1} borderLeftWidth={2} borderLeftColor="accent" paddingLeft="sm">
-          <Text variant="caption" tone="secondary">
-            {particular.label}
-          </Text>
-          <Text variant="title" weight="strong" tabular>
-            {particular.value}
-          </Text>
+        <Column key={particular.label} role="listitem" flexGrow={1}>
+          <Reading name={particular.label} value={particular.value} size="title" minWidth={0} />
         </Column>
       ))}
     </CardGrid>
@@ -197,7 +193,7 @@ export function Status({ cast, clock }: { readonly cast: CastScenario; readonly 
             Deadline
           </Text>
         </Row>
-        {clock ? <Deadline clock={clock} /> : <OpenEnded holds note="There's no deadline" />}
+        {clock ? <ClockReading clock={clock} /> : <OpenEnded holds note="There's no deadline" />}
       </Column>
       <Column gap="xs">
         <Row gap="xs">
@@ -240,7 +236,7 @@ function plateOf(beat: ConversationBeat): Plate | undefined {
   }
 }
 
-function Voices({ beats }: { readonly beats: readonly ConversationBeat[] }) {
+function Voices({ campaign, beats }: { readonly campaign: Campaign; readonly beats: readonly ConversationBeat[] }) {
   const spoken = beats.flatMap((beat) => {
     const plate = plateOf(beat);
     return plate ? [{ plate, text: beat.text }] : [];
@@ -257,6 +253,7 @@ function Voices({ beats }: { readonly beats: readonly ConversationBeat[] }) {
           name={plate.name}
           role={plate.role}
           line={text}
+          {...(plate.person ? { face: <PersonFace campaign={campaign} id={plate.person} name={plate.name} size={44} /> } : {})}
           nameSlot={plate.person ? <EntityLink label={plate.name} href={place.person(plate.person!)} onPress={() => go(place.person(plate.person!))} /> : undefined}
           tag={office ? <EntityLink label="Their office" icon="building" href={office} onPress={() => go(office)} /> : undefined}
         />
@@ -267,7 +264,7 @@ function Voices({ beats }: { readonly beats: readonly ConversationBeat[] }) {
 }
 
 /** Who said what, how it arrived and similar cases: the evidence behind the briefing. */
-export function Background({ cast, beats }: { readonly cast: CastScenario; readonly beats: readonly ConversationBeat[] }) {
+export function Background({ campaign, cast, beats }: { readonly campaign: Campaign; readonly cast: CastScenario; readonly beats: readonly ConversationBeat[] }) {
   const empty = beats.every((beat) => beat.speaker.kind === "narrator") && !cast.def.context && !cast.transmission;
   if (empty) {
     return (
@@ -278,7 +275,7 @@ export function Background({ cast, beats }: { readonly cast: CastScenario; reado
   }
   return (
     <Column gap="lg">
-      <Voices beats={beats} />
+      <Voices campaign={campaign} beats={beats} />
       {cast.def.context ? (
         <Column gap="sm">
           <Text variant="body">

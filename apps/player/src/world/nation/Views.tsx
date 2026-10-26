@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { WAR_POWERS_ANCHOR, actHref, countryWarPowers, underWayAgainst, type ActWorkspace, type NationFile } from "@admin/player-core";
 import type { NationId } from "@admin/world";
-import { Button, Column, Empty, Icon, Row, Text, type IconName } from "@admin/ui";
-import { Panel, StepReading, Unread } from "@admin/ui/world";
+import { Pane, Button, Column, Empty, Icon, Row, Text, type IconName } from "@admin/ui";
+import { StepReading, Unread } from "@admin/ui/world";
 import { ActsReceipt, useWorldActs } from "../acts";
 import { HoldingsTable } from "../forces";
 import { BandFrame, CardTo, TopicLaw, go } from "../parts";
@@ -23,7 +23,7 @@ function CountryWarPowers({ campaign, id, name }: { readonly campaign: Campaign;
   const war = reading.war;
   if (war) {
     return (
-      <Panel title="War Powers deadlines" icon="gavel" aside={<TopicLaw topic="war-powers" />} id={WAR_POWERS_ANCHOR}>
+      <Pane title="War Powers deadlines" icon="gavel" actions={<TopicLaw topic="war-powers" />} id={WAR_POWERS_ANCHOR}>
         <CardTo href={war} label="Open the war's War Powers deadlines" pad="md" flexDirection="row" alignItems="center" gap="sm">
           <Icon name="gavel" size={20} tone="colorSecondary" />
           <Text variant="body" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0}>
@@ -31,7 +31,7 @@ function CountryWarPowers({ campaign, id, name }: { readonly campaign: Campaign;
           </Text>
           <Icon name="chevron" size={18} tone="colorTertiary" />
         </CardTo>
-      </Panel>
+      </Pane>
     );
   }
   return (
@@ -51,7 +51,7 @@ export function SecurityView({ campaign, file }: { readonly campaign: Campaign; 
   return (
     <Column gap="lg">
       <CountryWarPowers campaign={campaign} id={file.nation} name={file.name} />
-      <Panel title={`${file.name}'s forces`} icon="shield">
+      <Pane title={`${file.name}'s forces`} icon="shield">
         {forces.warfighting ? <Text variant="body">Its military is in the {forces.warfighting.label.toLowerCase()} group. {forces.warfighting.sustains}</Text> : null}
         <BandFrame title="Its forces, by branch" meaning={FORCE_BANDS}>
           {forces.strip.map((domain) => (
@@ -68,15 +68,15 @@ export function SecurityView({ campaign, file }: { readonly campaign: Campaign; 
           </Row>
         ) : null}
         {forces.inferred.length > 0 ? <Unread>{`${forces.read ? "We don't have a detailed count for " : "Our intelligence agencies can't see "}${forces.inferred.map((domain) => domain.label.toLowerCase()).join(", ")}. The levels above are educated guesses.`}</Unread> : null}
-      </Panel>
+      </Pane>
       {forces.counted.length > 0 ? (
-        <Panel title={`What ${file.name} has, by type`} icon="unitGroundFormation">
+        <Pane title={`What ${file.name} has, by type`} icon="unitGroundFormation">
           <HoldingsTable holdings={forces.counted} caption={`What ${file.name} has, by type`} />
-        </Panel>
+        </Pane>
       ) : null}
-      <Panel title={`US forces in ${file.name}`} icon="mapPin" count={presence.length} lede="Only bases we can confirm are shown at their exact spot. Everything else is marked by general area.">
+      <Pane title={`US forces in ${file.name}`} icon="mapPin" count={presence.length} line="Only bases we can confirm are shown at their exact spot. Everything else is marked by general area.">
         {presence.length === 0 ? (
-          <Empty title="No US forces here" detail="Forces we place here would be listed with where they are." />
+          <Empty title="No US forces here" detail="You have no recorded deployment or base in this country." />
         ) : (
           <Column gap="sm" role="list" aria-label="US forces here">
             {(all ? presence : presence.slice(0, PRESENCE_FIRST)).map((row) => (
@@ -102,7 +102,7 @@ export function SecurityView({ campaign, file }: { readonly campaign: Campaign; 
             {all ? "Show fewer" : `Show all ${presence.length}`}
           </Button>
         ) : null}
-      </Panel>
+      </Pane>
     </Column>
   );
 }
@@ -112,7 +112,7 @@ export function IntelligenceView({ file }: { readonly file: NationFile }) {
   const { posture, program } = file;
   return (
     <Column gap="lg">
-      <Panel title="What it wants" icon="intel" aside={<TopicLaw topic="intelligence-collection" />}>
+      <Pane title="What it wants" icon="intel" actions={<TopicLaw topic="intelligence-collection" />}>
         {posture.unread ? (
           <Unread>Our intelligence agencies don't know yet what this country wants.</Unread>
         ) : (
@@ -135,8 +135,8 @@ export function IntelligenceView({ file }: { readonly file: NationFile }) {
           </BandFrame>
         ) : null}
         {posture.temperamentSource ? <Text variant="caption" tone="tertiary">{posture.temperamentSource}</Text> : null}
-      </Panel>
-      <Panel title="Its policies at home" icon="layerRegime">
+      </Pane>
+      <Pane title="Its policies at home" icon="layerRegime">
         <Column gap="xs">
           {program.rows.map((row) => (
             <Row key={row.domain} gap="sm" wrap>
@@ -153,16 +153,16 @@ export function IntelligenceView({ file }: { readonly file: NationFile }) {
           {program.lastChange ? `${program.lastChange.when}: ${program.lastChange.headline} ` : ""}
           It looks at its policies again {program.reviewInWeeks === 0 ? "this week" : `in ${program.reviewInWeeks} ${program.reviewInWeeks === 1 ? "week" : "weeks"}`}.
         </Text>
-      </Panel>
+      </Pane>
       {file.coverage ? (
-        <Panel title="How their press covers you" icon="press">
+        <Pane title="How their press covers you" icon="press">
           <Text variant="body">{file.coverage.caption}</Text>
           {file.coverage.piece ? (
             <Text variant="caption" tone="secondary">
               {file.coverage.piece.outlet}: {file.coverage.piece.lede}
             </Text>
           ) : null}
-        </Panel>
+        </Pane>
       ) : null}
       {file.provenance ? <Text variant="caption" tone="tertiary">{file.provenance}</Text> : null}
     </Column>
@@ -176,7 +176,7 @@ const END_VERB: Readonly<Record<ActWorkspace["underway"][number]["kind"], string
 export function UnderWay({ nation, rows }: { readonly nation: NationId; readonly rows: ActWorkspace["underway"] }) {
   if (rows.length === 0) return null;
   return (
-    <Panel title="Already under way" icon="pending" count={rows.length} edge="warning">
+    <Pane title="Already under way" icon="pending" count={rows.length} band="warning">
       {rows.map((row) => (
         <Row key={row.id} gap="sm" wrap>
           <Icon name={UNDERWAY_ICON[row.kind]} size={18} tone="colorSecondary" />
@@ -193,7 +193,7 @@ export function UnderWay({ nation, rows }: { readonly nation: NationId; readonly
           ) : null}
         </Row>
       ))}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -206,9 +206,9 @@ export function ActivityView({ campaign, file }: { readonly campaign: Campaign; 
   return (
     <Column gap="lg">
       <UnderWay nation={file.nation} rows={underway} />
-      <Panel title={`Recent moves by ${file.name}`} icon="dispatch" count={file.recent.length}>
+      <Pane title={`Recent moves by ${file.name}`} icon="dispatch" count={file.recent.length}>
         {file.recent.length === 0 ? (
-          <Text variant="body" tone="secondary">This country hasn't done anything in the news lately.</Text>
+          <Text variant="body" tone="secondary">No recent moves by this country are on file.</Text>
         ) : (
           <Column gap="md" role="list" aria-label="Recent moves">
             {file.recent.slice(0, shown).map((move) => (
@@ -231,7 +231,7 @@ export function ActivityView({ campaign, file }: { readonly campaign: Campaign; 
             {`Show all ${file.recent.length}`}
           </Button>
         ) : null}
-      </Panel>
+      </Pane>
     </Column>
   );
 }

@@ -1,4 +1,4 @@
-import { forceAssetNoun, forceAssetPersonnel, organizations, type ForceAssetId, type MilitaryBranch, type NationId } from "@admin/world";
+import { forceAssetNoun, forceAssetPersonnel, organizations, type ForceAssetId, type MilitaryBranch, type NationId, type StateId } from "@admin/world";
 import {
   selectConditionsFor,
   selectNation,
@@ -34,6 +34,7 @@ import type { DeedFamily, DeedOutcome } from "./deeds.js";
 import { markedFlags } from "./marked-flags.js";
 import { deploymentLocation } from "./commitment-locations.js";
 import type { MetricDeltas } from "./effect-types.js";
+import { isOrderCourtSuspended, prospectiveOrderAuthority } from "./order-authority.js";
 
 // Standing allocations, as first-class state.
 //
@@ -63,6 +64,10 @@ export type CommitmentDraft = {
   readonly rationale: string;
   /** See `Commitment.addressedCondition` — left unset unless the caller can name it. */
   readonly addressedCondition?: Commitment["addressedCondition"];
+  /** See `Commitment.authorizedBy`. */
+  readonly authorizedBy?: string;
+  /** Excepted work that a lapse in appropriations does not stop; see `ExecutiveOrder.excepted`. */
+  readonly excepted?: true;
 };
 
 /** The location a new commitment is written with, where it has one: a deployment stands in its target's zone. */
@@ -135,7 +140,7 @@ function moneyShortfall(campaign: Campaign, draft: CommitmentDraft): string | un
   if (draft.resource.spec.kind !== "currency") return undefined;
   const year = draft.resource.amountPerTurn * TURNS_PER_YEAR;
   if (year <= 0) return undefined;
-  const funded = obligationAvailability(campaign, year, {});
+  const funded = obligationAvailability(campaign, year, { excepted: draft.excepted });
   return funded.ok ? undefined : `This needs ${funded.missing}.`;
 }
 
@@ -167,6 +172,7 @@ export function openCommitment(campaign: Campaign, draft: CommitmentDraft): Comm
     status: "active",
     rationale: draft.rationale,
     addressedCondition: draft.addressedCondition,
+    ...(draft.authorizedBy ? { authorizedBy: draft.authorizedBy } : {}),
     ...located(campaign, draft),
   };
   const deed = commitmentDeed(campaign, commitment, "pledge");
@@ -305,6 +311,10 @@ export function setCommitmentStatus(
   const current = campaign.commitments[id];
   if (!current) return { ok: false, reason: `No such commitment: ${id}.` };
   if (current.status === status) return { ok: false, reason: "That commitment already stands as it is." };
+  // Forces sent under an order stay as long as the order does: the order is
+  // the legal instrument a court reviews, and ending the mission without it
+  // would leave a signed order with nothing under it.
+  if (current.authorizedBy) return { ok: false, reason: "Rescind the order that sent them." };
   if (current.status === "wound-down") return { ok: false, reason: "A commitment that has been wound down cannot be reopened; open a new one." };
   const next: Commitment = {
     ...current,
@@ -482,6 +492,7 @@ function targetName(target: Commitment["target"], campaign: Campaign | undefined
   if (!campaign) return target.id;
   if (target.kind === "nation") return selectNation(campaign, target.id as NationId)?.base.identity.name ?? target.id;
   if (target.kind === "org") return ORG_NAMES.get(target.id) ?? target.id;
+  if (target.kind === "state") return campaign.states[target.id as StateId]?.base.name ?? target.id;
   const conflict = campaign.conflicts[target.id];
   if (!conflict) return target.id;
   const name = (id: NationId) => selectNation(campaign, id)?.base.identity.name ?? id;
@@ -508,8 +519,8 @@ function openingSummary(commitment: Commitment, campaign: Campaign): string {
  */
 export const commitmentPhase: TurnPhase = (state: Campaign) => {
   const standing = activeCommitments(state, state.founding.nation);
-  const due = standing.filter((commitment) => !expired(commitment, state.turn));
-  const lapsed = standing.filter((commitment) => expired(commitment, state.turn));
+  const due = standing.filter((commitment) => !expired(state, commitment));
+  const lapsed = standing.filter((commitment) => expired(state, commitment));
 
   const effects: Effect[] = lapsed.map((commitment) => ({
     kind: "commitment",
@@ -531,7 +542,8 @@ export const commitmentPhase: TurnPhase = (state: Campaign) => {
   // a policy stance cost comparable amounts for comparable promises.
   const money = due
     .filter((commitment) => commitment.resource.spec.kind === "currency")
-    .reduce((total, commitment) => total + commitment.resource.amountPerTurn, 0);
+    .reduce((total, commitment) => total + commitment.resource.amountPerTurn, 0)
+    + lapsed.reduce((total, commitment) => total + minimumOwed(state, commitment), 0);
 
   const deltas: MetricDeltas = {};
   // A promise the authority cannot carry is short-funded, not forgiven: the
@@ -547,7 +559,8 @@ export const commitmentPhase: TurnPhase = (state: Campaign) => {
   // which is the one thing they buy that nothing else does.
   // A promise the administration inherited at the oath — a base, the Gulf
   // posture — is not evidence of this government's word; only its own are.
-  const kept = due.filter((commitment) => commitment.startedTurn > 0);
+  // Nor is a deployment into one of its own states: nobody abroad was promised it.
+  const kept = due.filter((commitment) => commitment.startedTurn > 0 && commitment.target.kind !== "state");
   if (kept.length > 0) deltas.standing = round3(Math.min(0.01, 0.002 * kept.length));
   if (Object.keys(deltas).length > 0) effects.push({ kind: "metric", deltas });
 
@@ -563,8 +576,29 @@ export const commitmentPhase: TurnPhase = (state: Campaign) => {
   ] satisfies readonly EffectPacket[];
 };
 
-function expired(commitment: Commitment, turn: number): boolean {
-  return commitment.review !== "standing" && turn >= commitment.review.endsTurn;
+/**
+ * The fewest weeks a mission is billed once ordered. Troops and a federalized
+ * Guard are mobilized, moved and housed before the first week on the street,
+ * and that is paid whether or not the order stands; a President who rescinds
+ * in the first week still pays for the second.
+ */
+export const MISSION_MINIMUM_WEEKS = 2;
+
+/**
+ * What a mission rescinded inside its minimum still owes. A court's pause or
+ * strike-down owes nothing: the government did not choose to end it.
+ */
+function minimumOwed(campaign: Campaign, commitment: Commitment): number {
+  if (!commitment.authorizedBy || commitment.resource.spec.kind !== "currency") return 0;
+  const record = campaign.orders.find((entry) => entry.id === commitment.authorizedBy);
+  if (record?.rescindedTurn === undefined || record.review?.status === "struck-down" || isOrderCourtSuspended(campaign, record.id)) return 0;
+  const served = campaign.turn - commitment.startedTurn;
+  return Math.max(0, MISSION_MINIMUM_WEEKS - served) * commitment.resource.amountPerTurn;
+}
+
+function expired(campaign: Campaign, commitment: Commitment): boolean {
+  if (commitment.authorizedBy && prospectiveOrderAuthority(campaign, commitment.authorizedBy) !== "operative") return true;
+  return commitment.review !== "standing" && campaign.turn >= commitment.review.endsTurn;
 }
 
 const round3 = (value: number) => Math.round(value * 1000) / 1000 + 0;

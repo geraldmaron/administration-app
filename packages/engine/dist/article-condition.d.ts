@@ -1,7 +1,7 @@
 import { type ConditionKind } from "./condition-kinds.js";
 import { type Desk } from "./article-desk.js";
 import type { FeedItem } from "./state.js";
-type Footprint = "weather" | "health" | "order" | "economy";
+type Footprint = "weather" | "health" | "order" | "event" | "economy";
 export type ConditionPhase = "onset" | "worsening" | "easing" | "over";
 type Extent = "local" | "part" | "whole";
 /** What the composer can honestly read off a condition item. */

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Theme, View, useMedia } from "@tamagui/core";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NavRail } from "./NavRail";
+import { AttentionLight, type AttentionState } from "./AttentionLight";
 import { TabBar } from "./TabBar";
 import type { LinkComponent, NavGroup, NavItem } from "./nav-types";
 
@@ -20,6 +21,8 @@ export type AppShellProps = {
   readonly frameTop?: ReactNode;
   /** The marking line closing the frame; on a phone it sits above the tab bar so the thumb target stays at the screen's edge. */
   readonly frameBottom?: ReactNode;
+  /** What the clock is waiting on; tints the light behind the work plane. */
+  readonly attention?: AttentionState;
   readonly children: ReactNode;
   readonly title?: string;
 };
@@ -30,12 +33,13 @@ export type AppShellProps = {
  * the labeled navigation from 1440px. What a President can do is the same at
  * every width; only where the controls sit changes.
  */
-export function AppShell({ groups, utilities, phoneItems, activeId, phoneActiveId, Link, bar, frameTop, frameBottom, children, title = "Administration" }: AppShellProps) {
+export function AppShell({ groups, utilities, phoneItems, activeId, phoneActiveId, Link, bar, frameTop, frameBottom, attention = "clear", children, title = "Administration" }: AppShellProps) {
   const media = useMedia();
   const insets = useSafeAreaInsets();
   if (media.phone) {
     return (
       <View flex={1} backgroundColor="backgroundStrong">
+        <AttentionLight state={attention} />
         <View paddingTop={insets.top} backgroundColor="background" flexShrink={0}>
           {frameTop}
           <Theme name="chrome">
@@ -52,6 +56,7 @@ export function AppShell({ groups, utilities, phoneItems, activeId, phoneActiveI
   }
   return (
     <View flex={1} minHeight={0} backgroundColor="backgroundStrong" paddingTop={insets.top}>
+      <AttentionLight state={attention} />
       <View flexShrink={0}>{frameTop}</View>
       <View flex={1} minHeight={0} flexDirection="row">
         <NavRail groups={groups} utilities={utilities} activeId={activeId} Link={Link} expanded={Boolean(media.wide)} title={title} />

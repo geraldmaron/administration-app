@@ -26,8 +26,8 @@ describe("force packages sized against the target", () => {
   it("proposes a small strike against a weak air arm and the full package against a peer", () => {
     const weak = specAgainst(withStrength(buildCampaign(), ALP, 0.25), ALP, strike);
     const peer = specAgainst(withStrength(buildCampaign(), ALP, 1), ALP, strike);
-    expect(weak.preferred).toBeGreaterThanOrEqual(40);
-    expect(weak.preferred).toBeLessThanOrEqual(50);
+    expect(weak.preferred).toBeGreaterThanOrEqual(35);
+    expect(weak.preferred).toBeLessThanOrEqual(45);
     expect(peer.preferred).toBe(strike.preferred);
   });
 

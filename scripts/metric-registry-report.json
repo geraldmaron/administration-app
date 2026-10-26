@@ -15,14 +15,14 @@
     "fields": 284,
     "fieldsWithAReader": 223,
     "fieldsWithAWriter": 163,
-    "readerSites": 2463,
-    "writerSites": 612,
-    "claimedReaders": 704,
+    "readerSites": 2556,
+    "writerSites": 620,
+    "claimedReaders": 707,
     "claimedThroughCall": 17,
-    "claimedNotSeen": 178,
+    "claimedNotSeen": 177,
     "fieldsGatedByContent": 19,
     "scenariosRead": 354,
-    "leakySites": 20,
+    "leakySites": 19,
     "computedKeySites": 0,
     "fieldsWithNoDeclaration": 58,
     "engineNodesWithNoStoredField": 17
@@ -123,7 +123,6 @@
   },
   "leaky": [
     "packages/engine/src/appointments.ts#dismissMinister: opaque patch of MetricSet (typed MetricDeltas)",
-    "packages/engine/src/budget.ts#budgetPhase: opaque patch of MetricSet (typed MetricDeltas)",
     "packages/engine/src/cabinet-agenda-acts.ts#answerResignationOffer: opaque patch of MetricSet (typed MetricDeltas)",
     "packages/engine/src/cabinet-agenda-acts.ts#proposalEffects: opaque patch of MetricSet (typed MetricDeltas)",
     "packages/engine/src/cabinet-faction.ts#reconcileFaction: opaque patch of MetricSet (typed MetricDeltas)",
@@ -262,7 +261,7 @@
         "packages/engine/src/municipal-offices.ts#cityMayorSeat",
         "packages/engine/src/people.ts#BIRTHPLACES_BY_NATION",
         "packages/engine/src/press-filing.ts#LOCALES",
-        "packages/engine/src/us-placement.ts#placeUsOnset",
+        "packages/engine/src/us-placement.ts#placeableCities",
         "packages/world/src/dataset/places.ts#cityPlace",
         "packages/world/src/dataset/usa.ts#usaPlacesFrom",
         "packages/world/src/schemas/city.ts#City",
@@ -284,7 +283,6 @@
         "packages/content/src/scenario.ts#ScenarioDef",
         "packages/engine/src/cities.ts#popWeightedLean",
         "packages/engine/src/impact-adapters.ts#conditionImpactEvent",
-        "packages/engine/src/us-placement.ts#placeUsOnset",
         "packages/player-core/src/world/state-dossier.ts#stateMetros",
         "packages/world/src/dataset/places.ts#largestCityIn",
         "packages/world/src/validate/dataset-validator.ts#checkCitiesFitTheNation"
@@ -304,6 +302,7 @@
         "packages/engine/src/people.ts#birthplaceLabel",
         "packages/engine/src/press-filing.ts#LOCALES",
         "packages/engine/src/us-placement.ts#placeUsOnset",
+        "packages/engine/src/us-placement.ts#placeableCities",
         "packages/player-core/src/world/state-dossier.ts#stateMetros",
         "packages/world/src/dataset/places.ts#cityPlace",
         "packages/world/src/dataset/places.ts#largestCityIn",
@@ -440,6 +439,7 @@
         "packages/engine/src/congress-members.ts#votingSeats",
         "packages/engine/src/delegations.ts#districtHolder",
         "packages/engine/src/house-seats.ts#districtsOf",
+        "packages/engine/src/succession.ts#houseSpecialOdds",
         "packages/player-core/src/world/district-dossier.ts#assembleDistrictDossier",
         "packages/player-core/src/world/state-dossier.ts#stateDossier",
         "packages/world/src/dataset/districts.ts#districtById",
@@ -499,6 +499,7 @@
     "FederalSite:institution": {
       "readers": [
         "apps/web/src/nation/policy/OrderScreen.tsx#OrderScreen",
+        "packages/engine/src/legal-exposure.ts#subjectState",
         "packages/engine/src/order-subjects.ts#federalSiteOrderSubjects",
         "packages/world/src/dataset/federal-sites.ts#siteByInstitution",
         "packages/world/src/validate/site-checks.ts#siteErrors",
@@ -525,6 +526,7 @@
     },
     "FederalSite:location": {
       "readers": [
+        "packages/engine/src/legal-exposure.ts#subjectState",
         "packages/engine/src/order-subjects.ts#federalSiteOrderSubjects",
         "packages/player-core/src/government/office-file.ts#siteOf",
         "packages/world/src/dataset/federal-sites.ts#federalSitePoint",
@@ -588,6 +590,7 @@
     },
     "FederalSite:state": {
       "readers": [
+        "packages/engine/src/legal-exposure.ts#subjectState",
         "packages/player-core/src/government/office-file.ts#siteOf",
         "packages/world/src/validate/site-checks.ts#siteRowErrors",
         "packages/world/src/validate/site-checks.ts#siteShapeErrors"
@@ -715,6 +718,7 @@
         "apps/web/src/nation/state/NationHome.tsx#NationHome",
         "packages/content/src/scenario-cast.ts#conditionMet (shared)",
         "packages/content/src/scenario-director.ts#presidencyPressure",
+        "packages/engine/src/__probes__/domestic-force.ts#runDomesticForce",
         "packages/engine/src/balance-harness.ts#summarize",
         "packages/engine/src/causality.ts#selectWhyMetricMoved (shared)",
         "packages/engine/src/congress.ts#dispositionTarget",
@@ -737,6 +741,7 @@
         "packages/engine/src/removal.ts#pressureTermReadings",
         "packages/engine/src/state-selectors.ts#selectMetricDelta (shared)",
         "packages/engine/src/state-selectors.ts#selectMetricSeries (shared)",
+        "packages/engine/src/succession.ts#moodToward",
         "packages/player-core/src/campaign/stop-brief.ts#briefMovements (shared)",
         "packages/player-core/src/compare/metrics.ts#playerCourse (shared)",
         "packages/player-core/src/compare/metrics.ts#playerMetric (shared)",
@@ -841,7 +846,7 @@
         "packages/content/src/scenario-memory.ts#inactionEffects",
         "packages/engine/src/appointments.ts#projectDismissal",
         "packages/engine/src/appointments.ts#projectDismissal (spread)",
-        "packages/engine/src/budget.ts#budgetPhase",
+        "packages/engine/src/budget.ts#spendingPackets (typed a narrower patch)",
         "packages/engine/src/cabinet-revolt.ts#exitPacket (typed a narrower patch)",
         "packages/engine/src/cabinet-revolt.ts#primaryPacket",
         "packages/engine/src/commitments.ts#commitmentPhase",
@@ -852,6 +857,7 @@
         "packages/engine/src/domestic-coercion.ts#incidentEffects",
         "packages/engine/src/inheritance.ts#inheritedMetricHistory",
         "packages/engine/src/judicial-review.ts#STRUCK_DOWN_COST",
+        "packages/engine/src/judicial-review.ts#strikeDownCost",
         "packages/engine/src/legislation.ts#overrideAttempts",
         "packages/engine/src/legislative-acts-domestic.ts#DOMESTIC_ACTS",
         "packages/engine/src/legislative-acts-fiscal.ts#FISCAL_ACTS",
@@ -877,6 +883,7 @@
       "readers": [
         "apps/web/src/world/overview/StandingPanel.tsx#StandingPanel",
         "packages/content/src/scenario-cast.ts#conditionMet (shared)",
+        "packages/engine/src/__probes__/domestic-force.ts#runDomesticForce",
         "packages/engine/src/balance-harness.ts#summarize",
         "packages/engine/src/causality.ts#selectWhyMetricMoved (shared)",
         "packages/engine/src/effects.ts#applyMetric (shared)",
@@ -919,8 +926,6 @@
         "packages/engine/src/commodity-levers.ts#projectFuelWaiver",
         "packages/engine/src/compacts.ts#callCompact",
         "packages/engine/src/congress.ts#recordUnilateralForce (spread)",
-        "packages/engine/src/conversation-report-actions.ts#localeProjection",
-        "packages/engine/src/conversation-report-actions.ts#localeProjection (spread)",
         "packages/engine/src/docket.ts#docketConsequence",
         "packages/engine/src/elections.ts#electionPacket",
         "packages/engine/src/elections.ts#electionPacket (typed { standing: number; })",
@@ -929,14 +934,16 @@
         "packages/engine/src/instruments-economic.ts#assistanceRungs",
         "packages/engine/src/intelligence.ts#committeeCost",
         "packages/engine/src/judicial-review.ts#STRUCK_DOWN_COST",
+        "packages/engine/src/judicial-review.ts#strikeDownCost",
         "packages/engine/src/legislation.ts#deskLapses",
         "packages/engine/src/legislation.ts#overrideAttempts",
         "packages/engine/src/legislative-acts-fiscal.ts#FISCAL_ACTS",
         "packages/engine/src/legislative-acts.ts#LEGISLATIVE_ACTS",
         "packages/engine/src/lobbying.ts#LOBBY_PLAYS",
-        "packages/engine/src/locale-acts.ts#takeHomeAct",
-        "packages/engine/src/locale-acts.ts#takeLocaleAct",
-        "packages/engine/src/locale-acts.ts#takeLocaleAct (spread)",
+        "packages/engine/src/locale-act-effects.ts#localeActPrice",
+        "packages/engine/src/locale-act-effects.ts#localeActPrice (spread)",
+        "packages/engine/src/locale-act-effects.ts#priceEffect",
+        "packages/engine/src/locale-act-effects.ts#priceEffect (spread)",
         "packages/engine/src/member-outreach.ts#issueMemberOutreach",
         "packages/engine/src/monetary-acts.ts#projectFedLean",
         "packages/engine/src/nomination.ts#withdrawNomination",
@@ -955,7 +962,7 @@
         "packages/engine/src/resolution.ts#riskContribution (typed { standing: number; } | {})",
         "packages/engine/src/standing-settling.ts#standingSettling",
         "packages/engine/src/strike-outcomes.ts#resolveStrikeHarm",
-        "packages/engine/src/trade.ts#tradePhase",
+        "packages/engine/src/trade-phase.ts#tradePhase",
         "packages/engine/src/treaties.ts#ratificationPacket",
         "packages/engine/src/treaties.ts#signTreaty",
         "packages/engine/src/treaties.ts#withdrawTreaty",
@@ -974,7 +981,7 @@
         "packages/engine/src/balance-choice.ts#chooseOption",
         "packages/engine/src/balance-choice.ts#isFreeWin",
         "packages/engine/src/balance-harness.ts#summarize",
-        "packages/engine/src/budget.ts#budgetPhase",
+        "packages/engine/src/budget.ts#spendingPackets",
         "packages/engine/src/causality.ts#selectWhyMetricMoved (shared)",
         "packages/engine/src/commitments.ts#commitmentPhase",
         "packages/engine/src/conditions.ts#conditionEffects",
@@ -1018,31 +1025,32 @@
       "writers": [
         "packages/content/src/consequence-compile.ts#compileRecipe (typed a narrower patch)",
         "packages/content/src/scenario-cast.ts#renderReply (typed a narrower patch)",
-        "packages/engine/src/budget.ts#budgetPhase",
+        "packages/engine/src/budget.ts#spendingPackets (typed a narrower patch)",
         "packages/engine/src/cabinet-agenda-acts.ts#projectMinisterProposal",
         "packages/engine/src/clean-power-purchasing.ts#buyFederalCleanPower",
         "packages/engine/src/commitments.ts#commitmentPhase",
         "packages/engine/src/conditions.ts#conditionEffects",
-        "packages/engine/src/conversation-report-actions.ts#localeProjection",
         "packages/engine/src/docket.ts#docketConsequence",
         "packages/engine/src/fiscal.ts#apportionmentPhase",
         "packages/engine/src/inheritance.ts#inheritedMetricHistory",
         "packages/engine/src/instrument-issued.ts#executionState",
         "packages/engine/src/instrument-issued.ts#withdrawInstrumentAct",
         "packages/engine/src/legislative-acts.ts#actCost",
-        "packages/engine/src/locale-acts.ts#takeHomeAct",
-        "packages/engine/src/locale-acts.ts#takeLocaleAct",
+        "packages/engine/src/locale-act-effects.ts#localeActPrice",
+        "packages/engine/src/locale-act-effects.ts#localeActPrice (spread)",
+        "packages/engine/src/locale-act-effects.ts#priceEffect",
+        "packages/engine/src/locale-act-effects.ts#priceEffect (spread)",
         "packages/engine/src/opening-position.ts#foundingBaseline",
         "packages/engine/src/opening-position.ts#openingPosition",
         "packages/engine/src/orders.ts#orderCost",
         "packages/engine/src/policy.ts#movementToDeltas",
         "packages/engine/src/policy.ts#sumDeltas",
-        "packages/engine/src/resolution.ts#projectCost",
-        "packages/engine/src/trade.ts#tradePhase"
+        "packages/engine/src/resolution.ts#projectCost"
       ]
     },
     "Nation.geo:chokepointDependence": {
       "readers": [
+        "packages/engine/src/commodity-shocks.ts#chokepointDependence",
         "packages/engine/src/geography.ts#chokepointExposure"
       ],
       "writers": [
@@ -1238,10 +1246,10 @@
         "packages/engine/src/war-join.ts#isNotable",
         "packages/engine/src/world-events-aid.ts#donorPool",
         "packages/engine/src/world-events-aid.ts#proximity",
-        "packages/engine/src/world-events.ts#applicant",
         "packages/engine/src/world-events.ts#clashPairs",
         "packages/engine/src/world-events.ts#interferencePackets",
         "packages/engine/src/world-events.ts#sanctionTarget",
+        "packages/engine/src/world-membership.ts#applicant",
         "packages/player-core/src/compare/peers.ts#chosen",
         "packages/world/src/dataset/geography.ts#borders",
         "packages/world/src/dataset/trade.ts#gravityPull",
@@ -1263,9 +1271,10 @@
         "packages/engine/src/combatant-commands.ts#defaultCommandFor",
         "packages/engine/src/feed-cap.ts#regionOf",
         "packages/engine/src/munitions.ts#npcIndustry",
-        "packages/engine/src/resolution-ripples.ts#thirdPartyRelation",
+        "packages/engine/src/resolution-ripples.ts#defenseTies",
         "packages/engine/src/strike-outcomes.ts#defensePromiseBreach",
         "packages/engine/src/war-join.ts#owedTo",
+        "packages/engine/src/world-events.ts#guarantorsOf",
         "packages/player-core/src/world/leaders.ts#worldLeaderRows",
         "packages/world/src/dataset/geography.ts#defaultDependence",
         "packages/world/src/dataset/portrait-priors.ts#REGION_BY_NATION",
@@ -1357,6 +1366,7 @@
         "packages/engine/src/cabinet-initiative.ts#baseFit",
         "packages/engine/src/engagement.ts#receiveTerms",
         "packages/engine/src/npc-agent.ts#salience",
+        "packages/engine/src/npc-response.ts#resolveToAnswer",
         "packages/engine/src/opening-position.ts#openingExpectations",
         "packages/player-core/src/compare/peers.ts#chosen",
         "packages/player-core/src/world/feed-rank.ts#powerTierOf"
@@ -1588,8 +1598,8 @@
       "readers": [
         "packages/content/src/scenario-cost.ts#financialCost",
         "packages/content/src/scenario-cost.ts#usOutput",
+        "packages/engine/src/budget-capability.ts#turnsToReach",
         "packages/engine/src/budget.ts#selectBudgetOutlook",
-        "packages/engine/src/budget.ts#turnsToReach",
         "packages/engine/src/collection-report.ts#foreignFindings",
         "packages/engine/src/commitments.ts#commitmentBand",
         "packages/engine/src/commitments.ts#commitmentPhase",
@@ -1598,6 +1608,9 @@
         "packages/engine/src/contest.ts#economicLayers",
         "packages/engine/src/external-pressure.ts#blockadeBite",
         "packages/engine/src/external-pressure.ts#foundingExportShare",
+        "packages/engine/src/external-pressure.ts#inputLoss",
+        "packages/engine/src/external-pressure.ts#retaliationCut",
+        "packages/engine/src/external-pressure.ts#worldExportShare",
         "packages/engine/src/fiscal.ts#bookUsWeek",
         "packages/engine/src/impact-adapters.ts#countryExposure",
         "packages/engine/src/impact-lifecycle.ts#independentImpactPressure",
@@ -1616,6 +1629,7 @@
         "packages/engine/src/national-books.ts#macroOf",
         "packages/engine/src/national-books.ts#usPosition",
         "packages/engine/src/opening-position.ts#foundingBaseline",
+        "packages/engine/src/operators.ts#cyberVictimWeights",
         "packages/engine/src/order-contribution.ts#orderLandingEffects",
         "packages/engine/src/order-subjects.ts#reliefAllocation",
         "packages/engine/src/policy-stats.ts#outputScale",
@@ -1624,6 +1638,7 @@
         "packages/engine/src/resolution.ts#projectCost",
         "packages/engine/src/trade-volume.ts#growthSinceOpening",
         "packages/engine/src/trade-volume.ts#sectorBase",
+        "packages/engine/src/trade-volume.ts#supplierHeadroom",
         "packages/player-core/src/compare/peers.ts#byOutput",
         "packages/player-core/src/economy/state-economy.ts#stateEconomyBoard",
         "packages/player-core/src/legislation/bill-reading.ts#billFundingLines",
@@ -1706,6 +1721,7 @@
     "NationStats:economy.inflation": {
       "readers": [
         "packages/content/src/scenario-pulse.ts#pulseMet",
+        "packages/engine/src/condition-home-events.ts#wageSqueeze",
         "packages/engine/src/condition-onset.ts#RATE_CONDITIONS",
         "packages/engine/src/condition-onset.ts#STANDING_PRESSURE",
         "packages/engine/src/condition-onset.ts#fiscalCrisisPressure",
@@ -1759,8 +1775,8 @@
     },
     "NationStats:economy.reserves": {
       "readers": [
-        "packages/engine/src/budget.ts#budgetPhase",
         "packages/engine/src/budget.ts#economicLevel",
+        "packages/engine/src/budget.ts#spendingPackets",
         "packages/engine/src/collection-report.ts#foreignFindings",
         "packages/engine/src/conditions.ts#conditionEffects",
         "packages/engine/src/contest.ts#assistanceLayers",
@@ -1775,7 +1791,7 @@
         "packages/world/src/dataset/bands.ts#wealthTier"
       ],
       "writers": [
-        "packages/engine/src/budget.ts#budgetPhase",
+        "packages/engine/src/budget.ts#spendingPackets",
         "packages/engine/src/conditions.ts#conditionEffects",
         "packages/engine/src/instruments-economic.ts#assistanceRungs",
         "packages/engine/src/instruments-economic.ts#economicRungs",
@@ -1863,6 +1879,7 @@
     "NationStats:energy.consumption": {
       "readers": [
         "packages/engine/src/commodity-pressure.ts#energyGrowth",
+        "packages/engine/src/commodity-shocks.ts#exportedShare",
         "packages/engine/src/condition-onset.ts#STANDING_PRESSURE",
         "packages/engine/src/policy-stats.ts#statAt (computed key)",
         "packages/world/src/dataset/bands.ts#archetype"
@@ -1890,7 +1907,7 @@
     },
     "NationStats:energy.mix.energy-gas": {
       "readers": [
-        "packages/engine/src/commodity-pressure.ts#energyGrowth",
+        "packages/engine/src/commodity-pressure.ts#energyGrowth (shared)",
         "packages/engine/src/policy-stats.ts#statAt (computed key)"
       ],
       "writers": [
@@ -1913,7 +1930,7 @@
     },
     "NationStats:energy.mix.energy-oil": {
       "readers": [
-        "packages/engine/src/commodity-pressure.ts#energyGrowth",
+        "packages/engine/src/commodity-pressure.ts#energyGrowth (shared)",
         "packages/engine/src/policy-stats.ts#statAt (computed key)"
       ],
       "writers": [
@@ -1938,6 +1955,7 @@
     "NationStats:energy.production": {
       "readers": [
         "packages/engine/src/commodity-pressure.ts#energyGrowth",
+        "packages/engine/src/commodity-shocks.ts#exportedShare",
         "packages/engine/src/condition-onset.ts#STANDING_PRESSURE",
         "packages/engine/src/policy-stats.ts#statAt (computed key)",
         "packages/world/src/dataset/bands.ts#archetype"
@@ -1992,7 +2010,8 @@
     "NationStats:military.arsenal.declared": {
       "readers": [
         "packages/engine/src/forces.ts#declaredWarheads",
-        "packages/engine/src/instrument-gates.ts#outsideNuclearDeterrence",
+        "packages/engine/src/instrument-gates.ts#declaresDeliverableArsenal",
+        "packages/engine/src/instrument-gates.ts#outsideNuclearDeterrence (through declaresDeliverableArsenal)",
         "packages/engine/src/policy-stats.ts#statAt (computed key)"
       ],
       "writers": []
@@ -2001,9 +2020,9 @@
       "readers": [
         "packages/engine/src/conflicts.ts#assessDeterrence",
         "packages/engine/src/forces.ts#nuclearReading",
-        "packages/engine/src/instrument-gates.ts#outsideNuclearDeterrence",
+        "packages/engine/src/instrument-gates.ts#declaresDeliverableArsenal",
+        "packages/engine/src/instrument-gates.ts#outsideNuclearDeterrence (through declaresDeliverableArsenal)",
         "packages/engine/src/policy-stats.ts#statAt (computed key)",
-        "packages/engine/src/regime-acts.ts#nuclearArmed",
         "packages/engine/src/relationship-graph.ts#nuclearWeight",
         "packages/engine/src/warfighting.ts#assessWarfighting",
         "packages/engine/src/warfighting.ts#forceProjectionProfile",
@@ -2019,9 +2038,9 @@
         "packages/engine/src/conflicts.ts#assessDeterrence",
         "packages/engine/src/forces.ts#declaredWarheads",
         "packages/engine/src/forces.ts#nuclearReading",
-        "packages/engine/src/instrument-gates.ts#outsideNuclearDeterrence",
+        "packages/engine/src/instrument-gates.ts#declaresDeliverableArsenal",
+        "packages/engine/src/instrument-gates.ts#outsideNuclearDeterrence (through declaresDeliverableArsenal)",
         "packages/engine/src/policy-stats.ts#statAt (computed key)",
-        "packages/engine/src/regime-acts.ts#nuclearArmed",
         "packages/engine/src/relationship-graph.ts#nuclearWeight",
         "packages/engine/src/war-entry.ts#joinPriceScale",
         "packages/engine/src/warfighting.ts#assessWarfighting",
@@ -2122,6 +2141,7 @@
     "NationStats:military.branchStrength.naval": {
       "readers": [
         "packages/engine/src/assessments.ts#readingFor",
+        "packages/engine/src/blockades.ts#blockadeReaches",
         "packages/engine/src/capacity.ts#ESTABLISHMENT_READINGS",
         "packages/engine/src/capacity.ts#establishmentScale",
         "packages/engine/src/force-failure.ts#answersWithForce",
@@ -2580,6 +2600,7 @@
     },
     "NationStats:politics.pressFreedom": {
       "readers": [
+        "packages/engine/src/condition-home-events.ts#captorWeights",
         "packages/engine/src/governance.ts#governmentCharacter",
         "packages/engine/src/legislative-acts.ts#LEGISLATIVE_ACTS",
         "packages/engine/src/policy-stats.ts#statAt (computed key)",
@@ -2597,6 +2618,8 @@
     "NationStats:politics.protestPressure": {
       "readers": [
         "packages/content/src/scenario-cast.ts#operatorPressure",
+        "packages/engine/src/__probes__/domestic-force.ts#injectionPacket",
+        "packages/engine/src/__probes__/domestic-force.ts#observeAfter",
         "packages/engine/src/assessments.ts#alternativeText",
         "packages/engine/src/assessments.ts#readingFor",
         "packages/engine/src/collection-report.ts#foreignFindings",
@@ -2607,6 +2630,7 @@
         "packages/engine/src/effects.ts#rollupSector",
         "packages/engine/src/instruments.ts#covertRungs",
         "packages/engine/src/legislative-acts-domestic.ts#unsettled",
+        "packages/engine/src/locale-act-effects.ts#withProtest",
         "packages/engine/src/macro-baseline.ts#politicalBaseline",
         "packages/engine/src/macro.ts#nextPolitics",
         "packages/engine/src/opinion.ts#salienceLevels",
@@ -2615,10 +2639,12 @@
       ],
       "writers": [
         "packages/content/src/preview-board.ts#withPlayerStats",
+        "packages/engine/src/__probes__/domestic-force.ts#injectionPacket",
         "packages/engine/src/conditions.ts#conditionEffects",
         "packages/engine/src/domestic-coercion.ts#incidentEffects",
         "packages/engine/src/effects.ts#rollupSector",
         "packages/engine/src/instruments.ts#covertRungs",
+        "packages/engine/src/locale-act-effects.ts#withProtest",
         "packages/engine/src/macro.ts#macroEffectsFor (spread)",
         "packages/engine/src/macro.ts#macroEffectsFor (typed NextPolitics)",
         "packages/engine/src/order-lineage.ts#ownerWeight (computed key over path)",
@@ -2721,6 +2747,7 @@
         "packages/engine/src/covert-exposure.ts#covertSuccessExposureChance",
         "packages/engine/src/operators.ts#OPERATOR_PROFILES",
         "packages/engine/src/operators.ts#crisisEffects",
+        "packages/engine/src/operators.ts#cyberVictimWeights",
         "packages/engine/src/policy-stats.ts#statAt (computed key)",
         "packages/engine/src/regime-acts.ts#exposureChance",
         "packages/engine/src/regime-npc.ts#canRun",
@@ -2774,6 +2801,7 @@
         "packages/engine/src/conditions.ts#conditionEffects",
         "packages/engine/src/contest.ts#assistanceLayers",
         "packages/engine/src/instruments.ts#covertRungs",
+        "packages/engine/src/locale-missions.ts#federalServiceGround",
         "packages/engine/src/operators.ts#OPERATOR_PROFILES",
         "packages/engine/src/opinion-causes.ts#securityTerms",
         "packages/engine/src/opinion.ts#openingMood",
@@ -2784,6 +2812,8 @@
       ],
       "writers": [
         "packages/content/src/preview-board.ts#withPlayerStats",
+        "packages/engine/src/__probes__/domestic-force.ts#injectionPacket",
+        "packages/engine/src/__probes__/domestic-force.ts#injectionPacket (spread)",
         "packages/engine/src/conditions.ts#conditionEffects",
         "packages/engine/src/instruments.ts#covertRungs",
         "packages/engine/src/order-lineage.ts#ownerWeight (computed key over path)",
@@ -2902,10 +2932,12 @@
     "NationStats:trade.exports": {
       "readers": [
         "packages/engine/src/external-pressure.ts#blockadeBite",
-        "packages/engine/src/external-pressure.ts#foundingExportShare",
+        "packages/engine/src/external-pressure.ts#worldExportShare",
         "packages/engine/src/instruments-economic.ts#economicRungs",
         "packages/engine/src/policy-stats.ts#statAt (computed key)",
         "packages/engine/src/propensity.ts#surplusShare",
+        "packages/engine/src/tariff-orders.ts#nationalPaymentsDeficit",
+        "packages/engine/src/trade-volume.ts#supplierHeadroom",
         "packages/world/src/dataset/bands.ts#archetype",
         "packages/world/src/dataset/trade.ts#tradeExposure"
       ],
@@ -2920,6 +2952,7 @@
         "packages/engine/src/instruments-economic.ts#economicRungs",
         "packages/engine/src/instruments-economic.ts#inDifficulty",
         "packages/engine/src/policy-stats.ts#statAt (computed key)",
+        "packages/engine/src/tariff-orders.ts#nationalPaymentsDeficit",
         "packages/world/src/dataset/bands.ts#archetype",
         "packages/world/src/dataset/trade.ts#tradeExposure"
       ],
@@ -2929,8 +2962,13 @@
     },
     "NationStats:trade.topExports": {
       "readers": [
+        "packages/engine/src/external-pressure.ts#exportScope",
+        "packages/engine/src/external-pressure.ts#flowsOf",
         "packages/engine/src/instruments-economic.ts#embargoSectorEffects",
+        "packages/engine/src/opening-world.ts#programSector",
         "packages/engine/src/policy-stats.ts#statAt (computed key)",
+        "packages/engine/src/trade-volume.ts#leadingExportSector",
+        "packages/engine/src/trade.ts#measuredSector",
         "packages/world/src/dataset/compose-nation.ts#composeNation"
       ],
       "writers": [
@@ -2942,25 +2980,19 @@
     },
     "NationStats:trade.topPartners": {
       "readers": [
-        "packages/engine/src/policy-stats.ts#statAt (computed key)",
-        "packages/engine/src/relationship-graph.ts#tradeTie",
-        "packages/engine/src/relationship-graph.ts#tradesWith",
-        "packages/engine/src/resolution-ripples.ts#thirdPartyRelation"
+        "packages/engine/src/policy-stats.ts#statAt (computed key)"
       ],
       "writers": [
         "packages/world/src/dataset/nation-figures.generated.ts#NATION_FIGURES",
         "packages/world/src/dataset/trade.ts#applyTrade"
-      ],
-      "claimedNotSeen": [
-        "packages/engine/src/relationship-graph.ts#hasStandingLink"
       ]
     },
     "NationStats:trade.tradeDependence": {
       "readers": [
         "packages/engine/src/balance-choice.ts#candidateTargetsForBalance",
-        "packages/engine/src/commodity-shocks.ts#buyerShare",
         "packages/engine/src/contest.ts#dependenceOn",
-        "packages/engine/src/external-pressure.ts#foundingExportShare",
+        "packages/engine/src/external-pressure.ts#partnerShare",
+        "packages/engine/src/instruments-economic.ts#designationReach",
         "packages/engine/src/instruments-economic.ts#tradeAccess",
         "packages/engine/src/policy-stats.ts#statAt (computed key)",
         "packages/engine/src/propensity.ts#averageTradeDependence",
@@ -2969,6 +3001,7 @@
         "packages/engine/src/relationship-graph.ts#deriveRelationship",
         "packages/engine/src/relationship-graph.ts#tradeTie",
         "packages/engine/src/relationship-graph.ts#tradesWith",
+        "packages/engine/src/resolution-ripples.ts#observerTies",
         "packages/player-core/src/compare/metrics.ts#tradeReliance",
         "packages/player-core/src/world/trade-partners.ts#partnerRows",
         "packages/world/src/dataset/bands.ts#totalTradeDependence",
@@ -3010,6 +3043,7 @@
         "packages/engine/src/assessments.ts#assessBehavior (shared)",
         "packages/engine/src/geography.ts#cradleThreatMix",
         "packages/engine/src/npc-agent.ts#intentMatch",
+        "packages/engine/src/npc-response.ts#resolveToAnswer",
         "packages/engine/src/npc-turn.ts#initiativeRate",
         "packages/engine/src/projection-belief.ts#believedTraits (shared)",
         "packages/engine/src/relationship-graph.ts#deriveRelationship",
@@ -3092,6 +3126,7 @@
         "packages/engine/src/war-join.ts#characterTerms",
         "packages/engine/src/world-event-templates.ts#sanctionVoteTerms",
         "packages/engine/src/world-event-templates.ts#temperTerms",
+        "packages/engine/src/world-event-templates.ts#withdrawalVoteTerms",
         "packages/player-core/src/reasons/temperament-words.ts#cutsFor (shared)",
         "packages/player-core/src/reasons/temperament-words.ts#leaderLeanSentence (shared)",
         "packages/player-core/src/reasons/temperament-words.ts#levelFor (shared)",
@@ -3224,10 +3259,12 @@
         "packages/engine/src/commitments.ts#withdrawalGrudge",
         "packages/engine/src/consequences.ts#grudgeEffect",
         "packages/engine/src/npc-agent.ts#hostility",
+        "packages/engine/src/npc-response.ts#resolveToAnswer",
         "packages/engine/src/peace.ts#VENGEFULNESS_CENTER",
         "packages/engine/src/peace.ts#peaceReading",
         "packages/engine/src/projection-belief.ts#believedTraits (shared)",
         "packages/engine/src/relationship-graph.ts#deriveRelationship",
+        "packages/engine/src/relationships.ts#settledReading",
         "packages/engine/src/resolution.ts#riskContribution",
         "packages/engine/src/revealed-preference.ts#probePricingMultiplier",
         "packages/engine/src/temperament.ts#withOffset (shared)",
@@ -3387,6 +3424,7 @@
         "apps/web/src/founding/TicketBalance.tsx#TicketBalance",
         "apps/web/src/founding/parts.tsx#personLine",
         "apps/web/src/founding/ticket-reasons.ts#ticketReasons",
+        "packages/engine/src/appointment-eligibility.ts#seatRuleRefusal",
         "packages/engine/src/appointment-eligibility.ts#yearsOutOfUniform",
         "packages/engine/src/appointment-pool.ts#reasonsFor",
         "packages/engine/src/appointment-pool.ts#scored",
@@ -3394,6 +3432,7 @@
         "packages/engine/src/judicial-vacancies.ts#judicialVacancyPhase",
         "packages/engine/src/judiciary.ts#seatFoundingJustices",
         "packages/engine/src/lower-bench.ts#materializeCircuitSeat",
+        "packages/engine/src/officeholder-mortality.ts#deathsThisWeek",
         "packages/engine/src/person-network-rules.ts#derive",
         "packages/engine/src/vice-president.ts#ticketBalance",
         "packages/player-core/src/dossier/person-age.ts#currentAge",
@@ -3634,11 +3673,13 @@
         "packages/engine/src/appointments.ts#selectAppointableFor",
         "packages/engine/src/career-incumbents.ts#freeIncumbents",
         "packages/engine/src/career-incumbents.ts#withCareerBench",
+        "packages/engine/src/congress-members.ts#memberCandidates",
         "packages/engine/src/congress-members.ts#seatCongressMembers",
         "packages/engine/src/dossier.ts#composeDossier",
         "packages/engine/src/foreign-leader.ts#seatedAbroad",
         "packages/engine/src/foreign-politics.ts#armedRival",
         "packages/engine/src/foreign-politics.ts#challengerFor",
+        "packages/engine/src/foreign-politics.ts#standIn",
         "packages/engine/src/founding.ts#cabinetRejections",
         "packages/engine/src/governors.ts#seatGovernorsByLean",
         "packages/engine/src/governors.ts#statehouseBench",
@@ -3648,6 +3689,7 @@
         "packages/engine/src/people.ts#candidatesForRole",
         "packages/engine/src/person-assessment.ts#personAssessment",
         "packages/engine/src/person-network-rules.ts#derive",
+        "packages/engine/src/succession.ts#governorDied",
         "packages/engine/src/vice-president.ts#hillService",
         "packages/engine/src/vice-president.ts#onRunningMateBench",
         "packages/engine/src/white-house.ts#onStaffBench",
@@ -3685,9 +3727,11 @@
         "packages/engine/src/appointment-bench.ts#vacancyBenchEffects",
         "packages/engine/src/appointment-pool.ts#eligibleBench",
         "packages/engine/src/appointment-pool.ts#scored",
+        "packages/engine/src/appointments.ts#actingClassOf",
         "packages/engine/src/appointments.ts#actingRefusal",
         "packages/engine/src/appointments.ts#deputyFor",
         "packages/engine/src/appointments.ts#dismissMinister",
+        "packages/engine/src/appointments.ts#holdsConfirmedOffice",
         "packages/engine/src/appointments.ts#selectAppointableFor",
         "packages/engine/src/balance-harness.ts#foundedForBalance",
         "packages/engine/src/balance-harness.ts#staffOneOffice",
@@ -3719,12 +3763,14 @@
         "packages/engine/src/career-incumbents.ts#withPoliticalActings",
         "packages/engine/src/cast-fit.ts#orderByFit",
         "packages/engine/src/committees.ts#seatCommittees",
+        "packages/engine/src/congress-members.ts#memberCandidates",
         "packages/engine/src/congress-members.ts#seatCongressMembers",
         "packages/engine/src/congress-members.ts#withCongressMemberOffices",
         "packages/engine/src/congress-members.ts#withCongressMembers",
         "packages/engine/src/conversation-speaker.ts#resolveSpeaker",
         "packages/engine/src/counsel.ts#opinionOf",
         "packages/engine/src/counsel.ts#perceivedOdds",
+        "packages/engine/src/directives.ts#caseworkJudgment",
         "packages/engine/src/dossier.ts#composeDossier",
         "packages/engine/src/dossier.ts#episodeSection",
         "packages/engine/src/dossier.ts#pick",
@@ -3736,9 +3782,9 @@
         "packages/engine/src/foreign-leader.ts#seatedAbroad",
         "packages/engine/src/foreign-politics.ts#armedRival",
         "packages/engine/src/foreign-politics.ts#byStanding",
-        "packages/engine/src/foreign-politics.ts#deathInOffice",
         "packages/engine/src/foreign-politics.ts#nationals",
         "packages/engine/src/foreign-politics.ts#sealNation",
+        "packages/engine/src/foreign-politics.ts#standIn",
         "packages/engine/src/foreign-politics.ts#successorSeat",
         "packages/engine/src/founding-cast.ts#castRejections",
         "packages/engine/src/founding-cast.ts#resolveFoundingCast",
@@ -3782,7 +3828,11 @@
         "packages/engine/src/person-network.ts#buildPersonNetwork",
         "packages/engine/src/press.ts#pressSecretary",
         "packages/engine/src/projection.ts#bundleOrder",
+        "packages/engine/src/removal-court.ts#removalRemedy",
         "packages/engine/src/scandal-response.ts#handOver",
+        "packages/engine/src/special-counsel.ts#superviseSpecialCounsel",
+        "packages/engine/src/succession.ts#agencyHeadDied",
+        "packages/engine/src/succession.ts#governorDied",
         "packages/engine/src/ties.ts#openFavorsOwedByPresident",
         "packages/engine/src/vice-president.ts#runningMateCandidates",
         "packages/engine/src/white-house.ts#staffCandidates",
@@ -3856,6 +3906,7 @@
         "packages/player-core/src/judiciary/courts.ts#leanAxes (shared)"
       ],
       "writers": [
+        "packages/engine/src/background-docket.ts#DOCTRINES",
         "packages/engine/src/balance-harness.ts#HARNESS_PRESIDENTS",
         "packages/engine/src/cohort-motivation.ts#beliefs",
         "packages/engine/src/domestic-signature.ts#stateValues",
@@ -3914,6 +3965,7 @@
         "packages/player-core/src/judiciary/courts.ts#leanAxes (shared)"
       ],
       "writers": [
+        "packages/engine/src/background-docket.ts#DOCTRINES",
         "packages/engine/src/balance-harness.ts#HARNESS_PRESIDENTS",
         "packages/engine/src/cohort-motivation.ts#beliefs",
         "packages/engine/src/domestic-signature.ts#stateValues",
@@ -3967,6 +4019,7 @@
       ],
       "writers": [
         "packages/content/src/packs/core.ts#theBusesAtTheShelter",
+        "packages/engine/src/background-docket.ts#DOCTRINES",
         "packages/engine/src/balance-harness.ts#HARNESS_PRESIDENTS",
         "packages/engine/src/cohort-motivation.ts#beliefs",
         "packages/engine/src/domestic-signature.ts#stateValues",
@@ -4045,6 +4098,7 @@
         "packages/engine/src/people.ts#reassignCareerLines",
         "packages/engine/src/person-disposition.ts#dispositionOf",
         "packages/engine/src/person-effects.ts#applyPerson",
+        "packages/engine/src/removal-court.ts#removalRemedy",
         "packages/engine/src/strike-odds.ts#ministerSway",
         "packages/engine/src/war-tick.ts#commandQuality",
         "packages/player-core/src/appointments/desk.ts#readingsFor (shared)",
@@ -4128,6 +4182,7 @@
         "packages/engine/src/conversation-speaker.ts#resolveSpeaker",
         "packages/engine/src/counsel-record.ts#heldSince",
         "packages/engine/src/counsel.ts#opinionOf",
+        "packages/engine/src/directives.ts#declinedMemorandum",
         "packages/engine/src/divergence.ts#peopleFacet",
         "packages/engine/src/elections.ts#opponentName",
         "packages/engine/src/foreign-leader.ts#foreignLeaderFor",
@@ -4163,11 +4218,22 @@
         "packages/engine/src/policy-draft.ts#projectPolicyStance",
         "packages/engine/src/policy.ts#selectPolicyOutlook",
         "packages/engine/src/press.ts#pressSecretary",
+        "packages/engine/src/removal-court.ts#removalMatter",
+        "packages/engine/src/removal-court.ts#removalRemedy",
         "packages/engine/src/scandal-origins.ts#leakSubject",
         "packages/engine/src/scandal-response.ts#actingLine",
         "packages/engine/src/scandal-response.ts#handOverRefusal",
         "packages/engine/src/special-counsel.ts#seatedAttorneyGeneral",
+        "packages/engine/src/special-counsel.ts#superviseSpecialCounsel",
+        "packages/engine/src/succession.ts#agencyHeadDied",
+        "packages/engine/src/succession.ts#governorDied",
+        "packages/engine/src/succession.ts#leaderDied",
+        "packages/engine/src/succession.ts#memberTitle",
+        "packages/engine/src/succession.ts#seatFilled",
+        "packages/engine/src/succession.ts#secretaryDied",
+        "packages/engine/src/succession.ts#specialDecided",
         "packages/engine/src/succession.ts#successionHandover",
+        "packages/engine/src/succession.ts#vicePresidentDied",
         "packages/player-core/src/appointments/desk.ts#candidateOf",
         "packages/player-core/src/appointments/desk.ts#nameOf",
         "packages/player-core/src/cabinet/roster-row.ts#departingLever",
@@ -4197,6 +4263,7 @@
         "packages/player-core/src/modeling/forecast.ts#adviserTrackRecords",
         "packages/player-core/src/modeling/forecast.ts#forecastSource",
         "packages/player-core/src/oversight/appointments-pipeline.ts#removableOfficers",
+        "packages/player-core/src/oversight/appointments-pipeline.ts#removalSuits",
         "packages/player-core/src/oversight/appointments-pipeline.ts#vacancyBoard",
         "packages/player-core/src/policy/order-desk.ts#reviewCell",
         "packages/player-core/src/policy/portfolio.ts#portfolioDomain",
@@ -4211,6 +4278,7 @@
         "packages/player-core/src/summons/due-executive.ts#departureTitle",
         "packages/player-core/src/summons/due-executive.ts#nominationTitle",
         "packages/player-core/src/world/engagement.ts#envoyReading",
+        "packages/player-core/src/world/locale-act-options.ts#litigationOf",
         "packages/player-core/src/world/state-dossier.ts#governorReading",
         "packages/player-core/src/world/state-dossier.ts#senateSeat",
         "packages/player-core/src/world/state-relationship.ts#stateRelationship",
@@ -4226,9 +4294,11 @@
         "packages/engine/src/appointments.ts#actingRefusal",
         "packages/engine/src/appointments.ts#selectAppointableFor",
         "packages/engine/src/congress-members.ts#congressionalBench",
+        "packages/engine/src/congress-members.ts#memberCandidates",
         "packages/engine/src/congress-members.ts#seatCongressMembers",
         "packages/engine/src/dossier.ts#careerSection",
         "packages/engine/src/foreign-politics.ts#nationals",
+        "packages/engine/src/foreign-politics.ts#standIn",
         "packages/engine/src/governors.ts#seatGovernorsByLean",
         "packages/engine/src/governors.ts#statehouseBench",
         "packages/engine/src/hill.ts#benchFor",
@@ -4239,6 +4309,7 @@
         "packages/engine/src/opponent.ts#opponentBench",
         "packages/engine/src/people.ts#candidatesForRole",
         "packages/engine/src/person-network-rules.ts#derive",
+        "packages/engine/src/succession.ts#governorDied",
         "packages/engine/src/vice-president.ts#onRunningMateBench",
         "packages/engine/src/white-house.ts#onStaffBench",
         "packages/player-core/src/dossier/person-dossier.ts#personStanding",
@@ -4255,11 +4326,13 @@
         "packages/engine/src/cast-fit.ts#usPartyOfPerson",
         "packages/engine/src/foreign-politics.ts#challengerFor",
         "packages/engine/src/foreign-politics.ts#leadershipStoryOf",
+        "packages/engine/src/foreign-politics.ts#standIn",
         "packages/engine/src/foreign-politics.ts#successorSeat",
         "packages/engine/src/governors.ts#deriveGovernorStanding",
         "packages/engine/src/governors.ts#statehouseBench",
         "packages/engine/src/people.ts#partyQuotaFill",
         "packages/engine/src/person-network-rules.ts#derive",
+        "packages/engine/src/succession.ts#governorDied",
         "packages/player-core/src/dossier/relationship-scopes.ts#relationshipScopes"
       ],
       "writers": [],
@@ -4478,6 +4551,8 @@
     },
     "SectorMixEntry:mix": {
       "readers": [
+        "packages/engine/src/external-pressure.ts#criticalInputCut",
+        "packages/engine/src/external-pressure.ts#exportScope",
         "packages/engine/src/sectors.ts#seedEntry",
         "packages/world/src/validate/dataset-validator.ts#checkSectors"
       ],
@@ -4487,6 +4562,8 @@
     },
     "SectorMixEntry:sector": {
       "readers": [
+        "packages/engine/src/external-pressure.ts#criticalInputCut",
+        "packages/engine/src/external-pressure.ts#exportScope",
         "packages/engine/src/sectors.ts#seedEntry",
         "packages/engine/src/sectors.ts#sliceFrom",
         "packages/world/src/validate/dataset-validator.ts#checkSectors"
@@ -4763,6 +4840,7 @@
       "readers": [
         "packages/content/src/scenario-locus-draw.ts#stateWeight (shared)",
         "packages/engine/src/domestic-signature.ts#stateAffinity",
+        "packages/engine/src/legal-exposure.ts#rawInjury",
         "packages/player-core/src/policy/portfolio.ts#stateIndustryShares (shared)",
         "packages/world/src/validate/dataset-validator.ts#checkStateEconomies"
       ],
@@ -4772,6 +4850,7 @@
       "readers": [
         "packages/content/src/scenario-locus-draw.ts#stateWeight (shared)",
         "packages/engine/src/domestic-signature.ts#stateAffinity",
+        "packages/engine/src/legal-exposure.ts#rawInjury",
         "packages/player-core/src/policy/portfolio.ts#stateIndustryShares (shared)",
         "packages/world/src/validate/dataset-validator.ts#checkStateEconomies"
       ],
@@ -4781,6 +4860,7 @@
       "readers": [
         "packages/content/src/scenario-locus-draw.ts#stateWeight (shared)",
         "packages/engine/src/domestic-signature.ts#stateAffinity",
+        "packages/engine/src/legal-exposure.ts#rawInjury",
         "packages/player-core/src/policy/portfolio.ts#stateIndustryShares (shared)",
         "packages/world/src/validate/dataset-validator.ts#checkStateEconomies"
       ],
@@ -4790,6 +4870,7 @@
       "readers": [
         "packages/content/src/scenario-locus-draw.ts#stateWeight (shared)",
         "packages/engine/src/domestic-signature.ts#stateAffinity",
+        "packages/engine/src/legal-exposure.ts#rawInjury",
         "packages/player-core/src/policy/portfolio.ts#stateIndustryShares (shared)",
         "packages/world/src/validate/dataset-validator.ts#checkStateEconomies"
       ],
@@ -4799,6 +4880,7 @@
       "readers": [
         "packages/content/src/scenario-locus-draw.ts#stateWeight (shared)",
         "packages/engine/src/domestic-signature.ts#stateAffinity",
+        "packages/engine/src/legal-exposure.ts#rawInjury",
         "packages/player-core/src/policy/portfolio.ts#stateIndustryShares (shared)",
         "packages/world/src/validate/dataset-validator.ts#checkStateEconomies"
       ],
@@ -4808,6 +4890,7 @@
       "readers": [
         "packages/content/src/scenario-locus-draw.ts#stateWeight (shared)",
         "packages/engine/src/domestic-signature.ts#stateAffinity",
+        "packages/engine/src/legal-exposure.ts#rawInjury",
         "packages/player-core/src/policy/portfolio.ts#stateIndustryShares (shared)",
         "packages/world/src/validate/dataset-validator.ts#checkStateEconomies"
       ],
@@ -4817,6 +4900,7 @@
       "readers": [
         "packages/engine/src/domestic-signature.ts#routeDomestic (through stateAffinity)",
         "packages/engine/src/domestic-signature.ts#stateAffinity",
+        "packages/engine/src/legal-exposure.ts#rawInjury",
         "packages/engine/src/member-votes.ts#memberVote (through stateAffinity)",
         "packages/engine/src/person-network-influence.ts#issuePreference (through stateAffinity)",
         "packages/engine/src/specialized-court-matters.ts#specializedMatter",
@@ -4938,6 +5022,7 @@
         "packages/engine/src/election-access-court.ts#filing",
         "packages/engine/src/election-access-court.ts#installation",
         "packages/engine/src/governors.ts#seatGovernorsByLean",
+        "packages/engine/src/officeholder-mortality.ts#homeOffices",
         "packages/engine/src/opponent.ts#contingentHouseVote",
         "packages/engine/src/people.ts#STATE_NAMES",
         "packages/engine/src/press-filing.ts#LOCALES",
@@ -4947,6 +5032,7 @@
         "packages/engine/src/states.ts#DISTRICT_SPREAD",
         "packages/engine/src/states.ts#districtLeans",
         "packages/engine/src/states.ts#openingStates",
+        "packages/engine/src/us-placement.ts#nationFootprint",
         "packages/engine/src/us-placement.ts#placeUsOnset",
         "packages/player-core/src/judiciary/court-overview.ts#circuitsOf",
         "packages/player-core/src/security/collection-reports.ts#collectionReports",
@@ -5009,8 +5095,12 @@
         "packages/engine/src/cast-home.ts#birthplacesInState",
         "packages/engine/src/collection-report.ts#domesticFindings",
         "packages/engine/src/collection-report.ts#draftCollectionProduct",
+        "packages/engine/src/commitments.ts#targetName",
         "packages/engine/src/committee-inquiry.ts#covertActCauses",
         "packages/engine/src/conditions.ts#conditionFacts",
+        "packages/engine/src/court-orders.ts#directiveRequest",
+        "packages/engine/src/court-orders.ts#requestCourtOrder",
+        "packages/engine/src/court-orders.ts#rulingEffects",
         "packages/engine/src/delegations.ts#delegationPhase",
         "packages/engine/src/election-access-court.ts#advance",
         "packages/engine/src/election-access-court.ts#filing",
@@ -5021,8 +5111,7 @@
         "packages/engine/src/governors.ts#governorPhase",
         "packages/engine/src/governors.ts#holdGovernorRace",
         "packages/engine/src/lobbying-person.ts#stateName",
-        "packages/engine/src/locale-acts.ts#takeHomeAct",
-        "packages/engine/src/locale-acts.ts#takeLocaleAct",
+        "packages/engine/src/locale-act-effects.ts#actPacket",
         "packages/engine/src/lower-bench.ts#districtForumFor",
         "packages/engine/src/obligations.ts#answerReliefClaims",
         "packages/engine/src/obligations.ts#obligationPhase",
@@ -5033,7 +5122,11 @@
         "packages/engine/src/specialized-court-matters.ts#specializedMatter",
         "packages/engine/src/stafford.ts#declareStaffordDisaster",
         "packages/engine/src/state-suits.ts#seatsOf",
+        "packages/engine/src/state-suits.ts#statePlaintiffs",
         "packages/engine/src/states.ts#statePhase",
+        "packages/engine/src/succession.ts#governorDied",
+        "packages/engine/src/succession.ts#memberTitle",
+        "packages/engine/src/succession.ts#seatFilled",
         "packages/engine/src/us-placement.ts#placeCaption",
         "packages/player-core/src/compare/readings.ts#stateReading",
         "packages/player-core/src/compare/subjects.ts#entityLabel",
@@ -5065,9 +5158,12 @@
         "packages/player-core/src/security/collection-reading.ts#targetName",
         "packages/player-core/src/security/collection-reports.ts#collectionReports",
         "packages/player-core/src/world/board-state.ts#conditionPlace",
+        "packages/player-core/src/world/court-order-options.ts#applicationView",
+        "packages/player-core/src/world/court-order-options.ts#optionFor",
         "packages/player-core/src/world/district-dossier.ts#assembleDistrictDossier",
         "packages/player-core/src/world/locale-act-options.ts#localeIncident",
         "packages/player-core/src/world/locale-act-options.ts#localeWaiting",
+        "packages/player-core/src/world/locale-act-options.ts#stepOf",
         "packages/player-core/src/world/nation-overview.ts#emergencyRows",
         "packages/player-core/src/world/nation-overview.ts#stateRows",
         "packages/player-core/src/world/state-dossier.ts#stateDossier",
@@ -5098,6 +5194,7 @@
         "apps/web/src/map/lenses/press-lens.ts#pressReachLens",
         "packages/engine/src/cast-home.ts#REGION_BY_STATE",
         "packages/engine/src/press-filing.ts#LOCALES",
+        "packages/engine/src/us-placement.ts#nationFootprint",
         "packages/player-core/src/government/governors.ts#governorRows",
         "packages/player-core/src/map/lenses/press-lens.ts#pressReachLens"
       ],

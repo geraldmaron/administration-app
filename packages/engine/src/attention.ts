@@ -88,6 +88,14 @@ export type AttentionMatter = {
   readonly institution?: string;
   /** What on the ledger produced it, so the desk can show the trail. */
   readonly causeIds?: readonly CausalId[];
+  /**
+   * What the matter looks like right now, as far as the President is
+   * concerned: its rung, its stance, how close its deadline is. The world stops
+   * for a matter once per signature. A level that holds is not news the second
+   * week; a worse rung, a closer deadline or a fresh approach is. A matter
+   * without a signature stops the world every time it is asked about.
+   */
+  readonly signature?: string;
 };
 
 /**
@@ -299,4 +307,50 @@ export function withoutDeferred(
   on: GameDate,
 ): readonly AttentionMatter[] {
   return matters.filter((matter) => !isDeferred(deferrals, matter.id, on));
+}
+
+/** What the President has already been stopped for, by matter id: the signature it carried. */
+export type NoticeLedger = Readonly<Record<string, string>>;
+
+/**
+ * The matters the President has not yet been told about in their present form.
+ *
+ * Applied before the composer, like a deferral: a noticed matter that sat
+ * first in the ranking would otherwise take one of the three places for nothing
+ * and crowd out a matter that is news.
+ */
+export function withoutNoticed(
+  matters: readonly AttentionMatter[],
+  ledger: NoticeLedger | undefined,
+): readonly AttentionMatter[] {
+  if (ledger === undefined) return matters;
+  return matters.filter((matter) => matter.signature === undefined || ledger[matter.id] !== matter.signature);
+}
+
+/**
+ * The ledger after a look: the presented matters recorded, and every entry
+ * whose matter has gone away or changed form dropped.
+ *
+ * Dropping on absence is what re-arms a matter. A removal case that left reach
+ * and came back is a fresh approach, and the ledger has to have forgotten the
+ * last one by then. Returns the same object when nothing changed so an
+ * unchanged look writes nothing.
+ */
+export function reviseNotices(
+  ledger: NoticeLedger | undefined,
+  gathered: readonly AttentionMatter[],
+  presented: readonly AttentionMatter[],
+): NoticeLedger | undefined {
+  const current = new Map(gathered.map((matter) => [matter.id, matter.signature] as const));
+  const next: Record<string, string> = {};
+  for (const [id, signature] of Object.entries(ledger ?? {})) {
+    if (current.get(id) === signature) next[id] = signature;
+  }
+  for (const matter of presented) {
+    if (matter.signature !== undefined) next[matter.id] = matter.signature;
+  }
+  const before = ledger ?? {};
+  const same = Object.keys(next).length === Object.keys(before).length && Object.entries(next).every(([id, sig]) => before[id] === sig);
+  if (same) return ledger;
+  return Object.keys(next).length === 0 ? undefined : next;
 }

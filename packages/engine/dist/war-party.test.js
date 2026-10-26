@@ -7,6 +7,7 @@ import { joinConflict } from "./war-entry.js";
 import { atWarAsParty, conflictsAsParty, homelandInvaded } from "./war-party.js";
 import { underRebellionOrInvasion } from "./legislative-acts.js";
 import { LOCALE_ACTS, localeAvailability } from "./locale-acts.js";
+import { federalServiceGround, LOCALE_REFUSALS } from "./locale-missions.js";
 import { EXECUTIVE_ORDERS, orderAvailability } from "./orders.js";
 import { selectSalience } from "./opinion.js";
 import { opinionCausesFor } from "./opinion-causes.js";
@@ -91,8 +92,8 @@ describe("a joined war opens none of the powers written for an invasion", () => 
         expect(underRebellionOrInvasion(after)).toBe(false);
         expect(underRebellionOrInvasion(invaded)).toBe(true);
     });
-    it("does not infer federal-service findings from the existence of an invasion", () => {
-        const federalize = LOCALE_ACTS.find((act) => act.predicate === "guard");
+    it("opens federal service on an invasion of the homeland and on no war the country merely joined", () => {
+        const federalize = LOCALE_ACTS.find((act) => act.predicate === "federal-service");
         const state = Object.keys(after.states)[0];
         // A declaration over a flood, so the statute's invasion ground is the only one left to answer.
         const declared = (campaign) => apply(campaign, {
@@ -104,8 +105,10 @@ describe("a joined war opens none of the powers written for an invasion", () => 
         });
         const refused = localeAvailability(declared(after), state, federalize);
         expect(refused.ok).toBe(false);
-        expect(refused.ok ? "" : refused.missing).toMatch(/doesn't include/);
-        expect(localeAvailability(declared(invaded), state, federalize).ok).toBe(false);
+        expect(refused.ok ? "" : refused.missing).toContain(LOCALE_REFUSALS.federalize);
+        expect(localeAvailability(declared(invaded), state, federalize).ok).toBe(true);
+        expect(federalServiceGround(invaded, state)).toBe("invasion");
+        expect(federalServiceGround(after, state)).toBeUndefined();
     });
     it("confers no foreign-asset blocking power without a named foreign-threat declaration", () => {
         const blocking = order("order-asset-seizure");
@@ -227,6 +230,7 @@ const CENSUS = [
     { file: "packages/engine/src/emergency.ts", site: "declareArmedForcesEmergency", decision: "principal", why: "The special declaration requires a live conflict with the country as a principal." },
     { file: "apps/web/src/nation/policy/OrderScreen.tsx", site: "OrderScreen", decision: "principal", why: "The order desk offers an armed-forces declaration only when the country is a principal in a live conflict." },
     { file: "packages/engine/src/legislative-acts.ts", site: "underRebellionOrInvasion", decision: "homeland", why: "The Suspension Clause; homelandInvaded is its caller-to-be." },
+    { file: "packages/engine/src/locale-missions.ts", site: "federalServiceGround", decision: "homeland", why: "§12406 opens on an invasion of the country's own soil; a war it joined or began abroad is none." },
     { file: "packages/engine/src/war-party.ts", site: "homelandInvaded", decision: "homeland", why: "The named question itself." },
     { file: "packages/engine/src/opening-world.ts", site: "refuseFoundingParty", decision: "principal", why: "The world the transition found holds no war the United States is a principal of; a join is the player's act, later." },
     { file: "packages/engine/src/revealed-preference.ts", site: "pressingAt", decision: "homeland", why: "Who was pressing the country: its own soil invaded." },
@@ -234,6 +238,7 @@ const CENSUS = [
     { file: "packages/engine/src/war-join.ts", site: "allyJoinEffects", decision: "party", why: "Every party sits out the draw, and the President's country is never drafted by it." },
     { file: "packages/engine/src/war-tick.ts", site: "worldOpinionEffects", decision: "principal", why: "The world's answer is aimed at the government that started the war; a joiner pays once, at the join." },
     { file: "packages/engine/src/war-forces.ts", site: "presidentsPersonnel", decision: "homeland", why: "The country fights with its home share only when its own soil is the one attacked; a joiner or an aggressor fights with what it sent." },
+    { file: "packages/engine/src/relationships.ts", site: "warShifts", decision: "principal", why: "A carried war's hostility between its two principals is already in the founding dyads; every pairing a later entrant makes is new and is held like a war begun on this watch." },
     { file: "packages/engine/src/blocs.ts", site: "recordWeight", decision: "principal", why: "A capital fears the government that started a war; who joined it is a later wave's." },
     { file: "packages/engine/src/red-lines.ts", site: "crossingsAgainst", decision: "homeland", why: "A red line is crossed by the government that invaded its holder." },
     { file: "packages/engine/src/trade-volume.ts", site: "atWar", decision: "party", why: "Trade stops between any two parties on opposite sides." },
@@ -241,7 +246,7 @@ const CENSUS = [
     { file: "packages/player-core/src/map/lenses/set-lenses.ts", site: "partyOf", decision: "party", why: "The war lens colors principals by side and lights the joiners, so it reads both." },
     { file: "packages/engine/src/conflicts.ts", site: "sideOf", decision: "party", why: "The definition every party reading goes through." },
     { file: "packages/engine/src/conditions.ts", site: "severityNext", decision: "party", why: "Already party-inclusive." },
-    { file: "packages/engine/src/condition-onset.ts", site: "onsetCandidates", decision: "party", why: "Already party-inclusive." },
+    { file: "packages/engine/src/condition-onset.ts", site: "standingCandidates", decision: "party", why: "Already party-inclusive." },
     { file: "packages/engine/src/peace.ts", site: "selectPeaceTables", decision: "party", why: "Already party-inclusive." },
     { file: "packages/engine/src/conversations.ts", site: "joinEntry", decision: "party", why: "Already party-inclusive." },
     {

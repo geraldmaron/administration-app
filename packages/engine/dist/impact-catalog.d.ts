@@ -1,5 +1,12 @@
 import type { ImpactMechanism, ImpactSpec } from "./impact-event.js";
-/** Deliberately marked provisional: tuning data is not empirical evidence. */
+/**
+ * Provisional, because the exposures are country proxies rather than site
+ * assessments and only the natural-hazard rows are fitted. What is fitted: each
+ * natural hazard's mean deaths and mean loss per significant event, against the
+ * costliest four in ten of NOAA's billion-dollar events of that type, 2005 to
+ * 2024. What is not: earthquakes (NOAA excludes them and no comparable series
+ * was opened), the outbreak, cyber and industrial rows, and strikes.
+ */
 export declare const IMPACT_CALIBRATION: ImpactSpec["calibration"];
 export type NaturalHazard = Extract<ImpactMechanism, {
     kind: "natural";
@@ -8,6 +15,14 @@ type PhysicalProfile = Pick<Extract<ImpactMechanism, {
     kind: "natural";
 }>, "fatalityRate" | "injuryRatio" | "damageShare" | "displacementShare" | "durationDays">;
 export declare const NATURAL_IMPACT_PROFILES: Readonly<Record<NaturalHazard, PhysicalProfile>>;
+/**
+ * The footprint: what share of the people in the place an event is filed
+ * against are inside it. A tornado's track crosses a few square miles of a
+ * metro; a hurricane, a winter storm and a heat wave cover the whole of it; a
+ * flood and a fire take a district. Fitted with the profiles above, against the
+ * same per-event losses.
+ */
+export declare const HAZARD_FOOTPRINT_SHARE: Readonly<Record<NaturalHazard, number>>;
 export declare const INDUSTRIAL_IMPACT_PROFILES: {
     readonly fire: {
         readonly fatalityRate: 0.002;

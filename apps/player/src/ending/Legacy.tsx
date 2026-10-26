@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import type { Campaign } from "@admin/engine";
 import { legacyReading, place, sealFor, type LegacyPoint, type LegacyReading } from "@admin/player-core";
-import { Badge, BenchmarkChart, Button, Column, Meter, Page, ReadingFrame, Row, Seal, Text, View, type KeyEntry } from "@admin/ui";
+import { BenchmarkChart, Button, Column, Meter, Page, ReadingFrame, Row, Seal, Tag, Text, View, type KeyEntry } from "@admin/ui";
 import { CompareDoor } from "../compare/CompareDoor";
 import { Segmented } from "@admin/ui/forms";
 import { ShiftRow, Tally, TermLine, type ShiftView } from "@admin/ui/record";
@@ -10,7 +10,7 @@ import { go } from "../news/story-parts";
 import { RecordArea } from "../record/Panel";
 import { SelfComparison } from "../record/RecordSections";
 import { legacyDomain, legacyPosition } from "../record/course";
-import { KIND_WORD, MARK_STATUS, NotYet, TERM_MARK_KEY } from "./parts";
+import { KIND_WORD, MARK_TONE, NotYet, TERM_MARK_KEY } from "./parts";
 
 export const LEGACY_VIEWS = ["comparison", "timeline", "record"] as const;
 export type LegacyView = (typeof LEGACY_VIEWS)[number];
@@ -93,7 +93,7 @@ function Timeline({ legacy }: { readonly legacy: LegacyReading }) {
       {legacy.marks.length === 0 ? <Text variant="body" tone="secondary">No decisions were marked this term.</Text> : null}
       {legacy.marks.map((mark) => (
         <Row key={mark.key} gap="sm" top>
-          <View width={80}><Badge status={MARK_STATUS[mark.tone]}>{KIND_WORD[mark.kind]}</Badge></View>
+          <View width={80}><Tag tone={MARK_TONE[mark.tone]}>{KIND_WORD[mark.kind]}</Tag></View>
           <Column flex={1}><Text variant="label">{mark.label}</Text><Text variant="caption" tone="tertiary">{mark.date}</Text></Column>
         </Row>
       ))}
@@ -119,7 +119,7 @@ function Commitments({ legacy }: { readonly legacy: LegacyReading }) {
       </RecordArea>
       <RecordArea id="wars" icon="conflict" title="Wars" {...(legacy.wars.list.length === 0 && legacy.wars.line ? { lede: legacy.wars.line } : {})}>
         {legacy.wars.list.map((war) => (
-          <Row key={war.key} gap="sm" top><Badge status={MARK_STATUS[war.tone]}>War</Badge><Column flex={1}><Text variant="label">{war.name}</Text><Text variant="caption" tone="secondary">{war.outcome}</Text></Column></Row>
+          <Row key={war.key} gap="sm" top><Tag tone={MARK_TONE[war.tone]}>War</Tag><Column flex={1}><Text variant="label">{war.name}</Text><Text variant="caption" tone="secondary">{war.outcome}</Text></Column></Row>
         ))}
       </RecordArea>
       <RecordArea id="marks" icon="caution" title="Marks on your record">

@@ -1,6 +1,6 @@
 import { BILL_LANES, FLOOR_GROUP_TITLE, place, type CongressChamber, type CongressSystem, type HillCommittee, type HillLeader, type RollHistoryEntry, type TermTally } from "@admin/player-core";
 import type { Campaign } from "@admin/engine";
-import { Badge, Button, Card, CardLink, Column, Empty, Meter, ReadingFrame, Row, Surface, Text, useMedia, View } from "@admin/ui";
+import { Tag, Button, Card, CardLink, Column, Empty, Meter, ReadingFrame, Row, Surface, Text, useMedia, View } from "@admin/ui";
 import { RollChart, rollKeyEntries } from "@admin/ui/legislature";
 import { LAW } from "./model";
 import { Authority } from "./ActChooser";
@@ -40,7 +40,7 @@ function TermStrip({ tally }: { readonly tally: TermTally }) {
           {TALLY.flatMap((kind) => Array.from({ length: tally[kind.key] }, (_, i) => <View key={`${kind.key}-${i}`} width={14} height={14} borderRadius="chip" backgroundColor={kind.ink} />))}
         </Row>
       ) : (
-        <Empty title="No bill has reached Congress yet" detail="Bills that are introduced this term are counted here as they move toward law." />
+        <Empty title="No bill has reached Congress yet" detail="No bill has been introduced this term." />
       )}
     </ReadingFrame>
   );
@@ -79,7 +79,7 @@ export function RollRecord({ history, chambers, tally }: { readonly history: rea
           <Column key={chamber.chamber} gap="xs">
             <Text variant="label">{label} · {entries.length} {entries.length === 1 ? "vote" : "votes"}</Text>
             {entries.length === 0 ? (
-              <Empty title="No votes yet" detail="Each recorded vote on a bill or nominee will be listed here." />
+              <Empty title="No votes yet" detail="No bill or nominee has come to a vote." />
             ) : (
               <ReadingFrame
                 title={`${label}: votes this term`}
@@ -178,7 +178,7 @@ function CommitteeBody({ campaign, committee }: { readonly campaign: Campaign; r
             <PersonName campaign={campaign} id={committee.chairId} name={committee.chair} role={`Chair of ${shortCommittee(committee.name)}`} variant="caption" />
           </Row>
         ) : <Text variant="caption" tone="tertiary">No chair yet</Text>}
-        {committee.inquiries.length > 0 ? <Badge status="warning" icon="review">{`Investigating: ${committee.inquiries.join(", ")}`}</Badge> : null}
+        {committee.inquiries.length > 0 ? <Tag tone="warning" icon="review">{`Investigating: ${committee.inquiries.join(", ")}`}</Tag> : null}
       </Column>
       <View flex={1} minWidth={180}>
         <Meter label="Mood toward you" value={committee.standing.value} figure={`${committee.standing.word} ${committee.standing.percent}`} tone={STANCE_METER[committee.standing.stance]} />

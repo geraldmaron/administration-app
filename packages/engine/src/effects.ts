@@ -11,7 +11,7 @@ import { applyBlockedAsset } from "./blocked-assets.js";
 import type { NationId, Relationship } from "@admin/world";
 import { applyOversight } from "./oversight.js";
 import { bookUsDebt } from "./national-books.js";
-import { applyAppropriation, applyCapRaise, applyCommitment, applyCondition, applyCourtCase, applyCourtProceeding, applyEmergency, applyExternalEmergency, applyFeed, applyFundingLapse, applyOrderFraming, applyPendingRule, applyPursuit, applySolicitorGeneral } from "./record-effects.js";
+import { applyAppropriation, applyCapRaise, applyCommitment, applyCondition, applyCourtCase, applyCourtProceeding, applyEmergency, applyAuthorityClock, applyExternalEmergency, applyFeed, applyFundingLapse, applyOrderFraming, applyPendingRule, applyPursuit, applySolicitorGeneral } from "./record-effects.js";
 import type { AppropriationEffect, CapRaiseEffect, CommitmentEffect, ConditionEffect, EmergencyEffect, FundingLapseEffect, OrderFramingEffect, PendingRuleEffect, PursuitEffect } from "./record-effects.js";
 export type { AppropriationEffect, CapRaiseEffect, CommitmentEffect, ConditionEffect, EmergencyEffect, FundingLapseEffect, OrderFramingEffect, PendingRuleEffect, PursuitEffect };
 import { relationshipKey as keyOf, type ActionRecord, type Campaign, type CityRuntime, type EffectActor, type FlagId, type GameDate, type MetricSet, type NationRuntime, type PublicMood, type RelationshipGraph } from "./state.js";
@@ -410,7 +410,10 @@ function applyFlag(state: Campaign, effect: FlagEffect): Campaign {
 function applyAttention(state: Campaign, effect: AttentionEffect): Campaign {
   const deferrals: Record<string, GameDate> = { ...state.deferrals, ...(effect.defer ?? {}) };
   for (const id of effect.resume ?? []) delete deferrals[id];
-  return { ...state, deferrals };
+  const noticed: Record<string, string> = { ...state.noticed, ...(effect.notice ?? {}) };
+  for (const id of effect.forget ?? []) delete noticed[id];
+  const { noticed: _prior, ...rest } = state;
+  return { ...rest, deferrals, ...(Object.keys(noticed).length > 0 ? { noticed } : {}) };
 }
 
 function applyIssuedAct(state: Campaign, effect: IssuedActEffect): Campaign {
@@ -627,6 +630,7 @@ function handlers(): HandlerTable {
     commitment: applyCommitment,
     condition: applyCondition,
     emergency: applyEmergency,
+    authorityClock: applyAuthorityClock,
     externalEmergency: applyExternalEmergency,
     militaryConstructionProject: applyMilitaryConstructionProject,
     offshoreLeaseSale: applyOffshoreLeaseSale,
@@ -737,6 +741,7 @@ export function apply(state: Campaign, packet: EffectPacket): Campaign {
   // that record months later can name this event as its cause. The id only
   // needs the ledger's length, the turn and the date, all of which are known
   // here before a single effect has run.
+  if (packet.presentation) return foldEffects(state, effectsFor(packet), `notice-${packet.turn}`);
   const causal = stampFor(
     packet.source,
     packet.provenance,

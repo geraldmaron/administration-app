@@ -23,7 +23,12 @@ export type BlockedAssetEffect = {
 export declare function applyBlockedAsset(campaign: Campaign, effect: BlockedAssetEffect): Campaign;
 export declare function blockableAccount(campaign: Campaign, owner: NationId): string | undefined;
 export declare function blockedAssetForOrder(campaign: Campaign, owner: NationId, orderRecordId: string): BlockedAsset | undefined;
-/** The linked trade restriction is the operational bar on dealings in this account. */
+/**
+ * The linked trade restriction is the operational bar on dealings in this
+ * account. It is filed as listed: one modeled account is not the owner's whole
+ * trade, so it reaches no sector and no third party until an account's own
+ * scope is represented.
+ */
 export declare function assetBlockingEffects(campaign: Campaign, asset: BlockedAsset): readonly Effect[];
 /** The block ceases when its order or specific emergency no longer stands. */
 export declare const blockedAssetPhase: TurnPhase;

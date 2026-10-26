@@ -6,7 +6,7 @@ import type { TaskingRequest } from "./intelligence.js";
 import type { ActionTiming } from "./action-timing.js";
 import { worldDataset, type NationId, type PersonId, type RoleId } from "@admin/world";
 import { signOrder, type OrderSubject } from "./orders.js";
-import { takeLocaleAct } from "./locale-acts.js";
+import { takeLocaleAct } from "./locale-act-effects.js";
 import { billTextAction, collectionAction, directiveAction, judicialNominationAction, localeProjection, orderRescissionAction, orderReviewAction, quotedPositionCost, reliefProjection, tariffAction, tariffLiftAction, transmissionAction } from "./conversation-report-actions.js";
 import {
   selectRelationship,
@@ -134,7 +134,7 @@ export type ReplyCommitment =
       readonly relief?: Extract<OrderSubject, { kind: "state" }>;
       /** Authored relief reply remains visible but disabled when its report has no lawful allocation. */
       readonly reliefRefusal?: string;
-      readonly locale?: { readonly act: "relief" | "review"; readonly state: import("@admin/world").StateId; readonly cause: import("./condition-kinds.js").ConditionKind };
+      readonly locale?: { readonly act: "relief" | "review" | "property-surge" | "task-force" | "priority"; readonly state: import("@admin/world").StateId; readonly cause: import("./condition-kinds.js").ConditionKind };
       readonly transmit?: string;
       readonly billText?: { readonly id: string; readonly act: string; readonly title: string;
         readonly introducedTurn: number; readonly stage: "markup" | "conference";

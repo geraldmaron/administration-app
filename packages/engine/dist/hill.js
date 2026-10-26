@@ -339,6 +339,15 @@ export function takeForCaucus(bench, free, party, platform) {
  * rather than a failure — it is what a campaign saved before these seats existed
  * genuinely contains, and every count still carries without them.
  */
+/**
+ * Whether a post's holder still sits in its chamber. A senator unseated at a
+ * special election keeps no gavel and no leadership post; with no roster on
+ * file (an old save, or the founding before members are seated) the post is
+ * read as held.
+ */
+export function holdsSeat(congress, person, chamber) {
+    return !congress.members || congress.members.some((member) => member.person === person && member.chamber === chamber && !member.vacancy);
+}
 export function seatLeadership(congress, people, nation, turn, signature) {
     const held = new Set();
     const benches = new Map();
@@ -352,7 +361,7 @@ export function seatLeadership(congress, people, nation, turn, signature) {
     for (const post of HILL_POSTS) {
         const caucus = caucusFor(congress, post.chamber, post.side);
         const incumbent = congress.leadership.find((figure) => figure.post === post.id);
-        if (incumbent && incumbent.caucus === caucus && people[incumbent.person]?.alive === true) {
+        if (incumbent && incumbent.caucus === caucus && people[incumbent.person]?.alive === true && holdsSeat(congress, incumbent.person, post.chamber)) {
             held.add(incumbent.person);
             seated.push({ ...incumbent, caucus, influence: post.influence });
             continue;

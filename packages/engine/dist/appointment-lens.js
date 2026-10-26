@@ -41,6 +41,11 @@ const DOMAIN_LIFE = {
     cyber: [["intelligence-service", 3], ["academia", 2]],
     space: [["military-command", 2], ["academia", 2]],
     domestic: [["civil-service", 1], ["local-government", 1]],
+    // Read only by the vice presidency, the one Senate-confirmed office whose
+    // body leads with this domain. The two section 2 Vice Presidents came from
+    // party leadership in Congress and from a statehouse (Ford, 1973; Rockefeller,
+    // 1974), so a life in party politics or state and local office is what counts.
+    executive: [["party-organizing", 3], ["local-government", 2], ["private-law", 1]],
 };
 /** Fields each domain hires. */
 const DOMAIN_STUDY = {

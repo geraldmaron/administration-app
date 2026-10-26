@@ -56,7 +56,7 @@ function OptionLens({ view, lens, onGoal, onCheckedOnly }: { readonly view: ActW
         <Chip label={`Checked · ${view.compared.length}`} on={lens.checkedOnly} onPress={() => onCheckedOnly(!lens.checkedOnly)} />
       </Row>
       <Text variant="caption" tone="secondary">
-        Each reading is the change from today. Press an option to plan it, or check two or more, from any goal, to compare them.
+        Each reading is a change from today, on the same scale across goals.
       </Text>
     </Column>
   );
@@ -138,7 +138,7 @@ function CheckedOptions({ view, handlers, order }: { readonly view: ActWorkspace
   if (view.compared.length === 0) {
     return (
       <Text variant="body" tone="secondary">
-        Nothing is checked yet. Check Compare on two or more options, from any goal, to see them side by side.
+        No options are checked for comparison.
       </Text>
     );
   }
@@ -163,7 +163,7 @@ function CheckedOptions({ view, handlers, order }: { readonly view: ActWorkspace
 function NoneLeft() {
   return (
     <Text variant="body" tone="secondary">
-      No option fits every filter you've set. Turn one off to see more.
+      No option fits every active filter.
     </Text>
   );
 }

@@ -30,6 +30,21 @@ function scopeErrors(org: Organization): ValidationError[] {
   return errors;
 }
 
+function councilErrors(org: Organization): ValidationError[] {
+  const rule = org.council;
+  if (!rule) return [];
+  const path = `organizations.${org.id}.council`;
+  const members = new Set(org.members.map((m) => m as string));
+  const errors: ValidationError[] = [];
+  if (org.kind === "defense") errors.push(error(path, `${org.name} is a defense body, and a voting council binds no one to fight`));
+  for (const seat of rule.permanent) {
+    if (!members.has(seat as string)) errors.push(error(path, `${seat as string} holds a veto on ${org.name} without a seat`));
+  }
+  if (rule.threshold > org.members.length) errors.push(error(path, `${org.name} needs ${rule.threshold} votes and has ${org.members.length} seats`));
+  if (!LINK.test(rule.source)) errors.push(error(path, "a voting rule is read from a founding text, and names none"));
+  return errors;
+}
+
 /** A government bound to two common external tariffs would owe two schedules at once. */
 function customsUnionErrors(orgs: readonly Organization[]): ValidationError[] {
   const seen = new Map<string, string>();
@@ -83,6 +98,7 @@ export function dyadErrors(row: DyadRow, index: number): ValidationError[] {
 export function checkOrganizations(dataset: WorldDataset): ValidationError[] {
   return [
     ...dataset.organizations.flatMap(scopeErrors),
+    ...dataset.organizations.flatMap(councilErrors),
     ...customsUnionErrors(dataset.organizations),
     ...sourceErrors(),
     ...FOUNDING_DYADS.flatMap(dyadErrors),

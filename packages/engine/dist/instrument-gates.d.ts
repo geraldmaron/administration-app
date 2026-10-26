@@ -63,7 +63,7 @@ export declare function standoffReach(ctx: InstrumentContext): CapabilityCheck;
 /**
  * Whether a strike this actor can make is a missile strike: it lacks the air
  * force the flown strike needs and its missiles reach. The strike's resolution
- * reads this so a missile salvo does not commit two hundred airframes.
+ * reads this so a missile salvo does not commit a hundred airframes.
  */
 export declare function strikesByMissile(ctx: InstrumentContext): boolean;
 export declare function sharesBorder(actor: Nation, target: Nation): boolean;
@@ -103,6 +103,14 @@ export declare function projectionAccess(ctx: InstrumentContext, cap: number, ca
  * figure the ladder already *charged* for military action and gated nothing
  * with; pairing the two is what turns a permanent capability into a rate.
  */
+/**
+ * The one nuclear test every refusal reads: warheads, declared, and a means to
+ * deliver them. Force (below) and the operations against a government's hold
+ * on power (`regime-acts.ts`) both refuse such a target; an arsenal a
+ * government has never declared is read as it presents itself, and only
+ * stiffens the odds.
+ */
+export declare function declaresDeliverableArsenal(arsenal: Nation["stats"]["military"]["arsenal"]): boolean;
 /**
  * A government with a declared arsenal and the means to deliver it is not
  * offered as a target of force by anyone: no blockade, strike or invasion. The

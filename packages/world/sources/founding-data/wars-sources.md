@@ -27,7 +27,7 @@ NOT independently opened this session. Every WebFetch attempt (a scispace PDF mi
 NOT independently opened this session (no successful fetch was attempted that returned readable content). What appears in war-durations.tsv is a WebSearch-engine aggregated summary: 152 civil wars, 1820-1992, finding that government-only third-party support lengthens wars and balanced interventions have a different effect. Treated as direction-only, low confidence, alongside D5.
 
 **D7: This program's own measurement: `waves/w2/2B/sec7-duration-report.json`.**
-Path: `~/Developer/Projects/.admin-app-backups/presidency-depth-2026-09-23/scratchpad/waves/w2/2B/sec7-duration-report.json`; opened directly (Read tool) 2026-09-24.
+Path: `<local path>`; opened directly (Read tool) 2026-09-24.
 Carries: the game engine's own measured war durations at HEAD-then, five-seed and supplementary twenty-five-seed runs over 104 turns. Median 6.5-7 weeks, p90 8, all measured wars (4 of 4, then 13 of 13) ending in defender victory. This is the baseline D14 and W5/5C are calibrating against, already cited in the register (`README.md:858`, `:1503`) and the plan audit (`audit-plan.md:155`).
 
 **D8: Correlates of War Project, "Extra-state Wars (Version 4.0): Definitions and Variables," codebook.**

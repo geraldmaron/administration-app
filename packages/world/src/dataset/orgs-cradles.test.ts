@@ -6,21 +6,24 @@ import {
   ORG_GCC,
   ORG_MERCOSUR,
   ORG_NATO,
+  ORG_SCO,
+  ORG_UNSC,
   ORG_US_JAPAN,
   ORG_US_KOREA,
   ORG_US_PHILIPPINES,
   ORGANIZATION_SOURCES,
   organizationById,
+  applyMemberships,
   organizations,
 } from "./orgs-cradles.js";
 
 describe("organizations", () => {
-  it("ships fifteen bodies so a sixteenth without history cannot sneak in", () => {
-    expect(organizations).toHaveLength(15);
+  it("ships seventeen bodies so an eighteenth without history cannot sneak in", () => {
+    expect(organizations).toHaveLength(17);
   });
 
   it("gives every org a single-paragraph history inside schema bounds", () => {
-    expect(organizations).toHaveLength(15);
+    expect(organizations).toHaveLength(17);
     for (const org of organizations) {
       const parsed = Organization.parse(org);
       expect(parsed.history, org.id).toBe(org.history);
@@ -58,5 +61,30 @@ describe("organizations", () => {
     expect(organizationById.get(ORG_MERCOSUR)!.tradeCompetence).toBe("customs-union");
     expect(organizationById.get(ORG_EU)!.tradeCompetence).toBe("customs-union");
     expect(organizationById.get(ORG_GCC)!.tradeCompetence).toBe("customs-union");
+  });
+
+  it("seats the Security Council with five vetoes and ten elected members, read from the UN's page", () => {
+    const council = organizationById.get(ORG_UNSC)!;
+    expect(council.members).toHaveLength(15);
+    expect([...council.council!.permanent].sort()).toEqual(["CHN", "FRA", "GBR", "RUS", "USA"]);
+    expect(council.council!.threshold).toBe(9);
+    expect(council.members.filter((m) => !council.council!.permanent.includes(m)).sort()).toEqual(
+      ["BHR", "COD", "COL", "DNK", "GRC", "LBR", "LVA", "PAK", "PAN", "SOM"],
+    );
+    expect(ORGANIZATION_SOURCES[ORG_UNSC]!.asOf).toBe("2026-10-25");
+  });
+
+  it("does not turn a Council seat into a bond between members", () => {
+    const [russia, panama] = applyMemberships([{ id: "RUS" }, { id: "PAN" }] as never);
+    expect(russia!.memberships).not.toContain(ORG_UNSC);
+    expect(panama!.memberships).not.toContain(ORG_UNSC);
+  });
+
+  it("holds the Shanghai Cooperation Organisation as a political body with no defense clause", () => {
+    const sco = organizationById.get(ORG_SCO)!;
+    expect(sco.kind).toBe("political");
+    expect(sco.defenseScope).toBeUndefined();
+    expect([...sco.members].sort()).toEqual(["BLR", "CHN", "IND", "IRN", "KAZ", "KGZ", "PAK", "RUS", "TJK", "UZB"]);
+    expect(sco.history).toMatch(/no mutual-defense clause/);
   });
 });

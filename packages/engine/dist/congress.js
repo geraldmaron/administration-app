@@ -34,6 +34,17 @@ export const CHAMBER_NAMES = {
 };
 const HOUSE_SEATS = 435;
 const SENATE_SEATS = 100;
+/**
+ * The members a chamber's count is taken over: its seats less the ones left
+ * vacant by a death. Both Houses decide by those present and voting, and the
+ * Constitution's two-thirds bars count the same way, so an empty seat is
+ * neither a yea nor a nay; Senate cloture's three fifths is of senators duly
+ * chosen and sworn, which excludes a vacancy too.
+ */
+export function seatedOf(congress, chamber) {
+    const vacant = (congress.members ?? []).filter((member) => member.chamber === chamber && member.vacancy !== undefined).length;
+    return congress.chambers[chamber].seats - vacant;
+}
 /** A simple majority of a chamber — one more than half, always an integer. */
 export function majorityOf(seats) {
     return Math.floor(seats / 2) + 1;
@@ -67,7 +78,7 @@ export function clotureOf(seats) {
  * really is decided by fifty-one.
  */
 export function floorThreshold(congress, chamber, track) {
-    const { seats } = congress.chambers[chamber];
+    const seats = seatedOf(congress, chamber);
     const sixty = chamber === "senate" && track === "ordinary";
     return sixty ? clotureOf(seats) : majorityOf(seats);
 }
@@ -375,7 +386,10 @@ export const STRUCK_ORDER_MOOD_CAP = 0.15;
 /** How long a ruling stays a fact the chamber reads; a struck order older than this has been priced. */
 export const STRUCK_ORDER_SEASON_TURNS = 26;
 function struckRecently(campaign) {
-    return campaign.judiciary.cases.filter((entry) => entry.holding === "struck-down" && campaign.turn - entry.ruledTurn <= STRUCK_ORDER_SEASON_TURNS).length;
+    // A ruling from the background docket narrows a doctrine in a case between
+    // other parties; it says nothing about this President's own acts.
+    return campaign.judiciary.cases.filter((entry) => entry.holding === "struck-down" && entry.subject?.kind !== "background-docket"
+        && campaign.turn - entry.ruledTurn <= STRUCK_ORDER_SEASON_TURNS).length;
 }
 /**
  * How far being investigated can move the room on its own.

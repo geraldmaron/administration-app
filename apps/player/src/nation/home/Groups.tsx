@@ -136,7 +136,7 @@ function HeatCell({ support, link }: { readonly support: number; readonly link?:
       </Text>
     </>
   );
-  const frame = { paddingHorizontal: "xs", paddingVertical: "2xs", borderRadius: "chip", position: "relative", overflow: "hidden", alignSelf: "stretch" } as const;
+  const frame = { paddingHorizontal: "xs", paddingVertical: "2xs", minHeight: 24, justifyContent: "center", borderRadius: "chip", position: "relative", overflow: "hidden", alignSelf: "stretch" } as const;
   if (!link) return <View {...frame}>{body}</View>;
   return (
     <Pressable role="link" aria-label={`${link.label}. See this group`} href={link.href} onPress={() => go(link.href)} {...frame}>

@@ -1,7 +1,7 @@
 import { underDeclaredEmergency, projectGovernorWillingness, type Campaign, type UsParty, type WillingnessForecast } from "@admin/engine";
 import type { StateId } from "@admin/world";
 import { PARTY_WORDS, governorDispositionWord } from "./state-dossier";
-import { localeActOptions, localeMatters } from "./locale-act-options";
+import { localeMatters, localeMissions, openLocaleActCount, type LocaleMissionView } from "./locale-act-options";
 
 // The President's standing with one state, read off what the engine already
 // holds: the governor's disposition toward the administration, the matters
@@ -29,6 +29,8 @@ export type StateRelationship = {
   readonly declared: boolean;
   /** Acts open against the lead matter this week; zero when there is nothing to answer. */
   readonly actCount: number;
+  /** Federal missions running in the state, newest first. */
+  readonly missions: readonly LocaleMissionView[];
 };
 
 const MEANING: Readonly<Record<WillingnessForecast, string>> = {
@@ -60,6 +62,7 @@ export function stateRelationship(campaign: Campaign, id: StateId): StateRelatio
     needs: matters.map((matter) => ({ cause: matter.cause, title: matter.title, requested: matter.request !== undefined })),
     needsCount: matters.length,
     declared: underDeclaredEmergency(campaign, id),
-    actCount: lead ? localeActOptions(campaign, id, lead.cause).filter((option) => !option.locked).length : 0,
+    actCount: lead ? openLocaleActCount(campaign, id, lead.cause) : 0,
+    missions: localeMissions(campaign, id),
   };
 }

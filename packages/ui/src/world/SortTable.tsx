@@ -2,9 +2,13 @@ import { useMemo, useState, type ReactNode } from "react";
 import { ScrollView } from "react-native";
 import { View, useMedia } from "@tamagui/core";
 import { Button, Pressable } from "../primitives/Button";
+import { useMeasuredWidth } from "../layout/Fit";
 import { PressRow } from "../primitives/PressRow";
 import { Column, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
+
+/** Under this container width the rows stack with their labels, whatever the window is. */
+const STACK_BELOW = 520;
 
 export type SortValue = string | number | undefined;
 
@@ -15,6 +19,10 @@ export type TableColumn<T> = {
   readonly detail?: string;
   readonly width?: number;
   readonly align?: "start" | "end";
+  /**
+   * A cell can hold an `InlineField` to edit in place: a press inside the cell
+   * goes to the field, so editing never opens or selects the row.
+   */
   readonly render: (row: T) => ReactNode;
   /** Present, the header sorts by it; absent, the column does not sort (counts in different units, say). */
   readonly sort?: (row: T) => SortValue;
@@ -169,11 +177,13 @@ function PhoneCard<T>({ row, lit, chosen, press, children }: LineProps<T> & { re
 
 /**
  * A full-data collection: every row on the columns it is compared by, sorted
- * by any sortable header, paged with "Show more". On a phone each row becomes
- * a card with the same fields named, so nothing is cut to fit.
+ * by any sortable header, paged with "Show more". In a narrow container (a
+ * phone, or a pane under 520px on a wide screen) each row becomes a card with
+ * the same fields named, so nothing is cut to fit or scrolled sideways.
  */
 export function SortTable<T>({ caption, columns, rows, rowKey, initialSort, page = 20, empty, tie, highlight, card, rowPress, selected }: SortTableProps<T>) {
   const media = useMedia();
+  const [width, onLayout] = useMeasuredWidth();
   const [sort, setSort] = useState<SortState | undefined>(initialSort);
   const [shown, setShown] = useState(page);
   const sorted = useMemo(() => sortRows(rows, columns.find((column) => column.id === sort?.key)?.sort, sort?.direction ?? "ascending", tie), [rows, columns, sort, tie]);
@@ -195,11 +205,11 @@ export function SortTable<T>({ caption, columns, rows, rowKey, initialSort, page
       {`Show more (${sorted.length - shown} of ${sorted.length} not shown)`}
     </Button>
   ) : null;
-  if (!media.desktop) {
+  if (!media.desktop || (width !== undefined && width < STACK_BELOW)) {
     const sortable = columns.filter((column) => column.sort);
     return (
-      <Column gap="sm" role="list" aria-label={caption}>
-        {sortable.length > 1 ? (
+      <Column gap="sm" role="list" aria-label={caption} onLayout={onLayout}>
+        {sortable.length > 0 ? (
           <Row gap="xs" wrap role="group" aria-label="Sort by">
             {sortable.map((column) => (
               <Button key={column.id} kind={sort?.key === column.id ? "primary" : "secondary"} size="compact" onPress={() => onSort(column.id)}>
@@ -218,7 +228,7 @@ export function SortTable<T>({ caption, columns, rows, rowKey, initialSort, page
     );
   }
   return (
-    <Column gap="sm">
+    <Column gap="sm" onLayout={onLayout}>
       <ScrollView horizontal showsHorizontalScrollIndicator>
         <Column role="table" aria-label={caption} borderWidth={1} borderColor="borderColor" borderRadius="card" overflow="hidden">
           <Row role="row" backgroundColor="surfaceRaised" borderBottomWidth={1} borderBottomColor="borderColorStrong" top {...(selected ? { borderLeftWidth: 3, borderLeftColor: "transparent" } : {})}>

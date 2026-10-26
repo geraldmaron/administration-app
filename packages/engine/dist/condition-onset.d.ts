@@ -1,4 +1,4 @@
-import { type NationId } from "@admin/world";
+import { type DisasterKind, type NationId } from "@admin/world";
 import { type StandingCondition } from "./condition-kinds.js";
 import { type Campaign, type ConditionKind, type NationCondition, type NationRuntime } from "./state.js";
 import type { RngStreams } from "./rng.js";
@@ -30,21 +30,29 @@ export declare function conditionFlagsToClear(campaign: Campaign, condition: Nat
  */
 export declare function conditionId(kind: ConditionKind, nation: NationId, turn: number, place?: string): string;
 /**
- * The same reading, at the rate the country the player governs is actually
- * struck at.
+ * Which share of the country's billion-dollar disasters is a President's
+ * condition.
  *
  * The world's rate is a rate for news: fifty capitals share two slots a week and
- * a foreign disaster is a line in the feed. Home is the subject of the game, and
- * at the world's rate the United States opened about one significant condition
- * every two years — a presidency in which the weather never happened. The
- * federal declaration record is about one major disaster declaration a week;
- * a condition is a far higher bar than a declaration, and this rate is set so
- * the country lives through four to eight of them a year.
+ * a foreign disaster is a line in the feed. Home is the subject of the game, so
+ * the home queue reads the country's own record instead
+ * (`US_SIGNIFICANT_HAZARDS_PER_YEAR`): NOAA's billion-dollar series is about
+ * fourteen events a year, each typically several states' declarations. A
+ * condition is a higher bar than a billion-dollar event, and this share keeps
+ * the costliest four in ten, which with the earthquake and outbreak rates (both
+ * already declaration-level, so taken whole) is about six a year. The share is
+ * a design value; the mix between kinds is the record's.
  *
- * It scales the home queue only, so raising what a president has to govern
- * through cannot move what the other fifty countries are living through.
+ * It scales the home queue only, so what a president has to govern through
+ * cannot move what the other fifty countries are living through.
  */
-export declare const HOME_DISASTER_ONSET_RATE = 0.06;
+export declare const HOME_SIGNIFICANT_SHARE = 0.4;
+/**
+ * The weekly chance this kind opens at home before its season: the record's
+ * annual rate, cut to the significant share where the record is a
+ * billion-dollar series, read as a hazard over seven days.
+ */
+export declare function homeHazardChance(kind: DisasterKind): number;
 export declare const MAX_NEW_CONDITIONS_PER_TURN = 2;
 export declare const MAX_NEW_HOME_CONDITIONS_PER_TURN = 1;
 /**
@@ -193,4 +201,5 @@ export declare function claimOnsetSlots<T extends OnsetCandidate>(rolled: readon
     readonly roll: number;
 }[], budget: number, tiebreak?: (candidate: T) => number): readonly T[];
 export declare function onsetCandidates(campaign: Campaign): readonly OnsetCandidate[];
+export declare function onsetSeverity(draw: number): number;
 export declare function openCondition(campaign: Campaign, candidate: OnsetCandidate, stream: ReturnType<RngStreams["stream"]>): NationCondition;

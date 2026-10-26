@@ -1,7 +1,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { place, formatDate, recordEntry, recordTimeline, type TimelineOption, type TimelineReading } from "@admin/player-core";
-import { Button, Column, Empty, Icon, PressRow, ReadingFrame, Row, Sticky, Surface, Text, useMedia } from "@admin/ui";
+import { Button, Column, Empty, Icon, Pane, PressRow, ReadingFrame, Row, Sticky, Surface, Text, useMedia } from "@admin/ui";
 import { Segmented, Select, TextInput } from "@admin/ui/forms";
 import { WeekColumns, segmentKeyEntries } from "@admin/ui/news";
 import { EntryRow } from "@admin/ui/record";
@@ -32,7 +32,7 @@ function Filters({ reading, params, onPatch }: { readonly reading: TimelineReadi
   const filtered = isFiltered(params);
   return (
     <Column gap="sm" role="form" aria-label="Search and filter the Record">
-      <TextInput kind="search" icon="review" label="Search the Record" placeholder="Try a word, a state, or a country" value={words} onChangeText={(text) => { setWords(text); onPatch({ q: text || undefined, entry: undefined }); }} />
+      <TextInput kind="search" icon="review" label="Search the Record" placeholder="A word, a state or a country" value={words} onChangeText={(text) => { setWords(text); onPatch({ q: text || undefined, entry: undefined }); }} />
       <Segmented label="Who acted" options={[{ value: "all", label: "Everything" }, { value: "player", label: "You" }, { value: "world", label: "The world" }]} value={params.actor ?? "all"} onChange={(actor) => onPatch({ actor: actor === "all" ? undefined : actor, entry: undefined })} />
       <Row gap="sm" wrap>
         <OptionSelect label="Topic" options={reading.domains} value={params.domain} onChange={(domain) => onPatch({ domain, entry: undefined })} />
@@ -68,7 +68,7 @@ function Activity({ reading }: { readonly reading: TimelineReading }) {
 function List({ reading, selected, onOpen }: { readonly reading: TimelineReading; readonly selected: string | undefined; readonly onOpen: (id: string) => void }) {
   const [shown, setShown] = useState(PAGE);
   if (reading.total === 0) return <Surface level="sunken"><Empty title="Nothing in the Record yet" detail="Your first decision, order, or appointment will show up here." /></Surface>;
-  if (reading.rows.length === 0) return <Surface level="sunken"><Empty title="No entries match these filters" detail="Remove a filter or try different words." /></Surface>;
+  if (reading.rows.length === 0) return <Surface level="sunken"><Empty title="No entries match these filters" detail="No entry carries those words and filters together." /></Surface>;
   const at = selected ? reading.rows.findIndex((row) => row.id === selected) : -1;
   const visible = Math.min(reading.rows.length, Math.max(shown, at < 0 ? 0 : Math.ceil((at + 1) / PAGE) * PAGE));
   return (
@@ -86,17 +86,13 @@ function List({ reading, selected, onOpen }: { readonly reading: TimelineReading
   );
 }
 
-/** With no entry open: how to read one, and the newest three to start from. */
+/** With no entry open: the newest three, dated in game time. */
 function Orientation({ reading, onOpen }: { readonly reading: TimelineReading; readonly onOpen: (id: string) => void }) {
   return (
-    <Surface level="raised" accentEdge="gold">
-      <Column gap="md">
-        <Row gap="sm"><Icon name="record" size={24} tone="gold" /><Text variant="title" role="heading" aria-level={2}>See what each action led to</Text></Row>
-        <Text variant="body" tone="secondary">Open an entry to see what happened, what it changed, and what came before and after it.</Text>
-        {[["sign", "What happened", "Who did it, when, and the details"], ["graph", "What changed", "The numbers that moved and any damage reports"], ["dossier", "How it connects", "The places involved, what caused it, and what it caused"]].map(([icon, title, body]) => (
-          <Row key={title} gap="sm" top><Icon name={icon as "sign"} size={20} tone="colorSecondary" /><Column flex={1}><Text variant="label">{title}</Text><Text variant="caption" tone="secondary">{body}</Text></Column></Row>
-        ))}
-        {reading.rows.length > 0 ? <Text variant="eyebrow" tone="secondary">Newest entries</Text> : null}
+    <Pane kicker="The Record" title="Newest entries" icon="record" band="gold" level="raised">
+      {reading.rows.length === 0 ? (
+        <Text variant="body" tone="secondary">Nothing has been recorded yet.</Text>
+      ) : (
         <Column>
           {reading.rows.slice(0, 3).map((row) => (
             <PressRow key={row.id} label={`Open the entry, ${row.headline}`} onPress={() => onOpen(row.id)} flexDirection="row" alignItems="center" gap="sm" paddingVertical="sm" paddingHorizontal="xs" minHeight={44} borderRadius="control">
@@ -109,8 +105,8 @@ function Orientation({ reading, onOpen }: { readonly reading: TimelineReading; r
             </PressRow>
           ))}
         </Column>
-      </Column>
-    </Surface>
+      )}
+    </Pane>
   );
 }
 

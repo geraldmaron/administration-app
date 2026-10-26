@@ -368,3 +368,16 @@ export function engagementLine(act) {
         return voice.president[shape](act.target);
     return sentenceCase(voice.between[shape](act.actor, act.target));
 }
+/**
+ * The bulletin for an act a government made as an answer. The line names what
+ * it answers before what it did, as the line for a kept red line does, so a
+ * President told that China raised tariffs is also told it was answering their
+ * own.
+ */
+export function answerLine(answered, act) {
+    const move = `${possessive(answered.coercer)} ${VOICES[key(answered.instrument, answered.rung)]?.phrase ?? "move"}`;
+    const lead = answered.onBehalfOf
+        ? `${sentenceCase(act.actor)} takes ${possessive(answered.onBehalfOf)} side against ${move}.`
+        : `${sentenceCase(act.actor)} answers ${move}.`;
+    return `${lead} ${wireLine(act)}`;
+}

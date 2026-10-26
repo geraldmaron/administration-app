@@ -13,6 +13,7 @@ import { initiativeRate } from "./npc-turn.js";
 import { createGrudge } from "./relationships.js";
 import { deedTowardFlag } from "./deeds.js";
 import { resolveAction } from "./resolution.js";
+import { apply } from "./effects.js";
 import { ENGAGEMENT_KINDS, engagementHistoryKind } from "./engagement.js";
 
 const seed = makeCampaignSeed("npc-agent-seed");
@@ -118,7 +119,7 @@ describe("the NPC utility agent", () => {
       ...base,
       nations: {
         ...base.nations,
-        [nationA.id]: { ...runtime, stats: { ...runtime.stats, economy: { ...runtime.stats.economy, reserves: 1 } } },
+        [nationA.id]: { ...runtime, stats: { ...runtime.stats, economy: { ...runtime.stats.economy, reserves: 0 } } },
       },
     };
     const decision = decideNpcAction(broke, nationA.id, streams());
@@ -295,12 +296,13 @@ describe("the deeds this government has landed reach the agent's own scoring", (
     expect(scoreOf(coerced)).toBeGreaterThan(scoreOf(quiet));
   });
 
+  // A development grant: relief is offered only where there is a need to answer, and none is set here.
   it("leaves the conciliatory end of the ladder worse off by the same reading", () => {
-    const quiet = termsFor(coercedCampaign(), "assistance", 1)!;
+    const quiet = termsFor(coercedCampaign(), "assistance", 2)!;
     const coerced = termsFor(
       coercedCampaign(deedTowardFlag(nationB.id, "military", "high", "landed")),
       "assistance",
-      1,
+      2,
     )!;
     expect(coerced.intentMatch).toBeLessThan(quiet.intentMatch);
   });
@@ -657,5 +659,81 @@ describe("two leaders' rapport in how one government reads the other", () => {
   it("decides the same twice and on a copy of the campaign", () => {
     expect(intentOf(opposed)).toBe(intentOf(opposed));
     expect(intentOf(structuredClone(opposed))).toBe(intentOf(opposed));
+  });
+});
+
+describe("an act this government has yet to answer", () => {
+  // The player sanctions ALP through the shared resolver, the path every
+  // coercive act takes, so the ledger entry the agent reads is the real one.
+  function sanctioned(base: Campaign): Campaign {
+    const sanction = resolveAction(base, { actor: nationA.id, target: nationB.id, instrument: "economic", rung: 3 }, streams(), "action");
+    if (!sanction.ok) throw new Error(`sanction refused: ${sanction.reason}`);
+    return { ...apply(base, sanction.packet), turn: base.turn + 1 };
+  }
+  const quarrelless = (campaign: Campaign): Campaign => {
+    const key = relationshipKey(nationB.id, nationA.id);
+    return { ...campaign, relationships: { ...campaign.relationships, [key]: { ...campaign.relationships[key]!, grudges: [] } } };
+  };
+  const at = (campaign: Campaign, instrument: string, rung: number) =>
+    decideNpcAction(campaign, nationB.id, streams()).ranked.find((c) => c.request.target === nationA.id && c.request.instrument === instrument && c.request.rung === rung);
+
+  // The fixture's ALP has no trade channel for the upper economic rungs, so
+  // the in-kind answer it can give is the first one.
+  it("raises the answer to the government that coerced it, in kind before anything higher", () => {
+    const campaign = withMutualRelations(buildCampaign());
+    const after = sanctioned(campaign);
+    const inKind = at(after, "economic", 1)!;
+    expect(at(campaign, "economic", 1)!.terms.response).toBe(0);
+    expect(inKind.terms.response).toBeGreaterThan(0);
+    expect(inKind.terms.response).toBeGreaterThan(at(after, "military", 4)!.terms.response);
+    expect(inKind.score).toBeGreaterThan(at(campaign, "economic", 1)!.score);
+  });
+
+  it("gives a government with no other quarrel a cause to answer", () => {
+    const after = sanctioned(quarrelless(withMutualRelations(buildCampaign())));
+    expect(decideNpcAction(after, nationB.id, streams()).ranked.some((c) => c.request.instrument === "economic")).toBe(true);
+  });
+
+  it("offers only answers where the act to answer is the only cause", () => {
+    // A sanction's own blowback leaves a grudge, which is a quarrel of its own;
+    // the act is written straight onto the record here so it is the only cause.
+    const base = quarrelless(withMutualRelations(buildCampaign()));
+    const entry = {
+      turn: base.turn,
+      actor: "player" as const,
+      description: "Targeted sanctions",
+      commitment: { instrument: "economic" as const, rung: 3 as const, target: nationB.id, landed: true },
+      causal: { origin: "decision" as const, eventId: "ev-test", createdDate: base.calendar, visibility: "public" as const, entities: [nationA.id as string, nationB.id as string] },
+    };
+    const after = { ...base, turn: base.turn + 1, ledger: [...base.ledger, entry] };
+    const ranked = decideNpcAction(after, nationB.id, streams()).ranked.filter((c) => c.request.target === nationA.id);
+    expect(ranked.some((c) => c.request.instrument === "economic")).toBe(true);
+    // An escalation the act does not call for is not on the list.
+    expect(ranked.every((c) => c.request.instrument === "assistance" || c.terms.response > 0)).toBe(true);
+  });
+
+  it("stamps the answer under a key the act's question allows", () => {
+    expect(QUESTION_TERMS["npc-act"]).toContain("response");
+  });
+});
+
+describe("alignment brakes pressure on a partner", () => {
+  const aligned = (campaign: Campaign, alignment: number): Campaign => {
+    const key = relationshipKey(nationB.id, nationA.id);
+    return { ...campaign, relationships: { ...campaign.relationships, [key]: { ...campaign.relationships[key]!, alignment } } };
+  };
+  const restraintAt = (campaign: Campaign, instrument: string, rung: number) =>
+    decideNpcAction(campaign, nationB.id, streams()).ranked.find((c) => c.request.instrument === instrument && c.request.rung === rung)!.terms.restraint;
+
+  it("restrains military pressure on an aligned partner more than on a neutral one", () => {
+    const base = withMutualRelations(buildCampaign());
+    expect(restraintAt(aligned(base, 0.7), "military", 1)).toBeLessThan(restraintAt(aligned(base, 0), "military", 1));
+  });
+
+  it("brakes force on a partner far harder than a protest, and leaves an adversary unbraked", () => {
+    const base = withMutualRelations(buildCampaign());
+    const brake = (instrument: string) => restraintAt(aligned(base, 0), instrument, 1) - restraintAt(aligned(base, 0.7), instrument, 1);
+    expect(brake("military")).toBeGreaterThan(brake("diplomatic") * 3);
+    expect(restraintAt(aligned(base, -0.7), "military", 1)).toBe(restraintAt(aligned(base, 0), "military", 1));
   });
 });

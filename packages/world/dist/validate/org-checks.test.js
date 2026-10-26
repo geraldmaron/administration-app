@@ -22,6 +22,15 @@ describe("the organization registry's cross-record rules", () => {
         const broken = withOrg(worldDataset, "ORG-US-KOREA", { defenseScope: { kind: "area", area: [], source: "https://example.org/korea" } });
         expect(checkOrganizations(broken).map((error) => error.path)).toContain("organizations.ORG-US-KOREA.defenseScope");
     });
+    it("refuses a veto without a seat, a threshold no roster can meet, and a council on a defense body", () => {
+        const rule = { permanent: ["CHN"], threshold: 9, source: "https://example.org/charter" };
+        const vetoWithoutSeat = withOrg(worldDataset, "ORG-G7", { council: { ...rule, permanent: ["IND"] } });
+        expect(checkOrganizations(vetoWithoutSeat).some((error) => error.message.includes("holds a veto"))).toBe(true);
+        const tooMany = withOrg(worldDataset, "ORG-G7", { council: { ...rule, permanent: ["USA"], threshold: 15 } });
+        expect(checkOrganizations(tooMany).some((error) => error.message.includes("needs 15 votes"))).toBe(true);
+        const defense = withOrg(worldDataset, "ORG-NATO", { council: { ...rule, permanent: ["USA"] } });
+        expect(checkOrganizations(defense).some((error) => error.message.includes("binds no one to fight"))).toBe(true);
+    });
     it("refuses a government inside two customs unions", () => {
         const broken = withOrg(worldDataset, "ORG-MERCOSUR", {
             members: [...worldDataset.organizations.find((org) => org.id === "ORG-MERCOSUR").members, "FRA"],

@@ -28,7 +28,7 @@ export type NationScreenProps = {
 /** The geography slot: until the map lands, the government's ties and US presence as the same rows the relations lens reads. */
 function Geography({ file }: { readonly file: NationFile }) {
   return (
-    <MapPanelSlot title={`${file.name} on the map`} lens="relations" marks="forces" camera={`nation:${file.nation}`} selection={`nation:${file.nation}`} note="Colored by how each country sees the United States. Select a US forces marker to see where it is.">
+    <MapPanelSlot title={`${file.name} on the map`} lens="relations" marks="forces" camera={`nation:${file.nation}`} selection={`nation:${file.nation}`} note="Each country is shaded by how it sees the United States, with US forces marked where they are stationed.">
       <Row gap="sm" wrap>
         <StateChip valence={stanceValence(file.boardStance)}>{file.standing.theirs?.trust.word ?? "Unknown"}</StateChip>
         <Text variant="caption" tone="secondary">
@@ -91,7 +91,7 @@ export function NationScreen({ campaign, id, view, onView, sector, onSector }: N
     </Button>
   );
   return (
-    <Page eyebrow="Foreign government" title={file.name} lede={`${file.leader.government}. ${file.posture.posture.word}.`} emblem={<FlagOf nation={id} name={file.name} height={44} />} actions={<><BackButton parent={place.world()} parentLabel="World" />{act}<TopicLaw topic="diplomacy" /></>} wide>
+    <Page eyebrow="Foreign government" title={file.name} lede={file.atWarWith.length > 0 ? "At war with the United States." : file.standing.theirs ? `Their view of the United States is ${file.standing.theirs.trust.word.toLowerCase()}.` : "Your intelligence agencies cannot yet read this government's standing toward the United States."} emblem={<FlagOf nation={id} name={file.name} height={44} />} actions={<><BackButton parent={place.world()} parentLabel="World" />{act}<TopicLaw topic="diplomacy" /></>} wide>
       <CountryIdentity file={file} {...(view === "overview" ? {} : { onOverview: () => onView("overview") })} />
       <ViewTabs label={`Sections about ${file.name}`} tabs={tabs} selected={view} onSelect={onView} />
       <Body campaign={campaign} file={file} view={view} onView={onView} {...(sector ? { sector } : {})} onSector={onSector} />

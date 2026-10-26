@@ -3,11 +3,12 @@ import { useRouter } from "expo-router";
 import { actOf, type Campaign } from "@admin/engine";
 import { connectionKindLabel, connectionTone, formatDate, personFile, publicGraphNeighborhood, publicGraphReach, publicScopeGraph, relationshipScopes, subjectHref, type PersonFile, type PublicGraphLink } from "@admin/player-core";
 import type { PersonId } from "@admin/world";
-import { Empty, Badge, Button, Column, ReadingFrame, Row, Surface, Text } from "@admin/ui";
+import { Empty, Tag, Button, Column, ReadingFrame, Row, Surface, Text } from "@admin/ui";
 import { Segmented, Select, TextInput } from "@admin/ui/forms";
-import { Monogram, TieMap, tieKeyEntries } from "@admin/ui/dossier";
+import { TieMap, tieKeyEntries } from "@admin/ui/dossier";
 import { termDoor } from "../handbook/term-door";
 import { LinkText, RowTo } from "../executive/parts";
+import { PersonFace } from "./PersonFace";
 import { PersonName } from "./PersonPeek";
 import { FilePart } from "./parts";
 import { VISUAL_CAP, VISUAL_START, VISUAL_STEP, circleWords, isFormalHub, linkWords, reachLegend, tieMap } from "./network-view";
@@ -114,7 +115,7 @@ function Navigator({ campaign, file, state, change }: { readonly campaign: Campa
       <Text variant="caption" tone="tertiary">{`${reachLegend(publicGraphReach(campaign, graph, scopeId, selected).unit)} Knowing someone or working together doesn't prove they trust each other or will vote together.`}</Text>
       <TextInput kind="search" label="Search people and connections" placeholder="Search people and connections" value={state.query ?? ""} onChangeText={(query) => change({ ...state, query: query.slice(0, 120) })} />
       <Surface pad="none" overflow="hidden">
-        {shown.length === 0 ? <Empty title="No one in this group matches" detail="Try another group, or clear the search to see everyone." /> : shown.map((link, index) => <ConnectionRow key={link.id} campaign={campaign} link={link} selected={selected} first={index === 0} />)}
+        {shown.length === 0 ? <Empty title="No one in this group matches" detail="No one in this group matches the search." /> : shown.map((link, index) => <ConnectionRow key={link.id} campaign={campaign} link={link} selected={selected} first={index === 0} />)}
       </Surface>
       <More total={matchingLinks.length} shown={shown.length} onMore={() => setAllLinks(true)} />
     </Column>
@@ -131,7 +132,7 @@ function Ties({ campaign, file, state, change }: { readonly campaign: Campaign; 
     <Column gap="sm">
       <TextInput kind="search" label="Search their connections" placeholder="Search their connections" value={state.contact ?? ""} onChangeText={(contact) => change({ ...state, contact: contact.slice(0, 120) })} />
       <Segmented<"all" | "recorded" | "inferred"> label="Show" value={kind} onChange={(evidence) => change({ ...state, evidence })} options={[{ value: "all", label: "All" }, { value: "recorded", label: "Have talked" }, { value: "inferred", label: "Probably know each other" }]} />
-      {rows.length === 0 ? <Text variant="body" tone="secondary">{file.circle.length === 0 ? "Staff haven't found anyone they're connected to yet." : "Nobody matches what you picked. Clear the search or choose All to see everyone."}</Text> : null}
+      {rows.length === 0 ? <Text variant="body" tone="secondary">{file.circle.length === 0 ? "Staff haven't found anyone they're connected to yet." : "Nobody matches the search and filter."}</Text> : null}
       {shown.length > 0 ? (
         <Surface pad="none" overflow="hidden">
           {shown.map((row, index) => {
@@ -139,11 +140,11 @@ function Ties({ campaign, file, state, change }: { readonly campaign: Campaign; 
             return (
               <RowTo key={`${row.otherId}:${row.edge.kind}`} first={index === 0} href={subjectHref({ kind: "person", id: row.otherId })} label={`Open ${row.otherName}'s file`}>
                 <Row gap="sm" top padding="sm">
-                  <Monogram name={row.otherName} size={36} />
+                  <PersonFace campaign={campaign} id={row.otherId} name={row.otherName} size={36} />
                   <Column flex={1} gap="2xs">
                     <Row gap="sm" wrap>
                       <PersonName campaign={campaign} id={row.otherId} name={row.otherName} />
-                      <Badge status={TIE_STATUS[tone]}>{row.observed ? "Have talked" : connectionKindLabel(row.edge.kind, row.subjectEnd)}</Badge>
+                      <Tag tone={TIE_STATUS[tone]}>{row.observed ? "Have talked" : connectionKindLabel(row.edge.kind, row.subjectEnd)}</Tag>
                     </Row>
                     <Text variant="caption" tone="secondary">
                       {row.observed ? `${row.observed.direction === "outgoing" ? `They reached out to ${row.otherName}` : `${row.otherName} reached out to them`} about an issue on ${formatDate(row.observed.date)}. Staff are sure the talk happened, but it doesn't promise a vote. ` : "Staff think they know each other from their backgrounds, but can't confirm they trust each other or work together. "}

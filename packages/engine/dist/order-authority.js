@@ -11,7 +11,7 @@ export function isOrderCourtSuspended(campaign, recordId) {
             return proceeding.lower.holding === "struck-down"
                 && proceeding.lower.enforcement === "in-force";
         return proceeding.interim === "rule-stayed" || proceeding.interim === "rule-paused"
-            || proceeding.interim === "construction-obligations-stayed"
+            || proceeding.interim === "construction-obligations-stayed" || proceeding.interim === "order-enjoined"
             || Boolean(proceeding.partyRelief?.active && proceeding.partyRelief.scope === "agency-rule"
                 && proceeding.partyRelief.fraction >= 1);
     }) ?? false;

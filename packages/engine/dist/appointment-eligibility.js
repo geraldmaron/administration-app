@@ -1,8 +1,11 @@
+import { ageInYear } from "./officeholder-mortality.js";
 import { isCircuitSeat } from "./lower-bench.js";
 import { officeDef, officeInstitution } from "./institutions.js";
 const SERVICE_SECRETARY_BODIES = new Set(["INST-ARMY", "INST-NAVY", "INST-AIRFORCE"]);
 const JOINT_CHIEFS_BODY = "INST-JCS";
 const DEFENSE_ROLE = "role-defense-minister";
+const VICE_PRESIDENT_OFFICE = "OFF-VP";
+const PRESIDENTIAL_MINIMUM_AGE = 35;
 /**
  * The kind of seat an office is, or nothing for an office the Senate does not
  * confirm: a seat the President fills alone has no nomination to send.
@@ -89,7 +92,7 @@ function civilianRefusal(kind, person, title) {
  * because a cabinet chair the agenda or a report proposes a name for has
  * always taken that name on the President's word.
  */
-export function seatRuleRefusal(office, person) {
+export function seatRuleRefusal(campaign, office, person) {
     const kind = seatKindOf(office);
     const title = officeDef(office)?.title ?? "office";
     if (!kind)
@@ -99,6 +102,13 @@ export function seatRuleRefusal(office, person) {
     }
     if (kind === "joint-chiefs" && !isServingOfficer(person)) {
         return `${person.name} is not a serving officer. The Chairman is appointed from the officers of the armed forces.`;
+    }
+    // The Twelfth Amendment bars from the vice presidency anyone ineligible to
+    // be President, and Article II sets that age at thirty-five. The nationality
+    // test is the nomination's own; fourteen years' residence is not modeled.
+    const age = ageInYear(campaign, person.age, campaign.calendar.year);
+    if (office === VICE_PRESIDENT_OFFICE && age < PRESIDENTIAL_MINIMUM_AGE) {
+        return `${person.name} is ${age}. The Constitution requires a Vice President to be at least ${PRESIDENTIAL_MINIMUM_AGE}.`;
     }
     const defense = kind === "cabinet" && officeInstitution(office)?.cabinetRole === DEFENSE_ROLE;
     if (defense || kind === "service-secretary")

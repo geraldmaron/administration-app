@@ -46,6 +46,22 @@
       "owner": "5C.2"
     },
     {
+      "file": "operators.ts",
+      "key": "operator-victim",
+      "kind": "hazard: which nation an intrusion crew strikes once operator-act has fired; it does not decide whether the crew acts",
+      "terms": ["the target's GDP", "hostility of the host toward the target", "the target's counter-intelligence"],
+      "status": "live",
+      "owner": "5C.2"
+    },
+    {
+      "file": "world-events.ts",
+      "key": "border-clash-week",
+      "kind": "hazard: a border clash breaking out this week between a pair whose side already chose to act through decideHostileAct",
+      "terms": ["base clash rate", "stock of stated hostile acts in the window", "treaty guarantor damping", "cooldown after the last clash"],
+      "status": "live",
+      "owner": "integrator"
+    },
+    {
       "file": "cabinet.ts",
       "key": "cabinet",
       "kind": "hazard: a minister breaking with the administration",

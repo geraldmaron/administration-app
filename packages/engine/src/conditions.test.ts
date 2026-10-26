@@ -92,24 +92,27 @@ function advance(state: Campaign, turns: number): Campaign {
 }
 
 describe("onset", () => {
-  it("reads the nation's authored exposure — an unexposed country never suffers that disaster", () => {
-    // The fixture authors no exposure at all, so nothing geographic may open.
+  it("reads a foreign nation's authored exposure — an unexposed country never suffers that disaster", () => {
+    // The fixture authors no exposure at all, so nothing geographic may open
+    // abroad. Home reads the country's own disaster record instead, so the
+    // home nation is left out of this one.
     const quiet = advance(buildCampaign(), 60);
-    const geographic = Object.values(quiet.conditions).filter((c) => c.kind !== "unrest");
+    const geographic = Object.values(quiet.conditions).filter((c) => c.nation !== USA && c.kind !== "unrest");
     expect(geographic).toHaveLength(0);
   });
 
-  it("opens the kinds the country is actually exposed to", () => {
-    const exposed = withExposure(buildCampaign(), USA, { flood: 1, earthquake: 1 });
-    const after = advance(exposed, 60);
-    const kinds = new Set(Object.values(after.conditions).map((c) => c.kind));
+  it("opens the kinds a foreign country is actually exposed to", () => {
+    const exposed = withExposure(buildCampaign(), ALP, { flood: 1, earthquake: 1 });
+    const after = advance(exposed, 200);
+    const abroad = Object.values(after.conditions).filter((c) => c.nation === ALP && c.kind !== "unrest");
+    expect(abroad.length).toBeGreaterThan(0);
+    for (const opened of abroad) expect(["flood", "earthquake"]).toContain(opened.kind);
+  });
 
-    expect(kinds.has("flood") || kinds.has("earthquake")).toBe(true);
-    for (const opened of Object.values(after.conditions)) {
-      if (opened.kind === "unrest") continue;
-      expect(opened.nation).toBe(USA);
-      expect(["flood", "earthquake"]).toContain(opened.kind);
-    }
+  it("strikes home from the national record whatever the authored exposure says", () => {
+    const after = advance(withExposure(buildCampaign(), USA, {}), 60);
+    const home = Object.values(after.conditions).filter((c) => c.nation === USA && c.kind !== "unrest");
+    expect(home.length).toBeGreaterThan(0);
   });
 
   it("never opens two floods in the same place at once", () => {

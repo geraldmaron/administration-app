@@ -20,7 +20,7 @@ import {
   takeTheHitPacket,
   type RunningStory,
 } from "@admin/player-core";
-import { Badge, CardLink, Column, Empty, EntityLink, Icon, Meter, ReadingFrame, Row, Seal, Sparkline, Sticky, Surface, Text, sparklineKey, useMedia } from "@admin/ui";
+import { CardLink, Column, Empty, EntityLink, Icon, Meter, ReadingFrame, Row, Seal, Sparkline, Sticky, Surface, Tag, Text, sparklineKey, useMedia } from "@admin/ui";
 import { Segmented, Select } from "@admin/ui/forms";
 import { termDoor } from "../handbook/term-door";
 import { PressAct, type PressCommit } from "./PressAct";
@@ -32,7 +32,7 @@ const PODIUM_AUTHORITY = "U.S. Const. art. II, §1";
 
 type Issue = "week" | "order" | "hit";
 
-const STAGE_STATUS = { breaking: "danger", developing: "warning", fading: "outline", resolved: "outline" } as const;
+const STAGE_TONE = { breaking: "danger", developing: "warning", fading: "outline", resolved: "outline" } as const;
 
 function PodiumBody({ podium }: { readonly podium: ReturnType<typeof podiumReading> }) {
   return (
@@ -74,7 +74,7 @@ function StoryRow({ story, oldest }: { readonly story: RunningStory; readonly ol
     <CardLink pad="md" label={`Open the story, ${story.subject}`} href={story.href} onPress={() => go(story.href)} {...(story.stage === "breaking" ? { accentEdge: "danger" as const } : story.stage === "developing" ? { accentEdge: "warning" as const } : {})}>
       <Column gap="sm">
         <Row gap="sm" wrap>
-          <Badge status={STAGE_STATUS[story.stage]}>{story.stageWord}</Badge>
+          <Tag tone={STAGE_TONE[story.stage]}>{story.stageWord}</Tag>
           <Text variant="caption" tone="secondary">{story.age}</Text>
         </Row>
         <Text variant="label">{story.subject}</Text>
@@ -98,8 +98,8 @@ function Running({ campaign }: { readonly campaign: Campaign }) {
   return (
     <Column gap="sm">
       <Text variant="heading" role="heading" aria-level={2}>Ongoing stories</Text>
-      <Text variant="caption" tone="secondary">To answer a story, open it. Its page shows the claim, what's been confirmed, and what you can do.</Text>
-      {stories.length === 0 ? <Surface level="sunken"><Empty title="No stories are going against you" detail="A story shows up here when the press keeps asking about something." icon="press" /></Surface> : stories.map((story) => <StoryRow key={story.id} story={story} oldest={oldest} />)}
+      <Text variant="caption" tone="secondary">{stories.length === 0 ? "The press isn't pressing you on anything." : `${stories.length} ${stories.length === 1 ? "story is" : "stories are"} running against you, hottest first.`}</Text>
+      {stories.length === 0 ? <Surface level="sunken"><Empty title="No stories are going against you" detail="Nothing is running against you right now." icon="press" /></Surface> : stories.map((story) => <StoryRow key={story.id} story={story} oldest={oldest} />)}
     </Column>
   );
 }
@@ -158,11 +158,11 @@ function Outings({ campaign }: { readonly campaign: Campaign }) {
             <Text variant="body" tone="secondary" flex={1}>{trend.summary}</Text>
           </Row>
         </ReadingFrame>
-      ) : <Text variant="body" tone="secondary">A trend shows up after your second press appearance.</Text>}
+      ) : <Text variant="body" tone="secondary">Fewer than two appearances so far, so there is no trend yet.</Text>}
       {history.length === 0 ? <Text variant="caption" tone="secondary">Nobody from your White House has faced the press yet.</Text> : null}
       {history.slice(0, 8).map((row) => (
         <Row key={row.id} gap="sm" top>
-          <Badge status={row.wentWell ? "success" : "danger"} icon={row.wentWell ? "favorable" : "adverse"}>{row.wentWell ? "Went well" : "Went badly"}</Badge>
+          <Tag tone={row.wentWell ? "success" : "danger"} icon={row.wentWell ? "favorable" : "adverse"}>{row.wentWell ? "Went well" : "Went badly"}</Tag>
           <Column flex={1} gap="2xs">
             <Text variant="label">{`${row.play}${row.desk ? ` with ${row.desk}` : ""}`}<Text variant="caption" tone="tertiary">{`  ${row.when}`}</Text></Text>
             <Text variant="caption" tone="secondary">{row.summary}</Text>

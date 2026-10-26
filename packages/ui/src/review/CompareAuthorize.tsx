@@ -91,7 +91,7 @@ export function CompareAuthorize({ title, options, selected, onSelect, verb, onA
   const lockShared = sharedLock(options.map((option) => option.unavailable));
   const picked = options.find((option) => option.id === selected);
   const locked = picked?.unavailable;
-  const line = picked ? (locked ?? review) : open.length === 0 ? "Nothing here can be approved yet. Each option says what it waits on." : "Pick an option to see what it does, then approve it.";
+  const line = picked ? (locked ?? review) : open.length === 0 ? "Nothing here can be approved yet. Each option says what it waits on." : "No option picked yet. Each one shows what it does before anything is approved.";
   return (
     <Column gap="md" role="group" aria-labelledby={`${id}-title`}>
       <Text id={`${id}-title`} variant="heading" role="heading" aria-level={2}>

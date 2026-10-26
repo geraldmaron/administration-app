@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { daysBetween, type Campaign } from "@admin/engine";
 import { PLACES, familyQueue, formatDate, place, resolveAuthorityText, summonsReading, type SummonsReading } from "@admin/player-core";
-import { Badge, Button, Column, EntityLink, LegalCitation, Loading, Page, Row, Section, Text } from "@admin/ui";
+import { Button, Column, EntityLink, LegalCitation, Loading, Page, Row, Section, Tag, Text } from "@admin/ui";
 import { useOpenAuthority } from "../law/AuthorityProvider";
 import { ReviewBoundary } from "../review/PresidentialReview";
 import { BackButton } from "../shell/BackButton";
 import { CaseReceipt, CaseScreen, type CaseDone } from "./CaseScreen";
 import { FactGrid } from "@admin/ui/record";
-import { Deadline, History, go, useCarryingOut } from "./parts";
+import { ClockReading, History, go, useCarryingOut } from "./parts";
 
-const URGENCY = { due: { status: "danger", word: "Due" }, closing: { status: "warning", word: "Closing" }, standing: { status: "outline", word: "Standing" } } as const;
+const URGENCY = { due: { tone: "danger", word: "Due" }, closing: { tone: "warning", word: "Closing" }, standing: { tone: "outline", word: "Standing" } } as const;
 
 function Window({ reading }: { readonly reading: SummonsReading }) {
   const openLaw = useOpenAuthority();
@@ -19,7 +19,7 @@ function Window({ reading }: { readonly reading: SummonsReading }) {
   const law = window.statute ? resolveAuthorityText(window.statute) : undefined;
   return (
     <Column gap="sm">
-      <Deadline clock={{ label: window.statute ?? "Time allowed", window: window.length, left, unit: window.unit === "day" ? "day" : "week" }} />
+      <ClockReading clock={{ label: window.statute ?? "Time allowed", window: window.length, left, unit: window.unit === "day" ? "day" : "week" }} />
       {law ? <LegalCitation citation={{ cite: law.cite, title: law.shortTitle ?? law.title }} onPress={() => openLaw(law.cite)} /> : null}
     </Column>
   );
@@ -36,7 +36,7 @@ function SummonsScreen({ campaign, reading }: { readonly campaign: Campaign; rea
   return (
     <Page icon="pending" eyebrow={running ? "Deadline · clock running" : "Deadline · clock stopped"} title={brief.title} lede={brief.clockLine}>
       <Row><BackButton parent={place.brief()} parentLabel="Brief" /></Row>
-      <Section icon="pending" title="What you owe" actions={<Badge status={urgency?.status ?? "outline"}>{urgency?.word ?? "Stopped"}</Badge>}>
+      <Section icon="pending" title="What you owe" actions={<Tag tone={urgency?.tone ?? "outline"}>{urgency?.word ?? "Stopped"}</Tag>}>
         <FactGrid
           items={[
             { label: "Due date", value: due ? `${left !== undefined && left < 0 ? "Overdue since" : "Due"} ${formatDate(due.dueDate)}` : "This clock isn't running right now" },
@@ -55,7 +55,7 @@ function SummonsScreen({ campaign, reading }: { readonly campaign: Campaign; rea
       ) : null}
       {brief.counsel ? (
         <Section icon="microphone" title="Counsel">
-          <Text variant="body" serif>{brief.counsel}</Text>
+          <Text variant="voice">{brief.counsel}</Text>
         </Section>
       ) : null}
       {running && reading.spec.answerable ? (

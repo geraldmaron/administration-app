@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import { withWeeksElapsed } from "./__fixtures__/campaign.js";
 import { foundedForBalance } from "./balance-harness.js";
 import { commodityPhase } from "./commodity-phase.js";
-import { commodityShocks } from "./commodity-shocks.js";
+import { commodityShocks, contestedRoutes, warLossFraction } from "./commodity-shocks.js";
 import { referenceIndex } from "./commodity-registry.js";
 import { openConflict } from "./conflicts.js";
 import { apply } from "./effects.js";
@@ -80,11 +80,17 @@ describe("the Hormuz worked proof", () => {
         expect(pressure.commodities?.inflation ?? 0).toBeGreaterThan(0);
         expect(pressure.inflation).toBeCloseTo(pressure.commodities.inflation, 6);
     });
-    it("parts importers from exporters: Japan pays in growth, a Gulf exporter outside the war gains", () => {
+    // Receipts are what an exporter delivers times the price. Norway ships
+    // nothing through the strait and is paid the higher price on all of it;
+    // Kuwait, outside the war but behind the strait, is paid it only on the
+    // cargo that still leaves, and loses the stranded rest.
+    it("parts importers from exporters: Japan pays in growth, an exporter clear of the strait gains, and one behind it fares worse", () => {
         const eight = marketWeeks(atWar, 8);
         expect(externalMacroPressure(eight, JPN).commodities?.growth ?? 0).toBeLessThan(0);
+        const norway = externalMacroPressure(eight, "NOR").commodities?.growth ?? 0;
         const kuwait = externalMacroPressure(eight, "KWT").commodities?.growth ?? 0;
-        expect(kuwait).toBeGreaterThan(0);
+        expect(norway).toBeGreaterThan(0);
+        expect(kuwait).toBeLessThan(norway);
     });
     it("makes the public name gasoline once the pump has climbed", () => {
         const ten = marketWeeks(atWar, 10);
@@ -127,5 +133,96 @@ describe("the Hormuz worked proof", () => {
         expect(index).toBeGreaterThan(1.15);
         expect(index).toBeLessThan(1.6);
         expect(pumpPrice(index)).toBeGreaterThan(oathPumpPrice());
+    });
+});
+// One quiet week opens the markets at rest, so a war or a measure added after
+// it changes what is delivered before it has moved any price.
+const QUIET = marketWeeks(BARE, 1);
+describe("the flags a closing government stops carry the shortage", () => {
+    const war = { ...openConflict(USA, IRN, QUIET.turn, "A test war."), intensity: 1 };
+    const stopped = withWar(QUIET, war);
+    const iran = QUIET.nations[IRN];
+    const passed = {
+        ...stopped,
+        nations: { ...stopped.nations, [IRN]: { ...iran, base: { ...iran.base, doctrine: { ...iran.base.doctrine, alignmentPull: [...iran.base.doctrine.alignmentPull, JPN] } } } },
+    };
+    it("leaves Japan shorter of energy when Iran stops its ships than when it lets them through, before any price has moved", () => {
+        const hit = (campaign) => externalMacroPressure(campaign, JPN).commodities?.growth ?? 0;
+        expect(hit(stopped)).toBeLessThan(0);
+        expect(hit(stopped)).toBeLessThan(hit(passed));
+    });
+    it("charges an exporter clear of the strait nothing for the closure until the price moves", () => {
+        expect(externalMacroPressure(stopped, "NOR").commodities?.growth ?? 0).toBeCloseTo(externalMacroPressure(QUIET, "NOR").commodities?.growth ?? 0, 9);
+    });
+});
+describe("a measure and a closed strait on the same barrels", () => {
+    // Kuwait under an oil designation and behind a closed strait: the barrels
+    // the measure already keeps from its buyers are not stranded a second time,
+    // in the world's supply or in Kuwait's own books.
+    const KWT = "KWT";
+    const sanctions = {
+        id: "sanctions:KWT:overlap",
+        kind: "sanctions",
+        sector: "energy-crude",
+        target: KWT,
+        rate: 0,
+        imposedTurn: QUIET.turn,
+        imposedDate: QUIET.calendar,
+        authority: "INST-OFAC",
+        origin: "us",
+    };
+    const war = { ...openConflict(USA, IRN, QUIET.turn, "A test war."), intensity: 1 };
+    const sanctioned = { ...QUIET, trade: { ...QUIET.trade, measures: { [sanctions.id]: sanctions } } };
+    const closed = withWar(QUIET, war);
+    const both = withWar(sanctioned, war);
+    const growth = (campaign) => externalMacroPressure(campaign, KWT).growth - externalMacroPressure(QUIET, KWT).growth;
+    const routeLoss = (campaign) => commodityShocks(campaign, "crude").find((shock) => shock.kind === "route")?.loss ?? 0;
+    it("costs Kuwait less than the two separately and no less than either alone", () => {
+        const [route, measure, together] = [growth(closed), growth(sanctioned), growth(both)];
+        expect(route).toBeLessThan(0);
+        expect(measure).toBeLessThan(0);
+        expect(together).toBeGreaterThan(route + measure);
+        expect(together).toBeLessThanOrEqual(Math.min(route, measure));
+    });
+    it("stops fewer barrels at the strait once the measure has already kept Kuwait's off the market", () => {
+        expect(routeLoss(both)).toBeLessThan(routeLoss(closed));
+        expect(routeLoss(both)).toBeGreaterThan(0);
+    });
+});
+describe("the strait's deduction and the market's shocks keep one account", () => {
+    const hormuzWar = { ...openConflict(USA, IRN, QUIET.turn, "A test war."), intensity: 1 };
+    const contested = withWar(QUIET, hormuzWar);
+    const upstream = (campaign) => contestedRoutes(campaign, "crude")[0].upstreamLost;
+    it("takes nothing from the strait's flow for a war on an importer's ground", () => {
+        const farWar = { ...openConflict("RUS", "CHN", QUIET.turn, "A distant test war."), intensity: 1 };
+        expect(upstream(withWar(contested, farWar))).toBeCloseTo(upstream(contested), 12);
+    });
+    it("charges a measure on a warring supplier only on the output its war left", () => {
+        const sanctions = { id: "sanctions:IRN:war", kind: "sanctions", sector: "energy-crude", target: IRN, rate: 0, imposedTurn: QUIET.turn, imposedDate: QUIET.calendar, authority: "INST-OFAC", origin: "us" };
+        const sanctioned = { ...QUIET, trade: { ...QUIET.trade, measures: { [sanctions.id]: sanctions } } };
+        const onIran = (campaign) => commodityShocks(campaign, "crude").find((s) => s.kind === "sanction" && s.cause.includes("Iran")).loss;
+        const atWar = withWar(sanctioned, hormuzWar);
+        expect(onIran(atWar)).toBeCloseTo(onIran(sanctioned) * (1 - warLossFraction(IRN, [hormuzWar])), 12);
+    });
+});
+describe("a full-intensity Hormuz war against the 2026 closure", () => {
+    // EIA STEO: 10.4 Mb/d shut in in April 2026 of 108.42 world supply; weekly
+    // Brent rose from $71.36 to a $124.61 peak. Lost physical flow first, then
+    // the weekly price peak, each within a quarter of the sourced change.
+    const full = withWar(BARE, { ...openConflict(USA, IRN, BARE.turn, "A test war."), intensity: 1 });
+    it("takes about the share of world supply the strait's closure shut in", () => {
+        const lost = commodityShocks(full, "crude").reduce((sum, shock) => sum + shock.loss, 0);
+        const april = 10.4 / 108.42;
+        expect(Math.abs(lost - april)).toBeLessThanOrEqual(0.25 * april);
+    });
+    it("peaks within a quarter of the weekly peak's rise", () => {
+        const causal = 124.61 / 71.36 - 1;
+        let working = full;
+        let high = 0;
+        for (let week = 0; week < 16; week += 1) {
+            working = marketWeeks(working, 1);
+            high = Math.max(high, crude(working) / referenceIndex("crude"));
+        }
+        expect(Math.abs(high - 1 - causal)).toBeLessThanOrEqual(0.25 * causal);
     });
 });

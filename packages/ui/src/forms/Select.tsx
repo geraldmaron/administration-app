@@ -7,8 +7,9 @@ import { Text } from "../primitives/Text";
 import { ChoiceList, type ChoiceOption } from "./ChoiceList";
 import type { FieldControl } from "./Field";
 import { TextInput } from "./TextInput";
+import { withButtonKeys } from "../primitives/PressableFrame";
 
-const Trigger = styled(View, {
+const Trigger = withButtonKeys(styled(View, {
   name: "SelectTrigger",
   role: "button",
   tabIndex: 0,
@@ -26,7 +27,7 @@ const Trigger = styled(View, {
   outlineStyle: "solid",
   outlineOffset: 2,
   outlineWidth: { default: 0, "focus-visible": 2 },
-});
+}));
 
 /** Past this many options the sheet offers a filter, so a list of states is typed into rather than scrolled. */
 const FILTER_FROM = 12;

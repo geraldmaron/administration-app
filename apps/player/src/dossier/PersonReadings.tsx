@@ -40,7 +40,7 @@ function Trend({ reading }: { readonly reading: PersonReading }) {
   );
 }
 
-function Reading({ reading, onOpen }: { readonly reading: PersonReading; readonly onOpen: () => void }) {
+function PersonReadingRow({ reading, onOpen }: { readonly reading: PersonReading; readonly onOpen: () => void }) {
   const confidence = confidenceWords(reading);
   return (
     <Pressable onPress={onOpen} aria-label={[`${reading.label}: ${reading.word}`, confidence, "Open details about this reading"].filter(Boolean).join(". ")} padding="md" borderRadius="card" borderWidth={1} borderColor="borderColor" backgroundColor={{ default: "surfaceRaised", hover: "surfaceHover" }} gap="sm" flexGrow={1}>
@@ -109,7 +109,7 @@ export function PersonReadings({ readings }: { readonly readings: readonly Perso
     <>
       <Fitted count={readings.length} columnsFor={readingColumns} label="Staff readings">
         {readings.map((reading) => (
-          <Reading key={reading.key} reading={reading} onOpen={() => setSelected(reading)} />
+          <PersonReadingRow key={reading.key} reading={reading} onOpen={() => setSelected(reading)} />
         ))}
       </Fitted>
       <Sheet open={selected !== undefined} onClose={() => setSelected(undefined)} title={selected ? selected.label : "About this reading"} eyebrow="About this reading">

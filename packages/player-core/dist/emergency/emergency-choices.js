@@ -1,4 +1,4 @@
-import { EMERGENCY_RENEWAL_TURNS, GUARD_SUPPORT_COORDINATION_USD_MILLIONS, EMERGENCY_WEEKLY_STANDING_COST, apply, availableOrders, declareEmergency, endEmergency, hazardLabel, renewEmergency, selectDateOfTurn, selectConditionsFor, weeklyStandingCost, } from "@admin/engine";
+import { GUARD_SUPPORT_COORDINATION_USD_MILLIONS, EMERGENCY_WEEKLY_STANDING_COST, apply, availableOrders, authorityDeadline, compareDates, declareEmergency, emergencyAuthorityClock, endEmergency, hazardLabel, renewEmergency, selectDeclaredEmergencies, selectConditionsFor, weeklyStandingCost, } from "@admin/engine";
 import { WILLINGNESS_WORDS } from "../act/preview";
 import { guardRequestCandidates } from "../desk/attention-requests";
 import { formatDate, formatSignedPoints } from "../format/figures";
@@ -35,6 +35,18 @@ function powersCell(names, none) {
     return names.length === 0 ? cell(none) : cell(names.join(", "));
 }
 const standingWords = (cost) => `International standing ${formatSignedPoints(-cost)} pts a week`;
+function deadlineWords(campaign, emergency) {
+    const clock = emergencyAuthorityClock(campaign, emergency);
+    const deadline = authorityDeadline(campaign, clock);
+    const continuation = compareDates(deadline, clock.expiresDate) === 0 ? "unless you renew it" : "unless Congress renews the authority";
+    return `${formatDate(deadline)}, ${continuation}`;
+}
+function resultDeadline(campaign, result) {
+    if (!result.ok)
+        return `No change. ${result.reason}`;
+    const record = result.packet.effects.find((effect) => effect.kind === "emergency").set;
+    return deadlineWords(apply(campaign, result.packet), record);
+}
 /** Declaring over one running condition, at each scope it could take. */
 export function declarationChoices(campaign, conditionId) {
     const condition = selectConditionsFor(campaign, campaign.founding.nation).find((entry) => entry.id === conditionId);
@@ -49,20 +61,19 @@ export function declarationChoices(campaign, conditionId) {
             ...(result.ok ? {} : { locked: `Not available right now. ${result.reason}` }),
         })),
     ];
-    const lapses = formatDate(selectDateOfTurn(campaign, campaign.turn + EMERGENCY_RENEWAL_TURNS));
     const row = (id, label, read) => ({ id, label, cells: results.map(read) });
     const rows = [
         row("reach", "Where it applies", ({ scope }) => cell(scopeWords(scope))),
         row("opens", "Powers it gives you", ({ result }) => powersCell(powersMoved(campaign, result, "opens"), "None you don't already have")),
         row("cost", "What it costs", () => cell(`${standingWords(EMERGENCY_WEEKLY_STANDING_COST)}, growing every week it lasts`, "adverse")),
-        row("lapses", "When it ends", () => cell(`${lapses}, unless you renew it`)),
+        row("lapses", "When it ends", ({ result }) => cell(resultDeadline(campaign, result))),
     ];
     return { columns, rows };
 }
 /** Ending a declaration; kept, it goes on costing standing every week, which is the waiting line. */
 export function endChoices(campaign, id) {
-    const emergency = campaign.emergencies[id];
-    if (!emergency || emergency.endedTurn !== undefined)
+    const emergency = selectDeclaredEmergencies(campaign).find((record) => record.id === id);
+    if (!emergency)
         return undefined;
     const result = endEmergency(campaign, id);
     const cost = weeklyStandingCost(emergency, campaign.turn);
@@ -75,23 +86,22 @@ export function endChoices(campaign, id) {
             { id: "closes", label: "Powers it gives back", cells: [powersCell(powersMoved(campaign, result, "closes"), "None that another emergency or a war doesn't still give you")] },
             { id: "after", label: "Afterward", cells: [cell("To declare again, the problem has to still be going on")] },
         ],
-        waiting: `Until you end it, it costs ${standingWords(cost).toLowerCase()}, growing every week, and it runs to ${formatDate(selectDateOfTurn(campaign, emergency.renewedTurn + EMERGENCY_RENEWAL_TURNS))} unless you renew it.`,
+        waiting: `Until you end it, it costs ${standingWords(cost).toLowerCase()}, growing every week, and it runs to ${deadlineWords(campaign, emergency)}.`,
     };
 }
 /** Continuing a declaration for a year; unrenewed, it lapses on its date, which is the waiting line. */
 export function renewChoices(campaign, id) {
-    const emergency = campaign.emergencies[id];
-    if (!emergency || emergency.endedTurn !== undefined)
+    const emergency = selectDeclaredEmergencies(campaign).find((record) => record.id === id);
+    if (!emergency)
         return undefined;
     const result = renewEmergency(campaign, id);
-    const lapses = formatDate(selectDateOfTurn(campaign, emergency.renewedTurn + EMERGENCY_RENEWAL_TURNS));
-    const renewed = formatDate(selectDateOfTurn(campaign, campaign.turn + EMERGENCY_RENEWAL_TURNS));
+    const lapses = formatDate(authorityDeadline(campaign, emergencyAuthorityClock(campaign, emergency)));
     return {
         columns: [
             { id: "renew", label: "Renew it for a year", ...(result.ok ? {} : { locked: `Not yet. ${result.reason}` }) },
         ],
         rows: [
-            { id: "until", label: "Lasts until", cells: [cell(`${renewed}, from ${lapses}`)] },
+            { id: "until", label: "Lasts until", cells: [cell(resultDeadline(campaign, result))] },
             { id: "cost", label: "Every week", cells: [cell(`${standingWords(weeklyStandingCost(emergency, campaign.turn))}, and still growing`, "adverse")] },
             { id: "public", label: "In public", cells: [cell("You publish a renewal notice")] },
         ],

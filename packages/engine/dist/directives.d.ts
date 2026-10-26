@@ -1,4 +1,5 @@
 import type { Campaign } from "./state.js";
+import { type DecisionStamp } from "./willingness.js";
 import type { EffectPacket } from "./effects.js";
 import type { InstitutionDef, InstitutionId } from "./institutions.js";
 export type DirectiveId = string;
@@ -59,6 +60,8 @@ export type Directive = {
     readonly status: DirectiveStatus;
     /** Present on a refusal and only on a refusal. */
     readonly memorandum?: RefusalMemorandum;
+    /** The officer's own weighing, on casework a statute does not bar: the Attorney General at Justice, the chair at a commission. */
+    readonly judgment?: DecisionStamp;
 };
 /** Keyed by id. Refused directives are kept forever, for the reason a refusal is. */
 export type DirectiveStore = Readonly<Record<DirectiveId, Directive>>;
@@ -94,6 +97,14 @@ export declare function directableKinds(institution: InstitutionId): readonly Di
  * table is served by it too without a line changing here.
  */
 export declare function directiveRefusal(def: InstitutionDef, kind: DirectiveKind): RefusalMemorandum | undefined;
+/**
+ * Whether the body takes no direction on its function at all. Independence is
+ * the structure (fixed terms, insulated delivery); direction is barred only
+ * while the officer at the head is protected from removal. An executive-power
+ * commission whose chair serves at the President's pleasure can be supervised
+ * on policy, and an adjudicator or the Federal Reserve cannot.
+ */
+export declare function isDirectionBarred(def: InstitutionDef): boolean;
 /** The memorandum as one paragraph, with the statutory reason unaltered inside it. */
 export declare function refusalMemorandumText(directive: Directive): string;
 /**
@@ -154,6 +165,8 @@ export type DirectiveRequest = {
     readonly subject: string;
     /** How hard this particular order leans. Absent, the kind's own weight. */
     readonly pressure?: number;
+    /** Tells apart two instructions of one kind to one body in one week, which would otherwise share a record. */
+    readonly key?: string;
 };
 export type DirectiveResult = {
     readonly ok: true;

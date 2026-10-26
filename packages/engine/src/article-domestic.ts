@@ -54,6 +54,7 @@ const HOME_COST: Readonly<Record<NonNullable<ReturnType<typeof conditionFootprin
   weather: (noun) => `${capitalize(theHazard(noun))} ${plural(noun) ? "are" : "is"} paid for from federal disaster money, and in the approval of whoever is seen to answer ${plural(noun) ? "them" : "it"}.`,
   health: (noun) => `${capitalize(theHazard(noun))} is paid for from federal emergency money, and in the approval of whoever is seen to answer it.`,
   order: () => "Unrest at home is paid for in the country's order, and in the approval of whoever is seen to answer it.",
+  event: (noun) => `${capitalize(theHazard(noun))} is paid for in the public's confidence, and in the approval of whoever is seen to answer it.`,
   economy: (noun) => `Voters feel ${theHazard(noun)} in their jobs and prices, which is where approval is decided.`,
 };
 
@@ -136,6 +137,7 @@ export function domesticRelevance(desk: Desk, read: ConditionRead): string {
     const footprint = conditionFootprint(read);
     if (footprint === "economy") return "This is the economy at home, and it is the one you are judged on.";
     if (footprint === "order") return "This is at home. Keeping order is yours to answer for.";
+    if (footprint === "event") return "This is at home. The country will judge how you answer it.";
     return "This is at home. The emergency is yours to answer, and the governors will say whether you did.";
   }
   if (kind === "player-action") {

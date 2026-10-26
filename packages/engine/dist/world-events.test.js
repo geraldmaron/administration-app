@@ -4,7 +4,7 @@ import { buildCampaign, nationA, nationB } from "./__fixtures__/campaign.js";
 import { relationshipKey } from "./state.js";
 import { apply } from "./effects.js";
 import { QUESTION_TERMS } from "./willingness.js";
-import { applyMembership, worldEventPhase } from "./world-events.js";
+import { applyMembership, clashHazard, worldEventPhase } from "./world-events.js";
 import { TEMPLATES } from "./world-event-templates.js";
 import { onEdge } from "./world-events-filing.js";
 import { campaignPhaseSequence, weekGroups } from "./turn-phases.js";
@@ -84,8 +84,19 @@ describe("a border clash", () => {
         [USA, ALP, {}],
         [ALP, USA, {}],
     ]);
+    const isClash = (packet) => packet.provenance?.decision?.question === "world-event";
+    // A willing pair clashes on a weekly hazard, so the first week it does is
+    // found by walking the weeks rather than assumed to be this one.
+    const firstClashWeek = (campaign) => {
+        for (let turn = campaign.turn; turn < campaign.turn + 600; turn += 1) {
+            if (packetsOf({ ...campaign, turn }).some(isClash))
+                return { ...campaign, turn };
+        }
+        throw new Error("no clash in 600 weeks");
+    };
+    const clashing = firstClashWeek(rivals);
     it("is decided by the government that fires, through the willingness model, and stamped", () => {
-        const clashes = packetsOf(rivals).filter((packet) => packet.provenance?.decision?.question === "world-event");
+        const clashes = packetsOf(clashing).filter(isClash);
         expect(clashes.length).toBeGreaterThan(0);
         const decision = clashes[0].provenance.decision;
         expect(decision.acts).toBe(true);
@@ -97,15 +108,16 @@ describe("a border clash", () => {
         }
     });
     it("files a wire item from its own bank and leaves a grudge on the side that was hit", () => {
-        const [clash] = packetsOf(rivals).filter((packet) => packet.provenance?.decision?.question === "world-event");
+        const [clash] = packetsOf(clashing).filter(isClash);
         const feed = clash.effects.find((effect) => effect.kind === "feed");
         expect(feed && "items" in feed && feed.items[0].headline).toMatch(/border|frontier/);
         expect(clash.effects.some((effect) => effect.kind === "relationship" && effect.addGrudge !== undefined)).toBe(true);
     });
-    it("waits out its cooldown on the same pair", () => {
-        const after = packetsOf(rivals).reduce((campaign, packet) => apply(campaign, packet), rivals);
-        const again = packetsOf({ ...after, turn: after.turn + 1 }).filter((packet) => packet.provenance?.decision?.question === "world-event");
-        expect(again).toHaveLength(0);
+    it("rests after a clash before the pair can clash again", () => {
+        const after = packetsOf(clashing).reduce((campaign, packet) => apply(campaign, packet), clashing);
+        for (let weeks = 1; weeks < 4; weeks += 1) {
+            expect(packetsOf({ ...after, turn: after.turn + weeks }).filter(isClash)).toHaveLength(0);
+        }
     });
     it("answers the same week the same way on every replay", () => {
         expect(packetsOf(rivals)).toEqual(packetsOf(rivals));
@@ -196,5 +208,84 @@ describe("a reaction toward a government the graph holds no edge to", () => {
         const campaign = buildCampaign();
         const missing = { kind: "relationship", from: "ZZZ", to: ALP, deltas: { trust: -0.03 } };
         expect(onEdge(campaign, missing)).toEqual([]);
+    });
+});
+describe("border clashes come in episodes", () => {
+    const rivals = world([
+        [BOR, ALP, HOSTILE],
+        [ALP, BOR, HOSTILE],
+        [USA, ALP, {}],
+        [ALP, USA, {}],
+    ]);
+    const clashedAt = (campaign, ...weeksAgo) => {
+        const key = relationshipKey(BOR, ALP);
+        const history = weeksAgo.map((weeks) => ({ turn: campaign.turn - weeks, kind: "world-event:border-clash", description: "a clash" }));
+        return { ...campaign, turn: campaign.turn, relationships: { ...campaign.relationships, [key]: { ...campaign.relationships[key], history } } };
+    };
+    const at = (turn) => ({ ...rivals, turn });
+    it("rests after a clash, then runs hotter for a season than a quiet pair does", () => {
+        const quiet = clashHazard(at(60), BOR, ALP, []);
+        expect(quiet).toBeGreaterThan(0);
+        expect(clashHazard(clashedAt(at(60), 2), BOR, ALP, [])).toBe(0);
+        expect(clashHazard(clashedAt(at(60), 6), BOR, ALP, [])).toBeGreaterThan(quiet * 2);
+        expect(clashHazard(clashedAt(at(60), 40), BOR, ALP, [])).toBe(quiet);
+    });
+    it("does not run a pair on one fixed interval", () => {
+        let campaign = at(1);
+        const turns = [];
+        for (let week = 0; week < 1500 && turns.length < 6; week += 1) {
+            const packets = packetsOf(campaign);
+            if (packets.some((packet) => packet.provenance?.decision?.question === "world-event"))
+                turns.push(campaign.turn);
+            campaign = { ...packets.reduce((c, packet) => apply(c, packet), campaign), turn: campaign.turn + 1 };
+        }
+        expect(turns.length).toBeGreaterThanOrEqual(4);
+        const gaps = new Set(turns.slice(1).map((turn, i) => turn - turns[i]));
+        expect(gaps.size).toBeGreaterThan(1);
+    });
+    it("files one clash for the pair in a week, though both sides are willing", () => {
+        for (let turn = 1; turn < 400; turn += 1) {
+            const clashes = packetsOf(at(turn)).filter((packet) => packet.provenance?.decision?.question === "world-event");
+            expect(clashes.length).toBeLessThanOrEqual(1);
+        }
+    });
+});
+describe("a clash on a treaty partner's border", () => {
+    const NATO = "ORG-NATO";
+    const guarded = (() => {
+        const base = world([
+            [BOR, ALP, HOSTILE],
+            [ALP, BOR, HOSTILE],
+            [CRU, BOR, {}],
+            [USA, ALP, {}],
+            [ALP, USA, {}],
+        ]);
+        const join = (c, id) => applyMembership(c, { kind: "membership", nation: id, org: NATO, change: "accede" });
+        return join(join(base, ALP), CRU);
+    })();
+    it("is far less likely where the side that would be hit sits under a defense treaty", () => {
+        const open = world([[BOR, ALP, HOSTILE], [ALP, BOR, HOSTILE]]);
+        expect(clashHazard({ ...guarded, turn: 60 }, BOR, ALP, [])).toBeLessThan(clashHazard({ ...open, turn: 60 }, BOR, ALP, []) / 5);
+    });
+    it("brings the guarantors to consult, and the consultation deters the next one", () => {
+        let campaign = { ...guarded, turn: 1 };
+        let consulted;
+        for (let week = 0; week < 20000 && !consulted; week += 1) {
+            consulted = packetsOf(campaign).find((packet) => packet.narration.summary.includes("consult"));
+            if (!consulted)
+                campaign = { ...campaign, turn: campaign.turn + 1 };
+        }
+        expect(consulted).toBeDefined();
+        const marked = consulted.effects.find((effect) => effect.kind === "relationship" && effect.from === CRU && effect.to === BOR);
+        expect(marked && "addHistory" in marked && marked.addHistory?.kind).toBe("world-event:consultation");
+        const after = packetsOf(campaign).reduce((c, packet) => apply(c, packet), campaign);
+        const later = { ...after, turn: after.turn + 30 };
+        const forget = (c, from) => {
+            const key = relationshipKey(from, BOR);
+            const edge = c.relationships[key];
+            return { ...c, relationships: { ...c.relationships, [key]: { ...edge, history: edge.history.filter((e) => e.kind !== "world-event:consultation") } } };
+        };
+        const unconsulted = forget(forget(later, CRU), ALP);
+        expect(clashHazard(later, BOR, ALP, [])).toBeLessThan(clashHazard(unconsulted, BOR, ALP, []));
     });
 });

@@ -68,7 +68,7 @@ export const TARIFF_STATUTES: Readonly<Record<TariffStatute, TariffStatuteDef>> 
   s122: {
     id: "s122", name: "Section 122", cite: "19 U.S.C. §2132", purpose: "A balance-of-payments deficit",
     investigation: null, cap: 0.15, clockDays: 150, reach: "one-country", courts: "untested",
-    courtNote: "No President had used this law before 2026, so courts haven't settled how far it reaches. After 150 days only Congress can extend it.",
+    courtNote: "Only Congress can extend the 150-day period for a payments episode. Reissuing a measure does not restart the clock; a later episode needs a new predicate.",
   },
   s338: {
     id: "s338", name: "Section 338", cite: "19 U.S.C. §1338", purpose: "A country discriminating against American goods",

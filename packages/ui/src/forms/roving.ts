@@ -9,7 +9,8 @@ const STEP: Readonly<Record<string, number>> = { ArrowRight: 1, ArrowDown: 1, Ar
 /**
  * One tab stop for a group of radios, with the arrows moving the choice, the
  * way a native radio group behaves: Tab enters at the chosen option (or the
- * first), arrows choose and focus the neighbor, Home and End jump to the ends.
+ * first), arrows choose and focus the neighbor, Home and End jump to the ends,
+ * Space checks the one in focus.
  */
 export function useRoving<T>(values: readonly T[], selected: T | undefined, onChange: (value: T) => void) {
   const nodes = useRef<(Focusable | null)[]>([]);
@@ -26,6 +27,12 @@ export function useRoving<T>(values: readonly T[], selected: T | undefined, onCh
     },
     tabIndexFor: (index: number): 0 | -1 => (index === (chosen === -1 ? 0 : chosen) ? 0 : -1),
     keyDownFor: (index: number) => (event: KeyEvent) => {
+      // Space checks the focused radio, as it does in a native group.
+      if (event.key === " ") {
+        event.preventDefault();
+        move(index);
+        return;
+      }
       const last = values.length - 1;
       const target = event.key === "Home" ? 0 : event.key === "End" ? last : STEP[event.key] === undefined ? undefined : (index + STEP[event.key]! + values.length) % values.length;
       if (target === undefined) return;

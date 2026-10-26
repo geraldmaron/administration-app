@@ -1,7 +1,7 @@
 import { type Campaign, type InstitutionId } from "@admin/engine";
 import { type Person, type WhiteHouseRoleId } from "@admin/world";
 /** How a White House post is filled, which is also what the President can and cannot do about it. */
-export type WhiteHouseTenure = "elected" | "appointed";
+export type WhiteHouseTenure = "elected" | "confirmed" | "appointed";
 export type WhiteHouseSeat = {
     readonly role: WhiteHouseRoleId;
     readonly title: string;

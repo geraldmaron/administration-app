@@ -42,7 +42,10 @@ export const TEMPLATES = [
         dyads: ["hostile", "rivalrous"],
         question: "world-event",
         threshold: 0.55,
-        cooldownWeeks: 12,
+        // The rest after a clash, not its rhythm: when the pair clashes again is
+        // the episode hazard's, so a rest long enough to set a timer is the one
+        // thing this must not be.
+        cooldownWeeks: 4,
         writes: ["relationships (both edges: tension, trust, military threat)", "a grudge on the side that was hit", "feed"],
         bank: {
             headlines: [
@@ -187,13 +190,20 @@ export function admissionVoteTerms(temper, edge) {
         { key: "isolationism", source: "trait", value: round4(-0.2 * (temper.isolationism - TEMPERAMENT_CENTER.isolationism)) },
     ];
 }
-/** A member deciding whether to leave: how little it still trusts the others, what it trades with them, and whether it would rather stand alone. */
-export function withdrawalVoteTerms(temper, meanTrust, meanTrade) {
+// Planning values. Set so a member that trusts the others at zero and trades
+// with them at the median holds, and one that resents them, has been coerced
+// by them and has little to lose goes; a treaty that says nothing about
+// leaving costs a legalistic government most to repudiate.
+const REPUDIATION_COST = 0.15;
+/** A member deciding whether to leave a body, from what it resents, what it would lose and what leaving costs. */
+export function withdrawalVoteTerms(temper, reading) {
     return [
-        { key: "bond", source: "interest", value: round4(-0.6 * meanTrust) },
-        { key: "stakes", source: "interest", value: round4(-0.4 * meanTrade) },
-        { key: "obligation", source: "obligation", value: -0.1 },
+        { key: "bond", source: "interest", value: round4(-0.6 * reading.meanTrust) },
+        { key: "enmity", source: "situation", value: round4(0.4 * reading.grievance) },
+        { key: "stakes", source: "interest", value: round4(-0.8 * reading.trade - 0.5 * reading.protection) },
+        { key: "obligation", source: "obligation", value: round4(-0.1 - reading.exitCost - (reading.repudiation ? REPUDIATION_COST : 0)) },
         { key: "isolationism", source: "trait", value: round4(0.4 * (temper.isolationism - TEMPERAMENT_CENTER.isolationism)) },
+        { key: "legalism", source: "trait", value: round4(reading.repudiation ? -0.3 * (temper.legalism - TEMPERAMENT_CENTER.legalism) : 0) },
     ];
 }
 /** A government deciding whether to send help after a disaster. */

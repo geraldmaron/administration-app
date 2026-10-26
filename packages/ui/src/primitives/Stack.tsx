@@ -4,7 +4,6 @@ import { View, styled } from "@tamagui/core";
 
 // Each boolean variant names its false case too: without one, `wrap={false}`
 // falls through to the DOM as a raw attribute on the web.
-export const Box = styled(View, { name: "Box" });
 
 export const Column = styled(View, {
   name: "Column",
@@ -24,7 +23,6 @@ export const Row = styled(View, {
   } as const,
 });
 
-export const Spacer = styled(View, { name: "Spacer", flex: 1 });
 
 /** A hairline in the theme's subtle line color; `strong` for a boundary that must stay visible. */
 export const Divider = styled(View, {

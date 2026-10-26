@@ -45,4 +45,11 @@ export const CHOKEPOINT_FLOWS: readonly ChokepointFlowRow[] = [
   // while the Cape route rose from 6.0 to 9.2 (TIE 63446): 3.2 of the 4.7 lost
   // went around, 0.68.
   { chokepoint: "CP-BAB-EL-MANDEB", commodity: "crude", littoral: ["YEM", "DJI", "ERI"], share: 0.085, bypass: 0.68, basis: "8.7 Mb/d in 2023 of 102.6 Mb/d world liquids supply; under attack in 2024 the strait lost 4.7 Mb/d and the Cape gained 3.2", source: `${TIE_RED_SEA} ${WOTC}`, opened: "2026-10-13" },
+  // "a third of globally traded urea" (UN News 1168074, 2026-08-04, opened 2026-10-25), stated
+  // over the nitrogen market's own denominator, world ammonia production in nitrogen terms
+  // (150,000 kt N, USGS Mineral Commodity Summaries 2025, the producer table's source): world
+  // urea trade is at least 37.6 Mt in 2023 (WITS HS 310210, the larger of reported exports and
+  // imports, opened 2026-10-25; India, Russia and Qatar do not report, so this undercounts), urea
+  // is 46.65 percent nitrogen, so the strait's urea is at least 5.8 Mt N: 0.039, a lower bound.
+  { chokepoint: "CP-HORMUZ", commodity: "nitrogen", littoral: ["IRN", "OMN"], share: 0.039, bypass: 0, basis: "a third of globally traded urea (UN News, 2026-08-04); traded urea at least 37.6 Mt in 2023 (WITS, the larger of reported exports and imports, an undercount: India, Russia and Qatar do not report), 46.65 percent nitrogen, so at least 5.8 Mt N, of 150,000 kt N world ammonia production (USGS MCS 2025): 0.039; no pipeline carries urea, so no bypass", source: "https://news.un.org/en/story/2026/08/1168074 https://wits.worldbank.org/trade/comtrade/en/country/ALL/year/2023/tradeflow/Exports/partner/WLD/product/310210 https://wits.worldbank.org/trade/comtrade/en/country/ALL/year/2023/tradeflow/Imports/partner/WLD/product/310210", opened: "2026-10-25" },
 ];

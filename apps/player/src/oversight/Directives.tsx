@@ -58,7 +58,7 @@ export function Directives({ campaign, acts }: { readonly campaign: Campaign; re
   const subject = subjects.find((entry) => entry.value === chosenSubject)?.value ?? subjects[0]?.value ?? "";
   const preview = useMemo(() => (target && kind ? directivePreview(campaign, target.institution, kind, subject) : undefined), [campaign, target, kind, subject]);
   const help = <CitedLawHelp title="Giving instructions to your government" meaning="As President, you run the executive branch, and your job is to see that the laws are carried out. If you give an agency an instruction the law forbids, its lawyers will refuse in writing and name the law. If that keeps happening at one agency, its inspector general will look into it." cites={[LAW.takeCare, LAW.inspectors]} />;
-  if (!target || !kind || !preview) return <Card title="Give an instruction" icon="order" help={help}><Empty title="No agency can take an instruction right now" detail="Agencies you may direct will show here once they're in place." /></Card>;
+  if (!target || !kind || !preview) return <Card title="Give an instruction" icon="order" help={help}><Empty title="No agency can take an instruction right now" detail="No agency is in place for you to instruct." /></Card>;
   const locked = !subject ? "There's nothing on record at this agency for this instruction to be about." : !preview.ok ? preview.reason : undefined;
   return (
     <Card title="Give an instruction" icon="order" help={help}>

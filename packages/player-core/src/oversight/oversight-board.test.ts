@@ -1,8 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { apply, fileInspectorRemovalNotice, inspectorNoticeCost, issueDirective, signFinding, type Campaign } from "@admin/engine";
+import { apply, judicialReviewPhase, conclusoryAccount, fileInspectorRemovalNotice, institutionDef, inspectorNoticeCost, issueDirective, signFinding, type Campaign } from "@admin/engine";
 import type { NationId } from "@admin/world";
 import { openingCampaign } from "../__fixtures__/opening";
-import { removableOfficers, removalTerms, REMOVAL_CAUSES, vacancyBoard } from "./appointments-pipeline";
+import { charterOf } from "../campaign/founding-options";
+import { CONTESTED_REMOVAL_WORDS, removableOfficers, removalPacket, removalSuits, removalTerms, REMOVAL_CAUSES, vacancyBoard } from "./appointments-pipeline";
 import { appointmentDesk, deskDefaults, deskPlan } from "../appointments/desk";
 import { DIRECTIVE_KIND_LABELS, directivePacket, directivePreview, directiveTargets } from "./directive-composer";
 import { committeeNoticePacket, inquiryPins, inquiryPipeline, inspectorNoticePacket, inspectorNoticeTerms, inspectorsBoard, noticesOwed } from "./oversight-board";
@@ -83,7 +84,7 @@ describe("inspectors", () => {
   it("prices a notice off the packet the filing commits, and says which audit it obstructs", () => {
     const terms = inspectorNoticeTerms(audited, "INST-TREASURY");
     if ("refusal" in terms) throw new Error(terms.refusal);
-    expect(terms.dispositionBefore - terms.dispositionAfter).toBeCloseTo(inspectorNoticeCost(true), 3);
+    expect(terms.dispositionBefore - terms.dispositionAfter).toBeCloseTo(inspectorNoticeCost(true, true), 3);
     expect(terms.obstructs).toHaveLength(1);
     const filed = apply(audited, inspectorNoticePacket(audited, "INST-TREASURY", "Lost confidence"));
     expect(filed.congress.disposition).toBe(terms.dispositionAfter);
@@ -92,7 +93,7 @@ describe("inspectors", () => {
   });
 
   it("refuses a notice with no reasons, in the engine's words", () => {
-    expect(fileInspectorRemovalNotice(opening, "INST-TREASURY", "").ok).toBe(false);
+    expect(fileInspectorRemovalNotice(opening, "INST-TREASURY", conclusoryAccount("", "", opening.turn)).ok).toBe(false);
     expect(() => inspectorNoticePacket(opening, "INST-TREASURY", "")).toThrow(/reasons/);
   });
 });
@@ -140,7 +141,8 @@ describe("appointments pipeline", () => {
   });
 
   it("prices each cause of a for-cause removal off its own packet", () => {
-    const officer = removableOfficers(opening).find((row) => row.removal === "for-cause");
+    // A contested commission seat is removable without a stated cause (DECISIONS 4.14), so the refusal is read off a protected one.
+    const officer = removableOfficers(opening).find((row) => row.removal === "for-cause" && institutionDef(row.institution)?.offices[0]?.removalContested !== true);
     if (!officer) return;
     const rises = REMOVAL_CAUSES.map((cause) => {
       const terms = removalTerms(opening, officer.institution, cause);
@@ -149,11 +151,47 @@ describe("appointments pipeline", () => {
     });
     expect(new Set(rises.map((rise) => rise.toFixed(3))).size).toBe(REMOVAL_CAUSES.length);
     expect("refusal" in removalTerms(opening, officer.institution)).toBe(true);
+    const contested = removableOfficers(opening).find((row) => institutionDef(row.institution)?.offices[0]?.removalContested === true);
+    if (contested) expect("refusal" in removalTerms(opening, contested.institution)).toBe(false);
   });
 
   it("leaves no fixed-term office and no cabinet chair among the removable officers", () => {
     const officers = removableOfficers(opening);
     expect(officers.length).toBeGreaterThan(0);
     expect(officers.every((row) => row.removal !== "term-protected")).toBe(true);
+  });
+});
+
+describe("a removal from a protected commission seat on the officers board", () => {
+  const SEC = "INST-SEC";
+  const removed = (): Campaign => apply(opening, removalPacket(opening, SEC));
+  const advanced = (state: Campaign, weeks: number): Campaign => {
+    const phase = judicialReviewPhase(charterOf(state));
+    let next = state;
+    for (let week = 0; week < weeks; week += 1) next = { ...phase(next).reduce(apply, next), turn: next.turn + 1 };
+    return next;
+  };
+
+  it("says what removing a protected commissioner risks in court, and says nothing for an at-will seat", () => {
+    const officers = removableOfficers(opening);
+    const sec = officers.find((row) => row.institution === SEC);
+    if (sec) expect(sec.contested).toBe(CONTESTED_REMOVAL_WORDS);
+    expect(officers.filter((row) => institutionDef(row.institution)?.offices[0]?.removalContested !== true).every((row) => row.contested === undefined)).toBe(true);
+    expect(CONTESTED_REMOVAL_WORDS).toMatch(/Trump v\. Slaughter/);
+  });
+
+  it("shows one row per removal, from the member's decision to the case in court", () => {
+    if (!removableOfficers(opening).some((row) => row.institution === SEC)) return;
+    const after = removed();
+    const rows = removalSuits(after);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.status).toBe("deciding");
+    const later = removalSuits(advanced(after, 6))[0]!;
+    expect(["in-court", "declined"]).toContain(later.status);
+    if (later.status === "in-court") {
+      expect(later.caseId).toMatch(/^removal:INST-SEC:/);
+      expect(later.reading).toMatch(/suing to get the seat back/);
+    }
+    expect(removalSuits(opening)).toEqual([]);
   });
 });

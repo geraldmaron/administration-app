@@ -112,7 +112,7 @@ export function ActChooser({ id, title, comparison, acts, authority, packet, aga
             readings={outcomeReadings(entry.outcome, scales)}
             selected={entry.id === selected}
             onPress={() => setSelected(entry.id)}
-            pressLabel={`Pick ${entry.label}`}
+            pressLabel={entry.label}
             below={
               <Column gap="sm">
                 <Text variant="caption" tone={entry.refusal ? "warning" : "secondary"}>{entry.refusal ? `Not available right now. ${entry.refusal}` : entry.review}</Text>
@@ -123,7 +123,7 @@ export function ActChooser({ id, title, comparison, acts, authority, packet, aga
         ))}
       </ResultsList>
       {!column ? (
-        <Text variant="caption" tone="secondary">{comparison.columns.every((entry) => entry.refusal) ? "Nothing here can be approved yet. Each option says what it waits on." : "Pick an option to see what it changes, then approve it."}</Text>
+        <Text variant="caption" tone="secondary">{comparison.columns.every((entry) => entry.refusal) ? "Nothing here can be approved yet. Each option says what it waits on." : "No option is picked yet."}</Text>
       ) : waiting ? (
         <Text variant="caption" tone="warning" role="alert">{column.refusal ? `Not available right now. ${waiting}` : waiting}</Text>
       ) : (

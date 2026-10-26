@@ -920,7 +920,12 @@ describe("silence, priced at most once a week", () => {
         }
         const waited = await runUnderSettings(waitSource);
         const logged = await runUnderSettings(logSource);
-        expect(JSON.stringify(logged)).toBe(JSON.stringify(waited));
+        // The notice ledger records what stopped each run, which is exactly what
+        // the settings change; it takes no number from the causal sequence, so
+        // everything else is identical to the byte.
+        const { noticed: _logged, ...loggedWorld } = logged;
+        const { noticed: _waited, ...waitedWorld } = waited;
+        expect(JSON.stringify(loggedWorld)).toBe(JSON.stringify(waitedWorld));
     }, 30_000);
 });
 describe("silence the held docket already charged", () => {

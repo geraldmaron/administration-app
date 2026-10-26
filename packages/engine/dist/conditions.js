@@ -14,6 +14,7 @@ import { nationName, sentenceCase } from "./naming.js";
 import { markedFlags } from "./marked-flags.js";
 import { INCIDENT_TAG } from "./article-incidents.js";
 import { stateAnswered } from "./obligations.js";
+import { missionAttention } from "./locale-missions.js";
 import { responseLoadPacket, responseMitigation } from "./response.js";
 import { claimOnsetSlots, conditionFlagsToClear, conditionFlagsToSet, MAX_NEW_CONDITIONS_PER_TURN, MAX_NEW_HOME_CONDITIONS_PER_TURN, onsetCandidates, openCondition, standingHold, unrestOnsetReason, } from "./condition-onset.js";
 export { claimOnsetSlots, conditionFlag, conditionId, MAX_NEW_CONDITIONS_PER_TURN, MAX_NEW_HOME_CONDITIONS_PER_TURN, STANDING_ONSET_READS, STANDING_PRESSURE, standingHold, standingPressure, } from "./condition-onset.js";
@@ -64,6 +65,16 @@ const ANSWERED_BY = {
     "fiscal-crisis": ["fiscal"],
     "energy-shortage": ["industry", "fiscal"],
     "housing-crunch": ["fiscal", "civil"],
+    // The home events: an intrusion is the security services and the industrial
+    // regulators who hold the networks; a strike is labor policy; a failed bank is
+    // the purse and its regulators; a mass killing is the police power and the
+    // services that care for the wounded; an American held abroad is worked by
+    // the national-security side of the government.
+    cyberattack: ["security", "industry"],
+    "work-stoppage": ["industry"],
+    "bank-failure": ["fiscal"],
+    "mass-casualty-attack": ["security", "civil"],
+    "wrongful-detention": ["security"],
 };
 // How long a signed order still reads as the government working this
 // condition rather than a thing it did once and moved on from. Six weeks:
@@ -164,7 +175,8 @@ export function conditionAttention(campaign, condition) {
     const since = attentionWindowStart(campaign.turn);
     const ordered = campaign.orders.some((record) => record.turn < campaign.turn && record.turn >= since);
     const program = programAttention(campaign, condition.kind);
-    return ordered ? Math.max(UNTARGETED_ORDER_ATTENTION, program) : program;
+    // A federal mission in the state is worked on this file too, as far as it reaches.
+    return Math.max(missionAttention(campaign, condition), ordered ? Math.max(UNTARGETED_ORDER_ATTENTION, program) : program);
 }
 export function conditionRecoveryRate(attention) {
     return NATURAL_RECOVERY_UNATTENDED + (NATURAL_RECOVERY_ATTENDED - NATURAL_RECOVERY_UNATTENDED) * attention;

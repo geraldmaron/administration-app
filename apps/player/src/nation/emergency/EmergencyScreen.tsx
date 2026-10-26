@@ -1,7 +1,7 @@
 import { lazy, useMemo, useState } from "react";
 import { EMERGENCY_RENEWAL_TURNS, type Campaign } from "@admin/engine";
 import { emergencyBoard, formatDate, formatSignedPoints, lapseWords, sealFor, type ConditionBoardRow, type DeclarationRow, type EmergencyBoard, type GuardRow } from "@admin/player-core";
-import { Badge, Button, Column, Empty, Icon, Page, Pressable, ReadingFrame, Row, Seal, Sheet, Sticky, Surface, Text, useMedia } from "@admin/ui";
+import { Pane, Tag, Button, Column, Empty, Icon, Page, Pressable, ReadingFrame, Row, Seal, Sheet, Sticky, Surface, Text, useMedia } from "@admin/ui";
 import { Collection, CompareChoices, Facts, FigureBand, Track, TrackRow } from "@admin/ui/nation";
 import { ActDone, ActProblem } from "../ActDone";
 import { useNationAct, type NationAct } from "../act";
@@ -10,7 +10,6 @@ import { CONDITION_GLYPH } from "../glyphs";
 import { toneKey } from "../keys";
 import { Cite, Cites, LawTopicHelp } from "../Law";
 import type { MapPin } from "@admin/ui/map";
-import { Panel } from "@admin/ui/world";
 import { MapSlot } from "../../map/MapSlot";
 import { MapPanelSlot } from "../MapPanelSlot";
 import { MetricActs, MetricReading } from "../MetricReading";
@@ -75,8 +74,8 @@ function IncidentRow({ row, selected, onSelect }: { readonly row: ConditionBoard
             </Text>
           </Row>
           <Row gap="xs" wrap>
-            {row.incident ? <Badge status="pending">Lasts one afternoon</Badge> : null}
-            {row.covered ? <Badge status="gold" icon="order">Declared</Badge> : null}
+            {row.incident ? <Tag tone="pending">Lasts one afternoon</Tag> : null}
+            {row.covered ? <Tag tone="authority" icon="order">Declared</Tag> : null}
           </Row>
         </Column>
       </Row>
@@ -88,7 +87,7 @@ function IncidentRow({ row, selected, onSelect }: { readonly row: ConditionBoard
 function Response({ row, guard, onOpen }: { readonly row: ConditionBoardRow; readonly guard: GuardRow | undefined; readonly onOpen: Open }) {
   const valence = valenceOf(row.severity.stance);
   return (
-    <Panel title={`Response: ${row.headline}`} icon="sign">
+    <Pane title={`Response: ${row.headline}`} icon="sign">
       <ReadingFrame title="How serious it is" unit="% of the worst damage it could do" legend={severityKey} help={SEVERITY_HELP}>
         <TrackRow name={row.severity.label} figure={row.severity.value} value={row.severity.fraction} tone={VALENCE_TRACK[valence]} cuts={SEVERITY_CUTS} />
       </ReadingFrame>
@@ -116,7 +115,7 @@ function Response({ row, guard, onOpen }: { readonly row: ConditionBoardRow; rea
           </Button>
         ) : null}
       </Row>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -132,7 +131,7 @@ function Declaration({ row, selected, onOpen, signer }: { readonly row: Declarat
             <Text variant="label" flex={1}>
               {row.where}, for {row.causeLabel.toLowerCase()}
             </Text>
-            {row.renewalOpen ? <Badge status="warning">Time to renew</Badge> : null}
+            {row.renewalOpen ? <Tag tone="warning">Time to renew</Tag> : null}
           </Row>
           <TrackRow name="Until it ends" figure={lapseWords(row.weeksToLapse)} value={Math.max(0, row.weeksToLapse) / EMERGENCY_RENEWAL_TURNS} tone={row.renewalOpen ? "watch" : "reading"} />
           <Text variant="caption" tone="secondary">
@@ -220,7 +219,7 @@ export function EmergencyScreen({ campaign, selected, onSelect, declaration }: E
   };
   const where = (
     <Column gap="md">
-      <MapPanelSlot title="Where conditions are running" lens="conditions" camera="us" {...(chosen?.state ? { selection: `state:${chosen.state as string}` } : {})} note="Each state's color shows its most serious ongoing problem. Gold marks a declared emergency. The response below is for the problem you picked.">
+      <MapPanelSlot title="Where conditions are running" lens="conditions" camera="us" {...(chosen?.state ? { selection: `state:${chosen.state as string}` } : {})} note="Each state's color shows its most serious ongoing problem. Gold marks a declared emergency.">
         <MapSlot height={300} failed="The map can't be drawn on this device. Every problem is in the list, with the same details.">
           {(onFail) => <EmergencyMap campaign={campaign} {...(chosen?.state ? { selected: chosen.state as string } : {})} marks={marks} onState={pickState} onFail={onFail} />}
         </MapSlot>
@@ -232,7 +231,7 @@ export function EmergencyScreen({ campaign, selected, onSelect, declaration }: E
     </Column>
   );
   return (
-    <Page eyebrow="Federal Emergency Management Agency" icon="caution" title="Emergency" lede={board.weeklyCost > 0 ? `Your emergency declarations change your International Standing by ${formatSignedPoints(-board.weeklyCost)} pts this week.` : "See problems at home, the emergencies you can declare, the help you can call on, and the limits the law sets."} emblem={<Seal spec={sealFor("INST-FEMA")} size={72} />}>
+    <Page eyebrow="Federal Emergency Management Agency" icon="caution" title="Emergency" lede={board.weeklyCost > 0 ? `Your emergency declarations change your International Standing by ${formatSignedPoints(-board.weeklyCost)} pts this week.` : incidents.length === 0 ? "Nothing is going wrong at home right now." : `${incidents.length} ${incidents.length === 1 ? "problem is" : "problems are"} going on at home.`} emblem={<Seal spec={sealFor("INST-FEMA")} size={72} />}>
       <Sheet open={open !== undefined || acts.done !== undefined} onClose={close} title="Emergency action" eyebrow="Emergency powers" wide>
         {acts.done ? <ActDone done={acts.done} onBack={close} backLabel="Back to emergencies" /> : open ? <ActPanel key={JSON.stringify(open)} campaign={campaign} act={open} acts={acts} /> : null}
       </Sheet>
@@ -241,19 +240,19 @@ export function EmergencyScreen({ campaign, selected, onSelect, declaration }: E
       <LawTopicHelp topic="national-emergency" />
       <Row gap="lg" wrap={!media.desktop} top>
         <Column flex={1} minWidth={300} gap="md" {...(media.desktop ? {} : { flexBasis: "100%" as const })}>
-          <Panel id="emergency-incidents" title="Problems, most serious first" icon="active" lede="Pick one to see where it is, what the law lets you do, and how you can respond.">
+          <Pane id="emergency-incidents" title="Problems, most serious first" icon="active" count={incidents.length}>
             <ReadingFrame title="How serious each problem is" unit="% of the worst damage it could do" legend={severityKey} pressHint="Press a problem to see its place on the map and what you can do." help={SEVERITY_HELP}>
             <Collection items={incidents} initial={6} noun="incidents" empty="Nothing is going wrong at home right now. You can declare an emergency only while a problem is still going on." render={(row) => <IncidentRow key={row.id} row={row} selected={row.id === chosen?.id} onSelect={onSelect} />} />
             </ReadingFrame>
-          </Panel>
+          </Pane>
         </Column>
         {media.desktop ? <Sticky width={media.wide ? 560 : 460}>{where}</Sticky> : <Column flexBasis="100%">{where}</Column>}
       </Row>
-      <Panel id="emergency-declared" title={`Declared emergencies (${board.declarations.length})`} icon="order">
+      <Pane id="emergency-declared" title={`Declared emergencies (${board.declarations.length})`} icon="order">
         <ReadingFrame title="Time left on each declaration" unit={`Weeks, out of ${EMERGENCY_RENEWAL_TURNS}`} legend={toneKey({ reading: "Running", watch: "Time to renew" })} help={{ meaning: "A declaration ends after a year unless you continue it. The bar is how much of that year is left, and it turns amber when you can continue it." }}>
         <Collection items={ordered} initial={4} noun="declarations" empty="No emergency is declared right now. Each problem above shows what the law lets you do. Declaring an emergency doesn't let you do whatever you want." render={(row) => <Declaration key={row.id} row={row} selected={row.id === declaration} onOpen={setOpen} signer={campaign.founding.leader.name} />} />
         </ReadingFrame>
-      </Panel>
+      </Pane>
       <MetricReading campaign={campaign} metric="stability" />
       <MetricActs campaign={campaign} metric="stability" title="What changed stability" empty="Nothing in the Record has changed stability yet." />
     </Page>

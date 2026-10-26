@@ -20,6 +20,7 @@ const RELATION_WORDS = {
     ally: "ally",
     "trade-partner": "trading partner",
     "bloc-peer": "bloc peer",
+    observer: "has a stake",
     domestic: "at home",
 };
 const RIPPLES_SHOWN = 4;
@@ -35,7 +36,7 @@ function costCell(projection) {
 function reactionCell(campaign, projection) {
     if (projection.ripples.length === 0)
         return assessCell("No government is expected to react");
-    const items = projection.ripples.slice(0, RIPPLES_SHOWN).map((ripple) => ({ text: `${nameOf(campaign, ripple.nation)}, ${RELATION_WORDS[ripple.relation] ?? ripple.relation}: ${ripple.reason}`, nation: ripple.nation }));
+    const items = projection.ripples.slice(0, RIPPLES_SHOWN).map((ripple) => ({ text: `${nameOf(campaign, ripple.nation)}, ${RELATION_WORDS[ripple.relation]}: ${ripple.reason}`, nation: ripple.nation }));
     return withItems(assessCell(projection.rippleVisibility === "if-exposed" ? "Only if it comes out" : `${projection.ripples.length} ${projection.ripples.length === 1 ? "government" : "governments"} react`), items);
 }
 function riskCell(projection) {

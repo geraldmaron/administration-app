@@ -1,6 +1,6 @@
 import { usPartyOfPerson } from "./cast-fit.js";
 import { INSTITUTION_CATALOG } from "./institution-catalog.js";
-import { benchFor, caucusTarget, majorityCaucus, takeForCaucus } from "./hill.js";
+import { benchFor, caucusTarget, holdsSeat, majorityCaucus, takeForCaucus } from "./hill.js";
 import { partyForCaucus, usTicket } from "./party.js";
 // The panels a nomination actually goes through.
 //
@@ -149,8 +149,8 @@ export function seatCommittees(congress, people, nation, turn) {
         const flipped = sitting !== undefined && sitting.chairCaucus !== gavel;
         const sittingChair = flipped ? sitting?.ranking : sitting?.chair;
         const sittingRanking = flipped ? sitting?.chair : sitting?.ranking;
-        const chair = alive(people, sittingChair) ?? take(gavel);
-        const ranking = alive(people, sittingRanking) ?? take(otherCaucus(gavel));
+        const chair = stillSitting(congress, people, sittingChair) ?? take(gavel);
+        const ranking = stillSitting(congress, people, sittingRanking) ?? take(otherCaucus(gavel));
         seated[committee] = {
             committee,
             ...(chair ? { chair } : {}),
@@ -164,10 +164,11 @@ export function seatCommittees(congress, people, nation, turn) {
     // that flips the Senate moves it for every panel at once without reseating.
     return seated;
 }
-function alive(people, person) {
+/** A panel's sitting member, kept only while alive and still a senator. */
+function stillSitting(congress, people, person) {
     if (!person)
         return undefined;
-    return people[person]?.alive === true ? person : undefined;
+    return people[person]?.alive === true && holdsSeat(congress, person, "senate") ? person : undefined;
 }
 /** The same, as the Congress it produces, for callers that hold one. */
 export function withCommittees(congress, people, nation, turn) {

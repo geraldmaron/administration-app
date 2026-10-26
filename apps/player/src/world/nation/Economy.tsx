@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { place, type NationFile, type NationVital, type TradeSectorRow } from "@admin/player-core";
-import { Badge, Button, Column, Icon, Pressable, ReadingFrame, Row, Segmented, Stat, StatGrid, Surface, Text } from "@admin/ui";
-import { BarScale, PairedBars, Panel, ShareBar, StateChip, StepReading, Unread } from "@admin/ui/world";
+import { Pane, Tag, Button, Column, Icon, Pressable, ReadingFrame, Row, Segmented, Reading, ReadingGrid, Surface, Text } from "@admin/ui";
+import { BarScale, PairedBars, ShareBar, StateChip, StepReading, Unread } from "@admin/ui/world";
 import { BandFrame, FlagOf, RowTo, TopicLaw, go, stanceValence } from "../parts";
 import { compareHref } from "../../compare/subjects";
 import { NATION_METRICS } from "../compare";
@@ -46,13 +46,13 @@ function SectorRow({ row, scale, picked, onPick }: { readonly row: TradeSectorRo
           <Text variant="label" flex={1}>
             {row.name}
           </Text>
-          {picked ? <Badge status="info">Selected</Badge> : null}
+          {picked ? <Tag tone="info">Selected</Tag> : null}
         </Row>
         <PairedBars buy={barPercent(row.imports, scale)} sell={barPercent(row.exports, scale)} />
         <Row gap="md" wrap maxWidth="100%">
-          <Stat label="US imports / year" value={row.importsText} size="title" minWidth={110} />
-          <Stat label="US exports / year" value={row.exportsText} size="title" minWidth={110} />
-          <Stat label="Tariff now" value={row.tariffPercent > 0 ? `${row.tariffPercent}%` : "None"} size="title" minWidth={110} />
+          <Reading name="US imports / year" value={row.importsText} size="title" minWidth={110} />
+          <Reading name="US exports / year" value={row.exportsText} size="title" minWidth={110} />
+          <Reading name="Tariff now" value={row.tariffPercent > 0 ? `${row.tariffPercent}%` : "None"} size="title" minWidth={110} />
         </Row>
       </Row>
     </Pressable>
@@ -64,7 +64,7 @@ function SelectedGoods({ file, sector }: { readonly file: NationFile; readonly s
   if (!row) {
     return (
       <Text variant="body" tone="secondary">
-        Pick a kind of goods to see how much we trade and what you can do about it.
+        No kind of goods is selected.
       </Text>
     );
   }
@@ -93,7 +93,7 @@ function SelectedGoods({ file, sector }: { readonly file: NationFile; readonly s
           </Text>
         )}
         <Text variant="caption" tone="tertiary">
-          Next you'll pick the rate, see what it would do, and review it. Nothing happens until you approve it.
+          Changing this tariff takes an order from you, which you set up and review before it takes effect.
         </Text>
       </Column>
     </Surface>
@@ -107,14 +107,14 @@ function Sectors({ file, sector, onSector }: { readonly file: NationFile; readon
   const rows = sorted(trade.sectors, sort);
   const [shown, setShown] = useState(rowsToShow(rows, SECTORS_FIRST, sector));
   return (
-    <Panel title={`Goods traded with ${file.name}, a year`} icon="subjectTrade" count={trade.sectors.length} lede="Very small amounts still get a small bar, and each card shows the exact number.">
+    <Pane title={`Goods traded with ${file.name}, a year`} icon="subjectTrade" count={trade.sectors.length} line="Your trade with this country, by kind of goods.">
       <SelectedGoods file={file} sector={sector} />
       {trade.sectors.length === 0 ? (
         <Text variant="body" tone="secondary">The United States doesn't trade any goods with {file.name}.</Text>
       ) : (
         <>
           <Segmented label="Sort by" value={sort} onChange={setSort} options={[{ value: "ranked", label: "Trade value" }, { value: "goods", label: "Name" }, { value: "imports", label: "US imports" }, { value: "exports", label: "US exports" }, { value: "tariff", label: "Tariff" }]} />
-          <ReadingFrame title="Trade by kind of goods" unit="Dollars a year, every pair of bars on one scale" legend={tradeKey(`The United States buys from ${file.name}`, `The United States sells to ${file.name}`)} pressHint="Press a kind of goods to select it." help={{ meaning: "Each pair of bars is one kind of goods. The top bar is what the United States buys from this country and the bottom bar is what it sells. All the bars share one scale, so you can compare any two, and the exact amounts are printed on each card." }}>
+          <ReadingFrame title="Trade by kind of goods" pressHint="Press a kind of goods to select it." unit="Dollars a year, every pair of bars on one scale" legend={tradeKey(`The United States buys from ${file.name}`, `The United States sells to ${file.name}`)} help={{ meaning: "Each pair of bars is one kind of goods. The top bar is what the United States buys from this country and the bottom bar is what it sells. All the bars share one scale, so you can compare any two. A very small amount still gets a short bar so you can see it, and the exact amounts are printed on each card." }}>
             <Column gap="xs" role="list" aria-label={`Goods traded with ${file.name}`}>
               {rows.slice(0, shown).map((row) => (
                 <SectorRow key={row.sector} row={row} scale={scale} picked={row.sector === sector} onPick={onSector} />
@@ -128,7 +128,7 @@ function Sectors({ file, sector, onSector }: { readonly file: NationFile; readon
           ) : null}
         </>
       )}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -136,11 +136,11 @@ function Partners({ file }: { readonly file: NationFile }) {
   const { partners } = file.trade;
   const [all, setAll] = useState(false);
   return (
-    <Panel title={`Where ${file.name} sends its trade`} icon="world" lede="Each country's share of its trade in a year." count={partners.length}>
+    <Pane title={`Where ${file.name} sends its trade`} icon="world" line="Each country's share of its trade in a year." count={partners.length}>
       {partners.length === 0 ? (
         <Text variant="body" tone="secondary">No one country stands out. Its trade is spread across many partners.</Text>
       ) : (
-        <ReadingFrame title="Share of its trade by country" unit="Share of its trade in a year" pressHint="Press a country to open its file." help={{ meaning: "Each bar is one country's share of this government's trade in a year. The scale runs from none to all of it, and the figure at the right is the exact share." }}>
+        <ReadingFrame title="Share of its trade by country" pressHint="Press a country to open its file." unit="Share of its trade in a year" help={{ meaning: "Each bar is one country's share of this government's trade in a year. The scale runs from none to all of it, and the figure at the right is the exact share." }}>
           <BarScale from="0%" to="100%" unit="Of its trade" labelWidth={200} />
           <Column role="group" aria-label="Trade partners">
             {(all ? partners : partners.slice(0, PARTNERS_FIRST)).map((partner, index) => (
@@ -165,7 +165,7 @@ function Partners({ file }: { readonly file: NationFile }) {
           {all ? "Show fewer" : `Show all ${partners.length}`}
         </Button>
       ) : null}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -180,7 +180,7 @@ export function EconomyView({ file, sector, onSector }: { readonly file: NationF
   const { trade } = file;
   return (
     <Column gap="lg">
-      <Panel title="How its economy is doing" icon="economyGrowth">
+      <Pane title="How its economy is doing" icon="economyGrowth">
         <PowerStats power={file.power} />
         <BandFrame title="How its economy is doing" meaning="Each bar has steps and the word beside it says which step the reading is on. More steps is better for the country, and the color follows the word. These are estimates, not official figures.">
           {file.vitals.map((vital) => (
@@ -192,20 +192,20 @@ export function EconomyView({ file, sector, onSector }: { readonly file: NationF
             {`Compare ${file.name} with the United States`}
           </Button>
         </Row>
-      </Panel>
-      <Panel title="Trade with the United States, a year" icon="subjectTrade">
-        <StatGrid>
-          <Stat label="Share of US goods trade" value={trade.usShareText ?? "None"} size="heading" />
-          <Stat label="You buy" value={trade.importsText} period="a year" size="heading" />
-          <Stat label="You sell" value={trade.exportsText} period="a year" size="heading" />
-        </StatGrid>
+      </Pane>
+      <Pane title="Trade with the United States, a year" icon="subjectTrade">
+        <ReadingGrid>
+          <Reading name="Share of US goods trade" value={trade.usShareText ?? "None"} size="heading" />
+          <Reading name="You buy" value={trade.importsText} period="a year" size="heading" />
+          <Reading name="You sell" value={trade.exportsText} period="a year" size="heading" />
+        </ReadingGrid>
         <Row gap="sm" wrap>
           <StateChip valence="neutral">{balanceWord(trade.imports, trade.exports)}</StateChip>
           <Text variant="body" flex={1} minWidth={200}>
             {trade.balanceLine}
           </Text>
         </Row>
-      </Panel>
+      </Pane>
       <Sectors file={file} sector={sector} onSector={onSector} />
       <Partners file={file} />
       <Row>

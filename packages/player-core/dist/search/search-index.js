@@ -4,6 +4,7 @@ export const isLinkEntry = (entry) => entry.kind !== "term";
 /** Groups in the order results list them, with the words a result group is headed by. */
 export const SEARCH_GROUPS = [
     { kind: "place", label: "Places" },
+    { kind: "verb", label: "Do" },
     { kind: "person", label: "People" },
     { kind: "member", label: "Members of Congress" },
     { kind: "judge", label: "Judges" },
@@ -59,6 +60,30 @@ export function chapterEntries(routeExists) {
         icon: PLACES.handbook.icon,
         href: `${PLACES.handbook.href}/${chapter.id}`,
         keywords: ["handbook", "chapter", "help", "guide", "how to play"],
+    }));
+}
+/** What the President can start from anywhere. Each opens the screen where the act is reviewed; nothing is committed from search. */
+const VERBS = [
+    { id: "respond", title: "Answer reporters", detail: "Opens the response desk. Nothing is sent from here.", icon: "microphone", place: "pressOffice", query: "?view=respond", keywords: ["press", "briefing", "statement", "reporters", "speak", "respond"] },
+    { id: "budget", title: "Set the budget", detail: "Opens the Budget, where a draft is reviewed before anything is signed.", icon: "budget", place: "budget", keywords: ["spending", "tax", "deficit", "appropriations"] },
+    { id: "order", title: "Issue an order", detail: "Opens the orders not yet signed, where one is reviewed before it is signed.", icon: "domesticLedger", place: "policy", query: "?view=orders&orderScope=catalogue", keywords: ["executive order", "regulate", "policy", "rule"] },
+    { id: "emergency", title: "Declare an emergency", detail: "Opens Emergency, where the powers and their limits are listed first.", icon: "caution", place: "emergency", keywords: ["disaster", "crisis", "powers"] },
+    { id: "bill", title: "Act on a bill", detail: "Opens Congress, where a bill is signed or vetoed after review.", icon: "subjectChamber", place: "congress", query: "?view=bills", keywords: ["sign", "veto", "legislation", "law"] },
+    { id: "judge", title: "Nominate a judge", detail: "Opens the Courts' nominations, where one is reviewed before it is sent.", icon: "court", place: "courts", query: "?view=nominations", keywords: ["appoint", "nominee", "supreme court", "bench"] },
+    { id: "staff", title: "Staff the administration", detail: "Opens Washington, where appointments and dismissals are reviewed first.", icon: "westWing", place: "washington", keywords: ["cabinet", "appoint", "fire", "hire", "dismiss"] },
+    { id: "force", title: "Order military action", detail: "Opens World: a country's act workspace plans a strike or deployment and reviews it before it goes out.", icon: "shield", place: "world", keywords: ["strike", "troops", "deploy", "war", "force"] },
+    { id: "abroad", title: "Deal with a government", detail: "Opens the World screen, where a country's file and its acts are kept.", icon: "world", place: "world", keywords: ["treaty", "sanction", "tariff", "summit", "call", "diplomacy"] },
+];
+/** The verbs whose screen exists. */
+export function verbEntries(routeExists) {
+    return VERBS.filter((verb) => routeExists(PLACES[verb.place].href)).map((verb) => ({
+        kind: "verb",
+        id: `verb:${verb.id}`,
+        title: verb.title,
+        detail: verb.detail,
+        icon: verb.icon,
+        href: `${PLACES[verb.place].href}${verb.query ?? ""}`,
+        keywords: verb.keywords,
     }));
 }
 export function termEntries(glossary) {

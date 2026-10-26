@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { CHARTER_PRESIDENTIAL_REPUBLIC } from "@admin/world";
 import { buildCampaign, person } from "./__fixtures__/campaign.js";
 import { apply } from "./effects.js";
-import { answerLowerOrderReview, judicialReviewPhase } from "./judicial-review.js";
+import { answerLowerOrderReview, judicialReviewPhase, strikeDownCost } from "./judicial-review.js";
+import { executiveOrder } from "./orders.js";
 import { openedProceeding } from "./court-procedure.js";
 import { addDays, selectDateOfTurn, selectTurnOfDate } from "./clock.js";
 import { advanceUntilAttention } from "./advance.js";
@@ -24,9 +25,11 @@ function challenged(order, index, legacy = false) {
     return { ...base, institutions: { ...base.institutions, ...foundingCircuitSeats(base.seed, base.calendar.year) }, orders: [record], judiciary: { cases: [],
             ...(!legacy ? { proceedings: [openedProceeding(record.id, order, base.turn, base.turn)] } : {}) } };
 }
+/** One court step: the next week, or later when every open stage is waiting on its own dated band. */
 function step(state) {
     const after = phase(state).reduce(apply, state);
-    return { ...after, turn: after.turn + 1 };
+    const waits = (after.judiciary.proceedings ?? []).filter((entry) => entry.stage !== "final").map((entry) => entry.nextTurn);
+    return { ...after, turn: Math.max(after.turn + 1, waits.length ? Math.min(...waits) : 0) };
 }
 function finish(state) {
     for (let i = 0; i < 30; i += 1) {
@@ -455,5 +458,17 @@ describe("an order challenge's court path", () => {
         const old = { ...final.judiciary.cases[0], id: "old-direct-opinion", procedure: undefined };
         const withLegacy = { ...final, judiciary: { ...final.judiciary, cases: [...final.judiciary.cases, old] } };
         expect(step(withLegacy).judiciary.cases).toEqual(withLegacy.judiciary.cases);
+    });
+});
+describe("what losing in court costs", () => {
+    it("follows the act: a loud order lost costs more than a quiet one", () => {
+        const loud = strikeDownCost(executiveOrder("order-emergency-construction"), true);
+        const quiet = strikeDownCost(executiveOrder("order-regulatory-review"), true);
+        expect(loud.standing).toBeLessThan(quiet.standing);
+        expect(loud.stability).toBeLessThan(quiet.stability);
+    });
+    it("follows the remedy: cancelling a rule before it landed costs half of undoing one in effect", () => {
+        const order = executiveOrder("order-border-controls");
+        expect(strikeDownCost(order, false).standing).toBeCloseTo(strikeDownCost(order, true).standing / 2, 4);
     });
 });

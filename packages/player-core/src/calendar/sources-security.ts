@@ -1,17 +1,17 @@
 import {
-  EMERGENCY_NOTICE_TURNS,
-  EMERGENCY_RENEWAL_TURNS,
+  addDays,
+  authorityDeadline,
+  emergencyAuthorityClock,
   EXTENSION_DAYS,
   TERMINATION_WINDOW_DAYS,
   emergencyCauseLabel,
   formatGameDate,
-  hasLapsed,
   selectDeclaredEmergencies,
   selectObligations,
   terminationClockRuns,
   terminationStartDay,
   type Campaign,
-  type DeclaredEmergency,
+  type EmergencyReading,
   type ExternalThreatEmergency,
   type ReportObligation,
 } from "@admin/engine";
@@ -92,20 +92,22 @@ export function warPowersCalendar(campaign: Campaign, window: CalendarWindow): r
     .filter((event) => beforeHorizon(window, event.date));
 }
 
-function declarationEvent(campaign: Campaign, emergency: DeclaredEmergency): CalendarEvent {
+function declarationEvent(campaign: Campaign, emergency: EmergencyReading): CalendarEvent {
   const national = emergency.scope.kind === "nation";
-  const notice = dateOfTurn(campaign, emergency.renewedTurn + EMERGENCY_RENEWAL_TURNS - EMERGENCY_NOTICE_TURNS);
+  const deadline = authorityDeadline(campaign, emergencyAuthorityClock(campaign, emergency));
+  const presidential = emergency.clockReading.presidentialRenewal;
   return {
     id: `emergency:${emergency.id}:anniversary`,
-    date: dateOfTurn(campaign, emergency.renewedTurn + EMERGENCY_RENEWAL_TURNS),
+    date: deadline,
     kind: "emergency",
-    title: `${emergencyCauseLabel(emergency.cause)} emergency ends unless you renew it`,
-    detail: `You can publish the renewal notice starting ${formatGameDate(notice)}.`,
+    title: `${emergencyCauseLabel(emergency.cause)} emergency ends unless ${presidential ? "you renew it" : "Congress renews it"}`,
+    detail: presidential ? `You can publish the renewal notice starting ${formatGameDate(addDays(deadline, -90))}.`
+      : "Congress must renew this authority before its enacted limit. A presidential continuation cannot extend it.",
     urgency: "soft",
     entityRefs: emergency.scope.kind === "state" ? [{ kind: "state", id: emergency.scope.state }] : [],
     href: place.emergencyDeclaration(emergency.id),
     lapse: "The emergency ends, and so do the powers it gave you.",
-    ...(national ? { authorityCite: "50 U.S.C. §1622(d)" } : {}),
+    ...(!presidential ? { authorityCite: "Emergency Powers Limitation Act" } : national ? { authorityCite: "50 U.S.C. §1622(d)" } : {}),
   };
 }
 
@@ -125,7 +127,6 @@ function findingEvent(campaign: Campaign, finding: ExternalThreatEmergency): Cal
 
 export function emergencyCalendar(campaign: Campaign, window: CalendarWindow): readonly CalendarEvent[] {
   const declarations = selectDeclaredEmergencies(campaign)
-    .filter((emergency) => !hasLapsed(emergency, campaign.turn))
     .map((emergency) => declarationEvent(campaign, emergency));
   const findings = Object.values(campaign.externalEmergencies ?? {})
     .filter((finding) => finding.endedTurn === undefined && campaign.turn < finding.expiresTurn)

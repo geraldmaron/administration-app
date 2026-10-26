@@ -10,7 +10,7 @@ import { applyCleanPowerPurchase } from "./clean-power-purchasing.js";
 import { applyBlockedAsset } from "./blocked-assets.js";
 import { applyOversight } from "./oversight.js";
 import { bookUsDebt } from "./national-books.js";
-import { applyAppropriation, applyCapRaise, applyCommitment, applyCondition, applyCourtCase, applyCourtProceeding, applyEmergency, applyExternalEmergency, applyFeed, applyFundingLapse, applyOrderFraming, applyPendingRule, applyPursuit, applySolicitorGeneral } from "./record-effects.js";
+import { applyAppropriation, applyCapRaise, applyCommitment, applyCondition, applyCourtCase, applyCourtProceeding, applyEmergency, applyAuthorityClock, applyExternalEmergency, applyFeed, applyFundingLapse, applyOrderFraming, applyPendingRule, applyPursuit, applySolicitorGeneral } from "./record-effects.js";
 import { relationshipKey as keyOf } from "./state.js";
 import { applyPerson } from "./person-effects.js";
 import { applyMoodDeltas, polarize, recomputeApproval, revertPolarization } from "./opinion.js";
@@ -348,7 +348,11 @@ function applyAttention(state, effect) {
     const deferrals = { ...state.deferrals, ...(effect.defer ?? {}) };
     for (const id of effect.resume ?? [])
         delete deferrals[id];
-    return { ...state, deferrals };
+    const noticed = { ...state.noticed, ...(effect.notice ?? {}) };
+    for (const id of effect.forget ?? [])
+        delete noticed[id];
+    const { noticed: _prior, ...rest } = state;
+    return { ...rest, deferrals, ...(Object.keys(noticed).length > 0 ? { noticed } : {}) };
 }
 function applyIssuedAct(state, effect) {
     const act = effect.set.kind === "instrument" ? { ...effect.set, causedBy: effect.set.causedBy ?? currentEventId() } : effect.set;
@@ -547,6 +551,7 @@ function handlers() {
         commitment: applyCommitment,
         condition: applyCondition,
         emergency: applyEmergency,
+        authorityClock: applyAuthorityClock,
         externalEmergency: applyExternalEmergency,
         militaryConstructionProject: applyMilitaryConstructionProject,
         offshoreLeaseSale: applyOffshoreLeaseSale,
@@ -657,6 +662,8 @@ export function apply(state, packet) {
     // that record months later can name this event as its cause. The id only
     // needs the ledger's length, the turn and the date, all of which are known
     // here before a single effect has run.
+    if (packet.presentation)
+        return foldEffects(state, effectsFor(packet), `notice-${packet.turn}`);
     const causal = stampFor(packet.source, packet.provenance, packet.turn, state.ledger.length, state.calendar);
     const next = recomputeApproval(foldEffects(state, effectsFor(packet), causal.eventId));
     // Every metric that actually moved is surfaced on the ledger entry, tied

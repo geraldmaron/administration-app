@@ -130,7 +130,10 @@ describe("borrowing capacity", () => {
             }
         }
         expect(borrowingCapacity(rated(FOUNDED, "BB"), actor)).toBe(1);
-        expect(rungDefinition("assistance", 1).gate({ campaign: rated(FOUNDED, "BB"), actor, target, streams }).ok).toBe(true);
+        // Relief answers a need, so the recipient is living through a flood.
+        const flood = { id: `condition:flood:${target}:0`, nation: target, kind: "flood", scope: "region", severity: 0.5, startedTurn: 0, status: "active", beats: [] };
+        const flooded = { ...rated(FOUNDED, "BB"), conditions: { ...FOUNDED.conditions, [flood.id]: flood } };
+        expect(rungDefinition("assistance", 1).gate({ campaign: flooded, actor, target, streams }).ok).toBe(true);
     });
     it("refuses them to a government in a fiscal crisis, however it is rated", () => {
         const crisis = { id: `condition:fiscal-crisis:${actor}:0`, nation: actor, kind: "fiscal-crisis", scope: "nation", severity: 0.5, startedTurn: 0, status: "active", beats: [] };

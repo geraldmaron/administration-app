@@ -7,9 +7,14 @@
 import { describe, expect, it } from "vitest";
 import { CHOKEPOINT_CARGO, CHOKEPOINT_FLOWS, type NationId } from "@admin/world";
 import { foundedForBalance } from "./balance-harness.js";
-import { commodityShocks, ROUTE_CLOSURE } from "./commodity-shocks.js";
+import { commodityShocks, contestedRoutes, ROUTE_CLOSURE, warLossFraction } from "./commodity-shocks.js";
+import { supplierShare } from "./commodity-registry.js";
+import { blockadesInForce } from "./blockades.js";
+import { apply } from "./effects.js";
+import { resolveAction } from "./resolution.js";
+import { createRngStreams, makeCampaignSeed } from "./rng.js";
 import { openConflict } from "./conflicts.js";
-import { letsThrough, straitPassage } from "./strait-passage.js";
+import { blockaderLetsThrough, letsThrough, straitPassage } from "./strait-passage.js";
 import type { Campaign, Conflict } from "./state.js";
 
 const USA = "USA" as NationId;
@@ -61,7 +66,9 @@ describe("the share stopped", () => {
     const hormuz = CHOKEPOINT_FLOWS.find((row) => row.chokepoint === "CP-HORMUZ" && row.commodity === "crude")!;
     const route = commodityShocks(campaign, "crude").find((shock) => shock.kind === "route")!;
     expect(route.passage?.stoppedShare).toBeLessThan(1);
-    expect(route.loss).toBeCloseTo(hormuz.share * (1 - hormuz.bypass) * route.passage!.stoppedShare * ROUTE_CLOSURE, 9);
+    // Net of the barrels Iran's own war already keeps off the market at origin (`upstreamLost`).
+    const [contested] = contestedRoutes(campaign, "crude");
+    expect(route.loss).toBeCloseTo(hormuz.share * (1 - hormuz.bypass) * route.passage!.stoppedShare * ROUTE_CLOSURE * (1 - contested!.upstreamLost), 9);
     expect(route.cause).toMatch(/ships bound for .*China.* are let through/);
   });
 
@@ -70,5 +77,48 @@ describe("the share stopped", () => {
     const lng = straitPassage(campaign, war, "CP-HORMUZ", "lng", HORMUZ_LITTORAL);
     expect(lng.stoppedShare).toBe(1);
     expect(lng.passing).toEqual([]);
+  });
+});
+
+describe("a navy that does not hold the shore", () => {
+  // DECISIONS 6.10, owner ruling 2026-10-25: a government with no coast on a
+  // strait denies only cargo bound to or from the government it blockades,
+  // only while its forces reach, and no third country's ships unless at war.
+  const landed = [...Array(30).keys()]
+    .map((k) => resolveAction(BARE, { actor: USA, target: IRN, instrument: "military", rung: 3 }, createRngStreams(makeCampaignSeed(`blockade-${k}`)), "action"))
+    .find((result) => result.ok && result.packet.commitment?.landed);
+  if (!landed || !landed.ok) throw new Error("the blockade of Iran did not land");
+  const blockaded = apply(BARE, landed.packet);
+  const blockade = blockadesInForce(blockaded)[0]!;
+  const unblockaded: Campaign = { ...blockaded, blockades: {} };
+  const crudeLoss = (campaign: Campaign) => commodityShocks(campaign, "crude").reduce((sum, shock) => sum + shock.loss, 0);
+  const [route] = contestedRoutes(blockaded, "crude");
+
+  it("stops cargo bound for Iran and lets China's ships through", () => {
+    expect(route!.passage.blockaders).toEqual([USA]);
+    expect(blockaderLetsThrough(blockaded, blockade, IRN)).toBe(false);
+    expect(blockaderLetsThrough(blockaded, blockade, CHN)).toBe(true);
+    expect(route!.passage.passing).toContain(CHN);
+  });
+
+  it("stops Iran's own loadings, and moves the world's supply by that flow and no more", () => {
+    const iranLoadings = supplierShare("crude", IRN) * (1 - warLossFraction(IRN, Object.values(blockaded.conflicts))) * blockade.cut;
+    const added = crudeLoss(blockaded) - crudeLoss(unblockaded);
+    expect(added).toBeGreaterThan(0);
+    expect(added).toBeLessThanOrEqual(iranLoadings + 1e-9);
+  });
+
+  it("stops nothing where its navy cannot reach the strait", () => {
+    const usa = blockaded.nations[USA]!;
+    const beached: Campaign = { ...blockaded, nations: { ...blockaded.nations, [USA]: { ...usa, stats: { ...usa.stats, military: { ...usa.stats.military, branchStrength: { ...usa.stats.military.branchStrength, naval: 0.1 } } } } } };
+    expect(blockadesInForce(beached)).toEqual([]);
+    expect(contestedRoutes(beached, "crude")[0]?.passage.blockaders ?? []).toEqual([]);
+    expect(crudeLoss(beached)).toBeCloseTo(crudeLoss(unblockaded), 12);
+  });
+
+  it("never takes the whole strait off the market with one act", () => {
+    const hormuz = CHOKEPOINT_FLOWS.find((row) => row.chokepoint === "CP-HORMUZ" && row.commodity === "crude")!;
+    expect(route!.passage.stoppedShare).toBeLessThan(1);
+    expect(crudeLoss(blockaded)).toBeLessThan(hormuz.share * (1 - hormuz.bypass));
   });
 });

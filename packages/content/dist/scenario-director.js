@@ -1,6 +1,7 @@
-import { createRngStreams, conflictsAsParty, selectActivePursuits, selectConditionsFor, selectRemovalPressureDelta, selectTurnOfDate, } from "@admin/engine";
+import { createRngStreams, conflictsAsParty, selectActiveConditions, selectActivePursuits, selectConditionsFor, selectRemovalPressureDelta, compareDates, daysBetween, selectDateOfTurn, selectTurnOfDate, } from "@admin/engine";
 import { classStagedFlag, scenarioFiredFlag, severityStagedFlag, } from "./scenario.js";
 import { flagSetFlag } from "./scenario-deed-flags.js";
+import { boundCondition, markerTurnOf } from "./scenario-cast-conditions.js";
 import { castBound, liveSelectors, } from "./scenario-cast.js";
 // Mechanics propose; the director stages.
 //
@@ -330,6 +331,117 @@ export function severityFactor(campaign, candidate, pressure) {
         return 1;
     return CRITICAL_DAMP_FLOOR + (1 - CRITICAL_DAMP_FLOOR) * clamp01(pressure);
 }
+// --- Recurrence: when a template may come back --------------------------------
+//
+// One contract, by what kind of matter a template is:
+//
+// - A unique incident (`once`) happens once a campaign.
+// - An arc member (`family`) follows its own family's order.
+// - An episode-bound matter is about one thing in the world: a subject the cast
+//   binds (an issued report, a landed trade measure, a bill in markup, a seat
+//   that fell vacant, a court case, an oversight matter), or a running
+//   condition its gate reads. It comes back only for a new episode: a new
+//   subject, or a condition that opened after its last occurrence. The same
+//   flood does not ask the same question twice.
+// - Recurring business (everything else) is a kind of question governments are
+//   asked again, and it rests a season between occurrences.
+/** Cast picks that bind one subject per occurrence, so a new occurrence is a new subject. */
+const SUBJECT_PICKS = new Set(["collectionReport", "tradeMeasure", "liveBill", "judicialVacancy", "pendingOrderCase"]);
+/**
+ * Calendar days recurring business rests: thirteen weeks, a quarter. Counted in
+ * days from the later of the last raise and the last answer or explicit
+ * decline, so a President who answers everything is never asked the same
+ * routine question twice inside ninety days, however late the answer came. A
+ * deferral does not restart the rest (deferring would then buy quiet), and
+ * expiry or withdrawal leaves it keyed to the raise. Counted in dates, not
+ * turns, because a turn index groups dates into weeks and thirteen of them can
+ * span as few as eighty-five days.
+ */
+export const RECURRING_REST_DAYS = 13 * 7;
+function conditionGates(selector) {
+    return selector.conditions.flatMap((condition) => (condition.kind === "conditionActive" ? [condition.condition] : []));
+}
+export function recurrenceKind(selector) {
+    if (selector.once)
+        return "unique";
+    if (selector.family)
+        return "arc";
+    const oversight = selector.conditions.some((condition) => condition.kind === "oversightMatter");
+    if (SUBJECT_PICKS.has(selector.cast.pick) || oversight || conditionGates(selector).length > 0)
+        return "episode";
+    return "recurring";
+}
+/**
+ * Whether the episode a template would speak to opened after its last occurrence.
+ *
+ * A template that binds to a running condition is about that one record, in its
+ * own ground, so only the record the bind would pick can make it new: a flood
+ * abroad, or a milder one at home that the bind passes over, is a different
+ * subject and must not reopen a question already answered. An unbound gate
+ * reads the board at large, so any matching record that opened since counts.
+ */
+function freshEpisode(campaign, selector, counterpart, prior) {
+    const gates = conditionGates(selector);
+    if (gates.length === 0)
+        return true;
+    if (selector.locus?.bind === "condition") {
+        const ground = selector.locus.ground === "counterpart" ? counterpart : campaign.founding.nation;
+        const bound = boundCondition(campaign, selector, ground);
+        return bound !== undefined && bound.startedTurn > prior;
+    }
+    return selectActiveConditions(campaign).some((condition) => condition.startedTurn > prior && gates.some((kind) => kind === undefined || kind === condition.kind));
+}
+/**
+ * Whether a template last raised on turn `prior` may be raised again this week.
+ * `rested` is the date its rest runs from; without it the rest runs from the
+ * raise week, which is all a case with no dated answer can offer.
+ */
+export function recurrenceAllows(campaign, selector, counterpart, prior, rested) {
+    const kind = recurrenceKind(selector);
+    if (kind === "unique" || kind === "arc" || prior === undefined)
+        return true;
+    const since = campaign.turn - prior;
+    if (kind === "recurring") {
+        return daysBetween(rested ?? selectDateOfTurn(campaign, prior), campaign.calendar) >= RECURRING_REST_DAYS;
+    }
+    return since >= CLASS_COOLDOWN && freshEpisode(campaign, selector, counterpart, prior);
+}
+/** The date a case was last raised or answered; only an act or an explicit decline counts as an answer. */
+function restDate(item) {
+    return (item.history ?? []).reduce((date, entry) => (entry.disposition?.kind === "act" || entry.disposition?.kind === "decline") && compareDates(entry.at, date) > 0 ? entry.at : date, item.raisedAt);
+}
+function lastOccurrences(campaign) {
+    const latest = new Map();
+    const rested = new Map();
+    for (const item of Object.values(campaign.cases ?? {})) {
+        const id = item.contentPin?.scenarioId;
+        if (item.kind !== "authored-scenario" || !id)
+            continue;
+        latest.set(id, Math.max(latest.get(id) ?? -1, selectTurnOfDate(campaign, item.raisedAt)));
+        const date = restDate(item);
+        const held = rested.get(id);
+        if (held === undefined || compareDates(date, held) > 0)
+            rested.set(id, date);
+    }
+    return { latest, rested };
+}
+/**
+ * Folds in the answer the fired flag remembers, for a reply given while no case
+ * was seated for it. The marker carries only a turn, so the rest runs from the
+ * last day of that week: never earlier than the answer itself.
+ */
+function withAnswerMemory(campaign, id, prior, rested) {
+    if (campaign.player.flags[scenarioFiredFlag(id)] !== true)
+        return { prior, rested };
+    const answered = markerTurnOf(campaign, scenarioFiredFlag(id));
+    if (answered === undefined)
+        return { prior, rested };
+    const weekEnd = selectDateOfTurn(campaign, answered + 1);
+    return {
+        prior: Math.max(prior ?? -1, answered),
+        rested: rested === undefined || compareDates(weekEnd, rested) > 0 ? weekEnd : rested,
+    };
+}
 /**
  * Every live candidate, priced by the director, best first.
  *
@@ -339,19 +451,13 @@ export function severityFactor(campaign, candidate, pressure) {
  * infer them from what happened to be drawn.
  */
 export function rankCandidates(campaign, selectors) {
-    const latest = new Map();
-    for (const item of Object.values(campaign.cases ?? {})) {
-        if (item.kind !== "authored-scenario" || !item.contentPin?.scenarioId)
-            continue;
-        const turn = selectTurnOfDate(campaign, item.raisedAt);
-        latest.set(item.contentPin.scenarioId, Math.max(latest.get(item.contentPin.scenarioId) ?? -1, turn));
-    }
+    const { latest, rested } = lastOccurrences(campaign);
     const scored = liveSelectors(campaign, selectors)
-        .filter(({ selector }) => {
-        if (selector.once || selector.family)
+        .filter(({ selector, counterpart }) => {
+        if (recurrenceKind(selector) === "unique" || recurrenceKind(selector) === "arc")
             return true;
-        const prior = latest.get(selector.id);
-        return prior === undefined || campaign.turn - prior >= CLASS_COOLDOWN;
+        const memory = withAnswerMemory(campaign, selector.id, latest.get(selector.id), rested.get(selector.id));
+        return recurrenceAllows(campaign, selector, counterpart, memory.prior, memory.rested);
     })
         .map((candidate) => {
         const recency = recencyFactor(campaign, candidate.selector.class);

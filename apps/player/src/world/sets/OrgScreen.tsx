@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { place, type OrgCommitment, type OrgMember, type OrgScreenReading } from "@admin/player-core";
-import { Badge, Button, Column, Empty, EntityLink, Field, Icon, Page, ReadingFrame, Row, Select, SealNotice, Text } from "@admin/ui";
-import { Panel, Segments, StateChip } from "@admin/ui/world";
+import { Pane, Tag, Button, Column, Empty, EntityLink, Field, Icon, Page, ReadingFrame, Row, Select, SealNotice, Text } from "@admin/ui";
+import { Segments, StateChip } from "@admin/ui/world";
 import { BackButton } from "../../shell/BackButton";
 import { CiteById, FlagOf, MapPanelSlot, NationName, RowTo, SealOf, TopicLaw, go, stanceValence } from "../parts";
 
@@ -17,7 +17,7 @@ function Alignment({ reading }: { readonly reading: OrgScreenReading }) {
   const { alignment } = reading;
   const valence = alignment.warm >= 0.66 ? "good" : alignment.warm >= 0.4 ? "watch" : "bad";
   return (
-    <Panel title="How members feel about you" icon="layerBlocs">
+    <Pane title="How members feel about you" icon="layerBlocs">
       {alignment.readable > 0 ? (
         <Row gap="sm" wrap>
           <Text variant="figure" tone={valence === "good" ? "success" : valence === "watch" ? "warning" : "danger"}>
@@ -41,7 +41,7 @@ function Alignment({ reading }: { readonly reading: OrgScreenReading }) {
       </ReadingFrame>
       {reading.trade ? <Text variant="body" tone="secondary">{reading.trade}</Text> : null}
       {reading.scope ? <Text variant="body" tone="secondary">{reading.scope}</Text> : null}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -53,8 +53,8 @@ function MemberRow({ member, first }: { readonly member: OrgMember; readonly fir
       <Column flexGrow={1} flexShrink={1} flexBasis={180} minWidth={0}>
         <NationName nation={member.nation} name={member.name} />
       </Column>
-      {member.us ? <Badge status="info">You</Badge> : null}
-      {member.atWar ? <Badge status="danger" icon="conflict">At war</Badge> : null}
+      {member.us ? <Tag tone="info">You</Tag> : null}
+      {member.atWar ? <Tag tone="danger" icon="conflict">At war</Tag> : null}
       {member.us ? null : <StateChip valence={stanceValence(member.stance)} icon={member.stance === "unread" ? "hidden" : member.stance === "adverse" ? "caution" : member.stance === "favorable" ? "approve" : "neutral"}>{member.word}</StateChip>}
     </RowTo>
   );
@@ -63,7 +63,7 @@ function MemberRow({ member, first }: { readonly member: OrgMember; readonly fir
 function Members({ reading }: { readonly reading: OrgScreenReading }) {
   const [all, setAll] = useState(false);
   return (
-    <Panel title="Members, by how they feel about you" icon="flag" count={reading.members.length}>
+    <Pane title="Members, by how they feel about you" icon="flag" count={reading.members.length}>
       <Column role="group" aria-label="Members">
         {(all ? reading.members : reading.members.slice(0, MEMBERS_FIRST)).map((member, index) => (
           <MemberRow key={member.nation} member={member} first={index === 0} />
@@ -74,14 +74,14 @@ function Members({ reading }: { readonly reading: OrgScreenReading }) {
           {all ? "Show fewer" : `Show all ${reading.members.length} members`}
         </Button>
       ) : null}
-    </Panel>
+    </Pane>
   );
 }
 
 function Calls({ reading }: { readonly reading: OrgScreenReading }) {
   if (reading.calls.length === 0) return null;
   return (
-    <Panel title="An ally under attack" icon="conflict" edge="danger">
+    <Pane title="An ally under attack" icon="conflict" band="danger">
       <Column role="group" aria-label="Wars against an ally">
         {reading.calls.map((call, index) => (
           <RowTo key={call.conflict} first={index === 0} href={place.war(call.conflict)} label={`Open the war: ${call.aggressor} against ${call.ally}`} flexDirection="row" flexWrap="wrap" alignItems="center" gap="sm" paddingVertical="sm" paddingHorizontal="xs">
@@ -94,7 +94,7 @@ function Calls({ reading }: { readonly reading: OrgScreenReading }) {
           </RowTo>
         ))}
       </Column>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -109,7 +109,7 @@ function Commitments({ reading }: { readonly reading: OrgScreenReading }) {
   const [all, setAll] = useState(false);
   const body = BODY_LAW[reading.id];
   return (
-    <Panel title="Commitments" icon="shield" count={reading.commitments.length} lede="These are the promises the United States has made here. You can change them on the national security screen, where each change shows what it does from today." aside={body ? <CiteById id={body} compact /> : <TopicLaw topic="treaties" />}>
+    <Pane title="Commitments" icon="shield" count={reading.commitments.length} line="The United States has made these promises to this body and its members." actions={body ? <CiteById id={body} compact /> : <TopicLaw topic="treaties" />}>
       {reading.commitments.length === 0 ? (
         <Text variant="body" tone="secondary">The United States hasn't made any promises to this group or its members.</Text>
       ) : (
@@ -118,7 +118,7 @@ function Commitments({ reading }: { readonly reading: OrgScreenReading }) {
             <Text variant="body" flex={1} minWidth={200}>
               {commitment.line}
             </Text>
-            <Badge status={commitment.status === "active" ? "success" : commitment.status === "suspended" ? "warning" : "outline"}>{COMMITMENT_STATUS[commitment.status]}</Badge>
+            <Tag tone={commitment.status === "active" ? "success" : commitment.status === "suspended" ? "warning" : "outline"}>{COMMITMENT_STATUS[commitment.status]}</Tag>
             <Text variant="caption" tone="secondary">
               {commitment.toward === "body" ? "To the whole group" : "To one member"}
             </Text>
@@ -131,7 +131,7 @@ function Commitments({ reading }: { readonly reading: OrgScreenReading }) {
         </Button>
       ) : null}
       <EntityLink label="Open national security" icon="shield" href={place.security()} onPress={() => go(place.security())} />
-    </Panel>
+    </Pane>
   );
 }
 
@@ -142,11 +142,11 @@ function Engage({ reading, member, onMember }: { readonly reading: OrgScreenRead
   const nation = member ? others.find((entry) => entry.nation === member)?.nation : others[0]?.nation;
   const name = others.find((entry) => entry.nation === nation)?.name;
   return (
-    <Panel title="Reach out to a member" icon="summit" lede="You reach out to one country at a time. Pick a member to call, send an envoy, visit, meet, or send aid.">
+    <Pane title="Reach out to a member" icon="summit" line="Diplomacy with this body proceeds through its member governments.">
       <Field label="The member">
         {(control) => <Select {...control} label="The member" value={nation} onChange={onMember} options={others.map((entry) => ({ value: entry.nation as string, label: entry.name, visual: <FlagOf nation={entry.nation} name={entry.name} height={14} /> }))} />}
       </Field>
-      {member && !nation ? <Text variant="body" tone="warning" role="status">That country isn't a member of this group. Pick one from the list.</Text> : null}
+      {member && !nation ? <Text variant="body" tone="warning" role="status">That country is not a member of this group.</Text> : null}
       {nation && name ? (
         <Row>
           <Button kind="primary" icon="dispatch" onPress={() => go(place.countryAct(nation))}>
@@ -154,7 +154,7 @@ function Engage({ reading, member, onMember }: { readonly reading: OrgScreenRead
           </Button>
         </Row>
       ) : null}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -180,10 +180,10 @@ export function OrgScreen({ reading, member, onMember }: { readonly reading: Org
       </Row>
       <Commitments reading={reading} />
       <Engage reading={reading} {...(member ? { member } : {})} onMember={onMember} />
-      <Panel title={`About the ${reading.name}`} icon="record">
+      <Pane title={`About the ${reading.name}`} icon="record">
         <Text variant="body">{reading.history}</Text>
         <SealNotice />
-      </Panel>
+      </Pane>
     </Page>
   );
 }

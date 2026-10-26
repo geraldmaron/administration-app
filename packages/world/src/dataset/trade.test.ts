@@ -31,13 +31,26 @@ describe("world.trade derivation", () => {
     }
   });
 
-  it("keeps dependence keys a subset of the ranked partner list", () => {
+  // The list names the largest flows, as WITS's "Top 5 Export and Import
+  // partners" does; every lane's magnitude lives in tradeDependence.
+  it("names at most five top partners, the largest lanes, in order", () => {
     for (const n of worldDataset.nations) {
-      const ranked = new Set(n.stats.trade.topPartners as unknown as string[]);
-      for (const key of Object.keys(n.stats.trade.tradeDependence)) {
-        expect(ranked.has(key), `${n.id as string} depends on unranked ${key}`).toBe(true);
-      }
+      const listed = n.stats.trade.topPartners as unknown as string[];
+      const lanes = n.stats.trade.tradeDependence as Record<string, number>;
+      expect(listed.length, n.id as string).toBeLessThanOrEqual(5);
+      const smallestListed = Math.min(...listed.map((id) => lanes[id] ?? 0));
+      const largestUnlisted = Math.max(0, ...Object.entries(lanes).filter(([id]) => !listed.includes(id)).map(([, value]) => value));
+      expect(smallestListed, n.id as string).toBeGreaterThanOrEqual(largestUnlisted);
     }
+  });
+
+  it("pins Iran's top partners to its largest modeled lanes, the United States and Israel not among them", () => {
+    // Turkey ahead of India: the Shanghai Cooperation Organization India and
+    // Iran share binds no trade, so it adds no gravity pull.
+    expect(partners("IRN")).toEqual(["CHN", "TUR", "IND", "IRQ", "SAU"]);
+    expect(partners("IRN")).not.toContain("USA");
+    expect(partners("IRN")).not.toContain("ISR");
+    expect(dependence("IRN")["USA"]).toBeGreaterThan(0);
   });
 
   it("keeps total dependence inside the schema range and below total exposure", () => {

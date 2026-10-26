@@ -4,7 +4,7 @@
 
 What the player can do to the simulation: the store actions and commit builders the previous player reached at `refs/safety/pre-map-first` (`d65de3896`), plus the reads that carry a model. The rebuilt player must reach every row by its due wave, or the row records an explicit, owner-visible drop. W9 closes only with every row reached or dropped.
 
-**Keyed by variant.** A row is a function plus its discriminating parameter value (instrument and rung for `issueAction`, kind for `engagementPacket`, verb for `respondToScandal`, and so on), because function-level reachability stays green when most variants of one act lose their UI. 182 rows over 104 functions.
+**Keyed by variant.** A row is a function plus its discriminating parameter value (instrument and rung for `issueAction`, kind for `engagementPacket`, verb for `respondToScandal`, and so on), because function-level reachability stays green when most variants of one act lose their UI. 183 rows over 105 functions.
 
 **Held by** `scripts/verify-engine-reachability.mjs`. It reads call sites, not import names, in `apps/web/src` and `packages/player-core/src`. A row due at or before the current wave with no call site fails; a row not yet due is reported as pending. The current wave is `scripts/pin-ledger.json`'s once its wave list is this program's, and `currentWaveUntilPinReset` in the JSON until then. `--as-of <wave>` previews a later wave. Status here is the ledger's (open or dropped); whether a row is reached is measured on each run, not written down.
 
@@ -48,9 +48,10 @@ What the player can do to the simulation: the store actions and commit builders 
 | `renewEmergency` |  | W5 | Emergencies | /nation/emergency | open |
 | `endEmergency` |  | W5 | Emergencies | /nation/emergency | open |
 | `requestGuardFederalization` |  | W5 | Emergencies | /nation/state/:id, /brief | open |
-| `takeLocaleAct` | act: relief, request-deployment, federalize, waiver, review (5) | W5 | States | /nation/state/:id | open |
-| `takeLocaleAct` | act: agents, troops, surveil (3) | W7 | States | /nation/state/:id | open |
-| `takeHomeAct` | act: agents, troops, surveil (3) | W7 | States | /nation/state/:id | open |
+| `takeLocaleAct` | act: relief, request-deployment, waiver, review (4) | W5 | States | /nation/state/:id | open |
+| `takeLocaleAct` | act: property-surge, task-force, federalize, proclaim, troops, priority, surveil-under-order (7; surveil is refused by law and shown as the reason, not a button) | W7 | States | /nation/state/:id | open |
+| `takeHomeAct` | act: immigration-operation (1; the other coercive acts answer disorder and are refused with no unrest) | W7 | States | /nation/state/:id | open |
+| `requestCourtOrder` | kind: search-warrant, title-iii-order, fisa-order, injunction-enforcement (4) | W7 | States | /nation/state/:id | open |
 | `appointMinister` |  | W6 | Cabinet | /washington/office/:id, /washington/person/:id | dropped: Retired 2026-10-13 by owner decision: an empty Senate-confirmed seat, a cabinet chair included, is filled through openNomination and the Senate pipeline from the appointments desk, so the same-day vote was a second path for the same chair (docs/audits/2026-10-13-appointments/PLAN.md). |
 | `appointActing` |  | W6 | Cabinet | /washington/office/:id | open |
 | `dismissMinister` |  | W6 | Cabinet | /washington/office/:id, /washington/person/:id | open |

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { View, useMedia } from "@tamagui/core";
 import { ChoiceMark } from "../forms/ChoiceList";
 import { Icon } from "../icons/Icon";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { Pressable } from "../primitives/Button";
 import { Column, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
@@ -80,7 +80,7 @@ function MoveLine({ effect, share, largest, compact }: { readonly effect: Effect
         <Text variant="caption" weight={largest ? "strong" : undefined} tone={largest ? "primary" : "secondary"} numberOfLines={1} flexShrink={1}>
           {effect.label}
         </Text>
-        {largest ? <Badge status="outline">Largest</Badge> : null}
+        {largest ? <Tag tone="outline">Largest</Tag> : null}
       </Row>
       <Row gap="sm" {...(compact ? {} : { flex: 1 })} minWidth={0}>
         <View flex={1} height={8} borderRadius="pill" backgroundColor="borderColor" position="relative" aria-hidden>
@@ -155,7 +155,7 @@ export function AnswerCard({ option, scales, selected, onSelect, below, lock }: 
     <Pressable
       role="button"
       aria-pressed={selected}
-      aria-label={`Pick ${option.label}${locked ? ". Locked; you can still read it" : ""}`}
+      aria-label={`${option.label}${locked ? ". Locked; you can still read it" : ""}`}
       onPress={onSelect}
       padding={selected ? 15 : "md"}
       borderRadius="card"
@@ -174,7 +174,7 @@ export function AnswerCard({ option, scales, selected, onSelect, below, lock }: 
               <Text variant="title" tone={locked ? "secondary" : "primary"}>
                 {option.label}
               </Text>
-              {option.recommended ? <Badge status="gold">Recommended</Badge> : null}
+              {option.recommended ? <Tag tone="authority">Recommended</Tag> : null}
             </Row>
             {typeof option.lead === "string" ? (
               <Text variant="body" tone="secondary" serif numberOfLines={selected ? undefined : 2}>

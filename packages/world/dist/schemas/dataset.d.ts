@@ -1325,6 +1325,11 @@ export declare const WorldDataset: z.ZodObject<{
             area: z.ZodOptional<z.ZodArray<z.core.$ZodBranded<z.ZodString, "RegionId", "out">>>;
             source: z.ZodString;
         }, z.core.$strip>>;
+        council: z.ZodOptional<z.ZodObject<{
+            permanent: z.ZodArray<z.core.$ZodBranded<z.ZodString, "NationId", "out">>;
+            threshold: z.ZodNumber;
+            source: z.ZodString;
+        }, z.core.$strip>>;
     }, z.core.$strip>>;
     cradles: z.ZodArray<z.ZodObject<{
         id: z.core.$ZodBranded<z.ZodString, "CradleId", "out">;

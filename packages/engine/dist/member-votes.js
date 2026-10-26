@@ -36,7 +36,7 @@ export function memberVote(congress, states, people, question, shares) {
         const pressure = (runtime.issuePressure ?? []).filter((entry) => entry.actId === question.actId && question.asOf && compareDates(entry.through, question.asOf) >= 0).reduce((sum, entry) => sum + entry.delta, 0);
         const issue = Math.max(-0.12, Math.min(0.12, pressure));
         const support = clamp01(shares[caucus] + (question.merit ?? 0) + conviction + constituency + rapport + party + localStanding + issue);
-        const yea = runtime.alive && support >= reservation(member.person);
+        const yea = member.vacancy === undefined && runtime.alive && support >= reservation(member.person);
         byCaucus[caucus].seats += 1;
         byCaucus[caucus].yeas += Number(yea);
         const reasons = [
@@ -50,7 +50,9 @@ export function memberVote(congress, states, people, question, shares) {
         return { person: member.person, seat: member.seat, state: member.state, party: member.party, yea, support, reasons };
     });
     const yeas = rollCall.filter((vote) => vote.yea).length;
+    // An empty seat casts no vote either way; the nays are the seated members who did not vote yea.
+    const voting = members.filter((member) => member.vacancy === undefined).length;
     return { ...breakSenateTie(congress, {
-            chamber: question.chamber, yeas, nays: members.length - yeas, required: question.required, passed: yeas >= question.required,
+            chamber: question.chamber, yeas, nays: voting - yeas, required: question.required, passed: yeas >= question.required,
         }, question.counted ?? "with"), byCaucus, rollCall };
 }

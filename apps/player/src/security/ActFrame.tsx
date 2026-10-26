@@ -36,6 +36,7 @@ export function ActFrame({ title, children, table, acts, verb, tone = "commit", 
   };
   return (
     <Column gap="lg">
+      <Text variant="headline" role="heading" aria-level={2}>{title}</Text>
       <LawChips authorities={law} />
       {children ? <Column gap="md">{children}</Column> : null}
       {table ? (

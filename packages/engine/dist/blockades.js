@@ -1,6 +1,7 @@
 import { forceScale } from "./force-packages.js";
 import { chokepointExposure } from "./geography.js";
-import { liveNation } from "./instrument-gates.js";
+import { liveNation, PROJECTION_CAPS, projectionAccess } from "./instrument-gates.js";
+import { createRngStreams } from "./rng.js";
 export function applyBlockade(campaign, effect) {
     return { ...campaign, blockades: { ...campaign.blockades, [effect.set.id]: effect.set } };
 }
@@ -35,8 +36,27 @@ export function blockadeRecord(ctx, conflictId, siblings) {
     };
     return { kind: "blockade", set };
 }
+/** The naval branch strength the blockade rung is stood up out of. */
+const BLOCKADE_NAVAL_STRENGTH = 0.3;
+/**
+ * Whether the blockading navy can still hold its station: the naval branch
+ * strength and the reach the blockade rung gates on, read now rather than only
+ * the week it was ordered. A navy that can no longer reach the coast stops
+ * nothing there, nor at any strait the coast sits on.
+ */
+export function blockadeReaches(campaign, blockade) {
+    const imposer = campaign.nations[blockade.imposer];
+    if (!imposer || !campaign.nations[blockade.target])
+        return false;
+    if (imposer.stats.military.branchStrength.naval < BLOCKADE_NAVAL_STRENGTH)
+        return false;
+    const ctx = { campaign, actor: blockade.imposer, target: blockade.target, streams: createRngStreams(campaign.seed) };
+    return projectionAccess(ctx, PROJECTION_CAPS[3], "").ok;
+}
 function stillOnStation(campaign, blockade) {
     if (campaign.conflicts[blockade.conflictId]?.status !== "active")
+        return false;
+    if (!blockadeReaches(campaign, blockade))
         return false;
     if (blockade.commitmentId !== undefined && campaign.commitments[blockade.commitmentId]?.status !== "active")
         return false;

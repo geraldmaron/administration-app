@@ -292,8 +292,11 @@ describe("the ladder — resolution", () => {
  * actually short of money, with each side holding a view of the other. Nothing
  * above a relief shipment is offered to a comfortable stranger.
  */
+// Relief answers a need, so the friendly board's partner is living through a flood.
+const FRIENDLY_FLOOD = { id: "condition:flood:NEIGH:0", nation: "NEIGH" as NationId, kind: "flood" as const, scope: "region" as const, severity: 0.5, startedTurn: 0, status: "active" as const, beats: [] };
+
 function friendlyBoard(): Campaign {
-  const state = buildCampaign();
+  const state = { ...buildCampaign(), conditions: { [FRIENDLY_FLOOD.id]: FRIENDLY_FLOOD } };
   const neigh = state.nations["NEIGH" as NationId]!;
   const trusted = (from: string, to: string) => Relationship.parse({ ...relBetween(from, to), trust: 0.6 });
   return {
@@ -368,10 +371,9 @@ describe("the assistance ladder", () => {
     if (!relief.ok) return;
     expect(apply(flooded, relief.packet).conditions[condition.id]!.severity).toBeLessThan(0.6);
 
+    // An untouched country has no need for relief to answer, so the shipment is refused rather than sent for nothing.
     const dry = landRung(state, "ALPHA" as NationId, "NEIGH" as NationId, "assistance", 1, streams);
-    expect(dry.ok).toBe(true);
-    if (!dry.ok) return;
-    expect(dry.packet.effects.some((effect) => effect.kind === "condition")).toBe(false);
+    expect(dry.ok).toBe(false);
   });
 
   it("opens weeks of relief named against the disaster it answers, and names nothing where there is none", () => {
@@ -397,9 +399,8 @@ describe("the assistance ladder", () => {
     expect(opened[0]!.review).toEqual({ endsTurn: flooded.turn + 8 });
 
     const dry = landRung(state, "ALPHA" as NationId, "NEIGH" as NationId, "assistance", 1, streams);
-    expect(dry.ok).toBe(true);
-    if (!dry.ok) return;
-    expect(Object.values(apply(state, dry.packet).commitments)).toHaveLength(0);
+    expect(dry.ok).toBe(false);
+    expect(Object.values(state.commitments)).toHaveLength(0);
   });
 
   it("marks no arms transfer or guarantee as answering a disaster the recipient happens to be living through", () => {

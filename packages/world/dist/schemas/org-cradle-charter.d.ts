@@ -20,6 +20,12 @@ export declare const DefenseScope: z.ZodObject<{
     source: z.ZodString;
 }, z.core.$strip>;
 export type DefenseScope = z.infer<typeof DefenseScope>;
+export declare const CouncilRule: z.ZodObject<{
+    permanent: z.ZodArray<z.core.$ZodBranded<z.ZodString, "NationId", "out">>;
+    threshold: z.ZodNumber;
+    source: z.ZodString;
+}, z.core.$strip>;
+export type CouncilRule = z.infer<typeof CouncilRule>;
 export declare const Organization: z.ZodObject<{
     id: z.core.$ZodBranded<z.ZodString, "OrgId", "out">;
     name: z.ZodString;
@@ -43,6 +49,11 @@ export declare const Organization: z.ZodObject<{
             area: "area";
         }>;
         area: z.ZodOptional<z.ZodArray<z.core.$ZodBranded<z.ZodString, "RegionId", "out">>>;
+        source: z.ZodString;
+    }, z.core.$strip>>;
+    council: z.ZodOptional<z.ZodObject<{
+        permanent: z.ZodArray<z.core.$ZodBranded<z.ZodString, "NationId", "out">>;
+        threshold: z.ZodNumber;
         source: z.ZodString;
     }, z.core.$strip>>;
 }, z.core.$strip>;

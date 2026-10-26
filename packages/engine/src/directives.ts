@@ -1,4 +1,8 @@
-import type { Campaign } from "./state.js";
+import type { RoleId } from "@admin/world";
+import type { Campaign, PersonRuntime } from "./state.js";
+import { selectChairRunner } from "./appointments.js";
+import { certifyOrder, type ReviewInput } from "./order-review.js";
+import { stampOf, type DecisionStamp } from "./willingness.js";
 import { carryOutDirective, SLOW_WALK_SHARE, type CarryOut } from "./execution.js";
 import type { Effect, EffectPacket } from "./effects.js";
 import type { InstitutionDef, InstitutionId } from "./institutions.js";
@@ -94,6 +98,8 @@ export type Directive = {
   readonly status: DirectiveStatus;
   /** Present on a refusal and only on a refusal. */
   readonly memorandum?: RefusalMemorandum;
+  /** The officer's own weighing, on casework a statute does not bar: the Attorney General at Justice, the chair at a commission. */
+  readonly judgment?: DecisionStamp;
 };
 
 /** Keyed by id. Refused directives are kept forever, for the reason a refusal is. */
@@ -208,14 +214,6 @@ type StatutoryBar = {
  */
 const STATUTORY_BARS: readonly StatutoryBar[] = [
   {
-    institutions: ["INST-DOJ", "INST-FBI", "INST-DEA", "INST-ATF", "INST-USMS"],
-    kinds: ["investigation", "targeting"],
-    authority: "28 U.S.C. § 509 and the Department's standing policy on communications with the White House",
-    reason:
-      "The functions of the Department of Justice are vested in the Attorney General. Communications between the White House and the Department about a pending or contemplated investigation or case are limited to the Attorney General and the Deputy Attorney General, and the Department does not open, close or direct a case at the request of the President.",
-    signedBy: "The Office of Legal Counsel",
-  },
-  {
     institutions: ["INST-IRS"],
     kinds: ["investigation", "targeting"],
     authority: "26 U.S.C. § 7217",
@@ -268,10 +266,21 @@ export function directiveRefusal(def: InstitutionDef, kind: DirectiveKind): Refu
   if (bar) return { authority: bar.authority, reason: bar.reason, signedBy: bar.signedBy };
   // Independence is the catch-all rather than the first test: a body can be
   // formally executive and still barred from this one instruction, which is
-  // exactly what the Department of Justice and the Internal Revenue Service
-  // are, and testing independence first would have made both of them take it.
-  if (def.independence === "independent") return independenceMemorandum(def);
+  // what the Internal Revenue Service is, and testing independence first would
+  // have made it take the generic memorandum.
+  if (isDirectionBarred(def)) return independenceMemorandum(def);
   return undefined;
+}
+
+/**
+ * Whether the body takes no direction on its function at all. Independence is
+ * the structure (fixed terms, insulated delivery); direction is barred only
+ * while the officer at the head is protected from removal. An executive-power
+ * commission whose chair serves at the President's pleasure can be supervised
+ * on policy, and an adjudicator or the Federal Reserve cannot.
+ */
+export function isDirectionBarred(def: InstitutionDef): boolean {
+  return def.independence === "independent" && def.offices[0]?.removal !== "at-will";
 }
 
 /** The memorandum as one paragraph, with the statutory reason unaltered inside it. */
@@ -388,6 +397,88 @@ function patternMatter(campaign: Campaign, def: InstitutionDef): OversightMatter
   };
 }
 
+// --- Casework: the officer's judgment ----------------------------------------
+
+const CASEWORK_KINDS: readonly DirectiveKind[] = ["investigation", "targeting"];
+
+/**
+ * How far past ordinary supervision an instruction about a named matter sits,
+ * on the scale the Attorney General's order review already uses. Nothing
+ * entitles the President to a prosecution, so even opening a file sits near
+ * the bar. A commission's named matters are decided by the commission's own
+ * vote, so no such instruction is offered to one.
+ */
+const CASEWORK_REACH: Readonly<Record<"investigation" | "targeting", number>> = { investigation: 0.4, targeting: 0.7 };
+
+/** Each casework instruction already given at the same body is one more entry on the record the officer weighs. */
+const CASEWORK_RECORD_STEP = 0.2;
+
+function isJusticeBody(def: InstitutionDef): boolean {
+  return inspectingBody(def) === "INST-DOJ";
+}
+
+function cabinetRoleOver(def: InstitutionDef): RoleId | undefined {
+  let current: InstitutionDef | undefined = def;
+  while (current) {
+    if (current.cabinetRole) return current.cabinetRole;
+    current = current.parent ? institutionDef(current.parent) : undefined;
+  }
+  return undefined;
+}
+
+/** The Attorney General, or whoever is acting in the chair, over any body in the Department. */
+function judgingOfficer(campaign: Campaign, def: InstitutionDef): PersonRuntime | undefined {
+  const role = cabinetRoleOver(def);
+  return role ? selectChairRunner(campaign, role) : undefined;
+}
+
+type CaseworkJudgment = {
+  readonly objects: boolean;
+  readonly officer: PersonRuntime;
+  readonly decision: DecisionStamp;
+};
+
+/**
+ * Whether the officer over a body will take a named-matter instruction.
+ *
+ * A DOJ instruction used to be refused as if a statute barred it. What exists
+ * is a norm and the Attorney General's own judgment of it, so the answer
+ * comes from the person: the weighing is the one an order's legality review
+ * uses, decided without a draw so the President reads it before asking. An
+ * Attorney General who carries the instruction opens a file, and a grand jury
+ * and the courts decide what follows; the President is entitled to no outcome.
+ */
+function caseworkJudgment(campaign: Campaign, def: InstitutionDef, request: DirectiveRequest): CaseworkJudgment | undefined {
+  if (request.kind !== "investigation" && request.kind !== "targeting") return undefined;
+  const officer = isJusticeBody(def) ? judgingOfficer(campaign, def) : undefined;
+  if (!officer) return undefined;
+  const inspected = inspectingBody(def);
+  const prior = selectDirectives(campaign).filter(
+    (entry) => CASEWORK_KINDS.includes(entry.kind) && inspectingBody(institutionDef(entry.institution) ?? def) === inspected,
+  ).length;
+  const input: ReviewInput = {
+    reach: CASEWORK_REACH[request.kind],
+    accumulated: Math.min(1, CASEWORK_RECORD_STEP * prior),
+    ground: "silent",
+  };
+  const willingness = certifyOrder(officer.base, input, true);
+  return {
+    objects: !willingness.acts,
+    officer,
+    decision: stampOf(willingness, officer.base.id as string, `directive:${def.id}:${request.kind}`, "public"),
+  };
+}
+
+function declinedMemorandum(officer: PersonRuntime): RefusalMemorandum {
+  return {
+    authority: "28 U.S.C. § 509 and the Department's standing policy on communications with the White House",
+    reason:
+      `${officer.base.name}, the Attorney General, reviewed the request and declined it. Whether to open, close or direct a case is a judgment the law places in the Department, ` +
+      "no statute entitles the President to a particular investigation or prosecution, and the Attorney General does not take the instruction.",
+    signedBy: "The Attorney General",
+  };
+}
+
 // --- Issuing ---------------------------------------------------------------
 
 export type DirectiveRequest = {
@@ -396,6 +487,8 @@ export type DirectiveRequest = {
   readonly subject: string;
   /** How hard this particular order leans. Absent, the kind's own weight. */
   readonly pressure?: number;
+  /** Tells apart two instructions of one kind to one body in one week, which would otherwise share a record. */
+  readonly key?: string;
 };
 
 export type DirectiveResult =
@@ -435,6 +528,36 @@ function carriedStatus(campaign: Campaign, def: InstitutionDef, subject: string)
   return { status: carry && carry.delayShare >= SLOW_WALK_SHARE ? "slow-walked" : "carried", ...(carry ? { carry } : {}) };
 }
 
+/**
+ * What carrying a named-matter instruction does to the body that carried it:
+ * the same bend and scrutiny a refusal writes, because a department that opens
+ * a file at the White House's request is the thing an inspector general
+ * describes as a pattern when it happens twice.
+ */
+function caseworkCarriedEffects(campaign: Campaign, def: InstitutionDef, directive: Directive): readonly Effect[] {
+  const runtime = campaign.institutions[def.id]!;
+  const move = directiveMove(directive.kind, directive.pressure);
+  const inspected = inspectingBody(def);
+  const priorCarried = selectDirectives(campaign).filter(
+    (entry) =>
+      CASEWORK_KINDS.includes(entry.kind) && entry.status !== "refused" && inspectingBody(institutionDef(entry.institution) ?? def) === inspected,
+  ).length;
+  const matter = patternMatter(campaign, def);
+  const opens = priorCarried + 1 === REFUSALS_BEFORE_MATTER && !campaign.oversight.matters.some((entry) => entry.id === matter.id);
+  return [
+    {
+      kind: "institution",
+      directives: [directive],
+      institution: def.id,
+      changes: {
+        politicization: round3(clamp01(runtime.politicization + move.politicization)),
+        oversightPressure: round3(clamp01(runtime.oversightPressure + move.oversight)),
+      },
+    },
+    ...(opens ? [{ kind: "oversight" as const, matters: [matter] }] : []),
+  ];
+}
+
 function summary(def: InstitutionDef, directive: Directive): string {
   if (directive.status === "refused") return refusalMemorandumText(directive);
   if (directive.status === "slow-walked") {
@@ -461,10 +584,15 @@ export function issueDirective(campaign: Campaign, request: DirectiveRequest): D
     return { ok: false, reason: `${institutionOpening(def.name)} holds no such function. There is nobody there this could be addressed to.` };
   }
 
-  const memorandum = directiveRefusal(def, request.kind);
+  const barred = directiveRefusal(def, request.kind);
+  if (!barred && CASEWORK_KINDS.includes(request.kind) && isJusticeBody(def) && !judgingOfficer(campaign, def)) {
+    return { ok: false, reason: "Nobody holds the Attorney General's authority right now, so there is no one at Justice to take or decline the instruction." };
+  }
+  const judged = barred ? undefined : caseworkJudgment(campaign, def, request);
+  const memorandum = barred ?? (judged?.objects ? declinedMemorandum(judged.officer) : undefined);
   const carried = memorandum ? undefined : carriedStatus(campaign, def, `directive:${def.id}:${request.kind}`);
   const directive: Directive = {
-    id: `directive:${def.id}:${request.kind}:${campaign.turn}`,
+    id: `directive:${def.id}:${request.kind}:${campaign.turn}${request.key ? `:${request.key}` : ""}`,
     institution: def.id,
     kind: request.kind,
     subject: request.subject.trim(),
@@ -472,7 +600,9 @@ export function issueDirective(campaign: Campaign, request: DirectiveRequest): D
     issuedTurn: campaign.turn,
     status: carried?.status ?? "refused",
     ...(memorandum ? { memorandum } : {}),
+    ...(judged ? { judgment: judged.decision } : {}),
   };
+  const decision = judged?.decision ?? carried?.carry?.decision;
 
   return {
     ok: true,
@@ -485,12 +615,16 @@ export function issueDirective(campaign: Campaign, request: DirectiveRequest): D
         entities: [def.id],
         systems: ["institutions"],
         visibility: memorandum ? "internal" : "public",
-        ...(carried?.carry ? { decision: carried.carry.decision } : {}),
+        ...(decision ? { decision } : {}),
       },
       narration: { summary: summary(def, directive) },
-      effects: memorandum
-        ? refusalEffects(campaign, def, directive)
-        : [{ kind: "institution", directives: [directive] }],
+      effects: directiveEffects(campaign, def, directive, memorandum !== undefined, judged !== undefined),
     },
   };
+}
+
+function directiveEffects(campaign: Campaign, def: InstitutionDef, directive: Directive, refused: boolean, judged: boolean): readonly Effect[] {
+  if (refused) return refusalEffects(campaign, def, directive);
+  if (judged && directive.status === "carried") return caseworkCarriedEffects(campaign, def, directive);
+  return [{ kind: "institution", directives: [directive] }];
 }

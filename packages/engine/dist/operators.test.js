@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { defaultFlagDesign, worldDataset } from "@admin/world";
 import { createRngStreams, makeCampaignSeed, replay } from "./rng.js";
 import { draftCabinetCandidates, generateFoundingPool, sealFounding } from "./founding.js";
-import { MAX_OPERATORS, MAX_NEW_OPERATORS_PER_TURN, MAX_OPERATORS_PER_HOST, OPERATOR_KINDS, OPERATOR_PROFILES, crisisFor, emergingOperators, operatorActRate, operatorActTerms, operatorPhase, operatorPressure, } from "./operators.js";
+import { MAX_OPERATORS, MAX_NEW_OPERATORS_PER_TURN, MAX_OPERATORS_PER_HOST, OPERATOR_KINDS, OPERATOR_PROFILES, crisisFor, cyberVictim, cyberVictimWeights, emergingOperators, operatorActRate, operatorActTerms, operatorPhase, operatorPressure, } from "./operators.js";
 import { defaultLeaderDraft } from "./leader.js";
 import { advanceTurn, noopPhase } from "./turn-loop.js";
 import { selectFeed, selectNation } from "./state.js";
@@ -191,5 +191,55 @@ describe("the operator's act rate", () => {
             expect(act.provenance.decision.terms.map((term) => term.key)).toEqual(["host-pressure", "destabilized", "regime-survival"]);
             expect(act.effects.some((effect) => effect.kind === "metric")).toBe(false);
         }
+    });
+});
+describe("who an intrusion crew breaks into", () => {
+    const campaign = foundedCampaign();
+    const us = campaign.founding.nation;
+    it("reaches the United States from abroad, weighted by output and hostility", () => {
+        const host = "RUS";
+        const weights = cyberVictimWeights(campaign, host);
+        const usWeight = weights.find((entry) => entry.nation === us).weight;
+        const total = weights.reduce((sum, entry) => sum + entry.weight, 0);
+        expect(usWeight / total).toBeGreaterThan(0.1);
+        const victims = Array.from({ length: 200 }, (_, step) => cyberVictim(campaign, host, (step + 0.5) / 200));
+        expect(victims).toContain(us);
+    });
+    it("files the outage against the victim and the stability cost only when the victim is the United States", () => {
+        const host = "RUS";
+        const crew = { id: "op:cyber-crew:RUS:0", kind: "cyber-crew", nationality: host };
+        const packets = Array.from({ length: 60 }, (_, turn) => operatorPhase({ ...campaign, operators: [crew], turn: campaign.turn + turn })).flat();
+        const acts = packets.filter((packet) => packet.provenance?.decision?.question === "operator-hazard");
+        expect(acts.length).toBeGreaterThan(0);
+        for (const act of acts) {
+            const outage = act.effects.find((effect) => effect.kind === "impactEvent");
+            const victim = outage && outage.kind === "impactEvent" ? outage.event.spec.nation : undefined;
+            expect(victim).toBeDefined();
+            expect(act.effects.some((effect) => effect.kind === "metric")).toBe(victim === us);
+        }
+    });
+    it("lowers the victim's counterintelligence, not the host's, when the crew breaks into another country", () => {
+        const host = "RUS";
+        const crew = { id: "op:cyber-crew:RUS:0", kind: "cyber-crew", nationality: host };
+        const packets = Array.from({ length: 60 }, (_, turn) => operatorPhase({ ...campaign, operators: [crew], turn: campaign.turn + turn })).flat();
+        const abroad = packets.flatMap((packet) => {
+            const outage = packet.effects.find((effect) => effect.kind === "impactEvent");
+            const victim = outage && outage.kind === "impactEvent" ? outage.event.spec.nation : undefined;
+            return victim && victim !== host ? [{ packet, victim }] : [];
+        });
+        expect(abroad.length).toBeGreaterThan(0);
+        for (const { packet, victim } of abroad) {
+            const hit = packet.effects.flatMap((effect) => (effect.kind === "nationStat" ? [effect.nation] : []));
+            expect(hit).toEqual([victim]);
+        }
+    });
+});
+describe("where operators take root", () => {
+    it("does not fill the world's slots from the front of the alphabet", () => {
+        let working = foundedCampaign();
+        for (let turn = 0; turn < 40; turn += 1)
+            working = advanceTurn(working, { simulate: operatorPhase, select: noopPhase });
+        const hosts = [...new Set(working.operators.map((op) => op.nationality))].sort();
+        expect(hosts.some((host) => host >= "M")).toBe(true);
     });
 });

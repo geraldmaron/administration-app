@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { foundedForBalance } from "./balance-harness.js";
 import { apply } from "./effects.js";
 import { CURRENT_SCHEMA_VERSION, createSave, loadSave } from "./save.js";
-import { EMPTY_TIE, figureRapport, openFavorsOwedByPresident, rapportOf, tieOf } from "./ties.js";
+import { EMPTY_TIE, figureRapport, openFavorsOwedByPresident, personalGrudgeWeight, rapportOf, tieOf } from "./ties.js";
+import { grievanceHalfLifeDays } from "./relationships.js";
+import { elapsedDays } from "./pace.js";
 const { campaign } = foundedForBalance("ties", "democrat");
 /** Someone the founding left with no tie, so every test starts from the neutral reading. */
 const stranger = Object.values(campaign.people).find((runtime) => runtime.tie === undefined).base.id;
@@ -46,6 +48,17 @@ describe("the tie effect", () => {
         const grudge = { cause: "Attacked in their own state.", weight: 0.4, turn: campaign.turn };
         const after = apply(campaign, packet({ kind: "tie", person: stranger, cause: grudge.cause, grudge }));
         expect(tieOf(after.people, stranger).grudges).toEqual([grudge]);
+    });
+    it("reads dated personal injuries once, fades by the shared half-life and preserves their causes", () => {
+        const grudge = { cause: "Attacked in their own state.", weight: 0.4, turn: campaign.turn };
+        const injured = apply(campaign, packet({ kind: "tie", person: stranger, cause: grudge.cause, grudge }));
+        const aged = { ...injured, turn: injured.turn + grievanceHalfLifeDays(0.5) / elapsedDays(1) };
+        expect(personalGrudgeWeight(campaign, stranger)).toBe(0);
+        expect(personalGrudgeWeight(injured, stranger)).toBe(0.4);
+        expect(personalGrudgeWeight(aged, stranger)).toBeCloseTo(0.2);
+        expect(personalGrudgeWeight(loadSave(createSave(aged)), stranger)).toBeCloseTo(0.2);
+        expect(tieOf(aged.people, stranger).grudges).toEqual([grudge]);
+        expect(personalGrudgeWeight({ ...injured, turn: injured.turn - 1 }, stranger)).toBe(0.4);
     });
     it("refuses a change with no cause, a person who does not exist, and a favor nobody holds", () => {
         expect(() => apply(campaign, packet({ kind: "tie", person: stranger, cause: "  ", rapport: { set: 1 } }))).toThrow(/cause/);

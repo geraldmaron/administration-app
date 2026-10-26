@@ -1,16 +1,15 @@
 import { useMemo, useState } from "react";
 import { daysBetween, type Campaign } from "@admin/engine";
 import { ARC_DISPOSITION_WORDS, METRIC_LABELS, PLEDGE_WARNING_DAYS, compareSeries, formatDate, formatRatio, impactReports, inheritedQuarter, isInheritedRow, polarizationReading, selectArcReading, selectPromises, selfVersus, type ArcRow, type CompareMetricId, type PromiseRow } from "@admin/player-core";
-import { Badge, BenchmarkChart, CardGrid, CardLink, Column, Empty, Icon, Meter, ReadingFrame, Row, Surface, Text, View, meterKeyEntries } from "@admin/ui";
+import { BenchmarkChart, CardGrid, CardLink, Column, Empty, Icon, Meter, Reading, ReadingFrame, Row, Surface, Tag, Text, meterKeyEntries } from "@admin/ui";
 import { CompareDoor } from "../compare/CompareDoor";
-import { Fact } from "@admin/ui/record";
 import { termDoor } from "../handbook/term-door";
 import { go } from "../shell/navigate";
 import { formatReading, termCourse } from "./course";
 import { ArcSheet, ImpactReportList } from "./Investigations";
 import { RecordArea } from "./Panel";
 
-const PLEDGE = { open: { word: "Open", status: "outline" }, kept: { word: "Kept", status: "success" }, broken: { word: "Broken", status: "danger" } } as const;
+const PLEDGE = { open: { word: "Open", tone: "outline" }, kept: { word: "Kept", tone: "success" }, broken: { word: "Broken", tone: "danger" } } as const;
 
 function pledgeWhen(campaign: Campaign, pledge: PromiseRow): { readonly when: string; readonly due: boolean } {
   const dueIn = daysBetween(campaign.calendar, pledge.dueDate);
@@ -26,7 +25,7 @@ function Pledge({ campaign, pledge }: { readonly campaign: Campaign; readonly pl
   const door = pledge.status === "open" ? pledge.door : undefined;
   const body = (
     <Column gap="xs">
-      <Row gap="sm" wrap><Text variant="label" flex={1} minWidth={200}>{pledge.title}</Text><Badge status={PLEDGE[pledge.status].status}>{PLEDGE[pledge.status].word}</Badge>{due ? <Badge status="warning">Due soon</Badge> : null}</Row>
+      <Row gap="sm" wrap><Text variant="label" flex={1} minWidth={200}>{pledge.title}</Text><Tag tone={PLEDGE[pledge.status].tone}>{PLEDGE[pledge.status].word}</Tag>{due ? <Tag tone="warning">Due soon</Tag> : null}</Row>
       <Text variant="caption" tone="secondary">{`${when}${pledge.firstHundredDays ? " · first 100 days" : ""}`}</Text>
       {pledge.status === "open" && pledge.keptWhen ? <Text variant="caption" tone="secondary">{pledge.keptWhen}</Text> : null}
       {door ? <Row gap="2xs"><Text variant="label" tone="accent">{door.label}</Text><Icon name="chevron" size={14} tone="accent" /></Row> : null}
@@ -43,7 +42,7 @@ export function Promises({ campaign }: { readonly campaign: Campaign }) {
   const kept = pledges.filter((pledge) => pledge.status === "kept").length;
   const broken = pledges.filter((pledge) => pledge.status === "broken").length;
   return (
-    <RecordArea id="promises" icon="sign" title="Your promises" lede="Every promise you made when you ran for office, with the soonest due first.">
+    <RecordArea id="promises" icon="sign" title="Your promises" lede={`${kept} kept, ${broken} broken and ${pledges.length - kept - broken} still open of the ${pledges.length} you made.`}>
       <ReadingFrame
         title="Promises kept"
         unit="Share of the promises you made"
@@ -94,13 +93,12 @@ export function SelfComparison({ campaign, metrics = STANDING_METRICS }: { reado
       {metrics.map((id) => {
         const versus = selfVersus(campaign, id);
         return (
-          <Column key={id} gap="xs" flexGrow={1} padding="md" borderWidth={1} borderColor="borderColor" borderRadius="card">
-            <Text variant="label" tone="secondary">{versus.label}</Text>
-            <Text variant="heading" tabular>{versus.now === undefined ? "No number yet" : formatReading(versus.format, versus.now)}</Text>
+          <Column key={id} gap="sm" flexGrow={1}>
+            <Reading name={versus.label} value={versus.now === undefined ? "No number yet" : formatReading(versus.format, versus.now)} size="heading" minWidth={0} />
             {versus.unavailable ? <Text variant="caption" tone="secondary">{versus.unavailable}</Text> : null}
             {versus.comparisons.map((row) => (
               <Row key={row.id} gap="sm" top>
-                <View minWidth={64} alignItems="flex-start"><Badge status={row.standing === "better" ? "success" : row.standing === "worse" ? "danger" : "outline"}>{row.standing === "better" ? "Better" : row.standing === "worse" ? "Worse" : row.standing === "level" ? "Same" : "No difference"}</Badge></View>
+                <Tag tone={row.standing === "better" ? "success" : row.standing === "worse" ? "danger" : "outline"}>{row.standing === "better" ? "Better" : row.standing === "worse" ? "Worse" : row.standing === "level" ? "Same" : "No difference"}</Tag>
                 <Text variant="caption" flex={1}>{`${row.label}: ${row.sentence}`}</Text>
               </Row>
             ))}
@@ -159,9 +157,9 @@ function Inherited({ campaign }: { readonly campaign: Campaign }) {
   if (!quarter) return null;
   return (
     <RecordArea id="inherited" icon="archive" title="Before you took office" lede={`The ${quarter.weeks} weeks before your oath belong to the President before you. The game estimates them from where things stood on the day you took office. They're estimates, not records.`}>
-      <Badge status="pending" icon="archive">The last President's record</Badge>
+      <Tag tone="pending" icon="archive">The last President's record</Tag>
       <Row gap="md" wrap>
-        {quarter.moves.map((move) => <Fact key={move.metric} label={METRIC_LABELS[move.metric]} value={`${formatRatio(move.from)} to ${formatRatio(move.to)}`} />)}
+        {quarter.moves.map((move) => <Reading key={move.metric} name={METRIC_LABELS[move.metric]} value={`${formatRatio(move.from)} to ${formatRatio(move.to)}`} basis="estimate" source="The last President's quarter" />)}
       </Row>
     </RecordArea>
   );
@@ -171,7 +169,7 @@ function Inherited({ campaign }: { readonly campaign: Campaign }) {
 export function Standing({ campaign }: { readonly campaign: Campaign }) {
   return (
     <Column gap="lg">
-      <RecordArea id="compared" icon="graph" title="Compared with past presidents" lede="Your approval over time, next to the months before you took office and past presidents.">
+      <RecordArea id="compared" icon="graph" title="Compared with past presidents" lede="Your approval against the months before you took office and against past presidents.">
         <TermApproval campaign={campaign} />
         <SelfComparison campaign={campaign} />
       </RecordArea>

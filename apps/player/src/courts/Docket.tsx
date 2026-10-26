@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { router } from "expo-router";
 import type { Campaign } from "@admin/engine";
 import { agenda, buildCalendar, place, type CourtCircuit, type CourtDocket, type CourtSystem, type DocketCase } from "@admin/player-core";
-import { Agenda, Badge, Card, CardLink, Column, Empty, Icon, Meter, ReadingFrame, Row, Surface, Text, useMedia, View, type KeyEntry } from "@admin/ui";
+import { Agenda, Tag, Card, CardLink, Column, Empty, Icon, Meter, ReadingFrame, Row, Surface, Text, useMedia, View, type KeyEntry } from "@admin/ui";
 import { termDoor } from "../handbook/term-door";
 import { useOpenAuthority } from "../law/AuthorityProvider";
 import { dateKey, dayLabel, eventRow, relativeDays } from "../calendar/rows";
@@ -56,7 +56,7 @@ function CaseRow({ row }: { readonly row: DocketCase }) {
             <Icon name="court" size={16} tone="colorSecondary" />
             <Text variant="label" flexShrink={1}>{row.orderName}</Text>
           </Row>
-          <Badge status={status.status} icon={row.status === "pending" ? "pending" : row.status === "upheld" ? "statusIssued" : "statusBlocked"}>{status.label}</Badge>
+          <Tag tone={status.status} icon={row.status === "pending" ? "pending" : row.status === "upheld" ? "statusIssued" : "statusBlocked"}>{status.label}</Tag>
         </Row>
         <Text variant="body">{row.question}</Text>
         <Text variant="caption" tone="secondary">{row.status === "pending" ? `${row.lowerForum?.court ?? "Court not known yet"} · ${dueWords(row)}` : `${row.split ?? "Vote count not known"} · ${row.ruled ?? "Date not known"}`}</Text>
@@ -81,7 +81,7 @@ export function Docket({ docket, system }: { readonly docket: CourtDocket; reado
           </Column>
         ))}
       </Row>
-      {docket.pending.length === 0 ? <Empty title="No cases are open" detail="If someone challenges one of your actions, the case goes through the lower courts before it can reach the Supreme Court." /> : docket.pending.map((row) => <CaseRow key={row.id} row={row} />)}
+      {docket.pending.length === 0 ? <Empty title="No cases are open" detail="No one is challenging your actions in court." /> : docket.pending.map((row) => <CaseRow key={row.id} row={row} />)}
       <Text variant="label">Rulings</Text>
       <Paged items={docket.ruled} initial={8} noun="rulings" empty="The courts haven't ruled on anything yet." render={(row) => <CaseRow key={row.id} row={row} />} />
     </Card>
@@ -94,7 +94,7 @@ export function CaseFlow({ system }: { readonly system: CourtSystem }) {
   const live = system.cases.length;
   return (
     <Card title="Where each case stands" icon="layerReading" help={<CitedLawHelp title="The case path" meaning="Each case shows up once, at the step it's on now. A higher court can send a case back to the district court to look at again. A request to pause a ruling is separate from the appeal itself." />}>
-      {live === 0 && system.decided.length === 0 ? <Empty title="There are no cases right now" detail="When someone files one, it shows here with its court, its next date, and anything you need to answer." /> : null}
+      {live === 0 && system.decided.length === 0 ? <Empty title="There are no cases right now" detail="No one has filed a case against your actions." /> : null}
       <Row gap="sm" top wrap={!media.desktop}>
         {LANES.map((lane) => {
           const cases = system.cases.filter((entry) => entry.lane === lane);

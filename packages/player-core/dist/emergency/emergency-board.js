@@ -1,4 +1,4 @@
-import { EMERGENCY_NOTICE_TURNS, EMERGENCY_RENEWAL_TURNS, hazardLabel, emergencyCauseLabel, liveCauses, renewalIsOpen, selectDateOfTurn, selectDeclaredEmergencies, underDeclaredEmergency, weeklyStandingCost, weeksToLapse, } from "@admin/engine";
+import { authorityDeadline, emergencyAuthorityClock, hazardLabel, emergencyCauseLabel, liveCauses, renewalIsOpen, selectDateOfTurn, selectDeclaredEmergencies, underDeclaredEmergency, weeklyStandingCost, weeksToLapse, } from "@admin/engine";
 import { STATE_IDS, stateById } from "@admin/world";
 import { WILLINGNESS_WORDS } from "../act/preview";
 import { guardRequestCandidates } from "../desk/attention-requests";
@@ -27,9 +27,9 @@ function declarationRow(campaign, emergency) {
         declared: selectDateOfTurn(campaign, emergency.declaredTurn),
         weeksStanding: Math.max(0, campaign.turn - emergency.declaredTurn),
         weeksToLapse: left,
-        lapses: selectDateOfTurn(campaign, emergency.renewedTurn + EMERGENCY_RENEWAL_TURNS),
+        lapses: authorityDeadline(campaign, emergencyAuthorityClock(campaign, emergency)),
         renewalOpen: renewalIsOpen(emergency, campaign.turn),
-        renewalOpensIn: Math.max(0, left - EMERGENCY_NOTICE_TURNS),
+        renewalOpensIn: emergency.clockReading.presidentialRenewal ? Math.max(0, (emergency.clockReading.daysLeft - 90) / 7) : 0,
         weeklyCost: weeklyStandingCost(emergency, campaign.turn),
         causeRunning: emergency.cause === "armed-conflict"
             ? Object.values(campaign.conflicts).some((conflict) => conflict.id === emergency.armedForcesConflictId && conflict.status === "active")

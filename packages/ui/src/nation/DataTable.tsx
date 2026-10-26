@@ -77,8 +77,9 @@ function Header<T, K extends string>({ column, sort, onSort }: { readonly column
   const key = column.sortKey;
   return (
     <Pressable
-      flex={column.flex ?? 1}
+      {...(column.flex === 0 ? { flexGrow: 0, flexShrink: 0, flexBasis: "auto", minHeight: 44, justifyContent: "center" } : { flex: column.flex ?? 1 })}
       padding="xs"
+      {...(column.flex === 0 ? { paddingHorizontal: "sm" } : {})}
       borderRadius="chip"
       role="columnheader"
       aria-sort={active ? sort.direction : "none"}

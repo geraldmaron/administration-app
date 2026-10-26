@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { ScrollView, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { BrandMark } from "../brand/BrandMark";
 import { Icon } from "../icons/Icon";
-import { CountDot } from "../primitives/Badge";
+import { CountDot } from "../primitives/CountDot";
 import { Column, Divider, Row } from "../primitives/Stack";
 import { Text } from "../primitives/Text";
 import type { LinkComponent, NavGroup, NavItem } from "./nav-types";
@@ -31,12 +31,13 @@ function RailItem({ item, active, expanded, Link }: { item: NavItem; active: boo
         paddingVertical={expanded ? "xs" : "sm"}
         paddingHorizontal={expanded ? "md" : "xs"}
         borderRadius="control"
-        backgroundColor={active ? "surfaceRaised" : { default: "transparent", hover: "backgroundHover" }}
-        borderLeftWidth={3}
-        borderLeftColor={active ? "goldRule" : "transparent"}
+        backgroundColor={{ default: "transparent", hover: "backgroundHover" }}
         position="relative"
       >
-        <Icon name={item.icon} size={expanded ? 20 : 22} tone={active ? "chromeColor" : "chromeSecondary"} weight={active ? "fill" : "duotone"} />
+        {/* The selected place is the glyph's pill, not a bar on the row's edge, so the label can use the full width. */}
+        <View paddingVertical="2xs" paddingHorizontal={expanded ? "xs" : "md"} borderRadius="pill" backgroundColor={active ? "selected" : "transparent"} alignItems="center" justifyContent="center">
+          <Icon name={item.icon} size={expanded ? 20 : 22} tone={active ? "accent" : "colorTertiary"} weight={active ? "fill" : "regular"} />
+        </View>
         {/* Pinned to the item's own corner, not the icon's: the rail's scroll view clips anything that overhangs the item. */}
         {!expanded && count > 0 ? (
           <View position="absolute" top={2} right={2}>

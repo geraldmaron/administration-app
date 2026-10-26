@@ -113,6 +113,14 @@ export declare const accountNameInSentence: (account: BudgetAccount) => string;
  * out of, and reserves are not.
  */
 export declare const RESERVE_TRANSFER_RATE = 1;
+/**
+ * What the accounts can actually spend: the appropriation less the share a
+ * special message is holding back. The standing book is `selectBudget`; this
+ * is the figure the outlook and the weekly spend are drawn from, so money
+ * withheld under the Impoundment Control Act stops building the account the
+ * week it is held and resumes the week it is released.
+ */
+export declare function selectSpendableBudget(campaign: Campaign): BudgetAllocation;
 export declare function selectBudget(campaign: Campaign): BudgetAllocation;
 export declare function budgetStatValue(stats: NationRuntime["stats"], path: BudgetStatPath): number;
 /**
@@ -170,6 +178,13 @@ export type BudgetOutlook = {
     readonly turnCost: number;
     readonly gdp: number;
 };
+/**
+ * A movement is delivered by a ministry and paid for by a government, so
+ * competence scales what is built and never what a drawdown costs — the same
+ * asymmetry policy execution applies. A weak defense minister buys fewer ships
+ * and scraps exactly as many.
+ */
+export declare function movement(netShare: number, gain: number, quality: number): number;
 /** One line of the appropriation, priced and projected against live stats. */
 export declare function budgetLine(campaign: Campaign, account: BudgetAccount, allocation: BudgetAllocation, runtime: NationRuntime, gdp: number): BudgetLine;
 /**
@@ -179,67 +194,6 @@ export declare function budgetLine(campaign: Campaign, account: BudgetAccount, a
  * disagree with it.
  */
 export declare function selectBudgetOutlook(campaign: Campaign, allocation?: BudgetAllocation): BudgetOutlook;
-export type CapabilityHorizon = {
-    readonly account: BudgetAccount;
-    readonly path: BudgetStatPath;
-    readonly current: number;
-    readonly required: number;
-    /**
-     * Turns until the requirement is met at the standing appropriation.
-     * `undefined` when the account is holding or drawing down — the requirement
-     * is not being approached at all, which is a different fact from "a long
-     * time" and must read as one.
-     */
-    readonly turns?: number;
-};
-/**
- * How long the standing appropriation needs to reach a capability figure.
- *
- * The whole point of the account is that a player can see the answer before
- * they commit a term to it: "sixty-one weeks" is a plan, and "unreachable" was
- * the bug.
- */
-export declare function turnsToReach(campaign: Campaign, account: BudgetAccount, path: BudgetStatPath, required: number, allocation?: BudgetAllocation): CapabilityHorizon;
-/**
- * The capability figure each rung of the ladder is gated on, declared so a
- * screen can say what an appropriation is *for*.
- *
- * The gates themselves live in `instruments.ts` as closures over live state,
- * which is right for resolving an attempt and useless for planning one: a
- * player cannot read a closure. This is the same requirement in a form the
- * budget can be steered by, and `budget.test.ts` proves the two agree by
- * building a campaign to each threshold and asserting the rung it names opens.
- *
- * Only the rungs gated on something an appropriation can move are listed. A
- * blockade needs a coastal target and an embargo needs trade to withhold;
- * neither is a thing money buys, and pretending otherwise on the budget screen
- * would be a promise the ladder does not keep.
- */
-export declare const CAPABILITY_MILESTONES: readonly {
-    readonly account: StatecraftAccount;
-    readonly rung: 1 | 2 | 3 | 4 | 5;
-    readonly name: string;
-    readonly path: BudgetStatPath;
-    readonly required: number;
-}[];
-/**
- * What each capability is called in the words a player is choosing in.
- *
- * A rung is gated on one specific figure inside an account, which is not
- * always the account's headline: a limited strike wants air strength, and
- * quoting the defense establishment's readiness beside it names a number that
- * has nothing to do with the requirement.
- */
-export declare const CAPABILITY_LABELS: Readonly<Record<BudgetStatPath, string>>;
-/**
- * The next rung this account is climbing toward, with how long the standing
- * appropriation needs to open it — the reading that turns a share of GDP into
- * a plan a small country can hold a term against.
- */
-export declare function nextMilestone(campaign: Campaign, account: BudgetAccount, allocation?: BudgetAllocation): (CapabilityHorizon & {
-    readonly rung: number;
-    readonly name: string;
-}) | undefined;
 /**
  * How much of a stability point an unfunded week of budget costs, per unit
  * of the shortfall as a share of GDP.

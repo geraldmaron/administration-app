@@ -1,4 +1,4 @@
-import { liveNation } from "./instrument-gates.js";
+import { declaresDeliverableArsenal, liveNation } from "./instrument-gates.js";
 import { markedFlags } from "./marked-flags.js";
 import { REGIME_DIALS } from "./regime-dials.js";
 import { createRngStreams } from "./rng.js";
@@ -169,5 +169,5 @@ export function operationsWeek(campaign) {
 /** Whether a government declares an arsenal it can deliver: such powers are refused as targets. */
 export function nuclearArmed(campaign, nation) {
     const arsenal = campaign.nations[nation] ? liveNation(campaign, nation).stats.military.arsenal : undefined;
-    return arsenal !== undefined && arsenal.warheads > 0 && arsenal.deliveryTriad;
+    return arsenal !== undefined && declaresDeliverableArsenal(arsenal);
 }

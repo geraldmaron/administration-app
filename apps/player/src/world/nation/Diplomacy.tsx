@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { actHref, place, type CommitmentRow, type NationFile } from "@admin/player-core";
-import { Badge, Button, Column, Empty, EntityLink, Icon, Pressable, Row, Text, type IconName } from "@admin/ui";
-import { Panel, StepReading, Unread } from "@admin/ui/world";
+import { Pane, Tag, Button, Column, Empty, EntityLink, Icon, Pressable, Row, Text, type IconName } from "@admin/ui";
+import { StepReading, Unread } from "@admin/ui/world";
 import { BandFrame, CiteById, RELATIONSHIP_BANDS, SealOf, TopicLaw, go, stanceValence } from "../parts";
 import { TieFlags } from "./Figures";
 import { TARIFF_LAW } from "../law";
@@ -17,21 +17,21 @@ function StandingReadings({ file }: { readonly file: NationFile }) {
   const { standing } = file;
   if (!standing.aims && !standing.threat) return null;
   return (
-    <Panel title="What else our intelligence agencies see" icon="intel">
+    <Pane title="What else our intelligence agencies see" icon="intel">
       <BandFrame title="Goals and threat" meaning={RELATIONSHIP_BANDS}>
         {standing.aims ? <StepReading icon="summit" label="Goals we share" lit={standing.aims.level} word={standing.aims.word} valence={stanceValence(standing.aims.stance)} /> : null}
         {standing.threat ? <StepReading icon="escalate" label="How much of a threat they are" lit={standing.threat.level} word={standing.threat.word} valence={stanceValence(standing.threat.stance)} /> : null}
       </BandFrame>
-    </Panel>
+    </Pane>
   );
 }
 
 function Measures({ file }: { readonly file: NationFile }) {
   const { measures } = file.trade;
   return (
-    <Panel title="Trade penalties in place" icon="subjectTrade" count={measures.length} aside={<TopicLaw topic="sanctions" />}>
+    <Pane title="Trade penalties in place" icon="subjectTrade" count={measures.length} actions={<TopicLaw topic="sanctions" />}>
       {measures.length === 0 ? (
-        <Empty title="No trade penalties in place" detail="Any tariff, sanction, or embargo between you would be listed here." />
+        <Empty title="No trade penalties in place" detail="Neither government has a tariff, sanction, or embargo in force against the other." />
       ) : (
         <Column gap="sm" role="list" aria-label="Trade penalties in place">
           {measures.map((measure) => (
@@ -56,14 +56,14 @@ function Measures({ file }: { readonly file: NationFile }) {
           ))}
         </Column>
       )}
-    </Panel>
+    </Pane>
   );
 }
 
 function Commitments({ file }: { readonly file: NationFile }) {
   if (file.commitments.length === 0) return null;
   return (
-    <Panel title="What you've promised them" icon="sign" count={file.commitments.length}>
+    <Pane title="What you've promised them" icon="sign" count={file.commitments.length}>
       <Column gap="sm" role="list" aria-label="Promises to this country">
         {file.commitments.map((commitment) => (
           <Row key={commitment.id} gap="sm" top wrap role="listitem">
@@ -74,12 +74,12 @@ function Commitments({ file }: { readonly file: NationFile }) {
                 {commitment.rationale}
               </Text>
             </Column>
-            <Badge status={commitment.status === "active" ? "success" : commitment.status === "suspended" ? "warning" : "outline"}>{commitment.status === "wound-down" ? "Ended" : commitment.status === "suspended" ? "Paused" : commitment.status.charAt(0).toUpperCase() + commitment.status.slice(1)}</Badge>
+            <Tag tone={commitment.status === "active" ? "success" : commitment.status === "suspended" ? "warning" : "outline"}>{commitment.status === "wound-down" ? "Ended" : commitment.status === "suspended" ? "Paused" : commitment.status.charAt(0).toUpperCase() + commitment.status.slice(1)}</Tag>
           </Row>
         ))}
       </Column>
-      <EntityLink label="Change these promises on the national security screen" icon="shield" href={place.security()} onPress={() => go(place.security())} />
-    </Panel>
+      <EntityLink label="National security commitments" icon="shield" href={place.security()} onPress={() => go(place.security())} />
+    </Pane>
   );
 }
 
@@ -90,7 +90,7 @@ function Organizations({ file }: { readonly file: NationFile }) {
   const [all, setAll] = useState(false);
   const shown = all ? file.organizations : file.organizations.slice(0, ORGS_FIRST);
   return (
-    <Panel title="Organizations" icon="building" count={file.organizations.length}>
+    <Pane title="Organizations" icon="building" count={file.organizations.length}>
       {file.organizations.length === 0 ? (
         <Text variant="body" tone="secondary">It isn't part of any group the game tracks.</Text>
       ) : (
@@ -108,7 +108,7 @@ function Organizations({ file }: { readonly file: NationFile }) {
           {all ? "Show fewer" : `Show all ${file.organizations.length}`}
         </Button>
       ) : null}
-    </Panel>
+    </Pane>
   );
 }
 
@@ -117,7 +117,7 @@ export function DiplomacyView({ file }: { readonly file: NationFile }) {
   return (
     <Column gap="lg">
       <StandingReadings file={file} />
-      <Panel title="Personal ties and our representative" icon="summit" aside={<TopicLaw topic="diplomacy" />}>
+      <Pane title="Personal ties and our representative" icon="summit" actions={<TopicLaw topic="diplomacy" />}>
         {file.rapport ? <Text variant="body">{file.rapport}</Text> : null}
         <Row gap="sm" top>
           <SealOf id="INST-STATE" size={32} />
@@ -125,13 +125,13 @@ export function DiplomacyView({ file }: { readonly file: NationFile }) {
             {file.envoy.line}
           </Text>
         </Row>
-      </Panel>
+      </Pane>
       <Measures file={file} />
       <Commitments file={file} />
-      <Panel title="Its friends and rivals" icon="layerBlocs">
+      <Pane title="Its friends and rivals" icon="layerBlocs">
         {file.ties.length > 0 ? <TieFlags ties={file.ties} limit={999} /> : <Text variant="body" tone="secondary">No close friend or rival stands out.</Text>}
         <Unread>There may be ties between other countries that we don't know about.</Unread>
-      </Panel>
+      </Pane>
       <Organizations file={file} />
     </Column>
   );

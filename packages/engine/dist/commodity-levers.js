@@ -1,6 +1,6 @@
 import { addDays } from "./clock.js";
 import { marketQuote } from "./commodities.js";
-import { commodityShocks, reserveReleasing } from "./commodity-shocks.js";
+import { commodityShocks, RESERVE_RELEASE_SHARE, reserveReleasing } from "./commodity-shocks.js";
 import { fuelWaiverStanding, oathPumpPrice, selectPumpPrice } from "./household-prices.js";
 import { emptyMarkets } from "./markets.js";
 // The two levers a President has on the price of fuel inside a term: drawing
@@ -19,7 +19,15 @@ export const WAIVER_WEEKS = 20;
 export const SEVERE_INTERRUPTION = 0.1;
 /** Planning value: the standing an emergency fuel waiver spends against the objection it draws. */
 const WAIVER_STANDING_COST = 0.005;
-/** Whether the world crude market is in a supply interruption the law recognizes: a standing shock, or crude well above its norm. */
+/**
+ * Whether the world crude market is in a supply interruption the law
+ * recognizes for a full drawdown: a standing shock, or crude well above its
+ * norm. 42 U.S.C. §6241(d)(1) also allows a full drawdown to meet the
+ * country's obligations under the International Energy Program; an IEA
+ * collective action is called on a severe disruption, so the same finding
+ * stands for it here, and the other members' barrels are not modeled, since
+ * the IEA's own pages on its 2022 actions refused the request (403).
+ */
 export function severeInterruption(campaign) {
     const quote = marketQuote(campaign, "crude");
     const shocked = commodityShocks(campaign, "crude").some((shock) => shock.loss > 0);
@@ -53,7 +61,7 @@ export function releaseStrategicReserve(campaign) {
     const projection = projectReserveRelease(campaign);
     if (!projection.ok)
         return projection;
-    const reserve = { fill: Math.round((reserveFill(campaign) - RELEASE_DRAW) * 1000) / 1000, release: { from: campaign.calendar, until: projection.until } };
+    const reserve = { fill: Math.round((reserveFill(campaign) - RELEASE_DRAW) * 1000) / 1000, release: { from: campaign.calendar, until: projection.until, share: RESERVE_RELEASE_SHARE } };
     return {
         ok: true,
         packet: {
@@ -76,6 +84,67 @@ export function releaseStrategicReserve(campaign) {
                         },
                     ],
                 },
+            ],
+        },
+    };
+}
+/** The reserve's barrels at the opening: EIA weekly SPR crude stocks, week of 2026-10-16 (WCSSTUS1, opened 2026-10-25). */
+export const SPR_OPENING_BARRELS = 282_683_000;
+/**
+ * 42 U.S.C. §6241(h), opened 2026-10-25 (law.cornell.edu): on a finding of a
+ * domestic or international energy supply shortage of significant scope or
+ * duration, short of the severe interruption a full drawdown needs, the
+ * Secretary may draw down no more than 30,000,000 barrels for each such
+ * shortage, for no more than 60 days, and never below 252,400,000 barrels.
+ */
+export const LIMITED_DRAWDOWN = { barrels: 30_000_000, days: 60, floor: 252_400_000 };
+/** World petroleum and other liquids consumption, 2024: 103,110 thousand b/d (EIA INTL.5-2-WORL-TBPD.A, opened 2026-10-25). */
+const WORLD_KBD = 103_110;
+/** The share of world crude supply a limited drawdown adds while it flows: its barrels over its days, against world consumption. */
+export const LIMITED_RELEASE_SHARE = LIMITED_DRAWDOWN.barrels / LIMITED_DRAWDOWN.days / 1000 / WORLD_KBD;
+/** The supply losses standing on crude now: the shortage a limited drawdown answers. */
+function shortageCauses(campaign) {
+    return commodityShocks(campaign, "crude").filter((shock) => shock.loss > 0).map((shock) => shock.cause).sort();
+}
+/** What a limited drawdown of the Strategic Petroleum Reserve would do, before it is ordered. */
+export function projectLimitedRelease(campaign) {
+    if (reserveReleasing(campaign))
+        return { ok: false, reason: "A drawdown is already flowing. The reserve cannot sell the same barrels twice." };
+    const causes = shortageCauses(campaign);
+    if (causes.length === 0)
+        return { ok: false, reason: "A limited drawdown answers an energy supply shortage, and no supply is being lost." };
+    if (causes.some((cause) => campaign.markets?.reserve?.limitedFor?.includes(cause))) {
+        return { ok: false, reason: "The law allows one limited drawdown of 30 million barrels for each shortage, and this one has had it." };
+    }
+    const barrels = reserveFill(campaign) * SPR_OPENING_BARRELS;
+    if (barrels - LIMITED_DRAWDOWN.barrels < LIMITED_DRAWDOWN.floor) {
+        return { ok: false, reason: "A limited drawdown may not take the reserve below 252.4 million barrels." };
+    }
+    return {
+        ok: true,
+        cost: {},
+        risks: [{ id: "reserve-depleted", chance: 1, description: `The reserve falls to ${Math.round((barrels - LIMITED_DRAWDOWN.barrels) / 1_000_000)} million barrels.` }],
+        until: addDays(campaign.calendar, LIMITED_DRAWDOWN.days),
+    };
+}
+/** Order a limited drawdown: 30 million barrels over 60 days, no severe-interruption finding needed. */
+export function releaseLimitedReserve(campaign) {
+    const projection = projectLimitedRelease(campaign);
+    if (!projection.ok)
+        return projection;
+    const fill = Math.round((reserveFill(campaign) - LIMITED_DRAWDOWN.barrels / SPR_OPENING_BARRELS) * 1000) / 1000;
+    const reserve = { fill, release: { from: campaign.calendar, until: projection.until, share: LIMITED_RELEASE_SHARE }, limitedFor: shortageCauses(campaign) };
+    return {
+        ok: true,
+        packet: {
+            source: "action",
+            actor: "player",
+            turn: campaign.turn,
+            provenance: { origin: "decision", systems: ["markets"], entities: ["INST-DOE"] },
+            narration: { summary: "The President orders a limited drawdown of the Strategic Petroleum Reserve." },
+            effects: [
+                { kind: "markets", set: withMarkets(campaign, { reserve }) },
+                { kind: "feed", items: [{ turn: campaign.turn, kind: "press", visibility: "public", headline: "The administration releases 30 million barrels from the Strategic Petroleum Reserve.", facts: { subject: "the Strategic Petroleum Reserve", topicTags: ["markets", "energy"], sceneFacet: { kind: "economy" } } }] },
             ],
         },
     };

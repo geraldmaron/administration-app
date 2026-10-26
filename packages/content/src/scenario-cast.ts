@@ -18,7 +18,6 @@ import {
   revealedPreference,
   reliefOrderSubjects,
   type Campaign,
-  type AcuteCondition,
   type ConversationScript,
   type ReplyOption,
   type ScriptedBeat,
@@ -572,7 +571,7 @@ function renderReply(
         return subject ? { relief: subject } : { reliefRefusal: "The report has no matching Stafford declaration and unallocated recovery appropriation." };
       })() : {}),
       ...(localeAct && report && report.targetKind === "domestic-state" && report.condition
-        ? { locale: { act: localeAct, state: report.target as StateId, cause: report.condition as AcuteCondition } } : {}),
+        ? { locale: { act: localeAct, state: report.target as StateId, cause: report.condition } } : {}),
       ...(transmit ? { transmit } : {}),
       ...(billText && bill ? { billText: { id: bill.id, act: bill.act, title: bill.title,
         introducedTurn: bill.introducedTurn, stage: bill.stage, text: bill.text,

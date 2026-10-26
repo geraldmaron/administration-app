@@ -12,6 +12,10 @@ export type CommitmentDraft = {
     readonly rationale: string;
     /** See `Commitment.addressedCondition` — left unset unless the caller can name it. */
     readonly addressedCondition?: Commitment["addressedCondition"];
+    /** See `Commitment.authorizedBy`. */
+    readonly authorizedBy?: string;
+    /** Excepted work that a lapse in appropriations does not stop; see `ExecutiveOrder.excepted`. */
+    readonly excepted?: true;
 };
 export declare function commitmentId(draft: CommitmentDraft, turn: number): string;
 /**
@@ -63,6 +67,13 @@ export declare function describeCommitment(commitment: Commitment, campaign?: Ca
  * is the total of.
  */
 export declare const commitmentPhase: TurnPhase;
+/**
+ * The fewest weeks a mission is billed once ordered. Troops and a federalized
+ * Guard are mobilized, moved and housed before the first week on the street,
+ * and that is paid whether or not the order stands; a President who rescinds
+ * in the first week still pays for the second.
+ */
+export declare const MISSION_MINIMUM_WEEKS = 2;
 export declare function releaseWarCommitments(campaign: Campaign, conflictId: string, belligerents: readonly NationId[], reason: string): readonly Effect[];
 /**
  * What one party that leaves a war takes home with it: the forces it

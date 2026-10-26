@@ -74,7 +74,7 @@ export function applyTrade(state: Campaign, effect: TradeEffect): Campaign {
   if (effect.lift) {
     const existing = measures[effect.lift];
     if (existing && existing.liftedTurn === undefined) {
-      measures = { ...measures, [effect.lift]: { ...existing, liftedTurn: state.turn } };
+      measures = { ...measures, [effect.lift]: { ...existing, liftedTurn: state.turn, liftedDate: state.calendar } };
     }
   }
 

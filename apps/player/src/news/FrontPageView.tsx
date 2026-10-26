@@ -1,13 +1,13 @@
 import { useMemo } from "react";
 import type { Campaign } from "@admin/engine";
 import { dispatchReading, sealFor, type CoverageRow, type DeskRow } from "@admin/player-core";
-import { Badge, Button, CardGrid, CardLink, Column, Empty, Masthead, Pressable, Row, Surface, Text, useMedia } from "@admin/ui";
-import { ArticleCard, ArticleRow, LeadStory } from "@admin/ui/news";
+import { Button, CardGrid, CardLink, Column, Empty, Masthead, Pressable, Row, Surface, Tag, Text, useMedia } from "@admin/ui";
+import { ArticleCard, LeadStory, Wire } from "@admin/ui/news";
 import { frontPage, nationsInCoverage } from "./front-page";
 import { feedHref } from "./press-params";
 import { SceneArt, go, storySummary, topicHref } from "./story-parts";
 
-const STANCE_STATUS = { hostile: "danger", skeptical: "warning", neutral: "outline", friendly: "success" } as const;
+const STANCE_TONE = { hostile: "danger", skeptical: "warning", neutral: "outline", friendly: "success" } as const;
 
 function Heading({ children, action }: { readonly children: string; readonly action?: { readonly label: string; readonly href: string } }) {
   return (
@@ -31,11 +31,7 @@ function Sections({ sections }: { readonly sections: ReturnType<typeof frontPage
       {sections.map((section) => (
         <Column key={section.topic} gap="sm" flexGrow={1}>
           <Heading action={{ label: "All", href: topicHref(section.topic) }}>{section.label}</Heading>
-          <Surface pad="none" flexGrow={1}>
-            {section.rows.map((row, i) => (
-              <ArticleRow key={row.index} story={storySummary(row)} first={i === 0} />
-            ))}
-          </Surface>
+          <Wire label={`${section.label}, widest-read outlets first`} flexGrow={1} stories={section.rows.map((row) => storySummary(row))} storyKey={(_, i) => String(section.rows[i]!.index)} />
         </Column>
       ))}
     </CardGrid>
@@ -68,7 +64,7 @@ function CorpsBody({ desk }: { readonly desk: DeskRow }) {
     <Column gap="xs">
       <Masthead spec={sealFor(desk.id, desk.name)} name={desk.name} size="compact" />
       <Row gap="sm" wrap>
-        <Badge status={STANCE_STATUS[desk.stance]}>{desk.stanceWord}</Badge>
+        <Tag tone={STANCE_TONE[desk.stance]}>{desk.stanceWord}</Tag>
         <Text variant="caption" tone="secondary">
           {desk.format}
         </Text>
@@ -118,7 +114,7 @@ export function FrontPageView({ campaign, rows, desks }: { readonly campaign: Ca
   if (!page.lead) {
     return (
       <Surface level="sunken">
-        <Empty title="No stories yet" detail="The front page fills in once a news outlet writes its first story about you or the world." icon="press" />
+        <Empty title="No stories yet" detail="No news outlet has written about you or the world yet." icon="press" />
       </Surface>
     );
   }

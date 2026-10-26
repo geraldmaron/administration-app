@@ -1,15 +1,15 @@
 import type { CastScenario } from "@admin/content";
 import { classLabel, severityWord } from "@admin/player-core";
-import { Badge, type IconName } from "@admin/ui";
+import { Tag, type IconName } from "@admin/ui";
 
 type Severity = CastScenario["def"]["severity"];
 type ScenarioClass = CastScenario["def"]["class"];
-type BadgeStatus = "danger" | "warning" | "outline" | "pending";
+type SeverityTone = "danger" | "warning" | "outline" | "pending";
 
-const SEVERITY: Readonly<Record<Severity, { readonly status: BadgeStatus; readonly icon: IconName }>> = {
-  critical: { status: "danger", icon: "adverse" },
-  serious: { status: "warning", icon: "caution" },
-  routine: { status: "outline", icon: "neutral" },
+const SEVERITY: Readonly<Record<Severity, { readonly tone: SeverityTone; readonly icon: IconName }>> = {
+  critical: { tone: "danger", icon: "adverse" },
+  serious: { tone: "warning", icon: "caution" },
+  routine: { tone: "outline", icon: "neutral" },
 };
 
 /** Each kind of matter by the glyph a reader would expect for it; force and harm read red, the rest plain. */
@@ -39,18 +39,18 @@ export function kindIcon(cast: CastScenario): IconName {
   return KIND[cast.def.class].icon;
 }
 
-/** A matter's severity and kind as badges: critical solid red, the kind with its glyph. */
+/** A matter's severity and kind as tags: critical in red, the kind with its glyph. */
 export function ScenarioTags({ cast }: { readonly cast: CastScenario }) {
   const severity = SEVERITY[cast.def.severity];
   const kind = KIND[cast.def.class];
   return (
     <>
-      <Badge status={severity.status} icon={severity.icon}>
+      <Tag tone={severity.tone} icon={severity.icon}>
         {severityWord(cast.def.severity)}
-      </Badge>
-      <Badge status={kind.risk ? "danger" : "pending"} icon={kind.icon}>
+      </Tag>
+      <Tag tone={kind.risk ? "danger" : "pending"} icon={kind.icon}>
         {classLabel(cast.def.class)}
-      </Badge>
+      </Tag>
     </>
   );
 }

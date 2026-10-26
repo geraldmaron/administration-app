@@ -1,6 +1,6 @@
 import { selectDateOfTurn, type Campaign } from "@admin/engine";
 import { formatDate, formatRatio, orderSignatures, place, type ReachLine } from "@admin/player-core";
-import { Badge, Column, EntityLink, ReadingFrame, Row, Sheet, Text } from "@admin/ui";
+import { Tag, Column, EntityLink, ReadingFrame, Row, Sheet, Text } from "@admin/ui";
 import { Collection, Diverging, Facts, TrackRow } from "@admin/ui/nation";
 import { go } from "../../shell/navigate";
 import { toneKey } from "../keys";
@@ -15,7 +15,7 @@ export function OrderRecord({ campaign, order, recordId, onClose }: { readonly c
     <Sheet open={recordId !== undefined} onClose={onClose} title="Signed order" eyebrow="What you signed and where it stands now">
       {record && row ? (
         <Column gap="md">
-          <Badge status={row.stage === "standing" ? "success" : "outline"}>{row.stage === "standing" ? "In effect" : "Signed"}</Badge>
+          <Tag tone={row.stage === "standing" ? "success" : "outline"}>{row.stage === "standing" ? "In effect" : "Signed"}</Tag>
           <Text variant="title">{row.name}</Text>
           <Text variant="body">{row.line}</Text>
           <Facts

@@ -1,5 +1,5 @@
 import { voteOn } from "./congress-votes.js";
-import { majorityOf } from "./congress.js";
+import { majorityOf, seatedOf } from "./congress.js";
 import { crossesTheAisle, usPartyOfPerson } from "./cast-fit.js";
 import { selectCabinet, selectPerson } from "./state.js";
 // How the Senate counts one nominee, and what a nominee from across the aisle
@@ -91,7 +91,7 @@ export function confirmationQuestion(campaign, nominee) {
         chamber: "senate",
         appeal: CONFIRMATION_DEFERENCE,
         merit: Math.round(nomineeAppeal(campaign, nominee) * RECORD_PER_MEMBER * 1000) / 1000,
-        required: majorityOf(campaign.congress.chambers.senate.seats),
+        required: majorityOf(seatedOf(campaign.congress, "senate")),
         stance: "neutral",
         ...(readings ? { readings } : {}),
     };
@@ -99,6 +99,16 @@ export function confirmationQuestion(campaign, nominee) {
 /** The Senate's count on this nominee today, tallied by caucus. */
 export function confirmationVote(campaign, nominee) {
     return voteOn(campaign, confirmationQuestion(campaign, nominee));
+}
+/**
+ * The House's count on a nominee it must also confirm: the Vice President
+ * under the Twenty-fifth Amendment, section 2, "by a majority vote of both
+ * Houses". The same question as the Senate's, put to the House and counted
+ * over its seated members.
+ */
+export function houseConfirmationVote(campaign, nominee) {
+    const question = confirmationQuestion(campaign, nominee);
+    return voteOn(campaign, { ...question, chamber: "house", required: majorityOf(seatedOf(campaign.congress, "house")) });
 }
 /** Whether a count clears the majority comfortably enough to need no fight. */
 export function isConsensus(vote) {

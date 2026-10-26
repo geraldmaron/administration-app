@@ -361,8 +361,8 @@ export const WORLD_GLOSSARY: readonly GlossaryEntry[] = [
   // (13), EMERGENCY_WEEKLY_STANDING_COST (.0015), EMERGENCY_COST_COMPOUNDING
   // (.02 of the first week's cost per week since the declaration; renewal
   // does not reset it), weeklyStandingCost, underDeclaredEmergency;
-  // locale-acts.ts federalize (needsDeclaration, standing .06); orders.ts
-  // inEmergency and EMERGENCY_MISSING (a nationwide declaration or a war).
+  // orders.ts inEmergency and EMERGENCY_MISSING (a nationwide declaration or a
+  // war). No locale act needs a declaration (locale-acts.ts needsDeclaration).
   // 50 U.S.C. 1601-1651.
   {
     id: "national-emergency",
@@ -375,6 +375,100 @@ export const WORLD_GLOSSARY: readonly GlossaryEntry[] = [
     inGame:
       "You can declare one over a disaster that is actually running, for one state or the whole country, where none is declared yet. It steps the federal response up to full effort and opens your strongest acts. It expires after 52 weeks unless you renew it in the last 13. It costs about 0.15 points of standing a week at first, and each week adds 2 percent of that first cost, so the weekly cost doubles after about a year. Renewing doesn't reset that growth. You can end it at any time.",
     related: ["stafford-act", "fema"],
+  },
+  // Domestic force and the court orders Justice applies for. locale-acts.ts
+  // (proclaim, troops, priority, surveil, surveil-under-order), locale-missions.ts
+  // (insurrectionGrounds, liveProclamation PROCLAMATION_VALID_TURNS 4,
+  // MISSION_ATTENTION.priority .3 for 8 weeks, OBSTRUCTION_WEEKS 1,
+  // LOCALE_REFUSALS), court-order-records.ts (COURT_ORDER_KINDS terms: warrant
+  // 14 days, Title III 30, FISA 90, injunction 182; DENIAL_COOLDOWN_WEEKS 4),
+  // court-orders.ts (predicateStrength, COURT_ORDER_REFUSALS, LEAK_CHANCE).
+  // 10 U.S.C. 251-254 and 12406, 18 U.S.C. 1385, 2516 and 2518, 28 U.S.C. 509,
+  // 533, 1331 and 1345, 50 U.S.C. 1805 and 1812, Fed. R. Crim. P. 41;
+  // Proclamation 3204 (Sept. 23, 1957), Little Rock.
+  {
+    id: "proclamation-to-disperse",
+    term: "Proclamation to disperse",
+    icon: "law",
+    definition:
+      "Before a President can use troops under the Insurrection Act, the law says the President must first publicly order the people breaking the law to break up and go home within a set time. The proclamation itself moves no soldier.",
+    example:
+      "In September 1957, crowds in Little Rock, Arkansas, blocked a federal court's orders to admit Black students to Central High School. President Eisenhower first issued a proclamation commanding them to stop and disperse.",
+    inGame:
+      "You can issue one for a state only when the governor asks for help with serious unrest, when the state lets a federal court's injunction go defied, or when violence there denies people their rights and the governor won't act. It stays in force for 4 weeks. Troops can go in from the following week, never the same week.",
+    related: ["posse-comitatus", "enforcement-injunction"],
+  },
+  {
+    id: "posse-comitatus",
+    term: "Posse Comitatus Act",
+    icon: "law",
+    definition:
+      "A federal law that makes it a crime to use the Army, Navy, Marine Corps, Air Force or Space Force to enforce the law at home, unless the Constitution or Congress expressly allows it.",
+    example:
+      "Soldiers can patrol a city street only when a law like the Insurrection Act allows it. Without one, arresting people there is a job for the police.",
+    inGame:
+      "Active-duty troops can't go into a state until a proclamation to disperse is in force there. The order that sends them states their mission, and a lawsuit can argue they went beyond it.",
+    related: ["proclamation-to-disperse"],
+  },
+  {
+    id: "investigative-priority",
+    term: "Investigative priority",
+    icon: "departmentInvestigation",
+    definition:
+      "A President can tell the Attorney General which kinds of crime matter most, such as violent disorder in one place. The Justice Department, not the President, decides which cases to open and whom to charge.",
+    example:
+      "A President asks the Attorney General to put more agents on attacks against federal workers in one city. The Justice Department decides how to do it.",
+    inGame:
+      "You can set one for a state with unrest, once a week. If the Attorney General carries it out, it counts toward calming the unrest there for 8 weeks and strengthens the case for a court order. The Attorney General can also stall it or refuse.",
+    related: ["attorney-general", "search-warrant", "title-iii-order"],
+  },
+  {
+    id: "search-warrant",
+    term: "Search warrant",
+    icon: "law",
+    definition:
+      "A judge's written permission for officers to search a named place for evidence of a crime. The judge must issue it when officers show good reason, called probable cause, to believe the evidence is there. It has to be used within 14 days.",
+    example:
+      "Agents believe a warehouse holds stolen weapons. They show a judge their evidence, the judge signs a warrant, and they search that warehouse and nowhere else.",
+    inGame:
+      "Justice can ask for one only where there is unrest in the state. The court answers within about a week. A warrant opens no other act, but a denial can leak and cost you standing.",
+    related: ["title-iii-order", "investigative-priority"],
+  },
+  {
+    id: "title-iii-order",
+    term: "Title III order",
+    icon: "intel",
+    definition:
+      "A federal judge's order letting investigators listen in on a person's calls or messages. The judge must find good reason to believe the person is committing a serious crime the law lists, and that ordinary investigation has failed. It lasts at most 30 days unless renewed.",
+    example:
+      "Prosecutors show a judge that a group is planning a riot by phone and that informants couldn't get inside. The judge lets them tap those phones for 30 days.",
+    inGame:
+      "Justice can ask for one where the unrest has turned violent, not over a peaceful protest. While it runs, you can conduct surveillance in that state under the court's order. It lasts 4 weeks, and you can renew it near the end.",
+    related: ["fisc-order", "search-warrant"],
+  },
+  {
+    id: "fisc-order",
+    term: "FISA court order",
+    icon: "intel",
+    definition:
+      "An order from the Foreign Intelligence Surveillance Court letting the government watch someone in the United States who is working for a foreign power. No American can be treated as a foreign agent just for speaking, protesting or worshiping.",
+    example:
+      "The FBI shows the court that a man is passing secrets to a foreign intelligence service. The court approves watching his phone for 90 days.",
+    inGame:
+      "Justice can ask for one only when a foreign government is working against the United States. Protest or unrest alone never supplies it. The odds follow the FBI's strength and how strong the foreign case is, starting from the court's real record of approvals. While it runs, you can conduct surveillance in that state under the order.",
+    related: ["title-iii-order"],
+  },
+  {
+    id: "enforcement-injunction",
+    term: "Injunction enforcing federal law",
+    icon: "law",
+    definition:
+      "A court order, won when the Justice Department sues, that tells a state or a person to stop blocking a federal law. If they ignore it, they are defying a court.",
+    example:
+      "Say a state's officials keep stopping federal officers from doing their jobs. The Justice Department asks a federal court to order them to stop. If they keep at it, they are now defying a court, not just arguing with Washington.",
+    inGame:
+      "Justice can sue only while a federal law-enforcement mission is in the state and the unrest goes on. The court rules in public, so a loss is known. If the court grants it and the state lets it stand defied for a week, the Insurrection Act's ground for enforcing federal law opens. It holds for 26 weeks.",
+    related: ["proclamation-to-disperse"],
   },
   // engine institutions.ts and response.ts RESPONSE_MEMBERS (FEMA leads
   // earthquakes, floods, storms, wildfires, tornadoes and winter storms),
@@ -686,7 +780,9 @@ export const WORLD_EXPLAINERS: readonly Explainer[] = [
   // emergency.ts (declareEmergency, endEmergency, renewEmergency, weeklyStandingCost,
   // EMERGENCY_RENEWAL_TURNS, EMERGENCY_NOTICE_TURNS), response.ts (GOVERNOR_CONSENT,
   // POSTURE_EFFORT, RESPONSE_MEMBERS), obligations.ts ANSWER_ATTENTION_TURNS (6),
-  // locale-acts.ts federalize, orders.ts inEmergency; 42 U.S.C. 5170; 50 U.S.C. 1622.
+  // orders.ts inEmergency; 42 U.S.C. 5170; 50 U.S.C. 1622. Federalizing the Guard
+  // reads no declaration: locale-missions.ts federalServiceGround (invasion,
+  // rebellion, or §12406(3) regular forces unable), Trump v. Illinois (2025).
   {
     id: "domestic-emergencies",
     title: "How a disaster becomes a federal emergency",
@@ -702,7 +798,7 @@ export const WORLD_EXPLAINERS: readonly Explainer[] = [
       { label: "It starts at home", detail: "Cities and states respond first. The Emergency page lists each disaster, how severe it is, and who is responding.", icon: "caution", youCan: "Watch the Emergency page for new disasters." },
       { label: "The governor asks", detail: "By law, a major disaster declaration starts with a governor's request. In the game, federal help doesn't wait for the request. A governor who leans toward you sends the state's own agencies into the response.", icon: "flag", term: "stafford-act", youCan: "Answer a state's request for relief with an act aimed at that state, to raise federal effort for 6 weeks." },
       { label: "Federal standby", detail: "Unless you answer the state or declare an emergency, federal help stays at about a third of full effort, run by career staff, whatever the governor does.", icon: "building", term: "fema" },
-      { label: "You declare", detail: "Pick one state or the whole nation. A disaster must be running there, and none can already be declared. Every agency on the disaster steps up to full effort, and the state's agencies join. A state declaration opens acts like federalizing the Guard (taking command of a state's National Guard over the governor's objection). A nationwide one, like a war, also opens the strongest executive orders.", icon: "law", term: "national-emergency", duration: "Lapses after 52 weeks unless renewed in the last 13", youCan: "Declare an emergency from the Emergency page.", exit: "You can end it early, and the response steps back down." },
+      { label: "You declare", detail: "Pick one state or the whole nation. A disaster must be running there, and none can already be declared. Every agency on the disaster steps up to full effort, and the state's agencies join. A nationwide declaration, like a war, also opens the strongest executive orders. A declaration never opens federal force at home. The Guard under your command, troops and federal agents each move only on the occasion their own law names, and a disaster or a protest isn't one of them.", icon: "law", term: "national-emergency", duration: "Lapses after 52 weeks unless renewed in the last 13", youCan: "Declare an emergency from the Emergency page.", exit: "You can end it early, and the response steps back down." },
       { label: "The price", detail: "It costs standing every week, and the cost grows by 2 percent of the first week's cost each week, so it doubles after about a year. Renewing doesn't reset it.", icon: "caution", youCan: "End the emergency when the need has passed." },
     ],
     links: [

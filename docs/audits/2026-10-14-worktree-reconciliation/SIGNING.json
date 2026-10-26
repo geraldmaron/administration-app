@@ -7,35 +7,35 @@
       "commit.gpgsign": "false"
     },
     {
-      "path": "~/.admin-app-wt/casting-pin-pilot",
+      "path": "<local path>",
       "commit.gpgsign": "false"
     },
     {
-      "path": "~/.admin-app-wt/coercion-followups",
+      "path": "<local path>",
       "commit.gpgsign": "false"
     },
     {
-      "path": "~/.admin-app-wt/electorate-surfaces",
+      "path": "<local path>",
       "commit.gpgsign": "false"
     },
     {
-      "path": "~/.admin-app-wt/regime-change",
+      "path": "<local path>",
       "commit.gpgsign": "false"
     },
     {
-      "path": "~/.admin-app-wt/registry-r2",
+      "path": "<local path>",
       "commit.gpgsign": "false"
     },
     {
-      "path": "~/.admin-app-wt/scenario-cost-model",
+      "path": "<local path>",
       "commit.gpgsign": "false"
     },
     {
-      "path": "~/.codex/worktrees/player-visual-audit/admin-app",
+      "path": "<local path>",
       "commit.gpgsign": "false"
     },
     {
-      "path": "~/.codex/worktrees/player-visual-overhaul/admin-app",
+      "path": "<local path>",
       "commit.gpgsign": "false"
     },
     {

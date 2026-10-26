@@ -52,8 +52,40 @@ export type OversightResult = {
     readonly ok: false;
     readonly reason: string;
 };
-/** How far filing notice moves Congress. Obstructing a live audit costs more than a quiet office. */
-export declare function inspectorNoticeCost(obstructs: boolean): number;
+/** How far filing notice moves Congress. Obstructing a live audit costs more than a quiet office, and a deficient notice more again. */
+export declare function inspectorNoticeCost(obstructs: boolean, deficient?: boolean): number;
+/**
+ * What the written communication rests its removal on. The statute allows the
+ * President to remove an inspector general for any reason and requires that
+ * the reasons be stated in detail and in the particular case; a ground names
+ * the kind of reason, and the particulars carry the case.
+ */
+export type InspectorRemovalGround = "misconduct" | "incapacity" | "performance" | "conflict-of-interest"
+/** A conclusion, not a cause: it states that the President no longer wants this person, and nothing about the case. */
+ | "loss-of-confidence";
+/** One particular of the case: the record it rests on, when it happened, and what the notice says it shows. */
+export type InspectorRemovalParticular = {
+    /** The oversight matter the cited conduct is documented in. */
+    readonly matterId: string;
+    /** The week the cited conduct occurred. */
+    readonly turn: number;
+    readonly statement: string;
+};
+export type InspectorRemovalAccount = {
+    readonly ground: InspectorRemovalGround;
+    readonly particulars: readonly InspectorRemovalParticular[];
+};
+/** Why a particular does not make the notice case-specific. */
+export type AccountDefect = "conclusory" | "no-such-record" | "outside-tenure" | "protected-audit";
+/** An account that states a conclusion and cites what it points at, where the callers hold only a sentence. */
+export declare function conclusoryAccount(statement: string, matterId: string, turn: number): InspectorRemovalAccount;
+/**
+ * The ways an account fails to be case-specific, judged on the records the
+ * campaign holds and never on the words of a statement: a conclusory ground, a
+ * particular citing no record that exists, conduct dated outside the
+ * inspector's service, or conduct that is the audit the office exists to run.
+ */
+export declare function accountDefects(campaign: Campaign, inspector: InspectorGeneral, account: InspectorRemovalAccount): readonly AccountDefect[];
 /**
  * File the written notice that empties an inspector general's office in thirty
  * days.
@@ -61,7 +93,15 @@ export declare function inspectorNoticeCost(obstructs: boolean): number;
  * Not a removal. The office is still occupied, the audit is still running, and
  * both stay that way for the whole notice period — which is the point of the
  * protection and the reason this returns a filing rather than a vacancy.
+ *
+ * The notice has to carry an account: a ground and the particulars of the
+ * case. Without particulars there is no communication of reasons at all and
+ * nothing is filed. With them, the campaign's own records decide whether the
+ * account is case-specific, and a deficient one is filed on the record as
+ * deficient and costs the Hill more. The statute gives the President the
+ * removal and gives Congress the right to be told why, so the price of a thin
+ * notice is the question it invites.
  */
-export declare function fileInspectorRemovalNotice(campaign: Campaign, institution: InstitutionId, reason: string): OversightResult;
+export declare function fileInspectorRemovalNotice(campaign: Campaign, institution: InstitutionId, account: InspectorRemovalAccount): OversightResult;
 /** Every office a president could still move against, for the board that offers it. */
 export declare function selectRemovableInspectors(campaign: Campaign): readonly InspectorGeneral[];

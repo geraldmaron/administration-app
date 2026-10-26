@@ -28,7 +28,10 @@ describe("what each option moves", () => {
         expect(declaration.effects.when).toBe("If they accept");
     });
     it("reads an aid rung off its success effects, their side only where only their side moves", () => {
-        const relief = optionEffects(campaign, CHN, actOption("assistance-1"));
+        // Emergency relief answers a need, so China is living through a flood.
+        const flood = { id: "condition:flood:CHN:0", nation: CHN, kind: "flood", scope: "region", severity: 0.5, startedTurn: campaign.turn, status: "active", beats: [] };
+        const flooded = { ...campaign, conditions: { ...campaign.conditions, [flood.id]: flood } };
+        const relief = optionEffects(flooded, CHN, actOption("assistance-1"));
         expect(relief.when).toBe("If it works");
         expect(relief.marks.find((mark) => mark.key === "theirTrust")?.good).toBe(true);
         expect(relief.marks.some((mark) => mark.key === "ourTrust")).toBe(false);

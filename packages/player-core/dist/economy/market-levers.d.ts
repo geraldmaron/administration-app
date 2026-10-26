@@ -1,5 +1,5 @@
 import { type Campaign, type EffectPacket, type MetricCost, type RiskBranch } from "@admin/engine";
-export type MarketLeverKey = "fed-ease" | "fed-tighten" | "reserve" | "fuel-waiver";
+export type MarketLeverKey = "fed-ease" | "fed-tighten" | "reserve" | "reserve-limited" | "fuel-waiver";
 export type MarketLever = {
     readonly key: MarketLeverKey;
     readonly label: string;

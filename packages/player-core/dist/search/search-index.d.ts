@@ -18,7 +18,7 @@ export type SearchEntry = {
     readonly href: string;
     readonly keywords: readonly string[];
 } | {
-    readonly kind: EntityKind;
+    readonly kind: EntityKind | "verb";
     readonly id: string;
     readonly title: string;
     readonly detail: string;
@@ -48,6 +48,8 @@ export declare const SEARCH_GROUPS: readonly {
 export declare function placeEntries(routeExists: (href: string) => boolean): readonly SearchEntry[];
 /** Each Handbook chapter as a place, so search can open the chapter that explains a subject. */
 export declare function chapterEntries(routeExists: (href: string) => boolean): readonly SearchEntry[];
+/** The verbs whose screen exists. */
+export declare function verbEntries(routeExists: (href: string) => boolean): readonly SearchEntry[];
 export declare function termEntries(glossary: readonly GlossaryEntry[]): readonly SearchEntry[];
 /** The entries for a query, best first; at one score, places come before people and bodies, and those before terms. */
 export declare function search(entries: readonly SearchEntry[], raw: string): readonly SearchEntry[];

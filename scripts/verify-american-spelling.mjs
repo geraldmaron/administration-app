@@ -161,6 +161,8 @@ const PROPER_NOUNS = [
   // that places a seated party on the game's axes (nation-roster-priors.mjs);
   // the key is the source's spelling because it has to match the source.
   /"euroscepticism"/g,
+  // The Shanghai Cooperation Organisation is the body's own official English name (the SCO's charter and website spell it so); the dataset names it exactly.
+  /\bShanghai Cooperation Organisation\b/g,
 ];
 
 // --- Register, not spelling -------------------------------------------------

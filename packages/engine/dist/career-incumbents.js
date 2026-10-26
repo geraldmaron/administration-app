@@ -1,6 +1,7 @@
 import { AGENCY_HEAD_ROLE } from "@admin/world";
-import { INSTITUTION_CATALOG } from "./institution-catalog.js";
+import { INSTITUTION_CATALOG, VICE_PRESIDENCY_INSTITUTION_ID } from "./institution-catalog.js";
 import { vacancyBenchEffects } from "./appointment-bench.js";
+import { actingLapseDay } from "./appointments.js";
 import { deriveImplementationQuality, institutionDef, } from "./institutions.js";
 // The executive branch below the cabinet, staffed.
 //
@@ -39,7 +40,10 @@ export const CAREER_INCUMBENT_ROLE = AGENCY_HEAD_ROLE;
  */
 export function careerOffices() {
     return INSTITUTION_CATALOG.flatMap((institution) => {
-        if (institution.cabinetRole)
+        // The vice presidency is filled by election or by the Twenty-fifth
+        // Amendment's nomination, never from the bench: a career official seated
+        // in an empty one would be a Vice President nobody chose.
+        if (institution.cabinetRole || institution.id === VICE_PRESIDENCY_INSTITUTION_ID)
             return [];
         const office = institution.offices[0];
         return office ? [{ institution, office }] : [];
@@ -131,7 +135,8 @@ export function withPoliticalActings(people, institutions) {
             vacancy: true,
             vacantDays: 0,
             actingLeader: senior.base.id,
-            ...(office.actingLimitDays !== undefined ? { actingExpiresDay: office.actingLimitDays } : {}),
+            // Open at the inauguration, so 5 U.S.C. 3349a starts the 210 days 90 days in.
+            ...(office.actingLimitDays !== undefined ? { actingExpiresDay: actingLapseDay(0, office.actingLimitDays) } : {}),
         };
         return {
             people: seating.people,
@@ -192,7 +197,14 @@ export const REMOVAL_POLITICIZATION = {
     "Neglect of duty": 0.12,
     "Malfeasance in office": 0.18,
 };
-/** What this removal writes onto politicization. An at-will departure writes nothing. */
+/**
+ * Removing the head of a commission built to sit apart from the President is
+ * lawful at will after Trump v. Slaughter, and still reads as bending the
+ * body: the price is the political one, smaller than a removal a statute
+ * protected against.
+ */
+export const INDEPENDENT_AT_WILL_POLITICIZATION = 0.1;
+/** What this removal writes onto politicization. An ordinary at-will departure writes nothing. */
 export function removalPoliticization(forCause, cause) {
     if (!forCause)
         return 0;
@@ -210,7 +222,9 @@ export function removalPoliticization(forCause, cause) {
  *
  * What the office may be removed *for* is the catalog's, not this function's:
  * an at-will office goes on the president's word, a for-cause office needs a
- * stated cause, and a term-protected one cannot be emptied at all. That is why
+ * stated cause unless its protection is contested (then the removal goes
+ * through and is recorded as a legal exposure), and a term-protected one
+ * cannot be emptied at all. That is why
  * relieving a Chair of the Federal Reserve is a different kind of act from
  * replacing the Administrator of FEMA, and the difference is read off the same
  * table the confirmation path reads.
@@ -232,11 +246,16 @@ export function removeOfficer(campaign, id, cause) {
     if (office.removal === "term-protected") {
         return { ok: false, reason: `${office.title} is held for a fixed term. The President cannot end it.` };
     }
-    if (office.removal === "for-cause" && !cause?.trim()) {
+    if (office.removal === "for-cause" && !office.removalContested && !cause?.trim()) {
         return { ok: false, reason: `${office.title} can only be removed for cause, and none has been stated.` };
     }
     const person = holder.base;
     const politicized = office.removal === "for-cause";
+    const independentAtWill = office.removal === "at-will" && def.independence === "independent";
+    const stated = cause?.trim();
+    const contested = office.removalContested
+        ? { contestedRemovals: [...(runtime.contestedRemovals ?? []), { person: person.id, turn: campaign.turn, ...(stated ? { cause: stated } : {}) }] }
+        : {};
     return {
         ok: true,
         packet: {
@@ -245,11 +264,13 @@ export function removeOfficer(campaign, id, cause) {
             turn: campaign.turn,
             provenance: { origin: "decision", entities: [id], systems: ["institutions"] },
             narration: {
-                summary: politicized
-                    ? `${person.name} is removed from ${office.title} for ${cause.trim()}, over the objection ${def.abbr}'s independence is written to raise.`
-                    : cause?.trim()
-                        ? `${person.name} is removed from ${office.title}. The stated reason is ${cause.trim()}, and the office is left open.`
-                        : `${person.name} is removed from ${office.title}, and the office is left open.`,
+                summary: office.removalContested
+                    ? `${person.name} is removed from ${office.title}${stated ? ` for ${stated}` : " with no cause stated"}. The statute protects the seat; the removal stands on the reasoning of Trump v. Slaughter, and a suit to be reinstated is likely.`
+                    : politicized
+                        ? `${person.name} is removed from ${office.title} for ${cause.trim()}, over the objection ${def.abbr}'s independence is written to raise.`
+                        : cause?.trim()
+                            ? `${person.name} is removed from ${office.title}. The stated reason is ${cause.trim()}, and the office is left open.`
+                            : `${person.name} is removed from ${office.title}, and the office is left open.`,
             },
             effects: [
                 {
@@ -257,8 +278,10 @@ export function removeOfficer(campaign, id, cause) {
                     institution: id,
                     vacate: true,
                     ...(politicized
-                        ? { changes: { politicization: Math.min(1, runtime.politicization + removalPoliticization(true, cause)) } }
-                        : {}),
+                        ? { changes: { politicization: Math.min(1, runtime.politicization + removalPoliticization(true, cause)), ...contested } }
+                        : independentAtWill
+                            ? { changes: { politicization: Math.min(1, runtime.politicization + INDEPENDENT_AT_WILL_POLITICIZATION) } }
+                            : {}),
                 },
                 {
                     kind: "person",

@@ -3,7 +3,9 @@ import { type Campaign, type PersonRuntime } from "./state.js";
 import type { Effect, EffectPacket } from "./effects.js";
 import type { MetricCost, RiskBranch } from "./resolution.js";
 import { type CabinetDeparture } from "./cabinet.js";
-import { type OfficeId } from "./institutions.js";
+import { type InstitutionDef, type OfficeId } from "./institutions.js";
+import { type NominationStage } from "./nomination-stages.js";
+import type { Nomination } from "./nomination.js";
 import { type FitPresident } from "./cast-fit.js";
 export type AppointmentResult = {
     readonly ok: true;
@@ -26,7 +28,7 @@ export declare function presidentFit(campaign: Campaign): FitPresident;
  * passed over at founding are exactly the people still available later. A
  * campaign cannot conjure a better candidate by waiting.
  */
-export declare function selectAppointableFor(campaign: Campaign, role: RoleId): readonly PersonRuntime[];
+export declare function selectAppointableFor(campaign: Campaign, role: RoleId, includeNominees?: boolean): readonly PersonRuntime[];
 /**
  * What an act on a chair moves the week it lands, and what follows from it.
  *
@@ -72,6 +74,50 @@ export declare function dismissMinister(campaign: Campaign, role: RoleId): Appoi
  * handed out a second time. Idempotent, so it is safe on every load.
  */
 export declare function deriveConfirmedRoles(campaign: Campaign): Campaign;
+/**
+ * Who 5 U.S.C. 3345(a) lets act in a vacant Senate-confirmed office.
+ *
+ * The first assistant, a person already confirmed to another Senate-confirmed
+ * office, or a senior employee of the same agency. The bench is the engine's
+ * record of the agency's own senior people; its first name is the first
+ * assistant, taken to have served the 90 days the nominee exception asks
+ * about because a first assistant is a holdover the transition inherits.
+ */
+export type ActingClass = "first-assistant" | "confirmed-officer" | "senior-employee";
+export declare function actingClassOf(campaign: Campaign, def: InstitutionDef, person: PersonRuntime): ActingClass | undefined;
+/**
+ * What submitting a nomination does to the nominee's own acting service.
+ * 5 U.S.C. 3345(b)(1) bars a nominee from acting unless they were the first
+ * assistant, and the bar applies from the day the nomination is submitted, so
+ * an acting named first and nominated afterward stops acting that day and
+ * leaves the office with nobody signing.
+ */
+export declare function nominationEndsActing(campaign: Campaign, seat: RoleId | OfficeId, nominee: PersonId): readonly Effect[];
+/**
+ * What a nomination's life does to the acting officer's clock, 5 U.S.C.
+ * 3346(a)(2) and (b). Submission of a first or second nomination tolls the 210
+ * days for as long as it is pending; its rejection, withdrawal or return
+ * restarts them from that day. A third nomination changes nothing. The clock
+ * is the one `actingLapseDay` stamps; this rewrites it, and the institution
+ * phase's lapse check keeps reading the same field. An office whose acting ran
+ * out its 210 days before the nomination was submitted names one again, since
+ * 3345(a) still says who may act.
+ */
+export declare function actingClockEffects(campaign: Campaign, nomination: Nomination, stage: NominationStage, day: number): readonly Effect[];
+/**
+ * An older save's acting clock was stamped before the office's nominations
+ * moved it, so a nomination already pending when it loads would otherwise let
+ * the acting lapse. Reads the same rule the live clock does.
+ */
+export declare function reconcileActingClocks(campaign: Campaign): Campaign;
+/**
+ * The day an acting officer's authority lapses under 5 U.S.C. 3346(a)(1):
+ * 210 days from the day the vacancy occurred, not the day somebody was named.
+ * A vacancy open in the 60 days after an inauguration starts its 210 days at
+ * the later of 90 days after the inauguration and 90 days after the vacancy
+ * (3349a). `actingClockEffects` tolls and restarts it as nominations come and go.
+ */
+export declare function actingLapseDay(vacancyDay: number, limitDays: number): number;
 /**
  * What seating an acting writes, where the seat can take one: the acting record
  * and the body's own acting authority, together. Two records, one change,

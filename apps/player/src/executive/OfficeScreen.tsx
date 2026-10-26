@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { formatDate, officeFile, personFile, place, type OfficeFile } from "@admin/player-core";
-import { Badge, Button, Column, Icon, Page, Row, Surface, Text, useMedia } from "@admin/ui";
+import { Tag, Button, Column, Icon, Page, Row, Surface, Text, useMedia } from "@admin/ui";
 import { ViewTabs, type ViewTab } from "@admin/ui/nation";
-import { Dossier, DossierSection, IdPlate, Monogram, StaffingBadge } from "@admin/ui/dossier";
+import { Dossier, DossierSection, IdPlate, StaffingBadge } from "@admin/ui/dossier";
+import { PersonFace } from "../dossier/PersonFace";
 import { PersonReadings } from "../dossier/PersonReadings";
 import { ActReceipt } from "./ActReceipt";
 import { AgendaActs } from "./AgendaActs";
@@ -53,9 +54,9 @@ function Plate({ file, asOf }: { readonly file: OfficeFile; readonly asOf: strin
         <>
           <StaffingBadge staffing={file.staffing} />
           {file.chips.map((chip) => (
-            <Badge key={chip.key} status="outline">
+            <Tag key={chip.key} tone="outline">
               {chip.label}
-            </Badge>
+            </Tag>
           ))}
           {file.holder ? <LinkText href={place.person(file.holder)} label={`Open ${file.holderName ?? "the leader"}'s profile`}>{file.holderName ?? "The leader"}</LinkText> : null}
         </>
@@ -67,12 +68,12 @@ function Plate({ file, asOf }: { readonly file: OfficeFile; readonly asOf: strin
 
 function Leadership({ campaign, file }: { readonly campaign: Campaign; readonly file: OfficeFile }) {
   const holder = useMemo(() => (file.holder ? personFile(campaign, file.holder) : undefined), [campaign, file.holder]);
-  if (!holder) return <Text variant="body" tone="secondary">Nobody is leading this office right now. Open Actions to see how you can fill the job.</Text>;
+  if (!holder) return <Text variant="body" tone="secondary">Nobody is leading this office right now.</Text>;
   return (
     <DossierSection n={1} icon="subjectPerson" title="How the leader rates" note="What staff say about this person and how sure they are. This is kept separate from what the office has actually done.">
       <CardTo href={place.person(holder.person.id)} label={`Open ${holder.person.name}'s file`} pad="sm">
         <Row gap="sm">
-          <Monogram name={holder.person.name} size={40} />
+          <PersonFace campaign={campaign} id={holder.person.id} name={holder.person.name} size={40} />
           <Text variant="label" flex={1}>
             {holder.person.name}
           </Text>

@@ -1,6 +1,6 @@
 import { useContext, useSyncExternalStore } from "react";
-import type { CampaignLibrarySaveState, CampaignState, CampaignStore } from "@admin/player-core";
-import { CampaignContext, EntitlementContext, PreferencesContext, type EntitlementHandle, type PreferencesHandle } from "./contexts";
+import type { CampaignLibrarySaveState, CampaignState, CampaignStore, DraftState, DraftStore } from "@admin/player-core";
+import { CampaignContext, DraftsContext, EntitlementContext, PreferencesContext, type EntitlementHandle, type PreferencesHandle } from "./contexts";
 
 const LOADING: CampaignState = { status: "loading" };
 const getLoading = (): CampaignState => LOADING;
@@ -39,4 +39,19 @@ export function useEntitlement(): EntitlementHandle {
   const handle = useContext(EntitlementContext);
   if (!handle) throw new Error("The entitlement is read outside DeviceProviders.");
   return handle;
+}
+
+export function useDraftStore(): DraftStore {
+  const drafts = useContext(DraftsContext);
+  if (!drafts) throw new Error("The drafts are read before the device's stores have loaded.");
+  return drafts;
+}
+
+const NO_DRAFTS: DraftState = { drafts: [] };
+const getNoDrafts = (): DraftState => NO_DRAFTS;
+
+/** The President's drafts; none until the stores have loaded. */
+export function useDraftState(): DraftState {
+  const drafts = useContext(DraftsContext);
+  return useSyncExternalStore(drafts?.subscribe ?? subscribeToNothing, drafts?.getState ?? getNoDrafts, drafts?.getState ?? getNoDrafts);
 }

@@ -1,5 +1,5 @@
 import { fiscalYearOf } from "./clock.js";
-import { majorityOf } from "./congress.js";
+import { majorityOf, seatedOf } from "./congress.js";
 import { legislativeVoteOn } from "./congress-votes.js";
 import { committeeName } from "./committees.js";
 import { actOf, type LegislativeAct } from "./legislative-acts.js";
@@ -56,7 +56,7 @@ export function requestBudgetResolution(campaign: Campaign, billId: string): Bud
     return { ok: false, reason: "Congress already voted on this instruction this week." };
   }
   const votes = (["house", "senate"] as const).map((chamber) => legislativeVoteOn(campaign, {
-    chamber, appeal: act.appeal, required: majorityOf(campaign.congress.chambers[chamber].seats),
+    chamber, appeal: act.appeal, required: majorityOf(seatedOf(campaign.congress, chamber)),
     stance: act.sponsor === "bipartisan" ? "neutral" : act.sponsor,
   })).map((vote) => ({ ...vote, recordedTurn: campaign.turn }));
   const adopted = votes.every((vote) => vote.passed);

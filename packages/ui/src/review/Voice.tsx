@@ -23,11 +23,11 @@ export function Monogram({ letters, size = 44, tone = "neutral" }: { readonly le
   );
 }
 
-/** One speaker's line: who, in what seat, and what they said, with an optional stance badge or link under the name. */
-export function Voice({ letters, name, role, line, tag, tone, nameSlot }: { readonly letters: string; readonly name: string; readonly role?: string; readonly line: string; readonly tag?: ReactNode; readonly tone?: "neutral" | "accent" | "danger" | "gold"; readonly nameSlot?: ReactNode }) {
+/** One speaker's line: who, in what seat, and what they said, with an optional stance badge or link under the name and an optional drawn face in place of the initials. */
+export function Voice({ letters, name, role, line, tag, tone, nameSlot, face }: { readonly letters: string; readonly name: string; readonly role?: string; readonly line: string; readonly tag?: ReactNode; readonly tone?: "neutral" | "accent" | "danger" | "gold"; readonly nameSlot?: ReactNode; readonly face?: ReactNode }) {
   return (
     <Row gap="md" top>
-      <Monogram letters={letters} tone={tone} />
+      {face ?? <Monogram letters={letters} tone={tone} />}
       <Column flex={1} gap="2xs" minWidth={0}>
         <Row gap="sm" wrap>
           {nameSlot ?? <Text variant="label">{name}</Text>}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Campaign, MatterSource } from "@admin/engine";
-import { createCampaignStore, createSaveStore, deskMatterSource, scenarioMatterSource, type AttentionPolicySettings, type CampaignStore, type Preferences, type StoragePort } from "@admin/player-core";
+import { createCampaignStore, createDraftStore, createSaveStore, deskMatterSource, scenarioMatterSource, type AttentionPolicySettings, type CampaignStore, type DraftStore, type Preferences, type StoragePort } from "@admin/player-core";
 
 /** Stores whose restore has started, so StrictMode's double effect reads the vault once. */
 const RESTORING = new WeakSet<CampaignStore>();
@@ -23,23 +23,24 @@ function useMatterSources(preferences: Preferences): readonly MatterSource<Campa
 export type DeviceStoresProps = {
   readonly storage: StoragePort;
   readonly preferences: Preferences;
-  readonly onReady: (store: CampaignStore) => void;
+  readonly onReady: (store: CampaignStore, drafts: DraftStore) => void;
 };
 
 /**
  * One campaign store over the device's vault, restored once. It draws
  * nothing: it is loaded after the map's first paint, because the store brings
  * the engine, the dataset and the corpus with it, and it hands the store up
- * to DeviceProviders.
+ * to DeviceProviders with the drafts kept over it.
  */
 export default function DeviceStores({ storage, preferences, onReady }: DeviceStoresProps) {
   const matterSources = useMatterSources(preferences);
   const [store] = useState(() => createCampaignStore({ saves: createSaveStore(storage), matterSources }));
+  const [drafts] = useState(() => createDraftStore({ campaigns: store }));
   useEffect(() => {
     if (RESTORING.has(store)) return;
     RESTORING.add(store);
     void store.restore();
   }, [store]);
-  useEffect(() => onReady(store), [onReady, store]);
+  useEffect(() => onReady(store, drafts), [onReady, store, drafts]);
   return null;
 }

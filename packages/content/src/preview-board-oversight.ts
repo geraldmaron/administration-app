@@ -18,6 +18,7 @@ import {
   apply,
   committeeInquiryPhase,
   createRngStreams,
+  conclusoryAccount,
   fileInspectorRemovalNotice,
   grantOrderSubjects,
   regulatoryReviewOrderSubjects,
@@ -37,6 +38,7 @@ import {
   type Bill,
   type EffectPacket,
   type NationCondition,
+  withDueCaseDefaults,
 } from "@admin/engine";
 import { PlankId, STATE_DISASTER_ELIGIBILITY, worldDataset, type DisasterKind } from "@admin/world";
 import { deedsWaitedOn, sealedCampaign, withFlags } from "./preview-board.js";
@@ -104,7 +106,7 @@ function oversightWeek(campaign: Campaign, obstruct: boolean): Campaign {
     const filed = fileInspectorRemovalNotice(
       state,
       answerable.origin.institution,
-      "the premise of the audit is not accepted, and the office is to be filled by somebody who accepts it",
+      conclusoryAccount("the premise of the audit is not accepted, and the office is to be filled by somebody who accepts it", answerable.id, state.turn),
     );
     if (filed.ok) state = apply(state, filed.packet);
   }
@@ -182,7 +184,9 @@ const RULE_BOARD_LAST_TURN = 47;
  * this fixture should paper over.
  */
 function theRulesInTheirWindow(): Campaign {
-  let campaign = sealedCampaign("rule-board-7");
+  // Seeded so a lower court strikes the border order inside the board's weeks;
+  // the lower merits now take 60 to 270 days to come back.
+  let campaign = sealedCampaign("rule-board-3");
   const charter = worldDataset.charters.find((candidate) => candidate.id === campaign.founding.charter);
   if (!charter) throw new Error("the shipped dataset lacks the founding's own charter");
   const streams = createRngStreams(campaign.seed);
@@ -207,6 +211,9 @@ function theRulesInTheirWindow(): Campaign {
       if (!signed.ok) throw new Error(`the preview board cannot sign ${order}: ${signed.reason}`);
       campaign = apply(campaign, signed.packet);
     }
+    // Nobody answers the lower judgment, so its desk case runs its default
+    // and the judgment becomes final, as it does for a President who does not answer.
+    campaign = withDueCaseDefaults(campaign);
     campaign = applied(campaign, review(campaign));
     campaign = applied(campaign, rulemakingPhase(campaign));
   }

@@ -1,5 +1,6 @@
-import { CHOKEPOINT_FLOWS, COMMODITY_PRODUCERS, type NationId } from "@admin/world";
+import { CHOKEPOINT_FLOWS, COMMODITY_PRODUCERS, type NationId, type SectorId } from "@admin/world";
 import type { ConditionKind } from "./condition-kinds.js";
+import type { TradeSectorId } from "./trade-sectors.js";
 import { COMMODITY_IDS, openingCommodityIndex, type AnchoredCommodityId, type CommodityId } from "./commodities.js";
 
 // What each of the eleven commodities is, who makes it, what it passes
@@ -56,7 +57,7 @@ const GAS: KernelParams = { ...ENERGY, spare: 0.01, coverWeeks: 10 };
  * (Brent $83 in November 2023 and $81 for 2024, EIA). No gas case is sourced,
  * so the gas markets keep the planning value.
  */
-const CRUDE: KernelParams = { ...ENERGY, sensitivity: 5 };
+const CRUDE: KernelParams = { ...ENERGY, sensitivity: 6, speed: 0.8, weeklyCap: 0.16 };
 const FOOD: KernelParams = { sensitivity: 2, speed: 0.2, weeklyCap: 0.08, spare: 0, coverWeeks: 16, elasticity: 0.08, residual: 0.008 };
 const FERTILIZER: KernelParams = { sensitivity: 1.8, speed: 0.15, weeklyCap: 0.08, spare: 0.01, coverWeeks: 12, elasticity: 0.1, residual: 0.008 };
 const METAL: KernelParams = { sensitivity: 1.5, speed: 0.2, weeklyCap: 0.06, spare: 0.01, coverWeeks: 6, elasticity: 0.1, residual: 0.01 };
@@ -86,6 +87,10 @@ export type CommodityDef = {
   readonly id: CommodityId;
   readonly name: string;
   readonly family: CommodityFamily;
+  /** The economy sector that sells it, which is what a measure scoped to a sector reaches. */
+  readonly sector: SectorId;
+  /** The trade sector its goods are filed under, which is what a measure naming goods reaches. */
+  readonly good: TradeSectorId;
   readonly reader: CommodityReader;
   readonly params: KernelParams;
   readonly routes: readonly CommodityRoute[];
@@ -114,11 +119,12 @@ function routesFor(id: string): readonly CommodityRoute[] {
 const HARVEST: readonly ConditionKind[] = ["drought", "flood", "heat-wave", "wildfire"];
 
 export const COMMODITY_DEFS: Readonly<Record<CommodityId, CommodityDef>> = {
-  crude: { id: "crude", name: "Crude oil", family: "crude", reader: "pump", params: CRUDE, routes: routesFor("crude"), inputs: [], hitBy: ["cyclone"] },
+  crude: { id: "crude", name: "Crude oil", family: "crude", sector: "energy-oil", good: "energy-crude", reader: "pump", params: CRUDE, routes: routesFor("crude"), inputs: [], hitBy: ["cyclone"] },
   "natural-gas": {
     id: "natural-gas",
     name: "Natural gas",
     family: "gas",
+    sector: "energy-gas", good: "energy-gas-lng",
     reader: "home-energy",
     params: GAS,
     routes: [],
@@ -131,6 +137,7 @@ export const COMMODITY_DEFS: Readonly<Record<CommodityId, CommodityDef>> = {
     id: "lng",
     name: "Liquefied natural gas",
     family: "gas",
+    sector: "energy-gas", good: "energy-gas-lng",
     reader: "home-energy",
     params: GAS,
     routes: routesFor("lng"),
@@ -139,14 +146,14 @@ export const COMMODITY_DEFS: Readonly<Record<CommodityId, CommodityDef>> = {
     // Planning values: EIA gives the five largest exporters' volumes and no world total.
     planningProducers: { USA: 0.22, AUS: 0.19, QAT: 0.19, RUS: 0.08, MYS: 0.07 },
   },
-  wheat: { id: "wheat", name: "Wheat", family: "grains", reader: "grocery", params: FOOD, routes: [], inputs: [{ from: "nitrogen", weight: 0.1, lagWeeks: 26 }], hitBy: HARVEST },
-  corn: { id: "corn", name: "Corn", family: "grains", reader: "grocery", params: FOOD, routes: [], inputs: [{ from: "nitrogen", weight: 0.15, lagWeeks: 26 }], hitBy: HARVEST },
-  soybeans: { id: "soybeans", name: "Soybeans", family: "grains", reader: "grocery", params: FOOD, routes: [], inputs: [{ from: "potash", weight: 0.08, lagWeeks: 26 }], hitBy: HARVEST },
-  potash: { id: "potash", name: "Potash", family: "fertilizer", reader: "farm-costs", params: FERTILIZER, routes: [], inputs: [], hitBy: [] },
-  nitrogen: { id: "nitrogen", name: "Nitrogen fertilizer", family: "fertilizer", reader: "farm-costs", params: FERTILIZER, routes: [], inputs: [{ from: "natural-gas", weight: 0.5, lagWeeks: 8 }], hitBy: [] },
-  copper: { id: "copper", name: "Copper", family: "metals", reader: "factory-inputs", params: METAL, routes: [], inputs: [], hitBy: ["earthquake", "flood"] },
-  lithium: { id: "lithium", name: "Lithium", family: "minerals", reader: "defense-tech", params: MINERAL, routes: [], inputs: [], hitBy: [] },
-  "rare-earths": { id: "rare-earths", name: "Rare earths", family: "minerals", reader: "defense-tech", params: MINERAL, routes: [], inputs: [], hitBy: [] },
+  wheat: { id: "wheat", name: "Wheat", family: "grains", sector: "agriculture", good: "agriculture-row-crops", reader: "grocery", params: FOOD, routes: [], inputs: [{ from: "nitrogen", weight: 0.1, lagWeeks: 26 }], hitBy: HARVEST },
+  corn: { id: "corn", name: "Corn", family: "grains", sector: "agriculture", good: "agriculture-row-crops", reader: "grocery", params: FOOD, routes: [], inputs: [{ from: "nitrogen", weight: 0.15, lagWeeks: 26 }], hitBy: HARVEST },
+  soybeans: { id: "soybeans", name: "Soybeans", family: "grains", sector: "agriculture", good: "agriculture-row-crops", reader: "grocery", params: FOOD, routes: [], inputs: [{ from: "potash", weight: 0.08, lagWeeks: 26 }], hitBy: HARVEST },
+  potash: { id: "potash", name: "Potash", family: "fertilizer", sector: "chemicals", good: "fertilizer", reader: "farm-costs", params: FERTILIZER, routes: [], inputs: [], hitBy: [] },
+  nitrogen: { id: "nitrogen", name: "Nitrogen fertilizer", family: "fertilizer", sector: "chemicals", good: "fertilizer", reader: "farm-costs", params: FERTILIZER, routes: routesFor("nitrogen"), inputs: [{ from: "natural-gas", weight: 0.5, lagWeeks: 8 }], hitBy: [] },
+  copper: { id: "copper", name: "Copper", family: "metals", sector: "mining", good: "bulk-mining", reader: "factory-inputs", params: METAL, routes: [], inputs: [], hitBy: ["earthquake", "flood"] },
+  lithium: { id: "lithium", name: "Lithium", family: "minerals", sector: "mining", good: "critical-minerals", reader: "defense-tech", params: MINERAL, routes: [], inputs: [], hitBy: [] },
+  "rare-earths": { id: "rare-earths", name: "Rare earths", family: "minerals", sector: "mining", good: "critical-minerals", reader: "defense-tech", params: MINERAL, routes: [], inputs: [], hitBy: [] },
 };
 
 const ANCHORED: ReadonlySet<CommodityId> = new Set<CommodityId>(["crude", "wheat", "corn", "soybeans"]);

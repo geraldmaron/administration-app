@@ -20,10 +20,12 @@ import { openingPosition } from "./opening-position.js";
 import { EXECUTIVE_ORDERS, executiveOrder, orderAvailability, orderCost, projectOrder, reliefOrderSubjects, signOrder } from "./orders.js";
 import { declareStaffordDisaster } from "./stafford.js";
 import { signBill } from "./legislation.js";
-import { LOCALE_ACTS, localeActCost, takeLocaleAct } from "./locale-acts.js";
+import { LOCALE_ACTS, localeActCost } from "./locale-acts.js";
+import { takeLocaleAct } from "./locale-act-effects.js";
 import { bundleOrder, materialDecisionGate } from "./projection.js";
 import { landRung } from "./__fixtures__/ladder.js";
-import { selectCustomsReceipts, tradePhase } from "./trade.js";
+import { selectCustomsReceipts } from "./trade.js";
+import { tradePhase } from "./trade-phase.js";
 import { createRngStreams } from "./rng.js";
 import { STANDING_PRESSURE, standingPressure } from "./conditions.js";
 import { obligationPhase } from "./obligations.js";
@@ -334,12 +336,15 @@ describe("the prices bite against the authority the President actually holds", (
   });
 
   it("prices a locale act as a share of output like every other act in the engine", () => {
-    for (const act of LOCALE_ACTS) {
+    // Acts that spend through another channel (a proclamation, a memorandum, collection a court order already authorizes) carry no up-front price.
+    const unpriced = new Set(["proclaim", "priority", "surveil", "surveil-under-order"]);
+    for (const act of LOCALE_ACTS.filter((entry) => !unpriced.has(entry.id))) {
       expect(act.treasuryOfGdp, act.id).toBeLessThan(0);
       expect(localeActCost(FOUNDED, act), act.id).toBeGreaterThan(0);
     }
     // Local relief is an enacted program expense at the state level; a
     // presidential allocation of that program carries no second cash price.
+    for (const id of unpriced) expect(LOCALE_ACTS.find((act) => act.id === id)!.treasuryOfGdp, id).toBe(0);
     const relief = LOCALE_ACTS.find((act) => act.id === "relief")!;
     expect(localeActCost(FOUNDED, relief)).toBeGreaterThan(0);
     expect(orderCost(FOUNDED, executiveOrder("order-relief-program")!).treasury).toBeUndefined();

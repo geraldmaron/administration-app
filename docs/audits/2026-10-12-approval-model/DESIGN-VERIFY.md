@@ -1,6 +1,6 @@
 # Adversarial verification of DESIGN.md (five-bloc electorate), 2026-10-12
 
-Read-only against source and the design. Every `design-*.mjs` probe re-run from the repo root, one at a time; no build, workspace test, verify sweep, Playwright or balance harness. The verifier's own scripts live in the session scratchpad, not the repo (`$D = /private/tmp/claude-501/-Users-geralddagher-Developer-Projects-admin-app/de978b3c-7bf2-4843-8068-0f815599efba/scratchpad/dv/`): `checks.mjs`, `checks2.mjs`, `lambda.mjs`, `g0.mjs`, `gap.mjs`, `rake.mjs`, `ballot.mjs`, `cb-0.04-*.mjs`. Each imports the design's own `design-blocs.mjs` / `design-sim.mjs` and changes only what is stated below. Web sources were fetched in this session and are listed at the end; nothing is cited that was not opened.
+Read-only against source and the design. Every `design-*.mjs` probe re-run from the repo root, one at a time; no build, workspace test, verify sweep, Playwright or balance harness. The verifier's own scripts live in the session scratchpad, not the repo (`$D = <scratch path>`): `checks.mjs`, `checks2.mjs`, `lambda.mjs`, `g0.mjs`, `gap.mjs`, `rake.mjs`, `ballot.mjs`, `cb-0.04-*.mjs`. Each imports the design's own `design-blocs.mjs` / `design-sim.mjs` and changes only what is stated below. Web sources were fetched in this session and are listed at the end; nothing is cited that was not opened.
 
 ## Bottom line
 
@@ -115,7 +115,7 @@ for s in 10 16 20; do DESIGN_S=$s node $P/design-occasions.mjs | grep rmse; done
 node $P/design-electorate.mjs
 node $P/design-decisions.mjs
 node $P/design-cohort-blocs.mjs
-D=/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-admin-app/de978b3c-7bf2-4843-8068-0f815599efba/scratchpad/dv
+D=<scratch path>
 node $D/checks.mjs     # bin Laden monthly mean, naive baselines, headline-only test, consensus I_b, Pew vote by bloc
 node $D/checks2.mjs    # joint Gulf rally + economy fit, wider midterm grid, Bush+Obama -> Trump-Biden holdout
 node $D/lambda.mjs     # lambda profile, symmetric-share counterfactual

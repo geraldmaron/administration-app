@@ -1,7 +1,8 @@
 import { withStandingFinding } from "./finding-testing.js";
 import { describe, expect, it } from "vitest";
 import { apply } from "./effects.js";
-import { ACCOUNT_CAP, CAPABILITY_MILESTONES, nextMilestone, BUDGET_ACCOUNTS, BUDGET_ACCOUNT_SPECS, STATECRAFT_ACCOUNTS, BUDGET_STAT_RANGES, budgetPhase, budgetStatValue, inheritedBudget, selectBudget, selectBudgetOutlook, turnsToReach } from "./budget.js";
+import { ACCOUNT_CAP, BUDGET_ACCOUNTS, BUDGET_ACCOUNT_SPECS, STATECRAFT_ACCOUNTS, BUDGET_STAT_RANGES, budgetPhase, budgetStatValue, inheritedBudget, selectBudget, selectBudgetOutlook } from "./budget.js";
+import { CAPABILITY_MILESTONES, nextMilestone, turnsToReach } from "./budget-capability.js";
 import { TURNS_PER_YEAR } from "./pace.js";
 import { enactBudget, projectBudgetDraft } from "./budget-draft.js";
 import { landRung } from "./__fixtures__/ladder.js";

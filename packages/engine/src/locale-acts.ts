@@ -1,12 +1,23 @@
-import type { StateId } from "@admin/world";
-import type { Campaign, ConditionKind, GovernorStanding, PendingClaim } from "./state.js";
-import type { Effect, EffectPacket } from "./effects.js";
-import { answerReliefClaims, RELIEF_SIGNATURE_PREFIX } from "./obligations.js";
+import { worldDataset, type Charter, type ForceAssetId, type MilitaryBranch, type StateId } from "@admin/world";
+import type { Campaign, ConditionKind, OutlayFunction, PendingClaim } from "./state.js";
+import { RELIEF_SIGNATURE_PREFIX } from "./obligations.js";
 import { underDeclaredEmergency } from "./emergency.js";
 import { obligationAvailability } from "./funding.js";
 import { playerGdp } from "./policy.js";
-import { coercionOutcome, type CoercionRisk } from "./domestic-coercion.js";
-import { boundaryRefusalReason, icElement } from "./intelligence.js";
+import { domesticBrigadeWeek, domesticGuardWeek } from "./force-costs.js";
+import type { CoercionRisk } from "./domestic-coercion.js";
+import { executiveOrder, orderAvailability, type OrderAuthority, type OrderSubject } from "./orders.js";
+import {
+  federalServiceGround,
+  governorAssents,
+  insurrectionGround,
+  liveProclamation,
+  LOCALE_REFUSALS,
+  MISSION_ATTENTION,
+  missionOrderId,
+  type InsurrectionGround,
+} from "./locale-missions.js";
+import { liveCourtOrder, SURVEILLANCE_ORDER_KINDS } from "./court-order-records.js";
 
 // What the president can actually do about one place.
 //
@@ -15,42 +26,79 @@ import { boundaryRefusalReason, icElement } from "./intelligence.js";
 // condition, so tightening border controls eased a flood in Michigan. These are
 // the typed verbs — generic by kind, never authored per scenario — that let an
 // administration answer one locale rather than the whole country.
+//
+// Federal force at home moves only on its statute's predicate. Every coercive
+// act signs a mission order (locale-mission-orders.ts) whose record is the
+// legal instrument, so review, suits, court pauses and rescission reach it on
+// the same machinery every other order runs on.
 
-export type LocaleActId = "relief" | "request-deployment" | "federalize" | "waiver" | "review" | "agents" | "troops" | "surveil";
+export type LocaleActId =
+  | "relief" | "request-deployment" | "waiver" | "review"
+  | "property-surge" | "immigration-operation" | "task-force"
+  | "federalize" | "proclaim" | "troops"
+  | "priority" | "surveil" | "surveil-under-order";
+
+export type LocaleActGroup = "relief" | "enforcement" | "military" | "investigation";
+
+/**
+ * What has to be happening for the act to be an answer at all. `disorder` is
+ * unrest in the state; `enforcement` is routine federal law, which runs in
+ * every state whether or not anything is wrong there, so it is never read as
+ * unprovoked.
+ */
+export type LocaleOccasion = "any" | "disorder" | "enforcement";
+
+/** A mark the act leaves on the state, `opposed` only where the governor withheld assent. */
+export type LocaleMark = { readonly valence: 1 | -1; readonly weight: number; readonly signature: string; readonly when: "always" | "opposed" };
+
+/** What the public reads into the act, `opposed` only where the governor withheld assent. */
+export type LocaleOpinion = { readonly integrity?: number; readonly competence?: number; readonly polarize?: number; readonly when?: "opposed" };
+
+/** What the troop act and the proclamation change by the Insurrection Act section they rest on. */
+export type LocaleTier = {
+  readonly standingCost: number;
+  readonly governor: { readonly opposed: number; readonly assenting: number };
+  readonly answersClaim: boolean;
+  readonly mark?: LocaleMark;
+  readonly opinion?: LocaleOpinion;
+  /** The purpose the troop order states, past which the Posse Comitatus Act bars the troops. */
+  readonly mission?: string;
+};
 
 export type LocaleAct = {
   readonly id: LocaleActId;
   readonly name: string;
   readonly summary: string;
+  readonly group: LocaleActGroup;
   /** Whether the act needs a declared emergency reaching this state. */
   readonly needsDeclaration: boolean;
   /** Whether the seated governor has to agree for it to happen at all. */
   readonly needsGovernorAssent: boolean;
+  readonly occasion: LocaleOccasion;
   /**
-   * Whether the act needs a statutory predicate beyond a declared emergency:
-   * `guard` is an unavailable military-authority pathway; `request` is the Stafford
-   * Act's requirement that the state ask first, `disorder` that the matter is
-   * unrest: agents and collection are answers to a crowd, not to a flood.
+   * The statutory predicate beyond the occasion: `request` is the Stafford
+   * Act's requirement that the state ask first, `federal-service` §12406's
+   * three occasions, `insurrection` one of the Insurrection Act's, and
+   * `proclaimed` a §254 proclamation already in force, and `court-order` a
+   * FISA or Title III order granted for the state and still running.
    */
-  readonly predicate?: "guard" | "request" | "disorder";
-  /** Whether taking it discharges the state's open relief claim. */
-  readonly answersClaim: boolean;
+  readonly predicate?: "request" | "federal-service" | "insurrection" | "proclaimed" | "court-order";
+  /** Whether taking it discharges the state's open relief claim; `with-assent` only where the governor agrees. */
+  readonly answersClaim: boolean | "with-assent";
   /**
-   * What it obligates, as a share of national output per use, the way every
-   * other priced act in the engine states money.
-   *
-   * These used to be flat figures — 60, 80, 25 — justified against an
-   * `order-relief-program` that charged 350. That order has not charged a flat
-   * figure since orders.ts abandoned the unit on the grounds that "the −80 this
-   * order used to charge was 0.003% of the federal accounts: a price on an act
-   * of government that no president could see and none would ever weigh". The
-   * locale acts went on charging exactly those invisible numbers against a
-   * benchmark that had been deleted.
+   * What it obligates up front, as a share of national output per use, the
+   * way every other priced act in the engine states money. Force acts price a
+   * surge at about $300k per loaded officer-year, a planning value.
    */
   readonly treasuryOfGdp: number;
   /** Standing paid at home for reaching this far into a state's own business. */
   readonly standingCost: number;
-  /** See `ExecutiveOrder.excepted` — work that continues through a lapse. */
+  /**
+   * See `ExecutiveOrder.excepted` — work that continues through a lapse. Force
+   * sent into a state to keep order is the "emergencies involving the safety
+   * of human life or the protection of property" the Antideficiency Act
+   * excepts (31 U.S.C. §1342), and so is its weekly bill.
+   */
   readonly excepted?: true;
   /**
    * Force or surveillance pointed at Americans: the chance something goes
@@ -58,7 +106,209 @@ export type LocaleAct = {
    * See `domestic-coercion.ts`.
    */
   readonly coercion?: CoercionRisk;
+  /** The law the act runs on, or for a refused act the law that closes it. */
+  readonly authority?: OrderAuthority;
+  /** The mission order the act signs; the troop act's depends on its tier. */
+  readonly orderId?: string;
+  /** What the mission is worth to the unrest it answers, and for how long. */
+  readonly mission?: { readonly attention: number; readonly weeks: number };
+  /** National protest pressure moved: easing only where unrest reaches the state, inflaming always. */
+  readonly protest?: number;
+  /** A standing federal mission: USD millions a week, for a term, on one outlay line, with any formations it takes. */
+  readonly commitment?: {
+    readonly amountPerTurn: number;
+    readonly weeks: number;
+    readonly line: OutlayFunction;
+    readonly forces?: { readonly branch: MilitaryBranch; readonly unitType: ForceAssetId; readonly count: number };
+  };
+  /** The governor's step toward or away from the administration, by whether they assented. */
+  readonly governor?: { readonly opposed: number; readonly assenting: number };
+  readonly mark?: LocaleMark;
+  readonly opinion?: LocaleOpinion;
+  readonly stability?: number;
+  readonly readiness?: number;
+  /** Scales protest, the opposed governor's step and the mark by the state's foreign-born share. */
+  readonly reach?: "foreign-born";
+  /** Refused by law in every case; kept so the desk can say which law. */
+  readonly boundary?: true;
+  readonly tiers?: Readonly<Record<InsurrectionGround, LocaleTier>>;
 };
+
+const govinfo = (title: number, section: string): string => `https://www.govinfo.gov/link/uscode/${title}/${section}`;
+
+const MISSION_TIERS: Readonly<Record<InsurrectionGround, LocaleTier>> = {
+  "251": { standingCost: 0.02, governor: { opposed: 0.02, assenting: 0.02 }, answersClaim: true,
+    mark: { valence: 1, weight: 0.3, signature: "locale:troops", when: "always" }, opinion: { competence: 0.004 },
+    mission: "assist state authorities" },
+  "252": { standingCost: 0.06, governor: { opposed: -0.04, assenting: -0.04 }, answersClaim: false,
+    mark: { valence: -1, weight: 0.5, signature: "locale:troops", when: "always" }, opinion: { integrity: -0.01, polarize: 0.01 },
+    mission: "enforce federal law and court orders" },
+  "253": { standingCost: 0.06, governor: { opposed: -0.04, assenting: -0.04 }, answersClaim: false,
+    mark: { valence: -1, weight: 0.5, signature: "locale:troops", when: "always" }, opinion: { integrity: -0.01, polarize: 0.01 },
+    mission: "suppress violence denying rights" },
+};
+
+/** The proclamation's own tier: the governor's request costs that governor nothing. */
+const PROCLAMATION_TIERS: Readonly<Record<InsurrectionGround, LocaleTier>> = {
+  "251": { standingCost: 0.01, governor: { opposed: 0, assenting: 0 }, answersClaim: false, opinion: { polarize: 0.004 } },
+  "252": { standingCost: 0.01, governor: { opposed: -0.02, assenting: -0.02 }, answersClaim: false, opinion: { polarize: 0.004 } },
+  "253": { standingCost: 0.01, governor: { opposed: -0.02, assenting: -0.02 }, answersClaim: false, opinion: { polarize: 0.004 } },
+};
+
+const ENFORCEMENT_ACTS: readonly LocaleAct[] = [
+  {
+    id: "property-surge",
+    name: "Surge officers to federal property",
+    summary: "Homeland Security officers protect the federal buildings here and the people on them, and nothing past their grounds.",
+    group: "enforcement", needsDeclaration: false, needsGovernorAssent: false, occasion: "disorder", answersClaim: false,
+    // ~$15M: about 430 officers for the six-week mission at ~$300k per loaded officer-year, a planning value.
+    treasuryOfGdp: -5.5e-7,
+    standingCost: 0.005,
+    excepted: true,
+    coercion: { kind: "agents", odds: 0.1, severity: 0.8 },
+    orderId: "order-property-surge",
+    mission: MISSION_ATTENTION["property-surge"],
+    protest: -0.01,
+    governor: { opposed: -0.02, assenting: 0 },
+    opinion: { polarize: 0.003 },
+    stability: 0.004,
+  },
+  {
+    id: "immigration-operation",
+    name: "Run an immigration operation",
+    summary: "Immigration officers concentrate in this state to question and arrest people they believe are removable.",
+    group: "enforcement", needsDeclaration: false, needsGovernorAssent: false, occasion: "enforcement", answersClaim: false,
+    // ~$65M: about 1,400 officers for eight weeks at ~$300k per loaded officer-year, a planning value.
+    treasuryOfGdp: -2.4e-6,
+    standingCost: 0.01,
+    excepted: true,
+    coercion: { kind: "agents", odds: 0.14, severity: 1 },
+    orderId: "order-immigration-operation",
+    protest: 0.015,
+    governor: { opposed: -0.04, assenting: -0.01 },
+    mark: { valence: -1, weight: 0.3, signature: "locale:immigration-operation", when: "always" },
+    reach: "foreign-born",
+  },
+  {
+    id: "task-force",
+    name: "Stand up a federal task force",
+    summary: "Justice Department agents work federal crimes here beside the state's own police, at the governor's invitation.",
+    group: "enforcement", needsDeclaration: false, needsGovernorAssent: true, occasion: "disorder", answersClaim: false,
+    // ~$40M: about 870 agents, analysts and prosecutors for the eight-week mission at ~$300k per loaded officer-year, a planning value.
+    treasuryOfGdp: -1.5e-6,
+    standingCost: 0,
+    excepted: true,
+    coercion: { kind: "agents", odds: 0.07, severity: 0.7 },
+    orderId: "order-joint-task-force",
+    mission: MISSION_ATTENTION["task-force"],
+    protest: -0.01,
+    governor: { opposed: 0.02, assenting: 0.02 },
+    mark: { valence: 1, weight: 0.2, signature: "answered:task-force", when: "always" },
+  },
+];
+
+const MILITARY_ACTS: readonly LocaleAct[] = [
+  {
+    id: "federalize",
+    name: "Federalize the Guard",
+    summary: "Call the state's National Guard into federal service, through its governor, on one of the three occasions the statute names.",
+    group: "military", needsDeclaration: false, needsGovernorAssent: false, occasion: "any", predicate: "federal-service",
+    answersClaim: "with-assent",
+    // ~$20M to mobilize, a planning value, then the force's weekly cost below.
+    treasuryOfGdp: -7.3e-7,
+    standingCost: 0.03,
+    excepted: true,
+    coercion: { kind: "troops", odds: 0.18, severity: 1.2 },
+    orderId: "order-guard-federalization",
+    mission: MISSION_ATTENTION.federalize,
+    protest: -0.02,
+    // ~$13.5M a week: a 3,000-member call-up at CBO's cost of the Guard deployed to a city.
+    commitment: { amountPerTurn: domesticGuardWeek(), weeks: MISSION_ATTENTION.federalize!.weeks, line: "defense" },
+    governor: { opposed: -0.04, assenting: 0 },
+    mark: { valence: -1, weight: 0.4, signature: "locale:federalize", when: "opposed" },
+    opinion: { integrity: -0.008, polarize: 0.008, when: "opposed" },
+    stability: 0.006,
+    readiness: -0.003,
+  },
+  {
+    id: "proclaim",
+    name: "Proclaim the insurgents to disperse",
+    summary: "The proclamation the Insurrection Act requires before any troops are used. By itself it moves no one.",
+    group: "military", needsDeclaration: false, needsGovernorAssent: false, occasion: "any", predicate: "insurrection",
+    answersClaim: false,
+    treasuryOfGdp: 0,
+    standingCost: 0.01,
+    excepted: true,
+    orderId: "order-insurrection-proclamation",
+    protest: -0.005,
+    tiers: PROCLAMATION_TIERS,
+  },
+  {
+    id: "troops",
+    name: "Send in active-duty troops",
+    summary: "Send one brigade of active-duty troops into the state, on the proclamation already issued and for the mission it states.",
+    group: "military", needsDeclaration: false, needsGovernorAssent: false, occasion: "any", predicate: "proclaimed",
+    answersClaim: "with-assent",
+    // ~$25M to move a brigade, a planning value, then the force's weekly cost below.
+    treasuryOfGdp: -9e-7,
+    standingCost: 0.06,
+    excepted: true,
+    coercion: { kind: "troops", odds: 0.22, severity: 1.5 },
+    orderId: "order-insurrection-enforcement",
+    mission: MISSION_ATTENTION.troops,
+    protest: -0.03,
+    // ~$14.5M a week: the active-duty border deployment's average rate, in 2026 dollars.
+    commitment: { amountPerTurn: domesticBrigadeWeek(), weeks: MISSION_ATTENTION.troops!.weeks, line: "defense",
+      forces: { branch: "army", unitType: "army.brigade-combat-team", count: 1 } },
+    stability: 0.008,
+    readiness: -0.008,
+    tiers: MISSION_TIERS,
+  },
+];
+
+const INVESTIGATIVE_ACTS: readonly LocaleAct[] = [
+  {
+    id: "priority",
+    name: "Set an investigative priority",
+    summary: "A memorandum asking the Attorney General to put violent disorder here first. Justice decides the cases.",
+    group: "investigation", needsDeclaration: false, needsGovernorAssent: false, occasion: "disorder", answersClaim: false,
+    treasuryOfGdp: 0,
+    standingCost: 0,
+    coercion: { kind: "surveillance", odds: 0.06, severity: 0.6 },
+    authority: { kind: "statute", cite: "28 U.S.C. §509", name: "Functions of the Attorney General",
+      limit: "The Department's functions are the Attorney General's; the President may set priorities but not direct a case.",
+      source: govinfo(28, "509"), opened: "2026-10-25" },
+    mission: MISSION_ATTENTION.priority,
+    protest: -0.005,
+    opinion: { integrity: -0.006, polarize: 0.004 },
+  },
+  {
+    id: "surveil",
+    name: "Order surveillance of residents",
+    summary: "A presidential order to watch residents. No such order exists; the courts and the Attorney General's procedures decide.",
+    group: "investigation", needsDeclaration: false, needsGovernorAssent: false, occasion: "disorder", answersClaim: false,
+    treasuryOfGdp: 0,
+    standingCost: 0,
+    boundary: true,
+    authority: { kind: "statute", cite: "50 U.S.C. §1812", name: "Exclusive means for electronic surveillance",
+      limit: "Electronic surveillance runs only on a FISA or Title III court order; no presidential order supplies one.",
+      source: govinfo(50, "1812"), opened: "2026-10-25" },
+  },
+  {
+    id: "surveil-under-order",
+    name: "Conduct surveillance under the court's order",
+    summary: "Justice and the Bureau collect on the targets and facilities a FISA or Title III order names here, for the term it runs and on its minimization rules.",
+    group: "investigation", needsDeclaration: false, needsGovernorAssent: false, occasion: "any", predicate: "court-order", answersClaim: false,
+    treasuryOfGdp: 0,
+    standingCost: 0,
+    // Lawful collection still reaches people it was not aimed at; a narrowed order raises the odds (see `surveillanceRisk`).
+    coercion: { kind: "surveillance", odds: 0.05, severity: 0.5 },
+    authority: { kind: "statute", cite: "50 U.S.C. §1805; 18 U.S.C. §2518", name: "Court-ordered electronic surveillance",
+      limit: "Only the targets, facilities and term the order names, under its minimization procedures; the order, not the President, authorizes the collection.",
+      source: govinfo(50, "1805"), opened: "2026-10-25" },
+    opinion: { polarize: 0.002 },
+  },
+];
 
 /**
  * Priced against `order-relief-program`, which is the *national* relief
@@ -74,8 +324,10 @@ export const LOCALE_ACTS: readonly LocaleAct[] = [
     id: "relief",
     name: "Direct federal relief",
     summary: "Money and materiel to this state, ahead of the ordinary appropriation.",
+    group: "relief",
     needsDeclaration: false,
     needsGovernorAssent: false,
+    occasion: "any",
     predicate: "request",
     answersClaim: true,
     // ~$6.9B, a sixth of the national program.
@@ -84,84 +336,41 @@ export const LOCALE_ACTS: readonly LocaleAct[] = [
     // The disaster relief fund is a no-year appropriation and does not stop
     // when the annual ones do.
     excepted: true,
+    authority: { kind: "statute", cite: "42 U.S.C. §5170", name: "The Stafford Disaster Relief and Emergency Assistance Act",
+      limit: "Answers a governor's request over a disaster beyond what the state can meet.",
+      source: govinfo(42, "5170"), opened: "2026-10-12" },
   },
   {
     id: "request-deployment",
     name: "Ask the governor to deploy the Guard",
     summary: "The state's own Guard, on the state's own authority, at the President's request.",
+    group: "military",
     needsDeclaration: false,
     needsGovernorAssent: true,
+    occasion: "any",
     answersClaim: true,
-    // ~$2.8B: a state's own Guard, on state orders, federally reimbursed.
-    treasuryOfGdp: -0.0001,
+    // ~$108M: the state's own Guard, on state orders, federally reimbursed for
+    // a 3,000-member call-up for eight weeks at the federalized Guard's weekly
+    // rate (`domesticGuardWeek`), the same people at the same cost.
+    treasuryOfGdp: -3.9e-6,
     standingCost: 0.01,
     excepted: true,
+    authority: { kind: "statute", cite: "32 U.S.C. §502(f)", name: "National Guard duty at the President's request",
+      limit: "The Guard stays under the governor's command and on state orders; the governor may decline.",
+      source: govinfo(32, "502"), opened: "2026-10-25" },
   },
-  {
-    // The historical identifier is retained; no supported federal-service pathway is modeled.
-    id: "federalize",
-    name: "Federalize the Guard",
-    summary: "Put the state's National Guard under federal command.",
-    needsDeclaration: true,
-    needsGovernorAssent: false,
-    predicate: "guard",
-    answersClaim: true,
-    // ~$8.3B: federal service, federal pay, and a deployment nobody in the
-    // state asked for.
-    treasuryOfGdp: -0.0003,
-    standingCost: 0.06,
-    excepted: true,
-  },
-  {
-    // Retained for historical records and comparison, not as a jurisdictional finding.
-    id: "agents",
-    name: "Surge federal agents",
-    summary: "Send federal law-enforcement agents into the state.",
-    needsDeclaration: false,
-    needsGovernorAssent: false,
-    predicate: "disorder",
-    answersClaim: false,
-    // ~$1.4B: a surge of federal officers, their travel and their overtime.
-    treasuryOfGdp: -0.00005,
-    standingCost: 0.02,
-    coercion: { kind: "agents", odds: 0.14, severity: 1 },
-  },
-  {
-    // Historical capability retained without inventing legal predicates or procedures.
-    id: "troops",
-    name: "Send in active-duty troops",
-    summary: "Send active-duty troops into the state.",
-    needsDeclaration: true,
-    needsGovernorAssent: false,
-    predicate: "guard",
-    answersClaim: false,
-    // ~$11B: a deployed brigade, and the readiness it is not training for.
-    treasuryOfGdp: -0.0004,
-    standingCost: 0.1,
-    excepted: true,
-    coercion: { kind: "troops", odds: 0.22, severity: 1.5 },
-  },
-  {
-    // Kept visible as a refused proposal so the state desk explains the
-    // investigation boundary instead of implying unrest grants authority.
-    id: "surveil",
-    name: "Order surveillance of residents",
-    summary: "A presidential order to investigate residents; Justice does not take case direction from this desk.",
-    needsDeclaration: false,
-    needsGovernorAssent: false,
-    predicate: "disorder",
-    answersClaim: false,
-    // Historical price of the refused proposal; no obligation is made.
-    treasuryOfGdp: -0.00002,
-    standingCost: 0.01,
-    coercion: { kind: "surveillance", odds: 0.18, severity: 1 },
-  },
+  // Enforcement, military and investigative acts, in the order the desk offers them.
+  ...ENFORCEMENT_ACTS,
+  ...MILITARY_ACTS,
+  ...INVESTIGATIVE_ACTS,
   {
     id: "waiver",
     name: "Grant a regulatory waiver",
     summary: "Cheap, narrow, and only part of an answer.",
+    group: "relief",
     needsDeclaration: false,
     needsGovernorAssent: false,
+    occasion: "any",
     answersClaim: false,
     // ~$825M: the administrative cost of suspending a rule for one state.
     treasuryOfGdp: -0.00003,
@@ -171,8 +380,10 @@ export const LOCALE_ACTS: readonly LocaleAct[] = [
     id: "review",
     name: "Order a federal review",
     summary: "Buys time. The state waits longer before the silence counts against you.",
+    group: "relief",
     needsDeclaration: false,
     needsGovernorAssent: false,
+    occasion: "any",
     answersClaim: false,
     // ~$550M: a federal review, which is people and time.
     treasuryOfGdp: -0.00002,
@@ -184,37 +395,78 @@ export function localeAct(id: LocaleActId): LocaleAct | undefined {
   return LOCALE_ACTS.find((act) => act.id === id);
 }
 
+/** The law an act runs on: its own citation, or the mission order's it signs. */
+export function localeActAuthority(act: LocaleAct): OrderAuthority | undefined {
+  return act.authority ?? (act.orderId ? executiveOrder(act.orderId)?.authority : undefined);
+}
+
+/** The act as its tier changes it: the troop act and the proclamation read their Insurrection Act section. */
+export function tieredLocaleAct(act: LocaleAct, ground: InsurrectionGround | undefined): LocaleAct {
+  const tier = ground ? act.tiers?.[ground] : undefined;
+  if (!tier) return act;
+  return {
+    ...act,
+    standingCost: tier.standingCost,
+    governor: tier.governor,
+    answersClaim: tier.answersClaim,
+    ...(tier.mark ? { mark: tier.mark } : {}),
+    ...(tier.opinion ? { opinion: tier.opinion } : {}),
+    ...(act.orderId ? { orderId: missionOrderId(act.id, ground) } : {}),
+  };
+}
+
+/** The Insurrection Act section this act rests on now: the proclamation's for troops, this week's occasion for a proclamation. */
+export function localeGround(campaign: Campaign, id: StateId, act: LocaleAct): InsurrectionGround | undefined {
+  if (act.id === "proclaim") return insurrectionGround(campaign, id);
+  if (act.id !== "troops") return undefined;
+  const subject = liveProclamation(campaign, id)?.subject;
+  return subject?.kind === "locale-mission" ? subject.ground : undefined;
+}
+
+/** The subject the act's mission order is signed for in this state. */
+export function missionSubject(campaign: Campaign, id: StateId, act: LocaleAct): Extract<OrderSubject, { kind: "locale-mission" }> {
+  const ground = localeGround(campaign, id, act);
+  const mission = ground ? act.tiers?.[ground]?.mission : undefined;
+  return { kind: "locale-mission", state: id, act: act.id, ...(ground ? { ground } : {}), ...(mission ? { mission } : {}) };
+}
+
 /** How long a federal review pushes a claim's deadline out. Once only; see `deferClaims`. */
 export const REVIEW_DEFERRAL_TURNS = 3;
 
 export type LocaleAvailability = { readonly ok: true } | { readonly ok: false; readonly missing: string };
-
-/**
- * Whether the governor will go along with an act that needs them.
- *
- * Read off `GovernorStanding`, which founding seats and
- * which nothing has ever consulted for a decision. A governor disposed against
- * the administration refuses, and refusing is what makes federalizing the only
- * remaining road — at its own price.
- */
-export const GOVERNOR_ASSENT_FLOOR = 0.45;
-
-export function governorAssents(governor: GovernorStanding | undefined): boolean {
-  // An absent governor record cannot supply affirmative consent.
-  return governor !== undefined && governor.disposition >= GOVERNOR_ASSENT_FLOOR;
-}
 
 /** What one use of an act obligates, resolved against the country paying for it. */
 export function localeActCost(campaign: Campaign, act: LocaleAct): number {
   return Math.round(Math.abs(act.treasuryOfGdp) * playerGdp(campaign));
 }
 
-/** A condition or declaration is not a federal mission, jurisdiction or statutory finding. */
-function domesticAuthorityBoundary(act: LocaleAct): string | undefined {
-  if (act.id === "agents") return "a federal law-enforcement mission, and the game doesn't include those yet";
-  if (act.id === "federalize") return "federal command of the Guard, and the game doesn't include that yet";
-  if (act.id === "troops") return "the Insurrection Act, and the game doesn't include it yet";
+/** The statutory predicate refused, as the text after "This needs ", or nothing when it holds. */
+function predicateRefusal(campaign: Campaign, id: StateId, act: LocaleAct): string | undefined {
+  if (act.predicate === "federal-service" && !federalServiceGround(campaign, id)) return LOCALE_REFUSALS.federalize;
+  if (act.predicate === "insurrection" && !insurrectionGround(campaign, id)) return LOCALE_REFUSALS.proclaim;
+  if (act.predicate === "proclaimed" && !liveProclamation(campaign, id)) return LOCALE_REFUSALS.troops;
+  if (act.predicate === "court-order" && !liveCourtOrder(campaign, id, SURVEILLANCE_ORDER_KINDS)) return LOCALE_REFUSALS["surveil-under-order"];
   return undefined;
+}
+
+/** The mission order's own gate: a Secretary in the chair, a week since the last signature, no statute against it. */
+function missionOrderRefused(campaign: Campaign, id: StateId, act: LocaleAct): string | undefined {
+  const subject = missionSubject(campaign, id, act);
+  const order = executiveOrder(tieredLocaleAct(act, subject.ground).orderId ?? "");
+  if (!order) return undefined;
+  const available = orderAvailability(campaign, order, subject);
+  return available.ok ? undefined : available.missing;
+}
+
+/** One investigative priority a week for each state: Justice keeps one record of the instruction per state and week. */
+export function priorityDirectiveId(turn: number, id: StateId): string {
+  return `directive:INST-DOJ:enforcement-posture:${turn}:${id}`;
+}
+
+function priorityRefused(campaign: Campaign, id: StateId, act: LocaleAct): string | undefined {
+  if (act.id !== "priority") return undefined;
+  return campaign.directives?.[priorityDirectiveId(campaign.turn, id)]
+    ? "a new week before the Attorney General is sent another priority for this state" : undefined;
 }
 
 export function localeAvailability(
@@ -225,18 +477,16 @@ export function localeAvailability(
 ): LocaleAvailability {
   const runtime = campaign.states[id];
   if (!runtime) return { ok: false, missing: "a state this act could reach" };
-  if (act.id === "surveil") return { ok: false, missing: residentSurveillanceBoundary() };
-  const authorityBoundary = domesticAuthorityBoundary(act);
-  if (authorityBoundary) return { ok: false, missing: authorityBoundary };
+  if (act.boundary) return { ok: false, missing: LOCALE_REFUSALS.surveil };
   if (act.needsDeclaration && !underDeclaredEmergency(campaign, id)) {
     return { ok: false, missing: "a declared emergency reaching this state" };
   }
-  if (act.predicate === "disorder" && cause !== "unrest") {
-    return { ok: false, missing: "unrest in the state: federal force and collection answer disorder, not a disaster" };
-  }
+  if (act.occasion === "disorder" && cause !== "unrest") return { ok: false, missing: LOCALE_REFUSALS.disorder };
   if (act.needsGovernorAssent && !governorAssents(runtime.governor)) {
     return { ok: false, missing: "the governor's recorded assent, which is absent or withheld" };
   }
+  const refused = predicateRefusal(campaign, id, act) ?? priorityRefused(campaign, id, act) ?? missionOrderRefused(campaign, id, act);
+  if (refused) return { ok: false, missing: refused };
   const funded = obligationAvailability(campaign, localeActCost(campaign, act), { excepted: act.excepted });
   if (!funded.ok) return funded;
   return { ok: true };
@@ -255,7 +505,7 @@ export function localeAvailability(
  */
 export const UNREQUESTED_RELIEF_STANDING = 0.04;
 
-function unrequestedReliefCost(campaign: Campaign, id: StateId): number {
+export function unrequestedReliefCost(campaign: Campaign, id: StateId): number {
   if (openRequests(campaign, id).length > 0) return 0;
   const disposition = campaign.states[id]?.governor?.disposition ?? 0.5;
   return round3(UNREQUESTED_RELIEF_STANDING * (1 - disposition));
@@ -264,7 +514,7 @@ function unrequestedReliefCost(campaign: Campaign, id: StateId): number {
 const round3 = (value: number) => Math.round(value * 1000) / 1000 + 0;
 
 /** Push every open relief claim in this state further out, once. */
-function deferClaims(claims: readonly PendingClaim[], turn: number): readonly PendingClaim[] {
+export function deferClaims(claims: readonly PendingClaim[], turn: number): readonly PendingClaim[] {
   return claims.map((claim) =>
     claim.signature.startsWith(`${RELIEF_SIGNATURE_PREFIX}:`) && claim.expiresTurn > turn
       ? { ...claim, expiresTurn: claim.expiresTurn + REVIEW_DEFERRAL_TURNS }
@@ -272,112 +522,22 @@ function deferClaims(claims: readonly PendingClaim[], turn: number): readonly Pe
   );
 }
 
-export type LocaleActResult =
-  | { readonly ok: true; readonly packet: EffectPacket }
-  | { readonly ok: false; readonly reason: string };
-
-/**
- * Take one act against one state, over one condition kind.
- *
- * An act that answers discharges the claim without a mark; the others cost
- * their price and leave the obligation standing, which is the honest outcome —
- * a waiver is not an answer, and the state goes on waiting.
- */
-export function takeLocaleAct(
-  campaign: Campaign,
-  id: StateId,
-  actId: LocaleActId,
-  cause: ConditionKind,
-): LocaleActResult {
-  const act = localeAct(actId);
-  if (!act) return { ok: false, reason: "no such act" };
-  const availability = localeAvailability(campaign, id, act, cause);
-  if (!availability.ok) return { ok: false, reason: `This needs ${availability.missing}.` };
-
-  const runtime = campaign.states[id]!;
-  const unrequested = act.predicate === "request" ? unrequestedReliefCost(campaign, id) : 0;
-  const standing = round3(act.standingCost + unrequested);
-  const effects: Effect[] = [
-    {
-      kind: "metric",
-      deltas: { treasury: -localeActCost(campaign, act), ...(standing ? { standing: -standing } : {}) },
-    },
-  ];
-
-  if (act.answersClaim) {
-    const answered = answerReliefClaims(campaign, id, cause);
-    if (answered) effects.push(answered);
-  } else if (actId === "review") {
-    const deferred = deferClaims(runtime.claims, campaign.turn);
-    effects.push({
-      kind: "state",
-      state: id,
-      reason: `A federal review of the ${cause} in ${runtime.base.name} buys the answer more time.`,
-      replaceClaims: deferred,
-    });
-  }
-  const coerced = act.coercion ? coercionOutcome(campaign, id, runtime.base.name, act.coercion) : undefined;
-  if (coerced) effects.push(...coerced.effects);
-  // A packet rather than loose effects, for the same reason every other act
-  // the president can take hands one back: `apply()` is the one write path onto
-  // the ledger, and a caller assembling its own narration would be a second
-  // account of what the administration did.
-  return {
-    ok: true,
-    packet: {
-      source: "action",
-      actor: "player",
-      turn: campaign.turn,
-      narration: {
-        summary: `${
-          unrequested
-            ? `${act.name} for ${runtime.base.name}, against the ${cause} — which the state did not ask for, and its governor will say so.`
-            : `${act.name} for ${runtime.base.name}, against the ${cause}.`
-        }${coerced?.incident ? ` ${coerced.incident}.` : ""}`,
-      },
-      effects,
-    },
-  };
-}
-
 /** Standing paid for force or collection with no unrest to answer, as a multiple of the act's own. */
 export const UNPROVOKED_STANDING = 2;
 
-/** A second entry point cannot waive the ordinary authority boundary. */
+/**
+ * A second entry point cannot waive the ordinary authority boundary. The home
+ * path takes coercive acts whose occasion is not `any`; it supplies no cause, so
+ * an act that answers disorder is refused there, and routine enforcement is not.
+ */
 export function homeActAvailability(campaign: Campaign, id: StateId, act: LocaleAct): LocaleAvailability {
-  if (!act.coercion) return { ok: false, missing: "an act of force or collection" };
+  if (!act.coercion || act.occasion === "any") return { ok: false, missing: "an act of force or collection" };
   return localeAvailability(campaign, id, act);
 }
 
-function residentSurveillanceBoundary(): string {
-  const fbi = icElement("IC-FBI")!;
-  return boundaryRefusalReason(fbi, {
-    element: "IC-FBI", discipline: "humint", targetKind: "domestic-person",
-    target: "a resident", question: "Investigate residents in this state.",
-  })!;
-}
-
-/** Force or collection sent into a state on the President's own initiative, with no unrest to answer. */
-export function takeHomeAct(campaign: Campaign, id: StateId, actId: LocaleActId): LocaleActResult {
-  const act = localeAct(actId);
-  if (!act?.coercion) return { ok: false, reason: "no such act of force or collection" };
-  const availability = homeActAvailability(campaign, id, act);
-  if (!availability.ok) return { ok: false, reason: `This needs ${availability.missing}.` };
-  const name = campaign.states[id]!.base.name;
-  const coerced = coercionOutcome(campaign, id, name, act.coercion, false);
-  return {
-    ok: true,
-    packet: {
-      source: "action",
-      actor: "player",
-      turn: campaign.turn,
-      narration: { summary: `${act.name} for ${name}, with no unrest there to answer.${coerced.incident ? ` ${coerced.incident}.` : ""}` },
-      effects: [
-        { kind: "metric", deltas: { treasury: -localeActCost(campaign, act), standing: -round3(act.standingCost * UNPROVOKED_STANDING) } },
-        ...coerced.effects,
-      ],
-    },
-  };
+/** The charter the mission orders are signed under. */
+export function playerCharter(campaign: Campaign): Charter | undefined {
+  return worldDataset.charters.find((entry) => entry.id === campaign.founding.charter);
 }
 
 /**

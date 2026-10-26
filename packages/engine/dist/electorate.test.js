@@ -4,12 +4,13 @@ import { BLOCS, BLOC_FLATTENING, FOUNDING_MARGIN_HALF_RANGE, HEADLINE_ISSUE_CAP,
 import { approvalFor, selectElectorate } from "./opinion.js";
 import { ERA_POLARIZATION, POLARIZATION_DRIFT_MAX, stepPolarization, weeklyReversion } from "./polarization.js";
 import { createRngStreams, makeCampaignSeed } from "./rng.js";
+import { flagMarker } from "./marked-flags.js";
 function withMood(mood, turn = 1) {
     const base = buildCampaign();
     return { ...base, turn, player: { ...base.player, opinion: { ...base.player.opinion, ...mood } } };
 }
 function withScandal(campaign, flag) {
-    return { ...campaign, player: { ...campaign.player, flags: { ...campaign.player.flags, [flag]: true } } };
+    return { ...campaign, player: { ...campaign.player, flags: { ...campaign.player.flags, [flag]: true, [flagMarker(flag, campaign.turn)]: true } } };
 }
 const inputs = (valence, polarization = ERA_POLARIZATION) => ({
     valence,

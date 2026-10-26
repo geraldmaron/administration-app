@@ -1,5 +1,6 @@
 import type { PlankId, StateId } from "@admin/world";
 import { type AlignmentVector, type Bill, type BillSponsor, type LawRevisionKind, type Campaign } from "./state.js";
+import type { AuthorityClock } from "./state-emergency.js";
 import type { LegislativeTrack } from "./congress.js";
 import { type PolicyStatPath } from "./policy.js";
 import { type BudgetAccount } from "./budget.js";
@@ -8,6 +9,7 @@ import type { MetricDeltas } from "./effect-types.js";
 export { CONTINUING_RESOLUTION_TURNS } from "./legislative-acts-fiscal.js";
 /** What an act does to the presidency once it is in force, either way. */
 export type LawConstraint = {
+    readonly authorityDays?: Partial<Readonly<Record<AuthorityClock["authority"], number>>>;
     /** Executive orders this act puts out of the president's reach entirely. */
     readonly blocksOrders?: readonly string[];
     /**
@@ -35,6 +37,7 @@ export type LawConstraint = {
      */
     readonly bindsTheExecutive?: boolean;
 };
+export declare function mergedAuthorityLimits(laws: readonly LawConstraint[]): LawConstraint["authorityDays"];
 /**
  * Which of the three grounds an order stands on, in the order they run from
  * strongest to weakest.
@@ -226,6 +229,8 @@ export type LegislativeAct = {
      * rule in particular.
      */
     readonly targetsOrder?: (campaign: Campaign) => string | undefined;
+    readonly targetsEmergency?: (campaign: Campaign) => string | undefined;
+    readonly emergencyAction?: "terminate" | "renew";
     /**
      * Whether enacting it strikes the order it names.
      *

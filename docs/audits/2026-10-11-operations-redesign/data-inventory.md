@@ -17,7 +17,7 @@ Counts come from saves the repo's own fixture builders produce, plus the shipped
 
 Caveat: these are scripted fixtures, and `term-end` is advanced by a scripted policy, not a person. Counts that depend on what a President chooses to do (executive orders, treaties, nominations, court cases) are probably low in them. Those cells are marked "fixture-low".
 
-Commands (scratch scripts live in `/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-admin-app/a8e062fc-007b-4254-9c83-6b58ec63be50/scratchpad/`, abbreviated `$S`):
+Commands (scratch scripts live in `<scratch path>`, abbreviated `$S`):
 
 | ID | Command | What it gave |
 |---|---|---|

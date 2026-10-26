@@ -28,10 +28,10 @@ function OwedNotice({ campaign, notice, acts }: { readonly campaign: Campaign; r
           You signed a finding on {notice.target} on {notice.signed}. Goal: {notice.objective}. You've held back telling the committees for {notice.daysLate} {notice.daysLate === 1 ? "day" : "days"}{notice.reasonsWithheld ? `, because ${notice.reasonsWithheld.replace(/\.$/, "")}` : ""}.
         </Text>
         <ActChooser id={`notice:${notice.id}`} title={`Tell the committees about ${notice.target}`} comparison={comparison(notice)} acts={acts} authority={LAW.covertNotice} again="Back to the notices"
-          pending={() => (statement ? undefined : "Pick your reason for the delay first.")}
+          pending={() => (statement ? undefined : "No reason for the delay chosen yet.")}
           receiptTitle={() => `The committees are told of the finding on ${notice.target}`}
           packet={() => committeeNoticePacket(campaign, notice.id, statement ?? "")}
-          terms={<Select label="Your reason for the delay" options={reasons.map((reason) => ({ value: reason, label: reason }))} value={statement} onChange={setStatement} placeholder="Pick a statement" />} />
+          terms={<Select label="Your reason for the delay" options={reasons.map((reason) => ({ value: reason, label: reason }))} value={statement} onChange={setStatement} placeholder="No statement chosen" />} />
         <Note tone="tertiary">Sending a standard statement doesn't prove the delay was legal.</Note>
       </Column>
     </Surface>

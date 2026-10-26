@@ -32,6 +32,17 @@ export const DefenseScope = z.object({
 });
 export type DefenseScope = z.infer<typeof DefenseScope>;
 
+// How a body that votes counts its decisions. The governments in `permanent`
+// hold a veto on every substantive question (Charter Art. 27(3)); the rest of
+// the roster votes without one. `threshold` is the count of affirmative votes
+// a decision needs.
+export const CouncilRule = z.object({
+  permanent: z.array(NationId).min(1),
+  threshold: z.number().int().positive(),
+  source: z.string().min(1),
+});
+export type CouncilRule = z.infer<typeof CouncilRule>;
+
 export const Organization = z.object({
   id: OrgId,
   name: z.string().min(1),
@@ -49,6 +60,9 @@ export const Organization = z.object({
   tradeCompetence: TradeCompetence.optional(),
   // Read only on a defense body: a scope on any other kind binds nothing.
   defenseScope: DefenseScope.optional(),
+  // Present only on a voting council. Sitting on one is not a bond between its
+  // members, so assembly does not mirror its roster onto the nations.
+  council: CouncilRule.optional(),
 });
 export type Organization = z.infer<typeof Organization>;
 

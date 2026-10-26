@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import { formatDate, personFile, place, type PersonFile } from "@admin/player-core";
 import { Column, Page, Text, useMedia } from "@admin/ui";
-import { Monogram } from "@admin/ui/dossier";
 import { ViewTabs, type ViewTab } from "@admin/ui/nation";
 import { ActReceipt } from "../executive/ActReceipt";
 import { useChairActs, type ChairActDone, type ChairActs } from "../executive/acts";
 import { Problem } from "../executive/parts";
 import { BackButton } from "../shell/BackButton";
 import { useMarking } from "../shell/classification";
+import { PersonFace } from "./PersonFace";
 import { Attention, Marking, PersonHeader } from "./PersonHeader";
 import { PersonNetwork, type NetworkSearch } from "./PersonNetwork";
 import { PersonProfile } from "./PersonProfile";
@@ -26,7 +26,7 @@ type DeskProps = { readonly campaign: Campaign; readonly file: PersonFile; reado
 function PersonDesk({ campaign, file, view, onView, network, onNetwork, acts }: DeskProps) {
   const media = useMedia();
   return (
-    <Page eyebrow={houseSeal(file.dossier.standing)?.name ?? file.role} icon="subjectPerson" title={file.person.name} emblem={<Monogram name={file.person.name} size={media.phone ? 48 : 72} />} actions={<Marking file={file} />}>
+    <Page eyebrow={houseSeal(file.dossier.standing)?.name ?? file.role} icon="subjectPerson" title={file.person.name} emblem={<PersonFace campaign={campaign} id={file.person.id} name={file.person.name} size={media.phone ? 48 : 72} />} actions={<Marking file={file} />}>
       <Column gap="md">
         <Problem text={acts.problem} />
         <PersonHeader campaign={campaign} file={file} acts={acts} asOf={formatDate(campaign.calendar)} />
@@ -56,7 +56,7 @@ export function PersonScreen({ campaign, id, view, onView, network, onNetwork }:
   if (!file) {
     return (
       <Page title="We couldn't find this person" eyebrow="Profile">
-        <Text variant="body">This link doesn't match anyone in your game. It may be old or mistyped. You can find everyone who works with you on the Executive screen.</Text>
+        <Text variant="body">This link doesn't match anyone in your game. It may be old or mistyped.</Text>
         <BackButton parent={place.washington()} parentLabel="Executive" />
       </Page>
     );

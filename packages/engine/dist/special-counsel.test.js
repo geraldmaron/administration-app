@@ -9,7 +9,7 @@ import { dispositionTarget } from "./congress.js";
 import { dismissMinister } from "./appointments.js";
 import { selectCabinetHolder } from "./state-selectors.js";
 import { isMatterOpen, matterSource, oversightRipeningPhase, selectOpenMatters, selectOversightPressure, } from "./oversight.js";
-import { attorneyGeneralRole, counselDismissalEffects, projectCounselObstruction, selectOpenSpecialCounsel, specialCounselPhase, } from "./special-counsel.js";
+import { attorneyGeneralRole, counselDismissalEffects, projectCounselObstruction, selectOpenSpecialCounsel, specialCounselPhase, superviseSpecialCounsel, } from "./special-counsel.js";
 const seed = makeCampaignSeed("special-counsel-seed");
 function foundedCampaign() {
     const pool = generateFoundingPool(seed, worldDataset);
@@ -190,5 +190,69 @@ describe("the save", () => {
         const reloaded = loadSave(createSave(appointed));
         expect(reloaded.oversight).toEqual(appointed.oversight);
         expect(selectOpenSpecialCounsel(reloaded)).toHaveLength(1);
+    });
+});
+describe("supervision by the Attorney General under 28 C.F.R. 600.7", () => {
+    const sitting = () => selectOpenSpecialCounsel(runPhase(withMatters(campaign, [ripeMatter()]), specialCounselPhase))[0];
+    function withAttorneyGeneral(state, integrity, loyalty, trait) {
+        const id = state.player.cabinet[attorneyGeneralRole()];
+        const person = state.people[id];
+        return { ...state, people: { ...state.people, [id]: { ...person, base: { ...person.base, integrity, loyalty, traits: [trait] } } } };
+    }
+    function seated(trait) {
+        const counsel = sitting();
+        const state = withAttorneyGeneral(withMatters(campaign, [ripeMatter(), counsel]), trait === "principled" ? 1 : 0.05, trait === "principled" ? 0.2 : 1, trait);
+        return { state, counsel };
+    }
+    it("refuses a counsel that is not sitting", () => {
+        const result = superviseSpecialCounsel(campaign, { kind: "remove", matterId: "matter:nothing", ground: "misconduct" });
+        expect(result.ok).toBe(false);
+    });
+    it("has a principled Attorney General decline to remove a counsel looking into the administration, leaving the counsel sitting", () => {
+        const { state, counsel } = seated("principled");
+        const result = superviseSpecialCounsel(state, { kind: "remove", matterId: counsel.id, ground: "policy-violation" });
+        if (!result.ok)
+            throw new Error(result.reason);
+        expect(result.packet.effects.some((effect) => effect.kind === "congress")).toBe(false);
+        const after = apply(state, result.packet);
+        expect(selectOpenSpecialCounsel(after)).toHaveLength(1);
+        expect(after.congress.disposition).toBe(state.congress.disposition);
+    });
+    it("has a deferential Attorney General remove the counsel for a listed cause, which closes the matter, marks it obstructed and tells the Hill", () => {
+        const { state, counsel } = seated("corrupt");
+        const result = superviseSpecialCounsel(state, { kind: "remove", matterId: counsel.id, ground: "conflict-of-interest" });
+        if (!result.ok)
+            throw new Error(result.reason);
+        const after = apply(state, result.packet);
+        expect(selectOpenSpecialCounsel(after)).toHaveLength(0);
+        const closed = after.oversight.matters.find((matter) => matter.id === counsel.id);
+        expect(closed.obstructed).toBe(true);
+        expect(closed.public).toBe(true);
+        expect(closed.beats.at(-1).description).toContain("Judiciary Committees");
+        expect(after.congress.disposition).toBeLessThan(state.congress.disposition);
+    });
+    it("prices a countermand below a removal and leaves the counsel sitting", () => {
+        const { state, counsel } = seated("corrupt");
+        const countermand = superviseSpecialCounsel(state, { kind: "countermand", matterId: counsel.id });
+        const removal = superviseSpecialCounsel(state, { kind: "remove", matterId: counsel.id, ground: "misconduct" });
+        if (!countermand.ok || !removal.ok)
+            throw new Error("both acts should be answered");
+        const countermanded = apply(state, countermand.packet);
+        expect(selectOpenSpecialCounsel(countermanded)).toHaveLength(1);
+        expect(countermanded.congress.disposition).toBeGreaterThan(apply(state, removal.packet).congress.disposition);
+        expect(countermanded.oversight.matters.find((matter) => matter.id === counsel.id).beats.at(-1).description).toContain("tell Congress when the investigation ends");
+    });
+    it("reads the authoritative chair, not a stale acting record", () => {
+        const { state, counsel } = seated("corrupt");
+        const role = attorneyGeneralRole();
+        const cabinet = Object.fromEntries(Object.entries(state.player.cabinet).filter(([seat]) => seat !== role));
+        const stale = { ...state, player: { ...state.player, cabinet }, actings: { ...state.actings, [role]: state.player.cabinet[role] } };
+        expect(superviseSpecialCounsel(stale, { kind: "countermand", matterId: counsel.id }).ok).toBe(false);
+    });
+    it("has no answer with no Attorney General in post", () => {
+        const { state, counsel } = seated("corrupt");
+        const role = attorneyGeneralRole();
+        const vacant = { ...state, player: { ...state.player, cabinet: Object.fromEntries(Object.entries(state.player.cabinet).filter(([seat]) => seat !== role)) } };
+        expect(superviseSpecialCounsel(vacant, { kind: "countermand", matterId: counsel.id }).ok).toBe(false);
     });
 });

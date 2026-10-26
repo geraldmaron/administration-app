@@ -20,7 +20,8 @@
     "./news": "./src/news/index.ts",
     "./record": "./src/record/index.ts",
     "./map": "./src/map/index.ts",
-    "./handbook": "./src/handbook/index.ts"
+    "./handbook": "./src/handbook/index.ts",
+    "./portrait": "./src/portrait/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -29,6 +30,7 @@
   },
   "dependencies": {
     "@admin/design": "workspace:*",
+    "@admin/world": "workspace:*",
     "@tamagui/core": "3.0.17",
     "phosphor-react-native": "3.0.6",
     "tamagui": "3.0.17",

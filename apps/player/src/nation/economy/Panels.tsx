@@ -2,9 +2,8 @@ import { useMemo, useState } from "react";
 import type { Campaign } from "@admin/engine";
 import type { NationId } from "@admin/world";
 import { CYCLE_PHASE_ORDER, bilateralTradePartners, cycleReading, deficitDriverReading, formatMoney, householdReadings, place, stateEconomyBoard, tradeBalance, type BilateralTrade, type HouseholdReading, type StateEconomyRow } from "@admin/player-core";
-import { Button, CardGrid, Column, Icon, ReadingFrame, Row, Sparkline, Surface, Text, View, sparklineKey, type IconName } from "@admin/ui";
+import { Pane, Button, CardGrid, Column, Icon, ReadingFrame, Row, Sparkline, Surface, Text, View, sparklineKey, type IconName } from "@admin/ui";
 import { DataTable, FigureBand, TrackRow, sortRows, type SortState } from "@admin/ui/nation";
-import { Panel } from "@admin/ui/world";
 import { Position } from "../budget/Books";
 import { go } from "../../shell/navigate";
 import { toneKey } from "../keys";
@@ -18,7 +17,7 @@ const PHASE_INK = { expansion: "successInk", peak: "warningInk", contraction: "d
 export function Cycle({ campaign }: { readonly campaign: Campaign }) {
   const cycle = cycleReading(campaign);
   return (
-    <Panel title="The business cycle" icon="graph" lede={`The business cycle is the economy's repeating loop of growing and shrinking. ${cycle.word} It has been there for ${cycle.weeksInPhase === 1 ? "1 week" : `${cycle.weeksInPhase} weeks`}, and the dot marks it below.`}>
+    <Pane title="The business cycle" icon="graph" line={`The business cycle is the economy's repeating loop of growing and shrinking. ${cycle.word} It has been there for ${cycle.weeksInPhase === 1 ? "1 week" : `${cycle.weeksInPhase} weeks`}, and the dot marks it below.`}>
       <CardGrid columns={{ phone: 2, tablet: 4, desktop: 4, wide: 4 }} gap="sm" role="list" aria-label={`The business cycle. ${cycle.word} ${cycle.weeksInPhase} weeks so far.`}>
         {CYCLE_PHASE_ORDER.map((phase) => {
           const current = phase === cycle.phase;
@@ -32,7 +31,7 @@ export function Cycle({ campaign }: { readonly campaign: Campaign }) {
           );
         })}
       </CardGrid>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -75,7 +74,7 @@ function Bill({ reading }: { readonly reading: HouseholdReading }) {
 /** The pump, the grocery bill and the heating and power bill, each with the weeks its lag has already decided. */
 export function Household({ campaign }: { readonly campaign: Campaign }) {
   return (
-    <Panel id="economy-household" title="What families pay" icon="building">
+    <Pane id="economy-household" title="What families pay" icon="building">
       <ReadingFrame title="What families pay, week by week" unit="Price per unit, in dollars" legend={[...toneKey({ good: "Getting cheaper", watch: "Worth watching", bad: "Getting dearer" }), ...sparklineKey("neutral")]} help={{ meaning: "Each card is a price a household feels. The small line is that price week by week, and the arrow at its end shows which way it moved. The words under the figure say how much it has changed since you took office." }}>
         <CardGrid columns={{ phone: 1, tablet: 1, desktop: 3, wide: 3 }}>
           {householdReadings(campaign).map((reading) => (
@@ -83,7 +82,7 @@ export function Household({ campaign }: { readonly campaign: Campaign }) {
           ))}
         </CardGrid>
       </ReadingFrame>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -102,14 +101,14 @@ export function Trade({ campaign }: { readonly campaign: Campaign }) {
   const partners = useMemo(() => sortRows(found, sort, { name: (row) => row.name, exports: (row) => row.exports, imports: (row) => row.imports, share: (row) => row.imports + row.exports }, (a, b) => a.name.localeCompare(b.name)), [found, sort]);
   return (
     <Column gap="lg">
-      <Panel title="Trade in goods" icon="subjectTrade" lede="What the US buys from and sells to every country, counting the tariffs and embargoes in place now. A tariff is a tax on goods from abroad, and an embargo stops trade. You set both on each country's page.">
+      <Pane title="Trade in goods" icon="subjectTrade" line="What the US buys from and sells to every country, counting the tariffs and embargoes in place now. A tariff is a tax on goods from abroad, and an embargo stops trade. You set both on each country's page.">
         <FigureBand label="Goods trade" items={[{ label: "Goods per year", value: `${trade.balance < 0 ? "Deficit of " : "Surplus of "}${formatMoney(Math.abs(trade.balance))}`, note: "What we sell minus what we buy" }]} />
         <ReadingFrame title="Goods sold and bought, per year" unit="Dollars per year, both bars on one scale" legend={[{ id: "bar", kind: "swatch", label: "Bar length: the longer of the two fills the track", ink: "accent" }]} help={{ meaning: "Two bars on the same scale, one for what the country sells abroad and one for what it buys. The longer bar is the bigger flow, and the difference is the trade balance." }}>
           <TrackRow name="Sold abroad (exports)" figure={formatMoney(trade.exports)} value={trade.exports / larger} />
           <TrackRow name="Bought from abroad (imports)" figure={formatMoney(trade.imports)} value={trade.imports / larger} />
         </ReadingFrame>
-      </Panel>
-      <Panel title="Partners" icon="world">
+      </Pane>
+      <Pane title="Partners" icon="world">
         <DataTable<BilateralTrade, PartnerSort>
           caption="Yearly trade in goods with each country"
           rows={partners}
@@ -127,7 +126,7 @@ export function Trade({ campaign }: { readonly campaign: Campaign }) {
             { id: "share", label: "Share of all US trade in goods", sortKey: "share", first: "descending", align: "end", render: (row) => <Text variant="label" tabular>{row.usShareText ?? "Not known"}</Text> },
           ]}
         />
-      </Panel>
+      </Pane>
     </Column>
   );
 }
@@ -155,7 +154,7 @@ export function ByState({ campaign }: { readonly campaign: Campaign }) {
   const ranked = useMemo(() => sortRows(board.rows, sort, { name: (row: StateEconomyRow) => row.name, unemployment: (row) => row.unemployment, jobsGap: (row) => row.jobsGap, pricesGap: (row) => row.pricesGap, output: (row) => row.output }, (a, b) => a.name.localeCompare(b.name)), [board, sort]);
   if (board.rows.length === 0) return null;
   return (
-    <Panel title="By state" icon="mapPin" lede={`Unemployment across the country is ${percentOne(board.nationalUnemployment)}. Each state's number starts there and adds that state's usual difference from the country. Choose a column heading to sort the states.`}>
+    <Pane title="By state" icon="mapPin" line={`Unemployment across the country is ${percentOne(board.nationalUnemployment)}. Each state's number starts there and adds that state's usual difference from the country.`}>
       <DataTable<StateEconomyRow, StateSort>
         caption="States by jobs, prices, and what they produce"
         rows={ranked}
@@ -173,7 +172,7 @@ export function ByState({ campaign }: { readonly campaign: Campaign }) {
           { id: "output", label: "Value produced per year", sortKey: "output", first: "descending", align: "end", render: (row) => <Text variant="label" tabular>{formatMoney(row.output)}</Text> },
         ]}
       />
-    </Panel>
+    </Pane>
   );
 }
 
@@ -184,9 +183,9 @@ export function Finances({ campaign }: { readonly campaign: Campaign }) {
     <Column gap="lg">
       <Position campaign={campaign} />
       {deficit ? (
-        <Panel title="What's behind this year's deficit or surplus" icon="domesticLedger">
+        <Pane title="What's behind this year's deficit or surplus" icon="domesticLedger">
           <DriverTable title="This year's balance" summary={deficit.balance} rows={deficit.rows} goodWhen="up" />
-        </Panel>
+        </Pane>
       ) : null}
       <Row>
         <Button kind="secondary" size="compact" icon="budget" onPress={() => go(place.budget())}>

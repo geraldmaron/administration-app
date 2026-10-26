@@ -1,7 +1,7 @@
 import { useMedia } from "@tamagui/core";
 import { LegalCitation } from "../context/LegalCitation";
 import { Icon } from "../icons/Icon";
-import { Badge } from "../primitives/Badge";
+import { Tag } from "../primitives/Tag";
 import { Button } from "../primitives/Button";
 import { Column, Row } from "../primitives/Stack";
 import { CardLink } from "../primitives/CardLink";
@@ -46,10 +46,10 @@ export function LawCard({ law, onOpen, onSource }: { readonly law: LawCardView; 
     <CardLink onPress={onOpen} label={`Open ${law.title}, ${law.cite}`} level="raised" pad={media.phone ? "md" : "lg"} accentEdge="gold">
       <Column gap="md">
         <Row gap="sm" wrap>
-          <Badge status="gold" icon="law">
+          <Tag tone="authority" icon="law">
             {law.kindLabel}
-          </Badge>
-          {law.inForce ? null : <Badge status="warning">{law.lapsed ?? "No longer in effect"}</Badge>}
+          </Tag>
+          {law.inForce ? null : <Tag tone="warning">{law.lapsed ?? "No longer in effect"}</Tag>}
         </Row>
         <Column gap="xs">
           <Text variant="title" role="heading" aria-level={3}>

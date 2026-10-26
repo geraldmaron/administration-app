@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { SCANDAL_RESPONSE_LABELS, respondToScandal, scandalAnswer, scandalCounselRead, selectDateOfTurn, selectScandalBoard, selectPerson, selectScandals, sentenceCase, type Campaign, type Scandal } from "@admin/engine";
-import { formatDate, formatRatio, monogramFor, place, roleTitle, sealFor } from "@admin/player-core";
-import { Badge, CardLink, Column, Icon, Masthead, Meter, Page, ReadingFrame, Row, Section, Text, useMedia } from "@admin/ui";
-import { CompareAuthorize, Monogram, Stages } from "@admin/ui/review";
+import { formatDate, formatRatio, place, roleTitle, sealFor } from "@admin/player-core";
+import { CardLink, Column, Icon, Masthead, Meter, Page, ReadingFrame, Row, Section, Tag, Text, useMedia } from "@admin/ui";
+import { CompareAuthorize, Stages } from "@admin/ui/review";
+import { PersonFace } from "../dossier/PersonFace";
 import { feedHref } from "../news/press-params";
 import { ReviewBoundary } from "../review/PresidentialReview";
 import { BackButton } from "../shell/BackButton";
@@ -37,7 +38,7 @@ function Named({ campaign, scandal }: { readonly campaign: Campaign; readonly sc
   const name = selectPerson(campaign, implicated.person)?.base.name ?? "A former official";
   return (
     <CardLink label={`Open ${name}'s file`} href={place.person(implicated.person)} onPress={() => go(place.person(implicated.person))} pad="sm" flexDirection="row" alignItems="center" gap="md" minHeight={44}>
-      <Monogram letters={monogramFor(name)} tone="danger" />
+      <PersonFace campaign={campaign} id={implicated.person} name={name} size={44} />
       <Column flex={1}>
         <Text variant="label">{name}</Text>
         <Text variant="caption" tone="secondary">
@@ -51,7 +52,7 @@ function Named({ campaign, scandal }: { readonly campaign: Campaign; readonly sc
 
 function Allegations({ campaign, scandal }: { readonly campaign: Campaign; readonly scandal: Scandal }) {
   return (
-    <Section icon="caution" title="What the papers are saying" actions={<Badge status="warning">Alleged</Badge>}>
+    <Section icon="caution" title="What the papers are saying" actions={<Tag tone="warning">Alleged</Tag>}>
       <Text variant="document">{scandal.context ?? "The papers have the accusation but not the full story yet."}</Text>
       <Named campaign={campaign} scandal={scandal} />
       <Text variant="caption" tone="secondary">These are claims in the press. None of it is proven until it's confirmed.</Text>
@@ -62,7 +63,7 @@ function Allegations({ campaign, scandal }: { readonly campaign: Campaign; reado
 function Established({ campaign, scandal, board }: { readonly campaign: Campaign; readonly scandal: Scandal; readonly board: Board }) {
   const weeks = board?.weeksRunning;
   return (
-    <Section icon="approve" title="What we know for sure" actions={<Badge status="success">Known</Badge>}>
+    <Section icon="approve" title="What we know for sure" actions={<Tag tone="success">Known</Tag>}>
       <FactGrid
         items={[
           { label: "Broke", value: scandal.brokeTurn >= 0 ? formatDate(selectDateOfTurn(campaign, scandal.brokeTurn)) : "Not dated" },
@@ -84,12 +85,12 @@ function Established({ campaign, scandal, board }: { readonly campaign: Campaign
 function Assessment({ campaign, scandal }: { readonly campaign: Campaign; readonly scandal: Scandal }) {
   const read = scandalCounselRead(campaign.seed, scandal.id, scandal.charge);
   return (
-    <Section icon="review" title="What your lawyer thinks the papers really have" actions={<Badge status="info">Assessment</Badge>}>
+    <Section icon="review" title="What your lawyer thinks the papers really have" actions={<Tag tone="info">Assessment</Tag>}>
       <Row gap="xs" wrap role="list" aria-label="Your lawyer's view">
         {READS.map((step) => (
-          <Badge key={step} status={step === read ? "info" : "outline"} {...(step === read ? { icon: "review" as const } : {})}>
+          <Tag key={step} tone={step === read ? "info" : "outline"} {...(step === read ? { icon: "review" as const } : {})}>
             {READ_STEP[step]}
-          </Badge>
+          </Tag>
         ))}
       </Row>
       <Text variant="body">{`${READ_WORDS[read]} This is your lawyer's opinion, not a proven fact.`}</Text>
@@ -149,7 +150,7 @@ function ScandalScreen({ campaign, scandal }: { readonly campaign: Campaign; rea
     <Page icon="press" eyebrow="A running story" title={sentenceCase(scandal.subject)} {...(masthead && !media.phone ? { emblem: masthead } : {})}>
       <Row><BackButton parent={place.brief()} parentLabel="Brief" /></Row>
       {masthead && media.phone ? masthead : null}
-      <Heat scandal={scandal} {...(board?.weeksRunning === undefined ? {} : { weeks: board.weeksRunning })} />
+      <Heat scandal={scandal} {...(board ? { weeks: board.weeksRunning } : {})} />
       <Row gap="lg" top wrap>
         <Column flexGrow={1} flexShrink={1} flexBasis={320} minWidth={0}>
           <Allegations campaign={campaign} scandal={scandal} />

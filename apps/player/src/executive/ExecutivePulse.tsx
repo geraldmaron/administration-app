@@ -1,29 +1,19 @@
 import { LOST_LABELS, formatRatio, type ExecutiveOverview } from "@admin/player-core";
-import { CardGrid, Column, Icon, Meter, ReadingFrame, Row, Surface, Text, markKeyEntries, useMedia, type IconName, type MeterMark } from "@admin/ui";
+import { CardGrid, Column, Icon, Meter, Pane, Reading, ReadingFrame, Row, Text, markKeyEntries, type IconName, type MeterMark } from "@admin/ui";
 import { termDoor } from "../handbook/term-door";
 import { Distribution } from "@admin/ui/dossier";
-import { CardLabel } from "./parts";
 import { QUALITY_METER, qualityOf } from "./present";
 
 const DELIVERY_MARKS: readonly MeterMark[] = [{ id: "holds", label: "Holds from 60%", at: 0.6, kind: "target" }, { id: "fails", label: "Fails under 40%", at: 0.4, kind: "gate" }];
 
 function PulseTile({ icon, eyebrow, figure, unit, children }: { readonly icon: IconName; readonly eyebrow: string; readonly figure: string; readonly unit: string; readonly children: React.ReactNode }) {
-  const media = useMedia();
   return (
-    <Surface level="base" pad={media.phone ? "md" : "lg"} flexGrow={1}>
+    <Pane level="base">
       <Column gap="sm" flexGrow={1}>
-        <CardLabel icon={icon}>{eyebrow}</CardLabel>
-        <Row gap="sm" top>
-          <Text variant={media.phone ? "heading" : "figure"} tabular>
-            {figure}
-          </Text>
-          <Text variant="caption" tone="secondary" flex={1} paddingTop="xs">
-            {unit}
-          </Text>
-        </Row>
+        <Reading name={eyebrow} value={figure} period={unit} icon={icon} minWidth={0} />
         {children}
       </Column>
-    </Surface>
+    </Pane>
   );
 }
 

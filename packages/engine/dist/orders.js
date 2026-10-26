@@ -1,9 +1,9 @@
 import { selectCabinetHolder } from "./state.js";
 import { activeExternalEmergency } from "./external-emergency.js";
 import { answerReliefClaims } from "./obligations.js";
-import { constructionNotice, constructionTransferAmount, firstOrderSubject, inEmergency, orderSubjectRefusal, reliefAllocation } from "./order-subjects.js";
+import { constructionNotice, constructionTransferAmount, firstOrderSubject, inEmergency, orderRecordId, orderSubjectRefusal, reliefAllocation } from "./order-subjects.js";
 import { assetBlockingEffects, blockedAssetForOrder } from "./blocked-assets.js";
-export { constructionOrderSubjects, energyLeasingOrderSubjects, entryClassOrderSubjects, federalSiteOrderSubjects, firstOrderSubject, grantOrderSubjects, leasePlanningArea, LEASE_PLANNING_AREAS, regulatoryReviewOrderSubjects, reliefOrderSubjects } from "./order-subjects.js";
+export { constructionOrderSubjects, energyLeasingOrderSubjects, entryClassOrderSubjects, federalSiteOrderSubjects, firstOrderSubject, grantOrderSubjects, leasePlanningArea, LEASE_PLANNING_AREAS, orderRecordId, regulatoryReviewOrderSubjects, reliefOrderSubjects } from "./order-subjects.js";
 import { inShutdown, obligationAvailability } from "./funding.js";
 import { DEFENSE_PRIORITY_CLASS, DEFENSE_PRIORITY_SUPPLIER, hasLiveDefensePriorityContract, munitionContractBook, munitionsOf, priorityOrder } from "./munitions.js";
 import { matchRole } from "./stewardship.js";
@@ -15,12 +15,16 @@ import { markedFlags } from "./marked-flags.js";
 import { routeDomestic } from "./domestic-signature.js";
 import { routeCohorts } from "./route-cohorts.js";
 import { beliefSplitEffects } from "./party-beliefs.js";
-import { accumulatedOverreach, groundFactor, institutionalCheck, ministerSway } from "./strike-odds.js";
+import { accumulatedOverreach, groundedReach, ministerSway, strikeDownChance } from "./strike-odds.js";
+import { filingOdds, orderChallengeMatter } from "./legal-exposure.js";
+import { doctrineShift } from "./background-docket.js";
+import { caseQuestion } from "./court-opinions.js";
 import { FURTHER_US_ORDERS } from "./order-families.js";
+import { LOCALE_MISSION_ORDERS } from "./locale-mission-orders.js";
 import { overruledReview, reviewedChance, reviewOrder } from "./order-review.js";
 import { campaignDay } from "./clock.js";
 import { carryOutOrder } from "./execution.js";
-import { openedProceeding } from "./court-procedure.js";
+import { courtWeeks, openedProceeding } from "./court-procedure.js";
 import { orderLandingEffects, realizedOrderContribution } from "./order-contribution.js";
 import { agencyRuleProcess, specializedMatter } from "./specialized-court-matters.js";
 /**
@@ -171,7 +175,8 @@ export const ORDER_DOMAIN_BAND = {
 export function orderDeed(band, outcome, turn) {
     return { kind: "flag", set: markedFlags([deedFlag("order", band, outcome)], turn) };
 }
-const BY_ID = new Map(EXECUTIVE_ORDERS.map((order) => [order.id, order]));
+// The mission orders resolve by id but stay off the desk: a locale act signs them.
+const BY_ID = new Map([...EXECUTIVE_ORDERS, ...LOCALE_MISSION_ORDERS].map((order) => [order.id, order]));
 export function executiveOrder(id) {
     return BY_ID.get(id);
 }
@@ -282,62 +287,64 @@ const MAX_CHALLENGE = 0.95;
 /**
  * What the player reads before signing. Pure and seed-independent, the same
  * contract `projectAction` holds: `signOrder` calls this and nothing else to
- * decide the odds, so the number shown is the number rolled against.
+ * decide the odds, so the number shown is the number rolled against. Pass the
+ * subject being signed: who is injured, and so who can sue, depends on it.
  */
-export function projectOrder(campaign, charter, order) {
+export function projectOrder(campaign, charter, order, subject) {
     const minister = orderMinister(campaign, order);
     const accumulated = accumulatedOverreach(campaign);
     const ground = constitutionalGround(campaign, order.id);
     const authorizing = ground === "authorized" ? lawAuthorizesOrder(campaign, order.id) : undefined;
-    // The statute discounts the reach past the office and leaves the record alone:
-    // a president refused four times is one the institutions have taken the
-    // measure of, and an act of Congress does not undo that.
-    const reach = order.overreach * institutionalCheck(charter) * groundFactor(ground);
+    // The statute discounts the statutory share of the reach past the office and
+    // leaves the record alone: a president refused four times is one the
+    // institutions have taken the measure of, and an act of Congress does not undo that.
+    const reach = groundedReach(charter, order, ground);
     const review = reviewOrder(campaign, order, { reach, accumulated, ground });
     const execution = carryOutOrder(campaign, order, orderChair(campaign, order), RULEMAKING_TURNS);
-    const chance = reviewedChance(clamp01(Math.max(MIN_CHALLENGE, Math.min(MAX_CHALLENGE, (reach + accumulated) * ministerSway(minister)))), review, MAX_CHALLENGE);
+    // Whether anyone sues reads injury and salience, never lawfulness. A minister
+    // who would rather not hold the order is still a source for the plaintiffs,
+    // and an objection on file is their first exhibit.
+    const filing = filingOdds(campaign, order, subject);
+    const chance = reviewedChance(clamp01(Math.max(MIN_CHALLENGE, Math.min(MAX_CHALLENGE, filing.chance * ministerSway(minister)))), review, MAX_CHALLENGE);
+    const meritsChance = Math.max(0.02, Math.min(0.98, strikeDownChance(charter, order, undefined, ground) + doctrineShift(campaign, order.id)));
     return {
         order,
         challengeChance: chance,
+        filing,
+        meritsChance: Math.round(meritsChance * 10000) / 10000,
         mechanism: charter.removalMechanism,
         cost: orderCost(campaign, order),
         accumulated,
         ground,
         ...(minister ? { minister } : {}),
         ...(authorizing ? { authorizedBy: authorizing.title } : {}),
-        reasoning: reasoningFor(ground, authorizing?.title, accumulated),
+        reasoning: reasoningFor(ground, authorizing?.title, accumulated, filing),
         ...(review ? { review } : {}),
         ...(execution ? { execution } : {}),
     };
 }
 /**
- * Why the odds read as they do, in the vocabulary of the three grounds. The
- * authorized case names the act, because that is the whole content of the
- * ground: a player who cannot see which statute is carrying the order cannot
- * tell a strong position from a lucky one.
- *
- * The charter's own name reads badly as a possessive ("The Constitution of the
- * United States's institutions"), so the silent case names the bodies that
- * actually weigh an order instead: the courts and the legislature.
+ * Why the odds read as they do: who could sue, then the ground. The authorized
+ * case names the act, because a player who cannot see which statute carries
+ * the order cannot tell a strong position from a lucky one.
  */
-function reasoningFor(ground, title, accumulated) {
+function reasoningFor(ground, title, accumulated, filing) {
+    const who = filing.states.length
+        ? `${filing.states.length === 1 ? "A state" : `${filing.states.length} states`} and private parties it injures could sue.`
+        : Object.keys(filing.classes).length ? "The private parties it injures could sue." : "Few people are injured enough to sue.";
     if (ground === "authorized" && title) {
-        return `${title} puts Congress behind this, and the courts weigh an order the legislature asked for far more gently than one it never spoke to.`;
+        return `${who} ${title} puts Congress behind this, so the courts weigh its statutory reach gently; a constitutional objection is weighed in full.`;
     }
     return accumulated > 0
-        ? "Congress has said nothing about this, so the courts and the legislature read it as reaching past the office — and this administration has been told so before."
-        : "Congress has said nothing about this, so the courts and the legislature weigh how far it reaches past the office on their own.";
+        ? `${who} Congress has said nothing about this, so the courts weigh how far it reaches past the office — and they have struck this administration down before.`
+        : `${who} Congress has said nothing about this, so the courts weigh how far it reaches past the office on their own.`;
 }
-// --- Signing ---
-function orderRecordId(orderId, turn, subject) {
-    const target = subject?.kind === "foreign" || subject?.kind === "entry-class" ? subject.nation : subject?.kind === "state" ? subject.state
-        : subject?.kind === "grant" ? subject.billId : subject?.kind === "construction" ? subject.sourceId
-            : subject?.kind === "rule-review" ? subject.ruleId : subject?.kind === "lease-planning" ? subject.areaId : undefined;
-    const key = subject?.kind === "federal-site" ? subject.institutionId : target;
-    return key ? `${orderId}:${key}:${turn}` : `${orderId}:${turn}`;
-}
-/** What being refused by your own institutions costs, on top of the order. */
-const CONTEST_COST = { stability: -0.05, standing: -0.06 };
+/**
+ * What being sued costs on the day, on top of the order. Smaller than losing:
+ * a suit is news and a fight, not yet a refusal; what a court takes back is
+ * charged when it rules.
+ */
+const CONTEST_COST = { stability: -0.02, standing: -0.03 };
 function narrate(order, contested, mechanism) {
     if (!contested) {
         return order.viaRulemaking
@@ -370,8 +377,8 @@ export function signOrder(campaign, charter, orderId, streams, subject) {
     if (!availability.ok) {
         return { ok: false, reason: `${order.name} cannot be signed: missing ${availability.missing}`, missing: availability.missing };
     }
-    const projection = projectOrder(campaign, charter, order);
-    const contested = streams.stream("executive-order", orderId, campaign.turn).next() < projection.challengeChance;
+    const projection = projectOrder(campaign, charter, order, subject);
+    const contested = streams.stream("executive-order", orderId, campaign.turn, ...(subject?.kind === "locale-mission" ? [subject.state] : [])).next() < projection.challengeChance;
     const effectiveTurn = campaign.turn + RULEMAKING_TURNS + (projection.execution?.addedWeeks ?? 0);
     const process = agencyRuleProcess(orderId, effectiveTurn - campaign.turn, projection.execution);
     const independentlyFiled = (orderId === "order-energy-leasing" && Boolean(process && (!process.commentsAnswered || !process.siteReviewPreserved)))
@@ -408,13 +415,17 @@ export function signOrder(campaign, charter, orderId, streams, subject) {
                 reviewedDay: campaignDay(campaign) } } : {}),
         ...(!order.viaRulemaking ? { nationContribution: realizedOrderContribution(campaign, order.nationEffects) } : {}),
         // An independently filed statutory matter follows the same review clock.
-        ...(contested || independentlyFiled ? { review: { dueTurn: orderId === "order-energy-leasing" ? effectiveTurn + 1 : campaign.turn + JUDICIAL_REVIEW_TURNS,
+        // An ordinary challenge is filed at signing and the first ruling, on interim
+        // relief, comes inside its expedited band; specialized matters keep their own clock.
+        ...(contested || independentlyFiled ? { review: { dueTurn: orderId === "order-energy-leasing" ? effectiveTurn + 1
+                    : campaign.turn + courtWeeks(campaign.seed, `case:${orderRecordId(orderId, campaign.turn, subject)}`, "interim"),
                 status: "pending" } } : {}),
     };
     const ruleRecord = order.viaRulemaking ? { id: record.id, order: orderId,
         signedTurn: campaign.turn, effectiveTurn, status: "pending",
         ...(process ? { process } : {}) } : undefined;
-    const courtMatter = specializedMatter(campaign, record, ruleRecord);
+    const courtMatter = specializedMatter(campaign, record, ruleRecord)
+        ?? (contested ? orderChallengeMatter(campaign, order, caseQuestion(order, projection.ground), projection.ground, resolvedSubject) : undefined);
     const blockedAsset = orderId === "order-asset-seizure" && subject?.kind === "foreign"
         ? blockedAssetForOrder(campaign, subject.nation, record.id) : undefined;
     const counsel = overruledReview(projection.review);
@@ -457,7 +468,7 @@ export function signOrder(campaign, charter, orderId, streams, subject) {
                 ? [answerReliefClaims(campaign, subject.state, subject.cause)].filter((effect) => effect !== undefined)
                 : []),
             { kind: "order", set: record },
-            ...(record.review && orderId !== "order-energy-leasing" && orderId !== "order-entry-suspension" ? [{ kind: "courtProceeding", set: openedProceeding(record.id, orderId, campaign.turn, courtMatter ? campaign.turn + 1 : record.review.dueTurn, courtMatter) }] : []),
+            ...(record.review && orderId !== "order-energy-leasing" && orderId !== "order-entry-suspension" ? [{ kind: "courtProceeding", set: openedProceeding(record.id, orderId, campaign.turn, courtMatter?.kind !== "order-challenge" && courtMatter ? campaign.turn + 1 : Math.max(campaign.turn, record.review.dueTurn - 1), courtMatter) }] : []),
             // Landed the moment it is signed, contested or not — a contested order
             // still changes the country this same packet (see the comment on
             // `mergedCost` above), so "landed" here answers "was it signed", not
@@ -483,7 +494,7 @@ function orderDomesticEffects(campaign, order, subject) {
     if (!order.domestic)
         return [];
     const all = routeDomestic(campaign, order.domestic);
-    const routed = order.id === "order-relief-program" && subject?.kind === "state"
+    const routed = (order.id === "order-relief-program" && subject?.kind === "state") || subject?.kind === "locale-mission"
         ? all.filter((effect) => effect.state === subject.state)
         : all;
     return [
@@ -494,11 +505,16 @@ function orderDomesticEffects(campaign, order, subject) {
 }
 // --- Judicial review ---------------------------------------------------------
 //
-// A challenged order goes to a bench, and the bench comes back weeks later. It
-// is the downstream half of what makes an order a decision: the unilateral
+// A challenged order goes to a bench, and the bench comes back on its own
+// clocks (court-procedure.ts): interim relief in days to weeks, merits and
+// appeals in months. It is the downstream half of what makes an order a decision: the unilateral
 // track is faster and narrower than legislation precisely because it is
 // reversible, and until the reversal existed the "faster" was free.
-/** How long a challenge takes to be heard and ruled on. */
+/**
+ * The fixed six-week clock the regulatory docket's derived litigation and the
+ * rulemaking pace still read. An order challenge no longer runs on it: its
+ * stages draw from the sourced bands in court-procedure.ts.
+ */
 export const JUDICIAL_REVIEW_TURNS = 6;
 /**
  * The part of an order the national books read: its movements on the economy's

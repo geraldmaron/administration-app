@@ -149,6 +149,18 @@ export type SaveStore = CampaignLibraryStore & {
    */
   readSitting(): Promise<unknown | null>;
   writeSitting(sitting: unknown | null): Promise<void>;
+  /**
+   * The President's unsigned drafts, kept beside the campaign in play. Not part
+   * of the campaign either: a draft is a working paper the simulation has not
+   * acted on, so the engine's save format never carries it.
+   */
+  /**
+   * Bound to a named slot rather than to whichever is active when the write
+   * runs: a write queued behind a load of another administration would
+   * otherwise land on that one.
+   */
+  readDrafts(id: string): Promise<unknown | null>;
+  writeDrafts(id: string, drafts: unknown | null): Promise<void>;
 };
 
 export type SaveStoreOptions = {
@@ -169,6 +181,10 @@ export function campaignPayloadKey(id: string): string {
 
 export function campaignSittingKey(id: string): string {
   return `${CAMPAIGN_PAYLOAD_KEY_PREFIX}:sitting:${id}`;
+}
+
+export function campaignDraftsKey(id: string): string {
+  return `${CAMPAIGN_PAYLOAD_KEY_PREFIX}:drafts:${id}`;
 }
 
 /**
@@ -429,6 +445,7 @@ export function createSaveStore(storage: StoragePort, options: SaveStoreOptions 
     await writeManifest({ ...manifest, activeCampaignId: nextActive, campaigns: remaining });
     await storage.removeItem(entry.payloadKey);
     await storage.removeItem(campaignSittingKey(entry.id));
+    await storage.removeItem(campaignDraftsKey(entry.id));
     // Deleting the campaign in play leaves nothing in play. The manifest
     // promotes a survivor so the vault has somewhere to open next, but nothing
     // is being played until something is actually loaded — and a write that
@@ -481,35 +498,54 @@ export function createSaveStore(storage: StoragePort, options: SaveStoreOptions 
     duplicate: (id, duplicateOptions) => serialized(() => duplicate(id, duplicateOptions)),
     exportSave: (id) => serialized(() => exportSave(id)),
     delete: (id) => serialized(() => deleteCampaign(id)),
-    readSitting: () =>
-      serialized(async () => {
-        const manifest = await readManifest();
-        const id = manifest.activeCampaignId;
-        if (!id) return null;
-        const raw = await storage.getItem(campaignSittingKey(id));
-        if (raw === null) return null;
-        try {
-          return JSON.parse(raw) as unknown;
-        } catch {
-          // A sitting that cannot be read is dropped, not repaired: the
-          // campaign it belonged to is intact and the next run rewrites it.
-          await storage.removeItem(campaignSittingKey(id));
-          return null;
-        }
-      }),
-    writeSitting: (sitting) =>
-      serialized(async () => {
-        const { entry } = await withCampaignInPlay();
-        const key = campaignSittingKey(entry.id);
-        if (sitting === null) await storage.removeItem(key);
-        else await storage.setItem(key, JSON.stringify(sitting));
-      }),
+    // A sitting that cannot be read is dropped, not repaired: the campaign it
+    // belonged to is intact and the next run rewrites it.
+    readSitting: () => serialized(() => readSide(campaignSittingKey)),
+    writeSitting: (sitting) => serialized(() => writeSide(campaignSittingKey, sitting)),
+    readDrafts: (id) => serialized(() => readSlotSide(campaignDraftsKey, id)),
+    writeDrafts: (id, drafts) => serialized(() => writeSlotSide(campaignDraftsKey, id, drafts)),
     getSaveState: () => saveState,
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
   };
+
+  /** A side record of the active campaign; one that cannot be parsed is dropped, since the campaign it sits beside is intact. */
+  async function readSide(keyOf: (id: string) => string): Promise<unknown | null> {
+    const manifest = await readManifest();
+    const id = manifest.activeCampaignId;
+    if (!id) return null;
+    return readSlotSide(keyOf, id);
+  }
+
+  async function readSlotSide(keyOf: (id: string) => string, id: string): Promise<unknown | null> {
+    const raw = await storage.getItem(keyOf(id));
+    if (raw === null) return null;
+    try {
+      return JSON.parse(raw) as unknown;
+    } catch {
+      await storage.removeItem(keyOf(id));
+      return null;
+    }
+  }
+
+  async function writeSide(keyOf: (id: string) => string, value: unknown | null): Promise<void> {
+    const { entry } = await withCampaignInPlay();
+    await writeKey(keyOf(entry.id), value);
+  }
+
+  /** A slot deleted while the write waited has nothing left to sit beside, so the write is dropped rather than orphaned. */
+  async function writeSlotSide(keyOf: (id: string) => string, id: string, value: unknown | null): Promise<void> {
+    const manifest = await readManifest();
+    if (!manifest.campaigns.some((campaign) => campaign.id === id)) return;
+    await writeKey(keyOf(id), value);
+  }
+
+  async function writeKey(key: string, value: unknown | null): Promise<void> {
+    if (value === null) await storage.removeItem(key);
+    else await storage.setItem(key, JSON.stringify(value));
+  }
 
   /** Writes the payload, verifies the readback, and returns its stamp for the manifest entry. */
   async function writePayloadVerified(payloadKey: string, campaign: Campaign): Promise<string> {

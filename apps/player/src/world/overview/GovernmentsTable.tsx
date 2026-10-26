@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { ALIGNMENT_RANK, ALIGNMENT_WORDS, WORLD_REGIONS, WORLD_REGION_NAMES, place, type Stance, type WorldGovernment, type WorldRegionId } from "@admin/player-core";
-import { Badge, CardGrid, Column, Field, Key, ReadingFrame, Row, Select, Sparkline, Text, TextInput, swatchEntries, type KeyEntry } from "@admin/ui";
-import { Panel, ShareBar, SortTable, StateChip, valenceFill, type RowPress, type TableColumn } from "@admin/ui/world";
+import { Pane, Tag, CardGrid, Column, Field, Key, ReadingFrame, Row, Select, Sparkline, Text, TextInput, swatchEntries, type KeyEntry } from "@admin/ui";
+import { ShareBar, SortTable, StateChip, valenceFill, type RowPress, type TableColumn } from "@admin/ui/world";
 import { termDoor } from "../../handbook/term-door";
 import { NationName, go, stanceValence } from "../parts";
 import { stanceParts } from "./stance-parts";
@@ -70,7 +70,7 @@ const COLUMNS: readonly TableColumn<WorldGovernment>[] = [
         <Text variant="caption" tone="tertiary">
           {row.capital}
         </Text>
-        {row.atWar ? <Badge status="danger" icon="conflict">At war with the US</Badge> : null}
+        {row.atWar ? <Tag tone="danger" icon="conflict">At war with the US</Tag> : null}
       </Column>
     ),
   },
@@ -94,7 +94,7 @@ const COLUMNS: readonly TableColumn<WorldGovernment>[] = [
     render: (row) => (
       <Column gap="2xs">
         <Text variant="caption">{ALIGNMENT_WORDS[row.alignment]}</Text>
-        {row.allied ? <Badge status="success">Treaty ally</Badge> : row.treaties > 0 ? <Text variant="caption" tone="tertiary">{row.treaties} {row.treaties === 1 ? "treaty" : "treaties"}</Text> : null}
+        {row.allied ? <Tag tone="success">Treaty ally</Tag> : row.treaties > 0 ? <Text variant="caption" tone="tertiary">{row.treaties} {row.treaties === 1 ? "treaty" : "treaties"}</Text> : null}
       </Column>
     ),
   },
@@ -122,10 +122,10 @@ export function GovernmentsTable({ governments, region, onRegion, query, onQuery
   const inRegion = useMemo(() => (region ? governments.filter((row) => row.region === region) : governments), [governments, region]);
   const found = useMemo(() => inRegion.filter((row) => matches(row, query)), [inRegion, query]);
   return (
-    <Panel title="Countries" icon="world" count={found.length}>
+    <Pane title="Countries" icon="world" count={found.length}>
       <CardGrid columns={{ phone: 1, tablet: 2, desktop: 2, wide: 2 }} gap="lg">
         <Column flexGrow={1}>
-          <Field label="Find a country" help="Search by name, capital, or what its people are called, like French or Kenyan.">
+          <Field label="Find a country" help="Country names, capitals, and names for their people, such as French or Kenyan.">
             {(control) => <TextInput {...control} kind="search" value={query} onChangeText={onQuery} icon="dossier" />}
           </Field>
         </Column>
@@ -138,7 +138,7 @@ export function GovernmentsTable({ governments, region, onRegion, query, onQuery
       <Text variant="caption" tone="secondary" role="status">
         {countLine(found.length, inRegion.length, region)}
       </Text>
-      <ReadingFrame title="How to read the bars and trend lines" unit="Bar: how much that country trusts the United States. Trend: the last four weeks" pressHint="Press a country's row to open its file. Press a column's name to sort by it." help={{ meaning: "The bar under Views of us fills with how much the country trusts the United States, in the color of its word. The small line under Trend is the last four weeks of that trust, ending in an arrow for the way it moved.", term: termDoor("trust-in-us", "What moves a country's trust in you") }}>
+      <ReadingFrame title="Trust and its recent course" unit="Bar: how much that country trusts the United States. Trend: the last four weeks" help={{ meaning: "The bar under Views of us fills with how much the country trusts the United States, in the color of its word. The small line under Trend is the last four weeks of that trust, ending in an arrow for the way it moved.", term: termDoor("trust-in-us", "What moves a country's trust in you") }}>
         <Key entries={TABLE_KEY} label="Key: views of us and trend" />
         <SortTable
           caption="Every country, with how it sees the United States, its trend, which side it's on, trade, and US forces there"
@@ -149,9 +149,9 @@ export function GovernmentsTable({ governments, region, onRegion, query, onQuery
           tie={(a, b) => a.name.localeCompare(b.name)}
           highlight={(row) => row.atWar}
           rowPress={OPEN_FILE}
-          empty="No country matches. Clear the search or pick a different region to see more."
+          empty="No country matches this search in this region."
         />
       </ReadingFrame>
-    </Panel>
+    </Pane>
   );
 }

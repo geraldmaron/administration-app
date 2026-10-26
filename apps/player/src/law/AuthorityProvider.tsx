@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { Linking } from "react-native";
 import { authorityByCite, authorityView, type AuthorityView } from "@admin/player-core";
-import { Badge, Button, Column, LegalCitation, Row, Sheet, Surface, Text } from "@admin/ui";
+import { Button, Column, LegalCitation, Row, Sheet, Surface, Tag, Text } from "@admin/ui";
 
 type OpenAuthority = (cite: string) => void;
 
@@ -37,10 +37,10 @@ function AuthorityBody({ view }: { readonly view: AuthorityView }) {
   return (
     <>
       <Row gap="sm" wrap>
-        <Badge status="gold" icon="law">
+        <Tag tone="authority" icon="law">
           {view.kindLabel}
-        </Badge>
-        {view.inForce ? null : <Badge status="warning">{view.lapsed ?? "No longer in effect"}</Badge>}
+        </Tag>
+        {view.inForce ? null : <Tag tone="warning">{view.lapsed ?? "No longer in effect"}</Tag>}
       </Row>
       <LegalCitation citation={{ cite: view.cite, title: view.title }} />
       <Text variant="body">{view.summary}</Text>

@@ -2,9 +2,8 @@ import { useMemo, useState } from "react";
 import { CARETAKER_QUALITY, POLICY_QUALITY_RANGE, enactPolicy, type Campaign, type PolicyDomain } from "@admin/engine";
 import { charterOf, domainShareWords, executionFigure, executionWords, formatDate, formatRatio, isPolicyDomain, orderPipeline, place, policyPortfolio, sealFor, stanceComparison, stanceReview, stateIndustryShares, weeksWords, type PortfolioDomain } from "@admin/player-core";
 import { stateById } from "@admin/world";
-import { Button, CardLink, Column, Icon, Page, Pressable, ReadingFrame, Row, Seal, Select, Sheet, Text, isIconName, useMedia } from "@admin/ui";
+import { Pane, Button, CardLink, Column, Icon, Page, Pressable, ReadingFrame, Row, Seal, Select, Sheet, Text, isIconName, useMedia } from "@admin/ui";
 import { Collection, CompareChoices, Facts, Track, TrackRow, ViewTabs } from "@admin/ui/nation";
-import { Panel } from "@admin/ui/world";
 import { go } from "../../shell/navigate";
 import { ActDone, ActProblem } from "../ActDone";
 import { markEntry, toneKey } from "../keys";
@@ -108,7 +107,7 @@ function FeltMost({ row }: { readonly row: PortfolioDomain }) {
   const ranked = useMemo(() => [...stateIndustryShares(row.domain)].map(([id, share]) => ({ id, name: stateById.get(id)?.name ?? (id as string), share })).sort((a, b) => b.share - a.share || a.name.localeCompare(b.name)), [row.domain]);
   const top = Math.max(Number.EPSILON, ...ranked.map((entry) => entry.share));
   return (
-    <Panel title="Where it matters most" icon="mapPin" lede={`States ranked by how much of their economy is in ${domainShareWords(row.domain)}. This shows who has the most at stake, not what will happen.`}>
+    <Pane title="Where it matters most" icon="mapPin" line={`States ranked by how much of their economy is in ${domainShareWords(row.domain)}. This shows who has the most at stake, not what will happen.`}>
       <ReadingFrame title="Share of each state's economy" unit="% of the state's economy" legend={[{ id: "scale", kind: "swatch", label: `Longest bar is ${ranked[0]?.name ?? "the leading state"}`, figure: formatRatio(top), ink: "accent" }]} pressHint="Press a state to open it." help={{ meaning: "Bars are scaled so the longest one is the state with the biggest share. The figure beside each bar is its real share." }}>
       <Collection items={ranked} initial={6} noun="states" render={(entry) => (
         <CardLink key={entry.id} pad="sm" radius="chip" minHeight={44} justifyContent="center" label={`Open ${entry.name}. ${formatRatio(entry.share)} of its economy`} href={place.state(entry.id)} onPress={() => go(place.state(entry.id))}>
@@ -125,7 +124,7 @@ function FeltMost({ row }: { readonly row: PortfolioDomain }) {
         </CardLink>
       )} />
       </ReadingFrame>
-    </Panel>
+    </Pane>
   );
 }
 
@@ -148,9 +147,9 @@ function Implementation({ row }: { readonly row: PortfolioDomain }) {
       <Text variant="caption" tone="secondary">
         {row.minister ? `${row.minister} is in charge of it.` : "Nobody is in charge, so staff keep it going at a basic level."}
       </Text>
-      <Panel title="Promises tied to it" icon="flag">
+      <Pane title="Promises tied to it" icon="flag">
         {row.pledges.length > 0 ? row.pledges.map((pledge) => <Text key={pledge.id} variant="body">&ldquo;{pledge.title}&rdquo;, due {formatDate(pledge.dueDate)}: {pledge.kind === "hold" ? "kept by keeping this policy" : "kept by adopting it"}.</Text>) : <Text variant="body" tone="secondary">No promises are tied to this policy.</Text>}
-      </Panel>
+      </Pane>
       <FeltMost row={row} />
     </Column>
   );
@@ -195,13 +194,13 @@ export function PolicyScreen({ campaign, domain, view, onView, onDomain, orderSe
             </Column>
           )}
           <Column flex={1} minWidth={0} gap="lg">
-            <Panel title={row.name} {...(isIconName(row.icon) ? { icon: row.icon } : {})} lede={row.question}>
+            <Pane title={row.name} {...(isIconName(row.icon) ? { icon: row.icon } : {})} line={row.question}>
               <Text variant="body">
                 Current policy: <Text weight="strong">{row.stance.name}</Text>
                 {row.stance.inherited ? " (left by the last president)" : ""}. {row.stance.summary}
               </Text>
               <LawTopicHelp topic="executive-direction" compact />
-            </Panel>
+            </Pane>
             {view === "implementation" ? <Implementation row={row} /> : <Proposals key={row.domain} campaign={campaign} row={row} />}
           </Column>
         </Row>

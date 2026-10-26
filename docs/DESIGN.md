@@ -404,53 +404,61 @@ The executive tree is the primary surface; the map shows where things are. Selec
 
 ## 3. Tokens and type
 
-The values live in `packages/design/src/tokens/*.ts` and their web copy `tokens.css`; a test holds the two together and another holds the contrast rules below. Components never write a color, a size or a duration of their own.
+The universal player draws from the desk tokens (`packages/design/src/tokens/desk.ts`, 2026-10-24): the President's desk at night, one lit work plane in a dark room. `packages/ui/src/theme/from-design.ts` projects them into Tamagui themes under the role names every component reads. The legacy DOM player still reads `color.ts` and `tokens.css` until it is deleted. Components never write a color, a size or a duration of their own. The published design system (tokens, components, brand book and audit) is the reference for the whole system; this section states the rules the code holds.
 
 ### Color
 
-The canvas supports System, Light and Dark under DECISIONS §8.9. Theme applies to every component and focused layer, with readable issued documents in both modes. The table below is a historical dark-map palette reference, not a ban on light mode or a complete new theme specification. Resolve current semantic token values from source, then validate both rendered themes; do not copy obsolete values to preserve precedent.
+Four themes: Night (the design center) and Day, each with an AAA contrast variant. Contrast composes with the player's System, Light or Dark choice under DECISIONS §8.9 instead of replacing it. Each theme is one flat set of roles, and a zone re-maps them for everything inside it (`Zone`, or `Pane zone=`):
 
-| Token family | Values | Rule |
+| Zone | What it is | What changes |
 |---|---|---|
-| Ground (navy) | abyss `#030914` (the sea), sunken, base `#0C1734` (a panel), raised, overlay | Each step is a surface, never a decoration. |
-| Text (white) | primary `#F3F6FC`, secondary, tertiary `#98A8CC` | AA (4.5:1) or better on every navy surface. |
-| Blue | `#7DB1FF` mark and link; fill `#2E6BDB` with white text | Selection and navigation: what you picked, where you go, the primary verb. |
-| Gold | `#E5BC62`; deep `#A9843A` | Institutional identity and current state: the mark, the current mode and stage, "you are here", the commit verb (sealing, signing). |
-| Red | `#FF8D96` mark; fill `#C42F3C` with white text | Force, destructive acts and urgent risk: Discard, an irreversible authorization, a failed save. |
-| Status (dark set) | info `#7DB1FF`, success `#6FD69B`, warning `#F2C66D`, danger `#FF8D96`, pending `#B5C0D8`, each on its own dark fill | Under `data-surface="dark"` the status inks are redefined, so a good-or-bad cue keeps AA (4.5:1) on every dark ground and on its own fill. |
-| Party | standard Democrat `#55B4F2`, Republican `#F0625C`, Independent `#B9B2A3` | A fact about a seat, never a selection. Democratic blue sits well above the navy. Counts are always printed beside the color. |
-| Data | sequential (7, lightness-first, deep blue `#3A5FD6` through cyan to gold `#FFD24D`), diverging (7: cool `#74BEFF` `#3D9BFF` `#3577E8`, violet-slate middle `#6E6A86`, warm `#D9473D` `#FF6A55` `#FFA08A`), categorical (8) | Every step saturated: the strongest reading is the most vivid one, never the palest. Every step 3:1 or better on the canvas and 2.2:1 or better against the land it fills. The diverging ramp is symmetric: each cool step and its warm twin share one lightness (within 10% contrast on the canvas), and lightness climbs from the middle out. The color-vision ramps keep the same steps. |
+| desk (default) | the work plane | graphite planes, cool ink, signal blue for action |
+| paper | an issued document | warm stock and black ink; actions turn to ink; destructive acts take the deepest red |
+| situation | classified material, the crisis room | near-black in every theme, amber as its accent |
+| theater | the map and spatial views | the deepest ground becomes the plane |
+| chrome | the command bar and navigation | translucent glass over the ground |
 
-**Settings rewrite tokens, components never read them.** High contrast (and the system's "more contrast") strengthens text and boundaries against the active background; it cannot assume white ink in both themes. The color-vision setting swaps the party and diverging palettes: under protan and deutan the Republican hue turns orange; under tritan the Democratic hue turns cyan. It reaches every data ink the same way: the bench's lean (`divergeCool`, `divergeWarm`) and the gain and loss of a track, a diverging bar, a sparkline and its key (`goodInk`, `badInk`) take the diverging palette's cool and warm steps instead of green and red, which these settings do not separate.
+| Anchor | Job |
+|---|---|
+| Signal (blue) | Selection, links, the primary action, "you" in a chart. Continue and Advance are primary. |
+| Brass (gold) | Presidential authority: signing (`Button kind="seal"`), the seal, the current stage, a draft's new value. |
+| Alarm (red) | Force, destruction, the irreversible, a failed save. |
+
+Status is state, never category: info, success, warning, danger and pending, each with a wash. Success is teal, off the red–green axis. A pending state is outlined and dashed, never filled. Party and data palettes are separate and keep their color-vision variants. Every text pair a usage note names holds 4.5:1 (7:1 in the contrast themes), and boundaries, the focus ring and meaningful marks hold 3:1. Two tests hold this: `packages/design/src/tokens/desk.test.ts` measures the roles, and `packages/ui/src/theme/desk-themes.test.ts` measures every theme and zone a component can sit under, with translucent grounds composited.
+
+**Settings rewrite tokens, components never read them.** High contrast (and the system's "more contrast") selects the contrast variant of the active scheme. The color-vision setting swaps the party and diverging palettes: under protan and deutan the Republican hue turns orange; under tritan the Democratic hue turns cyan. It reaches every data ink the same way: the bench's lean (`divergeCool`, `divergeWarm`) and the gain and loss of a track, a diverging bar, a sparkline and its key (`goodInk`, `badInk`) take the diverging palette's cool and warm steps instead of green and red.
 
 ### Type study
 
-Three families, each with one role (`packages/design/src/tokens/typography.ts`), checked in the live screens at 390×844 and 1440×900:
+Three families, each with one job (`deskType` in `desk.ts`; faces loaded through expo-font):
 
-- **Source Sans 3** carries the application: screen and section titles, labels, readings, controls and every chart's text. Its tabular numerals keep a column of figures aligned, so figures use it with `tabular-nums`, never a monospace, and a number reads as a number. Titles take its 700 weight; the interface takes 400 and 600.
-- **Source Serif 4** is kept for paper in the fiction (an issued order, a dispatch, the oath), so a document reads as a document and never as interface.
-- **The system monospace** only for strings a player may copy, such as a campaign seed. A statute citation or a case name is a reference read as prose, so it takes the interface face.
+- **Geist** carries the interface: page, pane and card titles, labels, readings, controls and chart text. Figures use its tabular numerals, never a monospace.
+- **Newsreader** is ceremony, voice and paper: `hero` (the title screen, the oath, a term's end), `headline` (a matter's title), `voice` (the President's or an adviser's own words) and `document`. It never titles a working page.
+- **Geist Mono** is readouts: the game clock (`clock`) and strings a player may copy (`code`). A statute citation or a case name is read as prose and takes the interface face.
 
-The scale steps from a 16px body, rounded to whole pixels, in `rem` so the player's own text size scales all of it. `Text`'s `variant` (`packages/ui/src/primitives/Text.tsx`) is the only way to choose a step; `weight`, `tone`, `serif`, `mono` and `tabular` modify it, and no screen or shared piece passes `fontSize`, `lineHeight` or `fontWeight` of its own (`scripts/verify-shared-components.mjs` counts the ones still forgiven). Nothing is set below 12px. SVG chart text, which does not follow `rem`, is pinned to the caption step as `CHART_LABEL_SIZE`.
+The scale is in `rem` of a 16px root so the player's own text size scales all of it. `Text`'s `variant` (`packages/ui/src/primitives/Text.tsx`) is the only way to choose a step; `weight`, `tone`, `serif`, `mono` and `tabular` modify it, and no screen or shared piece passes `fontSize`, `lineHeight` or `fontWeight` of its own (`scripts/verify-shared-components.mjs` counts the ones still forgiven). Nothing is set below 12px. SVG chart text, which does not follow `rem`, is pinned to the caption step as `CHART_LABEL_SIZE`.
 
 | Variant | Size | Weight | Use |
 |---|---|---|---|
 | caption | 12 | 400 | a fact's name, a note under a figure, counts, tab labels, chart ticks |
-| eyebrow | 12, uppercase, tracked 0.1em | 700 | the kicker over a screen or panel title, never a figure's name |
-| label | 14 | 600 | a row's or card's name, a figure's name, a fact's value, control text |
-| body | 16 | 400 | reading text, a term row's value |
-| title | 18 | 600 | section and panel titles, a receipt's headline |
-| heading | 22 | 700 | a stage's title, a figure in a band of tiles |
-| figure | 36 | 700 | one headline reading (`tabular-nums`) |
-| display | 28 → 40 | 700 | a screen's title, growing with the viewport |
-| hero | 36 → 48 | 700 | the title screen only |
-| document | 18, serif | 400 | paper in the fiction |
+| eyebrow | 12, uppercase, tracked | 600 | the kicker over a page or pane title, never a figure's name |
+| label | 13 | 500 | a row's or card's name, a figure's name, control text |
+| body | 15 | 400 | reading text |
+| title | 17 | 600 | a card's heading, a receipt's headline |
+| heading | 20 | 600 | a pane's title (level 2) |
+| display | 28 | 600 | a working page's title |
+| figure · figureXl | 26 · 44 | 500 | a reading's figure; one headline reading on a stage (`tabular-nums`) |
+| headline | 30, Newsreader | 500 | a matter's title |
+| voice | 19, Newsreader italic | 400 | the President's or an adviser's own words |
+| hero | 60, Newsreader | 500 | ceremony only |
+| document | 18, Newsreader | 400 | paper in the fiction |
+| clock · code | 15 · 12, Geist Mono | 500 | the game clock; copyable strings |
 
 **One role, one step.** A name sits one step below what it names, and the shared piece for the role holds that pairing so no screen re-decides it:
 
 | Role | Shared piece | Name | Value |
 |---|---|---|---|
-| A reading with its figure | `Stat`, world `Tile`, `FigureBand` | label, secondary | figure, heading or title, tabular |
+| A reading with its figure | `Reading` (`Stat` delegates to it), world `Tile`, `FigureBand` | label, secondary | figure, heading or title, tabular |
 | Facts in a grid | record `Fact`, `FactGrid` | caption, secondary | label, tabular |
 | Terms as rows | nation `Facts` | label, secondary | body |
 
@@ -459,8 +467,10 @@ Tertiary ink is for notes and sources under a value, not for a name. A local com
 ### Space, shape and motion
 
 - **Space:** a 4-point scale (2, 4, 8, 12, 16, 24, 32, 48). Every top-level panel on a screen is inset by `--panel-pad` (24, 16 under 480px wide), set once on the work surface; section titles in a panel use the title step (18) in the display face. A card or row with one destination is a whole-card door; the substance of a screen is open without a click, and only sources, methodology and raw tables fold. The workspace measure (1200) is centered on a wide screen, and a grid of a fixed number of tiles picks a column count that divides it, so no row is left short.
-- **Radius:** chip 4, control 8, card 12, sheet 16.
-- **Measures:** controls are 44px tall, 36 when compact. The phone bar is 44px, the desktop bar 56; the rail is 76px; the docked panel is 420–520px and the wide Hybrid panel 65% of the room up to 960px; the phone detents are 112 (peek) and 334 (half).
+- **Radius:** chip 6, control 10, card 16, sheet 24 (`deskRadius`). Depth is light, not outline: a plane is lifted by its lit top edge and a tight shadow, and a card's character is a band across its top (`Pane band=`), never a colored side border.
+- **Fit:** a component's shape follows the room it is given, not the window. `Fit` and `useMeasuredWidth` measure a box (React Native has no container queries); `Reading` is a row under 200px, a tile to 340px, and a tile with its history beside the figure above that; `Pane` tightens its padding under 480px of its own width.
+- **Editing:** a value the President sets is an `InlineField` where it is read. A change to something the simulation acts on is a draft (gold, with today's value struck beside it) until it is reviewed and signed; view settings and filters pass `immediate` and set at once. Drafts wait in the `Drafts` tray (the command bar's brass count; a right-hand sheet on desktop, a bottom sheet with half and full detents as buttons on phone), grouped by the authority that would act on them: Takes effect on signing, Sent to Congress, Needs the Senate. Each is signed on its own in `SignOff` inside the tray: the route, the law it rests on, the terms in order, then one ordinary press of its named verb ("Sign the order", "Send to Congress"); the Signed stamp plays after the commit. A draft whose terms moved since it was made says Out of date and is priced again on review. A screen's own verb for a drafted act (the budget's "Send budget to Congress") opens that draft's sign-off rather than a second review. First consumers: budget lines and the tariff order.
+- **Measures:** controls are 44px tall, 36 when compact. The phone bar is 44px, the desktop bar 56; the rail is 88px; the docked panel is 420–520px and the wide Hybrid panel 65% of the room up to 960px; the phone detents are 112 (peek) and 334 (half).
 - **Motion:** 120ms for a control, 200ms for a sheet or panel, 280ms for a detach, 400ms to settle, on a standard and an emphasized curve. Reduced motion makes every duration zero. The camera's own timing belongs to the map.
 
 ### Consistent choices, navigation and legislative work

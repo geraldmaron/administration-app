@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { READING_LEGENDS, WORLD_READINGS, WORLD_REGIONS, WORLD_REGION_NAMES, readingCell, tallyStances, type ReadingTone, type WorldGovernment, type WorldReadingId, type WorldRegionId } from "@admin/player-core";
-import { Button, CardGrid, CardLink, Column, KeySample, Pressable, ReadingFrame, Row, Text, View, swatchEntries } from "@admin/ui";
-import { Panel, Segments, valenceFill, type ReadingValence } from "@admin/ui/world";
+import { Pane, Button, CardGrid, CardLink, Column, KeySample, Pressable, ReadingFrame, Row, Text, View, swatchEntries } from "@admin/ui";
+import { Segments, valenceFill, type ReadingValence } from "@admin/ui/world";
 import { MapPanelSlot, NationChip, FlagOf, go } from "../parts";
 import { stanceParts } from "./stance-parts";
 
@@ -94,8 +94,8 @@ export function MapPanel({ governments, reading, onReading, region }: { readonly
 /** Where the governments stand by part of the world; choosing one filters the map and the table. */
 export function Regions({ governments, region, onRegion }: { readonly governments: readonly WorldGovernment[]; readonly region: WorldRegionId | null; readonly onRegion: (region: WorldRegionId | null) => void }) {
   return (
-    <Panel title="By part of the world" icon="layerBlocs">
-      <ReadingFrame title="How each part of the world sees the United States" unit="Countries in each part, by how they see us" legend={swatchEntries(stanceParts(tallyStances(governments)).map((part) => ({ key: part.key, label: part.word, ink: valenceFill(part.valence as ReadingValence) })))} pressHint="Press a part of the world to show only its countries on the map and in the table." help={{ meaning: "Each bar is one part of the world, split by how its governments see the United States. The bar's length is not a score. Each color's share of the bar is that share of its countries." }}>
+    <Pane title="By part of the world" icon="layerBlocs">
+      <ReadingFrame title="How each part of the world sees the United States" pressHint="Press a part of the world to show only its countries on the map and in the table." unit="Countries in each part, by how they see us" legend={swatchEntries(stanceParts(tallyStances(governments)).map((part) => ({ key: part.key, label: part.word, ink: valenceFill(part.valence as ReadingValence) })))} help={{ meaning: "Each bar is one part of the world, split by how its governments see the United States. The bar's length is not a score. Each color's share of the bar is that share of its countries." }}>
         <CardGrid columns={{ phone: 1, tablet: 2, desktop: 3, wide: 3 }} gap="lg">
           {WORLD_REGIONS.map((id) => {
             const rows = governments.filter((government) => government.region === id);
@@ -142,6 +142,6 @@ export function Regions({ governments, region, onRegion }: { readonly government
           })}
         </CardGrid>
       </ReadingFrame>
-    </Panel>
+    </Pane>
   );
 }

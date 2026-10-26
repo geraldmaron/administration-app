@@ -3,6 +3,7 @@ import { Nation, Relationship } from "@admin/world";
 import { buildCampaign, nationA, relationship } from "./__fixtures__/campaign.js";
 import { alarmAt, alarmedBy, blocPhase, blocsInPlay, coalitionCap, coalitionFlag, fracturesIn } from "./blocs.js";
 import { apply } from "./effects.js";
+import { pressedTrustLevel } from "./relationships.js";
 import { foundedForBalance } from "./balance-harness.js";
 import { openPursuit } from "./pursuits.js";
 import { openConflict } from "./conflicts.js";
@@ -102,6 +103,11 @@ describe("who has signed what", () => {
         expect(fracturesIn(pressing(withPact(), ALP, COD), members)).toHaveLength(1);
         expect(fracturesIn(atWar(withPact(), ALP, COD), members)).toHaveLength(1);
     });
+    it("does not read an ordinary quarrel between members as a breach", () => {
+        const members = [USA, ALP, COD];
+        expect(fracturesIn(pressing(withPact(), ALP, COD, 2), members)).toHaveLength(0);
+        expect(fracturesIn(pressing(withPact(), ALP, COD, 2, "diplomatic"), members)).toHaveLength(0);
+    });
     it("does not read a move against an outsider as a breach of the compact", () => {
         expect(fracturesIn(pressing(withPact(), ALP, DUN), [USA, ALP, COD])).toHaveLength(0);
     });
@@ -124,6 +130,22 @@ describe("a compact being shown to be hollow", () => {
         const after = apply(campaign, blocPhase(campaign)[0]);
         expect(selectRelationship(after, USA, DUN).trust).toBeLessThan(before);
         expect(selectRelationship(after, DUN, USA).trust).toBeLessThan(before);
+    });
+    it("holds a long fracture at a level below where the bystanders stand instead of lowering it every week", () => {
+        const base = withPact();
+        const fourth = member(DUN, [PACT]);
+        let campaign = pressing({ ...base, nations: { ...base.nations, [DUN]: { base: fourth, stats: fourth.stats, traits: fourth.traits } } }, ALP, COD);
+        const level = pressedTrustLevel(campaign, selectRelationship(campaign, USA, DUN), 0.12);
+        const trace = [];
+        for (let week = 0; week < 104; week++) {
+            campaign = blocPhase(campaign).reduce((state, packet) => apply(state, packet), campaign);
+            trace.push(selectRelationship(campaign, USA, DUN).trust);
+        }
+        expect(trace[0]).toBeLessThan(0.4);
+        expect(trace.at(-1)).toBeGreaterThanOrEqual(level);
+        expect(trace.at(-1) - level).toBeLessThan(0.001);
+        // The flat weekly step this replaced would have taken two full points off.
+        expect(0.4 - trace.at(-1)).toBeLessThan(0.4 - level + 1e-9);
     });
     it("leaves an intact compact entirely alone", () => {
         const campaign = withPact();

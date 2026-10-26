@@ -1,6 +1,7 @@
 import { imposeTestTariff } from "./__fixtures__/tariff.js";
 import { describe, expect, it } from "vitest";
-import { currentRate, foundingTrade, selectCustomsReceipts, liftMeasure, retaliationTargetFor, selectExpectedRetaliation, selectLiveMeasures, selectTradeExposure, suppliersOf, tariffIncidence, tradeEdge, tradeEdgesWith, tradePhase } from "./trade.js";
+import { currentRate, foundingTrade, selectCustomsReceipts, liftMeasure, retaliationTargetFor, selectExpectedRetaliation, selectLiveMeasures, selectTradeExposure, suppliersOf, tariffIncidence, tradeEdge, tradeEdgesWith } from "./trade.js";
+import { tradePhase } from "./trade-phase.js";
 import { TRADE_SECTORS, TRADE_SECTOR_IDS, downstreamOf, tradeSector, tradeSectorsFor } from "./trade-sectors.js";
 import { SECTOR_IDS } from "@admin/world";
 import { apply, type EffectPacket } from "./effects.js";
@@ -12,6 +13,8 @@ import { campaignTurnPhases } from "./turn-phases.js";
 import { advanceTurn } from "./turn-loop.js";
 import { createRngStreams } from "./rng.js";
 import type { Campaign } from "./state.js";
+import { externalMacroPressure } from "./external-pressure.js";
+import { retaliationFall } from "./trade-volume.js";
 
 const PARTNER = "ALP";
 // The fixture nations make textiles and run utilities. Trading a sector they
@@ -150,6 +153,21 @@ describe("a tariff is no longer treasury plus a relationship knock", () => {
     expect(incidence.shelfPriceRise).toBeGreaterThan(0);
     expect(incidence.diversionShare).toBeGreaterThanOrEqual(0);
     expect(incidence.retaliationChance).toBeGreaterThan(0);
+  });
+
+  it("prices the answer's odds on the export flow the answer would cut, at the trade book's own response", () => {
+    const campaign = tradingCampaign();
+    const incidence = tariffIncidence(campaign, PARTNER as never, TRADED, 0.25)!;
+    expect(incidence.retaliationTarget).toBeDefined();
+    expect(incidence.retaliationCut).toBe(retaliationFall(tradeSector(incidence.retaliationTarget!)!, 0.2));
+    const larger = tariffIncidence(campaign, PARTNER as never, TRADED, 0.5)!;
+    expect(larger.retaliationCut).toBeGreaterThan(incidence.retaliationCut);
+    expect(larger.retaliationChance).toBeGreaterThan(incidence.retaliationChance);
+  });
+
+  it("answers on salient goods its buyers can replace, as China answered on soybeans, not on aircraft", () => {
+    const { campaign } = foundedForBalance("trade-retaliation-target");
+    expect(retaliationTargetFor(campaign, "CHN" as never)).toBe("agriculture-row-crops");
   });
 
   it("charges a bigger rate more of everything", () => {
@@ -524,5 +542,32 @@ describe("the economic ladder writes into the trade register", () => {
     // taxed, which is the one place the vocabulary was dead before.
     expect(kinds.has("sanctions") || kinds.has("export-control")).toBe(true);
     expect(kinds.has("asset-restriction")).toBe(true);
+  });
+});
+
+describe("a partner's answer costs the exporters, not the Treasury", () => {
+  const { campaign } = foundedForBalance("trade-retaliation-output");
+  const partner = "SAU" as never;
+  const signed = TRADE_SECTORS.filter((def) => def.instrument === "tariff")
+    .map((def) => imposeTestTariff(campaign, partner, def.id, 0.25))
+    .flatMap((result) => (result.ok ? [apply(campaign, result.packet)] : []))
+    .find((state) => selectExpectedRetaliation(state).length > 0)!;
+  const due = { ...signed, turn: selectExpectedRetaliation(signed)[0]!.dueTurn };
+
+  it("lands the answer with no charge to the Treasury", () => {
+    const packets = tradePhase(due);
+    expect(packets.length).toBeGreaterThan(0);
+    for (const packet of packets) {
+      for (const effect of packet.effects) if (effect.kind === "metric") expect(effect.deltas.treasury ?? 0).toBe(0);
+    }
+  });
+
+  it("lowers where US growth is headed for as long as the answer stands, and not after it is lifted", () => {
+    const landed = tradePhase(due).reduce(apply, due);
+    const reply = Object.values(landed.trade.measures).find((measure) => measure.origin === "retaliation")!;
+    const growth = (state: Campaign) => externalMacroPressure(state, state.founding.nation).growth;
+    expect(growth(landed)).toBeLessThan(growth(due));
+    const lifted: Campaign = { ...landed, trade: { ...landed.trade, measures: { ...landed.trade.measures, [reply.id]: { ...reply, liftedTurn: landed.turn } } } };
+    expect(growth(lifted)).toBeCloseTo(growth(due), 9);
   });
 });

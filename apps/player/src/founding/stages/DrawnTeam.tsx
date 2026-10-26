@@ -3,7 +3,8 @@ import type { Person } from "@admin/world";
 import { Button, CardGrid, Column, Row, Text } from "@admin/ui";
 import { ChairReadBadge, ChairReadKey } from "../../executive/parts";
 import { cabinetGroups } from "../cabinet-groups";
-import { FactChip, PersonFace, Reading } from "../parts";
+import { PersonFace } from "../../dossier/PersonFace";
+import { FactChip, TitledReading } from "../parts";
 import { drawPlayableTeam } from "../seal";
 import type { Founding } from "../useFounding";
 
@@ -35,7 +36,7 @@ export function DrawnTeam({ founding }: { readonly founding: Founding }) {
   const holder = (role: string) => resolved.cabinetSlates[role]?.find((row) => row.person.id === resolved.seated.cabinet[role])?.person;
   const groups = cabinetGroups(resolved.seats.departments.map((role) => role as string));
   return (
-    <Reading icon="appoint" title="Your team, picked at random">
+    <TitledReading icon="appoint" title="Your team, picked at random">
       <Text variant="body" tone="secondary">
         Everyone here came from the same shortlists you'd pick from yourself, and nobody holds two jobs. Your White House staff were picked the same way.
       </Text>
@@ -85,6 +86,6 @@ export function DrawnTeam({ founding }: { readonly founding: Founding }) {
           </CardGrid>
         </Column>
       ))}
-    </Reading>
+    </TitledReading>
   );
 }

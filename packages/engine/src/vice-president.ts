@@ -179,3 +179,20 @@ export function vicePresidentLiaison(campaign: Campaign, person: PersonId): numb
   const signed = Math.max(-1, Math.min(1, (reading - LIAISON_CENTER) / LIAISON_SPREAD));
   return round3(SENATE_LIAISON_BOUND * signed);
 }
+
+/**
+ * The vice presidency filled: the record of who holds it and the Senate's
+ * presiding officer move together, so a Vice President confirmed under the
+ * Twenty-fifth Amendment presides and breaks ties as an elected one does.
+ */
+export function withVicePresident(campaign: Campaign, person: PersonId): Campaign {
+  const liaison = vicePresidentLiaison(campaign, person);
+  return { ...campaign, vicePresident: person, congress: { ...campaign.congress, presidingOfficer: { person, liaison } } };
+}
+
+/** The vice presidency emptied: nobody presides, nobody breaks a tie, and the Speaker stands next in line. */
+export function withoutVicePresident(campaign: Campaign): Campaign {
+  const { vicePresident: _vacated, ...rest } = campaign;
+  const { presidingOfficer: _chair, ...congress } = campaign.congress;
+  return { ...rest, congress } as Campaign;
+}

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { router } from "expo-router";
 import type { CampaignLibrary } from "@admin/player-core";
-import { Badge, Button, Column, Icon, Page, Row, Surface, Text } from "@admin/ui";
+import { Button, Column, Icon, Page, Row, Surface, Tag, Text } from "@admin/ui";
 import { Receipt } from "@admin/ui/review";
 import { useCampaignState, useSaveState, useStoresIfReady } from "../src/device/hooks";
 import { SaveCard } from "../src/library/SaveCard";
@@ -76,7 +76,7 @@ function Integrity({ library, actions }: { readonly library: CampaignLibrary | n
   return (
     <Step icon="archive" title="Check your saves">
       {library === null ? <Text variant="body" tone="secondary">Checking every save…</Text> : damaged.length === 0 ? (
-        <Row gap="sm"><Badge status="success" icon="approve">All readable</Badge><Text variant="body" tone="secondary">{library.campaigns.length === 0 ? "There are no saves on this device yet, so nothing needs fixing." : `All ${library.campaigns.length} ${library.campaigns.length === 1 ? "save" : "saves"} on this device can be opened. Nothing needs fixing.`}</Text></Row>
+        <Row gap="sm"><Tag tone="success" icon="approve">All readable</Tag><Text variant="body" tone="secondary">{library.campaigns.length === 0 ? "There are no saves on this device yet, so nothing needs fixing." : `All ${library.campaigns.length} ${library.campaigns.length === 1 ? "save" : "saves"} on this device can be opened. Nothing needs fixing.`}</Text></Row>
       ) : (
         <Column gap="md">
           <Text variant="body" tone="secondary">{`${damaged.length} of ${library.campaigns.length} ${library.campaigns.length === 1 ? "save" : "saves"} can't be opened. If one can still be exported, export it to keep a copy. Then remove it to free up its slot.`}</Text>
@@ -107,13 +107,13 @@ export default function Recovery() {
   // The reasons read the save store, which does not exist until the device's stores load, so a cold open waits here instead of throwing.
   if (!store) {
     return (
-      <Page eyebrow="Save problems" icon="archive" title="Recovery" lede="Here's what went wrong with your saves, and what you can do about it." actions={<ReturnButton />}>
+      <Page eyebrow="Save problems" icon="archive" title="Recovery" lede="What is wrong with the saves on this device." actions={<ReturnButton />}>
         <Text variant="body" tone="secondary" role="status">Opening the saves on this device…</Text>
       </Page>
     );
   }
   return (
-    <Page eyebrow="Save problems" icon="archive" title="Recovery" lede="Here's what went wrong with your saves, and what you can do about it." actions={<ReturnButton />}>
+    <Page eyebrow="Save problems" icon="archive" title="Recovery" lede="What is wrong with the saves on this device." actions={<ReturnButton />}>
       <Reasons failed={state.status === "failed" ? state.message : undefined} library={library} listError={error} />
       {state.status === "ready" ? <RetrySave /> : null}
       {error && library ? <Notice tone="danger">{error}</Notice> : null}

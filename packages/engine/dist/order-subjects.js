@@ -3,11 +3,12 @@ import { selectActiveConflicts, selectCurrentLaws } from "./state.js";
 import { activeExternalEmergency, eligibleExternalThreats } from "./external-emergency.js";
 import { conditionFamily } from "./condition-kinds.js";
 import { reliefSignature } from "./obligations.js";
-import { underDeclaredEmergency } from "./emergency.js";
+import { selectDeclaredEmergencies, underDeclaredEmergency } from "./emergency.js";
 import { campaignDay } from "./clock.js";
 import { energyLeasingOrderSubjects, regulatoryReviewOrderSubjects } from "./order-authority-subjects.js";
 import { blockableAccount } from "./blocked-assets.js";
 import { prospectiveOrderAuthority } from "./order-authority.js";
+import { isMissionOrder, missionOrderRefusal } from "./locale-missions.js";
 export { energyLeasingOrderSubjects, regulatoryReviewOrderSubjects, leasePlanningArea, LEASE_PLANNING_AREAS } from "./order-authority-subjects.js";
 /** §2808(c)(2): this catalogue offers domestic emergency projects only (USD millions). */
 export const DOMESTIC_EMERGENCY_CONSTRUCTION_CAP = 100;
@@ -30,6 +31,15 @@ export function constructionNotice(campaign, sourceId, declarationId, amount, co
         sourceImpact: `Canceling ${source.name} defers its remaining planned work; ${source.obligated} million dollars of prior commitments remains payable.`,
         estimatedCost: amount, contractId };
 }
+/** One record per order, subject and week, so a re-signing the same week is refused rather than overwritten. */
+export function orderRecordId(orderId, turn, subject) {
+    const target = subject?.kind === "foreign" || subject?.kind === "entry-class" ? subject.nation
+        : subject?.kind === "state" || subject?.kind === "locale-mission" ? subject.state
+            : subject?.kind === "grant" ? subject.billId : subject?.kind === "construction" ? subject.sourceId
+                : subject?.kind === "rule-review" ? subject.ruleId : subject?.kind === "lease-planning" ? subject.areaId : undefined;
+    const key = subject?.kind === "federal-site" ? subject.institutionId : target;
+    return key ? `${orderId}:${key}:${turn}` : `${orderId}:${turn}`;
+}
 /** A grant condition administers the program terms Congress enacted. */
 export function grantOrderSubjects(campaign) {
     return selectCurrentLaws(campaign).filter((bill) => bill.act === "act-police-accountability"
@@ -40,8 +50,8 @@ export function grantOrderSubjects(campaign) {
 }
 export function constructionOrderSubjects(campaign) {
     const conflicts = new Set(selectActiveConflicts(campaign).filter((conflict) => conflict.aggressor === campaign.founding.nation || conflict.defender === campaign.founding.nation).map((conflict) => conflict.id));
-    const declarations = Object.values(campaign.emergencies).filter((record) => record.scope.kind === "nation" && record.cause === "armed-conflict" && record.endedTurn === undefined && record.armedForcesConflictId &&
-        conflicts.has(record.armedForcesConflictId) && campaign.turn - record.renewedTurn < 52);
+    const declarations = selectDeclaredEmergencies(campaign).filter((record) => record.scope.kind === "nation" && record.cause === "armed-conflict" && record.armedForcesConflictId &&
+        conflicts.has(record.armedForcesConflictId));
     return (campaign.militaryConstructionProjects ?? []).filter((project) => project.status === "active" && project.hostState).flatMap((project) => declarations.filter((declaration) => constructionTransferAmount(campaign, project.id, declaration.id) > 0)
         .map((declaration) => ({ kind: "construction", sourceId: project.id, declarationId: declaration.id })));
 }
@@ -118,6 +128,8 @@ export function firstOrderSubject(campaign, orderId) {
 }
 /** The direct resolver and the desk use the same target-specific refusals. */
 export function orderSubjectRefusal(campaign, orderId, subject) {
+    if (isMissionOrder(orderId))
+        return missionOrderRefusal(campaign, orderId, subject);
     if (subject && ["order-price-controls", "order-clean-energy", "order-defense-production"].includes(orderId))
         return "an order that takes no separate target";
     if (orderId === "order-border-controls" && subject !== undefined && (subject.kind !== "ports-of-entry" || subject.scope !== "all-federal-ports"))

@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import type { CampaignStore, EntitlementSnapshot, Preferences } from "@admin/player-core";
+import type { CampaignStore, DraftStore, EntitlementSnapshot, Preferences } from "@admin/player-core";
 
 // The app's long-lived contexts, each created once in a module that imports
 // nothing that changes, so a hot reload of a provider never creates a second
@@ -18,5 +18,7 @@ export type EntitlementHandle = {
 
 /** Null until the campaign store has loaded: the frame, the map and the title draw without it. */
 export const CampaignContext = createContext<CampaignStore | null>(null);
+/** The President's drafts, over the same campaign store; null until it has loaded. */
+export const DraftsContext = createContext<DraftStore | null>(null);
 export const PreferencesContext = createContext<PreferencesHandle | null>(null);
 export const EntitlementContext = createContext<EntitlementHandle | null>(null);

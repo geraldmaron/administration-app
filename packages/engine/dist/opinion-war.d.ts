@@ -25,6 +25,18 @@ export declare const RALLY: {
         readonly halfLifeWeeks: 20;
     };
 };
+/**
+ * Planning values, not fitted: how much a public that has already rallied
+ * rallies again. Each earlier rally still in memory divides the next one by
+ * `1 + perPriorRally`, and a rally stays in memory with a half-life of 52
+ * weeks. The only anchor is ordering (the 2003 Iraq rally ran well below the
+ * 2001 Afghanistan one, with the stock of 9/11 already spent); Gallup's two
+ * series fix no coefficient.
+ */
+export declare const RALLY_FATIGUE: {
+    readonly perPriorRally: 1;
+    readonly halfLifeWeeks: 52;
+};
 /** Planning value: the unease a front at full intensity costs the security judgment. */
 export declare const WAR_UNEASE = 0.1;
 /** Planning value: security lost per tenfold of the country's own dead. */
@@ -32,6 +44,14 @@ export declare const CASUALTY_WEIGHT = 0.08;
 /** Planning value: the most the dead of one war can take off the judgment. */
 export declare const CASUALTY_CAP = 0.25;
 export declare function rallyFor(conflict: Conflict, turn: number, nation: NationId): number;
+/**
+ * How much of a fresh rally this war still earns after the rallies before it:
+ * the public carries one stock of fatigue, so a war opened while an earlier
+ * rally is still remembered gets a smaller lift, whichever war it is. Derived
+ * from the conflict ledger, ended wars included, so there is nothing to store
+ * or migrate.
+ */
+export declare function rallyFatigueFactor(campaign: Campaign, conflict: Conflict, nation: NationId): number;
 /**
  * Whether this government opened the war: the rally it gets is the smaller,
  * shorter one a contested case earns, and none at all for a war opened by a
@@ -49,7 +69,7 @@ export type WarOpinionTerms = {
 };
 /**
  * Every war the country is party to, summed: the strongest rally (a public
- * rallies once, to the newest war), the unease of each front, and each war's
+ * rallies once, and later wars rally it less: `rallyFatigueFactor`), the unease of each front, and each war's
  * dead on its own scale.
  */
 export declare function warOpinionTerms(campaign: Campaign): WarOpinionTerms;

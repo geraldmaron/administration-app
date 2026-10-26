@@ -94,7 +94,7 @@ export function ActCompare({ campaign, title, options, verbs, onAuthorize, waiti
               readings={option.unavailable ? {} : slots(rows, index, scale)}
               selected={option.id === selected}
               onPress={() => setSelected(option.id)}
-              pressLabel={`Pick ${option.label}`}
+              pressLabel={option.label}
               below={
                 <Column gap="sm">
                   {option.unavailable ? <Text variant="caption" tone="warning">{`Not available right now. ${option.unavailable}`}</Text> : null}
@@ -105,7 +105,7 @@ export function ActCompare({ campaign, title, options, verbs, onAuthorize, waiti
           ))}
         </ResultsList>
         <Text variant="caption" tone="secondary" aria-live="polite">
-          {picked ? (picked.unavailable ? `Not available right now. ${picked.unavailable}` : "Read the details before you confirm. What you do and what it costs will go on your Record.") : options.every((option) => option.unavailable) ? "Nothing here can be approved yet. Each option says what it waits on." : "Pick an option to see what it changes, then approve it."}
+          {picked ? (picked.unavailable ? `Not available right now. ${picked.unavailable}` : "What you do and what it costs go on your Record.") : options.every((option) => option.unavailable) ? "Nothing here can be approved yet. Each option says what it waits on." : "No option is picked yet."}
         </Text>
         <Row>
           <Button kind={danger ? "danger" : "primary"} icon="review" disabled={closed || busy} onPress={() => picked && onAuthorize(picked.id)}>

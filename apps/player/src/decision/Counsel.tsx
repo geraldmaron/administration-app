@@ -1,8 +1,9 @@
 import { counselOnReply, selectPerson, type Campaign, type ConversationScript, type ReplyProjection } from "@admin/engine";
 import { counselSentence, monogramFor, place } from "@admin/player-core";
-import { Badge, Column, EntityLink, Text } from "@admin/ui";
+import { Column, EntityLink, Tag, Text } from "@admin/ui";
 import { Voice } from "@admin/ui/review";
 import type { PersonId } from "@admin/world";
+import { PersonFace } from "../dossier/PersonFace";
 import { go } from "./parts";
 
 function nameOf(campaign: Campaign, person: PersonId): string {
@@ -12,8 +13,8 @@ function nameOf(campaign: Campaign, person: PersonId): string {
 /**
  * What the cabinet says about the answer picked: the chair whose call it is,
  * and a second voice exactly when the engine finds one. Composed only from
- * what the engine returned; a vacant chair says so. Faces are redacted to
- * initials, as the briefing carries them.
+ * what the engine returned; a vacant chair says so. Each adviser is drawn from
+ * their own record.
  */
 export function Counsel({ campaign, script, reply }: { readonly campaign: Campaign; readonly script: ConversationScript; readonly reply: ReplyProjection }) {
   const counsel = counselOnReply(campaign, script, reply);
@@ -42,8 +43,9 @@ export function Counsel({ campaign, script, reply }: { readonly campaign: Campai
             name={name}
             line={voice.line}
             tone={voice.tone}
+            face={<PersonFace campaign={campaign} id={voice.person} name={name} size={44} />}
             nameSlot={<EntityLink label={name} href={place.person(voice.person)} onPress={() => go(place.person(voice.person))} />}
-            tag={<Badge status={voice.key === "lead" ? "info" : "warning"}>{voice.label}</Badge>}
+            tag={<Tag tone={voice.key === "lead" ? "info" : "warning"}>{voice.label}</Tag>}
           />
         );
       })}

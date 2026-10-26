@@ -3,6 +3,8 @@ import type { NationId, PersonId, StateId } from "@admin/world";
 import type { AcuteCondition } from "./condition-kinds.js";
 import type { PolicyStatPath } from "./policy-stats.js";
 import type { GameDate } from "./state-campaign.js";
+import type { LocaleActId } from "./locale-acts.js";
+import type { InsurrectionGround } from "./locale-missions.js";
 export type ExecutiveOrderRecord = {
     readonly id: string;
     readonly order: string;
@@ -49,6 +51,12 @@ export type ExecutiveOrderRecord = {
         readonly sourceId: string;
         readonly declarationId: string;
         readonly amount: number;
+    } | {
+        readonly kind: "locale-mission";
+        readonly state: StateId;
+        readonly act: LocaleActId;
+        readonly ground?: InsurrectionGround;
+        readonly mission?: string;
     };
     /** The Defense Secretary's §2808 notice received by the congressional defense committees. */
     readonly constructionNotice?: {

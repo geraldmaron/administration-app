@@ -30,6 +30,16 @@ export const RALLY = {
   drawnIn: { valence: 2.2, halfLifeWeeks: 20 },
 } as const;
 
+/**
+ * Planning values, not fitted: how much a public that has already rallied
+ * rallies again. Each earlier rally still in memory divides the next one by
+ * `1 + perPriorRally`, and a rally stays in memory with a half-life of 52
+ * weeks. The only anchor is ordering (the 2003 Iraq rally ran well below the
+ * 2001 Afghanistan one, with the stock of 9/11 already spent); Gallup's two
+ * series fix no coefficient.
+ */
+export const RALLY_FATIGUE = { perPriorRally: 1, halfLifeWeeks: 52 } as const;
+
 /** Planning value: the unease a front at full intensity costs the security judgment. */
 export const WAR_UNEASE = 0.1;
 
@@ -48,6 +58,25 @@ export function rallyFor(conflict: Conflict, turn: number, nation: NationId): nu
   const weeks = Math.max(0, turn - conflict.startedTurn);
   const rally = launched ? RALLY.launched : RALLY.drawnIn;
   return rally.valence * 0.5 ** (weeks / rally.halfLifeWeeks);
+}
+
+/**
+ * How much of a fresh rally this war still earns after the rallies before it:
+ * the public carries one stock of fatigue, so a war opened while an earlier
+ * rally is still remembered gets a smaller lift, whichever war it is. Derived
+ * from the conflict ledger, ended wars included, so there is nothing to store
+ * or migrate.
+ */
+export function rallyFatigueFactor(campaign: Campaign, conflict: Conflict, nation: NationId): number {
+  const remembered = Object.values(campaign.conflicts)
+    .filter((prior) => prior.id !== conflict.id && sideOf(prior, nation) !== undefined && isEarlier(prior, conflict))
+    .filter((prior) => rallyFor(prior, prior.startedTurn, nation) > 0)
+    .reduce((sum, prior) => sum + 0.5 ** ((conflict.startedTurn - prior.startedTurn) / RALLY_FATIGUE.halfLifeWeeks), 0);
+  return 1 / (1 + RALLY_FATIGUE.perPriorRally * remembered);
+}
+
+function isEarlier(prior: Conflict, conflict: Conflict): boolean {
+  return prior.startedTurn < conflict.startedTurn || (prior.startedTurn === conflict.startedTurn && prior.id < conflict.id);
 }
 
 /**
@@ -76,7 +105,7 @@ export type WarOpinionTerms = {
 
 /**
  * Every war the country is party to, summed: the strongest rally (a public
- * rallies once, to the newest war), the unease of each front, and each war's
+ * rallies once, and later wars rally it less: `rallyFatigueFactor`), the unease of each front, and each war's
  * dead on its own scale.
  */
 export function warOpinionTerms(campaign: Campaign): WarOpinionTerms {
@@ -86,7 +115,7 @@ export function warOpinionTerms(campaign: Campaign): WarOpinionTerms {
     (terms, conflict) => {
       const side = sideOf(conflict, nation);
       return {
-        rally: Math.max(terms.rally, rallyFor(conflict, campaign.turn, nation)),
+        rally: Math.max(terms.rally, rallyFor(conflict, campaign.turn, nation) * rallyFatigueFactor(campaign, conflict, nation)),
         unease: terms.unease + WAR_UNEASE * conflict.intensity,
         casualties: terms.casualties + (side ? casualtyCost(casualtyBand(campaign, conflict, side)) : 0),
         wars: terms.wars + 1,

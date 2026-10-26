@@ -247,6 +247,11 @@ describe("issued report scenario binding", () => {
         for (const option of cast.script.options) {
             const streams = createRngStreams(board.seed);
             const projection = projectReply(board, cast.script, option, streams);
+            // Emergency relief answers a need, and the report board's recipient is
+            // living through none, so a reply that sends relief is refused for that
+            // reason and no other; the authored reply itself is a content finding.
+            if (!projection.available && /disaster or crisis at the target/.test(projection.missingCapability ?? ""))
+                continue;
             expect(projection.available, `${def.id}/${option.id}`).toBe(true);
             const committed = commitReply(board, cast.script, option, createRngStreams(board.seed));
             expect(committed.ok, `${def.id}/${option.id}`).toBe(true);

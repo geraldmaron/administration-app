@@ -24,6 +24,7 @@ export type ChoiceRowView = {
   readonly icon?: IconName;
   /** What the option is in its own words, read before any figure. */
   readonly lead?: boolean;
+  /** An option with no entry has no line: a row it does not touch is left out of its terms rather than drawn empty. */
   readonly cells: Readonly<Record<string, ReactNode>>;
 };
 
@@ -66,7 +67,7 @@ function Verdict({ verdict }: { readonly verdict: readonly ChoiceVerdict[] | und
 function Terms({ rows, option }: { readonly rows: readonly ChoiceRowView[]; readonly option: ChoiceOptionView }) {
   return (
     <Column gap="xs" role="table" aria-label={`${option.label}, what it changes`}>
-      {rows.map((row) => (
+      {rows.filter((row) => row.cells[option.id] !== undefined).map((row) => (
         <Row key={row.id} role="row" gap="md" top wrap paddingVertical="2xs" borderTopWidth={1} borderTopColor="borderColor">
           <Row gap="xs" top width={200} minWidth={160} role="rowheader">
             {row.icon ? <Icon name={row.icon} size={16} tone="colorSecondary" /> : null}
@@ -100,7 +101,7 @@ export function CompareChoices({ title, options, rows, selected, onSelect, verb,
   }, [selected, sole, onSelect]);
   const chosen = options.find((option) => option.id === selected);
   const blocked = !chosen || chosen.unavailable !== undefined || busy === true;
-  const sentence = chosen ? (chosen.unavailable ?? review) : options.every((option) => option.unavailable) ? "Nothing here can be approved yet. Each option says what it waits on." : "Pick an option to see what it changes, then approve it.";
+  const sentence = chosen ? (chosen.unavailable ?? review) : options.every((option) => option.unavailable) ? "Nothing here can be approved yet. Each option says what it waits on." : "No option picked yet. Each one shows what it changes before anything is approved.";
   return (
     <Surface pad="lg" role="region" aria-label={title}>
       <Column gap="md">
@@ -125,7 +126,7 @@ export function CompareChoices({ title, options, rows, selected, onSelect, verb,
               readings={{ move: <Verdict verdict={option.verdict} /> }}
               selected={option.id === selected}
               onPress={() => onSelect(option.id)}
-              pressLabel={`Pick ${option.label}`}
+              pressLabel={option.label}
               below={
                 <Column gap="sm">
                   {option.unavailable ? <Text variant="caption" tone="warning">{option.unavailable}</Text> : null}

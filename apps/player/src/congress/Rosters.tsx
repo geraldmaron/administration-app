@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { campaignDay, committeeName, usPartyWord, type Campaign, type UsParty } from "@admin/engine";
 import { appropriationReading, delegationReading, extensionNotices, formatDate, place, sealFor, warPowersReading, type DelegationReading } from "@admin/player-core";
 import { STATE_IDS } from "@admin/world";
-import { Badge, Button, CalendarPaper, Card, CardLink, Column, Empty, markKeyEntries, Meter, ReadingFrame, Row, Seal, Segmented, Select, Text, TextInput, View } from "@admin/ui";
+import { Tag, Button, CalendarPaper, Card, CardLink, Column, Empty, markKeyEntries, Meter, ReadingFrame, Row, Seal, Segmented, Select, Text, TextInput, View } from "@admin/ui";
 import { PARTY_INK, VoteCount } from "@admin/ui/legislature";
 import { Authority } from "./ActChooser";
 import { LAW, senateNominations, type Caucus, type SenateNomination } from "./model";
@@ -22,7 +22,7 @@ function NominationRow({ campaign, row }: { readonly campaign: Campaign; readonl
             <PersonName campaign={campaign} id={row.nominee} name={row.name} role={`Nominee for ${row.office}`} />
             <Text variant="caption" tone="secondary">{row.office}</Text>
           </Column>
-          <Badge status={row.vote ? "info" : "pending"} icon={row.vote ? "appoint" : "pending"}>{row.stage}</Badge>
+          <Tag tone={row.vote ? "info" : "pending"} icon={row.vote ? "appoint" : "pending"}>{row.stage}</Tag>
         </Row>
         <Text variant="caption">
           Open for {row.days} {row.days === 1 ? "day" : "days"}.{row.committee ? ` Committee: ${committeeName(row.committee)}.` : ""}
@@ -75,10 +75,10 @@ export function Members({ campaign, caucus, onCaucus }: { readonly campaign: Cam
   }, [all, caucus, chamber, query, sort]);
   return (
     <Card title="Members of Congress" icon="subjectPerson">
-      <Note>{members.length} seats. Open a member's page to see their background and who they're close to.</Note>
+      <Note>{members.length} seats.</Note>
       {caucus ? (
         <Row gap="sm" wrap>
-          <Badge status="info" icon="flag">{`Showing the ${usPartyWord(caucus)} caucus`}</Badge>
+          <Tag tone="info" icon="flag">{`Showing the ${usPartyWord(caucus)} caucus`}</Tag>
           <Button kind="quiet" size="compact" icon="close" onPress={() => onCaucus(undefined)}>Show everyone</Button>
         </Row>
       ) : null}
@@ -167,7 +167,7 @@ export function Powers({ campaign }: { readonly campaign: Campaign }) {
       <Card title="War powers" icon="conflict" edge={war.unauthorized.length > 0 ? "danger" : "success"} actions={<Authority cite={LAW.warPowers} compact />} help={<CitedLawHelp title="The War Powers Resolution" meaning="When you send troops into fighting, you have to tell Congress within 48 hours. You have to bring them home within 60 days unless Congress declares war or votes to approve the use of force. You can get up to 90 days if you certify that you need the extra time to pull them out safely." cites={[LAW.warPowers]} />}>
         <Text variant="label" tone={war.unauthorized.length > 0 ? "danger" : "success"}>{war.headline}</Text>
         <Text variant="caption">{war.detail}</Text>
-        {notices.length === 0 ? <Empty title="No deployment is on a War Powers clock" detail="Troops sent into combat start a 60-day clock, and the extension request would show here." /> : null}
+        {notices.length === 0 ? <Empty title="No deployment is on a War Powers clock" detail="No troops sent into combat are on a 60-day clock." /> : null}
         {notices.map((notice) => (
           <CardLink key={notice.id} label={`Open the War Powers paper on ${notice.target}`} href={notice.home} onPress={() => go(notice.home)} pad="md" accentEdge={notice.daysLeft <= 14 ? "danger" : "warning"}>
             <Column gap="xs">

@@ -1,3 +1,5 @@
+import { tariffAuthorityPhase } from "./tariff-orders.js";
+import { emergencyExpiryPhase } from "./emergency.js";
 import { advanceImpactEvents } from "./impact-lifecycle.js";
 import { expireTradeMeasures } from "./trade-effects.js";
 import { resolveDueInstruments } from "./instrument-issued.js";
@@ -16,12 +18,14 @@ import { DAYS_PER_TURN, closeWeek, openWeek, runPhase, tickWeek, type TurnPhases
 function stepCalendar(state: Campaign): Campaign {
   const dated = state.foundingDate ? state : { ...state, foundingDate: campaignFoundingDate(state) };
   const next: Campaign = { ...dated, calendar: addDays(dated.calendar, 1) };
-  const afterExpiry = runPhase(next, orderExpiryPhase, next.turn);
+  const afterExpiry = runPhase(runPhase(next, emergencyExpiryPhase, next.turn), orderExpiryPhase, next.turn);
   const afterLobby = resolveDueLobbying(afterExpiry);
   const afterPress = resolveDuePress(afterLobby.campaign);
   const afterTreaties = resolveDueTreaties(afterPress.campaign);
   const afterAuthorizations = resolveDueAuthorizations(afterTreaties.campaign);
-  return holdElectionsDueToday(advanceImpactEvents(expireTradeMeasures(resolveDueInstruments(afterAuthorizations.campaign).campaign)));
+  const afterInstruments = resolveDueInstruments(afterAuthorizations.campaign).campaign;
+  const afterClocks = runPhase(afterInstruments, tariffAuthorityPhase, next.turn);
+  return holdElectionsDueToday(advanceImpactEvents(expireTradeMeasures(afterClocks)));
 }
 
 function rememberOpening(state: Campaign): Campaign {

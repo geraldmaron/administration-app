@@ -38,7 +38,7 @@ export function RecordScreen({ campaign, params, standalone }: { readonly campai
     else router.setParams(routerParams(next));
   };
   return (
-    <Page eyebrow="Executive Office of the President" icon="record" title="The Record" lede={`${total.toLocaleString("en-US")} ${total === 1 ? "entry" : "entries"} this term. Open one to see what it changed and what it led to.`} emblem={<Seal spec={sealFor("INST-PRESIDENCY")} size={64} label="Executive Office of the President" />} wide>
+    <Page eyebrow="Executive Office of the President" icon="record" title="The Record" lede={`${total.toLocaleString("en-US")} ${total === 1 ? "entry" : "entries"} this term.`} emblem={<Seal spec={sealFor("INST-PRESIDENCY")} size={64} label="Executive Office of the President" />} wide>
       <ViewTabs<RecordView> label="Record sections" tabs={tabs} selected={view} onSelect={pick} />
       <Column gap="lg">
         {view === "acts" ? <RecordWorkspace campaign={campaign} params={params} standalone={standalone === true} onPatch={onPatch} /> : null}

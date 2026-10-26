@@ -791,15 +791,17 @@ export const GOVERNMENT_EXPLAINERS: readonly Explainer[] = [
     terms: ["majority", "cloture", "two-thirds", "reconciliation", "filibuster"],
   },
   // engine elections.ts projectVote (APPROVAL_LEVERAGE .36, RECORD_PENALTIES,
-  // RECORD_DRAG_CAP .15), holdElection; election-seating.ts MIDTERM_PENALTY (.04),
-  // SWING_SENSITIVITY (house .12, senate .05), senateClassUpIn, SENATE_FLIP_MARGIN.
-  // Nothing in the count draws a random number. INCUMBENCY (.03) is in the share;
-  // PARTY_VOTE_FLOOR (.415) and recordScale hold the record's drag to the room
-  // between the standing share and that floor, at most RECORD_DRAG_CAP (.15).
-  // The illustration: .5 minus .036 plus .03 is .494 standing; one struck order
-  // is .04 (under the .079 of room above the floor), so .454; (.454 - .5) x 2 x .12
-  // - .04 = -.051, and 435 x .051 is 22 at most (election-seating.ts houseSeatsMoved
-  // scales each state's seats by how close it is, so fewer in practice).
+  // RECORD_DRAG_CAP .15), holdElection; election-seating.ts HOUSE_MIDTERM
+  // (sensitivity 1.4, neutralShare .61, ceiling .31) for the House, and
+  // MIDTERM_PENALTY (.04) with SENATE_MIDTERM_SENSITIVITY (.05), senateClassUpIn
+  // and SENATE_FLIP_MARGIN for the Senate. Nothing in the count draws a random
+  // number. INCUMBENCY (.03) is in the share; PARTY_VOTE_FLOOR (.415) and
+  // recordScale hold the record's drag to the room between the standing share and
+  // that floor, at most RECORD_DRAG_CAP (.15). The illustration: .5 minus .036 plus
+  // .03 is .494 standing; one struck order is .04 (under the .079 of room above the
+  // floor), so .454; (.454 - .61) x 1.4 = -.218, bent toward the .31 ceiling to
+  // -.157 of the seats held in close states (seatsAtRisk), which on a founded map
+  // with 248 seats held is 33 (election-seating.ts midtermHouseSeatsMoved).
   {
     id: "midterm-seats",
     title: "What a midterm changes",
@@ -820,7 +822,7 @@ export const GOVERNMENT_EXPLAINERS: readonly Explainer[] = [
       { from: "Each order the courts struck down", to: "The national vote", how: "Takes 4 points each, up to 12.", direction: "lowers", weight: "weak", outcome: "hurts" },
       { from: "Each time force was used without a vote", to: "The national vote", how: "Takes 3 points each, up to 12.", direction: "lowers", weight: "weak", outcome: "hurts" },
       { from: "Each veto Congress overrode", to: "The national vote", how: "Takes 3 points each, up to 9.", direction: "lowers", weight: "weak", outcome: "hurts" },
-      { from: "The national vote", to: "House seats", how: "Each point your share sits above or below 50 percent moves about 0.24 percent of the seats, before the party penalty of 4 percent of the seats.", direction: "shifts", weight: "moderate" },
+      { from: "The national vote", to: "House seats", how: "Below about 61 percent of the vote, your party loses some of the seats it holds in close states. It loses about 1.4 percent of them for each point under, and never more than about three in ten. Above 61 percent, it gains some of the other party's.", direction: "shifts", weight: "moderate" },
       { from: "The national vote", to: "Senate seats", how: "Each point your share sits above or below 50 percent moves about 0.1 percent of the seats, but only in the class up that year and in close states.", direction: "shifts", weight: "weak" },
     ],
     examples: [
@@ -830,7 +832,7 @@ export const GOVERNMENT_EXPLAINERS: readonly Explainer[] = [
         lines: [
           "Say the blocs, weighted by who turns out, add up to a vote share near 46 percent. Holding the office adds 3, so you start near 49 percent.",
           "One of your orders was struck down, which takes 4 more points. Your ticket's share of the vote is about 45 percent. However long your record gets, it can't take the share below 41.5 percent.",
-          "In the House, that share moves about 1.2 percent of the seats against you, plus the 4 percent that every President's party starts behind. That's about 5 percent of 435, up to about 22 seats. It's fewer in practice, because only close districts change hands. The Senate moves far less.",
+          "In the House, that share costs your party about a sixth of the seats it holds in close states. With 248 seats held, that's about 33. It's fewer when you hold fewer seats or fewer of them are close. The Senate moves far less.",
         ],
       },
       {

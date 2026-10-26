@@ -77,7 +77,7 @@ function eligibleBench(campaign, office, kind) {
         !pending.has(runtime.base.id) &&
         !acting.has(runtime.base.id) &&
         (role === undefined || runtime.base.eligibleRoles.some((eligible) => eligible === role)) &&
-        seatRuleRefusal(office, runtime.base) === undefined);
+        seatRuleRefusal(campaign, office, runtime.base) === undefined);
 }
 /** Below the cabinet a candidate must have done or studied what the seat's primary domain hires; a cabinet chair's bench is its own gate. */
 function clearsFloor(kind, relevance) {

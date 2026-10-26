@@ -1,4 +1,4 @@
-import { uscode } from "./records-security.js";
+import { govinfoCode, uscode } from "./records-security.js";
 // Disasters, trade, budget and spending, rules and procurement.
 const DISASTERS = [
     {
@@ -30,6 +30,21 @@ const DISASTERS = [
         glossaryTerms: ["stafford-act", "fema"],
         aliases: ["Stafford Act §401"],
         covers: [{ code: "usc", title: 42, from: "5170" }],
+    },
+    {
+        id: "guard-state-duty-502f",
+        cite: "32 U.S.C. §502(f)",
+        title: "National Guard duty at the President's request",
+        kind: "statute",
+        summary: "Members of a state's National Guard can be ordered to duty beyond their usual training, including to support a mission their unit takes on at the request of the President or the Secretary of Defense. They stay in state status rather than being called into federal service.",
+        enables: ["Request a mission a state's Guard can take on while it stays in state status"],
+        limits: [
+            "It supports missions undertaken at the President's or the Secretary of Defense's request (§502(f)(2)(A)). Calling the Guard into federal service is a different law (10 U.S.C. §12406)",
+            "The duty runs under regulations the Secretary of the Army or of the Air Force prescribes",
+        ],
+        sourceUrl: govinfoCode(32, "502"),
+        aliases: ["Title 32 duty", "Section 502(f)"],
+        covers: [{ code: "usc", title: 32, from: "502" }],
     },
     {
         id: "stafford-emergency",

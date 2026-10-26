@@ -37,10 +37,14 @@ export type FedState = {
 /** The Strategic Petroleum Reserve as a share of its opening fill, and a release in progress. */
 export type ReserveState = {
     readonly fill: number;
+    /** A drawdown flowing; `share` is the share of world crude supply it adds, absent on a full drawdown recorded before it was stored. */
     readonly release?: {
         readonly from: GameDate;
         readonly until: GameDate;
+        readonly share?: number;
     };
+    /** The supply losses standing when the last limited drawdown was ordered: the shortage it answered. */
+    readonly limitedFor?: readonly string[];
 };
 /** A government abroad that stopped paying: the haircut its creditors took and the week it defaulted. */
 export type SovereignDefaultRecord = {

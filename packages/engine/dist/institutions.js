@@ -1,5 +1,5 @@
-import { AGENCY_HEAD_ROLE } from "@admin/world";
-import { INSTITUTION_CATALOG } from "./institution-catalog.js";
+import { AGENCY_HEAD_ROLE, VICE_PRESIDENT_ROLE_ID } from "@admin/world";
+import { INSTITUTION_CATALOG, VICE_PRESIDENCY_INSTITUTION_ID } from "./institution-catalog.js";
 import { campaignFoundingDate, daysBetween } from "./clock.js";
 import { weekOpenDate } from "./feed-cap.js";
 import { FUNDED_BUDGET_ADEQUACY, inShutdown, lapsedBudgetAdequacy, settledBudgetAdequacy } from "./funding.js";
@@ -368,13 +368,16 @@ export function institutionForRole(role) {
 }
 /**
  * The role on the record of whoever leads this body: its cabinet seat for a
- * department, a seat on the bench for a court, and the agency head's for every
- * other body. These are the roles the founding seats each kind under, so an
- * officer the Senate confirms reads the same as one the transition inherited.
+ * department, a seat on the bench for a court, the Vice President's for the
+ * vice presidency, and the agency head's for every other body. These are the
+ * roles the founding seats each kind under, so an officer the Senate confirms
+ * reads the same as one the transition inherited.
  */
 export function leaderRoleOf(def) {
     if (def.cabinetRole)
         return def.cabinetRole;
+    if (def.id === VICE_PRESIDENCY_INSTITUTION_ID)
+        return VICE_PRESIDENT_ROLE_ID;
     return def.kind === "judiciary" ? JUDICIARY_SEAT_ROLE : AGENCY_HEAD_ROLE;
 }
 /**

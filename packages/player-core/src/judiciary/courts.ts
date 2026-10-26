@@ -353,6 +353,7 @@ export function courtDocket(campaign: Campaign): CourtDocket {
         : proceeding.subject.kind === "fair-housing-enforcement" ? "Fair Housing Act complaint against one housing provider"
           : proceeding.subject.kind === "wage-hour-enforcement" ? "Overtime pay owed to one worker, under the FLSA"
             : proceeding.subject.kind === "unlawful-surveillance" ? "Damages for someone spied on unlawfully, under FISA"
+              : proceeding.subject.kind === "commission-removal" ? "A removed commissioner's suit to get the seat back, after Trump v. Slaughter"
               : "Accessible voting equipment under HAVA",
       signed: formatDate(selectDateOfTurn(campaign, record?.turn ?? proceeding.filedTurn)),
       due: formatDate(selectDateOfTurn(campaign, proceeding.nextTurn)),

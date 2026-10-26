@@ -1,6 +1,6 @@
 import {
-  EMERGENCY_NOTICE_TURNS,
-  EMERGENCY_RENEWAL_TURNS,
+  authorityDeadline,
+  emergencyAuthorityClock,
   hazardLabel,
   emergencyCauseLabel,
   liveCauses,
@@ -12,6 +12,7 @@ import {
   weeksToLapse,
   type Campaign,
   type DeclaredEmergency,
+  type EmergencyReading,
   type EmergencyScope,
   type GameDate,
 } from "@admin/engine";
@@ -58,7 +59,7 @@ export type DeclarationRow = {
   readonly camera: string;
 };
 
-function declarationRow(campaign: Campaign, emergency: DeclaredEmergency): DeclarationRow {
+function declarationRow(campaign: Campaign, emergency: EmergencyReading): DeclarationRow {
   const left = weeksToLapse(emergency, campaign.turn);
   return {
     id: emergency.id,
@@ -69,9 +70,9 @@ function declarationRow(campaign: Campaign, emergency: DeclaredEmergency): Decla
     declared: selectDateOfTurn(campaign, emergency.declaredTurn),
     weeksStanding: Math.max(0, campaign.turn - emergency.declaredTurn),
     weeksToLapse: left,
-    lapses: selectDateOfTurn(campaign, emergency.renewedTurn + EMERGENCY_RENEWAL_TURNS),
+    lapses: authorityDeadline(campaign, emergencyAuthorityClock(campaign, emergency)),
     renewalOpen: renewalIsOpen(emergency, campaign.turn),
-    renewalOpensIn: Math.max(0, left - EMERGENCY_NOTICE_TURNS),
+    renewalOpensIn: emergency.clockReading.presidentialRenewal ? Math.max(0, (emergency.clockReading.daysLeft - 90) / 7) : 0,
     weeklyCost: weeklyStandingCost(emergency, campaign.turn),
     causeRunning: emergency.cause === "armed-conflict"
       ? Object.values(campaign.conflicts).some((conflict) => conflict.id === emergency.armedForcesConflictId && conflict.status === "active")

@@ -9,7 +9,7 @@ import {
   type StageBeat,
   type StageOutcome,
 } from "./state.js";
-import { CHAMBERS, carried, floorThreshold, majorityOf } from "./congress.js";
+import { CHAMBERS, carried, floorThreshold, majorityOf, seatedOf } from "./congress.js";
 import { legislativeVoteOn, type VoteStance } from "./congress-votes.js";
 import type { Effect } from "./effects.js";
 import { createRngStreams } from "./rng.js";
@@ -111,6 +111,7 @@ export function restrainsThePresident(act: LegislativeAct): boolean {
   const constraint = act.constrains;
   return (
     act.disapproves === true ||
+    act.emergencyAction === "terminate" ||
     constraint?.barsUnilateralForce === true ||
     constraint?.bindsTheExecutive === true ||
     (constraint?.blocksOrders?.length ?? 0) > 0
@@ -154,7 +155,7 @@ function legislativeFloor(
   campaign: Campaign, chamber: "house" | "senate", act: LegislativeAct, appeal: number,
   counted: "with" | "against", readings: ReturnType<typeof readingsFor> | undefined, billId?: string,
 ): ChamberVote {
-  const question = { chamber, appeal, required: majorityOf(campaign.congress.chambers[chamber].seats),
+  const question = { chamber, appeal, required: majorityOf(seatedOf(campaign.congress, chamber)),
     actId: act.id, stance: stanceOf(act), counted, ...(act.domestic ? { signature: act.domestic } : {}),
     ...(counted === "with" && readings ? { readings } : {}) };
   return legislativeVoteOn(campaign, { ...question,
